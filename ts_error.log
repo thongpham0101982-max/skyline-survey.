@@ -1,0 +1,171 @@
+src/app/admin/academic-years/client.tsx(5,39): error TS7031: Binding element 'initialYears' implicitly has an 'any' type.
+src/app/admin/academic-years/client.tsx(5,53): error TS7031: Binding element 'updateAction' implicitly has an 'any' type.
+src/app/admin/academic-years/client.tsx(5,67): error TS7031: Binding element 'deleteAction' implicitly has an 'any' type.
+src/app/admin/academic-years/client.tsx(5,81): error TS7031: Binding element 'setActiveAction' implicitly has an 'any' type.
+src/app/admin/academic-years/client.tsx(11,23): error TS7006: Parameter 'y' implicitly has an 'any' type.
+src/app/admin/academic-years/client.tsx(20,29): error TS7006: Parameter 'id' implicitly has an 'any' type.
+src/app/admin/academic-years/client.tsx(23,47): error TS2339: Property 'name' does not exist on type '{}'.
+src/app/admin/academic-years/client.tsx(23,82): error TS2339: Property 'startDate' does not exist on type '{}'.
+src/app/admin/academic-years/client.tsx(23,121): error TS2339: Property 'endDate' does not exist on type '{}'.
+src/app/admin/academic-years/client.tsx(24,26): error TS7006: Parameter 'y' implicitly has an 'any' type.
+src/app/admin/academic-years/client.tsx(24,67): error TS2339: Property 'name' does not exist on type '{}'.
+src/app/admin/academic-years/client.tsx(24,102): error TS2339: Property 'startDate' does not exist on type '{}'.
+src/app/admin/academic-years/client.tsx(24,141): error TS2339: Property 'endDate' does not exist on type '{}'.
+src/app/admin/academic-years/client.tsx(30,31): error TS7006: Parameter 'id' implicitly has an 'any' type.
+src/app/admin/academic-years/client.tsx(30,35): error TS7006: Parameter 'name' implicitly has an 'any' type.
+src/app/admin/academic-years/client.tsx(34,29): error TS7006: Parameter 'y' implicitly has an 'any' type.
+src/app/admin/academic-years/client.tsx(38,34): error TS7006: Parameter 'id' implicitly has an 'any' type.
+src/app/admin/academic-years/client.tsx(42,26): error TS7006: Parameter 'y' implicitly has an 'any' type.
+src/app/admin/academic-years/client.tsx(63,22): error TS7006: Parameter 'y' implicitly has an 'any' type.
+src/app/admin/academic-years/client.tsx(83,58): error TS2339: Property 'name' does not exist on type '{}'.
+src/app/admin/academic-years/client.tsx(85,58): error TS2339: Property 'startDate' does not exist on type '{}'.
+src/app/admin/academic-years/client.tsx(87,58): error TS2339: Property 'endDate' does not exist on type '{}'.
+src/app/admin/academic-years/page.tsx(5,35): error TS7006: Parameter 'formData' implicitly has an 'any' type.
+src/app/admin/academic-years/page.tsx(16,35): error TS7006: Parameter 'data' implicitly has an 'any' type.
+src/app/admin/academic-years/page.tsx(19,26): error TS2339: Property 'name' does not exist on type '{}'.
+src/app/admin/academic-years/page.tsx(20,31): error TS2339: Property 'startDate' does not exist on type '{}'.
+src/app/admin/academic-years/page.tsx(21,29): error TS2339: Property 'endDate' does not exist on type '{}'.
+src/app/admin/academic-years/page.tsx(22,28): error TS2339: Property 'status' does not exist on type '{}'.
+src/app/admin/academic-years/page.tsx(27,35): error TS7006: Parameter 'id' implicitly has an 'any' type.
+src/app/admin/academic-years/page.tsx(33,30): error TS7006: Parameter 'id' implicitly has an 'any' type.
+src/app/admin/categories/client.tsx(6,36): error TS7031: Binding element 'initialCategories' implicitly has an 'any' type.
+src/app/admin/categories/client.tsx(33,23): error TS7006: Parameter 'cat' implicitly has an 'any' type.
+src/app/admin/categories/client.tsx(38,33): error TS7006: Parameter 'id' implicitly has an 'any' type.
+src/app/admin/categories/client.tsx(39,19): error TS2339: Property 'name' does not exist on type '{}'.
+src/app/admin/categories/client.tsx(39,44): error TS2339: Property 'code' does not exist on type '{}'.
+src/app/admin/categories/client.tsx(43,37): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/app/admin/categories/client.tsx(49,31): error TS7006: Parameter 'id' implicitly has an 'any' type.
+src/app/admin/categories/client.tsx(49,35): error TS7006: Parameter 'name' implicitly has an 'any' type.
+src/app/admin/categories/client.tsx(53,40): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/app/admin/categories/client.tsx(57,37): error TS7006: Parameter 'id' implicitly has an 'any' type.
+src/app/admin/categories/client.tsx(57,41): error TS7006: Parameter 'currentStatus' implicitly has an 'any' type.
+src/app/admin/categories/client.tsx(61,37): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/app/admin/categories/client.tsx(160,30): error TS7006: Parameter 'cat' implicitly has an 'any' type.
+src/app/admin/categories/client.tsx(173,43): error TS2339: Property 'name' does not exist on type '{}'.
+src/app/admin/categories/client.tsx(179,43): error TS2339: Property 'code' does not exist on type '{}'.
+src/app/admin/categories/client.tsx(185,43): error TS2339: Property 'sortOrder' does not exist on type '{}'.
+src/app/admin/page.tsx(11,44): error TS18047: 'metrics.systemNps' is possibly 'null'.
+src/app/admin/page.tsx(12,50): error TS18047: 'metrics.systemAverageSatisfactionScore' is possibly 'null'.
+src/app/admin/parents/client.tsx(6,40): error TS7031: Binding element 'classes' implicitly has an 'any' type.
+src/app/admin/parents/client.tsx(6,49): error TS7031: Binding element 'years' implicitly has an 'any' type.
+src/app/admin/parents/client.tsx(6,56): error TS7031: Binding element 'defaultYearId' implicitly has an 'any' type.
+src/app/admin/parents/client.tsx(15,22): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/app/admin/parents/client.tsx(17,32): error TS7006: Parameter 'cid' implicitly has an 'any' type.
+src/app/admin/parents/client.tsx(20,17): error TS2345: Argument of type '({ parents: ({ parent: { user: { id: string; status: string; email: string; fullName: string; passwordHash: string; role: string; createdAt: Date; updatedAt: Date; }; } & { id: string; status: string; ... 4 more ...; parentName: string; }; } & { ...; })[]; } & { ...; })[]' is not assignable to parameter of type 'SetStateAction<never[]>'.
+  Type '({ parents: ({ parent: { user: { id: string; status: string; email: string; fullName: string; passwordHash: string; role: string; createdAt: Date; updatedAt: Date; }; } & { id: string; status: string; ... 4 more ...; parentName: string; }; } & { ...; })[]; } & { ...; })[]' is not assignable to type 'never[]'.
+    Type '{ parents: ({ parent: { user: { id: string; status: string; email: string; fullName: string; passwordHash: string; role: string; createdAt: Date; updatedAt: Date; }; } & { id: string; status: string; ... 4 more ...; parentName: string; }; } & { ...; })[]; } & { ...; }' is not assignable to type 'never'.
+src/app/admin/parents/client.tsx(47,38): error TS7006: Parameter 'y' implicitly has an 'any' type.
+src/app/admin/parents/client.tsx(66,24): error TS7006: Parameter 'y' implicitly has an 'any' type.
+src/app/admin/parents/client.tsx(72,34): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/app/admin/parents/client.tsx(94,37): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/app/admin/parents/client.tsx(137,38): error TS2339: Property 'parents' does not exist on type 'never'.
+src/app/admin/parents/client.tsx(141,30): error TS2339: Property 'id' does not exist on type 'never'.
+src/app/admin/parents/client.tsx(143,81): error TS2339: Property 'studentCode' does not exist on type 'never'.
+src/app/admin/parents/client.tsx(144,75): error TS2339: Property 'studentName' does not exist on type 'never'.
+src/app/admin/parents/client.tsx(145,65): error TS2339: Property 'dateOfBirth' does not exist on type 'never'.
+src/app/admin/parents/client.tsx(145,90): error TS2339: Property 'dateOfBirth' does not exist on type 'never'.
+src/app/admin/surveys/[id]/questions/actions.ts(5,49): error TS7006: Parameter 'surveyPeriodId' implicitly has an 'any' type.
+src/app/admin/surveys/[id]/questions/actions.ts(5,65): error TS7006: Parameter 'questions' implicitly has an 'any' type.
+src/app/admin/surveys/[id]/questions/actions.ts(7,32): error TS7006: Parameter 'q' implicitly has an 'any' type.
+src/app/admin/surveys/[id]/questions/actions.ts(7,50): error TS7006: Parameter 'id' implicitly has an 'any' type.
+src/app/admin/surveys/[id]/questions/client.tsx(8,47): error TS7031: Binding element 'surveyPeriodId' implicitly has an 'any' type.
+src/app/admin/surveys/[id]/questions/client.tsx(8,63): error TS7031: Binding element 'initialQuestions' implicitly has an 'any' type.
+src/app/admin/surveys/[id]/questions/client.tsx(10,27): error TS7006: Parameter 'q' implicitly has an 'any' type.
+src/app/admin/surveys/[id]/questions/client.tsx(20,24): error TS7006: Parameter 'type' implicitly has an 'any' type.
+src/app/admin/surveys/[id]/questions/client.tsx(36,27): error TS7006: Parameter 'index' implicitly has an 'any' type.
+src/app/admin/surveys/[id]/questions/client.tsx(36,34): error TS7006: Parameter 'key' implicitly has an 'any' type.
+src/app/admin/surveys/[id]/questions/client.tsx(36,39): error TS7006: Parameter 'value' implicitly has an 'any' type.
+src/app/admin/surveys/[id]/questions/client.tsx(42,25): error TS7006: Parameter 'qIndex' implicitly has an 'any' type.
+src/app/admin/surveys/[id]/questions/client.tsx(42,33): error TS7006: Parameter 'optIndex' implicitly has an 'any' type.
+src/app/admin/surveys/[id]/questions/client.tsx(42,43): error TS7006: Parameter 'value' implicitly has an 'any' type.
+src/app/admin/surveys/[id]/questions/client.tsx(48,22): error TS7006: Parameter 'qIndex' implicitly has an 'any' type.
+src/app/admin/surveys/[id]/questions/client.tsx(54,25): error TS7006: Parameter 'qIndex' implicitly has an 'any' type.
+src/app/admin/surveys/[id]/questions/client.tsx(54,33): error TS7006: Parameter 'optIndex' implicitly has an 'any' type.
+src/app/admin/surveys/[id]/questions/client.tsx(56,59): error TS7006: Parameter '_' implicitly has an 'any' type.
+src/app/admin/surveys/[id]/questions/client.tsx(56,62): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/app/admin/surveys/[id]/questions/client.tsx(60,25): error TS7006: Parameter 'index' implicitly has an 'any' type.
+src/app/admin/surveys/[id]/questions/client.tsx(60,32): error TS7006: Parameter 'dir' implicitly has an 'any' type.
+src/app/admin/surveys/[id]/questions/client.tsx(69,27): error TS7006: Parameter 'index' implicitly has an 'any' type.
+src/app/admin/surveys/[id]/questions/client.tsx(70,36): error TS7006: Parameter '_' implicitly has an 'any' type.
+src/app/admin/surveys/[id]/questions/client.tsx(70,39): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/app/admin/surveys/[id]/questions/client.tsx(107,28): error TS7006: Parameter 'q' implicitly has an 'any' type.
+src/app/admin/surveys/[id]/questions/client.tsx(107,31): error TS7006: Parameter 'qIndex' implicitly has an 'any' type.
+src/app/admin/surveys/[id]/questions/client.tsx(151,48): error TS2339: Property 'id' does not exist on type 'never'.
+src/app/admin/surveys/[id]/questions/client.tsx(151,63): error TS2339: Property 'id' does not exist on type 'never'.
+src/app/admin/surveys/[id]/questions/client.tsx(151,72): error TS2339: Property 'name' does not exist on type 'never'.
+src/app/admin/surveys/[id]/questions/client.tsx(163,41): error TS7006: Parameter 'opt' implicitly has an 'any' type.
+src/app/admin/surveys/[id]/questions/client.tsx(163,46): error TS7006: Parameter 'optIndex' implicitly has an 'any' type.
+src/app/admin/surveys/[id]/questions/client.tsx(247,32): error TS7006: Parameter 'q' implicitly has an 'any' type.
+src/app/admin/surveys/[id]/questions/client.tsx(247,35): error TS7006: Parameter 'idx' implicitly has an 'any' type.
+src/app/admin/surveys/[id]/questions/client.tsx(248,56): error TS2339: Property 'id' does not exist on type 'never'.
+src/app/admin/surveys/[id]/questions/client.tsx(248,77): error TS2339: Property 'name' does not exist on type 'never'.
+src/app/admin/surveys/[id]/questions/client.tsx(268,47): error TS7006: Parameter 'opt' implicitly has an 'any' type.
+src/app/admin/surveys/[id]/questions/client.tsx(268,52): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/app/admin/surveys/[id]/questions/client.tsx(279,47): error TS7006: Parameter 'opt' implicitly has an 'any' type.
+src/app/admin/surveys/[id]/questions/client.tsx(279,52): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/app/admin/surveys/[id]/questions/client.tsx(313,39): error TS7006: Parameter '_' implicitly has an 'any' type.
+src/app/admin/surveys/[id]/questions/client.tsx(313,42): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/app/admin/surveys/[id]/questions/page.tsx(5,53): error TS7031: Binding element 'params' implicitly has an 'any' type.
+src/app/admin/surveys/[id]/questions/page.tsx(29,92): error TS2322: Type '{ id: string; code: string; name: string; }[]' is not assignable to type 'never[]'.
+  Type '{ id: string; code: string; name: string; }' is not assignable to type 'never'.
+src/app/admin/teachers/client.tsx(12,40): error TS7031: Binding element 'initialTeachers' implicitly has an 'any' type.
+src/app/admin/teachers/client.tsx(12,57): error TS7031: Binding element 'years' implicitly has an 'any' type.
+src/app/admin/teachers/client.tsx(12,64): error TS7031: Binding element 'defaultYearId' implicitly has an 'any' type.
+src/app/admin/teachers/client.tsx(12,79): error TS7031: Binding element 'classes' implicitly has an 'any' type.
+src/app/admin/teachers/client.tsx(31,27): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/app/admin/teachers/client.tsx(34,22): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/app/admin/teachers/client.tsx(38,35): error TS2339: Property 'academicYearId' does not exist on type '{}'.
+src/app/admin/teachers/client.tsx(39,22): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/app/admin/teachers/client.tsx(39,58): error TS2339: Property 'academicYearId' does not exist on type '{}'.
+src/app/admin/teachers/client.tsx(42,37): error TS7006: Parameter 't' implicitly has an 'any' type.
+src/app/admin/teachers/client.tsx(51,38): error TS7006: Parameter 'y' implicitly has an 'any' type.
+src/app/admin/teachers/client.tsx(60,34): error TS7006: Parameter 'y' implicitly has an 'any' type.
+src/app/admin/teachers/client.tsx(61,37): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/app/admin/teachers/client.tsx(79,19): error TS18046: 'e' is of type 'unknown'.
+src/app/admin/teachers/client.tsx(84,23): error TS7006: Parameter 't' implicitly has an 'any' type.
+src/app/admin/teachers/client.tsx(94,33): error TS7006: Parameter 'id' implicitly has an 'any' type.
+src/app/admin/teachers/client.tsx(98,32): error TS2339: Property 'academicYearId' does not exist on type '{}'.
+src/app/admin/teachers/client.tsx(98,60): error TS7006: Parameter 'y' implicitly has an 'any' type.
+src/app/admin/teachers/client.tsx(98,83): error TS2339: Property 'academicYearId' does not exist on type '{}'.
+src/app/admin/teachers/client.tsx(99,33): error TS2339: Property 'homeroomClassId' does not exist on type '{}'.
+src/app/admin/teachers/client.tsx(99,64): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/app/admin/teachers/client.tsx(99,87): error TS2339: Property 'homeroomClassId' does not exist on type '{}'.
+src/app/admin/teachers/client.tsx(100,32): error TS7006: Parameter 't' implicitly has an 'any' type.
+src/app/admin/teachers/client.tsx(102,31): error TS2339: Property 'teacherName' does not exist on type '{}'.
+src/app/admin/teachers/client.tsx(103,25): error TS2339: Property 'email' does not exist on type '{}'.
+src/app/admin/teachers/client.tsx(105,35): error TS2339: Property 'homeroomClassId' does not exist on type '{}'.
+src/app/admin/teachers/client.tsx(117,31): error TS7006: Parameter 'id' implicitly has an 'any' type.
+src/app/admin/teachers/client.tsx(117,35): error TS7006: Parameter 'name' implicitly has an 'any' type.
+src/app/admin/teachers/client.tsx(121,35): error TS7006: Parameter 't' implicitly has an 'any' type.
+src/app/admin/teachers/client.tsx(125,38): error TS7006: Parameter 'id' implicitly has an 'any' type.
+src/app/admin/teachers/client.tsx(125,42): error TS7006: Parameter 'code' implicitly has an 'any' type.
+src/app/admin/teachers/client.tsx(125,48): error TS7006: Parameter 'name' implicitly has an 'any' type.
+src/app/admin/teachers/client.tsx(134,35): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/app/admin/teachers/client.tsx(147,23): error TS2345: Argument of type '{ success: boolean; created: number; skipped: number; errors: string[]; }' is not assignable to parameter of type 'SetStateAction<null>'.
+  Type '{ success: boolean; created: number; skipped: number; errors: string[]; }' provides no match for the signature '(prevState: null): null'.
+src/app/admin/teachers/client.tsx(154,52): error TS2339: Property 'value' does not exist on type 'never'.
+src/app/admin/teachers/client.tsx(191,24): error TS7006: Parameter 'y' implicitly has an 'any' type.
+src/app/admin/teachers/client.tsx(195,35): error TS7006: Parameter 't' implicitly has an 'any' type.
+src/app/admin/teachers/client.tsx(210,88): error TS7006: Parameter 't' implicitly has an 'any' type.
+src/app/admin/teachers/client.tsx(214,88): error TS7006: Parameter 't' implicitly has an 'any' type.
+src/app/admin/teachers/client.tsx(246,44): error TS2339: Property 'created' does not exist on type 'never'.
+src/app/admin/teachers/client.tsx(246,94): error TS2339: Property 'skipped' does not exist on type 'never'.
+src/app/admin/teachers/client.tsx(247,25): error TS2339: Property 'errors' does not exist on type 'never'.
+src/app/admin/teachers/client.tsx(247,99): error TS2339: Property 'errors' does not exist on type 'never'.
+src/app/admin/teachers/client.tsx(268,28): error TS7006: Parameter 'y' implicitly has an 'any' type.
+src/app/admin/teachers/client.tsx(293,37): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/app/admin/teachers/client.tsx(349,34): error TS7006: Parameter 't' implicitly has an 'any' type.
+src/app/admin/teachers/client.tsx(349,37): error TS7006: Parameter 'idx' implicitly has an 'any' type.
+src/app/admin/teachers/client.tsx(351,49): error TS7006: Parameter 'y' implicitly has an 'any' type.
+src/app/admin/teachers/client.tsx(360,60): error TS2339: Property 'teacherName' does not exist on type '{}'.
+src/app/admin/teachers/client.tsx(376,49): error TS2339: Property 'homeroomClassId' does not exist on type '{}'.
+src/app/admin/teachers/client.tsx(380,47): error TS7006: Parameter 'c' implicitly has an 'any' type.
+src/app/admin/teachers/client.tsx(390,49): error TS2339: Property 'academicYearId' does not exist on type '{}'.
+src/app/admin/teachers/client.tsx(393,38): error TS7006: Parameter 'y' implicitly has an 'any' type.
+src/app/admin/teaching-assignments/client.tsx(39,13): error TS2488: Type '{ id: string; teacherId: string; classId: string; className: string; subjectId: string; subjectName: string; academicYearId: string; semester: number; }[] | undefined' must have a '[Symbol.iterator]()' method that returns an iterator.
+src/app/api/admin/teachers/import/route.ts(5,26): error TS7006: Parameter 'dateStr' implicitly has an 'any' type.
+src/app/api/admin/teachers/import/route.ts(28,29): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/app/parent/surveys/[id]/actions.ts(94,25): error TS18047: 'session' is possibly 'null'.
+src/components/Sidebar.tsx(53,32): error TS2322: Type 'string | undefined' is not assignable to type 'Url'.
+  Type 'undefined' is not assignable to type 'Url'.

@@ -1,0 +1,31 @@
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+\n
+Error: Prisma schema validation - (validate wasm)
+Error code: P1012
+[1;91merror[0m: [1mError validating: This line is invalid. It does not start with any known Prisma schema keyword.[0m
+  [1;94m-->[0m  [4mprisma\schema.prisma:1[0m
+[1;94m   | [0m
+[1;94m   | [0m
+[1;94m 1 | [0m[1;91m﻿generator client {[0m
+[1;94m 2 | [0m  provider = "prisma-client-js"
+[1;94m   | [0m
+[1;91merror[0m: [1mError validating: This line is invalid. It does not start with any known Prisma schema keyword.[0m
+  [1;94m-->[0m  [4mprisma\schema.prisma:2[0m
+[1;94m   | [0m
+[1;94m 1 | [0m﻿generator client {
+[1;94m 2 | [0m  [1;91mprovider = "prisma-client-js"[0m
+[1;94m 3 | [0m}
+[1;94m   | [0m
+[1;91merror[0m: [1mError validating: This line is invalid. It does not start with any known Prisma schema keyword.[0m
+  [1;94m-->[0m  [4mprisma\schema.prisma:3[0m
+[1;94m   | [0m
+[1;94m 2 | [0m  provider = "prisma-client-js"
+[1;94m 3 | [0m[1;91m}[0m
+[1;94m 4 | [0m
+[1;94m   | [0m
+
+Validation Error Count: 3
+[Context: validate]
+
+Prisma CLI Version : 5.20.0
