@@ -5,9 +5,9 @@ import { useState, useEffect } from "react"
 import { BarChart, Plus, Pencil, UserCheck, Trash2, CalendarDays, Layers, User, BookOpen, Settings, X, Check, Tag, ListChecks, Users, Search, Upload, FileSpreadsheet, Download, Lock, Unlock, Award } from "lucide-react"
 
 const CAT_TYPES = [
-  { key: "DIEN_KS", label: "Diện khảoHồ sơát", color: "bg-violet-100 text-violet-700 border-violet-200" },
+  { key: "DIEN_KS", label: "Diện khảo sát", color: "bg-violet-100 text-violet-700 border-violet-200" },
   { key: "HINH_THUC_KS", label: "Hình thức KS", color: "bg-cyan-100 text-cyan-700 border-cyan-200" },
-  { key: "LOAI_TUYEN_SINH", label: "Loại tuyểnHồ sơinh", color: "bg-amber-100 text-amber-700 border-amber-200" },
+  { key: "LOAI_TUYEN_SINH", label: "Loại tuyển sinh", color: "bg-amber-100 text-amber-700 border-amber-200" },
   { key: "KQGD_TIEU_HOC", label: "HồHồ sơơ CT Bộ (Khối 1-5)", color: "bg-rose-100 text-rose-700 border-rose-200" },
   { key: "KQ_HOC_TAP", label: "HồHồ sơơ CT Bộ (Khối 6-12)", color: "bg-orange-100 text-orange-700 border-orange-200" },
   { key: "HS_CT_QUOC_TE", label: "HồHồ sơơ CT Quốc tế", color: "bg-blue-100 text-blue-700 border-blue-200" },
@@ -15,76 +15,76 @@ const CAT_TYPES = [
 ]
 
 
-export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers,Hồ sơubjects: initialSubjects, eduSystems, grades, configs: initialConfigs, teachers = [], departments = [] }: any) {
-  const [viewResultsGroup,Hồ sơetViewResultsGroup] = useState<any>(null);
-  const [viewResultsData,Hồ sơetViewResultsData] = useState<any>(null);
-  const [isFetchingResults,Hồ sơetIsFetchingResults] = useState(false);
-  const [reviewUnlockPeriod,Hồ sơetReviewUnlockPeriod] = useState<any>(null);
-  const [activeTab,Hồ sơetActiveTab] = useState<"periods"|"categories"|"subjects"|"mapping"|"students"|"assignments"|"reports">("periods");
-  const [selectedYearId,Hồ sơetSelectedYearId] = useState(academicYears?.[0]?.id || "");
-  const [periods,Hồ sơetPeriods] = useState<any[]>([]);
-  const [loading,Hồ sơetLoading] = useState(true);
-  const [isPeriodOpen,Hồ sơetIsPeriodOpen] = useState(false);
-  const [isBatchOpen,Hồ sơetIsBatchOpen] = useState(false);
-  const [editingPeriodId,Hồ sơetEditingPeriodId] = useState<string|null>(null);
-  const [editingBatchId,Hồ sơetEditingBatchId] = useState<string|null>(null);
-  const [currentPeriodIdForBatch,Hồ sơetCurrentPeriodIdForBatch] = useState<string|null>(null);
-  const [periodForm,Hồ sơetPeriodForm] = useState({ type:"DOT_LE", code:"", name:"", description:"",Hồ sơtartDate:"", endDate:"", campusId:"", assignedUserId:"" });
-  const [batchForm,Hồ sơetBatchForm] = useState({ batchNumber:1, name:"",Hồ sơtartDate:"", endDate:"" });
-  const [subjectsList,Hồ sơetSubjectsList] = useState<any[]>(initialSubjects||[]);
-  const [isSubjectOpen,Hồ sơetIsSubjectOpen] = useState(false);
-  const [isColumnConfigOpen,Hồ sơetIsColumnConfigOpen] = useState(false);
-  const [columnConfigForm,Hồ sơetColumnConfigForm] = useState({Hồ sơubjectId: "", name: "",Hồ sơcoreNames: [], commentNames: [],Hồ sơhowScoreInReport: [],Hồ sơhowCommentInReport: [],Hồ sơcoreColumns: 1, commentColumns: 1 });
-  const [editingSubjectId,Hồ sơetEditingSubjectId] = useState<string|null>(null);
-  const [subjectForm,Hồ sơetSubjectForm] = useState({ code:"", name:"",Hồ sơubjectType:"",Hồ sơcoreColumns: 1, commentColumns: 1,Hồ sơtatus: "ACTIVE" });
-  const [selGrades,Hồ sơetSelGrades] = useState<string[]>((grades && grades.length) ? [grades[0]]:[]);
-  const [selEdus,Hồ sơetSelEdus] = useState<string[]>((eduSystems && eduSystems.length) ? [eduSystems[0].code]:[]);
-  const [mappings,Hồ sơetMappings] = useState<any[]>([]);
-  const [mappingLoading,Hồ sơetMappingLoading] = useState(false);
-  const [configsList,Hồ sơetConfigsList] = useState<any[]>(initialConfigs||[]);
-  const [isConfigOpen,Hồ sơetIsConfigOpen] = useState(false);
-  const [editingConfigId,Hồ sơetEditingConfigId] = useState<string|null>(null);
-  const [configForm,Hồ sơetConfigForm] = useState({ categoryType:"", code:"", name:"", academicYearId:"" });
-  const [hkYearId,Hồ sơetHkYearId] = useState(academicYears?.[0]?.id || "");
-  const [studentPeriodId,Hồ sơetStudentPeriodId] = useState("");
-  const [studentBatchId,Hồ sơetStudentBatchId] = useState("");
-  const [studentsList,Hồ sơetStudentsList] = useState([]);
-  const [studentsLoading,Hồ sơetStudentsLoading] = useState(false);
-  const [isStudentOpen,Hồ sơetIsStudentOpen] = useState(false);
-  const [editingStudentId,Hồ sơetEditingStudentId] = useState(null);
-  const [studentForm,Hồ sơetStudentForm] = useState({studentCode:"",fullName:"",dateOfBirth:"",admissionCriteria:"",surveyFormType:"",targetType:"",hocKy:"",kqgdTieuHoc:"",kqHocTap:"",hoSoCtQuocTe:"",kqRenLuyen:"",periodId:"",batchId:"",grade:""});
-  const [selectedStudentIds,Hồ sơetSelectedStudentIds] = useState([]);
-  const [studentSearch,Hồ sơetStudentSearch] = useState("");
-  const [importing,Hồ sơetImporting] = useState(false);
+export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers,subjects: initialSubjects, eduSystems, grades, configs: initialConfigs, teachers = [], departments = [] }: any) {
+  const [viewResultsGroup,setViewResultsGroup] = useState<any>(null);
+  const [viewResultsData,setViewResultsData] = useState<any>(null);
+  const [isFetchingResults,setIsFetchingResults] = useState(false);
+  const [reviewUnlockPeriod,setReviewUnlockPeriod] = useState<any>(null);
+  const [activeTab,setActiveTab] = useState<"periods"|"categories"|"subjects"|"mapping"|"students"|"assignments"|"reports">("periods");
+  const [selectedYearId,setSelectedYearId] = useState(academicYears?.[0]?.id || "");
+  const [periods,setPeriods] = useState<any[]>([]);
+  const [loading,setLoading] = useState(true);
+  const [isPeriodOpen,setIsPeriodOpen] = useState(false);
+  const [isBatchOpen,setIsBatchOpen] = useState(false);
+  const [editingPeriodId,setEditingPeriodId] = useState<string|null>(null);
+  const [editingBatchId,setEditingBatchId] = useState<string|null>(null);
+  const [currentPeriodIdForBatch,setCurrentPeriodIdForBatch] = useState<string|null>(null);
+  const [periodForm,setPeriodForm] = useState({ type:"DOT_LE", code:"", name:"", description:"",startDate:"", endDate:"", campusId:"", assignedUserId:"" });
+  const [batchForm,setBatchForm] = useState({ batchNumber:1, name:"",startDate:"", endDate:"" });
+  const [subjectsList,setSubjectsList] = useState<any[]>(initialSubjects||[]);
+  const [isSubjectOpen,setIsSubjectOpen] = useState(false);
+  const [isColumnConfigOpen,setIsColumnConfigOpen] = useState(false);
+  const [columnConfigForm,setColumnConfigForm] = useState({ subjectId: "", name: "",scoreNames: [], commentNames: [],showScoreInReport: [],showCommentInReport: [],scoreColumns: 1, commentColumns: 1 });
+  const [editingSubjectId,setEditingSubjectId] = useState<string|null>(null);
+  const [subjectForm,setSubjectForm] = useState({ code:"", name:"", subjectType:"",scoreColumns: 1, commentColumns: 1,status: "ACTIVE" });
+  const [selGrades,setSelGrades] = useState<string[]>((grades && grades.length) ? [grades[0]]:[]);
+  const [selEdus,setSelEdus] = useState<string[]>((eduSystems && eduSystems.length) ? [eduSystems[0].code]:[]);
+  const [mappings,setMappings] = useState<any[]>([]);
+  const [mappingLoading,setMappingLoading] = useState(false);
+  const [configsList,setConfigsList] = useState<any[]>(initialConfigs||[]);
+  const [isConfigOpen,setIsConfigOpen] = useState(false);
+  const [editingConfigId,setEditingConfigId] = useState<string|null>(null);
+  const [configForm,setConfigForm] = useState({ categoryType:"", code:"", name:"", academicYearId:"" });
+  const [hkYearId,setHkYearId] = useState(academicYears?.[0]?.id || "");
+  const [studentPeriodId,setStudentPeriodId] = useState("");
+  const [studentBatchId,setStudentBatchId] = useState("");
+  const [studentsList,setStudentsList] = useState([]);
+  const [studentsLoading,setStudentsLoading] = useState(false);
+  const [isStudentOpen,setIsStudentOpen] = useState(false);
+  const [editingStudentId,setEditingStudentId] = useState(null);
+  const [studentForm,setStudentForm] = useState({studentCode:"",fullName:"",dateOfBirth:"",admissionCriteria:"",surveyFormType:"",targetType:"",hocKy:"",kqgdTieuHoc:"",kqHocTap:"",hoSoCtQuocTe:"",kqRenLuyen:"",periodId:"",batchId:"",grade:""});
+  const [selectedStudentIds,setSelectedStudentIds] = useState([]);
+  const [studentSearch,setStudentSearch] = useState("");
+  const [importing,setImporting] = useState(false);
 
-  const [assignPeriodId,Hồ sơetAssignPeriodId] = useState("");
-  const [assignBatchId,Hồ sơetAssignBatchId] = useState("");
-  const [assignTeacherId,Hồ sơetAssignTeacherId] = useState("");
-  const [assignDepartmentId,Hồ sơetAssignDepartmentId] = useState("");
-  const [assignSelSubjects,Hồ sơetAssignSelSubjects] = useState<string[]>([]);
-  const [assignSelGrades,Hồ sơetAssignSelGrades] = useState<string[]>([]);
-  const [assignSelEdus,Hồ sơetAssignSelEdus] = useState<string[]>([]);
-  const [assignments,Hồ sơetAssignments] = useState<any[]>([]);
-  const [assignmentsLoading,Hồ sơetAssignmentsLoading] = useState(false);
-  const [selectedAssignmentIds,Hồ sơetSelectedAssignmentIds] = useState<string[]>([]);
+  const [assignPeriodId,setAssignPeriodId] = useState("");
+  const [assignBatchId,setAssignBatchId] = useState("");
+  const [assignTeacherId,setAssignTeacherId] = useState("");
+  const [assignDepartmentId,setAssignDepartmentId] = useState("");
+  const [assignSelSubjects,setAssignSelSubjects] = useState<string[]>([]);
+  const [assignSelGrades,setAssignSelGrades] = useState<string[]>([]);
+  const [assignSelEdus,setAssignSelEdus] = useState<string[]>([]);
+  const [assignments,setAssignments] = useState<any[]>([]);
+  const [assignmentsLoading,setAssignmentsLoading] = useState(false);
+  const [selectedAssignmentIds,setSelectedAssignmentIds] = useState<string[]>([]);
 
   const fetchAssignments = async () => {
     if (!assignPeriodId) return;
-   Hồ sơetAssignmentsLoading(true);
+   setAssignmentsLoading(true);
     try {
       const r = await fetch("/api/input-assessment-assignments?periodId=" + assignPeriodId);
-      if (r.ok)Hồ sơetAssignments(await r.json());
+      if (r.ok)setAssignments(await r.json());
     } catch (e) {}
-   Hồ sơetAssignmentsLoading(false);
+   setAssignmentsLoading(false);
   };
   useEffect(() => { if (assignPeriodId) fetchAssignments(); }, [assignPeriodId]);
 
   
-  const resolveUnlockRequest = async (assignmentId:Hồ sơtring,Hồ sơtatus: 'APPROVED' | 'REJECTED') => {
+  const resolveUnlockRequest = async (assignmentId:Hồ sơtring,status: 'APPROVED' | 'REJECTED') => {
     if (!confirm(`B?n c� ch?c mu?n ${status === 'APPROVED' ? '��?NG ?' : 'TỪ CHỐI'} y�u c?u n�y?`)) return;
     const r = await fetch("/api/input-assessment-assignments", { 
         method: "PUT", headers: { "Content-Type": "application/json" }, 
-        body: JSON.stringify({ action: "RESOLVE_UNLOCK", id: assignmentId,Hồ sơtatus }) 
+        body: JSON.stringify({ action: "RESOLVE_UNLOCK", id: assignmentId,status }) 
     });
     if (r.ok) {
         fetchAssignments();
@@ -100,7 +100,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
     assignSelSubjects.forEach(s => {
       assignSelGrades.forEach(g => {
         assignSelEdus.forEach(e => {
-          payload.push({ teacherId: assignTeacherId,Hồ sơubjectId:Hồ sơ, grade: g, educationSystem: e });
+          payload.push({ teacherId: assignTeacherId, subjectId:Hồ sơ, grade: g, educationSystem: e });
         });
       });
     });
@@ -119,21 +119,21 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
 
   
   const toggleAllAssignments = () => {
-    if (selectedAssignmentIds.length === assignments.length)Hồ sơetSelectedAssignmentIds([]);
-    elseHồ sơetSelectedAssignmentIds(assignments.map((a:any) => a.id));
+    if (selectedAssignmentIds.length === assignments.length)setSelectedAssignmentIds([]);
+    elsesetSelectedAssignmentIds(assignments.map((a:any) => a.id));
   };
   const deleteSelectedAssignments = async () => {
-    if (!confirm("X�a " +Hồ sơelectedAssignmentIds.length + " ph�n c�ng �? ch?n?")) return;
-    await fetch("/api/input-assessment-assignments?ids=" +Hồ sơelectedAssignmentIds.join(","), { method: "DELETE" });
-   Hồ sơetSelectedAssignmentIds([]);
+    if (!confirm("X�a " +selectedAssignmentIds.length + " ph�n c�ng �? ch?n?")) return;
+    await fetch("/api/input-assessment-assignments?ids=" +selectedAssignmentIds.join(","), { method: "DELETE" });
+   setSelectedAssignmentIds([]);
     fetchAssignments();
   };
   const editAssignment = (a: any) => {
-   Hồ sơetAssignTeacherId(a.userId);
-   Hồ sơetAssignBatchId(a.batchId || "");
-   Hồ sơetAssignSelSubjects([a.subjectId]);
-   Hồ sơetAssignSelGrades([a.grade]);
-   Hồ sơetAssignSelEdus([a.educationSystem]);
+   setAssignTeacherId(a.userId);
+   setAssignBatchId(a.batchId || "");
+   setAssignSelSubjects([a.subjectId]);
+   setAssignSelGrades([a.grade]);
+   setAssignSelEdus([a.educationSystem]);
     // Scroll up
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -148,7 +148,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
 
 
   useEffect(()=>{if(selectedYearId)fetchPeriods()},[selectedYearId]);
-  useEffect(()=>{if(selGrades.length&&selEdus.length)fetchMappings();elseHồ sơetMappings([])},[selGrades,selEdus]);
+  useEffect(()=>{if(selGrades.length&&selEdus.length)fetchMappings();elsesetMappings([])},[selGrades,selEdus]);
 
   const fetchPeriods=async()=>{setLoading(true);try{const r=await fetch("/api/input-assessments?academicYearId="+selectedYearId);if(r.ok)setPeriods(await r.json())}catch(e){}setLoading(false)};
   const generateAutoCode=(t:string)=>{const p=t+"_";leCột điểm=0;periods.filter(x=>x.code?.startsWith(p)).forEach(x=>{const n=parseInt(x.code.split('_').pop());if(!isNaN(n)&&n>m)m=n});return p+(m+1).toString().padStart(2,'0')};
@@ -165,9 +165,9 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
        id: p.id,
        data: {
          ...p,
-        Hồ sơtartDate: p.startDate,
+        startDate: p.startDate,
          endDate: p.endDate,
-        Hồ sơtatus: newStatus
+        status: newStatus
        }
     };
     const r = await fetch("/api/input-assessments", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
@@ -185,20 +185,20 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
       id: columnConfigForm.subjectId,
       data: {
         columnNames: JSON.stringify({
-         Hồ sơcores: columnConfigForm.scoreNames,
+         scores: columnConfigForm.scoreNames,
           comments: columnConfigForm.commentNames,
-         Hồ sơhowScoreInReport: columnConfigForm.showScoreInReport,
-         Hồ sơhowCommentInReport: columnConfigForm.showCommentInReport
+         showScoreInReport: columnConfigForm.showScoreInReport,
+         showCommentInReport: columnConfigForm.showCommentInReport
         })
       }
     };
     const r = await fetch("/api/input-assessment-categories", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(p) });
     if (r.ok) {
-     Hồ sơetIsColumnConfigOpen(false);
+     setIsColumnConfigOpen(false);
       fetchSubjects();
     } else alert((await r.json()).error);
 };     
-  const handleSubjectSubmit=async(e:React.FormEvent)=>{e.preventDefault();const p=editingSubjectId?{type:"subject",id:editingSubjectId,data:{name:subjectForm.name,subjectType:subjectForm.subjectType||null,Hồ sơcoreColumns:Hồ sơubjectForm.scoreColumns, commentColumns:Hồ sơubjectForm.commentColumns,Hồ sơtatus:Hồ sơubjectForm.status||"ACTIVE"}}:{type:"subject",data:{code:subjectForm.code,name:subjectForm.name,subjectType:subjectForm.subjectType||null,Hồ sơcoreColumns:Hồ sơubjectForm.scoreColumns, commentColumns:Hồ sơubjectForm.commentColumns,Hồ sơtatus:Hồ sơubjectForm.status||"ACTIVE"}};const r=await fetch("/api/input-assessment-categories",{method:editingSubjectId?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});if(r.ok){setIsSubjectOpen(false);fetchSubjects()}else alert((await r.json()).error)};
+  const handleSubjectSubmit=async(e:React.FormEvent)=>{e.preventDefault();const p=editingSubjectId?{type:"subject",id:editingSubjectId,data:{name:subjectForm.name,subjectType:subjectForm.subjectType||null,scoreColumns:Hồ sơubjectForm.scoreColumns, commentColumns:Hồ sơubjectForm.commentColumns,status:Hồ sơubjectForm.status||"ACTIVE"}}:{type:"subject",data:{code:subjectForm.code,name:subjectForm.name,subjectType:subjectForm.subjectType||null,scoreColumns:Hồ sơubjectForm.scoreColumns, commentColumns:Hồ sơubjectForm.commentColumns,status:Hồ sơubjectForm.status||"ACTIVE"}};const r=await fetch("/api/input-assessment-categories",{method:editingSubjectId?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});if(r.ok){setIsSubjectOpen(false);fetchSubjects()}else alert((await r.json()).error)};
   const deleteSubject=async(id:string)=>{if(!confirm("X�a?"))return;await fetch("/api/input-assessment-categories?type=subject&id="+id,{method:"DELETE"});fetchSubjects()};
   const fetchMappings=async()=>{setMappingLoading(true);try{const r=await fetch("/api/grade-subject-mappings?grades="+selGrades.join(",")+"&eduSystems="+selEdus.join(","));if(r.ok)setMappings(await r.json())}catch(e){}setMappingLoading(false)};
   const addMapping=async(sid:string)=>{const r=await fetch("/api/grade-subject-mappings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({grades:selGrades,eduSystems:selEdus,subjectId:sid})});if(r.ok)fetchMappings();else alert((await r.json()).error)};
@@ -219,7 +219,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   const deleteStudent=async(id)=>{if(!confirm("X�a hocHồ sơinh nay?"))return;await fetch("/api/input-assessment-students?id="+id,{method:"DELETE"});fetchStudents()};
   const deleteSelectedStudents=async()=>{if(selectedStudentIds.length===0)return;if(!confirm("X�a "+selectedStudentIds.length+" hocHồ sơinh �? ch?n?"))return;await fetch("/api/input-assessment-students?ids="+selectedStudentIds.join(","),{method:"DELETE"});setSelectedStudentIds([]);fetchStudents()};
   const toggleStudentSelect=(id)=>setSelectedStudentIds(p=>p.includes(id)?p.filter(x=>x!==id):[...p,id]);
-  const toggleAllStudents=()=>{if(selectedStudentIds.length===filteredStudents.length)setSelectedStudentIds([]);elseHồ sơetSelectedStudentIds(filteredStudents.map(s=>s.id))};
+  const toggleAllStudents=()=>{if(selectedStudentIds.length===filteredStudents.length)setSelectedStudentIds([]);elsesetSelectedStudentIds(filteredStudents.map(s=>s.id))};
   const dksOptions=configsList.filter(c=>c.categoryType==="DIEN_KS");
   const htksOptions=configsList.filter(c=>c.categoryType==="HINH_THUC_KS");
   constHồ sơelPeriodYearId = periods.find((p:any) => p.id ===Hồ sơtudentPeriodId)?.academicYearId;
@@ -244,19 +244,19 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
     "KQ Ren luyen": "kqRenLuyen", "kqRenLuyen": "kqRenLuyen",
     "Lop": "className", "className": "className",
     "Hoc ky": "hocKy", "HocKy": "hocKy", "hocKy": "hocKy",
-    "N�m h?c tuyểnHồ sơinh": "hocKy", "H?c k?": "hocKy",
+    "N�m h?c tuyển sinh": "hocKy", "H?c k?": "hocKy",
   };
 
   const handleExcelImport = async (e) => {
     const file = e.target.files?.[0];
     if (!file || !studentPeriodId) return;
-   Hồ sơetImporting(true);
+   setImporting(true);
     try {
       const data = await file.arrayBuffer();
       const wb = XLSX.read(data);
       const ws = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(ws, { defval: "" });
-      if (rows.length === 0) { alert("File Excel kh�ng c� d? li?u!");Hồ sơetImporting(false); return; }
+      if (rows.length === 0) { alert("File Excel kh�ng c� d? li?u!");setImporting(false); return; }
       consCột điểmapped = rows.map((row) => {
         const item = { periodId:Hồ sơtudentPeriodId, batchId:Hồ sơtudentBatchId || null };
         Object.keys(row).forEach(key => {
@@ -275,7 +275,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
         });
         return item;
       }).filter(r => r.studentCode && r.fullName);
-      if (mapped.length === 0) { alert("Kh�ng t?m th?y d? li?u h?p l?. Ki?m tra tên c?t: Ma_HS_KS, Ho ten, NgayHồ sơinh...");Hồ sơetImporting(false); return; }
+      if (mapped.length === 0) { alert("Kh�ng t?m th?y d? li?u h?p l?. Ki?m tra tên c?t: Ma_HS_KS, Ho ten, NgayHồ sơinh...");setImporting(false); return; }
       const r = await fetch("/api/input-assessment-students", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -289,7 +289,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
         fetchStudents();
       } else { alert("Lỗi: " + (res.error || "Unknown")); }
     } catch (err) { alert("L?i �?c file: " + err.message); }
-   Hồ sơetImporting(false);
+   setImporting(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -308,7 +308,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   return (
     <div className="space-y-5">
       <div className="flex border-b border-slate-200 bg-white rounded-t-xl overflow-hiddenHồ sơhadow-sm">
-        {[{key:"periods",label:"Kỳ khảoHồ sơát",icon:CalendarDays},{key:"categories",label:"Danh mục",icon:ListChecks},{key:"subjects",label:"Môn khảoHồ sơát",icon:BookOpen},{key:"mapping",label:"Cấu hình theo Khối",icon:Settings},{key:"students",label:"DS HS khảoHồ sơát",icon:Users},{key:"assignments",label:"Phân công GV",icon:UserCheck},{key:"reports",label:"Tổng hợp KQ",icon:BarChart}].map(tab=>(
+        {[{key:"periods",label:"Kỳ khảo sát",icon:CalendarDays},{key:"categories",label:"Danh mục",icon:ListChecks},{key:"subjects",label:"Môn khảo sát",icon:BookOpen},{key:"mapping",label:"Cấu hình theo Khối",icon:Settings},{key:"students",label:"DS HS khảo sát",icon:Users},{key:"assignments",label:"Phân công GV",icon:UserCheck},{key:"reports",label:"Tổng hợp KQ",icon:BarChart}].map(tab=>(
           <button key={tab.key} onClick={()=>setActiveTab(tab.key as any)} className={`flex items-center gap-2 px-5 py-3.5 text-sm font-semibold border-b-2 transition-colors ${activeTab===tab.key?"border-indigo-600 text-indigo-700 bg-indigo-50/50":"border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50"}`}><tab.icon className="w-4 h-4"/>{tab.label}</button>
         ))}
       </div>
@@ -347,7 +347,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
           {/* HOC KY - grouped by year */}
           <div className="glass-card rounded-2xl overflow-hiddenHồ sơhadow-xl border-slate-200">
             <div className="flex items-center justify-between px-5 py-4 border-b bg-slate-50/50">
-              <h3 className="font-bold text-slate-800 flex items-center gap-2"><Tag className="w-4 h-4 text-emerald-500"/>N�m h?c tuyểnHồ sơinh</h3>
+              <h3 className="font-bold text-slate-800 flex items-center gap-2"><Tag className="w-4 h-4 text-emerald-500"/>N�m h?c tuyển sinh</h3>
               <div className="flex items-center gap-3">
                 <select value={hkYearId} onChange={e=>setHkYearId(e.target.value)} className="border rounded-lg px-3 py-1.5 text-xs font-medium bg-slate-50 outline-none">
                   {academicYears.map((y:any)=><option key={y.id} value={y.id}>{y.name}</option>)}
@@ -358,7 +358,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
             <div className="p-4">
               {(()=>{
                 const hkItems=configsList.filter(c=>c.categoryType==="HOC_KY"&&c.academicYearId===hkYearId);
-                if(hkItems.length===0) return <div className="text-sm text-slate-400 text-center py-4">Ch�a c� N�m h?c tuyểnHồ sơinh cho n�m h?c n�y. B?m Thêm �? t?o.</div>;
+                if(hkItems.length===0) return <div className="text-sm text-slate-400 text-center py-4">Ch�a c� N�m h?c tuyển sinh cho n�m h?c n�y. B?m Thêm �? t?o.</div>;
                 return(<div className="flex flex-wrap gap-2">{hkItems.map((item:any)=>(
                   <div key={item.id} className="group relative inline-flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium bg-emerald-100 text-emerald-700 border-emerald-200">
                     <span className="font-bold">{item.name}</span>
@@ -381,14 +381,14 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
           <div className="flex items-center gap-3"><CalendarDays className="w-5 h-5 text-indigo-500"/><span className="font-semibold text-slate-800">Chọn Năm học:</span><select className="border rounded-lg px-3 py-1.5 outline-none text-sm font-medium bg-slate-50" value={selectedYearId} onChange={e=>setSelectedYearId(e.target.value)}>{academicYears.map((a:any)=><option key={a.id} value={a.id}>{a.name}</option>)}</select></div>
           <button onClick={handleOpenNewPeriod} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-mediumHồ sơhadow-sm"><Plus className="w-4 h-4"/>Thêm Kỳ KS</button>
         </div>
-        {loading?<div className="text-center py-12 text-slate-500">Đang tải...</div>:periods.length===0?<div className="text-center py-16 bg-white rounded-xlHồ sơhadow-sm border text-slate-500">Ch�a c� Kỳ khảoHồ sơát.</div>:(
+        {loading?<div className="text-center py-12 text-slate-500">Đang tải...</div>:periods.length===0?<div className="text-center py-16 bg-white rounded-xlHồ sơhadow-sm border text-slate-500">Ch�a c� Kỳ khảo sát.</div>:(
           <div className="grid gap-6">{periods.map(p=>{
             
     const pendingCount = p.InputAssessmentTeacherAssignment?.filter((a: any) => a.unlockRequestStatus === 'PENDING').length || 0;
     return (
             <div key={p.id} className="glass-card rounded-2xl overflow-hiddenHồ sơhadow-xl border-slate-200">
                {pendingCount > 0 && (
-                   <div className="bg-amber-50 border-b border-amber-200 px-5 py-2.5 flex justify-between items-center cursor-pointer hover:bg-amber-100 transition-colors" onClick={() =>Hồ sơetReviewUnlockPeriod(p)}>
+                   <div className="bg-amber-50 border-b border-amber-200 px-5 py-2.5 flex justify-between items-center cursor-pointer hover:bg-amber-100 transition-colors" onClick={() =>setReviewUnlockPeriod(p)}>
                        <div className="flex items-center gap-2 text-sm font-bold text-amber-800">
                            <span className="relative flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span></span>
                            C� {pendingCount} y�u c?u xin Mở khóa điểm �đang chờ duyệt!
@@ -414,10 +414,10 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
       {/* TAB: MON KHAO SAT */}
       {activeTab==="subjects"&&(
         <div className="glass-card rounded-2xl overflow-hiddenHồ sơhadow-xl border-slate-200">
-          <div className="flex items-center justify-between px-5 py-4 border-b bg-slate-50/50"><h3 className="font-bold text-slate-800 flex items-center gap-2"><BookOpen className="w-5 h-5 text-indigo-500"/>Môn khảoHồ sơát ({subjectsList.length})</h3><button onClick={()=>{setEditingSubjectId(null);setSubjectForm({code:"",name:"",subjectType:"",Hồ sơcoreColumns: 1, commentColumns: 1,Hồ sơtatus: "ACTIVE"});setIsSubjectOpen(true)}} className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-mediumHồ sơhadow-sm"><Plus className="w-4 h-4"/>Thêm mới</button></div>
+          <div className="flex items-center justify-between px-5 py-4 border-b bg-slate-50/50"><h3 className="font-bold text-slate-800 flex items-center gap-2"><BookOpen className="w-5 h-5 text-indigo-500"/>Môn khảo sát ({subjectsList.length})</h3><button onClick={()=>{setEditingSubjectId(null);setSubjectForm({code:"",name:"",subjectType:"",scoreColumns: 1, commentColumns: 1,status: "ACTIVE"});setIsSubjectOpen(true)}} className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-mediumHồ sơhadow-sm"><Plus className="w-4 h-4"/>Thêm mới</button></div>
           {subjectsList.length===0?<div className="text-center py-12 text-slate-400">Ch�a c� môn KS.</div>:(
             <table className="w-full text-sm"><thead><tr className="bg-slate-50 text-slate-600 text-xs uppercase"><th className="px-5 py-3 text-left w-12">STT</th><th className="px-5 py-3 text-left">Mã</th><th className="px-5 py-3 text-left">T�n môn</th><th className="px-5 py-3 text-left">Loại</th><th className="px-5 py-3 text-center">Cấu hình cột</th><th className="px-5 py-3 text-left">Trống th�i</th><th className="px-5 py-3 text-center w-24">Thao t�c</th></tr></thead>
-              <tbody>{subjectsList.map((s:any,i:number)=>(<tr key={s.id} className="border-t hover:bg-indigo-50/30"><td className="px-5 py-3 text-slate-500">{i+1}</td><td className="px-5 py-3 font-mono font-bold text-indigo-700">{s.code}</td><td className="px-5 py-3 font-medium text-slate-800">{s.name}</td><td className="px-5 py-3">{s.subjectType?<span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">{s.subjectType}</span>:'-'}</td><td className="px-5 py-3 text-center"><button type="button" onClick={()=>{let cn={scores:[],comments:[]}; try{if(s.columnNames) cn=JSON.parse(s.columnNames);}catch(e){}Hồ sơetColumnConfigForm({subjectId:s.id, name:s.name,Hồ sơcoreNames:cn.scores||[], commentNames:cn.comments||[],Hồ sơhowScoreInReport:cn.showScoreInReport||[],Hồ sơhowCommentInReport:cn.showCommentInReport||[],Hồ sơcoreColumns:Hồ sơ.scoreColumns||1, commentColumns:Hồ sơ.commentColumns||1});Hồ sơetIsColumnConfigOpen(true);}} className="text-xs font-semibold text-indigo-600 bg-indigo-50 border border-indigo-200 px-2.5 py-1.5 rounded-lg hover:bg-indigo-600 hover:text-white transition-allHồ sơhadow-sm">{s.scoreColumns ?? 1} c?t �i?m / {s.commentColumns ?? 1} c?t NX</button></td><td className="px-5 py-3"><span className={`text-xs px-2 py-0.5 rounded-full font-medium ${s.status==='ACTIVE'?'bg-green-100 text-green-700':'bg-slate-100 text-slate-500'}`}>{s.status==='ACTIVE'?'Ho?t �?ng':'Ng�ng'}</span></td><td className="px-5 py-3 text-center"><div className="flex gap-1 justify-center"><button onClick={()=>{setEditingSubjectId(s.id);setSubjectForm({code:s.code,name:s.name,subjectType:s.subjectType||"",Hồ sơcoreColumns:Hồ sơ.scoreColumns ?? 1, commentColumns:Hồ sơ.commentColumns ?? 1,Hồ sơtatus:Hồ sơ.status || "ACTIVE"});setIsSubjectOpen(true)}} className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50"><Pencil className="w-3.5 h-3.5"/></button><button onClick={()=>deleteSubject(s.id)} className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50"><Trash2 className="w-3.5 h-3.5"/></button></div></td></tr>))}</tbody></table>
+              <tbody>{subjectsList.map((s:any,i:number)=>(<tr key={s.id} className="border-t hover:bg-indigo-50/30"><td className="px-5 py-3 text-slate-500">{i+1}</td><td className="px-5 py-3 font-mono font-bold text-indigo-700">{s.code}</td><td className="px-5 py-3 font-medium text-slate-800">{s.name}</td><td className="px-5 py-3">{s.subjectType?<span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">{s.subjectType}</span>:'-'}</td><td className="px-5 py-3 text-center"><button type="button" onClick={()=>{let cn={scores:[],comments:[]}; try{if(s.columnNames) cn=JSON.parse(s.columnNames);}catch(e){}setColumnConfigForm({subjectId:s.id, name:s.name,scoreNames:cn.scores||[], commentNames:cn.comments||[],showScoreInReport:cn.showScoreInReport||[],showCommentInReport:cn.showCommentInReport||[],scoreColumns:Hồ sơ.scoreColumns||1, commentColumns:Hồ sơ.commentColumns||1});setIsColumnConfigOpen(true);}} className="text-xs font-semibold text-indigo-600 bg-indigo-50 border border-indigo-200 px-2.5 py-1.5 rounded-lg hover:bg-indigo-600 hover:text-white transition-allHồ sơhadow-sm">{s.scoreColumns ?? 1} c?t �i?m / {s.commentColumns ?? 1} c?t NX</button></td><td className="px-5 py-3"><span className={`text-xs px-2 py-0.5 rounded-full font-medium ${s.status==='ACTIVE'?'bg-green-100 text-green-700':'bg-slate-100 text-slate-500'}`}>{s.status==='ACTIVE'?'Ho?t �?ng':'Ng�ng'}</span></td><td className="px-5 py-3 text-center"><div className="flex gap-1 justify-center"><button onClick={()=>{setEditingSubjectId(s.id);setSubjectForm({code:s.code,name:s.name,subjectType:s.subjectType||"",scoreColumns:Hồ sơ.scoreColumns ?? 1, commentColumns:Hồ sơ.commentColumns ?? 1,status:Hồ sơ.status || "ACTIVE"});setIsSubjectOpen(true)}} className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50"><Pencil className="w-3.5 h-3.5"/></button><button onClick={()=>deleteSubject(s.id)} className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50"><Trash2 className="w-3.5 h-3.5"/></button></div></td></tr>))}</tbody></table>
           )}
         </div>
       )}
@@ -501,7 +501,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
           {!studentPeriodId ? (
             <div className="text-center py-16 bg-white rounded-xlHồ sơhadow-sm border text-slate-400">
               <Users className="w-12 h-12 mx-auto mb-3 text-slate-300"/>
-              <p className="font-medium">Ch?n Kỳ khảoHồ sơát �? xem danhHồ sơ�ch h?cHồ sơinh.</p>
+              <p className="font-medium">Ch?n Kỳ khảo sát �? xem danhHồ sơ�ch h?cHồ sơinh.</p>
             </div>
           ) :Hồ sơtudentsLoading ? (
             <div className="text-center py-12 text-slate-500">Đang tải...</div>
@@ -547,7 +547,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                             {s.admissionCriteria && <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-violet-50 text-violet-700 font-medium border border-violet-100" title="Diện KS"><span className="w-1.5 h-1.5 rounded-full bg-violet-400"></span>{s.admissionCriteria}</span>}
                             {s.surveyFormType && <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-cyan-50 text-cyan-700 font-medium border border-cyan-100" title="Hình thức"><span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>{s.surveyFormType}</span>}
                             {s.targetType && <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-amber-50 text-amber-700 font-medium border border-amber-100" title="Loại TS"><span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>{s.targetType}</span>}
-                            {s.hocKy && <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-emerald-50 text-emerald-700 font-medium border border-emerald-100" title="N�m h?c tuyểnHồ sơinh"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>{s.hocKy}</span>}
+                            {s.hocKy && <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-emerald-50 text-emerald-700 font-medium border border-emerald-100" title="N�m h?c tuyển sinh"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>{s.hocKy}</span>}
                             {(!s.admissionCriteria && !s.surveyFormType && !s.targetType && !s.hocKy) && <span className="text-xs text-slate-400 italic">Ch�a thi?t l?p</span>}
                           </div>
                         </td>
@@ -622,7 +622,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
 
                   <div>
                     <label className="block text-xs uppercase tracking-wider font-bold text-slate-500 mb-2">L?c theo T? CM <span className="text-slate-400 font-normal normal-case tracking-normal text-[11px]">(Kh�ng b?t bu?c)</span></label>
-                    <select className="w-full border-slate-300 rounded-xl px-4 py-3 outline-none text-sm font-medium focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200Hồ sơhadow-sm transition-shadow bg-white" value={assignDepartmentId} onChange={e => {setAssignDepartmentId(e.target.value);Hồ sơetAssignTeacherId("")}}>
+                    <select className="w-full border-slate-300 rounded-xl px-4 py-3 outline-none text-sm font-medium focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200Hồ sơhadow-sm transition-shadow bg-white" value={assignDepartmentId} onChange={e => {setAssignDepartmentId(e.target.value);setAssignTeacherId("")}}>
                       <option value="">T?t c? T? chuy�n môn</option>
                       {departments?.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
                     </select>
@@ -720,7 +720,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                         assignments.forEach(a => {
                           const key = a.userId + "_" + (a.batchId || "ALL");
                           if (!map.has(key)) {
-                            map.set(key, { ...a, pendingRequests: a.unlockRequestStatus === 'PENDING' ? [{ id: a.id, reason: a.unlockReason || 'Kh�ng c� l? do' }] : [],Hồ sơubjectNames: new Set([a.subject?.name]),Hồ sơubjectsSet: new Set([a.subjectId]), gradesSet: new Set([a.grade]), edusSet: new Set([a.educationSystem]), ids: [a.id] });
+                            map.set(key, { ...a, pendingRequests: a.unlockRequestStatus === 'PENDING' ? [{ id: a.id, reason: a.unlockReason || 'Kh�ng c� l? do' }] : [], subjectNames: new Set([a.subject?.name]),subjectsSet: new Set([a.subjectId]), gradesSet: new Set([a.grade]), edusSet: new Set([a.educationSystem]), ids: [a.id] });
                           } else {
                             const entry = map.get(key);
                             if(a.subject?.name) entry.subjectNames.add(a.subject.name);
@@ -732,32 +732,32 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                           }
                         });
                         return Array.from(map.values()).map((g:any, i) => {
-                          const allSelected = g.ids.every(id =>Hồ sơelectedAssignmentIds.includes(id));
-                          constHồ sơomeSelected = g.ids.some(id =>Hồ sơelectedAssignmentIds.includes(id));
+                          const allSelected = g.ids.every(id =>selectedAssignmentIds.includes(id));
+                          constHồ sơomeSelected = g.ids.some(id =>selectedAssignmentIds.includes(id));
                           
                           const toggleGroup = () => {
                              if (allSelected) {
-                              Hồ sơetSelectedAssignmentIds(p => p.filter(id => !g.ids.includes(id)));
+                              setSelectedAssignmentIds(p => p.filter(id => !g.ids.includes(id)));
                              } else {
-                              Hồ sơetSelectedAssignmentIds(p => [...new Set([...p, ...g.ids])]);
+                              setSelectedAssignmentIds(p => [...new Set([...p, ...g.ids])]);
                              }
                           };
 
                           const deleteGroup = async () => {
                              if (!confirm("X�a to�n b? " + g.ids.length + " ph�n c�ng c?a gi�o vi�n n�y?")) return;
                              await fetch("/api/input-assessment-assignments?ids=" + g.ids.join(","), { method: "DELETE" });
-                            Hồ sơetSelectedAssignmentIds(p => p.filter(id => !g.ids.includes(id)));
+                            setSelectedAssignmentIds(p => p.filter(id => !g.ids.includes(id)));
                              fetchAssignments();
                           };
 
                           const editGroup = () => {
                              const teacher = teachers.find((t: any) => t.userId === g.userId);
-                             if (teacher?.departmentId)Hồ sơetAssignDepartmentId(teacher.departmentId);
-                            Hồ sơetAssignTeacherId(g.userId);
-                            Hồ sơetAssignBatchId(g.batchId || "");
-                            Hồ sơetAssignSelSubjects(Array.from(g.subjectsSet));
-                            Hồ sơetAssignSelGrades(Array.from(g.gradesSet));
-                            Hồ sơetAssignSelEdus(Array.from(g.edusSet));
+                             if (teacher?.departmentId)setAssignDepartmentId(teacher.departmentId);
+                            setAssignTeacherId(g.userId);
+                            setAssignBatchId(g.batchId || "");
+                            setAssignSelSubjects(Array.from(g.subjectsSet));
+                            setAssignSelGrades(Array.from(g.gradesSet));
+                            setAssignSelEdus(Array.from(g.edusSet));
                              window.scrollTo({ top: 0, behavior: 'smooth' });
                           };
 
@@ -814,16 +814,16 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
             <div className="flex flex-wrap items-center gap-2 lg:ml-auto w-full lg:w-auto mt-2 lg:mt-0">
                 <select className="border rounded-lg px-3 py-1.5 outline-none text-sm font-medium bg-slate-50 min-w-[200px]" onChange={async (e) => {
                     const periodId = e.target.value;
-                    if (!periodId) returnHồ sơetViewResultsData(null);
-                   Hồ sơetViewResultsData({ loading: true });
+                    if (!periodId) returnsetViewResultsData(null);
+                   setViewResultsData({ loading: true });
                     try {
                         const res = await fetch(`/api/teacher-assessments?action=getReport&periodId=${periodId}`);
                         constHồ sơtudents = await res.json();
                         const asgRes = await fetch(`/api/input-assessment-assignments?periodId=${periodId}`);
                         const assignments = asgRes.ok ? await asgRes.json() : [];
-                       Hồ sơetViewResultsData({ loading: false,Hồ sơtudents, assignments });
+                       setViewResultsData({ loading: false, students, assignments });
                     } catch(err) {
-                       Hồ sơetViewResultsData({ loading: false,Hồ sơtudents: [], assignments: [] });
+                       setViewResultsData({ loading: false, students: [], assignments: [] });
                     }
                 }}>
                   <option value="">-- Chọn Kỳ Kh?oHồ sơ�t --</option>
@@ -839,7 +839,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                         ];
                         viewResultsData.students.forEach((s: any, i: number) => {
                             wsData.push([
-                                i+1,Hồ sơ.fullName,Hồ sơ.studentCode || '',Hồ sơ.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString('vi-VN') : '',Hồ sơ.grade || '',Hồ sơ.admissionCriteria ||Hồ sơ.surveySystem || ''
+                                i+1, s.fullName, s.studentCode || '', s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString('vi-VN') : '', s.grade || '', s.admissionCriteria ||Hồ sơ.surveySystem || ''
                             ]);
                         });
                         const ws = XLSX.utils.aoa_to_sheet(wsData);
@@ -857,7 +857,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
               <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
                 <BarChart className="w-8 h-8 text-slate-300"/>
               </div>
-              <p className="font-semibold text-slate-500 text-lg">Vui l?ng ch?n Kỳ khảoHồ sơát �? xem k?t qu?.</p>
+              <p className="font-semibold text-slate-500 text-lg">Vui l?ng ch?n Kỳ khảo sát �? xem k?t qu?.</p>
               <p className="text-sm text-slate-400 mt-2">D? li?uHồ sơ? ��?c t?ng h?p t? t?t c? c�c đợt trong k?.</p>
             </div>
           ) : viewResultsData.loading ? (
@@ -866,7 +866,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                 <span className="text-slate-500 font-medium">��Đang tổng hợp dữ liệu...</span>
             </div>
           ) : viewResultsData.students?.length === 0 ? (
-            <div className="text-center py-20 bg-white rounded-2xlHồ sơhadow-sm border text-slate-500 font-medium">Kỳ khảoHồ sơát n�y ch�a c� h?cHồ sơinh n�o.</div>
+            <div className="text-center py-20 bg-white rounded-2xlHồ sơhadow-sm border text-slate-500 font-medium">Kỳ khảo sát n�y ch�a c� h?cHồ sơinh n�o.</div>
           ) : (
             <div className="bg-white rounded-xlHồ sơhadow-sm border border-slate-200 overflow-hidden">
                 <div className="px-5 py-4 border-b bg-indigo-50/30 flex justify-between items-center">
@@ -913,13 +913,13 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                                                 {s.scores.map((sc:any, idx:number) => {
                                                     let parsedScores: any[] = [];
                                                     let parsedComments: any[] = [];
-                                                    let colNames: any = {Hồ sơcores: [], comments: [] };
+                                                    let colNames: any = {scores: [], comments: [] };
                                                     try { parsedScores = JSON.parse(sc.scores || "[]"); } catch(e){}
                                                     try { parsedComments = JSON.parse(sc.comments || "[]"); } catch(e){}
                                                     try { 
                                                         const parsedJSON = JSON.parse(sc.subject?.columnNames || "{}");
                                                         colNames = {
-                                                           Hồ sơcores: parsedJSON.scores || [],
+                                                           scores: parsedJSON.scores || [],
                                                             comments: parsedJSON.comments || []
                                                         };
                                                     } catch(e){}
@@ -941,7 +941,7 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
                                                                 <div className="p-1.5 flex flex-wrap items-stretch">
                                                                     {parsedScores.length > 0 && (
                                                                         <div className="flex gap-1 pr-2 border-r border-current/10 mr-2 items-center">
-                                                                            {parsedScores.map((score: any,Hồ sơ_i: number) => (
+                                                                            {parsedScores.map((score: any, s_i: number) => (
                                                                                 <div key={s_i} className="flex flex-col items-center justify-center bg-white/60 rounded px-2 min-w-[36px] py-1" title={colNames.scores[s_i] || `�i?m ${s_i+1}`}>
                                                                                     <span className="text-[9px] font-semibold opacity-70 mb-0.5">{colNames.scores[s_i] ? colNames.scores[s_i].slice(0,5)+'..' : `�${s_i+1}`}</span>
                                                                                     <span className="font-extrabold text-sm">{score || '-'}</span>
@@ -968,7 +968,7 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
                                         )}
                                     </td>
                                     <td className="p-4 align-middle text-center">
-                                        {/* Dropdown to approve/changeHồ sơtatus right here */}
+                                        {/* Dropdown to approve/changestatus right here */}
                                         <div className="flex flex-col gap-2 relative">
                                             <select 
                                                 value={s.admissionResult || ""}
@@ -981,7 +981,7 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
                                                         body: JSON.stringify({ id:Hồ sơ.id, data: { admissionResult: val } })
                                                     });
                                                     if (r.ok) {
-                                                       Hồ sơetViewResultsData((prev:any) => ({
+                                                       setViewResultsData((prev:any) => ({
                                                             ...prev,
                                                            Hồ sơtudents: prev.students.map((st:any) =>Hồ sơt.id ===Hồ sơ.id ? { ...st, admissionResult: val } :Hồ sơt)
                                                         }));
@@ -1022,7 +1022,7 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
           <div className="bg-white rounded-2xl w-full max-w-mdHồ sơhadow-2xl overflow-hidden">
             <div className="flex justify-between items-center p-4 border-b bg-slate-50/80"><h3 className="font-bold text-slate-800 text-lg">{editingConfigId?'Sửa Danh mục':'Thêm Danh mục mới'}</h3><button onClick={()=>setIsConfigOpen(false)} className="text-slate-400 hover:text-slate-600 bg-white hover:bg-slate-100 rounded-full p-1 borderHồ sơhadow-sm"><X className="w-5 h-5"/></button></div>
             <div className="p-5Hồ sơpace-y-4">
-              <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Loại danh mục</label><select value={configForm.categoryType} onChange={e=>setConfigForm({...configForm,categoryType:e.target.value})} disabled={!!editingConfigId} className="w-full border rounded-xl px-3 py-2.5 outline-none bg-slate-50 text-sm font-medium">{CAT_TYPES.map(c=><option key={c.key} value={c.key}>{c.label}</option>)}<option value="HOC_KY">N�m h?c tuyểnHồ sơinh</option></select></div>
+              <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Loại danh mục</label><select value={configForm.categoryType} onChange={e=>setConfigForm({...configForm,categoryType:e.target.value})} disabled={!!editingConfigId} className="w-full border rounded-xl px-3 py-2.5 outline-none bg-slate-50 text-sm font-medium">{CAT_TYPES.map(c=><option key={c.key} value={c.key}>{c.label}</option>)}<option value="HOC_KY">N�m h?c tuyển sinh</option></select></div>
               {configForm.categoryType==="HOC_KY"&&(<div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">N�m h?c g?n k�m <span className="text-red-500">*</span></label><select value={configForm.academicYearId} onChange={e=>setConfigForm({...configForm,academicYearId:e.target.value})} className="w-full border rounded-xl px-3 py-2.5 outline-none text-sm font-medium"><option value="">-- Ch?n N�m h?c --</option>{academicYears.map((y:any)=><option key={y.id} value={y.id}>{y.name}</option>)}</select></div>)}
               <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Mã (Code) <span className="text-red-500">*</span></label><input autoFocus={!editingConfigId} value={configForm.code} onChange={e=>setConfigForm({...configForm,code:e.target.value})} className="w-full border-slate-300 rounded-xl px-3 py-2.5 font-mono outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm" placeholder="VD: MIEN_PHI, AP, HK1_2024"/></div>
               <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">T�n hi?n th? <span className="text-red-500">*</span></label><input autoFocus={!!editingConfigId} value={configForm.name} onChange={e=>setConfigForm({...configForm,name:e.target.value})} className="w-full border-slate-300 rounded-xl px-3 py-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm font-medium" placeholder="VD: Mi?n ph� KS, Advanced Placement..."/></div>
@@ -1054,17 +1054,17 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
       {isStudentOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm overflow-y-auto">
             <div className="bg-white rounded-2xl w-full max-w-3xlHồ sơhadow-2xl overflow-hidden my-auto">
-            <div className="flex justify-between items-center p-4 border-b bg-slate-50/80"><h3 className="font-bold text-slate-800 text-lg flex items-center gap-2"><User className="w-5 h-5 text-indigo-500"/>{editingStudentId ? 'Sửa th�ng tin H?cHồ sơinh' : 'Thêm H?cHồ sơinh Kh?oHồ sơ�t'}</h3><button onClick={() =>Hồ sơetIsStudentOpen(false)} className="text-slate-400 hover:text-slate-600 bg-white hover:bg-slate-100 rounded-full p-1 borderHồ sơhadow-sm"><X className="w-5 h-5"/></button></div>
+            <div className="flex justify-between items-center p-4 border-b bg-slate-50/80"><h3 className="font-bold text-slate-800 text-lg flex items-center gap-2"><User className="w-5 h-5 text-indigo-500"/>{editingStudentId ? 'Sửa th�ng tin H?cHồ sơinh' : 'Thêm H?cHồ sơinh Kh?oHồ sơ�t'}</h3><button onClick={() =>setIsStudentOpen(false)} className="text-slate-400 hover:text-slate-600 bg-white hover:bg-slate-100 rounded-full p-1 borderHồ sơhadow-sm"><X className="w-5 h-5"/></button></div>
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[70vh] overflow-y-auto">
                 <div className="space-y-4">
                     <h4 className="font-bold text-indigo-900 border-b pb-2 text-sm uppercase">Th�ng tin c� b?n</h4>
-                    <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Mã HọcHồ sơinh <span className="text-red-500">*</span></label><input value={studentForm.studentCode} onChange={e =>Hồ sơetStudentForm({...studentForm,Hồ sơtudentCode: e.target.value})} disabled={!!editingStudentId} className="w-full border rounded-xl px-3 py-2 font-mono text-sm uppercase outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 disabled:bg-slate-50" placeholder="Mã HS..."/></div>
-                    <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">H? v� T�n <span className="text-red-500">*</span></label><input value={studentForm.fullName} onChange={e =>Hồ sơetStudentForm({...studentForm, fullName: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm font-medium outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:font-normal" placeholder="T�n HS..."/></div>
+                    <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Mã HọcHồ sơinh <span className="text-red-500">*</span></label><input value={studentForm.studentCode} onChange={e =>setStudentForm({...studentForm, studentCode: e.target.value})} disabled={!!editingStudentId} className="w-full border rounded-xl px-3 py-2 font-mono text-sm uppercase outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 disabled:bg-slate-50" placeholder="Mã HS..."/></div>
+                    <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">H? v� T�n <span className="text-red-500">*</span></label><input value={studentForm.fullName} onChange={e =>setStudentForm({...studentForm, fullName: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm font-medium outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:font-normal" placeholder="T�n HS..."/></div>
                     <div className="grid grid-cols-2 gap-4">
-                        <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Ng�yHồ sơinh</label><input type="date" value={studentForm.dateOfBirth} onChange={e =>Hồ sơetStudentForm({...studentForm, dateOfBirth: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"/></div>
+                        <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Ng�yHồ sơinh</label><input type="date" value={studentForm.dateOfBirth} onChange={e =>setStudentForm({...studentForm, dateOfBirth: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"/></div>
                         <div>
                             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Khối <span className="text-red-500">*</span></label>
-                            <select value={studentForm.grade} onChange={e =>Hồ sơetStudentForm({...studentForm, grade: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm font-bold outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-white">
+                            <select value={studentForm.grade} onChange={e =>setStudentForm({...studentForm, grade: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm font-bold outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-white">
                                 <option value="">-- Ch?n --</option>
                                 {grades.map((g:Hồ sơtring) => <option key={g} value={g}>K{g}</option>)}
                             </select>
@@ -1073,14 +1073,14 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
                 </div>
                 <div className="space-y-4">
                     <h4 className="font-bold text-indigo-900 border-b pb-2 text-sm uppercase">Thi?t l?p đợt & Kh?oHồ sơ�t</h4>
-                    <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Đợt KS</label><select value={studentForm.batchId} onChange={e =>Hồ sơetStudentForm({...studentForm, batchId: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"><option value="">T?t c? đợt trong k?</option>{currentPeriodBatches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}</select></div>
+                    <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Đợt KS</label><select value={studentForm.batchId} onChange={e =>setStudentForm({...studentForm, batchId: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"><option value="">T?t c? đợt trong k?</option>{currentPeriodBatches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}</select></div>
                     <div className="grid grid-cols-2 gap-4">
                         <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">N�m h?c Tuy?nHồ sơinh</label><select value={studentForm.hocKy} onChange={e=>setStudentForm({...studentForm, hocKy: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm outline-none"><option value="">-- Ch?n --</option>{configsList.filter(c=>c.categoryType==='HOC_KY').map(c => <option key={c.id} value={c.code}>{c.name}</option>)}</select></div>
                         <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Loại Tuy?nHồ sơinh</label><select value={studentForm.targetType} onChange={e=>setStudentForm({...studentForm, targetType: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm outline-none"><option value="">-- Ch?n --</option>{configsList.filter(c=>c.categoryType==='LOAI_TUYEN_SINH').map(c => <option key={c.id} value={c.code}>{c.name}</option>)}</select></div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Diện KS</label><select value={studentForm.admissionCriteria} onChange={e=>setStudentForm({...studentForm, admissionCriteria: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm outline-none"><option value="">-- Ch?n --</option>{configsList.filter(c=>c.categoryType==='DIEN_KS').map(c => <option key={c.id} value={c.code}>{c.name}</option>)}</select></div>
-                        <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Hình thức</label><select value={studentForm.surveyFormType} onChange={e=>setStudentForm({...studentForm,Hồ sơurveyFormType: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm outline-none"><option value="">-- Ch?n --</option>{configsList.filter(c=>c.categoryType==='HINH_THUC_KS').map(c => <option key={c.id} value={c.code}>{c.name}</option>)}</select></div>
+                        <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Hình thức</label><select value={studentForm.surveyFormType} onChange={e=>setStudentForm({...studentForm, surveyFormType: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm outline-none"><option value="">-- Ch?n --</option>{configsList.filter(c=>c.categoryType==='HINH_THUC_KS').map(c => <option key={c.id} value={c.code}>{c.name}</option>)}</select></div>
                     </div>
                 </div>
                 
@@ -1096,7 +1096,7 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
                 )}
             </div>
             <div className="flex justify-end gap-2 p-5 border-t bg-slate-50/80 mt-2">
-                <button onClick={() =>Hồ sơetIsStudentOpen(false)} className="px-5 py-2.5 text-slate-600 bg-white hover:bg-slate-100 rounded-xl text-sm font-semibold borderHồ sơhadow-sm transition-colors">Hủy</button>
+                <button onClick={() =>setIsStudentOpen(false)} className="px-5 py-2.5 text-slate-600 bg-white hover:bg-slate-100 rounded-xl text-sm font-semibold borderHồ sơhadow-sm transition-colors">Hủy</button>
                 <button onClick={handleStudentSubmit} disabled={!studentForm.studentCode || !studentForm.fullName || !studentForm.grade} className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 text-sm font-boldHồ sơhadow-sm transition-colors flex items-center gap-2 disabled:opacity-50"><Check className="w-4 h-4"/> {editingStudentId ? 'Cập nhật HọcHồ sơinh' : 'L�u H?cHồ sơinh m?i'}</button>
             </div>
             </div>
@@ -1122,11 +1122,11 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
                         <h4 className="font-bold text-slate-700 text-sm">S? c?t �I?M S?:</h4>
                         <input type="number" min="0" max="10" className="w-16 border rounded bg-white px-2 py-1 text-center font-bold text-indigo-700 outline-none" value={columnConfigForm.scoreColumns} onChange={e => {
                             const num = parseInt(e.target.value) || 0;
-                           Hồ sơetColumnConfigForm(p => ({
+                           setColumnConfigForm(p => ({
                                 ...p, 
-                               Hồ sơcoreColumns: num, 
-                               Hồ sơcoreNames: Array(num).fill("").map((_,i) => p.scoreNames[i] || ""),
-                               Hồ sơhowScoreInReport: Array(num).fill(true).map((_,i) => p.showScoreInReport[i] ?? true)
+                               scoreColumns: num, 
+                               scoreNames: Array(num).fill("").map((_,i) => p.scoreNames[i] || ""),
+                               showScoreInReport: Array(num).fill(true).map((_,i) => p.showScoreInReport[i] ?? true)
                             }));
                         }} />
                     </div>
@@ -1137,13 +1137,13 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
                                 <input value={columnConfigForm.scoreNames[i] || ""} onChange={e=>{
                                     const arr = [...columnConfigForm.scoreNames];
                                     arr[i] = e.target.value;
-                                   Hồ sơetColumnConfigForm(p=>({...p,Hồ sơcoreNames: arr}));
+                                   setColumnConfigForm(p=>({...p,scoreNames: arr}));
                                 }} className="flex-1 border rounded px-2 py-1.5 text-sm outline-none focus:border-indigo-400" placeholder={`T�n c?t �i?m ${i+1}. VD: B�i 1...`} />
                                 <label className="flex items-center gap-1.5 text-xs text-slate-600 bg-white border px-2 py-1.5 rounded cursor-pointer hover:bg-slate-100">
                                     <input type="checkbox" checked={columnConfigForm.showScoreInReport[i] !== false} onChange={e => {
                                         const arr = [...columnConfigForm.showScoreInReport];
                                         arr[i] = e.target.checked;
-                                       Hồ sơetColumnConfigForm(p=>({...p,Hồ sơhowScoreInReport: arr}));
+                                       setColumnConfigForm(p=>({...p,showScoreInReport: arr}));
                                     }} className="w-3 h-3 rounded" /> Hiện BC
                                 </label>
                             </div>
@@ -1157,11 +1157,11 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
                         <h4 className="font-bold text-slate-700 text-sm">S? c?t NH?N X�T:</h4>
                         <input type="number" min="0" max="10" className="w-16 border rounded bg-white px-2 py-1 text-center font-bold text-teal-700 outline-none" value={columnConfigForm.commentColumns} onChange={e => {
                             const num = parseInt(e.target.value) || 0;
-                           Hồ sơetColumnConfigForm(p => ({
+                           setColumnConfigForm(p => ({
                                 ...p, 
                                 commentColumns: num, 
                                 commentNames: Array(num).fill("").map((_,i) => p.commentNames[i] || ""),
-                               Hồ sơhowCommentInReport: Array(num).fill(true).map((_,i) => p.showCommentInReport[i] ?? true)
+                               showCommentInReport: Array(num).fill(true).map((_,i) => p.showCommentInReport[i] ?? true)
                             }));
                         }} />
                     </div>
@@ -1172,13 +1172,13 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
                                 <input value={columnConfigForm.commentNames[i] || ""} onChange={e=>{
                                     const arr = [...columnConfigForm.commentNames];
                                     arr[i] = e.target.value;
-                                   Hồ sơetColumnConfigForm(p=>({...p, commentNames: arr}));
+                                   setColumnConfigForm(p=>({...p, commentNames: arr}));
                                 }} className="flex-1 border rounded px-2 py-1.5 text-sm outline-none focus:border-teal-400" placeholder={`T�n c?t nh?n x�t ${i+1}...`} />
                                 <label className="flex items-center gap-1.5 text-xs text-slate-600 bg-white border px-2 py-1.5 rounded cursor-pointer hover:bg-slate-100">
                                     <input type="checkbox" checked={columnConfigForm.showCommentInReport[i] !== false} onChange={e => {
                                         const arr = [...columnConfigForm.showCommentInReport];
                                         arr[i] = e.target.checked;
-                                       Hồ sơetColumnConfigForm(p=>({...p,Hồ sơhowCommentInReport: arr}));
+                                       setColumnConfigForm(p=>({...p,showCommentInReport: arr}));
                                     }} className="w-3 h-3 rounded text-teal-600 focus:ring-teal-500" /> Hiện BC
                                 </label>
                             </div>
