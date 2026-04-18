@@ -120,7 +120,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   
   const toggleAllAssignments = () => {
     if (selectedAssignmentIds.length === assignments.length)setSelectedAssignmentIds([]);
-    elsesetSelectedAssignmentIds(assignments.map((a:any) => a.id));
+    else setSelectedAssignmentIds(assignments.map((a:any) => a.id));
   };
   const deleteSelectedAssignments = async () => {
     if (!confirm("X?a " +selectedAssignmentIds.length + " ph?n c?ng ?đã chọn?")) return;
@@ -219,7 +219,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   const deleteStudent=async(id)=>{if(!confirm("X?a hoc inh nay?"))return;await fetch("/api/input-assessment-students?id="+id,{method:"DELETE"});fetchStudents()};
   const deleteSelectedStudents=async()=>{if(selectedStudentIds.length===0)return;if(!confirm("X?a "+selectedStudentIds.length+" hoc inh ?đã chọn?"))return;await fetch("/api/input-assessment-students?ids="+selectedStudentIds.join(","),{method:"DELETE"});setSelectedStudentIds([]);fetchStudents()};
   const toggleStudentSelect=(id)=>setSelectedStudentIds(p=>p.includes(id)?p.filter(x=>x!==id):[...p,id]);
-  const toggleAllStudents=()=>{if(selectedStudentIds.length===filteredStudents.length)setSelectedStudentIds([]);elsesetSelectedStudentIds(filteredStudents.map(s=>s.id))};
+  const toggleAllStudents=()=>{if(selectedStudentIds.length===filteredStudents.length)setSelectedStudentIds([]);else setSelectedStudentIds(filteredStudents.map(s=>s.id))};
   const dksOptions=configsList.filter(c=>c.categoryType==="DIEN_KS");
   const htksOptions=configsList.filter(c=>c.categoryType==="HINH_THUC_KS");
   const selPeriodYearId = periods.find((p:any) => p.id ===studentPeriodId)?.academicYearId;
@@ -814,11 +814,11 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
             <div className="flex flex-wrap items-center gap-2 lg:ml-auto w-full lg:w-auto mt-2 lg:mt-0">
                 <select className="border rounded-lg px-3 py-1.5 outline-none text-sm font-medium bg-slate-50 min-w-[200px]" onChange={async (e) => {
                     const periodId = e.target.value;
-                    if (!periodId) returnsetViewResultsData(null);
+                    if (!periodId) { setViewResultsData(null); return; };
                    setViewResultsData({ loading: true });
                     try {
                         const res = await fetch(`/api/teacher-assessments?action=getReport&periodId=${periodId}`);
-                        conststudents = await res.json();
+                        const students = await res.json();
                         const asgRes = await fetch(`/api/input-assessment-assignments?periodId=${periodId}`);
                         const assignments = asgRes.ok ? await asgRes.json() : [];
                        setViewResultsData({ loading: false, students, assignments });
@@ -983,7 +983,7 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
                                                     if (r.ok) {
                                                        setViewResultsData((prev:any) => ({
                                                             ...prev,
-                                                           tudents: prev.students.map((st:any) =>t.id ===s.id ? { ...st, admissionResult: val } :t)
+                                                           students: prev.students.map((st:any) => st.id === s.id ? { ...st, admissionResult: val } : st)
                                                         }));
                                                     } else {
                                                         alert("Lỗi khi l?u k?t qu? ph? duyệt!");
@@ -1027,7 +1027,7 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
               <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">M? (Code) <span className="text-red-500">*</span></label><input autoFocus={!editingConfigId} value={configForm.code} onChange={e=>setConfigForm({...configForm,code:e.target.value})} className="w-full border-slate-300 rounded-xl px-3 py-2.5 font-mono outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm" placeholder="VD: MIEN_PHI, AP, HK1_2024"/></div>
               <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">T?n hi?n th? <span className="text-red-500">*</span></label><input autoFocus={!!editingConfigId} value={configForm.name} onChange={e=>setConfigForm({...configForm,name:e.target.value})} className="w-full border-slate-300 rounded-xl px-3 py-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm font-medium" placeholder="VD: Mi?n ph? KS, Advanced Placement..."/></div>
             </div>
-            <div className="flex justify-end gap-2 p-4 border-t bg-slate-50/50"><button onClick={()=>setIsConfigOpen(false)} className="px-5 py-2.5 text-slate-600 bg-white hover:bg-slate-100 rounded-xl text-sm font-semibold border shadow-sm transition-colors">H?y</button><button onClick={saveConfig} className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 text-sm font-bold shadow-sm transition-colors">{editingConfigId?'L?u thay ??i':'Thêm m?i'}</button></div>
+            <div className="flex justify-end gap-2 p-4 border-t bg-slate-50/50"><button onClick={()=>setIsConfigOpen(false)} className="px-5 py-2.5 text-slate-600 bg-white hover:bg-slate-100 rounded-xl text-sm font-semibold border shadow-sm transition-colors">H?y</button><button onClick={handleConfigSubmit} className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 text-sm font-bold shadow-sm transition-colors">{editingConfigId?'L?u thay ??i':'Thêm m?i'}</button></div>
           </div>
         </div>
       )}
@@ -1045,7 +1045,7 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
                   <div className="flex-1"><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Tr?ng th?i</label><select value={subjectForm.status} onChange={e=>setSubjectForm({...subjectForm,status:e.target.value})} className="w-full border rounded-xl px-3 py-2.5 outline-none bg-slate-50 text-sm font-medium"><option value="ACTIVE">Ho?t ??ng</option><option value="INACTIVE">Ng?ng ho?t ??ng</option></select></div>
               </div>
             </div>
-            <div className="flex justify-end gap-2 p-4 border-t bg-slate-50/50"><button onClick={()=>setIsSubjectOpen(false)} className="px-5 py-2.5 text-slate-600 bg-white hover:bg-slate-100 rounded-xl text-sm font-semibold border shadow-sm transition-colors">H?y</button><button onClick={saveSubject} className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 text-sm font-bold shadow-sm transition-colors">{editingSubjectId?'L?u thay ??i':'Thêm m?i'}</button></div>
+            <div className="flex justify-end gap-2 p-4 border-t bg-slate-50/50"><button onClick={()=>setIsSubjectOpen(false)} className="px-5 py-2.5 text-slate-600 bg-white hover:bg-slate-100 rounded-xl text-sm font-semibold border shadow-sm transition-colors">H?y</button><button onClick={handleSubjectSubmit} className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 text-sm font-bold shadow-sm transition-colors">{editingSubjectId?'L?u thay ??i':'Thêm m?i'}</button></div>
           </div>
         </div>
       )}
@@ -1189,7 +1189,7 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
 
             <div className="flex justify-end gap-2 p-4 border-t bg-slate-50">
                 <button onClick={()=>setIsColumnConfigOpen(false)} className="px-4 py-2 text-slate-600 bg-white hover:bg-slate-100 rounded-lg text-sm font-semibold border shadow-sm transition-colors">H?y</button>
-                <button onClick={saveColumnConfig} className="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-bold shadow-sm transition-colors flex items-center gap-2"><Check className="w-4 h-4"/>L?u c?u h?nh c?t</button>
+                <button onClick={handleColumnConfigSubmit} className="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-bold shadow-sm transition-colors flex items-center gap-2"><Check className="w-4 h-4"/>L?u c?u h?nh c?t</button>
             </div>
           </div>
         </div>
@@ -1198,4 +1198,6 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
     </div>
   );
 }
+
+
 
