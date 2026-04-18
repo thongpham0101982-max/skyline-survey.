@@ -229,7 +229,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   const hsQuocTeOptions=configsList.filter(c=>c.categoryType==="HS_CT_QUOC_TE");
   const kqrlOptions=configsList.filter(c=>c.categoryType==="KQ_REN_LUYEN");
   const ltsOptions=configsList.filter(c=>c.categoryType==="LOAI_TUYEN_SINH");
-  const filteredStudents=studentsList.filter(s=>{if(!studentSearch)return true;const q=studentSearch.toLowerCase();returnHồ sơ.studentCode?.toLowerCase().includes(q)||s.fullName?.toLowerCase().includes(q)});
+  const filteredStudents=studentsList.filter(s=>{if(!studentSearch)return true;const q=studentSearch.toLowerCase();returns.studentCode?.toLowerCase().includes(q)||s.fullName?.toLowerCase().includes(q)});
 
   const COLUMN_MAP = {
     "Ma_HS_KS": "studentCode", "Ma HS KS": "studentCode", "MaHS": "studentCode", "studentCode": "studentCode",
@@ -417,7 +417,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
           <div className="flex items-center justify-between px-5 py-4 border-b bg-slate-50/50"><h3 className="font-bold text-slate-800 flex items-center gap-2"><BookOpen className="w-5 h-5 text-indigo-500"/>Môn khảo sát ({subjectsList.length})</h3><button onClick={()=>{setEditingSubjectId(null);setSubjectForm({code:"",name:"",subjectType:"",scoreColumns: 1, commentColumns: 1,status: "ACTIVE"});setIsSubjectOpen(true)}} className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-mediumHồ sơhadow-sm"><Plus className="w-4 h-4"/>Thêm mới</button></div>
           {subjectsList.length===0?<div className="text-center py-12 text-slate-400">Ch�a c� môn KS.</div>:(
             <table className="w-full text-sm"><thead><tr className="bg-slate-50 text-slate-600 text-xs uppercase"><th className="px-5 py-3 text-left w-12">STT</th><th className="px-5 py-3 text-left">Mã</th><th className="px-5 py-3 text-left">T�n môn</th><th className="px-5 py-3 text-left">Loại</th><th className="px-5 py-3 text-center">Cấu hình cột</th><th className="px-5 py-3 text-left">Trống th�i</th><th className="px-5 py-3 text-center w-24">Thao t�c</th></tr></thead>
-              <tbody>{subjectsList.map((s:any,i:number)=>(<tr key={s.id} className="border-t hover:bg-indigo-50/30"><td className="px-5 py-3 text-slate-500">{i+1}</td><td className="px-5 py-3 font-mono font-bold text-indigo-700">{s.code}</td><td className="px-5 py-3 font-medium text-slate-800">{s.name}</td><td className="px-5 py-3">{s.subjectType?<span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">{s.subjectType}</span>:'-'}</td><td className="px-5 py-3 text-center"><button type="button" onClick={()=>{let cn={scores:[],comments:[]}; try{if(s.columnNames) cn=JSON.parse(s.columnNames);}catch(e){}setColumnConfigForm({subjectId:s.id, name:s.name,scoreNames:cn.scores||[], commentNames:cn.comments||[],showScoreInReport:cn.showScoreInReport||[],showCommentInReport:cn.showCommentInReport||[],scoreColumns:Hồ sơ.scoreColumns||1, commentColumns:Hồ sơ.commentColumns||1});setIsColumnConfigOpen(true);}} className="text-xs font-semibold text-indigo-600 bg-indigo-50 border border-indigo-200 px-2.5 py-1.5 rounded-lg hover:bg-indigo-600 hover:text-white transition-allHồ sơhadow-sm">{s.scoreColumns ?? 1} c?t �i?m / {s.commentColumns ?? 1} c?t NX</button></td><td className="px-5 py-3"><span className={`text-xs px-2 py-0.5 rounded-full font-medium ${s.status==='ACTIVE'?'bg-green-100 text-green-700':'bg-slate-100 text-slate-500'}`}>{s.status==='ACTIVE'?'Ho?t �?ng':'Ng�ng'}</span></td><td className="px-5 py-3 text-center"><div className="flex gap-1 justify-center"><button onClick={()=>{setEditingSubjectId(s.id);setSubjectForm({code:s.code,name:s.name,subjectType:s.subjectType||"",scoreColumns:Hồ sơ.scoreColumns ?? 1, commentColumns:Hồ sơ.commentColumns ?? 1,status:Hồ sơ.status || "ACTIVE"});setIsSubjectOpen(true)}} className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50"><Pencil className="w-3.5 h-3.5"/></button><button onClick={()=>deleteSubject(s.id)} className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50"><Trash2 className="w-3.5 h-3.5"/></button></div></td></tr>))}</tbody></table>
+              <tbody>{subjectsList.map((s:any,i:number)=>(<tr key={s.id} className="border-t hover:bg-indigo-50/30"><td className="px-5 py-3 text-slate-500">{i+1}</td><td className="px-5 py-3 font-mono font-bold text-indigo-700">{s.code}</td><td className="px-5 py-3 font-medium text-slate-800">{s.name}</td><td className="px-5 py-3">{s.subjectType?<span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">{s.subjectType}</span>:'-'}</td><td className="px-5 py-3 text-center"><button type="button" onClick={()=>{let cn={scores:[],comments:[]}; try{if(s.columnNames) cn=JSON.parse(s.columnNames);}catch(e){}setColumnConfigForm({subjectId:s.id, name:s.name,scoreNames:cn.scores||[], commentNames:cn.comments||[],showScoreInReport:cn.showScoreInReport||[],showCommentInReport:cn.showCommentInReport||[],scoreColumns:s.scoreColumns||1, commentColumns:s.commentColumns||1});setIsColumnConfigOpen(true);}} className="text-xs font-semibold text-indigo-600 bg-indigo-50 border border-indigo-200 px-2.5 py-1.5 rounded-lg hover:bg-indigo-600 hover:text-white transition-all shadow-sm">{s.scoreColumns ?? 1} c?t �i?m / {s.commentColumns ?? 1} c?t NX</button></td><td className="px-5 py-3"><span className={`text-xs px-2 py-0.5 rounded-full font-medium ${s.status==='ACTIVE'?'bg-green-100 text-green-700':'bg-slate-100 text-slate-500'}`}>{s.status==='ACTIVE'?'Ho?t �?ng':'Ng�ng'}</span></td><td className="px-5 py-3 text-center"><div className="flex gap-1 justify-center"><button onClick={()=>{setEditingSubjectId(s.id);setSubjectForm({code:s.code,name:s.name,subjectType:s.subjectType||"",scoreColumns:s.scoreColumns ?? 1, commentColumns:s.commentColumns ?? 1,status:s.status || "ACTIVE"});setIsSubjectOpen(true)}} className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50"><Pencil className="w-3.5 h-3.5"/></button><button onClick={()=>deleteSubject(s.id)} className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50"><Trash2 className="w-3.5 h-3.5"/></button></div></td></tr>))}</tbody></table>
           )}
         </div>
       )}
@@ -561,8 +561,8 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                         </td>
                         <td className="px-4 py-4 align-top text-center">
                           <div className="flex gap-2 justify-center pt-2">
-                            <button onClick={()=>{setEditingStudentId(s.id);setStudentForm({studentCode:s.studentCode,fullName:s.fullName,dateOfBirth:s.dateOfBirth?new Date(s.dateOfBirth).toISOString().slice(0,10):"",admissionCriteria:s.admissionCriteria||"",surveyFormType:s.surveyFormType||"",targetType:s.targetType||"",hocKy:s.hocKy||"",kqgdTieuHoc:s.kqgdTieuHoc||"",kqHocTap:s.kqHocTap||"",kqRenLuyen:s.kqRenLuyen||"",grade:s.grade||"",periodId:s.periodId,batchId:s.batchId||""});setIsStudentOpen(true)}} className="p-2 text-indigo-600 hover:text-indigo-800 rounded-lg hover:bg-indigo-50 border border-transparent hover:border-indigo-100 bg-white transition-allHồ sơhadow-sm"><Pencil className="w-4 h-4"/></button>
-                            <button onClick={()=>deleteStudent(s.id)} className="p-2 text-red-500 hover:text-red-700 rounded-lg hover:bg-red-50 border border-transparent hover:border-red-100 bg-white transition-allHồ sơhadow-sm"><Trash2 className="w-4 h-4"/></button>
+                            <button onClick={()=>{setEditingStudentId(s.id);setStudentForm({studentCode:s.studentCode,fullName:s.fullName,dateOfBirth:s.dateOfBirth?new Date(s.dateOfBirth).toISOString().slice(0,10):"",admissionCriteria:s.admissionCriteria||"",surveyFormType:s.surveyFormType||"",targetType:s.targetType||"",hocKy:s.hocKy||"",kqgdTieuHoc:s.kqgdTieuHoc||"",kqHocTap:s.kqHocTap||"",kqRenLuyen:s.kqRenLuyen||"",grade:s.grade||"",periodId:s.periodId,batchId:s.batchId||""});setIsStudentOpen(true)}} className="p-2 text-indigo-600 hover:text-indigo-800 rounded-lg hover:bg-indigo-50 border border-transparent hover:border-indigo-100 bg-white transition-all shadow-sm"><Pencil className="w-4 h-4"/></button>
+                            <button onClick={()=>deleteStudent(s.id)} className="p-2 text-red-500 hover:text-red-700 rounded-lg hover:bg-red-50 border border-transparent hover:border-red-100 bg-white transition-all shadow-sm"><Trash2 className="w-4 h-4"/></button>
                           </div>
                         </td>
                       </tr>
@@ -839,7 +839,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                         ];
                         viewResultsData.students.forEach((s: any, i: number) => {
                             wsData.push([
-                                i+1, s.fullName, s.studentCode || '', s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString('vi-VN') : '', s.grade || '', s.admissionCriteria ||Hồ sơ.surveySystem || ''
+                                i+1, s.fullName, s.studentCode || '', s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString('vi-VN') : '', s.grade || '', s.admissionCriteria ||s.surveySystem || ''
                             ]);
                         });
                         const ws = XLSX.utils.aoa_to_sheet(wsData);
@@ -908,7 +908,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                                         </div>
                                     </td>
                                     <td className="p-4 border-r align-top">
-                                        {s.scores &&Hồ sơ.scores.length > 0 ? (
+                                        {s.scores &&s.scores.length > 0 ? (
                                             <div className="flex flex-wrap gap-3">
                                                 {s.scores.map((sc:any, idx:number) => {
                                                     let parsedScores: any[] = [];
@@ -927,7 +927,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                                                     const colors = ['bg-indigo-50 border-indigo-200 text-indigo-800', 'bg-cyan-50 border-cyan-200 text-cyan-800', 'bg-violet-50 border-violet-200 text-violet-800', 'bg-fuchsia-50 border-fuchsia-200 text-fuchsia-800', 'bg-teal-50 border-teal-200 text-teal-800'];
                                                     const color = colors[Math.min(idx, colors.length - 1)];
 
-const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => a.subjectId ===c.subjectId && a.grade ===Hồ sơ.grade && (a.educationSystem ===Hồ sơ.admissionCriteria || a.educationSystem ===Hồ sơ.surveySystem))?.user?.fullName;
+const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => a.subjectId ===c.subjectId && a.grade ===s.grade && (a.educationSystem ===s.admissionCriteria || a.educationSystem ===s.surveySystem))?.user?.fullName;
 
                                                         return (
                                                             <div key={sc.id} className={`border rounded-xlHồ sơhadow-sm flex-none flex flex-col max-w-[650px] ${color}`}>
@@ -978,22 +978,22 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
                                                     const r = await fetch("/api/input-assessment-students", {
                                                         method: "PUT",
                                                         headers: { "Content-Type": "application/json" },
-                                                        body: JSON.stringify({ id:Hồ sơ.id, data: { admissionResult: val } })
+                                                        body: JSON.stringify({ id:s.id, data: { admissionResult: val } })
                                                     });
                                                     if (r.ok) {
                                                        setViewResultsData((prev:any) => ({
                                                             ...prev,
-                                                           tudents: prev.students.map((st:any) =>t.id ===Hồ sơ.id ? { ...st, admissionResult: val } :t)
+                                                           tudents: prev.students.map((st:any) =>t.id ===s.id ? { ...st, admissionResult: val } :t)
                                                         }));
                                                     } else {
                                                         alert("L?i khi l�u k?t qu? ph� duy?t!");
                                                     }
                                                 }}
                                                 className={`w-full font-bold text-xs uppercase tracking-wide rounded-lg px-2 py-2.5 outline-none border transition-colorsHồ sơhadow-sm cursor-pointer ${
-                                                   Hồ sơ.admissionResult === 'DAT' ? 'bg-emerald-50 text-emerald-700 border-emerald-300' :
-                                                   Hồ sơ.admissionResult === 'CAM_KET' ? 'bg-amber-50 text-amber-700 border-amber-300' :
-                                                   Hồ sơ.admissionResult === 'KHONG_DAT' ? 'bg-red-50 text-red-700 border-red-300' :
-                                                   Hồ sơ.admissionResult === 'KIEM_TRA_LAI' ? 'bg-blue-50 text-blue-700 border-blue-300' :
+                                                   s.admissionResult === 'DAT' ? 'bg-emerald-50 text-emerald-700 border-emerald-300' :
+                                                   s.admissionResult === 'CAM_KET' ? 'bg-amber-50 text-amber-700 border-amber-300' :
+                                                   s.admissionResult === 'KHONG_DAT' ? 'bg-red-50 text-red-700 border-red-300' :
+                                                   s.admissionResult === 'KIEM_TRA_LAI' ? 'bg-blue-50 text-blue-700 border-blue-300' :
                                                     'bg-slate-50 text-slate-500 border-slate-300'
                                                 }`}
                                             >
