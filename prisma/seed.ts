@@ -1,7 +1,21 @@
-import { PrismaClient } from '@prisma/client'
-import bcrypt from 'bcryptjs'
+﻿import bcrypt from 'bcryptjs'
+import { createClient } from '@libsql/client'
+import { PrismaLibSQL } from '@prisma/adapter-libsql'
+import { PrismaClient } from './generated/client2'
 
-const prisma = new PrismaClient()
+const tursoUrl = process.env.TURSO_DATABASE_URL
+let prisma: PrismaClient
+
+if (tursoUrl && tursoUrl.startsWith('libsql://')) {
+  const libsql = createClient({
+    url: tursoUrl,
+    authToken: process.env.TURSO_AUTH_TOKEN,
+  })
+  const adapter = new PrismaLibSQL(libsql)
+  prisma = new PrismaClient({ adapter })
+} else {
+  prisma = new PrismaClient()
+}
 
 function pad(n: number, len = 3) {
   return String(n).padStart(len, '0')
@@ -10,7 +24,6 @@ function pad(n: number, len = 3) {
 async function main() {
   const passwordHash = await bcrypt.hash('password123', 10)
 
-  // 1. Admin
   await prisma.user.upsert({
     where: { email: 'admin@skyline.edu' },
     update: {},
@@ -23,7 +36,6 @@ async function main() {
     },
   })
 
-  // 2. Campuses
   const campus1 = await prisma.campus.upsert({
     where: { campusCode: 'CAMP-1' },
     update: {},
@@ -35,7 +47,6 @@ async function main() {
     create: { campusCode: 'CAMP-2', campusName: 'Westside Campus', address: '456 West Blvd' },
   })
 
-  // 3. Academic Year
   const ay = await prisma.academicYear.upsert({
     where: { id: 'AY-2026' },
     update: {},
@@ -47,7 +58,6 @@ async function main() {
     },
   })
 
-  // 4. Survey Period
   await prisma.surveyPeriod.upsert({
     where: { code: 'SP-2026-T1' },
     update: {},
@@ -61,7 +71,6 @@ async function main() {
     },
   })
 
-  // 5. Sections & Questions
   const acad = await prisma.surveySection.upsert({
     where: { code: 'SEC-ACAD' },
     update: { name: 'Academics' },
@@ -85,41 +94,28 @@ async function main() {
       sortOrder: 1,
     },
   })
-  await prisma.surveyQuestion.upsert({
-    where: { code: 'Q-NPS-1' },
-    update: {},
-    create: {
-      code: 'Q-NPS-1',
-      sectionId: acad.id,
-      questionText: 'How likely are you to recommend the school to others?',
-      questionType: 'NPS',
-      sortOrder: 10,
-    },
-  })
 
-  // 6. Teachers
   const teachers = []
   for (let i = 1; i <= 4; i++) {
-    const email = `teacher${i}@skyline.edu`
+    const email = 	eacher+i+@skyline.edu
     const user = await prisma.user.upsert({
       where: { email },
       update: {},
-      create: { email, fullName: `Teacher ${i}`, passwordHash, role: 'TEACHER' },
+      create: { email, fullName: Teacher +i, passwordHash, role: 'TEACHER' },
     })
     const t = await prisma.teacher.upsert({
-      where: { teacherCode: `T-${pad(i)}` },
+      where: { teacherCode: T-+pad(i) },
       update: {},
       create: {
         userId: user.id,
-        teacherCode: `T-${pad(i)}`,
-        teacherName: `Teacher ${i}`,
+        teacherCode: T-+pad(i),
+        teacherName: Teacher +i,
         campusId: i <= 2 ? campus1.id : campus2.id,
       },
     })
     teachers.push(t)
   }
 
-  // 7. Classes
   const classCodes = ['G1-A', 'G1-B', 'G2-A', 'G2-B']
   const classes = []
   for (let i = 0; i < classCodes.length; i++) {
@@ -128,7 +124,7 @@ async function main() {
       update: {},
       create: {
         classCode: classCodes[i],
-        className: `Class ${classCodes[i]}`,
+        className: Class +classCodes[i],
         campusId: i < 2 ? campus1.id : campus2.id,
         academicYearId: ay.id,
         homeroomTeacherId: teachers[i].id,
@@ -137,27 +133,26 @@ async function main() {
     classes.push(c)
   }
 
-  // 8. Parents & Students
   for (let i = 1; i <= 20; i++) {
-    const email = `parent${i}@skyline.edu`
+    const email = parent+i+@skyline.edu
     const user = await prisma.user.upsert({
       where: { email },
       update: {},
-      create: { email, fullName: `Parent User ${i}`, passwordHash, role: 'PARENT' },
+      create: { email, fullName: Parent User +i, passwordHash, role: 'PARENT' },
     })
     const parent = await prisma.parent.upsert({
-      where: { parentCode: `P-${pad(i)}` },
+      where: { parentCode: P-+pad(i) },
       update: {},
-      create: { userId: user.id, parentCode: `P-${pad(i)}`, parentName: `Parent Name ${i}` },
+      create: { userId: user.id, parentCode: P-+pad(i), parentName: Parent Name +i },
     })
 
     const cls = classes[(i - 1) % classes.length]
     const student = await prisma.student.upsert({
-      where: { studentCode: `S-${pad(i)}` },
+      where: { studentCode: S-+pad(i) },
       update: {},
       create: {
-        studentCode: `S-${pad(i)}`,
-        studentName: `Student Name ${i}`,
+        studentCode: S-+pad(i),
+        studentName: Student Name +i,
         classId: cls.id,
         campusId: cls.campusId,
         academicYearId: ay.id,

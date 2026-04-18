@@ -26,6 +26,7 @@ export function Sidebar({ role, permissionModules, actualRole, taskCount = 0 }: 
       { href: "#", label: "Hệ thống", icon: null, isHeader: true, requiresAdmin: true },
       { href: "/admin/roles", label: "Quản lý Nhóm quyền", icon: UserCog, requiresAdmin: true },
       { href: "/admin/users", label: "Tài khoản Nhân sự", icon: Users, requiresAdmin: true },
+      { href: "/admin/campuses", label: "Quản lý Cơ sở", icon: Building2, requiresAdmin: true },
       
       { href: "#", label: "Quản lý Đào tạo", icon: null, isHeader: true },
       { href: "/admin/teachers", label: "Quản lý Giáo viên", icon: GraduationCap, module: "TEACHERS" },

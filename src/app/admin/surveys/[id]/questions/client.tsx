@@ -173,7 +173,7 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
                             <button onClick={() => removeOption(qIndex, optIndex)} className="text-red-400 opacity-0 group-hover/opt:opacity-100 hover:text-red-600 transition-opacity p-1"><X className="w-5 h-5" /></button>
                           </div>
                         ))}
-                        <button onClick={() => addOption(qIndex)} className="text-sm font-medium text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-md mt-3 flex items-center transition-colors"><Plus className="w-4 h-4 mr-1"/> Them tuy chon</button>
+                        <button onClick={() => addOption(qIndex)} className="text-sm font-medium text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-md mt-3 flex items-center transition-colors"><Plus className="w-4 h-4 mr-1"/> Thêm tùy chọn</button>
                       </div>
                     )}
                     {q.questionType === "TEXT" && (
@@ -206,7 +206,7 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
                     <div className="flex items-center space-x-2 md:border-l border-slate-200 md:pl-4">
                       <button onClick={() => moveQuestion(qIndex, -1)} className="p-1.5 text-slate-500 hover:text-slate-800 rounded-md hover:bg-slate-100" title="Len tren"><ArrowUp className="w-5 h-5" /></button>
                       <button onClick={() => moveQuestion(qIndex, 1)} className="p-1.5 text-slate-500 hover:text-slate-800 rounded-md hover:bg-slate-100" title="Xuong duoi"><ArrowDown className="w-5 h-5" /></button>
-                      <button onClick={() => removeQuestion(qIndex)} className="p-1.5 text-red-500 hover:text-red-700 rounded-md hover:bg-red-50 ml-2" title="Xoa cau hoi"><Trash2 className="w-5 h-5" /></button>
+                      <button onClick={() => removeQuestion(qIndex)} className="p-1.5 text-red-500 hover:text-red-700 rounded-md hover:bg-red-50 ml-2" title="Xóa cau hoi"><Trash2 className="w-5 h-5" /></button>
                     </div>
                   </div>
                 </div>
@@ -242,7 +242,7 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
             {questions.length === 0 ? (
               <div className="text-center py-16 text-slate-400">
                 <div className="text-5xl mb-4">📋</div>
-                <p className="font-medium">Them cau hoi de xem preview</p>
+                <p className="font-medium">Thêm cau hoi de xem preview</p>
               </div>
             ) : questions.map((q, idx) => {
               const catName = categories.find((c) => c.id === q.sectionId)?.name
@@ -334,7 +334,7 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
           </div>
           <div className="flex items-center space-x-3">
             <button onClick={() => handleSave(false)} disabled={saving} className="px-4 py-2.5 md:px-6 md:py-3 flex items-center bg-white border border-slate-300 text-slate-700 rounded-lg font-bold hover:bg-slate-50 shadow-sm transition-colors justify-center">
-              <Save className="w-5 h-5 md:mr-2" /><span className="hidden md:inline">Luu Nhap Tam Thoi</span>
+              <Save className="w-5 h-5 md:mr-2" /><span className="hidden md:inline">Lưu Nhap Tam Thoi</span>
             </button>
             <button onClick={() => handleSave(true)} disabled={saving} className="px-4 py-2.5 md:px-8 md:py-3 flex items-center bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 shadow-lg shadow-green-600/30 transition-all justify-center">
               <CloudUpload className="w-5 h-5 md:mr-2" /><span className="hidden md:inline">Publish Online Ngay</span><span className="md:hidden">Publish</span>

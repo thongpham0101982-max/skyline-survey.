@@ -47,7 +47,7 @@ export function CategoriesClient({ initialCategories }) {
   }
 
   const handleDelete = async (id, name) => {
-    if (!confirm(`Xoa danh muc "${name}"?\n\nLuu y: Cac cau hoi thuoc danh muc nay se khong bi xoa, chi khong con thuoc danh muc nao.`)) return
+    if (!confirm(`Xóa danh muc "${name}"?\n\nLuu y: Cac cau hoi thuoc danh muc nay se khong bi xoa, chi khong con thuoc danh muc nao.`)) return
     try {
       await deleteCategoryAction(id)
       setCategories(categories.filter((c) => c.id !== id))

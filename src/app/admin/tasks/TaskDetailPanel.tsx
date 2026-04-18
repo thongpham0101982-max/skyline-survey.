@@ -79,7 +79,7 @@ export function TaskDetailPanel({ task, currentUserId, isAdmin, onClose }: TaskD
       setComments([...comments, res.comment])
       setNewComment("")
     } else {
-      alert("Loi: " + res.error)
+      alert("Lỗi: " + res.error)
     }
     setSending(false)
   }

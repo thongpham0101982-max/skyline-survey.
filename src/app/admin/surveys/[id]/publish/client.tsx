@@ -76,7 +76,7 @@ export function PublishSurveyClient({ period, classes }: any) {
           </div>
           <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
             <div className="text-2xl font-bold text-slate-700">{result.alreadyExisted}</div>
-            <div className="text-sm text-slate-500 font-medium">Da co truoc do</div>
+            <div className="text-sm text-slate-500 font-medium">Đã co truoc do</div>
           </div>
           <div className="bg-green-50 rounded-xl p-4 border border-green-100">
             <div className="text-2xl font-bold text-green-700">{result.totalStudents}</div>
@@ -101,7 +101,7 @@ export function PublishSurveyClient({ period, classes }: any) {
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
             <div className="text-sm text-amber-800">
-              <strong>{result.studentsWithoutParents} hoc sinh chua duoc gan Phu huynh.</strong> Vui long kiem tra lai muc <strong>Quan ly Tai khoan PHHS</strong> de dam bao moi HS deu co tai khoan PH lien ket.
+              <strong>{result.studentsWithoutParents} hoc sinh chua duoc gan Phu huynh.</strong> Vui long kiem tra lai muc <strong>Quan ly Tài khoản PHHS</strong> de dam bao moi HS deu co tai khoan PH lien ket.
             </div>
           </div>
         )}
@@ -150,7 +150,7 @@ export function PublishSurveyClient({ period, classes }: any) {
                 onClick={() => setShowConfirm(false)}
                 className="flex-1 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition"
               >
-                Huy bo
+                Hủy bo
               </button>
               <button
                 onClick={handleDispatch}
@@ -177,7 +177,7 @@ export function PublishSurveyClient({ period, classes }: any) {
         
         <div className="flex justify-between items-center bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6 font-medium">
           <div className="text-slate-600">
-            Da chon: <span className="text-indigo-600 font-bold text-lg mx-1">{selectedClasses.length}</span> / {classes.length} lop hoc
+            Đã chon: <span className="text-indigo-600 font-bold text-lg mx-1">{selectedClasses.length}</span> / {classes.length} lop hoc
           </div>
           <button onClick={toggleAll} className="text-indigo-600 hover:text-indigo-800 font-semibold underline underline-offset-2">
             {selectedClasses.length === classes.length ? "Bo chon tat ca" : "Chon tat ca"}

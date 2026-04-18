@@ -64,7 +64,7 @@ export function CategoriesClient() {
             Danh muc Mon Khao sat ({items.length})
           </h3>
           <button onClick={openNew} className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium shadow-sm">
-            <Plus className="w-4 h-4" /> Them moi
+            <Plus className="w-4 h-4" /> Thêm moi
           </button>
         </div>
 
@@ -82,7 +82,7 @@ export function CategoriesClient() {
                   <th className="px-5 py-3 text-left">Ten mon</th>
                   <th className="px-5 py-3 text-left">Loai</th>
                   <th className="px-5 py-3 text-left">Trang thai</th>
-                  <th className="px-5 py-3 text-center w-24">Thao tac</th>
+                  <th className="px-5 py-3 text-center w-24">Thao tác</th>
                 </tr>
               </thead>
               <tbody>
@@ -147,8 +147,8 @@ export function CategoriesClient() {
                 </select>
               </div>
               <div className="pt-4 flex justify-end gap-3">
-                <button type="button" onClick={() => setIsFormOpen(false)} className="px-5 py-2.5 text-slate-600 hover:bg-slate-100 rounded-xl font-medium">Huy</button>
-                <button type="submit" className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium shadow-sm">Luu</button>
+                <button type="button" onClick={() => setIsFormOpen(false)} className="px-5 py-2.5 text-slate-600 hover:bg-slate-100 rounded-xl font-medium">Hủy</button>
+                <button type="submit" className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium shadow-sm">Lưu</button>
               </div>
             </form>
           </div>

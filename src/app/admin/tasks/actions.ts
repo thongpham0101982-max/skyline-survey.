@@ -129,7 +129,7 @@ export async function respondToTask(id: string, data: { progress: string; staffN
         data: {
           userId: admin.id,
           title: "[Cap nhat CV] " + task.title,
-          message: userName + " da cap nhat trang thai: " + data.progress + ". Noi dung: " + (data.staffNote || "(khong co ghi chu)"),
+          message: userName + " da cap nhat trang thai: " + data.progress + ". Nội dung: " + (data.staffNote || "(khong co ghi chu)"),
           isRead: false
         }
       })

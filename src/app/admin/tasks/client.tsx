@@ -68,11 +68,11 @@ export function TasksClient({ initialTasks, years, roles, currentRole, currentUs
   }
 
   const handleSubmit = async () => {
-    if (!title.trim()) return alert("Vui long nhap noi dung cong viec!")
+    if (!title.trim()) return alert("Vui lòng nhập nội dung công việc!")
     const data = { title, category, assignedToRole, assignedToUserId: assignedToUserId || null, startDate, endDate, academicYearId }
     const res = editId ? await updateTask(editId, data) : await createTask(data)
     if (res.success) window.location.reload()
-    else alert("Loi: " + res.error)
+    else alert("Lỗi: " + res.error)
   }
 
   const handleEdit = (t: any) => {
@@ -86,15 +86,15 @@ export function TasksClient({ initialTasks, years, roles, currentRole, currentUs
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Xoa cong viec nay?")) return
+    if (!confirm("Xóa công việc này?")) return
     const res = await deleteTask(id)
     if (res.success) setTasks(tasks.filter((t: any) => t.id !== id))
   }
 
   const handleRemind = async (id: string) => {
     const res: any = await remindTask(id)
-    if (res.success) alert("Da gui " + (res.sent || 0) + " thong bao nhac viec!")
-    else alert("Loi: " + res.error)
+    if (res.success) alert("Đã gửi " + (res.sent || 0) + " thông báo nhắc việc!")
+    else alert("Lỗi: " + res.error)
   }
 
   const handleProgressChange = async (id: string, progress: string) => {
@@ -104,14 +104,14 @@ export function TasksClient({ initialTasks, years, roles, currentRole, currentUs
 
   const handleStaffRespond = async () => {
     if (!respondingTaskId) return
-    if (!respondNote.trim()) return alert("Vui long ghi noi dung trao doi!")
+    if (!respondNote.trim()) return alert("Vui lòng ghi nội dung trao đổi!")
     setSubmitting(true)
     const res = await respondToTask(respondingTaskId, { progress: respondProgress, staffNote: respondNote })
     if (res.success) {
-      alert("Da cap nhat trang thai cong viec!")
+      alert("Đã cập nhật trạng thái công việc!")
       window.location.reload()
     } else {
-      alert("Loi: " + res.error)
+      alert("Lỗi: " + res.error)
     }
     setSubmitting(false)
   }
@@ -160,7 +160,7 @@ export function TasksClient({ initialTasks, years, roles, currentRole, currentUs
       {/* Admin Form */}
       {showForm && isAdmin && (
         <div className="bg-white border-2 border-indigo-200 rounded-2xl shadow-sm p-6 space-y-4">
-          <h2 className="font-bold text-lg text-slate-700">{editId ? "Cập nhật cong viec" : "Giao cong viec moi"}</h2>
+          <h2 className="font-bold text-lg text-slate-700">{editId ? "Cập nhật công việc" : "Giao công việc mới"}</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-500 mb-1">Danh mục</label>
@@ -175,16 +175,16 @@ export function TasksClient({ initialTasks, years, roles, currentRole, currentUs
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1"><User className="w-3 h-3" /> Tai khoan (tuy chon)</label>
+              <label className="block text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1"><User className="w-3 h-3" /> Tài khoản (tùy chọn)</label>
               <select value={assignedToUserId} onChange={e => setAssignedToUserId(e.target.value)} disabled={loadingUsers}
                 className="w-full border rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-300 disabled:bg-slate-50">
-                <option value="">-- Ca nhom ({roleUsers.length} nguoi) --</option>
+                <option value="">-- Cả nhóm ({roleUsers.length} người) --</option>
                 {roleUsers.map((u: any) => <option key={u.id} value={u.id}>{u.fullName} ({u.email})</option>)}
               </select>
             </div>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1">Noi dung cong viec</label>
+            <label className="block text-xs font-semibold text-slate-500 mb-1">Nội dung cong viec</label>
             <input value={title} onChange={e => setTitle(e.target.value)}
               className="w-full border rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-300" placeholder="Nhap noi dung..." />
           </div>
@@ -205,7 +205,7 @@ export function TasksClient({ initialTasks, years, roles, currentRole, currentUs
             </div>
           </div>
           <div className="flex gap-3 pt-2">
-            <button onClick={handleSubmit} className="bg-indigo-600 text-white px-6 py-2.5 rounded-xl hover:bg-indigo-700 font-medium">Luu</button>
+            <button onClick={handleSubmit} className="bg-indigo-600 text-white px-6 py-2.5 rounded-xl hover:bg-indigo-700 font-medium">Lưu</button>
             <button onClick={() => setShowForm(false)} className="bg-slate-100 px-6 py-2.5 rounded-xl hover:bg-slate-200 font-medium">Hủy</button>
           </div>
         </div>
@@ -217,7 +217,7 @@ export function TasksClient({ initialTasks, years, roles, currentRole, currentUs
           <div className="flex items-center justify-between">
             <h2 className="font-bold text-lg text-slate-700 flex items-center gap-2">
               <MessageSquare className="w-5 h-5 text-emerald-600" />
-              Xac nhan & Trao doi cong viec
+              Xác nhận & Trao đổi công việc
             </h2>
             <button onClick={() => setRespondingTaskId(null)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
           </div>
@@ -225,14 +225,14 @@ export function TasksClient({ initialTasks, years, roles, currentRole, currentUs
             {tasks.find((t: any) => t.id === respondingTaskId)?.title}
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1">Trang thai cong viec</label>
+            <label className="block text-xs font-semibold text-slate-500 mb-1">Trạng thái công việc</label>
             <select value={respondProgress} onChange={e => setRespondProgress(e.target.value)}
               className="w-full border rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-300">
               {STAFF_PROGRESS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1">Noi dung trao doi / bao cao</label>
+            <label className="block text-xs font-semibold text-slate-500 mb-1">Nội dung trao doi / bao cao</label>
             <textarea value={respondNote} onChange={e => setRespondNote(e.target.value)}
               rows={4}
               className="w-full border rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-300 resize-none"
@@ -241,7 +241,7 @@ export function TasksClient({ initialTasks, years, roles, currentRole, currentUs
           <div className="flex gap-3">
             <button onClick={handleStaffRespond} disabled={submitting}
               className="flex items-center gap-2 bg-emerald-600 text-white px-6 py-2.5 rounded-xl hover:bg-emerald-700 font-medium disabled:opacity-50">
-              <Send className="w-4 h-4" /> {submitting ? "Đang gửi..." : "Gui xac nhan"}
+              <Send className="w-4 h-4" /> {submitting ? "Đang gửi..." : "Gửi xác nhận"}
             </button>
             <button onClick={() => setRespondingTaskId(null)} className="bg-slate-100 px-6 py-2.5 rounded-xl hover:bg-slate-200 font-medium">Hủy</button>
           </div>
@@ -255,16 +255,16 @@ export function TasksClient({ initialTasks, years, roles, currentRole, currentUs
             <tr className="bg-slate-50 border-b">
               <th className="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase w-12">STT</th>
               <th className="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase">Danh mục</th>
-              <th className="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase">Noi dung</th>
-              <th className="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase">Nguoi nhan</th>
+              <th className="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase">Nội dung</th>
+              <th className="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase">Người nhận</th>
               <th className="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase">Hạn chót</th>
               <th className="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase">Tiến độ</th>
-              <th className="px-4 py-4 text-center text-xs font-semibold text-slate-500 uppercase">Thao tac</th>
+              <th className="px-4 py-4 text-center text-xs font-semibold text-slate-500 uppercase">Thao tác</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {displayedTasks.length === 0 && (
-              <tr><td colSpan={7} className="px-5 py-12 text-center text-slate-400">Chưa có công việc nao</td></tr>
+              <tr><td colSpan={7} className="px-5 py-12 text-center text-slate-400">Chưa có công việc nào</td></tr>
             )}
             {displayedTasks.map((t: any, i: number) => {
               const isOverdue = t.progress === "OVERDUE"
@@ -286,7 +286,7 @@ export function TasksClient({ initialTasks, years, roles, currentRole, currentUs
                     {hasStaffNote && (
                       <div className="mt-2 bg-emerald-50 border border-emerald-200 rounded-lg p-2">
                         <div className="text-xs font-semibold text-emerald-700 flex items-center gap-1 mb-0.5">
-                          <MessageSquare className="w-3 h-3" /> Phan hoi tu nhan vien:
+                          <MessageSquare className="w-3 h-3" /> Phản hồi từ nhân viên:
                         </div>
                         <div className="text-xs text-emerald-800">{t.staffNote}</div>
                         {t.staffUpdatedAt && <div className="text-xs text-emerald-500 mt-1">{new Date(t.staffUpdatedAt).toLocaleString("vi-VN")}</div>}

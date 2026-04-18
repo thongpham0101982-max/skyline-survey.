@@ -110,7 +110,7 @@ export function AdminSurveysClient({ initialSurveys, years, createAction, update
         <div>
           {selectedIds.length > 0 && (
             <button onClick={handleDeleteMultiple} className='flex items-center gap-2 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-sm font-semibold transition-colors'>
-              <Trash2 className='w-4 h-4' /> Xoa {selectedIds.length} muc
+              <Trash2 className='w-4 h-4' /> Xóa {selectedIds.length} muc
             </button>
           )}
         </div>
@@ -191,7 +191,7 @@ export function AdminSurveysClient({ initialSurveys, years, createAction, update
             <button
               onClick={() => { setShowCreate(false); setErrorMsg("") }}
               className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium text-sm transition-colors"
-            >Huy</button>
+            >Hủy</button>
           </div>
         </div>
       )}

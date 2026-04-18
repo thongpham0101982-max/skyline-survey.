@@ -149,7 +149,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                 <th className="px-4 py-2 font-semibold text-slate-600 text-xs">Mã môn</th>
                 <th className="px-4 py-2 font-semibold text-slate-600 text-xs border-r border-slate-200">Tên môn</th>
                 <th className="px-4 py-2 font-semibold text-slate-600 text-xs border-r border-slate-200">Hệ học</th>
-                <th className="px-4 py-2 font-semibold text-slate-600 text-xs border-r border-slate-200">Ghi chú</th>
+                <th className="px-4 py-2 font-semibold text-slate-600 text-xs border-r border-slate-200">Ghi chúú</th>
                 <th className="px-4 py-2 font-semibold text-blue-800 text-xs text-center border-r border-slate-200 bg-blue-50/50">Tiểu học</th>
                 <th className="px-4 py-2 font-semibold text-emerald-800 text-xs text-center border-r border-slate-200 bg-emerald-50/50">THCS</th>
                 <th className="px-4 py-2 font-semibold text-amber-800 text-xs text-center border-r border-slate-200 bg-amber-50/50">THPT</th>
@@ -176,7 +176,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                       </label>
                     </div>
                   </td>
-                  <td className="px-4 py-3 border-r border-slate-200"><input value={formData.desc} onChange={e=>setFormData({...formData, desc: e.target.value})} className="w-40 p-1.5 rounded border text-sm outline-none" placeholder="Ghi chú..."/></td>
+                  <td className="px-4 py-3 border-r border-slate-200"><input value={formData.desc} onChange={e=>setFormData({...formData, desc: e.target.value})} className="w-40 p-1.5 rounded border text-sm outline-none" placeholder="Ghi chúú..."/></td>
                   <td className="px-4 py-3 border-r border-slate-200">
                     <div className="flex flex-col gap-1 text-xs">
                       <label className="flex items-center gap-1 cursor-pointer">
