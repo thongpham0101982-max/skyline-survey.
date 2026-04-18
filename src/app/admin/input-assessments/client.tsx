@@ -73,7 +73,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
    setAssignmentsLoading(true);
     try {
       const r = await fetch("/api/input-assessment-assignments?periodId=" + assignPeriodId);
-      if (r.ok)setAssignments(await r.json());
+      if (r.ok) setAssignments(await r.json());
     } catch (e) {}
    setAssignmentsLoading(false);
   };
@@ -81,7 +81,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
 
   
   const resolveUnlockRequest = async (assignmentId:string,status: 'APPROVED' | 'REJECTED') => {
-    if (!confirm(`Bạn có chắc chắn muốn ${status === 'APPROVED' ? 'ĐỒNG Ý' : 'TỪ CHỐI'} yêu cầu này?`)) return;
+    if (!confirm(`Bộn có ch?c ch?n mu?n ${status === 'APPROVED' ? 'Đ?NG ?' : 'T? CH?I'} yêu cầu này?`)) return;
     const r = await fetch("/api/input-assessment-assignments", { 
         method: "PUT", headers: { "Content-Type": "application/json" }, 
         body: JSON.stringify({ action: "RESOLVE_UNLOCK", id: assignmentId,status }) 
@@ -94,7 +94,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   };
   const handleAssignSubmit = async () => {
     if(!assignPeriodId || !assignTeacherId || assignSelSubjects.length===0 || assignSelGrades.length===0 || assignSelEdus.length===0) {
-      alert("Vui lòng chọn đủ Môn, Khối, Hệ, và Giáo viên!"); return;
+      alert("Vui l?ng ch?n đ? Môn, Khối, H?, và Giáo viên!"); return;
     }
     const payload: any[] = [];
     assignSelSubjects.forEach(s => {
@@ -109,11 +109,11 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
       body: JSON.stringify({ action: "BULK_ASSIGN", periodId: assignPeriodId, batchId: assignBatchId, assignments: payload })
     });
     if (r.ok) {
-      alert("Phân công th�nh c�ng!");
+      alert("Phân công thành công!");
       fetchAssignments();
     } else {
       const errData = await r.json();
-      alert("Lỗi: " + (errData.error || errData.message || "Kh�ng x�c �?nh"));
+      alert("Lỗi: " + (errData.error || errData.message || "Không x?c ??nh"));
     }
   };
 
@@ -123,7 +123,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
     elsesetSelectedAssignmentIds(assignments.map((a:any) => a.id));
   };
   const deleteSelectedAssignments = async () => {
-    if (!confirm("X�a " +selectedAssignmentIds.length + " ph�n c�ng �? ch?n?")) return;
+    if (!confirm("X?a " +selectedAssignmentIds.length + " ph?n c?ng ?đã chọn?")) return;
     await fetch("/api/input-assessment-assignments?ids=" +selectedAssignmentIds.join(","), { method: "DELETE" });
    setSelectedAssignmentIds([]);
     fetchAssignments();
@@ -139,7 +139,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   };
 
   const deleteAssignment = async (id:string) => {
-    if (!confirm("X�a ph�n c�ng n�y?")) return;
+    if (!confirm("X?a ph?n c?ng n?y?")) return;
     await fetch("/api/input-assessment-assignments?id="+id, {method:"DELETE"});
     fetchAssignments();
   };
@@ -150,16 +150,16 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   useEffect(()=>{if(selectedYearId)fetchPeriods()},[selectedYearId]);
   useEffect(()=>{if(selGrades.length&&selEdus.length)fetchMappings();elsesetMappings([])},[selGrades,selEdus]);
 
-  const fetchPeriods=async()=>{setLoading(true);try{const r=await fetch("/api/input-assessments?academicYearId="+selectedYearId);if(r.ok)setPeriods(await r.json())}catch(e){}setLoading(false)};
+  const fetchPeriods=async()=>{setLoading(true);try{const r=await fetch("/api/input-assessments?academicYearId="+selectedYearId);if(r.ok) setPeriods(await r.json())}catch(e){}setLoading(false)};
   const generateAutoCode=(t:string)=>{const p=t+"_";let m=0;periods.filter(x=>x.code?.startsWith(p)).forEach(x=>{const n=parseInt(x.code.split('_').pop());if(!isNaN(n)&&n>m)m=n});return p+(m+1).toString().padStart(2,'0')};
   const handleOpenNewPeriod=()=>{setEditingPeriodId(null);const c=generateAutoCode("DOT_LE");setPeriodForm({type:"DOT_LE",code:c,name:c,description:"",startDate:"",endDate:"",campusId:"",assignedUserId:""});setIsPeriodOpen(true)};
   const handlePeriodTypeChange=(t:string)=>{const c=generateAutoCode(t);setPeriodForm({...periodForm,type:t,code:c,name:c})};
-  const handlePeriodSubmit=async(e:React.FormEvent)=>{e.preventDefault();const r=await fetch("/api/input-assessments",{method:editingPeriodId?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:editingPeriodId?"UPDATE_PERIOD":"CREATE_PERIOD",id:editingPeriodId,data:{...periodForm,academicYearId:selectedYearId}})});if(r.ok){setIsPeriodOpen(false);fetchPeriods()}else alert((await r.json()).error)};
-  const handleBatchSubmit=async(e:React.FormEvent)=>{e.preventDefault();const r=await fetch("/api/input-assessments",{method:editingBatchId?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:editingBatchId?"UPDATE_BATCH":"CREATE_BATCH",id:editingBatchId,data:{...batchForm,periodId:currentPeriodIdForBatch}})});if(r.ok){setIsBatchOpen(false);fetchPeriods()}else alert((await r.json()).error)};
+  const handlePeriodSubmit=async(e:React.FormEvent)=>{e.preventDefault();const r=await fetch("/api/input-assessments",{method:editingPeriodId?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:editingPeriodId?"UPDATE_PERIOD":"CREATE_PERIOD",id:editingPeriodId,data:{...periodForm,academicYearId:selectedYearId}})});if(r.ok) {setIsPeriodOpen(false);fetchPeriods()}else alert((await r.json()).error)};
+  const handleBatchSubmit=async(e:React.FormEvent)=>{e.preventDefault();const r=await fetch("/api/input-assessments",{method:editingBatchId?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:editingBatchId?"UPDATE_BATCH":"CREATE_BATCH",id:editingBatchId,data:{...batchForm,periodId:currentPeriodIdForBatch}})});if(r.ok) {setIsBatchOpen(false);fetchPeriods()}else alert((await r.json()).error)};
   
   const togglePeriodStatus = async (p: any) => {
     const newStatus = p.status === 'ACTIVE' ? 'LOCKED' : 'ACTIVE';
-    if (!confirm(`B?n c� ch?c mu?n ${newStatus === 'ACTIVE' ? 'M? KH�A' : 'KH�A'} đợt n�y?`)) return;
+    if (!confirm(`Bộn c? ch?c mu?n ${newStatus === 'ACTIVE' ? 'M? KH?A' : 'KH?A'} đợt n?y?`)) return;
     const payload = { 
        action: "UPDATE_PERIOD",
        id: p.id,
@@ -172,10 +172,10 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
     };
     const r = await fetch("/api/input-assessments", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
     if (r.ok) fetchPeriods();
-    else alert((await r.json()).error || "��? x?y ra l?i");
+    else alert((await r.json()).error || "đã x?y ra l?i");
   };
-  const deletePeriod=async(id:string)=>{if(!confirm("X�a ky?"))return;await fetch("/api/input-assessments?id="+id+"&type=period",{method:"DELETE"});fetchPeriods()};
-  const deleteBatch=async(id:string)=>{if(!confirm("X�a dot?"))return;await fetch("/api/input-assessments?id="+id+"&type=batch",{method:"DELETE"});fetchPeriods()};
+  const deletePeriod=async(id:string)=>{if(!confirm("X?a kỳ?"))return;await fetch("/api/input-assessments?id="+id+"&type=period",{method:"DELETE"});fetchPeriods()};
+  const deleteBatch=async(id:string)=>{if(!confirm("X?a đợt?"))return;await fetch("/api/input-assessments?id="+id+"&type=batch",{method:"DELETE"});fetchPeriods()};
   const fmtDate=(d:string)=>d?new Date(d).toISOString().slice(0,10):"";
   const fetchSubjects=async()=>{const r=await fetch("/api/input-assessment-categories?type=subject");if(r.ok)setSubjectsList(await r.json())};
      const handleColumnConfigSubmit = async (e: React.FormEvent) => {
@@ -198,8 +198,8 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
       fetchSubjects();
     } else alert((await r.json()).error);
 };     
-  const handleSubjectSubmit=async(e:React.FormEvent)=>{e.preventDefault();const p=editingSubjectId?{type:"subject",id:editingSubjectId,data:{name:subjectForm.name,subjectType:subjectForm.subjectType||null,scoreColumns:ubjectForm.scoreColumns, commentColumns:ubjectForm.commentColumns,status:ubjectForm.status||"ACTIVE"}}:{type:"subject",data:{code:subjectForm.code,name:subjectForm.name,subjectType:subjectForm.subjectType||null,scoreColumns:ubjectForm.scoreColumns, commentColumns:ubjectForm.commentColumns,status:ubjectForm.status||"ACTIVE"}};const r=await fetch("/api/input-assessment-categories",{method:editingSubjectId?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});if(r.ok){setIsSubjectOpen(false);fetchSubjects()}else alert((await r.json()).error)};
-  const deleteSubject=async(id:string)=>{if(!confirm("X�a?"))return;await fetch("/api/input-assessment-categories?type=subject&id="+id,{method:"DELETE"});fetchSubjects()};
+  const handleSubjectSubmit=async(e:React.FormEvent)=>{e.preventDefault();const p=editingSubjectId?{type:"subject",id:editingSubjectId,data:{name:subjectForm.name,subjectType:subjectForm.subjectType||null,scoreColumns:subjectForm.scoreColumns, commentColumns:subjectForm.commentColumns,status:subjectForm.status||"ACTIVE"}}:{type:"subject",data:{code:subjectForm.code,name:subjectForm.name,subjectType:subjectForm.subjectType||null,scoreColumns:subjectForm.scoreColumns, commentColumns:subjectForm.commentColumns,status:subjectForm.status||"ACTIVE"}};const r=await fetch("/api/input-assessment-categories",{method:editingSubjectId?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});if(r.ok) {setIsSubjectOpen(false);fetchSubjects()}else alert((await r.json()).error)};
+  const deleteSubject=async(id:string)=>{if(!confirm("X?a?"))return;await fetch("/api/input-assessment-categories?type=subject&id="+id,{method:"DELETE"});fetchSubjects()};
   const fetchMappings=async()=>{setMappingLoading(true);try{const r=await fetch("/api/grade-subject-mappings?grades="+selGrades.join(",")+"&eduSystems="+selEdus.join(","));if(r.ok)setMappings(await r.json())}catch(e){}setMappingLoading(false)};
   const addMapping=async(sid:string)=>{const r=await fetch("/api/grade-subject-mappings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({grades:selGrades,eduSystems:selEdus,subjectId:sid})});if(r.ok)fetchMappings();else alert((await r.json()).error)};
   const removeMapping=async(sid:string)=>{await fetch("/api/grade-subject-mappings?subjectId="+sid+"&grades="+selGrades.join(",")+"&eduSystems="+selEdus.join(","),{method:"DELETE"});fetchMappings()};
@@ -210,31 +210,31 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   const toggleEdu=(c:string)=>setSelEdus(p=>p.includes(c)?p.filter(x=>x!==c):[...p,c]);
 
   const fetchConfigs=async()=>{const r=await fetch("/api/assessment-configs");if(r.ok)setConfigsList(await r.json())};
-  const handleConfigSubmit=async(e:React.FormEvent)=>{e.preventDefault();if(editingConfigId){const r=await fetch("/api/assessment-configs",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:editingConfigId,name:configForm.name})});if(r.ok){setIsConfigOpen(false);fetchConfigs()}else alert((await r.json()).error)}else{const r=await fetch("/api/assessment-configs",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...configForm, academicYearId: configForm.categoryType==="HOC_KY"?hkYearId:undefined})});if(r.ok){setIsConfigOpen(false);fetchConfigs()}else alert((await r.json()).error)}};
+  const handleConfigSubmit=async(e:React.FormEvent)=>{e.preventDefault();if(editingConfigId){const r=await fetch("/api/assessment-configs",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:editingConfigId,name:configForm.name})});if(r.ok) {setIsConfigOpen(false);fetchConfigs()}else alert((await r.json()).error)}else{const r=await fetch("/api/assessment-configs",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...configForm, academicYearId: configForm.categoryType==="HOC_KY"?hkYearId:undefined})});if(r.ok) {setIsConfigOpen(false);fetchConfigs()}else alert((await r.json()).error)}};
   
   const fetchStudents=async()=>{if(!studentPeriodId)return;setStudentsLoading(true);try{let url="/api/input-assessment-students?periodId="+studentPeriodId;if(studentBatchId)url+="&batchId="+studentBatchId;const r=await fetch(url);if(r.ok)setStudentsList(await r.json())}catch(e){}setStudentsLoading(false)};
   useEffect(()=>{if(studentPeriodId)fetchStudents()},[studentPeriodId,studentBatchId]);
   const handleOpenNewStudent=()=>{setEditingStudentId(null);setStudentForm({studentCode:"",fullName:"",dateOfBirth:"",admissionCriteria:"",surveyFormType:"",targetType:"",hocKy:"",kqgdTieuHoc:"",kqHocTap:"",kqRenLuyen:"",periodId:studentPeriodId,batchId:studentBatchId,grade:""});setIsStudentOpen(true)};
-  const handleStudentSubmit=async(e)=>{e.preventDefault();const payload=editingStudentId?{id:editingStudentId,data:{...studentForm}}:{action:"CREATE",data:{...studentForm,periodId:studentPeriodId,batchId:studentBatchId||null}};const r=await fetch("/api/input-assessment-students",{method:editingStudentId?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});if(r.ok){setIsStudentOpen(false);fetchStudents()}else alert((await r.json()).error)};
-  const deleteStudent=async(id)=>{if(!confirm("X�a hoc inh nay?"))return;await fetch("/api/input-assessment-students?id="+id,{method:"DELETE"});fetchStudents()};
-  const deleteSelectedStudents=async()=>{if(selectedStudentIds.length===0)return;if(!confirm("X�a "+selectedStudentIds.length+" hoc inh �? ch?n?"))return;await fetch("/api/input-assessment-students?ids="+selectedStudentIds.join(","),{method:"DELETE"});setSelectedStudentIds([]);fetchStudents()};
+  const handleStudentSubmit=async(e)=>{e.preventDefault();const payload=editingStudentId?{id:editingStudentId,data:{...studentForm}}:{action:"CREATE",data:{...studentForm,periodId:studentPeriodId,batchId:studentBatchId||null}};const r=await fetch("/api/input-assessment-students",{method:editingStudentId?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});if(r.ok) {setIsStudentOpen(false);fetchStudents()}else alert((await r.json()).error)};
+  const deleteStudent=async(id)=>{if(!confirm("X?a hoc inh nay?"))return;await fetch("/api/input-assessment-students?id="+id,{method:"DELETE"});fetchStudents()};
+  const deleteSelectedStudents=async()=>{if(selectedStudentIds.length===0)return;if(!confirm("X?a "+selectedStudentIds.length+" hoc inh ?đã chọn?"))return;await fetch("/api/input-assessment-students?ids="+selectedStudentIds.join(","),{method:"DELETE"});setSelectedStudentIds([]);fetchStudents()};
   const toggleStudentSelect=(id)=>setSelectedStudentIds(p=>p.includes(id)?p.filter(x=>x!==id):[...p,id]);
   const toggleAllStudents=()=>{if(selectedStudentIds.length===filteredStudents.length)setSelectedStudentIds([]);elsesetSelectedStudentIds(filteredStudents.map(s=>s.id))};
   const dksOptions=configsList.filter(c=>c.categoryType==="DIEN_KS");
   const htksOptions=configsList.filter(c=>c.categoryType==="HINH_THUC_KS");
-  const elPeriodYearId = periods.find((p:any) => p.id ===tudentPeriodId)?.academicYearId;
+  const selPeriodYearId = periods.find((p:any) => p.id ===studentPeriodId)?.academicYearId;
   const hkOptions=configsList.filter((c:any)=>c.categoryType==="HOC_KY" && (!selPeriodYearId || c.academicYearId===selPeriodYearId));
   const kqgdThOptions=configsList.filter(c=>c.categoryType==="KQGD_TIEU_HOC");
   const kqhtOptions=configsList.filter(c=>c.categoryType==="KQ_HOC_TAP");
   const hsQuocTeOptions=configsList.filter(c=>c.categoryType==="HS_CT_QUOC_TE");
   const kqrlOptions=configsList.filter(c=>c.categoryType==="KQ_REN_LUYEN");
   const ltsOptions=configsList.filter(c=>c.categoryType==="LOAI_TUYEN_SINH");
-  const filteredStudents=studentsList.filter(s=>{if(!studentSearch)return true;const q=studentSearch.toLowerCase();returns.studentCode?.toLowerCase().includes(q)||s.fullName?.toLowerCase().includes(q)});
+  const filteredStudents=studentsList.filter(s=>{if(!studentSearch)return true;const q=studentSearch.toLowerCase();return s.studentCode?.toLowerCase().includes(q)||s.fullName?.toLowerCase().includes(q)});
 
   const COLUMN_MAP = {
     "Ma_HS_KS": "studentCode", "Ma HS KS": "studentCode", "MaHS": "studentCode", "studentCode": "studentCode",
     "Ho ten": "fullName", "Ho va Ten": "fullName", "HoTen": "fullName", "fullName": "fullName",
-    "Ngay inh": "dateOfBirth", "NgaySinh": "dateOfBirth", "dateOfBirth": "dateOfBirth",
+    "Ngày sinh": "dateOfBirth", "NgaySinh": "dateOfBirth", "dateOfBirth": "dateOfBirth",
     "Khoi KS": "grade", "Khoi": "grade", "Khối": "grade", "grade": "grade",
     "Dien khao at": "admissionCriteria", "Dien KS": "admissionCriteria", "DienKS": "admissionCriteria", "admissionCriteria": "admissionCriteria",
     "Hinh thuc KS": "surveyFormType", "HinhThucKS": "surveyFormType", "surveyFormType": "surveyFormType",
@@ -244,7 +244,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
     "KQ Ren luyen": "kqRenLuyen", "kqRenLuyen": "kqRenLuyen",
     "Lop": "className", "className": "className",
     "Hoc ky": "hocKy", "HocKy": "hocKy", "hocKy": "hocKy",
-    "N�m h?c tuyển sinh": "hocKy", "H?c k?": "hocKy",
+    "N?m h?c tuy?n sinh": "hocKy", "H?c k?": "hocKy",
   };
 
   const handleExcelImport = async (e) => {
@@ -256,9 +256,9 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
       const wb = XLSX.read(data);
       const ws = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(ws, { defval: "" });
-      if (rows.length === 0) { alert("File Excel kh�ng c� d? li?u!");setImporting(false); return; }
-      consCột điểmapped = rows.map((row) => {
-        const item = { periodId:tudentPeriodId, batchId:tudentBatchId || null };
+      if (rows.length === 0) { alert("File Excel không có dữ liệu!"); setImporting(false); return; }
+      const mapped = rows.map((row) => {
+        const item = { periodId:studentPeriodId, batchId:studentBatchId || null };
         Object.keys(row).forEach(key => {
           const k = key.trim();
           const field = COLUMN_MAP[k];
@@ -275,7 +275,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
         });
         return item;
       }).filter(r => r.studentCode && r.fullName);
-      if (mapped.length === 0) { alert("Kh�ng t?m th?y d? li?u h?p l?. Ki?m tra tên c?t: Ma_HS_KS, Ho ten, Ngay inh...");setImporting(false); return; }
+      if (mapped.length === 0) { alert("Không tìm thấy dữ liệu hợp lệ. Kiểm tra tên cột: Ma_HS_KS, Ho ten, Ngày sinh...");setImporting(false); return; }
       const r = await fetch("/api/input-assessment-students", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -283,19 +283,19 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
       });
       const res = await r.json();
       if (res.success) {
-        let msg = "Import th�nh c�ng: " + res.created + "/" + mapped.length + " học inh.";
+        let msg = "Import thành công: " + res.created + "/" + mapped.length + " học sinh.";
         if (res.errors?.length > 0) msg += "\nLoi " + res.errors.length + " dong: " + res.errors.map(e => "Dong " + e.row + " (" + e.code + "): " + e.error).join("\n");
         alert(msg);
         fetchStudents();
       } else { alert("Lỗi: " + (res.error || "Unknown")); }
-    } catch (err) { alert("L?i �?c file: " + err.message); }
+    } catch (err) { alert("Lỗi ??c file: " + err.message); }
    setImporting(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const downloadTemplate = () => {
-    const headers = ["Ma_HS_KS", "Ho ten", "Ngay inh", "Dien khao at", "Hinh thuc KS", "Loai tuyen inh", "Hoc ky", "KQGD Tieu hoc", "KQ Hoc tap", "KQ Ren luyen"];
-    const ws = XLSX.utils.aoa_to_sheet([headers, ["HS_001", "Nguy?n V�n A", "2010-01-15", "", "", "", ""]]);
+    const headers = ["Ma_HS_KS", "Ho ten", "Ngày sinh", "Dien khao at", "Hinh thuc KS", "Loai tuyen inh", "Hoc ky", "KQGD Tieu hoc", "KQ Hoc tap", "KQ Ren luyen"];
+    const ws = XLSX.utils.aoa_to_sheet([headers, ["HS_001", "Nguy?n V?n A", "2010-01-15", "", "", "", ""]]);
     ws["!cols"] = headers.map(() => ({ wch: 20 }));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "DS_HS_KS");
@@ -304,11 +304,11 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
 
   const currentPeriodBatches=periods.find(p=>p.id===studentPeriodId)?.batches||[];
 
-  const deleteConfig=async(id:string)=>{if(!confirm("X�a?"))return;await fetch("/api/assessment-configs?id="+id,{method:"DELETE"});fetchConfigs()};
+  const deleteConfig=async(id:string)=>{if(!confirm("X?a?"))return;await fetch("/api/assessment-configs?id="+id,{method:"DELETE"});fetchConfigs()};
   return (
     <div className="space-y-5">
       <div className="flex border-b border-slate-200 bg-white rounded-t-xl overflow-hidden shadow-sm">
-        {[{key:"periods",label:"Kỳ khảo sát",icon:CalendarDays},{key:"categories",label:"Danh mục",icon:ListChecks},{key:"subjects",label:"Môn khảo sát",icon:BookOpen},{key:"mapping",label:"Cấu hình theo Khối",icon:Settings},{key:"students",label:"DS HS khảo sát",icon:Users},{key:"assignments",label:"Phân công GV",icon:UserCheck},{key:"reports",label:"Tổng hợp KQ",icon:BarChart}].map(tab=>(
+        {[{key:"periods",label:"Kỳ khảo sát",icon:CalendarDays},{key:"categories",label:"Danh mục",icon:ListChecks},{key:"subjects",label:"Môn khảo sát",icon:BookOpen},{key:"mapping",label:"C?u h?nh theo Khối",icon:Settings},{key:"students",label:"DS HS khảo sát",icon:Users},{key:"assignments",label:"Phân công GV",icon:UserCheck},{key:"reports",label:"Tổng hợp KQ",icon:BarChart}].map(tab=>(
           <button key={tab.key} onClick={()=>setActiveTab(tab.key as any)} className={`flex items-center gap-2 px-5 py-3.5 text-sm font-semibold border-b-2 transition-colors ${activeTab===tab.key?"border-indigo-600 text-indigo-700 bg-indigo-50/50":"border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50"}`}><tab.icon className="w-4 h-4"/>{tab.label}</button>
         ))}
       </div>
@@ -325,7 +325,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                   <button onClick={()=>{setEditingConfigId(null);setConfigForm({categoryType:cat.key,code:"",name:""});setIsConfigOpen(true)}} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-xs font-medium shadow-sm"><Plus className="w-3.5 h-3.5"/>Thêm</button>
                 </div>
                 <div className="p-4">
-                  {items.length===0?<div className="text-sm text-slate-400 text-center py-4">Ch�a c� mục n�o.</div>:(
+                  {items.length===0?<div className="text-sm text-slate-400 text-center py-4">Chưa c? mục n?o.</div>:(
                     <div className="flex flex-wrap gap-2">
                       {items.map((item:any)=>(
                         <div key={item.id} className={`group relative inline-flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium ${cat.color}`}>
@@ -347,7 +347,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
           {/* HOC KY - grouped by year */}
           <div className="glass-card rounded-2xl overflow-hidden shadow-xl border-slate-200">
             <div className="flex items-center justify-between px-5 py-4 border-b bg-slate-50/50">
-              <h3 className="font-bold text-slate-800 flex items-center gap-2"><Tag className="w-4 h-4 text-emerald-500"/>N�m h?c tuyển sinh</h3>
+              <h3 className="font-bold text-slate-800 flex items-center gap-2"><Tag className="w-4 h-4 text-emerald-500"/>N?m h?c tuy?n sinh</h3>
               <div className="flex items-center gap-3">
                 <select value={hkYearId} onChange={e=>setHkYearId(e.target.value)} className="border rounded-lg px-3 py-1.5 text-xs font-medium bg-slate-50 outline-none">
                   {academicYears.map((y:any)=><option key={y.id} value={y.id}>{y.name}</option>)}
@@ -358,7 +358,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
             <div className="p-4">
               {(()=>{
                 const hkItems=configsList.filter(c=>c.categoryType==="HOC_KY"&&c.academicYearId===hkYearId);
-                if(hkItems.length===0) return <div className="text-sm text-slate-400 text-center py-4">Ch�a c� N�m h?c tuyển sinh cho n�m h?c n�y. B?m Thêm �? t?o.</div>;
+                if(hkItems.length===0) return <div className="text-sm text-slate-400 text-center py-4">Chưa c? N?m h?c tuy?n sinh cho n?m h?c n?y. Bộm Thêm ?? tạo.</div>;
                 return(<div className="flex flex-wrap gap-2">{hkItems.map((item:any)=>(
                   <div key={item.id} className="group relative inline-flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium bg-emerald-100 text-emerald-700 border-emerald-200">
                     <span className="font-bold">{item.name}</span>
@@ -375,13 +375,13 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
         </div>
       )}
 
-      {/* TAB: KY KHAO SAT */}
+      {/* TAB: KY KHÓAO SAT */}
       {activeTab==="periods"&&(<>
         <div className="glass-card p-6 rounded-2xl hover-lift border-slate-200 flex items-center justify-between">
-          <div className="flex items-center gap-3"><CalendarDays className="w-5 h-5 text-indigo-500"/><span className="font-semibold text-slate-800">Chọn Năm học:</span><select className="border rounded-lg px-3 py-1.5 outline-none text-sm font-medium bg-slate-50" value={selectedYearId} onChange={e=>setSelectedYearId(e.target.value)}>{academicYears.map((a:any)=><option key={a.id} value={a.id}>{a.name}</option>)}</select></div>
+          <div className="flex items-center gap-3"><CalendarDays className="w-5 h-5 text-indigo-500"/><span className="font-semibold text-slate-800">Ch?n Năm h?c:</span><select className="border rounded-lg px-3 py-1.5 outline-none text-sm font-medium bg-slate-50" value={selectedYearId} onChange={e=>setSelectedYearId(e.target.value)}>{academicYears.map((a:any)=><option key={a.id} value={a.id}>{a.name}</option>)}</select></div>
           <button onClick={handleOpenNewPeriod} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium shadow-sm"><Plus className="w-4 h-4"/>Thêm Kỳ KS</button>
         </div>
-        {loading?<div className="text-center py-12 text-slate-500">Đang tải...</div>:periods.length===0?<div className="text-center py-16 bg-white rounded-xl shadow-sm border text-slate-500">Ch�a c� Kỳ khảo sát.</div>:(
+        {loading?<div className="text-center py-12 text-slate-500">Đang t?i...</div>:periods.length===0?<div className="text-center py-16 bg-white rounded-xl shadow-sm border text-slate-500">Chưa c? Kỳ khảo sát.</div>:(
           <div className="grid gap-6">{periods.map(p=>{
             
     const pendingCount = p.InputAssessmentTeacherAssignment?.filter((a: any) => a.unlockRequestStatus === 'PENDING').length || 0;
@@ -391,33 +391,33 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                    <div className="bg-amber-50 border-b border-amber-200 px-5 py-2.5 flex justify-between items-center cursor-pointer hover:bg-amber-100 transition-colors" onClick={() =>setReviewUnlockPeriod(p)}>
                        <div className="flex items-center gap-2 text-sm font-bold text-amber-800">
                            <span className="relative flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span></span>
-                           C� {pendingCount} y�u c?u xin Mở khóa điểm �đang chờ duyệt!
+                           C? {pendingCount} yêu cầu xin Mở khóa điểm ?đang chờ duyệt!
                        </div>
-                       <button className="text-xs font-semibold px-3 py-1 bg-white border border-amber-300 text-amber-700 rounded-lg shadow-sm hover:bg-amber-50">Xem & Duyệt ngay?</button>
+                       <button className="text-xs font-semibold px-3 py-1 bg-white border border-amber-300 text-amber-700 rounded-lg shadow-sm hover:bg-amber-50">Xem & Duy?t ngay?</button>
                    </div>
                )}
               <div className="p-5 border-b bg-slate-50/50 flex justify-between items-center">
 
-                <div><h3 className="text-lg font-bold text-indigo-900">{p.name}<span className="text-sm font-medium text-slate-500 bg-white border px-2 py-0.5 rounded ml-2">{p.code}</span><span className="text-xs font-medium text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded ml-2">{p.campus?.campusName||'Tất cả CS'}</span>{p.status !== 'ACTIVE' && <span className="text-xs font-bold text-red-600 bg-red-50 border border-red-200 px-2.5 py-0.5 rounded ml-2 flex items-center gap-1 inline-flex"><Lock className="w-3 h-3"/> KH�A �I?M</span>}</h3><div className="flex gap-4 mt-2 text-sm"><span className="text-slate-400">B�:</span><span className="font-medium text-slate-700">{p.startDate?new Date(p.startDate).toLocaleDateString('vi-VN'):'-'}</span><span className="text-slate-400 ml-4">Kết thúc:</span><span className="font-medium text-slate-700">{p.endDate?new Date(p.endDate).toLocaleDateString('vi-VN'):'-'}</span><span className="text-slate-400 ml-4">PT:</span><span className="font-medium text-slate-700 flex items-center gap-1"><User className="w-3.5 h-3.5"/>{p.assignedUser?.fullName||'Ch�a PC'}</span></div></div>
+                <div><h3 className="text-lg font-bold text-indigo-900">{p.name}<span className="text-sm font-medium text-slate-500 bg-white border px-2 py-0.5 rounded ml-2">{p.code}</span><span className="text-xs font-medium text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded ml-2">{p.campus?.campusName||'Tất cả CS'}</span>{p.status !== 'ACTIVE' && <span className="text-xs font-bold text-red-600 bg-red-50 border border-red-200 px-2.5 py-0.5 rounded ml-2 flex items-center gap-1 inline-flex"><Lock className="w-3 h-3"/> KHÓA ĐIỂM</span>}</h3><div className="flex gap-4 mt-2 text-sm"><span className="text-slate-400">Bắt đầu:</span><span className="font-medium text-slate-700">{p.startDate?new Date(p.startDate).toLocaleDateString('vi-VN'):'-'}</span><span className="text-slate-400 ml-4">Kết thúc:</span><span className="font-medium text-slate-700">{p.endDate?new Date(p.endDate).toLocaleDateString('vi-VN'):'-'}</span><span className="text-slate-400 ml-4">PT:</span><span className="font-medium text-slate-700 flex items-center gap-1"><User className="w-3.5 h-3.5"/>{p.assignedUser?.fullName||'Chưa PC'}</span></div></div>
                 <div className="flex gap-2"><button onClick={()=>{setEditingPeriodId(p.id);setPeriodForm({type:p.code?.startsWith('OPEN_DAY')?"OPEN_DAY":"DOT_LE",code:p.code,name:p.name,description:p.description||"",startDate:fmtDate(p.startDate),endDate:fmtDate(p.endDate),campusId:p.campusId||"",assignedUserId:p.assignedUserId||""});setIsPeriodOpen(true)}} className="px-3 py-1.5 text-sm bg-white border text-slate-600 rounded-lg hover:text-indigo-600 flex items-center gap-1.5 shadow-sm"><Pencil className="w-3.5 h-3.5"/>Sửa</button><button onClick={() => togglePeriodStatus(p)} className={`px-3 py-1.5 text-sm rounded-lg flex items-center gap-1.5 shadow-sm border transition-colors ${p.status === 'ACTIVE' ? 'bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100 hover:text-amber-700' : 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100'}`}>
         {p.status === 'ACTIVE' ? <><Lock className="w-3.5 h-3.5"/> Khóa điểm</> : <><Unlock className="w-3.5 h-3.5"/> Mở khóa</>}
     </button>
     <button onClick={()=>deletePeriod(p.id)} className="px-3 py-1.5 text-sm bg-white border text-red-500 rounded-lg hover:bg-red-50 shadow-sm"><Trash2 className="w-3.5 h-3.5"/></button></div>
               </div>
-              <div className="p-5"><div className="flex justify-between items-center mb-4"><h4 className="font-semibold text-slate-700 flex items-center gap-2"><Layers className="w-4 h-4 text-slate-400"/>Đợt KS ({p.batches?.length||0})</h4><button onClick={()=>{setCurrentPeriodIdForBatch(p.id);setEditingBatchId(null);setBatchForm({batchNumber:(p.batches?.length||0)+1,name:"Dot "+((p.batches?.length||0)+1),startDate:"",endDate:""});setIsBatchOpen(true)}} className="text-sm text-indigo-600 font-medium flex items-center gap-1"><Plus className="w-3.5 h-3.5"/>Thêm đợt</button></div>
-                {p.batches?.length>0?(<div className="grid grid-cols-1 md:grid-cols-3 gap-4">{p.batches.map((b:any)=>(<div key={b.id} className="border rounded-xl p-4 hover:border-indigo-300 bg-white shadow-sm relative group"><div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 flex gap-1"><button onClick={()=>{setCurrentPeriodIdForBatch(p.id);setEditingBatchId(b.id);setBatchForm({batchNumber:b.batchNumber,name:b.name,startDate:fmtDate(b.startDate),endDate:fmtDate(b.endDate)});setIsBatchOpen(true)}} className="p-1 text-slate-400 hover:text-indigo-600 bg-white rounded-full shadow-sm border"><Pencil className="w-3 h-3"/></button><button onClick={()=>deleteBatch(b.id)} className="p-1 text-slate-400 hover:text-red-500 bg-white rounded-full shadow-sm border"><Trash2 className="w-3 h-3"/></button></div><div className="font-bold text-indigo-900 mb-2 flex items-center gap-2 pr-12"><span className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs">{b.batchNumber}</span>{b.name}</div><div className="space-y-1.5 mt-3"><div className="flex justify-between text-sm"><span className="text-slate-500">B�:</span><span className="font-medium">{b.startDate?new Date(b.startDate).toLocaleDateString('vi-VN'):'-'}</span></div><div className="flex justify-between text-sm"><span className="text-slate-500">Kết thúc:</span><span className="font-medium">{b.endDate?new Date(b.endDate).toLocaleDateString('vi-VN'):'-'}</span></div></div></div>))}</div>):<div className="text-center py-6 text-sm text-slate-400 bg-slate-50 border border-dashed rounded-xl">Ch�a c� đợt.</div>}
+              <div className="p-5"><div className="flex justify-between items-center mb-4"><h4 className="font-semibold text-slate-700 flex items-center gap-2"><Layers className="w-4 h-4 text-slate-400"/>Đ?t KS ({p.batches?.length||0})</h4><button onClick={()=>{setCurrentPeriodIdForBatch(p.id);setEditingBatchId(null);setBatchForm({batchNumber:(p.batches?.length||0)+1,name:"Đợt "+((p.batches?.length||0)+1),startDate:"",endDate:""});setIsBatchOpen(true)}} className="text-sm text-indigo-600 font-medium flex items-center gap-1"><Plus className="w-3.5 h-3.5"/>Thêm đợt</button></div>
+                {p.batches?.length>0?(<div className="grid grid-cols-1 md:grid-cols-3 gap-4">{p.batches.map((b:any)=>(<div key={b.id} className="border rounded-xl p-4 hover:border-indigo-300 bg-white shadow-sm relative group"><div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 flex gap-1"><button onClick={()=>{setCurrentPeriodIdForBatch(p.id);setEditingBatchId(b.id);setBatchForm({batchNumber:b.batchNumber,name:b.name,startDate:fmtDate(b.startDate),endDate:fmtDate(b.endDate)});setIsBatchOpen(true)}} className="p-1 text-slate-400 hover:text-indigo-600 bg-white rounded-full shadow-sm border"><Pencil className="w-3 h-3"/></button><button onClick={()=>deleteBatch(b.id)} className="p-1 text-slate-400 hover:text-red-500 bg-white rounded-full shadow-sm border"><Trash2 className="w-3 h-3"/></button></div><div className="font-bold text-indigo-900 mb-2 flex items-center gap-2 pr-12"><span className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs">{b.batchNumber}</span>{b.name}</div><div className="space-y-1.5 mt-3"><div className="flex justify-between text-sm"><span className="text-slate-500">Bắt đầu:</span><span className="font-medium">{b.startDate?new Date(b.startDate).toLocaleDateString('vi-VN'):'-'}</span></div><div className="flex justify-between text-sm"><span className="text-slate-500">Kết thúc:</span><span className="font-medium">{b.endDate?new Date(b.endDate).toLocaleDateString('vi-VN'):'-'}</span></div></div></div>))}</div>):<div className="text-center py-6 text-sm text-slate-400 bg-slate-50 border border-dashed rounded-xl">Chưa c? đợt.</div>}
               </div>
             </div>
           )})}</div>
         )}
       </>)}
-      {/* TAB: MON KHAO SAT */}
+      {/* TAB: MON KHÓAO SAT */}
       {activeTab==="subjects"&&(
         <div className="glass-card rounded-2xl overflow-hidden shadow-xl border-slate-200">
-          <div className="flex items-center justify-between px-5 py-4 border-b bg-slate-50/50"><h3 className="font-bold text-slate-800 flex items-center gap-2"><BookOpen className="w-5 h-5 text-indigo-500"/>Môn khảo sát ({subjectsList.length})</h3><button onClick={()=>{setEditingSubjectId(null);setSubjectForm({code:"",name:"",subjectType:"",scoreColumns: 1, commentColumns: 1,status: "ACTIVE"});setIsSubjectOpen(true)}} className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium shadow-sm"><Plus className="w-4 h-4"/>Thêm mới</button></div>
-          {subjectsList.length===0?<div className="text-center py-12 text-slate-400">Ch�a c� môn KS.</div>:(
-            <table className="w-full text-sm"><thead><tr className="bg-slate-50 text-slate-600 text-xs uppercase"><th className="px-5 py-3 text-left w-12">STT</th><th className="px-5 py-3 text-left">Mã</th><th className="px-5 py-3 text-left">T�n môn</th><th className="px-5 py-3 text-left">Loại</th><th className="px-5 py-3 text-center">Cấu hình cột</th><th className="px-5 py-3 text-left">Trống th�i</th><th className="px-5 py-3 text-center w-24">Thao t�c</th></tr></thead>
-              <tbody>{subjectsList.map((s:any,i:number)=>(<tr key={s.id} className="border-t hover:bg-indigo-50/30"><td className="px-5 py-3 text-slate-500">{i+1}</td><td className="px-5 py-3 font-mono font-bold text-indigo-700">{s.code}</td><td className="px-5 py-3 font-medium text-slate-800">{s.name}</td><td className="px-5 py-3">{s.subjectType?<span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">{s.subjectType}</span>:'-'}</td><td className="px-5 py-3 text-center"><button type="button" onClick={()=>{let cn={scores:[],comments:[]}; try{if(s.columnNames) cn=JSON.parse(s.columnNames);}catch(e){}setColumnConfigForm({subjectId:s.id, name:s.name,scoreNames:cn.scores||[], commentNames:cn.comments||[],showScoreInReport:cn.showScoreInReport||[],showCommentInReport:cn.showCommentInReport||[],scoreColumns:s.scoreColumns||1, commentColumns:s.commentColumns||1});setIsColumnConfigOpen(true);}} className="text-xs font-semibold text-indigo-600 bg-indigo-50 border border-indigo-200 px-2.5 py-1.5 rounded-lg hover:bg-indigo-600 hover:text-white transition-all shadow-sm">{s.scoreColumns ?? 1} c?t �i?m / {s.commentColumns ?? 1} c?t NX</button></td><td className="px-5 py-3"><span className={`text-xs px-2 py-0.5 rounded-full font-medium ${s.status==='ACTIVE'?'bg-green-100 text-green-700':'bg-slate-100 text-slate-500'}`}>{s.status==='ACTIVE'?'Ho?t �?ng':'Ng�ng'}</span></td><td className="px-5 py-3 text-center"><div className="flex gap-1 justify-center"><button onClick={()=>{setEditingSubjectId(s.id);setSubjectForm({code:s.code,name:s.name,subjectType:s.subjectType||"",scoreColumns:s.scoreColumns ?? 1, commentColumns:s.commentColumns ?? 1,status:s.status || "ACTIVE"});setIsSubjectOpen(true)}} className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50"><Pencil className="w-3.5 h-3.5"/></button><button onClick={()=>deleteSubject(s.id)} className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50"><Trash2 className="w-3.5 h-3.5"/></button></div></td></tr>))}</tbody></table>
+          <div className="flex items-center justify-between px-5 py-4 border-b bg-slate-50/50"><h3 className="font-bold text-slate-800 flex items-center gap-2"><BookOpen className="w-5 h-5 text-indigo-500"/>Môn khảo sát ({subjectsList.length})</h3><button onClick={()=>{setEditingSubjectId(null);setSubjectForm({code:"",name:"",subjectType:"",scoreColumns: 1, commentColumns: 1,status: "ACTIVE"});setIsSubjectOpen(true)}} className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium shadow-sm"><Plus className="w-4 h-4"/>Thêm m?i</button></div>
+          {subjectsList.length===0?<div className="text-center py-12 text-slate-400">Chưa c? môn KS.</div>:(
+            <table className="w-full text-sm"><thead><tr className="bg-slate-50 text-slate-600 text-xs uppercase"><th className="px-5 py-3 text-left w-12">STT</th><th className="px-5 py-3 text-left">M?</th><th className="px-5 py-3 text-left">T?n môn</th><th className="px-5 py-3 text-left">Loại</th><th className="px-5 py-3 text-center">C?u h?nh c?t</th><th className="px-5 py-3 text-left">Tr?ng th?i</th><th className="px-5 py-3 text-center w-24">Thao t?c</th></tr></thead>
+              <tbody>{subjectsList.map((s:any,i:number)=>(<tr key={s.id} className="border-t hover:bg-indigo-50/30"><td className="px-5 py-3 text-slate-500">{i+1}</td><td className="px-5 py-3 font-mono font-bold text-indigo-700">{s.code}</td><td className="px-5 py-3 font-medium text-slate-800">{s.name}</td><td className="px-5 py-3">{s.subjectType?<span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">{s.subjectType}</span>:'-'}</td><td className="px-5 py-3 text-center"><button type="button" onClick={()=>{let cn={scores:[],comments:[]}; try{if(s.columnNames) cn=JSON.parse(s.columnNames);}catch(e){}setColumnConfigForm({subjectId:s.id, name:s.name,scoreNames:cn.scores||[], commentNames:cn.comments||[],showScoreInReport:cn.showScoreInReport||[],showCommentInReport:cn.showCommentInReport||[],scoreColumns:s.scoreColumns||1, commentColumns:s.commentColumns||1});setIsColumnConfigOpen(true);}} className="text-xs font-semibold text-indigo-600 bg-indigo-50 border border-indigo-200 px-2.5 py-1.5 rounded-lg hover:bg-indigo-600 hover:text-white transition-all shadow-sm">{s.scoreColumns ?? 1} c?t điểm / {s.commentColumns ?? 1} c?t NX</button></td><td className="px-5 py-3"><span className={`text-xs px-2 py-0.5 rounded-full font-medium ${s.status==='ACTIVE'?'bg-green-100 text-green-700':'bg-slate-100 text-slate-500'}`}>{s.status==='ACTIVE'?'Ho?t ??ng':'Ng?ng'}</span></td><td className="px-5 py-3 text-center"><div className="flex gap-1 justify-center"><button onClick={()=>{setEditingSubjectId(s.id);setSubjectForm({code:s.code,name:s.name,subjectType:s.subjectType||"",scoreColumns:s.scoreColumns ?? 1, commentColumns:s.commentColumns ?? 1,status:s.status || "ACTIVE"});setIsSubjectOpen(true)}} className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50"><Pencil className="w-3.5 h-3.5"/></button><button onClick={()=>deleteSubject(s.id)} className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50"><Trash2 className="w-3.5 h-3.5"/></button></div></td></tr>))}</tbody></table>
           )}
         </div>
       )}
@@ -426,32 +426,32 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
       {activeTab==="mapping"&&(
         <div className="space-y-5">
           <div className="bg-white p-5 rounded-xl shadow-sm border">
-            <h3 className="font-bold text-slate-800 mb-3 flex items-center gap-2"><Settings className="w-5 h-5 text-indigo-500"/>Cấu hình M�n KS theo Khối v� Hệ học</h3>
-            <p className="text-sm text-slate-500 mb-4">Ch?n nhi?u Khối v� Hệ học �? g�n M�n KS �?ng lo?t.</p>
+            <h3 className="font-bold text-slate-800 mb-3 flex items-center gap-2"><Settings className="w-5 h-5 text-indigo-500"/>C?u h?nh M?n KS theo Khối v? H? h?c</h3>
+            <p className="text-sm text-slate-500 mb-4">Ch?n nhi?u Khối v? H? h?c ?? g?n M?n KS ??ng lo?t.</p>
             <div className="flex gap-8 items-start flex-wrap">
               <div><span className="block font-semibold text-slate-700 text-sm mb-2">Khối:</span><div className="flex flex-wrap gap-2">
                 <button onClick={()=>setSelGrades(selGrades.length===grades.length?[]:[...grades])} className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors ${selGrades.length===grades.length?'bg-indigo-600 text-white border-indigo-600':'bg-white text-indigo-600 border-indigo-300 hover:bg-indigo-50'}`}>Tất cả</button>
                 {grades.map((g:string)=>(<button key={g} onClick={()=>toggleGrade(g)} className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors ${selGrades.includes(g)?'bg-indigo-100 text-indigo-700 border-indigo-300':'bg-white text-slate-600 border-slate-200 hover:border-indigo-300'}`}>{selGrades.includes(g)&&<Check className="w-3 h-3 inline mr-1"/>}K{g}</button>))}
               </div></div>
-              <div><span className="block font-semibold text-slate-700 text-sm mb-2">Hệ học:</span><div className="flex flex-wrap gap-2">
+              <div><span className="block font-semibold text-slate-700 text-sm mb-2">H? h?c:</span><div className="flex flex-wrap gap-2">
                 <button onClick={()=>setSelEdus(selEdus.length===eduSystems.length?[]:eduSystems.map((e:any)=>e.code))} className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors ${selEdus.length===eduSystems.length?'bg-purple-600 text-white border-purple-600':'bg-white text-purple-600 border-purple-300 hover:bg-purple-50'}`}>Tất cả</button>
                 {eduSystems.map((es:any)=>(<button key={es.code} onClick={()=>toggleEdu(es.code)} className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors ${selEdus.includes(es.code)?'bg-purple-100 text-purple-700 border-purple-300':'bg-white text-slate-600 border-slate-200 hover:border-purple-300'}`}>{selEdus.includes(es.code)&&<Check className="w-3 h-3 inline mr-1"/>}{es.code} - {es.name}</button>))}
               </div></div>
             </div>
-            {selGrades.length>0&&selEdus.length>0&&(<div className="mt-4 p-3 bg-indigo-50 rounded-lg text-sm text-indigo-700"><strong>�Đang chọn:</strong> {selGrades.map(g=>"K"+g).join(", ")} x {selEdus.join(", ")} = <strong>{selGrades.length*selEdus.length}</strong> tổ hợp</div>)}
+            {selGrades.length>0&&selEdus.length>0&&(<div className="mt-4 p-3 bg-indigo-50 rounded-lg text-sm text-indigo-700"><strong>?Đang ch?n:</strong> {selGrades.map(g=>"K"+g).join(", ")} x {selEdus.join(", ")} = <strong>{selGrades.length*selEdus.length}</strong> t? h?p</div>)}
           </div>
           {selGrades.length>0&&selEdus.length>0&&(
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
               <div className="glass-card rounded-2xl overflow-hidden shadow-xl border-slate-200">
-                <div className="px-5 py-4 border-b bg-indigo-50/50"><h4 className="font-bold text-indigo-800 flex items-center gap-2"><BookOpen className="w-4 h-4"/>M�n �? g�n ({uniqueAssigned.length})</h4><p className="text-xs text-indigo-500 mt-1">Bo e xoa khoi tat ca tổ hợp</p></div>
-                {mappingLoading?<div className="p-8 text-center text-slate-400">Đang tải...</div>:uniqueAssigned.length===0?<div className="p-8 text-center text-slate-400">Ch�a c� môn. Thêm t? b�n ph?i.</div>:(
+                <div className="px-5 py-4 border-b bg-indigo-50/50"><h4 className="font-bold text-indigo-800 flex items-center gap-2"><BookOpen className="w-4 h-4"/>M?n ?? g?n ({uniqueAssigned.length})</h4><p className="text-xs text-indigo-500 mt-1">Bo e xoa khoi tat ca t? h?p</p></div>
+                {mappingLoading?<div className="p-8 text-center text-slate-400">Đang t?i...</div>:uniqueAssigned.length===0?<div className="p-8 text-center text-slate-400">Chưa c? môn. Thêm t? b?n ph?i.</div>:(
                   <div className="p-4 space-y-2">{uniqueAssigned.map((m:any,i:number)=>(<div key={m.subjectId} className="flex items-center justify-between bg-white border rounded-lg px-4 py-3 hover:border-indigo-300 group"><div className="flex items-center gap-3"><span className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold">{i+1}</span><div><span className="font-bold text-slate-800">{m.subject?.name}</span><span className="ml-2 text-xs font-mono text-slate-400">{m.subject?.code}</span>{m.subject?.subjectType&&<span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">{m.subject.subjectType}</span>}</div></div><button onClick={()=>removeMapping(m.subjectId)} className="p-1.5 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 rounded-lg hover:bg-red-50"><Trash2 className="w-4 h-4"/></button></div>))}</div>
                 )}
               </div>
               <div className="glass-card rounded-2xl overflow-hidden shadow-xl border-slate-200">
-                <div className="px-5 py-4 border-b bg-emerald-50/50"><h4 className="font-bold text-emerald-800 flex items-center gap-2"><Plus className="w-4 h-4"/>M�n ch�a g�n ({availableSubjects.length})</h4><p className="text-xs text-emerald-500 mt-1">G�n v�o {selGrades.length*selEdus.length} tổ hợp</p></div>
-                {availableSubjects.length===0?<div className="p-8 text-center text-slate-400">�? g�n h?t.</div>:(
-                  <div className="p-4 space-y-2">{availableSubjects.map((s:any)=>(<button key={s.id} onClick={()=>addMapping(s.id)} className="w-full flex items-center justify-between bg-white border border-dashed rounded-lg px-4 py-3 hover:border-emerald-400 hover:bg-emerald-50 text-left"><div className="flex items-center gap-3"><span className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center"><Plus className="w-3.5 h-3.5"/></span><div><span className="font-bold text-slate-800">{s.name}</span><span className="ml-2 text-xs font-mono text-slate-400">{s.code}</span>{s.subjectType&&<span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">{s.subjectType}</span>}</div></div><span className="text-xs text-emerald-600 font-medium">+ G�n</span></button>))}</div>
+                <div className="px-5 py-4 border-b bg-emerald-50/50"><h4 className="font-bold text-emerald-800 flex items-center gap-2"><Plus className="w-4 h-4"/>M?n ch?a g?n ({availableSubjects.length})</h4><p className="text-xs text-emerald-500 mt-1">G?n v?o {selGrades.length*selEdus.length} t? h?p</p></div>
+                {availableSubjects.length===0?<div className="p-8 text-center text-slate-400">?? g?n h?t.</div>:(
+                  <div className="p-4 space-y-2">{availableSubjects.map((s:any)=>(<button key={s.id} onClick={()=>addMapping(s.id)} className="w-full flex items-center justify-between bg-white border border-dashed rounded-lg px-4 py-3 hover:border-emerald-400 hover:bg-emerald-50 text-left"><div className="flex items-center gap-3"><span className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center"><Plus className="w-3.5 h-3.5"/></span><div><span className="font-bold text-slate-800">{s.name}</span><span className="ml-2 text-xs font-mono text-slate-400">{s.code}</span>{s.subjectType&&<span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">{s.subjectType}</span>}</div></div><span className="text-xs text-emerald-600 font-medium">+ G?n</span></button>))}</div>
                 )}
               </div>
             </div>
@@ -459,7 +459,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
         </div>
       )}
 
-      {/* TAB: DS HS KHAO SAT */}
+      {/* TAB: DS HS KHÓAO SAT */}
       {activeTab==="students"&&(
         <div className="space-y-5">
           <div className="glass-card p-6 rounded-2xl hover-lift border-slate-200 flex flex-wrap items-center gap-4">
@@ -467,7 +467,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
               <Users className="w-5 h-5 text-indigo-500"/>
               <span className="font-semibold text-slate-800 text-sm">Kỳ KS:</span>
               <select className="border rounded-lg px-3 py-1.5 outline-none text-sm font-medium bg-slate-50 min-w-[180px]" value={studentPeriodId} onChange={e=>{setStudentPeriodId(e.target.value);setStudentBatchId("")}}>
-                <option value="">-- Chọn Kỳ --</option>
+                <option value="">-- Ch?n Kỳ --</option>
                 {periods.map((p)=><option key={p.id} value={p.id}>{p.name} ({p.code})</option>)}
               </select>
             </div>
@@ -483,15 +483,15 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
             <div className="flex-1"/>
             <div className="relative">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"/>
-              <input placeholder="Tìm Mã HS, Họ tên..." value={studentSearch} onChange={e=>setStudentSearch(e.target.value)} className="border rounded-lg pl-9 pr-3 py-1.5 text-sm w-56 outline-none focus:border-indigo-400"/>
+              <input placeholder="T?m M? HS, H? tên..." value={studentSearch} onChange={e=>setStudentSearch(e.target.value)} className="border rounded-lg pl-9 pr-3 py-1.5 text-sm w-56 outline-none focus:border-indigo-400"/>
             </div>
             {studentPeriodId && (<>
               <input type="file" ref={fileInputRef} accept=".xlsx,.xls,.csv" onChange={handleExcelImport} className="hidden" id="excel-import-hs"/>
-              <button onClick={downloadTemplate} className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-300 text-slate-600 rounded-lg hover:bg-slate-50 text-sm font-medium" title="Tải mẫu Excel">
-                <Download className="w-4 h-4"/>Mẫu Excel
+              <button onClick={downloadTemplate} className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-300 text-slate-600 rounded-lg hover:bg-slate-50 text-sm font-medium" title="T?i m?u Excel">
+                <Download className="w-4 h-4"/>M?u Excel
               </button>
               <button onClick={()=>fileInputRef.current?.click()} disabled={importing} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium shadow-sm disabled:opacity-50">
-                {importing ? <><FileSpreadsheet className="w-4 h-4 animate-pulse"/>�Đang import...</> : <><Upload className="w-4 h-4"/>Import Excel</>}
+                {importing ? <><FileSpreadsheet className="w-4 h-4 animate-pulse"/>?Đang import...</> : <><Upload className="w-4 h-4"/>Import Excel</>}
               </button>
               <button onClick={handleOpenNewStudent} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium shadow-sm">
                 <Plus className="w-4 h-4"/>Thêm HS
@@ -501,18 +501,18 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
           {!studentPeriodId ? (
             <div className="text-center py-16 bg-white rounded-xl shadow-sm border text-slate-400">
               <Users className="w-12 h-12 mx-auto mb-3 text-slate-300"/>
-              <p className="font-medium">Ch?n Kỳ khảo sát �? xem danh �ch h?c inh.</p>
+              <p className="font-medium">Ch?n Kỳ khảo sát ?? xem danh ?ch học sinh.</p>
             </div>
-          ) :tudentsLoading ? (
-            <div className="text-center py-12 text-slate-500">Đang tải...</div>
+          ) :studentsLoading ? (
+            <div className="text-center py-12 text-slate-500">Đang t?i...</div>
           ) : (
             <div className="glass-card rounded-2xl overflow-hidden shadow-xl border-slate-200">
               <div className="flex items-center justify-between px-5 py-4 border-b bg-slate-50/50">
-                <h3 className="font-bold text-slate-800 flex items-center gap-2"><Users className="w-5 h-5 text-indigo-500"/>DS Học inh KS <span className="text-sm font-normal text-slate-400">({filteredStudents.length})</span></h3>
-                {selectedStudentIds.length>0 && (<button onClick={deleteSelectedStudents} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 text-xs font-medium shadow-sm"><Trash2 className="w-3.5 h-3.5"/>X�a {selectedStudentIds.length} �? ch?n</button>)}
+                <h3 className="font-bold text-slate-800 flex items-center gap-2"><Users className="w-5 h-5 text-indigo-500"/>DS H?c inh KS <span className="text-sm font-normal text-slate-400">({filteredStudents.length})</span></h3>
+                {selectedStudentIds.length>0 && (<button onClick={deleteSelectedStudents} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 text-xs font-medium shadow-sm"><Trash2 className="w-3.5 h-3.5"/>X?a {selectedStudentIds.length} ?đã chọn</button>)}
               </div>
               {filteredStudents.length===0 ? (
-                <div className="text-center py-12 text-slate-400">Ch�a c� h?c inh n�o.</div>
+                <div className="text-center py-12 text-slate-400">Chưa c? học sinh n?o.</div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
@@ -520,10 +520,10 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                       <tr className="bg-slate-50 border-b border-slate-200">
                         <th className="px-4 py-3 w-10"><input type="checkbox" checked={selectedStudentIds.length===filteredStudents.length && filteredStudents.length>0} onChange={toggleAllStudents} className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600"/></th>
                         <th className="px-4 py-3 text-left w-10 text-xs uppercase tracking-wider text-slate-500 font-bold">STT</th>
-                        <th className="px-4 py-3 text-left text-xs uppercase tracking-wider text-slate-500 font-bold">Học inh</th>
-                        <th className="px-4 py-3 text-left text-xs uppercase tracking-wider text-slate-500 font-bold">Cấu hình Kh?o �t</th>
-                        <th className="px-4 py-3 text-left text-xs uppercase tracking-wider text-slate-500 font-bold">Th�nh t�ch</th>
-                        <th className="px-4 py-3 text-center w-24 text-xs uppercase tracking-wider text-slate-500 font-bold">Thao t�c</th>
+                        <th className="px-4 py-3 text-left text-xs uppercase tracking-wider text-slate-500 font-bold">H?c inh</th>
+                        <th className="px-4 py-3 text-left text-xs uppercase tracking-wider text-slate-500 font-bold">C?u h?nh Kh?o ?t</th>
+                        <th className="px-4 py-3 text-left text-xs uppercase tracking-wider text-slate-500 font-bold">Th?nh t?ch</th>
+                        <th className="px-4 py-3 text-center w-24 text-xs uppercase tracking-wider text-slate-500 font-bold">Thao t?c</th>
                       </tr>
                     </thead>
                     <tbody>{filteredStudents.map((s,i)=>(
@@ -538,7 +538,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                             </div>
                             <div className="flex items-center gap-3 text-xs">
                               <span className="font-mono font-semibold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100">{s.studentCode}</span>
-                              <span className="text-slate-500 flex items-center gap-1"><CalendarDays className="w-3.5 h-3.5"/> {s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString('vi-VN') : 'Trống'}</span>
+                              <span className="text-slate-500 flex items-center gap-1"><CalendarDays className="w-3.5 h-3.5"/> {s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString('vi-VN') : 'Tr?ng'}</span>
                             </div>
                           </div>
                         </td>
@@ -547,16 +547,16 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                             {s.admissionCriteria && <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-violet-50 text-violet-700 font-medium border border-violet-100" title="Diện KS"><span className="w-1.5 h-1.5 rounded-full bg-violet-400"></span>{s.admissionCriteria}</span>}
                             {s.surveyFormType && <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-cyan-50 text-cyan-700 font-medium border border-cyan-100" title="Hình thức"><span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>{s.surveyFormType}</span>}
                             {s.targetType && <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-amber-50 text-amber-700 font-medium border border-amber-100" title="Loại TS"><span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>{s.targetType}</span>}
-                            {s.hocKy && <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-emerald-50 text-emerald-700 font-medium border border-emerald-100" title="N�m h?c tuyển sinh"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>{s.hocKy}</span>}
-                            {(!s.admissionCriteria && !s.surveyFormType && !s.targetType && !s.hocKy) && <span className="text-xs text-slate-400 italic">Ch�a thi?t l?p</span>}
+                            {s.hocKy && <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-emerald-50 text-emerald-700 font-medium border border-emerald-100" title="N?m h?c tuy?n sinh"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>{s.hocKy}</span>}
+                            {(!s.admissionCriteria && !s.surveyFormType && !s.targetType && !s.hocKy) && <span className="text-xs text-slate-400 italic">Chưa thi?t l?p</span>}
                           </div>
                         </td>
                         <td className="px-4 py-4 align-top">
                           <div className="flex flex-col gap-1.5">
-                            {s.kqgdTieuHoc && <div className="text-xs flex items-center gap-2"><span className="text-slate-500 w-16">CT Bộ:</span><span className="font-medium text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded truncate max-w-[120px] block border border-rose-100">{s.kqgdTieuHoc}</span></div>}
+                            {s.kqgdTieuHoc && <div className="text-xs flex items-center gap-2"><span className="text-slate-500 w-16">CT Bắt đầu:</span><span className="font-medium text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded truncate max-w-[120px] block border border-rose-100">{s.kqgdTieuHoc}</span></div>}
                             {s.kqHocTap && <div className="text-xs flex items-center gap-2"><span className="text-slate-500 w-16">Quốc tế:</span><span className="font-medium text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded truncate max-w-[120px] block border border-blue-100">{s.kqHocTap}</span></div>}
-                            {s.kqRenLuyen && <div className="text-xs flex items-center gap-2"><span className="text-slate-500 w-16">R�n luy?n:</span><span className="font-medium text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded truncate max-w-[120px] block border border-teal-100">{s.kqRenLuyen}</span></div>}
-                            {(!s.kqgdTieuHoc && !s.kqHocTap && !s.kqRenLuyen) && <span className="text-xs text-slate-400 italic">Trống</span>}
+                            {s.kqRenLuyen && <div className="text-xs flex items-center gap-2"><span className="text-slate-500 w-16">R?n luy?n:</span><span className="font-medium text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded truncate max-w-[120px] block border border-teal-100">{s.kqRenLuyen}</span></div>}
+                            {(!s.kqgdTieuHoc && !s.kqHocTap && !s.kqRenLuyen) && <span className="text-xs text-slate-400 italic">Tr?ng</span>}
                           </div>
                         </td>
                         <td className="px-4 py-4 align-top text-center">
@@ -585,8 +585,8 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                   <UserCheck className="w-6 h-6 text-indigo-600"/>
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-slate-800 text-lg">Phân công Giáo viên Kh?o �t</h3>
-                  <p className="text-sm font-medium text-slate-500 mt-0.5">Giao nhiệm vụ phụ trách môn thi cho gi�o vi�n t? T? chuy�n môn</p>
+                  <h3 className="font-extrabold text-slate-800 text-lg">Phân công Giáo viên Kh?o ?t</h3>
+                  <p className="text-sm font-medium text-slate-500 mt-0.5">Giao nhi?m v? ph? trách môn thi cho gi?o vi?n t? T? chuy?n môn</p>
                 </div>
               </div>
             </div>
@@ -597,22 +597,22 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                 <div className="absolute top-0 left-0 w-1.5 h-full bg-indigo-500 rounded-l-xl"></div>
                 <div className="flex items-center gap-3 mb-2">
                    <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-sm font-bold shadow-sm">1</div>
-                   <h4 className="font-bold text-slate-700 text-base tracking-tight">K? Kh?o �t & Ng�?i phụ trách</h4>
+                   <h4 className="font-bold text-slate-700 text-base tracking-tight">Kỳ Kh?o ?t & Ng??i ph? trách</h4>
                 </div>
                 
                 <div className="space-y-5">
                   <div>
-                    <label className="block text-xs uppercase tracking-wider font-bold text-slate-500 mb-2">K? Kh?o �t <span className="text-red-500">*</span></label>
+                    <label className="block text-xs uppercase tracking-wider font-bold text-slate-500 mb-2">Kỳ Kh?o ?t <span className="text-red-500">*</span></label>
                     <select className="w-full border-slate-300 rounded-xl px-4 py-3 outline-none text-sm font-medium focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 shadow-sm transition-shadow bg-white" value={assignPeriodId} onChange={e=>{setAssignPeriodId(e.target.value);setAssignBatchId("")}}>
-                      <option value="">-- Chọn Kỳ --</option>
+                      <option value="">-- Ch?n Kỳ --</option>
                       {periods.map(p=><option key={p.id} value={p.id}>{p.name} ({p.code})</option>)}
                     </select>
                   </div>
                   {assignPeriodId && periods.find(p=>p.id===assignPeriodId)?.batches?.length > 0 && (
                     <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                      <label className="block text-xs uppercase tracking-wider font-bold text-slate-500 mb-2">Đợt KS</label>
+                      <label className="block text-xs uppercase tracking-wider font-bold text-slate-500 mb-2">Đ?t KS</label>
                       <select className="w-full border-slate-300 rounded-xl px-4 py-3 outline-none text-sm font-medium focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 shadow-sm transition-shadow bg-white" value={assignBatchId} onChange={e=>setAssignBatchId(e.target.value)}>
-                        <option value="">Tất cả c�c đợt</option>
+                        <option value="">Tất cả c?c đợt</option>
                         {periods.find(p=>p.id===assignPeriodId)?.batches.map((b:any)=><option key={b.id} value={b.id}>{b.name}</option>)}
                       </select>
                     </div>
@@ -621,16 +621,16 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                   <div className="border-t border-slate-200 my-2"></div>
 
                   <div>
-                    <label className="block text-xs uppercase tracking-wider font-bold text-slate-500 mb-2">Lọc theo Tổ CM <span className="text-slate-400 font-normal normal-case tracking-normal text-[11px]">(Kh�ng b?t bu?c)</span></label>
+                    <label className="block text-xs uppercase tracking-wider font-bold text-slate-500 mb-2">L?c theo T? CM <span className="text-slate-400 font-normal normal-case tracking-normal text-[11px]">(Không b?t bu?c)</span></label>
                     <select className="w-full border-slate-300 rounded-xl px-4 py-3 outline-none text-sm font-medium focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 shadow-sm transition-shadow bg-white" value={assignDepartmentId} onChange={e => {setAssignDepartmentId(e.target.value);setAssignTeacherId("")}}>
-                      <option value="">Tất cả T? chuy�n môn</option>
+                      <option value="">Tất cả T? chuy?n môn</option>
                       {departments?.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs uppercase tracking-wider font-bold text-slate-500 mb-2">Giáo viên Ph? tr�ch <span className="text-red-500">*</span></label>
+                    <label className="block text-xs uppercase tracking-wider font-bold text-slate-500 mb-2">Giáo viên Ph? tr?ch <span className="text-red-500">*</span></label>
                     <select className="w-full border-indigo-200 rounded-xl px-4 py-3 outline-none text-sm font-bold text-indigo-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 shadow-sm transition-shadow bg-indigo-50/50" value={assignTeacherId} onChange={e=>setAssignTeacherId(e.target.value)}>
-                      <option value="">-- Chọn Giáo viên --</option>
+                      <option value="">-- Ch?n Giáo viên --</option>
                       {teachers?.filter((t: any) => !assignDepartmentId || t.departmentId === assignDepartmentId).map((t:any)=><option key={t.userId} value={t.userId}>{t.teacherName}</option>)}
                     </select>
                   </div>
@@ -649,9 +649,9 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                   {/* Subj */}
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <span className="block text-xs uppercase tracking-wider font-bold text-slate-500">M�n Kh?o �t <span className="text-red-500">*</span></span>
+                      <span className="block text-xs uppercase tracking-wider font-bold text-slate-500">M?n Kh?o ?t <span className="text-red-500">*</span></span>
                       <button onClick={()=>setAssignSelSubjects(assignSelSubjects.length===subjectsList.length?[]:subjectsList.map((s:any)=>s.id))} className="text-xs text-indigo-700 hover:text-indigo-900 font-bold bg-indigo-100 hover:bg-indigo-200 px-3 py-1.5 rounded-lg transition-colors shadow-sm">
-                        {assignSelSubjects.length===subjectsList.length ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
+                        {assignSelSubjects.length===subjectsList.length ? 'Bộ ch?n t?t c?' : 'Ch?n t?t c?'}
                       </button>
                     </div>
                     <div className="flex flex-wrap gap-2.5 text-sm max-h-48 overflow-y-auto min-h-[40px] p-1">
@@ -664,7 +664,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                     <div>
                       <div className="flex items-center justify-between mb-3">
                         <span className="block text-xs uppercase tracking-wider font-bold text-slate-500">Khối <span className="text-red-500">*</span></span>
-                        <button onClick={()=>setAssignSelGrades(assignSelGrades.length===grades.length?[]:[...grades])} className="text-xs text-teal-700 hover:text-teal-900 font-bold bg-teal-100 hover:bg-teal-200 px-3 py-1.5 rounded-lg transition-colors shadow-sm">Chọn tất cả</button>
+                        <button onClick={()=>setAssignSelGrades(assignSelGrades.length===grades.length?[]:[...grades])} className="text-xs text-teal-700 hover:text-teal-900 font-bold bg-teal-100 hover:bg-teal-200 px-3 py-1.5 rounded-lg transition-colors shadow-sm">Ch?n t?t c?</button>
                       </div>
                       <div className="flex flex-wrap gap-2 text-sm">
                         {grades.map((g:string)=><button key={g} onClick={()=>setAssignSelGrades(p=>p.includes(g)?p.filter(x=>x!==g):[...p,g])} className={"px-4 py-2 rounded-xl border font-bold transition-all duration-200 " + (assignSelGrades.includes(g)?'bg-teal-500 text-white border-teal-500 shadow-md shadow-teal-200 ring-2 ring-teal-200 ring-offset-1':'bg-white text-slate-600 hover:border-teal-400 hover:bg-teal-50 border-slate-300 shadow-sm')}>K{g}</button>)}
@@ -674,8 +674,8 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                     {/* Edu */}
                     <div>
                       <div className="flex items-center justify-between mb-3">
-                        <span className="block text-xs uppercase tracking-wider font-bold text-slate-500">Hệ học <span className="text-red-500">*</span></span>
-                        <button onClick={()=>setAssignSelEdus(assignSelEdus.length===eduSystems.length?[]:eduSystems.map((e:any)=>e.code))} className="text-xs text-amber-700 hover:text-amber-900 font-bold bg-amber-100 hover:bg-amber-200 px-3 py-1.5 rounded-lg transition-colors shadow-sm">Chọn tất cả</button>
+                        <span className="block text-xs uppercase tracking-wider font-bold text-slate-500">H? h?c <span className="text-red-500">*</span></span>
+                        <button onClick={()=>setAssignSelEdus(assignSelEdus.length===eduSystems.length?[]:eduSystems.map((e:any)=>e.code))} className="text-xs text-amber-700 hover:text-amber-900 font-bold bg-amber-100 hover:bg-amber-200 px-3 py-1.5 rounded-lg transition-colors shadow-sm">Ch?n t?t c?</button>
                       </div>
                       <div className="flex flex-wrap gap-2 text-sm">
                         {eduSystems.map((es:any)=><button key={es.code} onClick={()=>setAssignSelEdus(p=>p.includes(es.code)?p.filter(x=>x!==es.code):[...p,es.code])} className={"px-4 py-2 rounded-xl border font-bold transition-all duration-200 " + (assignSelEdus.includes(es.code)?'bg-amber-500 text-white border-amber-500 shadow-md shadow-amber-200 ring-2 ring-amber-200 ring-offset-1':'bg-white text-slate-600 hover:border-amber-400 hover:bg-amber-50 border-slate-300 shadow-sm')}>{es.code}</button>)}
@@ -685,7 +685,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                 </div>
 
                 <div className="pt-2 mt-auto">
-                  <button onClick={handleAssignSubmit} disabled={!assignPeriodId || !assignTeacherId || assignSelSubjects.length===0 || assignSelGrades.length===0 || assignSelEdus.length===0} className="w-full py-4 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-extrabold text-base rounded-xl shadow-lg shadow-indigo-200 hover:from-indigo-700 hover:to-indigo-600 transition-all flex items-center justify-center gap-2 hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0 disabled:from-slate-400 disabled:to-slate-500 disabled:shadow-none"><Check className="w-5 h-5"/> {(!assignPeriodId || !assignTeacherId || assignSelSubjects.length===0 || assignSelGrades.length===0 || assignSelEdus.length===0) ? "Vui l?ng ch?n �? th�ng tin" : "X�c nh?n & L�u Phân công"}</button>
+                  <button onClick={handleAssignSubmit} disabled={!assignPeriodId || !assignTeacherId || assignSelSubjects.length===0 || assignSelGrades.length===0 || assignSelEdus.length===0} className="w-full py-4 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-extrabold text-base rounded-xl shadow-lg shadow-indigo-200 hover:from-indigo-700 hover:to-indigo-600 transition-all flex items-center justify-center gap-2 hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0 disabled:from-slate-400 disabled:to-slate-500 disabled:shadow-none"><Check className="w-5 h-5"/> {(!assignPeriodId || !assignTeacherId || assignSelSubjects.length===0 || assignSelGrades.length===0 || assignSelEdus.length===0) ? "Vui l?ng ch?n ?? thông tin" : "X?c nh?n & L?u Phân công"}</button>
                 </div>
               </div>
             </div>
@@ -695,12 +695,12 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
           {assignPeriodId && (
             <div className="glass-card rounded-2xl overflow-hidden shadow-xl border-slate-200">
                <div className="flex items-center justify-between p-4 border-b bg-slate-50/50">
-                  <h4 className="font-bold text-slate-800">Danh �ch �? Phân công ({assignments.length})</h4>
+                  <h4 className="font-bold text-slate-800">Danh ?ch ?? Phân công ({assignments.length})</h4>
                   {selectedAssignmentIds.length > 0 && (
-                    <button onClick={deleteSelectedAssignments} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 text-xs font-medium shadow-sm"><Trash2 className="w-3.5 h-3.5"/>X�a {selectedAssignmentIds.length} �? ch?n</button>
+                    <button onClick={deleteSelectedAssignments} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 text-xs font-medium shadow-sm"><Trash2 className="w-3.5 h-3.5"/>X?a {selectedAssignmentIds.length} ?đã chọn</button>
                   )}
                </div>
-               {assignmentsLoading ? <div className="p-8 text-center text-slate-400">Đang tải...</div> : assignments.length === 0 ? <div className="p-8 text-center text-slate-400">Ch�a c� ph�n c�ng n�o.</div> : (
+               {assignmentsLoading ? <div className="p-8 text-center text-slate-400">Đang t?i...</div> : assignments.length === 0 ? <div className="p-8 text-center text-slate-400">Chưa c? ph?n c?ng n?o.</div> : (
                   <div className="overflow-x-auto max-h-[500px]">
                     <table className="w-full text-sm">
                       <thead className="bg-slate-50 text-slate-600 text-xs uppercase ticky top-0 shadow-sm z-10"><tr className="border-b">
@@ -708,32 +708,32 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                         <th className="py-3 px-4 text-left w-10">STT</th>
                         <th className="py-3 px-4 text-left">Giáo viên</th>
                         <th className="py-3 px-4 text-left">đợt</th>
-                        <th className="py-3 px-4 text-left">C�c M�n KS</th>
+                        <th className="py-3 px-4 text-left">C?c M?n KS</th>
                         <th className="py-3 px-4 text-left">Khối</th>
-                        <th className="py-3 px-4 text-left">Hệ học</th>
-                        <th className="py-3 px-4 text-left">Y�u c?u M? form</th>
-                        <th className="py-3 px-4 text-center">Thao t�c</th>
+                        <th className="py-3 px-4 text-left">H? h?c</th>
+                        <th className="py-3 px-4 text-left">Y?u c?u M? form</th>
+                        <th className="py-3 px-4 text-center">Thao t?c</th>
                       </tr></thead>
                       <tbody>
                       {(()=>{
-                        consCột điểmap = new Map();
+                        const map = new Map();
                         assignments.forEach(a => {
                           const key = a.userId + "_" + (a.batchId || "ALL");
                           if (!map.has(key)) {
-                            map.set(key, { ...a, pendingRequests: a.unlockRequestStatus === 'PENDING' ? [{ id: a.id, reason: a.unlockReason || 'Kh�ng c� l? do' }] : [], subjectNames: new Set([a.subject?.name]),subjectsSet: new Set([a.subjectId]), gradesSet: new Set([a.grade]), edusSet: new Set([a.educationSystem]), ids: [a.id] });
+                            map.set(key, { ...a, pendingRequests: a.unlockRequestStatus === 'PENDING' ? [{ id: a.id, reason: a.unlockReason || 'Không c? l? do' }] : [], subjectNames: new Set([a.subject?.name]),subjectsSet: new Set([a.subjectId]), gradesSet: new Set([a.grade]), edusSet: new Set([a.educationSystem]), ids: [a.id] });
                           } else {
                             const entry = map.get(key);
                             if(a.subject?.name) entry.subjectNames.add(a.subject.name);
                             if(a.subjectId) entry.subjectsSet.add(a.subjectId);
                             entry.gradesSet.add(a.grade);
                             entry.edusSet.add(a.educationSystem);
-                            if (a.unlockRequestStatus === 'PENDING') { entry.pendingRequests = entry.pendingRequests || []; entry.pendingRequests.push({ id: a.id, reason: a.unlockReason || 'Kh�ng c� l? do' }); }
+                            if (a.unlockRequestStatus === 'PENDING') { entry.pendingRequests = entry.pendingRequests || []; entry.pendingRequests.push({ id: a.id, reason: a.unlockReason || 'Không c? l? do' }); }
                             entry.ids.push(a.id);
                           }
                         });
                         return Array.from(map.values()).map((g:any, i) => {
                           const allSelected = g.ids.every(id =>selectedAssignmentIds.includes(id));
-                          const omeSelected = g.ids.some(id =>selectedAssignmentIds.includes(id));
+                          const someSelected = g.ids.some(id =>selectedAssignmentIds.includes(id));
                           
                           const toggleGroup = () => {
                              if (allSelected) {
@@ -744,7 +744,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                           };
 
                           const deleteGroup = async () => {
-                             if (!confirm("X�a to�n b? " + g.ids.length + " ph�n c�ng c?a gi�o vi�n n�y?")) return;
+                             if (!confirm("X?a to?n b? " + g.ids.length + " ph?n c?ng c?a gi?o vi?n n?y?")) return;
                              await fetch("/api/input-assessment-assignments?ids=" + g.ids.join(","), { method: "DELETE" });
                             setSelectedAssignmentIds(p => p.filter(id => !g.ids.includes(id)));
                              fetchAssignments();
@@ -763,7 +763,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
 
                           return (
                             <tr key={g.id} className={"border-b transition-colors " + (allSelected?'bg-indigo-50/50 hover:bg-indigo-50/80':'hover:bg-slate-50')}>
-                              <td className="py-3 px-4"><input type="checkbox" checked={allSelected} ref={el => { if(el) el.indeterminate =omeSelected && !allSelected; }} onChange={toggleGroup} className="w-4 h-4 rounded"/></td>
+                              <td className="py-3 px-4"><input type="checkbox" checked={allSelected} ref={el => { if(el) el.indeterminate =someSelected && !allSelected; }} onChange={toggleGroup} className="w-4 h-4 rounded"/></td>
                               <td className="py-3 px-4 text-slate-500 font-medium">{i+1}</td>
                               <td className="py-3 px-4 font-medium text-slate-800 flex items-center gap-2 pt-4"><User className="w-4 h-4 text-slate-400" />{g.user?.fullName || "N/A"}</td>
                               <td className="py-3 px-4 text-slate-600">{g.batch?.name || "Tất cả"}</td>
@@ -784,7 +784,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                               </td>
                               <td className="py-3 px-4 text-center"><div className="flex gap-1 justify-center">
                                 <button onClick={editGroup} className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50" title="Sửa"><Pencil className="w-4 h-4"/></button>
-                                <button onClick={deleteGroup} className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50" title="X�a"><Trash2 className="w-4 h-4"/></button>
+                                <button onClick={deleteGroup} className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50" title="X?a"><Trash2 className="w-4 h-4"/></button>
                               </div></td>
                             </tr>
                           );
@@ -807,8 +807,8 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                 <BarChart className="w-5 h-5 text-indigo-600"/>
               </div>
               <div>
-                <h3 className="font-bold text-slate-800 text-base">Tổng hợp Kết quả Kh?o �t</h3>
-                <p className="text-[11px] font-medium text-slate-500">Xem �i?m v� xu?t b�o c�o</p>
+                <h3 className="font-bold text-slate-800 text-base">Tổng hợp Kỳt qu? Kh?o ?t</h3>
+                <p className="text-[11px] font-medium text-slate-500">Xem điểm v? xu?t b?o c?o</p>
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2 lg:ml-auto w-full lg:w-auto mt-2 lg:mt-0">
@@ -826,7 +826,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                        setViewResultsData({ loading: false, students: [], assignments: [] });
                     }
                 }}>
-                  <option value="">-- Chọn Kỳ Kh?o �t --</option>
+                  <option value="">-- Ch?n Kỳ Kh?o ?t --</option>
                   {periods.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
                 
@@ -835,7 +835,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                     onClick={() => {
                         const wb = XLSX.utils.book_new();
                         const wsData = [
-                            ["STT", "H? T�n", "M? HS", "Ng�y inh", "Khối", "Hệ học"], // Header row
+                            ["STT", "H? T?n", "M? HS", "Ng?y inh", "Khối", "H? h?c"], // Header row
                         ];
                         viewResultsData.students.forEach((s: any, i: number) => {
                             wsData.push([
@@ -847,7 +847,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                         XLSX.writeFile(wb, "KetQua_KhaoSat.xlsx");
                     }}
                     className="flex items-center gap-2 px-3 py-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium shadow-sm disabled:opacity-50">
-                  <Download className="w-4 h-4"/> Xuất Excel
+                  <Download className="w-4 h-4"/> Xu?t Excel
                 </button>
             </div>
           </div>
@@ -857,24 +857,24 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
               <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
                 <BarChart className="w-8 h-8 text-slate-300"/>
               </div>
-              <p className="font-semibold text-slate-500 text-lg">Vui l?ng ch?n Kỳ khảo sát �? xem k?t qu?.</p>
-              <p className="text-sm text-slate-400 mt-2">D? li?u ? ��?c t?ng h?p t? t?t c? c�c đợt trong k?.</p>
+              <p className="font-semibold text-slate-500 text-lg">Vui l?ng ch?n Kỳ khảo sát ?? xem k?t qu?.</p>
+              <p className="text-sm text-slate-400 mt-2">D? li?u ? đãc t?ng h?p t? t?t c? c?c đợt trong k?.</p>
             </div>
           ) : viewResultsData.loading ? (
             <div className="text-center py-20 bg-white rounded-2xl shadow-sm border flex flex-col items-center justify-center">
                 <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
-                <span className="text-slate-500 font-medium">��Đang tổng hợp dữ liệu...</span>
+                <span className="text-slate-500 font-medium">??Đang t?ng h?p dữ liệu...</span>
             </div>
           ) : viewResultsData.students?.length === 0 ? (
-            <div className="text-center py-20 bg-white rounded-2xl shadow-sm border text-slate-500 font-medium">Kỳ khảo sát n�y ch�a c� h?c inh n�o.</div>
+            <div className="text-center py-20 bg-white rounded-2xl shadow-sm border text-slate-500 font-medium">Kỳ khảo sát n?y ch?a c? học sinh n?o.</div>
           ) : (
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                 <div className="px-5 py-4 border-b bg-indigo-50/30 flex justify-between items-center">
-                    <h4 className="font-bold text-slate-800">Kết quả ph�n t�ch <span className="text-slate-400 font-normal text-sm">({viewResultsData.students.length} h?c inh)</span></h4>
+                    <h4 className="font-bold text-slate-800">Kỳt qu? ph?n t?ch <span className="text-slate-400 font-normal text-sm">({viewResultsData.students.length} học sinh)</span></h4>
                     <div className="text-xs font-medium text-slate-500 flex gap-4">
                         <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> đợt</span>
-                        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-500"></span> Kh�ng đợt</span>
-                        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-slate-300"></span> Ch? nh?p/duy?t</span>
+                        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-500"></span> Không đợt</span>
+                        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-slate-300"></span> Ch? nh?p/duyệt</span>
                     </div>
                 </div>
                 <div className="overflow-x-auto">
@@ -882,9 +882,9 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                         <thead className="bg-slate-50 text-slate-600 font-bold uppercase text-[10px] tracking-wider border-b border-slate-200 ticky top-0 z-10">
                             <tr>
                                 <th className="px-4 py-3 text-center w-12 border-r">STT</th>
-                                <th className="px-5 py-3 text-left w-64 border-r">Th�ng tin H?c inh</th>
-                                <th className="px-5 py-3 text-left border-r min-w-[500px]">Chi tiết �i?m & Nh?n x�t c�c môn</th>
-                                <th className="px-5 py-3 text-center w-40">Kết quả Duyệt</th>
+                                <th className="px-5 py-3 text-left w-64 border-r">Th?ng tin H?c inh</th>
+                                <th className="px-5 py-3 text-left border-r min-w-[500px]">Chi ti?t điểm & Nh?n x?t c?c môn</th>
+                                <th className="px-5 py-3 text-center w-40">Kỳt qu? Duy?t</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -899,7 +899,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                                             </div>
                                             <div className="flex items-center gap-2 text-xs">
                                                 <span className="font-mono font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100">{s.studentCode}</span>
-                                                <span className="text-slate-400 flex items-center gap-1"><CalendarDays className="w-3 h-3"/> {s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString('vi-VN') : 'Trống'}</span>
+                                                <span className="text-slate-400 flex items-center gap-1"><CalendarDays className="w-3 h-3"/> {s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString('vi-VN') : 'Tr?ng'}</span>
                                             </div>
                                             <div className="flex flex-wrap gap-1.5 mt-1">
                                                 <span className="text-[10px] font-medium px-2 py-0.5 bg-slate-100 text-slate-600 rounded">Diện KS: {s.admissionCriteria || '-'}</span>
@@ -934,16 +934,16 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
                                                                 <div className="px-3 py-1.5 bg-white/40 text-[11px] font-bold uppercase tracking-wider border-b border-current/10 flex justify-between items-center gap-3">
                                                                     <span>{sc.subject?.name}</span>
                                                                     <div className="flex flex-col items-end text-right">
-                                                                        {assignedTeacherName && <span className="text-[9px] font-black text-indigo-700 tracking-normal normal-case hrink-0" title={"GV Ph? tr�ch: " + assignedTeacherName}>PC: {assignedTeacherName}</span>}
-                                                                        {sc.teacherName && <span className="text-[9px] font-medium opacity-60 tracking-normal normal-case italic hrink-0" title={"Ng�?i nh?p: " +c.teacherName}>nh?p: {sc.teacherName}</span>}
+                                                                        {assignedTeacherName && <span className="text-[9px] font-black text-indigo-700 tracking-normal normal-case hrink-0" title={"GV Ph? tr?ch: " + assignedTeacherName}>PC: {assignedTeacherName}</span>}
+                                                                        {sc.teacherName && <span className="text-[9px] font-medium opacity-60 tracking-normal normal-case italic hrink-0" title={"Ng??i nh?p: " +c.teacherName}>nh?p: {sc.teacherName}</span>}
                                                                     </div>
                                                                 </div>
                                                                 <div className="p-1.5 flex flex-wrap items-stretch">
                                                                     {parsedScores.length > 0 && (
                                                                         <div className="flex gap-1 pr-2 border-r border-current/10 mr-2 items-center">
                                                                             {parsedScores.map((score: any, s_i: number) => (
-                                                                                <div key={s_i} className="flex flex-col items-center justify-center bg-white/60 rounded px-2 min-w-[36px] py-1" title={colNames.scores[s_i] || `�i?m ${s_i+1}`}>
-                                                                                    <span className="text-[9px] font-semibold opacity-70 mb-0.5">{colNames.scores[s_i] ? colNames.scores[s_i].slice(0,5)+'..' : `�${s_i+1}`}</span>
+                                                                                <div key={s_i} className="flex flex-col items-center justify-center bg-white/60 rounded px-2 min-w-[36px] py-1" title={colNames.scores[s_i] || `điểm ${s_i+1}`}>
+                                                                                    <span className="text-[9px] font-semibold opacity-70 mb-0.5">{colNames.scores[s_i] ? colNames.scores[s_i].slice(0,5)+'..' : `?${s_i+1}`}</span>
                                                                                     <span className="font-extrabold text-sm">{score || '-'}</span>
                                                                                 </div>
                                                                             ))}
@@ -956,7 +956,7 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
                                                                                 <span>{com}</span>
                                                                             </div>
                                                                         ))}
-                                                                        {parsedComments.every((c: any) => !c) && <span className="text-xs opacity-50 italic">Ch�a c� nh?n x�t.</span>}
+                                                                        {parsedComments.every((c: any) => !c) && <span className="text-xs opacity-50 italic">Chưa c? nh?n x?t.</span>}
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -964,11 +964,11 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
                                                 })}
                                             </div>
                                         ) : (
-                                            <span className="text-xs text-slate-400 italic">Ch�a c� d? li?u �i?m môn n�o.</span>
+                                            <span className="text-xs text-slate-400 italic">Chưa c? dữ liệu điểm môn n?o.</span>
                                         )}
                                     </td>
                                     <td className="p-4 align-middle text-center">
-                                        {/* Dropdown to approve/changestatus right here */}
+                                        {/* Dropdown to approve/chưangestatus right here */}
                                         <div className="flex flex-col gap-2 relative">
                                             <select 
                                                 value={s.admissionResult || ""}
@@ -986,7 +986,7 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
                                                            tudents: prev.students.map((st:any) =>t.id ===s.id ? { ...st, admissionResult: val } :t)
                                                         }));
                                                     } else {
-                                                        alert("L?i khi l�u k?t qu? ph� duy?t!");
+                                                        alert("Lỗi khi l?u k?t qu? ph? duyệt!");
                                                     }
                                                 }}
                                                 className={`w-full font-bold text-xs uppercase tracking-wide rounded-lg px-2 py-2.5 outline-none border transition-colors shadow-sm cursor-pointer ${
@@ -997,11 +997,11 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
                                                     'bg-slate-50 text-slate-500 border-slate-300'
                                                 }`}
                                             >
-                                                <option value="">-- Chờ duyệt --</option>
+                                                <option value="">-- Ch? duyệt --</option>
                                                 <option value="DAT">đợt</option>
-                                                <option value="CAM_KET">Cam kết</option>
-                                                <option value="KHONG_DAT">Kh�ng đợt</option>
-                                                <option value="KIEM_TRA_LAI">Kiểm tra lại</option>
+                                                <option value="CAM_KET">Cam k?t</option>
+                                                <option value="KHONG_DAT">Không đợt</option>
+                                                <option value="KIEM_TRA_LAI">Kiểm tra l?i</option>
                                             </select>
                                         </div>
                                     </td>
@@ -1020,32 +1020,32 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
       {isConfigOpen&&(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
           <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
-            <div className="flex justify-between items-center p-4 border-b bg-slate-50/80"><h3 className="font-bold text-slate-800 text-lg">{editingConfigId?'Sửa Danh mục':'Thêm Danh mục mới'}</h3><button onClick={()=>setIsConfigOpen(false)} className="text-slate-400 hover:text-slate-600 bg-white hover:bg-slate-100 rounded-full p-1 border shadow-sm"><X className="w-5 h-5"/></button></div>
+            <div className="flex justify-between items-center p-4 border-b bg-slate-50/80"><h3 className="font-bold text-slate-800 text-lg">{editingConfigId?'Sửa Danh mục':'Thêm Danh mục m?i'}</h3><button onClick={()=>setIsConfigOpen(false)} className="text-slate-400 hover:text-slate-600 bg-white hover:bg-slate-100 rounded-full p-1 border shadow-sm"><X className="w-5 h-5"/></button></div>
             <div className="p-5 space-y-4">
-              <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Loại danh mục</label><select value={configForm.categoryType} onChange={e=>setConfigForm({...configForm,categoryType:e.target.value})} disabled={!!editingConfigId} className="w-full border rounded-xl px-3 py-2.5 outline-none bg-slate-50 text-sm font-medium">{CAT_TYPES.map(c=><option key={c.key} value={c.key}>{c.label}</option>)}<option value="HOC_KY">N�m h?c tuyển sinh</option></select></div>
-              {configForm.categoryType==="HOC_KY"&&(<div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">N�m h?c g?n k�m <span className="text-red-500">*</span></label><select value={configForm.academicYearId} onChange={e=>setConfigForm({...configForm,academicYearId:e.target.value})} className="w-full border rounded-xl px-3 py-2.5 outline-none text-sm font-medium"><option value="">-- Ch?n N�m h?c --</option>{academicYears.map((y:any)=><option key={y.id} value={y.id}>{y.name}</option>)}</select></div>)}
-              <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Mã (Code) <span className="text-red-500">*</span></label><input autoFocus={!editingConfigId} value={configForm.code} onChange={e=>setConfigForm({...configForm,code:e.target.value})} className="w-full border-slate-300 rounded-xl px-3 py-2.5 font-mono outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm" placeholder="VD: MIEN_PHI, AP, HK1_2024"/></div>
-              <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">T�n hi?n th? <span className="text-red-500">*</span></label><input autoFocus={!!editingConfigId} value={configForm.name} onChange={e=>setConfigForm({...configForm,name:e.target.value})} className="w-full border-slate-300 rounded-xl px-3 py-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm font-medium" placeholder="VD: Mi?n ph� KS, Advanced Placement..."/></div>
+              <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Loại danh mục</label><select value={configForm.categoryType} onChange={e=>setConfigForm({...configForm,categoryType:e.target.value})} disabled={!!editingConfigId} className="w-full border rounded-xl px-3 py-2.5 outline-none bg-slate-50 text-sm font-medium">{CAT_TYPES.map(c=><option key={c.key} value={c.key}>{c.label}</option>)}<option value="HOC_KY">N?m h?c tuy?n sinh</option></select></div>
+              {configForm.categoryType==="HOC_KY"&&(<div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">N?m h?c g?n k?m <span className="text-red-500">*</span></label><select value={configForm.academicYearId} onChange={e=>setConfigForm({...configForm,academicYearId:e.target.value})} className="w-full border rounded-xl px-3 py-2.5 outline-none text-sm font-medium"><option value="">-- Ch?n N?m h?c --</option>{academicYears.map((y:any)=><option key={y.id} value={y.id}>{y.name}</option>)}</select></div>)}
+              <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">M? (Code) <span className="text-red-500">*</span></label><input autoFocus={!editingConfigId} value={configForm.code} onChange={e=>setConfigForm({...configForm,code:e.target.value})} className="w-full border-slate-300 rounded-xl px-3 py-2.5 font-mono outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm" placeholder="VD: MIEN_PHI, AP, HK1_2024"/></div>
+              <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">T?n hi?n th? <span className="text-red-500">*</span></label><input autoFocus={!!editingConfigId} value={configForm.name} onChange={e=>setConfigForm({...configForm,name:e.target.value})} className="w-full border-slate-300 rounded-xl px-3 py-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm font-medium" placeholder="VD: Mi?n ph? KS, Advanced Placement..."/></div>
             </div>
-            <div className="flex justify-end gap-2 p-4 border-t bg-slate-50/50"><button onClick={()=>setIsConfigOpen(false)} className="px-5 py-2.5 text-slate-600 bg-white hover:bg-slate-100 rounded-xl text-sm font-semibold border shadow-sm transition-colors">Hủy</button><button onClick={saveConfig} className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 text-sm font-bold shadow-sm transition-colors">{editingConfigId?'L�u thay �?i':'Thêm mới'}</button></div>
+            <div className="flex justify-end gap-2 p-4 border-t bg-slate-50/50"><button onClick={()=>setIsConfigOpen(false)} className="px-5 py-2.5 text-slate-600 bg-white hover:bg-slate-100 rounded-xl text-sm font-semibold border shadow-sm transition-colors">H?y</button><button onClick={saveConfig} className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 text-sm font-bold shadow-sm transition-colors">{editingConfigId?'L?u thay ??i':'Thêm m?i'}</button></div>
           </div>
         </div>
       )}
 
-      {/* MODAL MON KHAO SAT */}
+      {/* MODAL MON KHÓAO SAT */}
       {isSubjectOpen&&(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
           <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
-            <div className="flex justify-between items-center p-4 border-b bg-slate-50/80"><h3 className="font-bold text-slate-800 text-lg">{editingSubjectId?'Sửa M�n Kh?o �t':'Thêm M�n Kh?o �Cột điểm?i'}</h3><button onClick={()=>setIsSubjectOpen(false)} className="text-slate-400 hover:text-slate-600 bg-white hover:bg-slate-100 rounded-full p-1 border shadow-sm"><X className="w-5 h-5"/></button></div>
+            <div className="flex justify-between items-center p-4 border-b bg-slate-50/80"><h3 className="font-bold text-slate-800 text-lg">{editingSubjectId?'Sửa M?n Kh?o ?t':'Thêm M?n Kh?o ?C?t điểm?i'}</h3><button onClick={()=>setIsSubjectOpen(false)} className="text-slate-400 hover:text-slate-600 bg-white hover:bg-slate-100 rounded-full p-1 border shadow-sm"><X className="w-5 h-5"/></button></div>
             <div className="p-5 space-y-4">
-              <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">M? M�n <span className="text-red-500">*</span></label><input autoFocus={!editingSubjectId} value={subjectForm.code} onChange={e=>setSubjectForm({...subjectForm,code:e.target.value})} disabled={!!editingSubjectId} className="w-full border-slate-300 rounded-xl px-3 py-2.5 font-mono outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm" placeholder="VD: TOAN_EQ"/></div>
-              <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">T�n M�n <span className="text-red-500">*</span></label><input autoFocus={!!editingSubjectId} value={subjectForm.name} onChange={e=>setSubjectForm({...subjectForm,name:e.target.value})} className="w-full border-slate-300 rounded-xl px-3 py-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm font-medium" placeholder="VD: To�n (EQ)"/></div>
-              <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Thuộc loại / Hệ</label><input value={subjectForm.subjectType} onChange={e=>setSubjectForm({...subjectForm,subjectType:e.target.value})} className="w-full border-slate-300 rounded-xl px-3 py-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm" placeholder="VD: Chuy�n, Th�?ng (T�y ch?n)"/></div>
+              <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">M? M?n <span className="text-red-500">*</span></label><input autoFocus={!editingSubjectId} value={subjectForm.code} onChange={e=>setSubjectForm({...subjectForm,code:e.target.value})} disabled={!!editingSubjectId} className="w-full border-slate-300 rounded-xl px-3 py-2.5 font-mono outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm" placeholder="VD: TOAN_EQ"/></div>
+              <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">T?n M?n <span className="text-red-500">*</span></label><input autoFocus={!!editingSubjectId} value={subjectForm.name} onChange={e=>setSubjectForm({...subjectForm,name:e.target.value})} className="w-full border-slate-300 rounded-xl px-3 py-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm font-medium" placeholder="VD: To?n (EQ)"/></div>
+              <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Thu?c lo?i / H?</label><input value={subjectForm.subjectType} onChange={e=>setSubjectForm({...subjectForm,subjectType:e.target.value})} className="w-full border-slate-300 rounded-xl px-3 py-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm" placeholder="VD: Chuy?n, Th??ng (T?y ch?n)"/></div>
               <div className="flex gap-4">
-                  <div className="flex-1"><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Trống th�i</label><select value={subjectForm.status} onChange={e=>setSubjectForm({...subjectForm,status:e.target.value})} className="w-full border rounded-xl px-3 py-2.5 outline-none bg-slate-50 text-sm font-medium"><option value="ACTIVE">Ho?t �?ng</option><option value="INACTIVE">Ng�ng ho?t �?ng</option></select></div>
+                  <div className="flex-1"><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Tr?ng th?i</label><select value={subjectForm.status} onChange={e=>setSubjectForm({...subjectForm,status:e.target.value})} className="w-full border rounded-xl px-3 py-2.5 outline-none bg-slate-50 text-sm font-medium"><option value="ACTIVE">Ho?t ??ng</option><option value="INACTIVE">Ng?ng ho?t ??ng</option></select></div>
               </div>
             </div>
-            <div className="flex justify-end gap-2 p-4 border-t bg-slate-50/50"><button onClick={()=>setIsSubjectOpen(false)} className="px-5 py-2.5 text-slate-600 bg-white hover:bg-slate-100 rounded-xl text-sm font-semibold border shadow-sm transition-colors">Hủy</button><button onClick={saveSubject} className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 text-sm font-bold shadow-sm transition-colors">{editingSubjectId?'L�u thay �?i':'Thêm mới'}</button></div>
+            <div className="flex justify-end gap-2 p-4 border-t bg-slate-50/50"><button onClick={()=>setIsSubjectOpen(false)} className="px-5 py-2.5 text-slate-600 bg-white hover:bg-slate-100 rounded-xl text-sm font-semibold border shadow-sm transition-colors">H?y</button><button onClick={saveSubject} className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 text-sm font-bold shadow-sm transition-colors">{editingSubjectId?'L?u thay ??i':'Thêm m?i'}</button></div>
           </div>
         </div>
       )}
@@ -1054,14 +1054,14 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
       {isStudentOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm overflow-y-auto">
             <div className="bg-white rounded-2xl w-full max-w-3xl shadow-2xl overflow-hidden my-auto">
-            <div className="flex justify-between items-center p-4 border-b bg-slate-50/80"><h3 className="font-bold text-slate-800 text-lg flex items-center gap-2"><User className="w-5 h-5 text-indigo-500"/>{editingStudentId ? 'Sửa th�ng tin H?c inh' : 'Thêm H?c inh Kh?o �t'}</h3><button onClick={() =>setIsStudentOpen(false)} className="text-slate-400 hover:text-slate-600 bg-white hover:bg-slate-100 rounded-full p-1 border shadow-sm"><X className="w-5 h-5"/></button></div>
+            <div className="flex justify-between items-center p-4 border-b bg-slate-50/80"><h3 className="font-bold text-slate-800 text-lg flex items-center gap-2"><User className="w-5 h-5 text-indigo-500"/>{editingStudentId ? 'Sửa thông tin H?c inh' : 'Thêm H?c inh Kh?o ?t'}</h3><button onClick={() =>setIsStudentOpen(false)} className="text-slate-400 hover:text-slate-600 bg-white hover:bg-slate-100 rounded-full p-1 border shadow-sm"><X className="w-5 h-5"/></button></div>
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[70vh] overflow-y-auto">
                 <div className="space-y-4">
-                    <h4 className="font-bold text-indigo-900 border-b pb-2 text-sm uppercase">Th�ng tin c� b?n</h4>
-                    <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Mã Học inh <span className="text-red-500">*</span></label><input value={studentForm.studentCode} onChange={e =>setStudentForm({...studentForm, studentCode: e.target.value})} disabled={!!editingStudentId} className="w-full border rounded-xl px-3 py-2 font-mono text-sm uppercase outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 disabled:bg-slate-50" placeholder="Mã HS..."/></div>
-                    <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">H? v� T�n <span className="text-red-500">*</span></label><input value={studentForm.fullName} onChange={e =>setStudentForm({...studentForm, fullName: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm font-medium outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:font-normal" placeholder="T�n HS..."/></div>
+                    <h4 className="font-bold text-indigo-900 border-b pb-2 text-sm uppercase">Th?ng tin c? b?n</h4>
+                    <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">M? H?c inh <span className="text-red-500">*</span></label><input value={studentForm.studentCode} onChange={e =>setStudentForm({...studentForm, studentCode: e.target.value})} disabled={!!editingStudentId} className="w-full border rounded-xl px-3 py-2 font-mono text-sm uppercase outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 disabled:bg-slate-50" placeholder="M? HS..."/></div>
+                    <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">H? v? T?n <span className="text-red-500">*</span></label><input value={studentForm.fullName} onChange={e =>setStudentForm({...studentForm, fullName: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm font-medium outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:font-normal" placeholder="T?n HS..."/></div>
                     <div className="grid grid-cols-2 gap-4">
-                        <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Ng�y inh</label><input type="date" value={studentForm.dateOfBirth} onChange={e =>setStudentForm({...studentForm, dateOfBirth: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"/></div>
+                        <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Ng?y inh</label><input type="date" value={studentForm.dateOfBirth} onChange={e =>setStudentForm({...studentForm, dateOfBirth: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"/></div>
                         <div>
                             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Khối <span className="text-red-500">*</span></label>
                             <select value={studentForm.grade} onChange={e =>setStudentForm({...studentForm, grade: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm font-bold outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-white">
@@ -1072,10 +1072,10 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
                     </div>
                 </div>
                 <div className="space-y-4">
-                    <h4 className="font-bold text-indigo-900 border-b pb-2 text-sm uppercase">Thi?t l?p đợt & Kh?o �t</h4>
-                    <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Đợt KS</label><select value={studentForm.batchId} onChange={e =>setStudentForm({...studentForm, batchId: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"><option value="">Tất cả đợt trong k?</option>{currentPeriodBatches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}</select></div>
+                    <h4 className="font-bold text-indigo-900 border-b pb-2 text-sm uppercase">Thi?t l?p đợt & Kh?o ?t</h4>
+                    <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Đ?t KS</label><select value={studentForm.batchId} onChange={e =>setStudentForm({...studentForm, batchId: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"><option value="">Tất cả đợt trong k?</option>{currentPeriodBatches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}</select></div>
                     <div className="grid grid-cols-2 gap-4">
-                        <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">N�m h?c Tuy?n inh</label><select value={studentForm.hocKy} onChange={e=>setStudentForm({...studentForm, hocKy: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm outline-none"><option value="">-- Ch?n --</option>{configsList.filter(c=>c.categoryType==='HOC_KY').map(c => <option key={c.id} value={c.code}>{c.name}</option>)}</select></div>
+                        <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">N?m h?c Tuy?n inh</label><select value={studentForm.hocKy} onChange={e=>setStudentForm({...studentForm, hocKy: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm outline-none"><option value="">-- Ch?n --</option>{configsList.filter(c=>c.categoryType==='HOC_KY').map(c => <option key={c.id} value={c.code}>{c.name}</option>)}</select></div>
                         <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Loại Tuy?n inh</label><select value={studentForm.targetType} onChange={e=>setStudentForm({...studentForm, targetType: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm outline-none"><option value="">-- Ch?n --</option>{configsList.filter(c=>c.categoryType==='LOAI_TUYEN_SINH').map(c => <option key={c.id} value={c.code}>{c.name}</option>)}</select></div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
@@ -1086,18 +1086,18 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
                 
                 {studentForm.grade && parseInt(studentForm.grade) && (
                     <div className="col-span-1 md:col-span-2 space-y-4 mt-2 border-t pt-4">
-                        <h4 className="font-bold text-teal-800 flex items-center gap-2 text-sm uppercase"><Award className="w-4 h-4"/> Th�nh t�ch & H? �</h4>
+                        <h4 className="font-bold text-teal-800 flex items-center gap-2 text-sm uppercase"><Award className="w-4 h-4"/> Th?nh t?ch & H? ?</h4>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">{parseInt(studentForm.grade) <= 5 ? 'H? � T�m t?t theo CT B?' : 'Kết quả Học tập theo CT Bộ'}</label><select value={studentForm.kqgdTieuHoc} onChange={e=>setStudentForm({...studentForm, kqgdTieuHoc: e.target.value})} className="w-full border border-rose-200 bg-rose-50 rounded-xl px-3 py-2 text-sm font-bold outline-none focus:border-rose-400 focus:ring-1 focus:ring-rose-400"><option value="">-- Chon --</option>{configsList.filter(c => parseInt(studentForm.grade) <= 5 ? c.categoryType === 'KQGD_TIEU_HOC' : c.categoryType === 'KQ_HOC_TAP').map(c => (<option key={c.id} value={c.code}>{c.name}</option>))}</select></div>
-                            <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Kết quả HSTT theo CT Quốc tế</label><select value={studentForm.kqHocTap} onChange={e=>setStudentForm({...studentForm, kqHocTap: e.target.value})} className="w-full border border-blue-200 bg-blue-50 rounded-xl px-3 py-2 text-sm font-bold outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"><option value="">-- Chon --</option>{configsList.filter(c => c.categoryType === 'HS_CT_QUOC_TE').map(c => (<option key={c.id} value={c.code}>{c.name}</option>))}</select></div>
-                            <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Kết quả R�n luy?n theo CT B?</label><select value={studentForm.kqRenLuyen} onChange={e=>setStudentForm({...studentForm, kqRenLuyen: e.target.value})} className="w-full border border-teal-200 bg-teal-50 rounded-xl px-3 py-2 text-sm font-bold outline-none focus:border-teal-400 focus:ring-1 focus:ring-teal-400"><option value="">-- Chon --</option>{configsList.filter(c => c.categoryType === 'KQ_REN_LUYEN').map(c => (<option key={c.id} value={c.code}>{c.name}</option>))}</select></div>
+                            <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">{parseInt(studentForm.grade) <= 5 ? 'H? ? T?m t?t theo CT Bộ' : 'Kỳt qu? H?c t?p theo CT Bộ'}</label><select value={studentForm.kqgdTieuHoc} onChange={e=>setStudentForm({...studentForm, kqgdTieuHoc: e.target.value})} className="w-full border border-rose-200 bg-rose-50 rounded-xl px-3 py-2 text-sm font-bold outline-none focus:border-rose-400 focus:ring-1 focus:ring-rose-400"><option value="">-- Chon --</option>{configsList.filter(c => parseInt(studentForm.grade) <= 5 ? c.categoryType === 'KQGD_TIEU_HOC' : c.categoryType === 'KQ_HOC_TAP').map(c => (<option key={c.id} value={c.code}>{c.name}</option>))}</select></div>
+                            <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Kỳt qu? HSTT theo CT Quốc tế</label><select value={studentForm.kqHocTap} onChange={e=>setStudentForm({...studentForm, kqHocTap: e.target.value})} className="w-full border border-blue-200 bg-blue-50 rounded-xl px-3 py-2 text-sm font-bold outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"><option value="">-- Chon --</option>{configsList.filter(c => c.categoryType === 'HS_CT_QUOC_TE').map(c => (<option key={c.id} value={c.code}>{c.name}</option>))}</select></div>
+                            <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Kỳt qu? R?n luy?n theo CT Bộ</label><select value={studentForm.kqRenLuyen} onChange={e=>setStudentForm({...studentForm, kqRenLuyen: e.target.value})} className="w-full border border-teal-200 bg-teal-50 rounded-xl px-3 py-2 text-sm font-bold outline-none focus:border-teal-400 focus:ring-1 focus:ring-teal-400"><option value="">-- Chon --</option>{configsList.filter(c => c.categoryType === 'KQ_REN_LUYEN').map(c => (<option key={c.id} value={c.code}>{c.name}</option>))}</select></div>
                         </div>
                     </div>
                 )}
             </div>
             <div className="flex justify-end gap-2 p-5 border-t bg-slate-50/80 mt-2">
-                <button onClick={() =>setIsStudentOpen(false)} className="px-5 py-2.5 text-slate-600 bg-white hover:bg-slate-100 rounded-xl text-sm font-semibold border shadow-sm transition-colors">Hủy</button>
-                <button onClick={handleStudentSubmit} disabled={!studentForm.studentCode || !studentForm.fullName || !studentForm.grade} className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 text-sm font-bold shadow-sm transition-colors flex items-center gap-2 disabled:opacity-50"><Check className="w-4 h-4"/> {editingStudentId ? 'Cập nhật Học inh' : 'L�u H?c inh m?i'}</button>
+                <button onClick={() =>setIsStudentOpen(false)} className="px-5 py-2.5 text-slate-600 bg-white hover:bg-slate-100 rounded-xl text-sm font-semibold border shadow-sm transition-colors">H?y</button>
+                <button onClick={handleStudentSubmit} disabled={!studentForm.studentCode || !studentForm.fullName || !studentForm.grade} className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 text-sm font-bold shadow-sm transition-colors flex items-center gap-2 disabled:opacity-50"><Check className="w-4 h-4"/> {editingStudentId ? 'C?p nh?t H?c inh' : 'L?u H?c inh m?i'}</button>
             </div>
             </div>
         </div>
@@ -1109,8 +1109,8 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
           <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <div className="flex justify-between items-center p-4 border-b bg-indigo-50/50">
               <div>
-                <h3 className="font-bold text-indigo-900 text-lg flex items-center gap-2"><Settings className="w-5 h-5"/>Cấu hình Cột �i?m & Nh?n x�t</h3>
-                <p className="text-xs text-indigo-600 mt-1 font-medium">M�n: {columnConfigForm.name}</p>
+                <h3 className="font-bold text-indigo-900 text-lg flex items-center gap-2"><Settings className="w-5 h-5"/>C?u h?nh C?t điểm & Nh?n x?t</h3>
+                <p className="text-xs text-indigo-600 mt-1 font-medium">M?n: {columnConfigForm.name}</p>
               </div>
               <button onClick={()=>setIsColumnConfigOpen(false)} className="text-slate-400 hover:text-slate-600 bg-white hover:bg-slate-100 rounded-full p-1.5 border shadow-sm"><X className="w-4 h-4"/></button>
             </div>
@@ -1119,7 +1119,7 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
                 {/* SO COT DIEM */}
                 <div className="bg-slate-50 border rounded-xl p-4">
                     <div className="flex justify-between items-center mb-3 pb-2 border-b">
-                        <h4 className="font-bold text-slate-700 text-sm">S? c?t �I?M S?:</h4>
+                        <h4 className="font-bold text-slate-700 text-sm">S? c?t ?I?M S?:</h4>
                         <input type="number" min="0" max="10" className="w-16 border rounded bg-white px-2 py-1 text-center font-bold text-indigo-700 outline-none" value={columnConfigForm.scoreColumns} onChange={e => {
                             const num = parseInt(e.target.value) || 0;
                            setColumnConfigForm(p => ({
@@ -1133,18 +1133,18 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
                     <div className="space-y-2">
                         {Array.from({length: columnConfigForm.scoreColumns || 0}).map((_, i) => (
                             <div key={i} className="flex gap-2 items-center">
-                                <span className="text-xs font-semibold text-slate-500 w-12">�i?m {i+1}</span>
+                                <span className="text-xs font-semibold text-slate-500 w-12">điểm {i+1}</span>
                                 <input value={columnConfigForm.scoreNames[i] || ""} onChange={e=>{
                                     const arr = [...columnConfigForm.scoreNames];
                                     arr[i] = e.target.value;
                                    setColumnConfigForm(p=>({...p,scoreNames: arr}));
-                                }} className="flex-1 border rounded px-2 py-1.5 text-sm outline-none focus:border-indigo-400" placeholder={`T�n c?t �i?m ${i+1}. VD: B�i 1...`} />
+                                }} className="flex-1 border rounded px-2 py-1.5 text-sm outline-none focus:border-indigo-400" placeholder={`T?n c?t điểm ${i+1}. VD: Bội 1...`} />
                                 <label className="flex items-center gap-1.5 text-xs text-slate-600 bg-white border px-2 py-1.5 rounded cursor-pointer hover:bg-slate-100">
                                     <input type="checkbox" checked={columnConfigForm.showScoreInReport[i] !== false} onChange={e => {
                                         const arr = [...columnConfigForm.showScoreInReport];
                                         arr[i] = e.target.checked;
                                        setColumnConfigForm(p=>({...p,showScoreInReport: arr}));
-                                    }} className="w-3 h-3 rounded" /> Hiện BC
+                                    }} className="w-3 h-3 rounded" /> Hi?n BC
                                 </label>
                             </div>
                         ))}
@@ -1154,7 +1154,7 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
                 {/* SO COT NHAN XET */}
                 <div className="bg-slate-50 border rounded-xl p-4">
                     <div className="flex justify-between items-center mb-3 pb-2 border-b">
-                        <h4 className="font-bold text-slate-700 text-sm">S? c?t NH?N X�T:</h4>
+                        <h4 className="font-bold text-slate-700 text-sm">S? c?t NH?N X?T:</h4>
                         <input type="number" min="0" max="10" className="w-16 border rounded bg-white px-2 py-1 text-center font-bold text-teal-700 outline-none" value={columnConfigForm.commentColumns} onChange={e => {
                             const num = parseInt(e.target.value) || 0;
                            setColumnConfigForm(p => ({
@@ -1173,13 +1173,13 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
                                     const arr = [...columnConfigForm.commentNames];
                                     arr[i] = e.target.value;
                                    setColumnConfigForm(p=>({...p, commentNames: arr}));
-                                }} className="flex-1 border rounded px-2 py-1.5 text-sm outline-none focus:border-teal-400" placeholder={`T�n c?t nh?n x�t ${i+1}...`} />
+                                }} className="flex-1 border rounded px-2 py-1.5 text-sm outline-none focus:border-teal-400" placeholder={`T?n c?t nh?n x?t ${i+1}...`} />
                                 <label className="flex items-center gap-1.5 text-xs text-slate-600 bg-white border px-2 py-1.5 rounded cursor-pointer hover:bg-slate-100">
                                     <input type="checkbox" checked={columnConfigForm.showCommentInReport[i] !== false} onChange={e => {
                                         const arr = [...columnConfigForm.showCommentInReport];
                                         arr[i] = e.target.checked;
                                        setColumnConfigForm(p=>({...p,showCommentInReport: arr}));
-                                    }} className="w-3 h-3 rounded text-teal-600 focus:ring-teal-500" /> Hiện BC
+                                    }} className="w-3 h-3 rounded text-teal-600 focus:ring-teal-500" /> Hi?n BC
                                 </label>
                             </div>
                         ))}
@@ -1188,8 +1188,8 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
             </div>
 
             <div className="flex justify-end gap-2 p-4 border-t bg-slate-50">
-                <button onClick={()=>setIsColumnConfigOpen(false)} className="px-4 py-2 text-slate-600 bg-white hover:bg-slate-100 rounded-lg text-sm font-semibold border shadow-sm transition-colors">Hủy</button>
-                <button onClick={saveColumnConfig} className="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-bold shadow-sm transition-colors flex items-center gap-2"><Check className="w-4 h-4"/>L�u c?u h?nh c?t</button>
+                <button onClick={()=>setIsColumnConfigOpen(false)} className="px-4 py-2 text-slate-600 bg-white hover:bg-slate-100 rounded-lg text-sm font-semibold border shadow-sm transition-colors">H?y</button>
+                <button onClick={saveColumnConfig} className="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-bold shadow-sm transition-colors flex items-center gap-2"><Check className="w-4 h-4"/>L?u c?u h?nh c?t</button>
             </div>
           </div>
         </div>
@@ -1198,3 +1198,4 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
     </div>
   );
 }
+
