@@ -1,7 +1,7 @@
 import { auth } from '@/lib/auth'
 import { NextResponse } from 'next/server'
 
-export default auth((req) => {
+export const proxy = auth((req) => {
   const isLoggedIn = !!req.auth
   const isOnApiAuthRoute = req.nextUrl.pathname.startsWith('/api/auth')
   const isOnLogin = req.nextUrl.pathname.startsWith('/login')
