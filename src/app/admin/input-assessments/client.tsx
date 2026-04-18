@@ -100,7 +100,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
     assignSelSubjects.forEach(s => {
       assignSelGrades.forEach(g => {
         assignSelEdus.forEach(e => {
-          payload.push({ teacherId: assignTeacherId, subjectId:Hồ sơ, grade: g, educationSystem: e });
+          payload.push({ teacherId: assignTeacherId, subjectId: s, grade: g, educationSystem: e });
         });
       });
     });
