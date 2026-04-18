@@ -1,7 +1,7 @@
 ﻿"use client"
 import Link from 'next/link'
 import { signOut } from "next-auth/react"
-import { LogOut, ClipboardList, ListChecks, LayoutDashboard, Layout, Users, UserCog, Calendar, GraduationCap, BookOpen, UserPlus, FileSpreadsheet, PieChart, Layers } from "lucide-react"
+import { LogOut, ClipboardList, ListChecks, LayoutDashboard, Layout, Users, UserCog, Calendar, GraduationCap, BookOpen, UserPlus, FileSpreadsheet, PieChart, Layers, Building2 } from "lucide-react"
 
 interface SidebarProps {
   role: 'ADMIN' | 'TEACHER' | 'PARENT'
