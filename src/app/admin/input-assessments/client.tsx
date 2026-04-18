@@ -8,9 +8,9 @@ const CAT_TYPES = [
   { key: "DIEN_KS", label: "Diện khảo sát", color: "bg-violet-100 text-violet-700 border-violet-200" },
   { key: "HINH_THUC_KS", label: "Hình thức KS", color: "bg-cyan-100 text-cyan-700 border-cyan-200" },
   { key: "LOAI_TUYEN_SINH", label: "Loại tuyển sinh", color: "bg-amber-100 text-amber-700 border-amber-200" },
-  { key: "KQGD_TIEU_HOC", label: "HồHồ sơơ CT Bộ (Khối 1-5)", color: "bg-rose-100 text-rose-700 border-rose-200" },
-  { key: "KQ_HOC_TAP", label: "HồHồ sơơ CT Bộ (Khối 6-12)", color: "bg-orange-100 text-orange-700 border-orange-200" },
-  { key: "HS_CT_QUOC_TE", label: "HồHồ sơơ CT Quốc tế", color: "bg-blue-100 text-blue-700 border-blue-200" },
+  { key: "KQGD_TIEU_HOC", label: "Hồ sơ CT Bộ (Khối 1-5)", color: "bg-rose-100 text-rose-700 border-rose-200" },
+  { key: "KQ_HOC_TAP", label: "Hồ sơ CT Bộ (Khối 6-12)", color: "bg-orange-100 text-orange-700 border-orange-200" },
+  { key: "HS_CT_QUOC_TE", label: "Hồ sơ CT Quốc tế", color: "bg-blue-100 text-blue-700 border-blue-200" },
   { key: "KQ_REN_LUYEN", label: "KQ Rèn luyện", color: "bg-teal-100 text-teal-700 border-teal-200" },
 ]
 
