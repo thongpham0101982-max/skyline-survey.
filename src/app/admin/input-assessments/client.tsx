@@ -621,7 +621,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                   <div className="border-t border-slate-200 my-2"></div>
 
                   <div>
-                    <label className="block text-xs uppercase tracking-wider font-bold text-slate-500 mb-2">L?c theo T? CM <span className="text-slate-400 font-normal normal-case tracking-normal text-[11px]">(Kh�ng b?t bu?c)</span></label>
+                    <label className="block text-xs uppercase tracking-wider font-bold text-slate-500 mb-2">Lọc theo Tổ CM <span className="text-slate-400 font-normal normal-case tracking-normal text-[11px]">(Kh�ng b?t bu?c)</span></label>
                     <select className="w-full border-slate-300 rounded-xl px-4 py-3 outline-none text-sm font-medium focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 shadow-sm transition-shadow bg-white" value={assignDepartmentId} onChange={e => {setAssignDepartmentId(e.target.value);setAssignTeacherId("")}}>
                       <option value="">Tất cả T? chuy�n môn</option>
                       {departments?.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
