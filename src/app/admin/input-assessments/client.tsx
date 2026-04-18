@@ -151,7 +151,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   useEffect(()=>{if(selGrades.length&&selEdus.length)fetchMappings();elsesetMappings([])},[selGrades,selEdus]);
 
   const fetchPeriods=async()=>{setLoading(true);try{const r=await fetch("/api/input-assessments?academicYearId="+selectedYearId);if(r.ok)setPeriods(await r.json())}catch(e){}setLoading(false)};
-  const generateAutoCode=(t:string)=>{const p=t+"_";leCột điểm=0;periods.filter(x=>x.code?.startsWith(p)).forEach(x=>{const n=parseInt(x.code.split('_').pop());if(!isNaN(n)&&n>m)m=n});return p+(m+1).toString().padStart(2,'0')};
+  const generateAutoCode=(t:string)=>{const p=t+"_";let m=0;periods.filter(x=>x.code?.startsWith(p)).forEach(x=>{const n=parseInt(x.code.split('_').pop());if(!isNaN(n)&&n>m)m=n});return p+(m+1).toString().padStart(2,'0')};
   const handleOpenNewPeriod=()=>{setEditingPeriodId(null);const c=generateAutoCode("DOT_LE");setPeriodForm({type:"DOT_LE",code:c,name:c,description:"",startDate:"",endDate:"",campusId:"",assignedUserId:""});setIsPeriodOpen(true)};
   const handlePeriodTypeChange=(t:string)=>{const c=generateAutoCode(t);setPeriodForm({...periodForm,type:t,code:c,name:c})};
   const handlePeriodSubmit=async(e:React.FormEvent)=>{e.preventDefault();const r=await fetch("/api/input-assessments",{method:editingPeriodId?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:editingPeriodId?"UPDATE_PERIOD":"CREATE_PERIOD",id:editingPeriodId,data:{...periodForm,academicYearId:selectedYearId}})});if(r.ok){setIsPeriodOpen(false);fetchPeriods()}else alert((await r.json()).error)};
@@ -283,7 +283,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
       });
       const res = await r.json();
       if (res.success) {
-        leCột điểmsg = "Import th�nh c�ng: " + res.created + "/" + mapped.length + " học inh.";
+        let msg = "Import th�nh c�ng: " + res.created + "/" + mapped.length + " học inh.";
         if (res.errors?.length > 0) msg += "\nLoi " + res.errors.length + " dong: " + res.errors.map(e => "Dong " + e.row + " (" + e.code + "): " + e.error).join("\n");
         alert(msg);
         fetchStudents();
