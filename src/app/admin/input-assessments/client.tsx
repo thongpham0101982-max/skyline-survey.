@@ -80,8 +80,8 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   useEffect(() => { if (assignPeriodId) fetchAssignments(); }, [assignPeriodId]);
 
   
-  const resolveUnlockRequest = async (assignmentId:Hồ sơtring,status: 'APPROVED' | 'REJECTED') => {
-    if (!confirm(`B?n c� ch?c mu?n ${status === 'APPROVED' ? '��?NG ?' : 'TỪ CHỐI'} y�u c?u n�y?`)) return;
+  const resolveUnlockRequest = async (assignmentId:string,status: 'APPROVED' | 'REJECTED') => {
+    if (!confirm(`Bạn có chắc chắn muốn ${status === 'APPROVED' ? 'ĐỒNG Ý' : 'TỪ CHỐI'} yêu cầu này?`)) return;
     const r = await fetch("/api/input-assessment-assignments", { 
         method: "PUT", headers: { "Content-Type": "application/json" }, 
         body: JSON.stringify({ action: "RESOLVE_UNLOCK", id: assignmentId,status }) 
@@ -89,12 +89,12 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
     if (r.ok) {
         fetchAssignments();
     } else {
-        alert("LỗiHồ sơerver");
+        alert("LỗiServer");
     }
   };
   const handleAssignSubmit = async () => {
     if(!assignPeriodId || !assignTeacherId || assignSelSubjects.length===0 || assignSelGrades.length===0 || assignSelEdus.length===0) {
-      alert("Vui l?ng ch?n �? M�n, Khối, H?, v� Gi�o vi�n!"); return;
+      alert("Vui lòng chọn đủ Môn, Khối, Hệ, và Giáo viên!"); return;
     }
     const payload: any[] = [];
     assignSelSubjects.forEach(s => {
@@ -138,7 +138,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const deleteAssignment = async (id:Hồ sơtring) => {
+  const deleteAssignment = async (id:string) => {
     if (!confirm("X�a ph�n c�ng n�y?")) return;
     await fetch("/api/input-assessment-assignments?id="+id, {method:"DELETE"});
     fetchAssignments();
@@ -198,7 +198,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
       fetchSubjects();
     } else alert((await r.json()).error);
 };     
-  const handleSubjectSubmit=async(e:React.FormEvent)=>{e.preventDefault();const p=editingSubjectId?{type:"subject",id:editingSubjectId,data:{name:subjectForm.name,subjectType:subjectForm.subjectType||null,scoreColumns:Hồ sơubjectForm.scoreColumns, commentColumns:Hồ sơubjectForm.commentColumns,status:Hồ sơubjectForm.status||"ACTIVE"}}:{type:"subject",data:{code:subjectForm.code,name:subjectForm.name,subjectType:subjectForm.subjectType||null,scoreColumns:Hồ sơubjectForm.scoreColumns, commentColumns:Hồ sơubjectForm.commentColumns,status:Hồ sơubjectForm.status||"ACTIVE"}};const r=await fetch("/api/input-assessment-categories",{method:editingSubjectId?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});if(r.ok){setIsSubjectOpen(false);fetchSubjects()}else alert((await r.json()).error)};
+  const handleSubjectSubmit=async(e:React.FormEvent)=>{e.preventDefault();const p=editingSubjectId?{type:"subject",id:editingSubjectId,data:{name:subjectForm.name,subjectType:subjectForm.subjectType||null,scoreColumns:ubjectForm.scoreColumns, commentColumns:ubjectForm.commentColumns,status:ubjectForm.status||"ACTIVE"}}:{type:"subject",data:{code:subjectForm.code,name:subjectForm.name,subjectType:subjectForm.subjectType||null,scoreColumns:ubjectForm.scoreColumns, commentColumns:ubjectForm.commentColumns,status:ubjectForm.status||"ACTIVE"}};const r=await fetch("/api/input-assessment-categories",{method:editingSubjectId?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});if(r.ok){setIsSubjectOpen(false);fetchSubjects()}else alert((await r.json()).error)};
   const deleteSubject=async(id:string)=>{if(!confirm("X�a?"))return;await fetch("/api/input-assessment-categories?type=subject&id="+id,{method:"DELETE"});fetchSubjects()};
   const fetchMappings=async()=>{setMappingLoading(true);try{const r=await fetch("/api/grade-subject-mappings?grades="+selGrades.join(",")+"&eduSystems="+selEdus.join(","));if(r.ok)setMappings(await r.json())}catch(e){}setMappingLoading(false)};
   const addMapping=async(sid:string)=>{const r=await fetch("/api/grade-subject-mappings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({grades:selGrades,eduSystems:selEdus,subjectId:sid})});if(r.ok)fetchMappings();else alert((await r.json()).error)};
@@ -222,7 +222,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   const toggleAllStudents=()=>{if(selectedStudentIds.length===filteredStudents.length)setSelectedStudentIds([]);elsesetSelectedStudentIds(filteredStudents.map(s=>s.id))};
   const dksOptions=configsList.filter(c=>c.categoryType==="DIEN_KS");
   const htksOptions=configsList.filter(c=>c.categoryType==="HINH_THUC_KS");
-  constHồ sơelPeriodYearId = periods.find((p:any) => p.id ===Hồ sơtudentPeriodId)?.academicYearId;
+  constHồ sơelPeriodYearId = periods.find((p:any) => p.id ===tudentPeriodId)?.academicYearId;
   const hkOptions=configsList.filter((c:any)=>c.categoryType==="HOC_KY" && (!selPeriodYearId || c.academicYearId===selPeriodYearId));
   const kqgdThOptions=configsList.filter(c=>c.categoryType==="KQGD_TIEU_HOC");
   const kqhtOptions=configsList.filter(c=>c.categoryType==="KQ_HOC_TAP");
@@ -258,7 +258,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
       const rows = XLSX.utils.sheet_to_json(ws, { defval: "" });
       if (rows.length === 0) { alert("File Excel kh�ng c� d? li?u!");setImporting(false); return; }
       consCột điểmapped = rows.map((row) => {
-        const item = { periodId:Hồ sơtudentPeriodId, batchId:Hồ sơtudentBatchId || null };
+        const item = { periodId:tudentPeriodId, batchId:tudentBatchId || null };
         Object.keys(row).forEach(key => {
           const k = key.trim();
           const field = COLUMN_MAP[k];
@@ -503,7 +503,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
               <Users className="w-12 h-12 mx-auto mb-3 text-slate-300"/>
               <p className="font-medium">Ch?n Kỳ khảo sát �? xem danhHồ sơ�ch h?cHồ sơinh.</p>
             </div>
-          ) :Hồ sơtudentsLoading ? (
+          ) :tudentsLoading ? (
             <div className="text-center py-12 text-slate-500">Đang tải...</div>
           ) : (
             <div className="glass-card rounded-2xl overflow-hiddenHồ sơhadow-xl border-slate-200">
@@ -763,7 +763,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
 
                           return (
                             <tr key={g.id} className={"border-b transition-colors " + (allSelected?'bg-indigo-50/50 hover:bg-indigo-50/80':'hover:bg-slate-50')}>
-                              <td className="py-3 px-4"><input type="checkbox" checked={allSelected} ref={el => { if(el) el.indeterminate =Hồ sơomeSelected && !allSelected; }} onChange={toggleGroup} className="w-4 h-4 rounded"/></td>
+                              <td className="py-3 px-4"><input type="checkbox" checked={allSelected} ref={el => { if(el) el.indeterminate =omeSelected && !allSelected; }} onChange={toggleGroup} className="w-4 h-4 rounded"/></td>
                               <td className="py-3 px-4 text-slate-500 font-medium">{i+1}</td>
                               <td className="py-3 px-4 font-medium text-slate-800 flex items-center gap-2 pt-4"><User className="w-4 h-4 text-slate-400" />{g.user?.fullName || "N/A"}</td>
                               <td className="py-3 px-4 text-slate-600">{g.batch?.name || "T?t c?"}</td>
@@ -927,7 +927,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                                                     const colors = ['bg-indigo-50 border-indigo-200 text-indigo-800', 'bg-cyan-50 border-cyan-200 text-cyan-800', 'bg-violet-50 border-violet-200 text-violet-800', 'bg-fuchsia-50 border-fuchsia-200 text-fuchsia-800', 'bg-teal-50 border-teal-200 text-teal-800'];
                                                     const color = colors[Math.min(idx, colors.length - 1)];
 
-const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => a.subjectId ===Hồ sơc.subjectId && a.grade ===Hồ sơ.grade && (a.educationSystem ===Hồ sơ.admissionCriteria || a.educationSystem ===Hồ sơ.surveySystem))?.user?.fullName;
+const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => a.subjectId ===c.subjectId && a.grade ===Hồ sơ.grade && (a.educationSystem ===Hồ sơ.admissionCriteria || a.educationSystem ===Hồ sơ.surveySystem))?.user?.fullName;
 
                                                         return (
                                                             <div key={sc.id} className={`border rounded-xlHồ sơhadow-sm flex-none flex flex-col max-w-[650px] ${color}`}>
@@ -935,7 +935,7 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
                                                                     <span>{sc.subject?.name}</span>
                                                                     <div className="flex flex-col items-end text-right">
                                                                         {assignedTeacherName && <span className="text-[9px] font-black text-indigo-700 tracking-normal normal-caseHồ sơhrink-0" title={"GV Ph? tr�ch: " + assignedTeacherName}>PC: {assignedTeacherName}</span>}
-                                                                        {sc.teacherName && <span className="text-[9px] font-medium opacity-60 tracking-normal normal-case italicHồ sơhrink-0" title={"Ng�?i nh?p: " +Hồ sơc.teacherName}>nh?p: {sc.teacherName}</span>}
+                                                                        {sc.teacherName && <span className="text-[9px] font-medium opacity-60 tracking-normal normal-case italicHồ sơhrink-0" title={"Ng�?i nh?p: " +c.teacherName}>nh?p: {sc.teacherName}</span>}
                                                                     </div>
                                                                 </div>
                                                                 <div className="p-1.5 flex flex-wrap items-stretch">
@@ -983,7 +983,7 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
                                                     if (r.ok) {
                                                        setViewResultsData((prev:any) => ({
                                                             ...prev,
-                                                           Hồ sơtudents: prev.students.map((st:any) =>Hồ sơt.id ===Hồ sơ.id ? { ...st, admissionResult: val } :Hồ sơt)
+                                                           tudents: prev.students.map((st:any) =>t.id ===Hồ sơ.id ? { ...st, admissionResult: val } :t)
                                                         }));
                                                     } else {
                                                         alert("L?i khi l�u k?t qu? ph� duy?t!");
@@ -1066,7 +1066,7 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
                             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Khối <span className="text-red-500">*</span></label>
                             <select value={studentForm.grade} onChange={e =>setStudentForm({...studentForm, grade: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm font-bold outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-white">
                                 <option value="">-- Ch?n --</option>
-                                {grades.map((g:Hồ sơtring) => <option key={g} value={g}>K{g}</option>)}
+                                {grades.map((g:string) => <option key={g} value={g}>K{g}</option>)}
                             </select>
                         </div>
                     </div>
