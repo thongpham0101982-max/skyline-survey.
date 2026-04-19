@@ -113,7 +113,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
       fetchAssignments();
     } else {
       const errData = await r.json();
-      alert("L?i: " + (errData.error || errData.message || "Không x?c ??nh"));
+      alert("L?i: " + (errData.error || errData.message || "Không xác ð?nh"));
     }
   };
 
@@ -123,7 +123,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
     else setSelectedAssignmentIds(assignments.map((a:any) => a.id));
   };
   const deleteSelectedAssignments = async () => {
-    if (!confirm("X?a " +selectedAssignmentIds.length + " ph?n c?ng ?ð? ch?n?")) return;
+    if (!confirm("Xóa " +selectedAssignmentIds.length + " ph?n c?ng ?ð? ch?n?")) return;
     await fetch("/api/input-assessment-assignments?ids=" +selectedAssignmentIds.join(","), { method: "DELETE" });
    setSelectedAssignmentIds([]);
     fetchAssignments();
@@ -139,7 +139,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   };
 
   const deleteAssignment = async (id:string) => {
-    if (!confirm("X?a ph?n c?ng n?y?")) return;
+    if (!confirm("Xóa phân công này?")) return;
     await fetch("/api/input-assessment-assignments?id="+id, {method:"DELETE"});
     fetchAssignments();
   };
@@ -159,7 +159,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   
   const togglePeriodStatus = async (p: any) => {
     const newStatus = p.status === 'ACTIVE' ? 'LOCKED' : 'ACTIVE';
-    if (!confirm(`B?n c? ch?c mu?n ${newStatus === 'ACTIVE' ? 'M? KH?A' : 'KH?A'} ð?t n?y?`)) return;
+    if (!confirm(`B?n c? ch?c mu?n ${newStatus === 'ACTIVE' ? 'M? KHÓA' : 'KHÓA'} ð?t n?y?`)) return;
     const payload = { 
        action: "UPDATE_PERIOD",
        id: p.id,
@@ -174,8 +174,8 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
     if (r.ok) fetchPeriods();
     else alert((await r.json()).error || "ð? x?y ra l?i");
   };
-  const deletePeriod=async(id:string)=>{if(!confirm("X?a k??"))return;await fetch("/api/input-assessments?id="+id+"&type=period",{method:"DELETE"});fetchPeriods()};
-  const deleteBatch=async(id:string)=>{if(!confirm("X?a ð?t?"))return;await fetch("/api/input-assessments?id="+id+"&type=batch",{method:"DELETE"});fetchPeriods()};
+  const deletePeriod=async(id:string)=>{if(!confirm("Xóa k??"))return;await fetch("/api/input-assessments?id="+id+"&type=period",{method:"DELETE"});fetchPeriods()};
+  const deleteBatch=async(id:string)=>{if(!confirm("Xóa ð?t?"))return;await fetch("/api/input-assessments?id="+id+"&type=batch",{method:"DELETE"});fetchPeriods()};
   const fmtDate=(d:string)=>d?new Date(d).toISOString().slice(0,10):"";
   const fetchSubjects=async()=>{const r=await fetch("/api/input-assessment-categories?type=subject");if(r.ok)setSubjectsList(await r.json())};
      const handleColumnConfigSubmit = async (e: React.FormEvent) => {
@@ -199,7 +199,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
     } else alert((await r.json()).error);
 };     
   const handleSubjectSubmit=async(e:React.FormEvent)=>{e.preventDefault();const p=editingSubjectId?{type:"subject",id:editingSubjectId,data:{name:subjectForm.name,subjectType:subjectForm.subjectType||null,scoreColumns:subjectForm.scoreColumns, commentColumns:subjectForm.commentColumns,status:subjectForm.status||"ACTIVE"}}:{type:"subject",data:{code:subjectForm.code,name:subjectForm.name,subjectType:subjectForm.subjectType||null,scoreColumns:subjectForm.scoreColumns, commentColumns:subjectForm.commentColumns,status:subjectForm.status||"ACTIVE"}};const r=await fetch("/api/input-assessment-categories",{method:editingSubjectId?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});if(r.ok) {setIsSubjectOpen(false);fetchSubjects()}else alert((await r.json()).error)};
-  const deleteSubject=async(id:string)=>{if(!confirm("X?a?"))return;await fetch("/api/input-assessment-categories?type=subject&id="+id,{method:"DELETE"});fetchSubjects()};
+  const deleteSubject=async(id:string)=>{if(!confirm("Xóa?"))return;await fetch("/api/input-assessment-categories?type=subject&id="+id,{method:"DELETE"});fetchSubjects()};
   const fetchMappings=async()=>{setMappingLoading(true);try{const r=await fetch("/api/grade-subject-mappings?grades="+selGrades.join(",")+"&eduSystems="+selEdus.join(","));if(r.ok)setMappings(await r.json())}catch(e){}setMappingLoading(false)};
   const addMapping=async(sid:string)=>{const r=await fetch("/api/grade-subject-mappings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({grades:selGrades,eduSystems:selEdus,subjectId:sid})});if(r.ok)fetchMappings();else alert((await r.json()).error)};
   const removeMapping=async(sid:string)=>{await fetch("/api/grade-subject-mappings?subjectId="+sid+"&grades="+selGrades.join(",")+"&eduSystems="+selEdus.join(","),{method:"DELETE"});fetchMappings()};
@@ -216,8 +216,8 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   useEffect(()=>{if(studentPeriodId)fetchStudents()},[studentPeriodId,studentBatchId]);
   const handleOpenNewStudent=()=>{setEditingStudentId(null);setStudentForm({studentCode:"",fullName:"",dateOfBirth:"",admissionCriteria:"",surveyFormType:"",targetType:"",hocKy:"",kqgdTieuHoc:"",kqHocTap:"",kqRenLuyen:"",periodId:studentPeriodId,batchId:studentBatchId,grade:""});setIsStudentOpen(true)};
   const handleStudentSubmit=async(e)=>{e.preventDefault();const payload=editingStudentId?{id:editingStudentId,data:{...studentForm}}:{action:"CREATE",data:{...studentForm,periodId:studentPeriodId,batchId:studentBatchId||null}};const r=await fetch("/api/input-assessment-students",{method:editingStudentId?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});if(r.ok) {setIsStudentOpen(false);fetchStudents()}else alert((await r.json()).error)};
-  const deleteStudent=async(id)=>{if(!confirm("X?a hoc inh nay?"))return;await fetch("/api/input-assessment-students?id="+id,{method:"DELETE"});fetchStudents()};
-  const deleteSelectedStudents=async()=>{if(selectedStudentIds.length===0)return;if(!confirm("X?a "+selectedStudentIds.length+" hoc inh ?ð? ch?n?"))return;await fetch("/api/input-assessment-students?ids="+selectedStudentIds.join(","),{method:"DELETE"});setSelectedStudentIds([]);fetchStudents()};
+  const deleteStudent=async(id)=>{if(!confirm("Xóa hoc inh nay?"))return;await fetch("/api/input-assessment-students?id="+id,{method:"DELETE"});fetchStudents()};
+  const deleteSelectedStudents=async()=>{if(selectedStudentIds.length===0)return;if(!confirm("Xóa "+selectedStudentIds.length+" hoc inh ?ð? ch?n?"))return;await fetch("/api/input-assessment-students?ids="+selectedStudentIds.join(","),{method:"DELETE"});setSelectedStudentIds([]);fetchStudents()};
   const toggleStudentSelect=(id)=>setSelectedStudentIds(p=>p.includes(id)?p.filter(x=>x!==id):[...p,id]);
   const toggleAllStudents=()=>{if(selectedStudentIds.length===filteredStudents.length)setSelectedStudentIds([]);else setSelectedStudentIds(filteredStudents.map(s=>s.id))};
   const dksOptions=configsList.filter(c=>c.categoryType==="DIEN_KS");
@@ -229,7 +229,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   const hsQuocTeOptions=configsList.filter(c=>c.categoryType==="HS_CT_QUOC_TE");
   const kqrlOptions=configsList.filter(c=>c.categoryType==="KQ_REN_LUYEN");
   const ltsOptions=configsList.filter(c=>c.categoryType==="LOAI_TUYEN_SINH");
-  const filteredStudents=studentsList.filter(s=>{if(!studentSearch)return true;const q=studentSearch.toLowerCase();return s.studentCode?.toLowerCase().includes(q)||s.fullName?.toLowerCase().includes(q)});
+  const filteredStudents=studentsList.filter(s=>{if(!studentSearch)return true;const q=studentSearch.toLowerCase();return (s.studentCode || "").toLowerCase().includes(q)||(s.fullName || "").toLowerCase().includes(q)});
 
   const COLUMN_MAP = {
     "Ma_HS_KS": "studentCode", "Ma HS KS": "studentCode", "MaHS": "studentCode", "studentCode": "studentCode",
@@ -304,7 +304,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
 
   const currentPeriodBatches=periods.find(p=>p.id===studentPeriodId)?.batches||[];
 
-  const deleteConfig=async(id:string)=>{if(!confirm("X?a?"))return;await fetch("/api/assessment-configs?id="+id,{method:"DELETE"});fetchConfigs()};
+  const deleteConfig=async(id:string)=>{if(!confirm("Xóa?"))return;await fetch("/api/assessment-configs?id="+id,{method:"DELETE"});fetchConfigs()};
   return (
     <div className="space-y-5">
       <div className="flex border-b border-slate-200 bg-white rounded-t-xl overflow-hidden shadow-sm">
@@ -358,7 +358,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
             <div className="p-4">
               {(()=>{
                 const hkItems=configsList.filter(c=>c.categoryType==="HOC_KY"&&c.academicYearId===hkYearId);
-                if(hkItems.length===0) return <div className="text-sm text-slate-400 text-center py-4">Chýa c? N?m h?c tuy?n sinh cho n?m h?c n?y. B?m Thêm ?? t?o.</div>;
+                if(hkItems.length===0) return <div className="text-sm text-slate-400 text-center py-4">Chýa có Nãm h?c tuy?n sinh cho n?m h?c n?y. B?m Thêm ?? t?o.</div>;
                 return(<div className="flex flex-wrap gap-2">{hkItems.map((item:any)=>(
                   <div key={item.id} className="group relative inline-flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium bg-emerald-100 text-emerald-700 border-emerald-200">
                     <span className="font-bold">{item.name}</span>
@@ -384,7 +384,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
         {loading?<div className="text-center py-12 text-slate-500">Ðang t?i...</div>:periods.length===0?<div className="text-center py-16 bg-white rounded-xl shadow-sm border text-slate-500">Chýa c? K? kh?o sát.</div>:(
           <div className="grid gap-6">{periods.map(p=>{
             
-    const pendingCount = p.InputAssessmentTeacherAssignment?.filter((a: any) => a.unlockRequestStatus === 'PENDING').length || 0;
+    const pendingCount = (p.InputAssessmentTeacherAssignment || []).filter((a: any) => a.unlockRequestStatus === 'PENDING').length || 0;
     return (
             <div key={p.id} className="glass-card rounded-2xl overflow-hidden shadow-xl border-slate-200">
                {pendingCount > 0 && (
@@ -509,7 +509,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
             <div className="glass-card rounded-2xl overflow-hidden shadow-xl border-slate-200">
               <div className="flex items-center justify-between px-5 py-4 border-b bg-slate-50/50">
                 <h3 className="font-bold text-slate-800 flex items-center gap-2"><Users className="w-5 h-5 text-indigo-500"/>DS H?c inh KS <span className="text-sm font-normal text-slate-400">({filteredStudents.length})</span></h3>
-                {selectedStudentIds.length>0 && (<button onClick={deleteSelectedStudents} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 text-xs font-medium shadow-sm"><Trash2 className="w-3.5 h-3.5"/>X?a {selectedStudentIds.length} ?ð? ch?n</button>)}
+                {selectedStudentIds.length>0 && (<button onClick={deleteSelectedStudents} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 text-xs font-medium shadow-sm"><Trash2 className="w-3.5 h-3.5"/>Xóa {selectedStudentIds.length} ?ð? ch?n</button>)}
               </div>
               {filteredStudents.length===0 ? (
                 <div className="text-center py-12 text-slate-400">Chýa c? h?c sinh n?o.</div>
@@ -697,13 +697,13 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                <div className="flex items-center justify-between p-4 border-b bg-slate-50/50">
                   <h4 className="font-bold text-slate-800">Danh ?ch ?? Phân công ({assignments.length})</h4>
                   {selectedAssignmentIds.length > 0 && (
-                    <button onClick={deleteSelectedAssignments} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 text-xs font-medium shadow-sm"><Trash2 className="w-3.5 h-3.5"/>X?a {selectedAssignmentIds.length} ?ð? ch?n</button>
+                    <button onClick={deleteSelectedAssignments} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 text-xs font-medium shadow-sm"><Trash2 className="w-3.5 h-3.5"/>Xóa {selectedAssignmentIds.length} ?ð? ch?n</button>
                   )}
                </div>
                {assignmentsLoading ? <div className="p-8 text-center text-slate-400">Ðang t?i...</div> : assignments.length === 0 ? <div className="p-8 text-center text-slate-400">Chýa c? ph?n c?ng n?o.</div> : (
                   <div className="overflow-x-auto max-h-[500px]">
                     <table className="w-full text-sm">
-                      <thead className="bg-slate-50 text-slate-600 text-xs uppercase ticky top-0 shadow-sm z-10"><tr className="border-b">
+                      <thead className="bg-slate-50 text-slate-600 text-xs uppercase sticky top-0 shadow-sm z-10"><tr className="border-b">
                         <th className="py-3 px-4 w-10"><input type="checkbox" checked={selectedAssignmentIds.length===assignments.length && assignments.length>0} onChange={toggleAllAssignments} className="w-4 h-4 rounded"/></th>
                         <th className="py-3 px-4 text-left w-10">STT</th>
                         <th className="py-3 px-4 text-left">Giáo viên</th>
@@ -744,7 +744,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                           };
 
                           const deleteGroup = async () => {
-                             if (!confirm("X?a to?n b? " + g.ids.length + " ph?n c?ng c?a gi?o vi?n n?y?")) return;
+                             if (!confirm("Xóa to?n b? " + g.ids.length + " ph?n c?ng c?a gi?o vi?n n?y?")) return;
                              await fetch("/api/input-assessment-assignments?ids=" + g.ids.join(","), { method: "DELETE" });
                             setSelectedAssignmentIds(p => p.filter(id => !g.ids.includes(id)));
                              fetchAssignments();
@@ -784,7 +784,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                               </td>
                               <td className="py-3 px-4 text-center"><div className="flex gap-1 justify-center">
                                 <button onClick={editGroup} className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50" title="S?a"><Pencil className="w-4 h-4"/></button>
-                                <button onClick={deleteGroup} className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50" title="X?a"><Trash2 className="w-4 h-4"/></button>
+                                <button onClick={deleteGroup} className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50" title="Xóa"><Trash2 className="w-4 h-4"/></button>
                               </div></td>
                             </tr>
                           );
@@ -879,7 +879,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                 </div>
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
-                        <thead className="bg-slate-50 text-slate-600 font-bold uppercase text-[10px] tracking-wider border-b border-slate-200 ticky top-0 z-10">
+                        <thead className="bg-slate-50 text-slate-600 font-bold uppercase text-[10px] tracking-wider border-b border-slate-200 sticky top-0 z-10">
                             <tr>
                                 <th className="px-4 py-3 text-center w-12 border-r">STT</th>
                                 <th className="px-5 py-3 text-left w-64 border-r">Th?ng tin H?c inh</th>
@@ -934,8 +934,8 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
                                                                 <div className="px-3 py-1.5 bg-white/40 text-[11px] font-bold uppercase tracking-wider border-b border-current/10 flex justify-between items-center gap-3">
                                                                     <span>{sc.subject?.name}</span>
                                                                     <div className="flex flex-col items-end text-right">
-                                                                        {assignedTeacherName && <span className="text-[9px] font-black text-indigo-700 tracking-normal normal-case hrink-0" title={"GV Ph? tr?ch: " + assignedTeacherName}>PC: {assignedTeacherName}</span>}
-                                                                        {sc.teacherName && <span className="text-[9px] font-medium opacity-60 tracking-normal normal-case italic hrink-0" title={"Ngý?i nh?p: " + sc.teacherName}>nh?p: {sc.teacherName}</span>}
+                                                                        {assignedTeacherName && <span className="text-[9px] font-black text-indigo-700 tracking-normal normal-case shrink-0" title={"GV Ph? tr?ch: " + assignedTeacherName}>PC: {assignedTeacherName}</span>}
+                                                                        {sc.teacherName && <span className="text-[9px] font-medium opacity-60 tracking-normal normal-case italic shrink-0" title={"Ngý?i nh?p: " + sc.teacherName}>nh?p: {sc.teacherName}</span>}
                                                                     </div>
                                                                 </div>
                                                                 <div className="p-1.5 flex flex-wrap items-stretch">
@@ -952,7 +952,7 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
                                                                     <div className="flex flex-col gap-1 flex-1 min-w-[150px] justify-center py-0.5">
                                                                         {parsedComments.map((com: any, c_i: number) => com && (
                                                                             <div key={c_i} className="text-xs font-medium leading-snug flex items-start gap-1">
-                                                                                <span className="opacity-50 hrink-0 font-semibold">{colNames.comments[c_i] || `NX ${c_i+1}`}:</span>
+                                                                                <span className="opacity-50 shrink-0 font-semibold">{colNames.comments[c_i] || `NX ${c_i+1}`}:</span>
                                                                                 <span>{com}</span>
                                                                             </div>
                                                                         ))}
