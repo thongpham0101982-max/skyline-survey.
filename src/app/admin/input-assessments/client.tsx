@@ -5,13 +5,13 @@ import { useState, useEffect } from "react"
 import { BarChart, Plus, Pencil, UserCheck, Trash2, CalendarDays, Layers, User, BookOpen, Settings, X, Check, Tag, ListChecks, Users, Search, Upload, FileSpreadsheet, Download, Lock, Unlock, Award } from "lucide-react"
 
 const CAT_TYPES = [
-  { key: "DIEN_KS", label: "Di?n kh?o sát", color: "bg-violet-100 text-violet-700 border-violet-200" },
-  { key: "HINH_THUC_KS", label: "H?nh th?c KS", color: "bg-cyan-100 text-cyan-700 border-cyan-200" },
-  { key: "LOAI_TUYEN_SINH", label: "Lo?i tuy?n sinh", color: "bg-amber-100 text-amber-700 border-amber-200" },
-  { key: "KQGD_TIEU_HOC", label: "  CT B? (Kh?i 1-5)", color: "bg-rose-100 text-rose-700 border-rose-200" },
-  { key: "KQ_HOC_TAP", label: "  CT B? (Kh?i 6-12)", color: "bg-orange-100 text-orange-700 border-orange-200" },
-  { key: "HS_CT_QUOC_TE", label: "  CT Qu?c t?", color: "bg-blue-100 text-blue-700 border-blue-200" },
-  { key: "KQ_REN_LUYEN", label: "KQ Rèn luy?n", color: "bg-teal-100 text-teal-700 border-teal-200" },
+  { key: "DIEN_KS", label: "Diá»‡n kháº£o sÃ¡t", color: "bg-violet-100 text-violet-700 border-violet-200" },
+  { key: "HINH_THUC_KS", label: "HÃ¬nh thá»©c KS", color: "bg-cyan-100 text-cyan-700 border-cyan-200" },
+  { key: "LOAI_TUYEN_SINH", label: "Loáº¡i tuyá»ƒn sinh", color: "bg-amber-100 text-amber-700 border-amber-200" },
+  { key: "KQGD_TIEU_HOC", label: "  CT Bá»™ (Khá»‘i 1-5)", color: "bg-rose-100 text-rose-700 border-rose-200" },
+  { key: "KQ_HOC_TAP", label: "  CT Bá»™ (Khá»‘i 6-12)", color: "bg-orange-100 text-orange-700 border-orange-200" },
+  { key: "HS_CT_QUOC_TE", label: "  CT Quá»‘c táº¿", color: "bg-blue-100 text-blue-700 border-blue-200" },
+  { key: "KQ_REN_LUYEN", label: "KQ RÃ¨n luyá»‡n", color: "bg-teal-100 text-teal-700 border-teal-200" },
 ]
 
 
@@ -81,7 +81,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
 
   
   const resolveUnlockRequest = async (assignmentId:string,status: 'APPROVED' | 'REJECTED') => {
-    if (!confirm(`B?n có ch?c ch?n mu?n ${status === 'APPROVED' ? 'Ð?NG ?' : 'T? CH?I'} yêu c?u này?`)) return;
+    if (!confirm(`B?n cï¿½ ch?c ch?n mu?n ${status === 'APPROVED' ? 'ï¿½?NG ?' : 'T? CH?I'} yï¿½u c?u nï¿½y?`)) return;
     const r = await fetch("/api/input-assessment-assignments", { 
         method: "PUT", headers: { "Content-Type": "application/json" }, 
         body: JSON.stringify({ action: "RESOLVE_UNLOCK", id: assignmentId,status }) 
@@ -94,7 +94,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   };
   const handleAssignSubmit = async () => {
     if(!assignPeriodId || !assignTeacherId || assignSelSubjects.length===0 || assignSelGrades.length===0 || assignSelEdus.length===0) {
-      alert("Vui l?ng ch?n ð? Môn, Kh?i, H?, và Giáo viên!"); return;
+      alert("Vui l?ng ch?n ï¿½? Mï¿½n, Kh?i, H?, vï¿½ Giï¿½o viï¿½n!"); return;
     }
     const payload: any[] = [];
     assignSelSubjects.forEach(s => {
@@ -109,11 +109,11 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
       body: JSON.stringify({ action: "BULK_ASSIGN", periodId: assignPeriodId, batchId: assignBatchId, assignments: payload })
     });
     if (r.ok) {
-      alert("Phân công thành công!");
+      alert("Phï¿½n cï¿½ng thï¿½nh cï¿½ng!");
       fetchAssignments();
     } else {
       const errData = await r.json();
-      alert("L?i: " + (errData.error || errData.message || "Không xác ð?nh"));
+      alert("L?i: " + (errData.error || errData.message || "Khï¿½ng xï¿½c ï¿½?nh"));
     }
   };
 
@@ -123,7 +123,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
     else setSelectedAssignmentIds(assignments.map((a:any) => a.id));
   };
   const deleteSelectedAssignments = async () => {
-    if (!confirm("Xóa " +selectedAssignmentIds.length + " ph?n c?ng ?ð? ch?n?")) return;
+    if (!confirm("Xï¿½a " +selectedAssignmentIds.length + " ph?n c?ng ?ï¿½? ch?n?")) return;
     await fetch("/api/input-assessment-assignments?ids=" +selectedAssignmentIds.join(","), { method: "DELETE" });
    setSelectedAssignmentIds([]);
     fetchAssignments();
@@ -139,7 +139,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   };
 
   const deleteAssignment = async (id:string) => {
-    if (!confirm("Xóa phân công này?")) return;
+    if (!confirm("Xï¿½a phï¿½n cï¿½ng nï¿½y?")) return;
     await fetch("/api/input-assessment-assignments?id="+id, {method:"DELETE"});
     fetchAssignments();
   };
@@ -159,7 +159,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   
   const togglePeriodStatus = async (p: any) => {
     const newStatus = p.status === 'ACTIVE' ? 'LOCKED' : 'ACTIVE';
-    if (!confirm(`B?n c? ch?c mu?n ${newStatus === 'ACTIVE' ? 'M? KHÓA' : 'KHÓA'} ð?t n?y?`)) return;
+    if (!confirm(`B?n c? ch?c mu?n ${newStatus === 'ACTIVE' ? 'M? KHï¿½A' : 'KHï¿½A'} ï¿½?t n?y?`)) return;
     const payload = { 
        action: "UPDATE_PERIOD",
        id: p.id,
@@ -172,10 +172,10 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
     };
     const r = await fetch("/api/input-assessments", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
     if (r.ok) fetchPeriods();
-    else alert((await r.json()).error || "ð? x?y ra l?i");
+    else alert((await r.json()).error || "ï¿½? x?y ra l?i");
   };
-  const deletePeriod=async(id:string)=>{if(!confirm("Xóa k??"))return;await fetch("/api/input-assessments?id="+id+"&type=period",{method:"DELETE"});fetchPeriods()};
-  const deleteBatch=async(id:string)=>{if(!confirm("Xóa ð?t?"))return;await fetch("/api/input-assessments?id="+id+"&type=batch",{method:"DELETE"});fetchPeriods()};
+  const deletePeriod=async(id:string)=>{if(!confirm("Xï¿½a k??"))return;await fetch("/api/input-assessments?id="+id+"&type=period",{method:"DELETE"});fetchPeriods()};
+  const deleteBatch=async(id:string)=>{if(!confirm("Xï¿½a ï¿½?t?"))return;await fetch("/api/input-assessments?id="+id+"&type=batch",{method:"DELETE"});fetchPeriods()};
   const fmtDate=(d:string)=>d?new Date(d).toISOString().slice(0,10):"";
   const fetchSubjects=async()=>{const r=await fetch("/api/input-assessment-categories?type=subject");if(r.ok)setSubjectsList(await r.json())};
      const handleColumnConfigSubmit = async (e: React.FormEvent) => {
@@ -199,7 +199,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
     } else alert((await r.json()).error);
 };     
   const handleSubjectSubmit=async(e:React.FormEvent)=>{e.preventDefault();const p=editingSubjectId?{type:"subject",id:editingSubjectId,data:{name:subjectForm.name,subjectType:subjectForm.subjectType||null,scoreColumns:subjectForm.scoreColumns, commentColumns:subjectForm.commentColumns,status:subjectForm.status||"ACTIVE"}}:{type:"subject",data:{code:subjectForm.code,name:subjectForm.name,subjectType:subjectForm.subjectType||null,scoreColumns:subjectForm.scoreColumns, commentColumns:subjectForm.commentColumns,status:subjectForm.status||"ACTIVE"}};const r=await fetch("/api/input-assessment-categories",{method:editingSubjectId?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});if(r.ok) {setIsSubjectOpen(false);fetchSubjects()}else alert((await r.json()).error)};
-  const deleteSubject=async(id:string)=>{if(!confirm("Xóa?"))return;await fetch("/api/input-assessment-categories?type=subject&id="+id,{method:"DELETE"});fetchSubjects()};
+  const deleteSubject=async(id:string)=>{if(!confirm("Xï¿½a?"))return;await fetch("/api/input-assessment-categories?type=subject&id="+id,{method:"DELETE"});fetchSubjects()};
   const fetchMappings=async()=>{setMappingLoading(true);try{const r=await fetch("/api/grade-subject-mappings?grades="+selGrades.join(",")+"&eduSystems="+selEdus.join(","));if(r.ok)setMappings(await r.json())}catch(e){}setMappingLoading(false)};
   const addMapping=async(sid:string)=>{const r=await fetch("/api/grade-subject-mappings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({grades:selGrades,eduSystems:selEdus,subjectId:sid})});if(r.ok)fetchMappings();else alert((await r.json()).error)};
   const removeMapping=async(sid:string)=>{await fetch("/api/grade-subject-mappings?subjectId="+sid+"&grades="+selGrades.join(",")+"&eduSystems="+selEdus.join(","),{method:"DELETE"});fetchMappings()};
@@ -216,8 +216,8 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   useEffect(()=>{if(studentPeriodId)fetchStudents()},[studentPeriodId,studentBatchId]);
   const handleOpenNewStudent=()=>{setEditingStudentId(null);setStudentForm({studentCode:"",fullName:"",dateOfBirth:"",admissionCriteria:"",surveyFormType:"",targetType:"",hocKy:"",kqgdTieuHoc:"",kqHocTap:"",kqRenLuyen:"",periodId:studentPeriodId,batchId:studentBatchId,grade:""});setIsStudentOpen(true)};
   const handleStudentSubmit=async(e)=>{e.preventDefault();const payload=editingStudentId?{id:editingStudentId,data:{...studentForm}}:{action:"CREATE",data:{...studentForm,periodId:studentPeriodId,batchId:studentBatchId||null}};const r=await fetch("/api/input-assessment-students",{method:editingStudentId?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});if(r.ok) {setIsStudentOpen(false);fetchStudents()}else alert((await r.json()).error)};
-  const deleteStudent=async(id)=>{if(!confirm("Xóa hoc inh nay?"))return;await fetch("/api/input-assessment-students?id="+id,{method:"DELETE"});fetchStudents()};
-  const deleteSelectedStudents=async()=>{if(selectedStudentIds.length===0)return;if(!confirm("Xóa "+selectedStudentIds.length+" hoc inh ?ð? ch?n?"))return;await fetch("/api/input-assessment-students?ids="+selectedStudentIds.join(","),{method:"DELETE"});setSelectedStudentIds([]);fetchStudents()};
+  const deleteStudent=async(id)=>{if(!confirm("Xï¿½a hoc inh nay?"))return;await fetch("/api/input-assessment-students?id="+id,{method:"DELETE"});fetchStudents()};
+  const deleteSelectedStudents=async()=>{if(selectedStudentIds.length===0)return;if(!confirm("Xï¿½a "+selectedStudentIds.length+" hoc inh ?ï¿½? ch?n?"))return;await fetch("/api/input-assessment-students?ids="+selectedStudentIds.join(","),{method:"DELETE"});setSelectedStudentIds([]);fetchStudents()};
   const toggleStudentSelect=(id)=>setSelectedStudentIds(p=>p.includes(id)?p.filter(x=>x!==id):[...p,id]);
   const toggleAllStudents=()=>{if(selectedStudentIds.length===filteredStudents.length)setSelectedStudentIds([]);else setSelectedStudentIds(filteredStudents.map(s=>s.id))};
   const dksOptions=configsList.filter(c=>c.categoryType==="DIEN_KS");
@@ -234,7 +234,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   const COLUMN_MAP = {
     "Ma_HS_KS": "studentCode", "Ma HS KS": "studentCode", "MaHS": "studentCode", "studentCode": "studentCode",
     "Ho ten": "fullName", "Ho va Ten": "fullName", "HoTen": "fullName", "fullName": "fullName",
-    "Ngày sinh": "dateOfBirth", "NgaySinh": "dateOfBirth", "dateOfBirth": "dateOfBirth",
+    "Ngï¿½y sinh": "dateOfBirth", "NgaySinh": "dateOfBirth", "dateOfBirth": "dateOfBirth",
     "Khoi KS": "grade", "Khoi": "grade", "Kh?i": "grade", "grade": "grade",
     "Dien khao at": "admissionCriteria", "Dien KS": "admissionCriteria", "DienKS": "admissionCriteria", "admissionCriteria": "admissionCriteria",
     "Hinh thuc KS": "surveyFormType", "HinhThucKS": "surveyFormType", "surveyFormType": "surveyFormType",
@@ -256,7 +256,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
       const wb = XLSX.read(data);
       const ws = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(ws, { defval: "" });
-      if (rows.length === 0) { alert("File Excel không có d? li?u!"); setImporting(false); return; }
+      if (rows.length === 0) { alert("File Excel khï¿½ng cï¿½ d? li?u!"); setImporting(false); return; }
       const mapped = rows.map((row) => {
         const item = { periodId:studentPeriodId, batchId:studentBatchId || null };
         Object.keys(row).forEach(key => {
@@ -275,7 +275,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
         });
         return item;
       }).filter(r => r.studentCode && r.fullName);
-      if (mapped.length === 0) { alert("Không t?m th?y d? li?u h?p l?. Ki?m tra tên c?t: Ma_HS_KS, Ho ten, Ngày sinh...");setImporting(false); return; }
+      if (mapped.length === 0) { alert("Khï¿½ng t?m th?y d? li?u h?p l?. Ki?m tra tï¿½n c?t: Ma_HS_KS, Ho ten, Ngï¿½y sinh...");setImporting(false); return; }
       const r = await fetch("/api/input-assessment-students", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -283,18 +283,18 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
       });
       const res = await r.json();
       if (res.success) {
-        let msg = "Import thành công: " + res.created + "/" + mapped.length + " h?c sinh.";
+        let msg = "Import thï¿½nh cï¿½ng: " + res.created + "/" + mapped.length + " h?c sinh.";
         if (res.errors?.length > 0) msg += "\nLoi " + res.errors.length + " dong: " + res.errors.map(e => "Dong " + e.row + " (" + e.code + "): " + e.error).join("\n");
         alert(msg);
         fetchStudents();
       } else { alert("L?i: " + (res.error || "Unknown")); }
-    } catch (err) { alert("L?i ð?c file: " + err.message); }
+    } catch (err) { alert("L?i ï¿½?c file: " + err.message); }
    setImporting(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const downloadTemplate = () => {
-    const headers = ["Ma_HS_KS", "Ho ten", "Ngày sinh", "Dien khao at", "Hinh thuc KS", "Loai tuyen inh", "Hoc ky", "KQGD Tieu hoc", "KQ Hoc tap", "KQ Ren luyen"];
+    const headers = ["Ma_HS_KS", "Ho ten", "Ngï¿½y sinh", "Dien khao at", "Hinh thuc KS", "Loai tuyen inh", "Hoc ky", "KQGD Tieu hoc", "KQ Hoc tap", "KQ Ren luyen"];
     const ws = XLSX.utils.aoa_to_sheet([headers, ["HS_001", "Nguy?n V?n A", "2010-01-15", "", "", "", ""]]);
     ws["!cols"] = headers.map(() => ({ wch: 20 }));
     const wb = XLSX.utils.book_new();
@@ -304,11 +304,11 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
 
   const currentPeriodBatches=periods.find(p=>p.id===studentPeriodId)?.batches||[];
 
-  const deleteConfig=async(id:string)=>{if(!confirm("Xóa?"))return;await fetch("/api/assessment-configs?id="+id,{method:"DELETE"});fetchConfigs()};
+  const deleteConfig=async(id:string)=>{if(!confirm("Xï¿½a?"))return;await fetch("/api/assessment-configs?id="+id,{method:"DELETE"});fetchConfigs()};
   return (
     <div className="space-y-5">
       <div className="flex border-b border-slate-200 bg-white rounded-t-xl overflow-hidden shadow-sm">
-        {[{key:"periods",label:"K? kh?o sát",icon:CalendarDays},{key:"categories",label:"Danh m?c",icon:ListChecks},{key:"subjects",label:"Môn kh?o sát",icon:BookOpen},{key:"mapping",label:"C?u h?nh theo Kh?i",icon:Settings},{key:"students",label:"DS HS kh?o sát",icon:Users},{key:"assignments",label:"Phân công GV",icon:UserCheck},{key:"reports",label:"T?ng h?p KQ",icon:BarChart}].map(tab=>(
+        {[{key:"periods",label:"K? kh?o sï¿½t",icon:CalendarDays},{key:"categories",label:"Danh m?c",icon:ListChecks},{key:"subjects",label:"Mï¿½n kh?o sï¿½t",icon:BookOpen},{key:"mapping",label:"C?u h?nh theo Kh?i",icon:Settings},{key:"students",label:"DS HS kh?o sï¿½t",icon:Users},{key:"assignments",label:"Phï¿½n cï¿½ng GV",icon:UserCheck},{key:"reports",label:"T?ng h?p KQ",icon:BarChart}].map(tab=>(
           <button key={tab.key} onClick={()=>setActiveTab(tab.key as any)} className={`flex items-center gap-2 px-5 py-3.5 text-sm font-semibold border-b-2 transition-colors ${activeTab===tab.key?"border-indigo-600 text-indigo-700 bg-indigo-50/50":"border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50"}`}><tab.icon className="w-4 h-4"/>{tab.label}</button>
         ))}
       </div>
@@ -322,10 +322,10 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
               <div key={cat.key} className="glass-card rounded-2xl overflow-hidden shadow-xl border-slate-200">
                 <div className="flex items-center justify-between px-5 py-4 border-b bg-slate-50/50">
                   <h3 className="font-bold text-slate-800 flex items-center gap-2"><Tag className="w-4 h-4 text-indigo-500"/>{cat.label} <span className="text-sm font-normal text-slate-400">({items.length})</span></h3>
-                  <button onClick={()=>{setEditingConfigId(null);setConfigForm({categoryType:cat.key,code:"",name:""});setIsConfigOpen(true)}} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-xs font-medium shadow-sm"><Plus className="w-3.5 h-3.5"/>Thêm</button>
+                  <button onClick={()=>{setEditingConfigId(null);setConfigForm({categoryType:cat.key,code:"",name:""});setIsConfigOpen(true)}} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-xs font-medium shadow-sm"><Plus className="w-3.5 h-3.5"/>Thï¿½m</button>
                 </div>
                 <div className="p-4">
-                  {items.length===0?<div className="text-sm text-slate-400 text-center py-4">Chýa c? m?c n?o.</div>:(
+                  {items.length===0?<div className="text-sm text-slate-400 text-center py-4">Chï¿½a c? m?c n?o.</div>:(
                     <div className="flex flex-wrap gap-2">
                       {items.map((item:any)=>(
                         <div key={item.id} className={`group relative inline-flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium ${cat.color}`}>
@@ -352,13 +352,13 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                 <select value={hkYearId} onChange={e=>setHkYearId(e.target.value)} className="border rounded-lg px-3 py-1.5 text-xs font-medium bg-slate-50 outline-none">
                   {academicYears.map((y:any)=><option key={y.id} value={y.id}>{y.name}</option>)}
                 </select>
-                <button onClick={()=>{setEditingConfigId(null);setConfigForm({categoryType:"HOC_KY",code:"",name:"",academicYearId:hkYearId});setIsConfigOpen(true)}} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-xs font-medium shadow-sm"><Plus className="w-3.5 h-3.5"/>Thêm</button>
+                <button onClick={()=>{setEditingConfigId(null);setConfigForm({categoryType:"HOC_KY",code:"",name:"",academicYearId:hkYearId});setIsConfigOpen(true)}} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-xs font-medium shadow-sm"><Plus className="w-3.5 h-3.5"/>Thï¿½m</button>
               </div>
             </div>
             <div className="p-4">
               {(()=>{
                 const hkItems=configsList.filter(c=>c.categoryType==="HOC_KY"&&c.academicYearId===hkYearId);
-                if(hkItems.length===0) return <div className="text-sm text-slate-400 text-center py-4">Chýa có Nãm h?c tuy?n sinh cho nãm h?c này. B?m Thêm ð? t?o.</div>;
+                if(hkItems.length===0) return <div className="text-sm text-slate-400 text-center py-4">Chï¿½a cï¿½ Nï¿½m h?c tuy?n sinh cho nï¿½m h?c nï¿½y. B?m Thï¿½m ï¿½? t?o.</div>;
                 return(<div className="flex flex-wrap gap-2">{hkItems.map((item:any)=>(
                   <div key={item.id} className="group relative inline-flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium bg-emerald-100 text-emerald-700 border-emerald-200">
                     <span className="font-bold">{item.name}</span>
@@ -375,13 +375,13 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
         </div>
       )}
 
-      {/* TAB: KY KHÓAO SAT */}
+      {/* TAB: KY KHï¿½AO SAT */}
       {activeTab==="periods"&&(<>
         <div className="glass-card p-6 rounded-2xl hover-lift border-slate-200 flex items-center justify-between">
-          <div className="flex items-center gap-3"><CalendarDays className="w-5 h-5 text-indigo-500"/><span className="font-semibold text-slate-800">Ch?n Nãm h?c:</span><select className="border rounded-lg px-3 py-1.5 outline-none text-sm font-medium bg-slate-50" value={selectedYearId} onChange={e=>setSelectedYearId(e.target.value)}>{academicYears.map((a:any)=><option key={a.id} value={a.id}>{a.name}</option>)}</select></div>
-          <button onClick={handleOpenNewPeriod} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium shadow-sm"><Plus className="w-4 h-4"/>Thêm K? KS</button>
+          <div className="flex items-center gap-3"><CalendarDays className="w-5 h-5 text-indigo-500"/><span className="font-semibold text-slate-800">Ch?n Nï¿½m h?c:</span><select className="border rounded-lg px-3 py-1.5 outline-none text-sm font-medium bg-slate-50" value={selectedYearId} onChange={e=>setSelectedYearId(e.target.value)}>{academicYears.map((a:any)=><option key={a.id} value={a.id}>{a.name}</option>)}</select></div>
+          <button onClick={handleOpenNewPeriod} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium shadow-sm"><Plus className="w-4 h-4"/>Thï¿½m K? KS</button>
         </div>
-        {loading?<div className="text-center py-12 text-slate-500">Ðang t?i...</div>:periods.length===0?<div className="text-center py-16 bg-white rounded-xl shadow-sm border text-slate-500">Chýa c? K? kh?o sát.</div>:(
+        {loading?<div className="text-center py-12 text-slate-500">ï¿½ang t?i...</div>:periods.length===0?<div className="text-center py-16 bg-white rounded-xl shadow-sm border text-slate-500">Chï¿½a c? K? kh?o sï¿½t.</div>:(
           <div className="grid gap-6">{periods.map(p=>{
             
     const pendingCount = (p.InputAssessmentTeacherAssignment || []).filter((a: any) => a.unlockRequestStatus === 'PENDING').length || 0;
@@ -391,33 +391,33 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                    <div className="bg-amber-50 border-b border-amber-200 px-5 py-2.5 flex justify-between items-center cursor-pointer hover:bg-amber-100 transition-colors" onClick={() =>setReviewUnlockPeriod(p)}>
                        <div className="flex items-center gap-2 text-sm font-bold text-amber-800">
                            <span className="relative flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span></span>
-                           C? {pendingCount} yêu c?u xin M? khóa ði?m ?ðang ch? duy?t!
+                           C? {pendingCount} yï¿½u c?u xin M? khï¿½a ï¿½i?m ?ï¿½ang ch? duy?t!
                        </div>
                        <button className="text-xs font-semibold px-3 py-1 bg-white border border-amber-300 text-amber-700 rounded-lg shadow-sm hover:bg-amber-50">Xem & Duy?t ngay?</button>
                    </div>
                )}
               <div className="p-5 border-b bg-slate-50/50 flex justify-between items-center">
 
-                <div><h3 className="text-lg font-bold text-indigo-900">{p.name}<span className="text-sm font-medium text-slate-500 bg-white border px-2 py-0.5 rounded ml-2">{p.code}</span><span className="text-xs font-medium text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded ml-2">{p.campus?.campusName||'T?t c? CS'}</span>{p.status !== 'ACTIVE' && <span className="text-xs font-bold text-red-600 bg-red-50 border border-red-200 px-2.5 py-0.5 rounded ml-2 flex items-center gap-1 inline-flex"><Lock className="w-3 h-3"/> KHÓA ÐI?M</span>}</h3><div className="flex gap-4 mt-2 text-sm"><span className="text-slate-400">B?t ð?u:</span><span className="font-medium text-slate-700">{p.startDate?new Date(p.startDate).toLocaleDateString('vi-VN'):'-'}</span><span className="text-slate-400 ml-4">K?t thúc:</span><span className="font-medium text-slate-700">{p.endDate?new Date(p.endDate).toLocaleDateString('vi-VN'):'-'}</span><span className="text-slate-400 ml-4">PT:</span><span className="font-medium text-slate-700 flex items-center gap-1"><User className="w-3.5 h-3.5"/>{p.assignedUser?.fullName||'Chýa PC'}</span></div></div>
+                <div><h3 className="text-lg font-bold text-indigo-900">{p.name}<span className="text-sm font-medium text-slate-500 bg-white border px-2 py-0.5 rounded ml-2">{p.code}</span><span className="text-xs font-medium text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded ml-2">{p.campus?.campusName||'T?t c? CS'}</span>{p.status !== 'ACTIVE' && <span className="text-xs font-bold text-red-600 bg-red-50 border border-red-200 px-2.5 py-0.5 rounded ml-2 flex items-center gap-1 inline-flex"><Lock className="w-3 h-3"/> KHï¿½A ï¿½I?M</span>}</h3><div className="flex gap-4 mt-2 text-sm"><span className="text-slate-400">B?t ï¿½?u:</span><span className="font-medium text-slate-700">{p.startDate?new Date(p.startDate).toLocaleDateString('vi-VN'):'-'}</span><span className="text-slate-400 ml-4">K?t thï¿½c:</span><span className="font-medium text-slate-700">{p.endDate?new Date(p.endDate).toLocaleDateString('vi-VN'):'-'}</span><span className="text-slate-400 ml-4">PT:</span><span className="font-medium text-slate-700 flex items-center gap-1"><User className="w-3.5 h-3.5"/>{p.assignedUser?.fullName||'Chï¿½a PC'}</span></div></div>
                 <div className="flex gap-2"><button onClick={()=>{setEditingPeriodId(p.id);setPeriodForm({type:p.code?.startsWith('OPEN_DAY')?"OPEN_DAY":"DOT_LE",code:p.code,name:p.name,description:p.description||"",startDate:fmtDate(p.startDate),endDate:fmtDate(p.endDate),campusId:p.campusId||"",assignedUserId:p.assignedUserId||""});setIsPeriodOpen(true)}} className="px-3 py-1.5 text-sm bg-white border text-slate-600 rounded-lg hover:text-indigo-600 flex items-center gap-1.5 shadow-sm"><Pencil className="w-3.5 h-3.5"/>S?a</button><button onClick={() => togglePeriodStatus(p)} className={`px-3 py-1.5 text-sm rounded-lg flex items-center gap-1.5 shadow-sm border transition-colors ${p.status === 'ACTIVE' ? 'bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100 hover:text-amber-700' : 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100'}`}>
-        {p.status === 'ACTIVE' ? <><Lock className="w-3.5 h-3.5"/> Khóa ði?m</> : <><Unlock className="w-3.5 h-3.5"/> M? khóa</>}
+        {p.status === 'ACTIVE' ? <><Lock className="w-3.5 h-3.5"/> Khï¿½a ï¿½i?m</> : <><Unlock className="w-3.5 h-3.5"/> M? khï¿½a</>}
     </button>
     <button onClick={()=>deletePeriod(p.id)} className="px-3 py-1.5 text-sm bg-white border text-red-500 rounded-lg hover:bg-red-50 shadow-sm"><Trash2 className="w-3.5 h-3.5"/></button></div>
               </div>
-              <div className="p-5"><div className="flex justify-between items-center mb-4"><h4 className="font-semibold text-slate-700 flex items-center gap-2"><Layers className="w-4 h-4 text-slate-400"/>Ð?t KS ({p.batches?.length||0})</h4><button onClick={()=>{setCurrentPeriodIdForBatch(p.id);setEditingBatchId(null);setBatchForm({batchNumber:(p.batches?.length||0)+1,name:"Ð?t "+((p.batches?.length||0)+1),startDate:"",endDate:""});setIsBatchOpen(true)}} className="text-sm text-indigo-600 font-medium flex items-center gap-1"><Plus className="w-3.5 h-3.5"/>Thêm ð?t</button></div>
-                {p.batches?.length>0?(<div className="grid grid-cols-1 md:grid-cols-3 gap-4">{p.batches.map((b:any)=>(<div key={b.id} className="border rounded-xl p-4 hover:border-indigo-300 bg-white shadow-sm relative group"><div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 flex gap-1"><button onClick={()=>{setCurrentPeriodIdForBatch(p.id);setEditingBatchId(b.id);setBatchForm({batchNumber:b.batchNumber,name:b.name,startDate:fmtDate(b.startDate),endDate:fmtDate(b.endDate)});setIsBatchOpen(true)}} className="p-1 text-slate-400 hover:text-indigo-600 bg-white rounded-full shadow-sm border"><Pencil className="w-3 h-3"/></button><button onClick={()=>deleteBatch(b.id)} className="p-1 text-slate-400 hover:text-red-500 bg-white rounded-full shadow-sm border"><Trash2 className="w-3 h-3"/></button></div><div className="font-bold text-indigo-900 mb-2 flex items-center gap-2 pr-12"><span className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs">{b.batchNumber}</span>{b.name}</div><div className="space-y-1.5 mt-3"><div className="flex justify-between text-sm"><span className="text-slate-500">B?t ð?u:</span><span className="font-medium">{b.startDate?new Date(b.startDate).toLocaleDateString('vi-VN'):'-'}</span></div><div className="flex justify-between text-sm"><span className="text-slate-500">K?t thúc:</span><span className="font-medium">{b.endDate?new Date(b.endDate).toLocaleDateString('vi-VN'):'-'}</span></div></div></div>))}</div>):<div className="text-center py-6 text-sm text-slate-400 bg-slate-50 border border-dashed rounded-xl">Chýa c? ð?t.</div>}
+              <div className="p-5"><div className="flex justify-between items-center mb-4"><h4 className="font-semibold text-slate-700 flex items-center gap-2"><Layers className="w-4 h-4 text-slate-400"/>ï¿½?t KS ({p.batches?.length||0})</h4><button onClick={()=>{setCurrentPeriodIdForBatch(p.id);setEditingBatchId(null);setBatchForm({batchNumber:(p.batches?.length||0)+1,name:"ï¿½?t "+((p.batches?.length||0)+1),startDate:"",endDate:""});setIsBatchOpen(true)}} className="text-sm text-indigo-600 font-medium flex items-center gap-1"><Plus className="w-3.5 h-3.5"/>Thï¿½m ï¿½?t</button></div>
+                {p.batches?.length>0?(<div className="grid grid-cols-1 md:grid-cols-3 gap-4">{p.batches.map((b:any)=>(<div key={b.id} className="border rounded-xl p-4 hover:border-indigo-300 bg-white shadow-sm relative group"><div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 flex gap-1"><button onClick={()=>{setCurrentPeriodIdForBatch(p.id);setEditingBatchId(b.id);setBatchForm({batchNumber:b.batchNumber,name:b.name,startDate:fmtDate(b.startDate),endDate:fmtDate(b.endDate)});setIsBatchOpen(true)}} className="p-1 text-slate-400 hover:text-indigo-600 bg-white rounded-full shadow-sm border"><Pencil className="w-3 h-3"/></button><button onClick={()=>deleteBatch(b.id)} className="p-1 text-slate-400 hover:text-red-500 bg-white rounded-full shadow-sm border"><Trash2 className="w-3 h-3"/></button></div><div className="font-bold text-indigo-900 mb-2 flex items-center gap-2 pr-12"><span className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs">{b.batchNumber}</span>{b.name}</div><div className="space-y-1.5 mt-3"><div className="flex justify-between text-sm"><span className="text-slate-500">B?t ï¿½?u:</span><span className="font-medium">{b.startDate?new Date(b.startDate).toLocaleDateString('vi-VN'):'-'}</span></div><div className="flex justify-between text-sm"><span className="text-slate-500">K?t thï¿½c:</span><span className="font-medium">{b.endDate?new Date(b.endDate).toLocaleDateString('vi-VN'):'-'}</span></div></div></div>))}</div>):<div className="text-center py-6 text-sm text-slate-400 bg-slate-50 border border-dashed rounded-xl">Chï¿½a c? ï¿½?t.</div>}
               </div>
             </div>
           )})}</div>
         )}
       </>)}
-      {/* TAB: MON KHÓAO SAT */}
+      {/* TAB: MON KHï¿½AO SAT */}
       {activeTab==="subjects"&&(
         <div className="glass-card rounded-2xl overflow-hidden shadow-xl border-slate-200">
-          <div className="flex items-center justify-between px-5 py-4 border-b bg-slate-50/50"><h3 className="font-bold text-slate-800 flex items-center gap-2"><BookOpen className="w-5 h-5 text-indigo-500"/>Môn kh?o sát ({subjectsList.length})</h3><button onClick={()=>{setEditingSubjectId(null);setSubjectForm({code:"",name:"",subjectType:"",scoreColumns: 1, commentColumns: 1,status: "ACTIVE"});setIsSubjectOpen(true)}} className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium shadow-sm"><Plus className="w-4 h-4"/>Thêm m?i</button></div>
-          {subjectsList.length===0?<div className="text-center py-12 text-slate-400">Chýa c? môn KS.</div>:(
-            <table className="w-full text-sm"><thead><tr className="bg-slate-50 text-slate-600 text-xs uppercase"><th className="px-5 py-3 text-left w-12">STT</th><th className="px-5 py-3 text-left">M?</th><th className="px-5 py-3 text-left">T?n môn</th><th className="px-5 py-3 text-left">Lo?i</th><th className="px-5 py-3 text-center">C?u h?nh c?t</th><th className="px-5 py-3 text-left">Tr?ng th?i</th><th className="px-5 py-3 text-center w-24">Thao t?c</th></tr></thead>
-              <tbody>{subjectsList.map((s:any,i:number)=>(<tr key={s.id} className="border-t hover:bg-indigo-50/30"><td className="px-5 py-3 text-slate-500">{i+1}</td><td className="px-5 py-3 font-mono font-bold text-indigo-700">{s.code}</td><td className="px-5 py-3 font-medium text-slate-800">{s.name}</td><td className="px-5 py-3">{s.subjectType?<span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">{s.subjectType}</span>:'-'}</td><td className="px-5 py-3 text-center"><button type="button" onClick={()=>{let cn={scores:[],comments:[]}; try{if(s.columnNames) cn=JSON.parse(s.columnNames);}catch(e){}setColumnConfigForm({subjectId:s.id, name:s.name,scoreNames:cn.scores||[], commentNames:cn.comments||[],showScoreInReport:cn.showScoreInReport||[],showCommentInReport:cn.showCommentInReport||[],scoreColumns:s.scoreColumns||1, commentColumns:s.commentColumns||1});setIsColumnConfigOpen(true);}} className="text-xs font-semibold text-indigo-600 bg-indigo-50 border border-indigo-200 px-2.5 py-1.5 rounded-lg hover:bg-indigo-600 hover:text-white transition-all shadow-sm">{s.scoreColumns ?? 1} c?t ði?m / {s.commentColumns ?? 1} c?c?t NX</button></td><td className="px-5 py-3"><span className={`text-xs px-2 py-0.5 rounded-full font-medium ${s.status==='ACTIVE'?'bg-green-100 text-green-700':'bg-slate-100 text-slate-500'}`}>{s.status==='ACTIVE'?'Ho?t ð?ng':'Ng?ng'}</span></td><td className="px-5 py-3 text-center"><div className="flex gap-1 justify-center"><button onClick={()=>{setEditingSubjectId(s.id);setSubjectForm({code:s.code,name:s.name,subjectType:s.subjectType||"",scoreColumns:s.scoreColumns ?? 1, commentColumns:s.commentColumns ?? 1,status:s.status || "ACTIVE"});setIsSubjectOpen(true)}} className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50"><Pencil className="w-3.5 h-3.5"/></button><button onClick={()=>deleteSubject(s.id)} className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50"><Trash2 className="w-3.5 h-3.5"/></button></div></td></tr>))}</tbody></table>
+          <div className="flex items-center justify-between px-5 py-4 border-b bg-slate-50/50"><h3 className="font-bold text-slate-800 flex items-center gap-2"><BookOpen className="w-5 h-5 text-indigo-500"/>Mï¿½n kh?o sï¿½t ({subjectsList.length})</h3><button onClick={()=>{setEditingSubjectId(null);setSubjectForm({code:"",name:"",subjectType:"",scoreColumns: 1, commentColumns: 1,status: "ACTIVE"});setIsSubjectOpen(true)}} className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium shadow-sm"><Plus className="w-4 h-4"/>Thï¿½m m?i</button></div>
+          {subjectsList.length===0?<div className="text-center py-12 text-slate-400">Chï¿½a c? mï¿½n KS.</div>:(
+            <table className="w-full text-sm"><thead><tr className="bg-slate-50 text-slate-600 text-xs uppercase"><th className="px-5 py-3 text-left w-12">STT</th><th className="px-5 py-3 text-left">M?</th><th className="px-5 py-3 text-left">T?n mï¿½n</th><th className="px-5 py-3 text-left">Lo?i</th><th className="px-5 py-3 text-center">C?u h?nh c?t</th><th className="px-5 py-3 text-left">Tr?ng th?i</th><th className="px-5 py-3 text-center w-24">Thao t?c</th></tr></thead>
+              <tbody>{subjectsList.map((s:any,i:number)=>(<tr key={s.id} className="border-t hover:bg-indigo-50/30"><td className="px-5 py-3 text-slate-500">{i+1}</td><td className="px-5 py-3 font-mono font-bold text-indigo-700">{s.code}</td><td className="px-5 py-3 font-medium text-slate-800">{s.name}</td><td className="px-5 py-3">{s.subjectType?<span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">{s.subjectType}</span>:'-'}</td><td className="px-5 py-3 text-center"><button type="button" onClick={()=>{let cn={scores:[],comments:[]}; try{if(s.columnNames) cn=JSON.parse(s.columnNames);}catch(e){}setColumnConfigForm({subjectId:s.id, name:s.name,scoreNames:cn.scores||[], commentNames:cn.comments||[],showScoreInReport:cn.showScoreInReport||[],showCommentInReport:cn.showCommentInReport||[],scoreColumns:s.scoreColumns||1, commentColumns:s.commentColumns||1});setIsColumnConfigOpen(true);}} className="text-xs font-semibold text-indigo-600 bg-indigo-50 border border-indigo-200 px-2.5 py-1.5 rounded-lg hover:bg-indigo-600 hover:text-white transition-all shadow-sm">{s.scoreColumns ?? 1} c?t ï¿½i?m / {s.commentColumns ?? 1} c?c?t NX</button></td><td className="px-5 py-3"><span className={`text-xs px-2 py-0.5 rounded-full font-medium ${s.status==='ACTIVE'?'bg-green-100 text-green-700':'bg-slate-100 text-slate-500'}`}>{s.status==='ACTIVE'?'Ho?t ï¿½?ng':'Ng?ng'}</span></td><td className="px-5 py-3 text-center"><div className="flex gap-1 justify-center"><button onClick={()=>{setEditingSubjectId(s.id);setSubjectForm({code:s.code,name:s.name,subjectType:s.subjectType||"",scoreColumns:s.scoreColumns ?? 1, commentColumns:s.commentColumns ?? 1,status:s.status || "ACTIVE"});setIsSubjectOpen(true)}} className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50"><Pencil className="w-3.5 h-3.5"/></button><button onClick={()=>deleteSubject(s.id)} className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50"><Trash2 className="w-3.5 h-3.5"/></button></div></td></tr>))}</tbody></table>
           )}
         </div>
       )}
@@ -427,7 +427,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
         <div className="space-y-5">
           <div className="bg-white p-5 rounded-xl shadow-sm border">
             <h3 className="font-bold text-slate-800 mb-3 flex items-center gap-2"><Settings className="w-5 h-5 text-indigo-500"/>C?u h?nh M?n KS theo Kh?i v? H? h?c</h3>
-            <p className="text-sm text-slate-500 mb-4">Ch?n nhi?u Kh?i và H? h?c ?? g?n M?n KS ??ng lo?t.</p>
+            <p className="text-sm text-slate-500 mb-4">Ch?n nhi?u Kh?i vï¿½ H? h?c ?? g?n M?n KS ??ng lo?t.</p>
             <div className="flex gap-8 items-start flex-wrap">
               <div><span className="block font-semibold text-slate-700 text-sm mb-2">Kh?i:</span><div className="flex flex-wrap gap-2">
                 <button onClick={()=>setSelGrades(selGrades.length===grades.length?[]:[...grades])} className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors ${selGrades.length===grades.length?'bg-indigo-600 text-white border-indigo-600':'bg-white text-indigo-600 border-indigo-300 hover:bg-indigo-50'}`}>T?t c?</button>
@@ -438,19 +438,19 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                 {eduSystems.map((es:any)=>(<button key={es.code} onClick={()=>toggleEdu(es.code)} className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors ${selEdus.includes(es.code)?'bg-purple-100 text-purple-700 border-purple-300':'bg-white text-slate-600 border-slate-200 hover:border-purple-300'}`}>{selEdus.includes(es.code)&&<Check className="w-3 h-3 inline mr-1"/>}{es.code} - {es.name}</button>))}
               </div></div>
             </div>
-            {selGrades.length>0&&selEdus.length>0&&(<div className="mt-4 p-3 bg-indigo-50 rounded-lg text-sm text-indigo-700"><strong>?Ðang ch?n:</strong> {selGrades.map(g=>"K"+g).join(", ")} x {selEdus.join(", ")} = <strong>{selGrades.length*selEdus.length}</strong> t? h?p</div>)}
+            {selGrades.length>0&&selEdus.length>0&&(<div className="mt-4 p-3 bg-indigo-50 rounded-lg text-sm text-indigo-700"><strong>?ï¿½ang ch?n:</strong> {selGrades.map(g=>"K"+g).join(", ")} x {selEdus.join(", ")} = <strong>{selGrades.length*selEdus.length}</strong> t? h?p</div>)}
           </div>
           {selGrades.length>0&&selEdus.length>0&&(
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
               <div className="glass-card rounded-2xl overflow-hidden shadow-xl border-slate-200">
-                <div className="px-5 py-4 border-b bg-indigo-50/50"><h4 className="font-bold text-indigo-800 flex items-center gap-2"><BookOpen className="w-4 h-4"/>Môn ð? gán ({uniqueAssigned.length})</h4><p className="text-xs text-indigo-500 mt-1">Bo e xoa khoi tat ca t? h?p</p></div>
-                {mappingLoading?<div className="p-8 text-center text-slate-400">Ðang t?i...</div>:uniqueAssigned.length===0?<div className="p-8 text-center text-slate-400">Chýa c? môn. Thêm t? b?n ph?i.</div>:(
+                <div className="px-5 py-4 border-b bg-indigo-50/50"><h4 className="font-bold text-indigo-800 flex items-center gap-2"><BookOpen className="w-4 h-4"/>Mï¿½n ï¿½? gï¿½n ({uniqueAssigned.length})</h4><p className="text-xs text-indigo-500 mt-1">Bo e xoa khoi tat ca t? h?p</p></div>
+                {mappingLoading?<div className="p-8 text-center text-slate-400">ï¿½ang t?i...</div>:uniqueAssigned.length===0?<div className="p-8 text-center text-slate-400">Chï¿½a c? mï¿½n. Thï¿½m t? b?n ph?i.</div>:(
                   <div className="p-4 space-y-2">{uniqueAssigned.map((m:any,i:number)=>(<div key={m.subjectId} className="flex items-center justify-between bg-white border rounded-lg px-4 py-3 hover:border-indigo-300 group"><div className="flex items-center gap-3"><span className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold">{i+1}</span><div><span className="font-bold text-slate-800">{m.subject?.name}</span><span className="ml-2 text-xs font-mono text-slate-400">{m.subject?.code}</span>{m.subject?.subjectType&&<span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">{m.subject.subjectType}</span>}</div></div><button onClick={()=>removeMapping(m.subjectId)} className="p-1.5 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 rounded-lg hover:bg-red-50"><Trash2 className="w-4 h-4"/></button></div>))}</div>
                 )}
               </div>
               <div className="glass-card rounded-2xl overflow-hidden shadow-xl border-slate-200">
                 <div className="px-5 py-4 border-b bg-emerald-50/50"><h4 className="font-bold text-emerald-800 flex items-center gap-2"><Plus className="w-4 h-4"/>M?n ch?a g?n ({availableSubjects.length})</h4><p className="text-xs text-emerald-500 mt-1">G?n v?o {selGrades.length*selEdus.length} t? h?p</p></div>
-                {availableSubjects.length===0?<div className="p-8 text-center text-slate-400">Ð? gán h?t.</div>:(
+                {availableSubjects.length===0?<div className="p-8 text-center text-slate-400">ï¿½? gï¿½n h?t.</div>:(
                   <div className="p-4 space-y-2">{availableSubjects.map((s:any)=>(<button key={s.id} onClick={()=>addMapping(s.id)} className="w-full flex items-center justify-between bg-white border border-dashed rounded-lg px-4 py-3 hover:border-emerald-400 hover:bg-emerald-50 text-left"><div className="flex items-center gap-3"><span className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center"><Plus className="w-3.5 h-3.5"/></span><div><span className="font-bold text-slate-800">{s.name}</span><span className="ml-2 text-xs font-mono text-slate-400">{s.code}</span>{s.subjectType&&<span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">{s.subjectType}</span>}</div></div><span className="text-xs text-emerald-600 font-medium">+ G?n</span></button>))}</div>
                 )}
               </div>
@@ -459,7 +459,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
         </div>
       )}
 
-      {/* TAB: DS HS KHÓAO SAT */}
+      {/* TAB: DS HS KHï¿½AO SAT */}
       {activeTab==="students"&&(
         <div className="space-y-5">
           <div className="glass-card p-6 rounded-2xl hover-lift border-slate-200 flex flex-wrap items-center gap-4">
@@ -473,7 +473,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
             </div>
             {studentPeriodId && currentPeriodBatches.length>0 && (
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-slate-700 text-sm">ð?t:</span>
+                <span className="font-semibold text-slate-700 text-sm">ï¿½?t:</span>
                 <select className="border rounded-lg px-3 py-1.5 outline-none text-sm font-medium bg-slate-50" value={studentBatchId} onChange={e=>setStudentBatchId(e.target.value)}>
                   <option value="">T?t c?</option>
                   {currentPeriodBatches.map((b)=><option key={b.id} value={b.id}>{b.name}</option>)}
@@ -483,7 +483,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
             <div className="flex-1"/>
             <div className="relative">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"/>
-              <input placeholder="T?m M? HS, H? tên..." value={studentSearch} onChange={e=>setStudentSearch(e.target.value)} className="border rounded-lg pl-9 pr-3 py-1.5 text-sm w-56 outline-none focus:border-indigo-400"/>
+              <input placeholder="T?m M? HS, H? tï¿½n..." value={studentSearch} onChange={e=>setStudentSearch(e.target.value)} className="border rounded-lg pl-9 pr-3 py-1.5 text-sm w-56 outline-none focus:border-indigo-400"/>
             </div>
             {studentPeriodId && (<>
               <input type="file" ref={fileInputRef} accept=".xlsx,.xls,.csv" onChange={handleExcelImport} className="hidden" id="excel-import-hs"/>
@@ -491,28 +491,28 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                 <Download className="w-4 h-4"/>M?u Excel
               </button>
               <button onClick={()=>fileInputRef.current?.click()} disabled={importing} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium shadow-sm disabled:opacity-50">
-                {importing ? <><FileSpreadsheet className="w-4 h-4 animate-pulse"/>?Ðang import...</> : <><Upload className="w-4 h-4"/>Import Excel</>}
+                {importing ? <><FileSpreadsheet className="w-4 h-4 animate-pulse"/>?ï¿½ang import...</> : <><Upload className="w-4 h-4"/>Import Excel</>}
               </button>
               <button onClick={handleOpenNewStudent} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium shadow-sm">
-                <Plus className="w-4 h-4"/>Thêm HS
+                <Plus className="w-4 h-4"/>Thï¿½m HS
               </button>
             </>)}
           </div>
           {!studentPeriodId ? (
             <div className="text-center py-16 bg-white rounded-xl shadow-sm border text-slate-400">
               <Users className="w-12 h-12 mx-auto mb-3 text-slate-300"/>
-              <p className="font-medium">Ch?n K? kh?o sát ?? xem danh sách h?c sinh.</p>
+              <p className="font-medium">Ch?n K? kh?o sï¿½t ?? xem danh sï¿½ch h?c sinh.</p>
             </div>
           ) :studentsLoading ? (
-            <div className="text-center py-12 text-slate-500">Ðang t?i...</div>
+            <div className="text-center py-12 text-slate-500">ï¿½ang t?i...</div>
           ) : (
             <div className="glass-card rounded-2xl overflow-hidden shadow-xl border-slate-200">
               <div className="flex items-center justify-between px-5 py-4 border-b bg-slate-50/50">
                 <h3 className="font-bold text-slate-800 flex items-center gap-2"><Users className="w-5 h-5 text-indigo-500"/>DS H?c inh KS <span className="text-sm font-normal text-slate-400">({filteredStudents.length})</span></h3>
-                {selectedStudentIds.length>0 && (<button onClick={deleteSelectedStudents} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 text-xs font-medium shadow-sm"><Trash2 className="w-3.5 h-3.5"/>Xóa {selectedStudentIds.length} ?ð? ch?n</button>)}
+                {selectedStudentIds.length>0 && (<button onClick={deleteSelectedStudents} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 text-xs font-medium shadow-sm"><Trash2 className="w-3.5 h-3.5"/>Xï¿½a {selectedStudentIds.length} ?ï¿½? ch?n</button>)}
               </div>
               {filteredStudents.length===0 ? (
-                <div className="text-center py-12 text-slate-400">Chýa c? h?c sinh n?o.</div>
+                <div className="text-center py-12 text-slate-400">Chï¿½a c? h?c sinh n?o.</div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
@@ -548,12 +548,12 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                             {s.surveyFormType && <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-cyan-50 text-cyan-700 font-medium border border-cyan-100" title="H?nh th?c"><span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>{s.surveyFormType}</span>}
                             {s.targetType && <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-amber-50 text-amber-700 font-medium border border-amber-100" title="Lo?i TS"><span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>{s.targetType}</span>}
                             {s.hocKy && <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-emerald-50 text-emerald-700 font-medium border border-emerald-100" title="N?m h?c tuy?n sinh"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>{s.hocKy}</span>}
-                            {(!s.admissionCriteria && !s.surveyFormType && !s.targetType && !s.hocKy) && <span className="text-xs text-slate-400 italic">Chýa thi?t l?p</span>}
+                            {(!s.admissionCriteria && !s.surveyFormType && !s.targetType && !s.hocKy) && <span className="text-xs text-slate-400 italic">Chï¿½a thi?t l?p</span>}
                           </div>
                         </td>
                         <td className="px-4 py-4 align-top">
                           <div className="flex flex-col gap-1.5">
-                            {s.kqgdTieuHoc && <div className="text-xs flex items-center gap-2"><span className="text-slate-500 w-16">CT B?t ð?u:</span><span className="font-medium text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded truncate max-w-[120px] block border border-rose-100">{s.kqgdTieuHoc}</span></div>}
+                            {s.kqgdTieuHoc && <div className="text-xs flex items-center gap-2"><span className="text-slate-500 w-16">CT B?t ï¿½?u:</span><span className="font-medium text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded truncate max-w-[120px] block border border-rose-100">{s.kqgdTieuHoc}</span></div>}
                             {s.kqHocTap && <div className="text-xs flex items-center gap-2"><span className="text-slate-500 w-16">Qu?c t?:</span><span className="font-medium text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded truncate max-w-[120px] block border border-blue-100">{s.kqHocTap}</span></div>}
                             {s.kqRenLuyen && <div className="text-xs flex items-center gap-2"><span className="text-slate-500 w-16">R?n luy?n:</span><span className="font-medium text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded truncate max-w-[120px] block border border-teal-100">{s.kqRenLuyen}</span></div>}
                             {(!s.kqgdTieuHoc && !s.kqHocTap && !s.kqRenLuyen) && <span className="text-xs text-slate-400 italic">Tr?ng</span>}
@@ -585,8 +585,8 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                   <UserCheck className="w-6 h-6 text-indigo-600"/>
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-slate-800 text-lg">Phân công Giáo viên Kh?o ?t</h3>
-                  <p className="text-sm font-medium text-slate-500 mt-0.5">Giao nhi?m v? ph? trách môn thi cho gi?o vi?n t? T? chuy?n môn</p>
+                  <h3 className="font-extrabold text-slate-800 text-lg">Phï¿½n cï¿½ng Giï¿½o viï¿½n Kh?o ?t</h3>
+                  <p className="text-sm font-medium text-slate-500 mt-0.5">Giao nhi?m v? ph? trï¿½ch mï¿½n thi cho gi?o vi?n t? T? chuy?n mï¿½n</p>
                 </div>
               </div>
             </div>
@@ -597,7 +597,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                 <div className="absolute top-0 left-0 w-1.5 h-full bg-indigo-500 rounded-l-xl"></div>
                 <div className="flex items-center gap-3 mb-2">
                    <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-sm font-bold shadow-sm">1</div>
-                   <h4 className="font-bold text-slate-700 text-base tracking-tight">K? Kh?o ?t & Ng??i ph? trách</h4>
+                   <h4 className="font-bold text-slate-700 text-base tracking-tight">K? Kh?o ?t & Ng??i ph? trï¿½ch</h4>
                 </div>
                 
                 <div className="space-y-5">
@@ -610,9 +610,9 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                   </div>
                   {assignPeriodId && periods.find(p=>p.id===assignPeriodId)?.batches?.length > 0 && (
                     <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                      <label className="block text-xs uppercase tracking-wider font-bold text-slate-500 mb-2">Ð?t KS</label>
+                      <label className="block text-xs uppercase tracking-wider font-bold text-slate-500 mb-2">ï¿½?t KS</label>
                       <select className="w-full border-slate-300 rounded-xl px-4 py-3 outline-none text-sm font-medium focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 shadow-sm transition-shadow bg-white" value={assignBatchId} onChange={e=>setAssignBatchId(e.target.value)}>
-                        <option value="">T?t c? c?c ð?t</option>
+                        <option value="">T?t c? c?c ï¿½?t</option>
                         {periods.find(p=>p.id===assignPeriodId)?.batches.map((b:any)=><option key={b.id} value={b.id}>{b.name}</option>)}
                       </select>
                     </div>
@@ -621,16 +621,16 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                   <div className="border-t border-slate-200 my-2"></div>
 
                   <div>
-                    <label className="block text-xs uppercase tracking-wider font-bold text-slate-500 mb-2">L?c theo T? CM <span className="text-slate-400 font-normal normal-case tracking-normal text-[11px]">(Không b?t bu?c)</span></label>
+                    <label className="block text-xs uppercase tracking-wider font-bold text-slate-500 mb-2">L?c theo T? CM <span className="text-slate-400 font-normal normal-case tracking-normal text-[11px]">(Khï¿½ng b?t bu?c)</span></label>
                     <select className="w-full border-slate-300 rounded-xl px-4 py-3 outline-none text-sm font-medium focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 shadow-sm transition-shadow bg-white" value={assignDepartmentId} onChange={e => {setAssignDepartmentId(e.target.value);setAssignTeacherId("")}}>
-                      <option value="">T?t c? T? chuy?n môn</option>
+                      <option value="">T?t c? T? chuy?n mï¿½n</option>
                       {departments?.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs uppercase tracking-wider font-bold text-slate-500 mb-2">Giáo viên Ph? tr?ch <span className="text-red-500">*</span></label>
+                    <label className="block text-xs uppercase tracking-wider font-bold text-slate-500 mb-2">Giï¿½o viï¿½n Ph? tr?ch <span className="text-red-500">*</span></label>
                     <select className="w-full border-indigo-200 rounded-xl px-4 py-3 outline-none text-sm font-bold text-indigo-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 shadow-sm transition-shadow bg-indigo-50/50" value={assignTeacherId} onChange={e=>setAssignTeacherId(e.target.value)}>
-                      <option value="">-- Ch?n Giáo viên --</option>
+                      <option value="">-- Ch?n Giï¿½o viï¿½n --</option>
                       {teachers?.filter((t: any) => !assignDepartmentId || t.departmentId === assignDepartmentId).map((t:any)=><option key={t.userId} value={t.userId}>{t.teacherName}</option>)}
                     </select>
                   </div>
@@ -642,7 +642,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                 <div className="absolute top-0 left-0 w-1.5 h-full bg-emerald-500 rounded-l-xl"></div>
                 <div className="flex items-center gap-3 mb-2">
                    <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-sm font-bold shadow-sm">2</div>
-                   <h4 className="font-bold text-slate-700 text-base tracking-tight">Ph?m vi Phân công</h4>
+                   <h4 className="font-bold text-slate-700 text-base tracking-tight">Ph?m vi Phï¿½n cï¿½ng</h4>
                 </div>
 
                 <div className="space-y-8 flex-1">
@@ -685,7 +685,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                 </div>
 
                 <div className="pt-2 mt-auto">
-                  <button onClick={handleAssignSubmit} disabled={!assignPeriodId || !assignTeacherId || assignSelSubjects.length===0 || assignSelGrades.length===0 || assignSelEdus.length===0} className="w-full py-4 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-extrabold text-base rounded-xl shadow-lg shadow-indigo-200 hover:from-indigo-700 hover:to-indigo-600 transition-all flex items-center justify-center gap-2 hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0 disabled:from-slate-400 disabled:to-slate-500 disabled:shadow-none"><Check className="w-5 h-5"/> {(!assignPeriodId || !assignTeacherId || assignSelSubjects.length===0 || assignSelGrades.length===0 || assignSelEdus.length===0) ? "Vui l?ng ch?n ?? thông tin" : "X?c nh?n & L?u Phân công"}</button>
+                  <button onClick={handleAssignSubmit} disabled={!assignPeriodId || !assignTeacherId || assignSelSubjects.length===0 || assignSelGrades.length===0 || assignSelEdus.length===0} className="w-full py-4 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-extrabold text-base rounded-xl shadow-lg shadow-indigo-200 hover:from-indigo-700 hover:to-indigo-600 transition-all flex items-center justify-center gap-2 hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0 disabled:from-slate-400 disabled:to-slate-500 disabled:shadow-none"><Check className="w-5 h-5"/> {(!assignPeriodId || !assignTeacherId || assignSelSubjects.length===0 || assignSelGrades.length===0 || assignSelEdus.length===0) ? "Vui l?ng ch?n ?? thï¿½ng tin" : "X?c nh?n & L?u Phï¿½n cï¿½ng"}</button>
                 </div>
               </div>
             </div>
@@ -695,19 +695,19 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
           {assignPeriodId && (
             <div className="glass-card rounded-2xl overflow-hidden shadow-xl border-slate-200">
                <div className="flex items-center justify-between p-4 border-b bg-slate-50/50">
-                  <h4 className="font-bold text-slate-800">Danh ?ch ?? Phân công ({assignments.length})</h4>
+                  <h4 className="font-bold text-slate-800">Danh ?ch ?? Phï¿½n cï¿½ng ({assignments.length})</h4>
                   {selectedAssignmentIds.length > 0 && (
-                    <button onClick={deleteSelectedAssignments} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 text-xs font-medium shadow-sm"><Trash2 className="w-3.5 h-3.5"/>Xóa {selectedAssignmentIds.length} ?ð? ch?n</button>
+                    <button onClick={deleteSelectedAssignments} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 text-xs font-medium shadow-sm"><Trash2 className="w-3.5 h-3.5"/>Xï¿½a {selectedAssignmentIds.length} ?ï¿½? ch?n</button>
                   )}
                </div>
-               {assignmentsLoading ? <div className="p-8 text-center text-slate-400">Ðang t?i...</div> : assignments.length === 0 ? <div className="p-8 text-center text-slate-400">Chýa c? ph?n c?ng n?o.</div> : (
+               {assignmentsLoading ? <div className="p-8 text-center text-slate-400">ï¿½ang t?i...</div> : assignments.length === 0 ? <div className="p-8 text-center text-slate-400">Chï¿½a c? ph?n c?ng n?o.</div> : (
                   <div className="overflow-x-auto max-h-[500px]">
                     <table className="w-full text-sm">
                       <thead className="bg-slate-50 text-slate-600 text-xs uppercase sticky top-0 shadow-sm z-10"><tr className="border-b">
                         <th className="py-3 px-4 w-10"><input type="checkbox" checked={selectedAssignmentIds.length===assignments.length && assignments.length>0} onChange={toggleAllAssignments} className="w-4 h-4 rounded"/></th>
                         <th className="py-3 px-4 text-left w-10">STT</th>
-                        <th className="py-3 px-4 text-left">Giáo viên</th>
-                        <th className="py-3 px-4 text-left">ð?t</th>
+                        <th className="py-3 px-4 text-left">Giï¿½o viï¿½n</th>
+                        <th className="py-3 px-4 text-left">ï¿½?t</th>
                         <th className="py-3 px-4 text-left">C?c M?n KS</th>
                         <th className="py-3 px-4 text-left">Kh?i</th>
                         <th className="py-3 px-4 text-left">H? h?c</th>
@@ -720,14 +720,14 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                         assignments.forEach(a => {
                           const key = a.userId + "_" + (a.batchId || "ALL");
                           if (!map.has(key)) {
-                            map.set(key, { ...a, pendingRequests: a.unlockRequestStatus === 'PENDING' ? [{ id: a.id, reason: a.unlockReason || 'Không c? l? do' }] : [], subjectNames: new Set([a.subject?.name]),subjectsSet: new Set([a.subjectId]), gradesSet: new Set([a.grade]), edusSet: new Set([a.educationSystem]), ids: [a.id] });
+                            map.set(key, { ...a, pendingRequests: a.unlockRequestStatus === 'PENDING' ? [{ id: a.id, reason: a.unlockReason || 'Khï¿½ng c? l? do' }] : [], subjectNames: new Set([a.subject?.name]),subjectsSet: new Set([a.subjectId]), gradesSet: new Set([a.grade]), edusSet: new Set([a.educationSystem]), ids: [a.id] });
                           } else {
                             const entry = map.get(key);
                             if(a.subject?.name) entry.subjectNames.add(a.subject.name);
                             if(a.subjectId) entry.subjectsSet.add(a.subjectId);
                             entry.gradesSet.add(a.grade);
                             entry.edusSet.add(a.educationSystem);
-                            if (a.unlockRequestStatus === 'PENDING') { entry.pendingRequests = entry.pendingRequests || []; entry.pendingRequests.push({ id: a.id, reason: a.unlockReason || 'Không c? l? do' }); }
+                            if (a.unlockRequestStatus === 'PENDING') { entry.pendingRequests = entry.pendingRequests || []; entry.pendingRequests.push({ id: a.id, reason: a.unlockReason || 'Khï¿½ng c? l? do' }); }
                             entry.ids.push(a.id);
                           }
                         });
@@ -744,7 +744,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                           };
 
                           const deleteGroup = async () => {
-                             if (!confirm("Xóa to?n b? " + g.ids.length + " ph?n c?ng c?a gi?o vi?n n?y?")) return;
+                             if (!confirm("Xï¿½a to?n b? " + g.ids.length + " ph?n c?ng c?a gi?o vi?n n?y?")) return;
                              await fetch("/api/input-assessment-assignments?ids=" + g.ids.join(","), { method: "DELETE" });
                             setSelectedAssignmentIds(p => p.filter(id => !g.ids.includes(id)));
                              fetchAssignments();
@@ -784,7 +784,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                               </td>
                               <td className="py-3 px-4 text-center"><div className="flex gap-1 justify-center">
                                 <button onClick={editGroup} className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50" title="S?a"><Pencil className="w-4 h-4"/></button>
-                                <button onClick={deleteGroup} className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50" title="Xóa"><Trash2 className="w-4 h-4"/></button>
+                                <button onClick={deleteGroup} className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50" title="Xï¿½a"><Trash2 className="w-4 h-4"/></button>
                               </div></td>
                             </tr>
                           );
@@ -808,7 +808,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
               </div>
               <div>
                 <h3 className="font-bold text-slate-800 text-base">T?ng h?p K?t qu? Kh?o ?t</h3>
-                <p className="text-[11px] font-medium text-slate-500">Xem ði?m v? xu?t b?o c?o</p>
+                <p className="text-[11px] font-medium text-slate-500">Xem ï¿½i?m v? xu?t b?o c?o</p>
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2 lg:ml-auto w-full lg:w-auto mt-2 lg:mt-0">
@@ -857,23 +857,23 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
               <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
                 <BarChart className="w-8 h-8 text-slate-300"/>
               </div>
-              <p className="font-semibold text-slate-500 text-lg">Vui l?ng ch?n K? kh?o sát ?? xem k?t qu?.</p>
-              <p className="text-sm text-slate-400 mt-2">D? li?u ? ð?c t?ng h?p t? t?t c? c?c ð?t trong k?.</p>
+              <p className="font-semibold text-slate-500 text-lg">Vui l?ng ch?n K? kh?o sï¿½t ?? xem k?t qu?.</p>
+              <p className="text-sm text-slate-400 mt-2">D? li?u ? ï¿½?c t?ng h?p t? t?t c? c?c ï¿½?t trong k?.</p>
             </div>
           ) : viewResultsData.loading ? (
             <div className="text-center py-20 bg-white rounded-2xl shadow-sm border flex flex-col items-center justify-center">
                 <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
-                <span className="text-slate-500 font-medium">??Ðang t?ng h?p d? li?u...</span>
+                <span className="text-slate-500 font-medium">??ï¿½ang t?ng h?p d? li?u...</span>
             </div>
           ) : viewResultsData.students?.length === 0 ? (
-            <div className="text-center py-20 bg-white rounded-2xl shadow-sm border text-slate-500 font-medium">K? kh?o sát n?y ch?a c? h?c sinh n?o.</div>
+            <div className="text-center py-20 bg-white rounded-2xl shadow-sm border text-slate-500 font-medium">K? kh?o sï¿½t n?y ch?a c? h?c sinh n?o.</div>
           ) : (
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                 <div className="px-5 py-4 border-b bg-indigo-50/30 flex justify-between items-center">
                     <h4 className="font-bold text-slate-800">K?t qu? ph?n t?ch <span className="text-slate-400 font-normal text-sm">({viewResultsData.students.length} h?c sinh)</span></h4>
                     <div className="text-xs font-medium text-slate-500 flex gap-4">
-                        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> ð?t</span>
-                        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-500"></span> Không ð?t</span>
+                        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> ï¿½?t</span>
+                        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-500"></span> Khï¿½ng ï¿½?t</span>
                         <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-slate-300"></span> Ch? nh?p/duy?t</span>
                     </div>
                 </div>
@@ -883,7 +883,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                             <tr>
                                 <th className="px-4 py-3 text-center w-12 border-r">STT</th>
                                 <th className="px-5 py-3 text-left w-64 border-r">Th?ng tin H?c inh</th>
-                                <th className="px-5 py-3 text-left border-r min-w-[500px]">Chi ti?t ði?m & Nh?n x?t c?c môn</th>
+                                <th className="px-5 py-3 text-left border-r min-w-[500px]">Chi ti?t ï¿½i?m & Nh?n x?t c?c mï¿½n</th>
                                 <th className="px-5 py-3 text-center w-40">K?t qu? Duy?t</th>
                             </tr>
                         </thead>
@@ -935,14 +935,14 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
                                                                     <span>{sc.subject?.name}</span>
                                                                     <div className="flex flex-col items-end text-right">
                                                                         {assignedTeacherName && <span className="text-[9px] font-black text-indigo-700 tracking-normal normal-case shrink-0" title={"GV Ph? tr?ch: " + assignedTeacherName}>PC: {assignedTeacherName}</span>}
-                                                                        {sc.teacherName && <span className="text-[9px] font-medium opacity-60 tracking-normal normal-case italic shrink-0" title={"Ngý?i nh?p: " + sc.teacherName}>nh?p: {sc.teacherName}</span>}
+                                                                        {sc.teacherName && <span className="text-[9px] font-medium opacity-60 tracking-normal normal-case italic shrink-0" title={"Ngï¿½?i nh?p: " + sc.teacherName}>nh?p: {sc.teacherName}</span>}
                                                                     </div>
                                                                 </div>
                                                                 <div className="p-1.5 flex flex-wrap items-stretch">
                                                                     {parsedScores.length > 0 && (
                                                                         <div className="flex gap-1 pr-2 border-r border-current/10 mr-2 items-center">
                                                                             {parsedScores.map((score: any, s_i: number) => (
-                                                                                <div key={s_i} className="flex flex-col items-center justify-center bg-white/60 rounded px-2 min-w-[36px] py-1" title={colNames.scores[s_i] || `ði?m ${s_i+1}`}>
+                                                                                <div key={s_i} className="flex flex-col items-center justify-center bg-white/60 rounded px-2 min-w-[36px] py-1" title={colNames.scores[s_i] || `ï¿½i?m ${s_i+1}`}>
                                                                                     <span className="text-[9px] font-semibold opacity-70 mb-0.5">{colNames.scores[s_i] ? colNames.scores[s_i].slice(0,5)+'..' : `?${s_i+1}`}</span>
                                                                                     <span className="font-extrabold text-sm">{score || '-'}</span>
                                                                                 </div>
@@ -956,7 +956,7 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
                                                                                 <span>{com}</span>
                                                                             </div>
                                                                         ))}
-                                                                        {parsedComments.every((c: any) => !c) && <span className="text-xs opacity-50 italic">Chýa c? nh?n x?t.</span>}
+                                                                        {parsedComments.every((c: any) => !c) && <span className="text-xs opacity-50 italic">Chï¿½a c? nh?n x?t.</span>}
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -964,11 +964,11 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
                                                 })}
                                             </div>
                                         ) : (
-                                            <span className="text-xs text-slate-400 italic">Chýa c? d? li?u ði?m môn n?o.</span>
+                                            <span className="text-xs text-slate-400 italic">Chï¿½a c? d? li?u ï¿½i?m mï¿½n n?o.</span>
                                         )}
                                     </td>
                                     <td className="p-4 align-middle text-center">
-                                        {/* Dropdown to approve/chýangestatus right here */}
+                                        {/* Dropdown to approve/chï¿½angestatus right here */}
                                         <div className="flex flex-col gap-2 relative">
                                             <select 
                                                 value={s.admissionResult || ""}
@@ -998,9 +998,9 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
                                                 }`}
                                             >
                                                 <option value="">-- Ch? duy?t --</option>
-                                                <option value="DAT">ð?t</option>
+                                                <option value="DAT">ï¿½?t</option>
                                                 <option value="CAM_KET">Cam k?t</option>
-                                                <option value="KHONG_DAT">Không ð?t</option>
+                                                <option value="KHONG_DAT">Khï¿½ng ï¿½?t</option>
                                                 <option value="KIEM_TRA_LAI">Ki?m tra l?i</option>
                                             </select>
                                         </div>
@@ -1020,32 +1020,32 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
       {isConfigOpen&&(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
           <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
-            <div className="flex justify-between items-center p-4 border-b bg-slate-50/80"><h3 className="font-bold text-slate-800 text-lg">{editingConfigId?'S?a Danh m?c':'Thêm Danh m?c m?i'}</h3><button onClick={()=>setIsConfigOpen(false)} className="text-slate-400 hover:text-slate-600 bg-white hover:bg-slate-100 rounded-full p-1 border shadow-sm"><X className="w-5 h-5"/></button></div>
+            <div className="flex justify-between items-center p-4 border-b bg-slate-50/80"><h3 className="font-bold text-slate-800 text-lg">{editingConfigId?'S?a Danh m?c':'Thï¿½m Danh m?c m?i'}</h3><button onClick={()=>setIsConfigOpen(false)} className="text-slate-400 hover:text-slate-600 bg-white hover:bg-slate-100 rounded-full p-1 border shadow-sm"><X className="w-5 h-5"/></button></div>
             <div className="p-5 space-y-4">
               <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Lo?i danh m?c</label><select value={configForm.categoryType} onChange={e=>setConfigForm({...configForm,categoryType:e.target.value})} disabled={!!editingConfigId} className="w-full border rounded-xl px-3 py-2.5 outline-none bg-slate-50 text-sm font-medium">{CAT_TYPES.map(c=><option key={c.key} value={c.key}>{c.label}</option>)}<option value="HOC_KY">N?m h?c tuy?n sinh</option></select></div>
               {configForm.categoryType==="HOC_KY"&&(<div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">N?m h?c g?n k?m <span className="text-red-500">*</span></label><select value={configForm.academicYearId} onChange={e=>setConfigForm({...configForm,academicYearId:e.target.value})} className="w-full border rounded-xl px-3 py-2.5 outline-none text-sm font-medium"><option value="">-- Ch?n N?m h?c --</option>{academicYears.map((y:any)=><option key={y.id} value={y.id}>{y.name}</option>)}</select></div>)}
               <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">M? (Code) <span className="text-red-500">*</span></label><input autoFocus={!editingConfigId} value={configForm.code} onChange={e=>setConfigForm({...configForm,code:e.target.value})} className="w-full border-slate-300 rounded-xl px-3 py-2.5 font-mono outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm" placeholder="VD: MIEN_PHI, AP, HK1_2024"/></div>
               <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">T?n hi?n th? <span className="text-red-500">*</span></label><input autoFocus={!!editingConfigId} value={configForm.name} onChange={e=>setConfigForm({...configForm,name:e.target.value})} className="w-full border-slate-300 rounded-xl px-3 py-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm font-medium" placeholder="VD: Mi?n ph? KS, Advanced Placement..."/></div>
             </div>
-            <div className="flex justify-end gap-2 p-4 border-t bg-slate-50/50"><button onClick={()=>setIsConfigOpen(false)} className="px-5 py-2.5 text-slate-600 bg-white hover:bg-slate-100 rounded-xl text-sm font-semibold border shadow-sm transition-colors">H?y</button><button onClick={handleConfigSubmit} className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 text-sm font-bold shadow-sm transition-colors">{editingConfigId?'L?u thay ??i':'Thêm m?i'}</button></div>
+            <div className="flex justify-end gap-2 p-4 border-t bg-slate-50/50"><button onClick={()=>setIsConfigOpen(false)} className="px-5 py-2.5 text-slate-600 bg-white hover:bg-slate-100 rounded-xl text-sm font-semibold border shadow-sm transition-colors">H?y</button><button onClick={handleConfigSubmit} className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 text-sm font-bold shadow-sm transition-colors">{editingConfigId?'L?u thay ??i':'Thï¿½m m?i'}</button></div>
           </div>
         </div>
       )}
 
-      {/* MODAL MON KHÓAO SAT */}
+      {/* MODAL MON KHï¿½AO SAT */}
       {isSubjectOpen&&(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
           <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
-            <div className="flex justify-between items-center p-4 border-b bg-slate-50/80"><h3 className="font-bold text-slate-800 text-lg">{editingSubjectId?'S?a M?n Kh?o ?t':'Thêm M?n Kh?o ?C?t ði?m?i'}</h3><button onClick={()=>setIsSubjectOpen(false)} className="text-slate-400 hover:text-slate-600 bg-white hover:bg-slate-100 rounded-full p-1 border shadow-sm"><X className="w-5 h-5"/></button></div>
+            <div className="flex justify-between items-center p-4 border-b bg-slate-50/80"><h3 className="font-bold text-slate-800 text-lg">{editingSubjectId?'S?a M?n Kh?o ?t':'Thï¿½m M?n Kh?o ?C?t ï¿½i?m?i'}</h3><button onClick={()=>setIsSubjectOpen(false)} className="text-slate-400 hover:text-slate-600 bg-white hover:bg-slate-100 rounded-full p-1 border shadow-sm"><X className="w-5 h-5"/></button></div>
             <div className="p-5 space-y-4">
               <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">M? M?n <span className="text-red-500">*</span></label><input autoFocus={!editingSubjectId} value={subjectForm.code} onChange={e=>setSubjectForm({...subjectForm,code:e.target.value})} disabled={!!editingSubjectId} className="w-full border-slate-300 rounded-xl px-3 py-2.5 font-mono outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm" placeholder="VD: TOAN_EQ"/></div>
               <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">T?n M?n <span className="text-red-500">*</span></label><input autoFocus={!!editingSubjectId} value={subjectForm.name} onChange={e=>setSubjectForm({...subjectForm,name:e.target.value})} className="w-full border-slate-300 rounded-xl px-3 py-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm font-medium" placeholder="VD: To?n (EQ)"/></div>
               <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Thu?c lo?i / H?</label><input value={subjectForm.subjectType} onChange={e=>setSubjectForm({...subjectForm,subjectType:e.target.value})} className="w-full border-slate-300 rounded-xl px-3 py-2.5 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm" placeholder="VD: Chuy?n, Th??ng (T?y ch?n)"/></div>
               <div className="flex gap-4">
-                  <div className="flex-1"><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Tr?ng th?i</label><select value={subjectForm.status} onChange={e=>setSubjectForm({...subjectForm,status:e.target.value})} className="w-full border rounded-xl px-3 py-2.5 outline-none bg-slate-50 text-sm font-medium"><option value="ACTIVE">Ho?t ð?ng</option><option value="INACTIVE">Ng?ng ho?t ??ng</option></select></div>
+                  <div className="flex-1"><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Tr?ng th?i</label><select value={subjectForm.status} onChange={e=>setSubjectForm({...subjectForm,status:e.target.value})} className="w-full border rounded-xl px-3 py-2.5 outline-none bg-slate-50 text-sm font-medium"><option value="ACTIVE">Ho?t ï¿½?ng</option><option value="INACTIVE">Ng?ng ho?t ??ng</option></select></div>
               </div>
             </div>
-            <div className="flex justify-end gap-2 p-4 border-t bg-slate-50/50"><button onClick={()=>setIsSubjectOpen(false)} className="px-5 py-2.5 text-slate-600 bg-white hover:bg-slate-100 rounded-xl text-sm font-semibold border shadow-sm transition-colors">H?y</button><button onClick={handleSubjectSubmit} className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 text-sm font-bold shadow-sm transition-colors">{editingSubjectId?'L?u thay ??i':'Thêm m?i'}</button></div>
+            <div className="flex justify-end gap-2 p-4 border-t bg-slate-50/50"><button onClick={()=>setIsSubjectOpen(false)} className="px-5 py-2.5 text-slate-600 bg-white hover:bg-slate-100 rounded-xl text-sm font-semibold border shadow-sm transition-colors">H?y</button><button onClick={handleSubjectSubmit} className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 text-sm font-bold shadow-sm transition-colors">{editingSubjectId?'L?u thay ??i':'Thï¿½m m?i'}</button></div>
           </div>
         </div>
       )}
@@ -1054,7 +1054,7 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
       {isStudentOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm overflow-y-auto">
             <div className="bg-white rounded-2xl w-full max-w-3xl shadow-2xl overflow-hidden my-auto">
-            <div className="flex justify-between items-center p-4 border-b bg-slate-50/80"><h3 className="font-bold text-slate-800 text-lg flex items-center gap-2"><User className="w-5 h-5 text-indigo-500"/>{editingStudentId ? 'S?a thông tin H?c inh' : 'Thêm H?c inh Kh?o ?t'}</h3><button onClick={() =>setIsStudentOpen(false)} className="text-slate-400 hover:text-slate-600 bg-white hover:bg-slate-100 rounded-full p-1 border shadow-sm"><X className="w-5 h-5"/></button></div>
+            <div className="flex justify-between items-center p-4 border-b bg-slate-50/80"><h3 className="font-bold text-slate-800 text-lg flex items-center gap-2"><User className="w-5 h-5 text-indigo-500"/>{editingStudentId ? 'S?a thï¿½ng tin H?c inh' : 'Thï¿½m H?c inh Kh?o ?t'}</h3><button onClick={() =>setIsStudentOpen(false)} className="text-slate-400 hover:text-slate-600 bg-white hover:bg-slate-100 rounded-full p-1 border shadow-sm"><X className="w-5 h-5"/></button></div>
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[70vh] overflow-y-auto">
                 <div className="space-y-4">
                     <h4 className="font-bold text-indigo-900 border-b pb-2 text-sm uppercase">Th?ng tin c? b?n</h4>
@@ -1072,8 +1072,8 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
                     </div>
                 </div>
                 <div className="space-y-4">
-                    <h4 className="font-bold text-indigo-900 border-b pb-2 text-sm uppercase">Thi?t l?p ð?t & Kh?o ?t</h4>
-                    <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Ð?t KS</label><select value={studentForm.batchId} onChange={e =>setStudentForm({...studentForm, batchId: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"><option value="">T?t c? ð?t trong k?</option>{currentPeriodBatches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}</select></div>
+                    <h4 className="font-bold text-indigo-900 border-b pb-2 text-sm uppercase">Thi?t l?p ï¿½?t & Kh?o ?t</h4>
+                    <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">ï¿½?t KS</label><select value={studentForm.batchId} onChange={e =>setStudentForm({...studentForm, batchId: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"><option value="">T?t c? ï¿½?t trong k?</option>{currentPeriodBatches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}</select></div>
                     <div className="grid grid-cols-2 gap-4">
                         <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">N?m h?c Tuy?n inh</label><select value={studentForm.hocKy} onChange={e=>setStudentForm({...studentForm, hocKy: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm outline-none"><option value="">-- Ch?n --</option>{configsList.filter(c=>c.categoryType==='HOC_KY').map(c => <option key={c.id} value={c.code}>{c.name}</option>)}</select></div>
                         <div><label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Lo?i Tuy?n inh</label><select value={studentForm.targetType} onChange={e=>setStudentForm({...studentForm, targetType: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm outline-none"><option value="">-- Ch?n --</option>{configsList.filter(c=>c.categoryType==='LOAI_TUYEN_SINH').map(c => <option key={c.id} value={c.code}>{c.name}</option>)}</select></div>
@@ -1109,7 +1109,7 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
           <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <div className="flex justify-between items-center p-4 border-b bg-indigo-50/50">
               <div>
-                <h3 className="font-bold text-indigo-900 text-lg flex items-center gap-2"><Settings className="w-5 h-5"/>C?u h?nh C?t ði?m & Nh?n x?t</h3>
+                <h3 className="font-bold text-indigo-900 text-lg flex items-center gap-2"><Settings className="w-5 h-5"/>C?u h?nh C?t ï¿½i?m & Nh?n x?t</h3>
                 <p className="text-xs text-indigo-600 mt-1 font-medium">M?n: {columnConfigForm.name}</p>
               </div>
               <button onClick={()=>setIsColumnConfigOpen(false)} className="text-slate-400 hover:text-slate-600 bg-white hover:bg-slate-100 rounded-full p-1.5 border shadow-sm"><X className="w-4 h-4"/></button>
@@ -1133,12 +1133,12 @@ const assignedTeacherName = (viewResultsData.assignments || []).find((a:any) => 
                     <div className="space-y-2">
                         {Array.from({length: columnConfigForm.scoreColumns || 0}).map((_, i) => (
                             <div key={i} className="flex gap-2 items-center">
-                                <span className="text-xs font-semibold text-slate-500 w-12">ði?m {i+1}</span>
+                                <span className="text-xs font-semibold text-slate-500 w-12">ï¿½i?m {i+1}</span>
                                 <input value={columnConfigForm.scoreNames[i] || ""} onChange={e=>{
                                     const arr = [...columnConfigForm.scoreNames];
                                     arr[i] = e.target.value;
                                    setColumnConfigForm(p=>({...p,scoreNames: arr}));
-                                }} className="flex-1 border rounded px-2 py-1.5 text-sm outline-none focus:border-indigo-400" placeholder={`T?n c?t ði?m ${i+1}. VD: B?i 1...`} />
+                                }} className="flex-1 border rounded px-2 py-1.5 text-sm outline-none focus:border-indigo-400" placeholder={`T?n c?t ï¿½i?m ${i+1}. VD: B?i 1...`} />
                                 <label className="flex items-center gap-1.5 text-xs text-slate-600 bg-white border px-2 py-1.5 rounded cursor-pointer hover:bg-slate-100">
                                     <input type="checkbox" checked={columnConfigForm.showScoreInReport[i] !== false} onChange={e => {
                                         const arr = [...columnConfigForm.showScoreInReport];
