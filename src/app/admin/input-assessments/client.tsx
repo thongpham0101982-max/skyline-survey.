@@ -796,7 +796,21 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
       <Modal open={pModal} onClose={()=>setPModal(false)} title="Thông tin Kỳ khảo sát" footer={<><button onClick={()=>setPModal(false)} className="flex-1 py-3 font-black text-xs uppercase tracking-widest text-slate-500 hover:text-slate-700">Hủy</button> <button onClick={savePeriod} className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-slate-200">Lưu thông tin</button></>}>
         <div className="space-y-4">
            <Field label="Mã định danh" required><input value={pForm.code} onChange={e=>setPForm(f=>({...f,code:e.target.value.toUpperCase()}))} className={inp}/></Field>
-           <Field label="Tên Kỳ khảo sát" required><input value={pForm.name} onChange={e=>setPForm(f=>({...f,name:e.target.value}))} className={inp}/></Field>
+           <Field label="Kỳ Khảo sát" required>
+             <select
+               value={pForm.name}
+               onChange={e => {
+                 const sel = configs.find(c => c.categoryType === "KY_KS" && c.name === e.target.value)
+                 setPForm(f => ({ ...f, name: e.target.value, code: sel ? sel.code : f.code }))
+               }}
+               className={inp}
+             >
+               <option value="">-- Chọn loại kỳ khảo sát --</option>
+               {configs.filter(c => c.categoryType === "KY_KS").map(c => (
+                 <option key={c.id} value={c.name}>{c.name}</option>
+               ))}
+             </select>
+           </Field>
            <div className="grid grid-cols-2 gap-3"><Field label="Ngày bắt đầu"><input type="date" value={pForm.startDate} onChange={e=>setPForm(f=>({...f,startDate:e.target.value}))} className={inp}/></Field><Field label="Ngày kết thúc"><input type="date" value={pForm.endDate} onChange={e=>setPForm(f=>({...f,endDate:e.target.value}))} className={inp}/></Field></div>
            <Field label="Người phụ trách">
               <select value={pForm.assignedUserId} onChange={e=>setPForm(f=>({...f,assignedUserId:e.target.value}))} className={inp}>
