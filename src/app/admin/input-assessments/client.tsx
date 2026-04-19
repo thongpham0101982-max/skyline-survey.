@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import {
@@ -47,8 +47,9 @@ interface Props {
 const CATEGORY_TYPES = [
   { code: "DIEN_KS",       label: "Diện Khảo sát",      color: "from-violet-500 to-indigo-500" },
   { code: "HINH_THUC_KS",  label: "Hình thức KS",        color: "from-blue-500 to-cyan-500" },
-  { code: "HS_CT_QUOC_TE", label: "Hồ sơ CT Quốc tế",   color: "from-emerald-500 to-teal-500" },
+  { code: "HS_CT_QUOC_TE", label: "Hồ sơ/Bảng điểm",   color: "from-emerald-500 to-teal-500" },
   { code: "HOC_KY",        label: "Học kỳ / Năm TS",     color: "from-amber-500 to-orange-500" },
+  { code: "KY_KS",          label: "Kỳ Khảo sát",         color: "from-orange-500 to-red-500" },
   { code: "KQGD_TIEU_HOC", label: "KQGD Tiểu học",       color: "from-rose-500 to-pink-500" },
   { code: "KQ_HOC_TAP",    label: "Kết quả Học tập",     color: "from-sky-500 to-blue-500" },
   { code: "KQ_REN_LUYEN",  label: "Kết quả Rèn luyện",   color: "from-green-500 to-emerald-500" },
@@ -836,3 +837,4 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
     </div>
   )
 }
+
