@@ -1,4 +1,4 @@
-"use server"
+﻿"use server"
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 
@@ -7,7 +7,7 @@ export async function createCampus(code: string, name: string, address?: string)
     await prisma.campus.create({
       data: {
         campusCode: code,
-        name: name,
+        campusName: name,
         address: address,
         status: "ACTIVE"
       }
@@ -25,7 +25,7 @@ export async function updateCampus(id: string, code: string, name: string, addre
       where: { id },
       data: {
         campusCode: code,
-        name: name,
+        campusName: name,
         address: address,
         status: status || "ACTIVE"
       }
@@ -39,12 +39,12 @@ export async function updateCampus(id: string, code: string, name: string, addre
 
 export async function deleteCampus(id: string) {
   try {
-    // Check if there are classes or teachers linked to this campus
-    const classCount = await (prisma as any).class.count({ where: { campusId: id } });
-    const teacherCount = await (prisma as any).teacher.count({ where: { campusId: id } });
+    const classCount = await prisma.class.count({ where: { campusId: id } });
+    const teacherCount = await prisma.teacher.count({ where: { campusId: id } });
+    const studentCount = await prisma.student.count({ where: { campusId: id } });
     
-    if (classCount > 0 || teacherCount > 0) {
-      return { success: false, error: "Không thể xóa cơ sở đang có lớp học hoặc giáo viên!" };
+    if (classCount > 0 || teacherCount > 0 || studentCount > 0) {
+      return { success: false, error: "Không thể xóa cơ sở đang có dữ liệu liên quan (lớp học, giáo viên hoặc học sinh)!" };
     }
 
     await prisma.campus.delete({ where: { id } });
