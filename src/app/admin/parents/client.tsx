@@ -1,4 +1,5 @@
-﻿"use client"
+﻿// Deployment trigger at 20/04/2026 15:27:29
+"use client"
 import { useState, useEffect, useMemo } from "react"
 import { getClassStudentsWithParentsAction, generateParentAccountsAction, deleteParentAccountsAction } from "./actions"
 import { Users, KeyRound, UserCheck, AlertCircle, RefreshCw, CalendarDays, Trash2, X, School, Search, ShieldCheck } from "lucide-react"
@@ -301,3 +302,4 @@ export function ParentAccountsClient({ classes, years, campuses, defaultYearId }
     </div>
   )
 }
+
