@@ -2,7 +2,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
-import { LogOut, LayoutDashboard } from "lucide-react"
+import { LogOut, LayoutDashboard, Layers } from "lucide-react"
 import { APP_CATEGORIES } from "@/config/modules"
 
 interface SidebarProps {
@@ -37,7 +37,6 @@ export function Sidebar({ role, permissionModules, actualRole, taskCount = 0 }: 
       </div>
 
       <nav className="flex flex-col space-y-1 flex-grow overflow-y-auto pr-2 custom-scrollbar">
-        {/* Dashboard is always visible for relevant roles */}
         <Link 
           href={role === "ADMIN" ? "/admin" : role === "TEACHER" ? "/teacher" : "/parent"}
           className={`group flex items-center px-3 py-2.5 rounded-xl transition-all duration-200 text-sm font-medium ${
@@ -46,7 +45,7 @@ export function Sidebar({ role, permissionModules, actualRole, taskCount = 0 }: 
               : "text-slate-400 hover:text-white hover:bg-slate-800"
           }`}
         >
-          <LayoutDashboard className={`w-4 h-4 mr-3 ${pathname === "/admin" ? "text-indigo-400" : "text-slate-500 group-hover:text-indigo-400"}`} />
+          <LayoutDashboard className={`w-4 h-4 mr-3 ${pathname === (role === "ADMIN" ? "/admin" : "/teacher") ? "text-indigo-400" : "text-slate-500 group-hover:text-indigo-400"}`} />
           Dashboard
         </Link>
 
@@ -89,7 +88,6 @@ export function Sidebar({ role, permissionModules, actualRole, taskCount = 0 }: 
           )
         })}
 
-        {/* Placeholder for Teacher/Parent modules if needed, keeping it simple for now */}
         {role === "TEACHER" && (
           <div className="pt-4">
             <div className="px-3 py-2">
