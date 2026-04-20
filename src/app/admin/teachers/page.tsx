@@ -10,27 +10,31 @@ export default async function TeacherManagerPage() {
   })
   const defaultYearId = years.find(y => y.status === "ACTIVE")?.id || years[0]?.id || null
 
-  // Danh sach To chuyen mon
   const departments = await prisma.department.findMany({
     where: { status: "ACTIVE" },
     orderBy: { name: "asc" },
     select: { id: true, code: true, name: true }
   })
 
-  // Danh sach Mon hoc tu module Quan ly mon hoc
   const subjects = await prisma.subject.findMany({
     where: { status: "ACTIVE" },
     orderBy: { subjectName: "asc" },
     select: { id: true, subjectCode: true, subjectName: true }
   })
 
-  // Query teachers with FK joins for department and subject names
+  const campuses = await prisma.campus.findMany({
+    where: { status: "ACTIVE" },
+    orderBy: { campusName: "asc" },
+    select: { id: true, campusCode: true, campusName: true }
+  })
+
   const rawTeachers = await prisma.teacher.findMany({
     orderBy: { teacherName: "asc" },
     include: {
       user: { select: { email: true, status: true } },
       departmentRel: { select: { name: true } },
       mainSubjectRel: { select: { subjectName: true } },
+      campus: { select: { campusName: true } }
     }
   })
 
@@ -53,11 +57,12 @@ export default async function TeacherManagerPage() {
     teacherCode: t.teacherCode,
     teacherName: t.teacherName,
     dateOfBirth: t.dateOfBirth || null,
-    // Display name from FK relation (preferred) or legacy string field
     department: t.departmentRel?.name || null,
     departmentId: t.departmentId || null,
     mainSubject: t.mainSubjectRel?.subjectName || null,
     mainSubjectId: t.mainSubjectId || null,
+    campus: t.campus?.campusName || null,
+    campusId: t.campusId || null,
     homeroomClass: t.homeroomClass || null,
     homeroomClassId: classHomeroomMap.get(t.id)?.classId || null,
     email: t.email || null,
@@ -79,8 +84,8 @@ export default async function TeacherManagerPage() {
         classes={classes}
         departments={departments}
         subjects={subjects}
+        campuses={campuses}
       />
     </div>
   )
 }
-

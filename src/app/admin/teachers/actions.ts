@@ -56,7 +56,7 @@ async function assignHomeroomClass(teacherId: string, classId: string | null) {
 }
 
 export async function createTeacherAction(data: any) {
-  const campusId = await getDefaultCampusId()
+  const campusId = data.campusId || await getDefaultCampusId()
   const hashedPassword = await bcrypt.hash(data.teacherCode, 10)
 
   const existingUser = await prisma.user.findUnique({ where: { email: data.teacherCode } })
@@ -99,11 +99,12 @@ export async function createTeacherAction(data: any) {
 }
 
 export async function updateTeacherAction(data: any) {
-  const { id, teacherName, dateOfBirth } = data
+  const { id, teacherName, dateOfBirth, campusId } = data
 
   const updateData: any = {}
   if (teacherName) updateData.teacherName = teacherName
   if (dateOfBirth !== undefined) updateData.dateOfBirth = dateOfBirth ? new Date(dateOfBirth) : null
+  if (campusId !== undefined) updateData.campusId = campusId
 
   // Resolve FK IDs
   if (data.department !== undefined) {
