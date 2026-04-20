@@ -1,10 +1,11 @@
 ﻿"use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { getClassStudentsWithParentsAction, generateParentAccountsAction, deleteParentAccountsAction } from "./actions"
-import { Users, KeyRound, UserCheck, AlertCircle, RefreshCw, CalendarDays, Trash2, X } from "lucide-react"
+import { Users, KeyRound, UserCheck, AlertCircle, RefreshCw, CalendarDays, Trash2, X, School, Search, ShieldCheck } from "lucide-react"
 
-export function ParentAccountsClient({ classes, years, defaultYearId }: any) {
+export function ParentAccountsClient({ classes, years, campuses, defaultYearId }: any) {
   const [filterYearId, setFilterYearId] = useState(defaultYearId || "ALL")
+  const [selectedCampusId, setSelectedCampusId] = useState("ALL")
   const [selectedClassId, setSelectedClassId] = useState("")
   const [students, setStudents] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
@@ -13,16 +14,26 @@ export function ParentAccountsClient({ classes, years, defaultYearId }: any) {
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([])
   const [deleting, setDeleting] = useState(false)
 
-  const filteredClasses = filterYearId === "ALL"
-    ? classes
-    : classes.filter((c: any) => c.academicYear?.id === filterYearId)
+  // Filter classes based on Year AND Campus
+  const filteredClasses = useMemo(() => {
+    return classes.filter((c: any) => {
+      const yearMatch = filterYearId === "ALL" || c.academicYear?.id === filterYearId
+      const campusMatch = selectedCampusId === "ALL" || c.campusId === selectedCampusId
+      return yearMatch && campusMatch
+    })
+  }, [classes, filterYearId, selectedCampusId])
 
   const fetchStudents = async (cid: string) => {
     setLoading(true)
-    const data = await getClassStudentsWithParentsAction(cid)
-    setStudents(data)
-    setSelectedStudentIds([]) // Reset selection on class change
-    setLoading(false)
+    try {
+      const data = await getClassStudentsWithParentsAction(cid)
+      setStudents(data)
+      setSelectedStudentIds([])
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => {
@@ -30,12 +41,12 @@ export function ParentAccountsClient({ classes, years, defaultYearId }: any) {
     else setStudents([])
   }, [selectedClassId])
 
-  // Reset class selection when year changes
+  // Reset class when year or campus changes
   useEffect(() => {
     setSelectedClassId("")
     setStudents([])
     setSelectedStudentIds([])
-  }, [filterYearId])
+  }, [filterYearId, selectedCampusId])
 
   const handleGenerate = async () => {
     if (!selectedClassId) return
@@ -44,188 +55,224 @@ export function ParentAccountsClient({ classes, years, defaultYearId }: any) {
     const res = await generateParentAccountsAction(selectedClassId)
     setGenerating(false)
     if (res.success) {
-      alert(`Khởi tạo thành công ${res.count} tài khoản mới cho Phụ huynh lớp này!`)
+      alert(`Khởi tạo thành công ${res.count} tài khoản mới!`)
       fetchStudents(selectedClassId)
     }
   }
 
   const handleDeleteMany = async () => {
     if (selectedStudentIds.length === 0) return;
-    if (!confirm(`Bạn có chắc chắn muốn xóa ${selectedStudentIds.length} tài khoản PHHS đã chọn?`)) return;
+    if (!confirm(`Xác nhận xóa ${selectedStudentIds.length} tài khoản PHHS đã chọn?`)) return;
     setDeleting(true);
     const res = await deleteParentAccountsAction(selectedStudentIds);
     setDeleting(false);
     if (res.success) {
-      alert("Xoá thành công!");
       fetchStudents(selectedClassId);
-    } else {
-      alert("Lỗi: " + (res.error || ""));
     }
   }
-
-  const handleDeleteAllInClass = async () => {
-    if (!selectedClassId) return;
-    const studentIdsWithAccounts = students.filter(s => s.parents.length > 0).map(s => s.id);
-    if (studentIdsWithAccounts.length === 0) {
-      alert("Lớp này chưa có tài khoản nào để huỷ.");
-      return;
-    }
-    if (!confirm(`Bạn có chắc chắn muốn huỷ (xoá) TOÀN BỘ ${studentIdsWithAccounts.length} tài khoản phụ huynh trong lớp này?`)) return;
-    setDeleting(true);
-    const res = await deleteParentAccountsAction(studentIdsWithAccounts);
-    setDeleting(false);
-    if (res.success) {
-      alert("Đã huỷ toàn bộ tài khoản thành công!");
-      fetchStudents(selectedClassId);
-    } else {
-      alert("Lỗi: " + (res.error || ""));
-    }
-  }
-
-  const currentYearName = years.find((y: any) => y.id === filterYearId)?.name || "Tat ca"
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-outfit">
 
-      {/* Year Filter */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-          <div className="flex items-center gap-2">
-            <CalendarDays className="w-4 h-4 text-indigo-500" />
-            <span className="text-sm font-bold text-slate-700">Lọc theo Năm học:</span>
+      {/* FILTER BOX */}
+      <div className="bg-white rounded-[2rem] border border-slate-100 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.05)] overflow-hidden">
+        <div className="p-1 h-1 bg-gradient-to-r from-red-600 via-[#d90429] to-red-400" />
+        <div className="p-8 space-y-8">
+          
+          <div className="flex flex-col lg:flex-row lg:items-center gap-10">
+            {/* Year Selector */}
+            <div className="flex-1 space-y-4">
+              <div className="flex items-center gap-2 mb-3">
+                <CalendarDays className="w-5 h-5 text-red-500" strokeWidth={2.5} />
+                <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Năm học</span>
+              </div>
+              <div className="flex flex-wrap gap-2 text-sm">
+                <button
+                  onClick={() => setFilterYearId("ALL")}
+                  className={`px-5 py-2.5 rounded-2xl font-black transition-all border-2 ${filterYearId === "ALL" ? "bg-[#d90429] text-white border-[#d90429] shadow-lg shadow-red-200" : "bg-slate-50 text-slate-500 border-slate-50 hover:border-red-200"}`}
+                >
+                  Tất cả
+                </button>
+                {years.map((y: any) => (
+                  <button key={y.id}
+                    onClick={() => setFilterYearId(y.id)}
+                    className={`px-5 py-2.5 rounded-2xl font-black transition-all border-2 ${filterYearId === y.id ? "bg-[#d90429] text-white border-[#d90429] shadow-lg shadow-red-200" : "bg-slate-50 text-slate-500 border-slate-50 hover:border-red-200"}`}
+                  >
+                    {y.name}{y.status === "ACTIVE" && " (Hiện tại)"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="hidden lg:block w-px h-16 bg-slate-100" />
+
+            {/* Campus Selector */}
+            <div className="flex-1 space-y-4">
+              <div className="flex items-center gap-2 mb-3">
+                <School className="w-5 h-5 text-red-500" strokeWidth={2.5} />
+                <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Cơ sở (Campus)</span>
+              </div>
+              <div className="flex flex-wrap gap-2 text-sm">
+                <button
+                  onClick={() => setSelectedCampusId("ALL")}
+                  className={`px-5 py-2.5 rounded-2xl font-black transition-all border-2 ${selectedCampusId === "ALL" ? "bg-[#d90429] text-white border-[#d90429] shadow-lg shadow-red-200" : "bg-slate-50 text-slate-500 border-slate-50 hover:border-red-200"}`}
+                >
+                  Toàn hệ thống
+                </button>
+                {campuses.map((c: any) => (
+                  <button key={c.id}
+                    onClick={() => setSelectedCampusId(c.id)}
+                    className={`px-5 py-2.5 rounded-2xl font-black transition-all border-2 ${selectedCampusId === c.id ? "bg-[#d90429] text-white border-[#d90429] shadow-lg shadow-red-200" : "bg-slate-50 text-slate-500 border-slate-50 hover:border-red-200"}`}
+                  >
+                    {c.name}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <button
-              onClick={() => setFilterYearId("ALL")}
-              className={`px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all ${filterYearId === "ALL" ? "bg-indigo-600 text-white border-indigo-600" : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"}`}
-            >
-              Tất cả (${classes.length} lớp)
-            </button>
-            {years.map((y: any) => (
-              <button key={y.id}
-                onClick={() => setFilterYearId(y.id)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all ${filterYearId === y.id ? "bg-indigo-600 text-white border-indigo-600" : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"}`}
-              >
-                {y.name}{y.status === "ACTIVE" && " *"}
-                (${classes.filter((c: any) => c.academicYear?.id === y.id).length} lớp)
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
 
-      <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-          <div className="flex-1 w-full md:max-w-sm">
-            <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wider">Chọn Lớp học</label>
-            <select
-              value={selectedClassId}
-              onChange={(e) => setSelectedClassId(e.target.value)}
-              className="w-full p-3 border-2 border-slate-200 rounded-xl focus:border-indigo-500 font-medium text-slate-800 bg-slate-50 outline-none"
-            >
-              <option value="">-- Click để chọn Lớp (${filteredClasses.length} lớp) --</option>
-              {filteredClasses.map((c: any) => (
-                <option key={c.id} value={c.id}>
-                  {c.className} - {c.academicYear?.name || "?"}
-                </option>
-              ))}
-            </select>
-          </div>
+          <div className="h-px bg-slate-50" />
 
-          <div className="flex items-center gap-3 mt-4 md:mt-6">
-            {selectedStudentIds.length > 0 && (
-              <button onClick={handleDeleteMany} disabled={deleting}
-                 className="flex items-center text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 font-semibold py-3.5 px-5 rounded-xl border border-red-200 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
-                 <Trash2 className="w-5 h-5 mr-2" /> {deleting ? "Đang xoá..." : `Xoá ${selectedStudentIds.length} tài khoản`}
-              </button>
-            )}
-
-            {selectedClassId && students.some(s => s.parents.length > 0) && (
-              <button 
-                onClick={handleDeleteAllInClass} 
-                disabled={deleting || loading}
-                className="flex items-center text-red-600 hover:text-red-700 bg-white hover:bg-red-50 font-semibold py-3.5 px-5 rounded-xl border-2 border-red-200 transition shadow-sm disabled:opacity-50"
-              >
-                <X className="w-5 h-5 mr-2" /> Hủy tạo tài khoản
-              </button>
-            )}
+          {/* Class Dropdown */}
+          <div className="flex flex-col md:flex-row md:items-end gap-6 pb-2">
+            <div className="flex-1">
+              <label className="block text-[11px] font-black text-slate-400 mb-4 uppercase tracking-widest">Lớp học ({filteredClasses.length} lớp phù hợp)</label>
+              <div className="relative group">
+                <select
+                  value={selectedClassId}
+                  onChange={(e) => setSelectedClassId(e.target.value)}
+                  className="w-full h-14 pl-14 pr-6 border-2 border-slate-100 rounded-[1.25rem] focus:border-[#d90429] focus:bg-white font-black text-slate-800 bg-slate-50 outline-none transition-all appearance-none cursor-pointer"
+                >
+                  <option value="">-- Click để chọn Lớp học --</option>
+                  {filteredClasses.map((c: any) => (
+                    <option key={c.id} value={c.id}>
+                      {c.className} (Năm học: {c.academicYear?.name || "?"} | {c.campus?.name || "N/A"})
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute left-5 top-1/2 -translate-y-1/2 p-2 bg-white rounded-xl shadow-sm text-red-500">
+                  <Users className="w-4 h-4" strokeWidth={3} />
+                </div>
+              </div>
+            </div>
 
             <button
               onClick={handleGenerate}
               disabled={!selectedClassId || generating || loading}
-              className="flex items-center justify-center px-6 py-3.5 bg-indigo-600 text-white font-bold rounded-xl shadow-md hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-14 px-10 bg-[#d90429] text-white font-black rounded-[1.25rem] shadow-xl shadow-red-100 hover:bg-red-700 active:scale-95 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-3 whitespace-nowrap uppercase tracking-widest text-[11px]"
             >
-              {generating ? <RefreshCw className="w-5 h-5 mr-2 animate-spin" /> : <KeyRound className="w-5 h-5 mr-2" />}
+              {generating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" strokeWidth={2.5} />}
               Khởi tạo Tài khoản tự động
             </button>
           </div>
         </div>
+      </div>
 
-        <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-inner">
+      {/* STUDENT LIST TABLE */}
+      <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-slate-200/40 border border-slate-100 overflow-hidden">
+        <div className="p-8 border-b border-slate-50 flex items-center justify-between">
+           <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center text-red-600 shadow-inner">
+                <Users className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-black text-slate-900 leading-none mb-1">Danh sách học sinh</h3>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                  {selectedClassId ? `Hiển thị ${students.length} học sinh của lớp` : "Vui lòng chọn lớp để xem dữ liệu"}
+                </p>
+              </div>
+           </div>
+
+           {selectedStudentIds.length > 0 && (
+             <button onClick={handleDeleteMany} disabled={deleting}
+                className="flex items-center gap-2 bg-red-50 text-red-600 px-6 py-3 rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all active:scale-95 border border-red-100">
+               <Trash2 className="w-3.5 h-3.5" /> Xóa {selectedStudentIds.length} TK
+             </button>
+           )}
+        </div>
+
+        <div className="overflow-x-auto custom-scrollbar">
           <table className="w-full text-left whitespace-nowrap">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th className="px-6 py-4 w-12 text-center">
-                  <input type="checkbox" className="w-4 h-4 rounded text-indigo-600"
-                    checked={students.length > 0 && selectedStudentIds.length === students.length}
-                    onChange={(e) => {
-                      if (e.target.checked) setSelectedStudentIds(students.map(s => s.id));
-                      else setSelectedStudentIds([]);
+            <thead>
+              <tr className="bg-slate-50/50">
+                <th className="px-8 py-5 w-12">
+                   <div 
+                    onClick={() => {
+                        if (students.length > 0 && selectedStudentIds.length === students.length) setSelectedStudentIds([]);
+                        else setSelectedStudentIds(students.map(s => s.id));
                     }}
-                  />
+                    className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center cursor-pointer transition-all ${selectedStudentIds.length === students.length && students.length > 0 ? "bg-red-600 border-red-600 text-white shadow-lg shadow-red-100" : "bg-white border-slate-200"}`}
+                   >
+                     {selectedStudentIds.length === students.length && students.length > 0 && <ShieldCheck className="w-4 h-4" strokeWidth={3} />}
+                   </div>
                 </th>
-                <th className="px-6 py-4 font-bold text-slate-600 text-sm">STT</th>
-                <th className="px-6 py-4 font-bold text-slate-600 text-sm">Mã HS</th>
-                <th className="px-6 py-4 font-bold text-slate-600 text-sm">Họ và Tên HS</th>
-                <th className="px-6 py-4 font-bold text-slate-600 text-sm opacity-50">Ngày sinh</th>
-                <th className="px-6 py-4 font-bold text-slate-600 text-sm text-center">Tài khoản PHHS</th>
-                <th className="px-6 py-4 font-bold text-slate-600 text-sm text-center">Mật khẩu</th>
+                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">STT</th>
+                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Mã học sinh</th>
+                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Họ và Tên</th>
+                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Tài khoản PHHS</th>
+                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Trạng thái</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {!selectedClassId && (
-                <tr><td colSpan={7} className="px-6 py-12 text-center text-slate-400 font-medium bg-white">
-                  Vui lòng chọn 1 lớp học ở ô phía trên để tải danh sách.
+                <tr><td colSpan={6} className="px-8 py-24 text-center">
+                  <div className="flex flex-col items-center opacity-20">
+                    <Search className="w-16 h-16 text-slate-900 mb-4" />
+                    <p className="font-black text-lg">Chọn lớp để quản lý tài khoản</p>
+                  </div>
                 </td></tr>
               )}
-              {loading && selectedClassId && (
-                <tr><td colSpan={7} className="px-6 py-12 text-center text-indigo-500 font-bold bg-white animate-pulse">Đang nạp dữ liệu...</td></tr>
-              )}
-              {!loading && selectedClassId && students.length === 0 && (
-                <tr><td colSpan={7} className="px-6 py-12 text-center text-slate-500 bg-white">Lớp này chưa có học sinh nào.</td></tr>
+              {loading && (
+                <tr><td colSpan={6} className="px-8 py-24 text-center">
+                  <div className="flex flex-col items-center text-red-600 animate-pulse">
+                    <RefreshCw className="w-10 h-10 animate-spin mb-4" />
+                    <p className="font-black">Đang đồng bộ dữ liệu...</p>
+                  </div>
+                </td></tr>
               )}
               {!loading && students.map((s, idx) => {
-                const parentLink = s.parents[0]
-                const user = parentLink?.parent?.user
+                const user = s.parents[0]?.parent?.user
                 const hasAccount = !!user
+                const isSelected = selectedStudentIds.includes(s.id)
                 return (
-                  <tr key={s.id} className={"hover:bg-slate-50/70 bg-white transition-colors " + (selectedStudentIds.includes(s.id) ? "bg-indigo-50/30" : "")}>
-                    <td className="px-6 py-4 text-center">
-                      <input type="checkbox" className="w-4 h-4 rounded text-indigo-600"
-                        checked={selectedStudentIds.includes(s.id)}
-                        onChange={e => {
-                          if (e.target.checked) setSelectedStudentIds([...selectedStudentIds, s.id])
-                          else setSelectedStudentIds(selectedStudentIds.filter(id => id !== s.id))
+                  <tr key={s.id} className={`group transition-all ${isSelected ? "bg-red-50/30" : "hover:bg-slate-50/50"}`}>
+                    <td className="px-8 py-5">
+                       <div 
+                        onClick={() => {
+                          if (isSelected) setSelectedStudentIds(selectedStudentIds.filter(id => id !== s.id))
+                          else setSelectedStudentIds([...selectedStudentIds, s.id])
                         }}
-                      />
+                        className={`w-5 h-5 rounded-md border-2 flex items-center justify-center cursor-pointer transition-all ${isSelected ? "bg-red-600 border-red-600 text-white shadow-md shadow-red-100" : "bg-white border-slate-200 group-hover:border-red-300"}`}
+                       >
+                         {isSelected && <ShieldCheck className="w-3 h-3" strokeWidth={4} />}
+                       </div>
                     </td>
-                    <td className="px-6 py-4 text-slate-500 font-medium">{idx + 1}</td>
-                    <td className="px-6 py-4 text-indigo-700 font-extrabold">{s.studentCode}</td>
-                    <td className="px-6 py-4 text-slate-800 font-bold">{s.studentName}</td>
-                    <td className="px-6 py-4 text-slate-500 opacity-50">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "---"}</td>
-                    <td className="px-6 py-4 text-center">
-                      {hasAccount ? (
-                        <div className="inline-flex items-center space-x-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-100 font-bold shadow-sm">
-                          <UserCheck className="w-4 h-4" /><span>{user.email}</span>
-                        </div>
-                      ) : (
-                        <span className="inline-flex items-center text-amber-500 font-semibold bg-amber-50 px-3 py-1 rounded-full text-xs border border-amber-100">
-                          <AlertCircle className="w-3.5 h-3.5 mr-1" />Chưa khởi tạo
-                        </span>
-                      )}
+                    <td className="px-6 py-5 text-xs font-bold text-slate-400">{idx + 1}</td>
+                    <td className="px-6 py-5">
+                       <span className="font-black text-slate-900 text-sm">{s.studentCode}</span>
                     </td>
-                    <td className="px-6 py-4 text-center font-mono font-semibold text-slate-600 bg-slate-50/50">
-                      {hasAccount ? <span className="tracking-widest">********</span> : <span className="opacity-30">---</span>}
+                    <td className="px-6 py-5">
+                       <div className="flex flex-col">
+                         <span className="font-black text-slate-800">{s.studentName}</span>
+                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "---"}</span>
+                       </div>
+                    </td>
+                    <td className="px-6 py-5">
+                       {hasAccount ? (
+                         <div className="inline-flex items-center gap-2 bg-white border-2 border-slate-100 px-4 py-2 rounded-xl shadow-sm">
+                           <UserCheck className="w-4 h-4 text-emerald-500" />
+                           <span className="font-black text-slate-700 text-xs tracking-tight">{user.email}</span>
+                         </div>
+                       ) : (
+                         <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest italic">Chưa có tài khoản</span>
+                       )}
+                    </td>
+                    <td className="px-6 py-5 text-center">
+                       {hasAccount ? (
+                         <span className="px-3 py-1 bg-emerald-500 text-white text-[9px] font-black rounded-lg uppercase tracking-widest shadow-lg shadow-emerald-100">Đã kích hoạt</span>
+                       ) : (
+                         <span className="px-3 py-1 bg-slate-100 text-slate-400 text-[9px] font-black rounded-lg uppercase tracking-widest">Trống</span>
+                       )}
                     </td>
                   </tr>
                 )
@@ -233,16 +280,24 @@ export function ParentAccountsClient({ classes, years, defaultYearId }: any) {
             </tbody>
           </table>
         </div>
-
-        {students.length > 0 && !loading && (
-          <div className="mt-4 p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
-            <p className="text-sm text-indigo-800 font-medium flex items-start">
-              <KeyRound className="w-5 h-5 mr-2 shrink-0 mt-0.5 opacity-70" />
-              <span><b>Quy tắc:</b> Mật khẩu mặc định = Mã Học Sinh. Phụ huynh đăng nhập bằng Tài khoản (cột xanh) và Password = mã học sinh.</span>
-            </p>
-          </div>
-        )}
       </div>
+
+      {students.length > 0 && !loading && (
+        <div className="bg-slate-900 rounded-[2rem] p-8 text-white relative overflow-hidden shadow-2xl">
+           <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-red-600/10 rounded-full blur-3xl" />
+           <div className="relative flex items-center gap-6">
+              <div className="w-14 h-14 bg-red-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-red-500/20">
+                <ShieldCheck className="w-7 h-7 text-white" />
+              </div>
+              <div>
+                <h4 className="font-black text-lg mb-1 italic">Nguyên tắc bảo mật:</h4>
+                <p className="text-slate-400 text-sm font-bold leading-relaxed max-w-xl">
+                  Mật khẩu mặc định bằng <span className="text-white">Mã Học Sinh</span>. PHHS đăng nhập bằng Tài khoản là Email được cấp phía trên để thực hiện khảo sát.
+                </p>
+              </div>
+           </div>
+        </div>
+      )}
     </div>
   )
 }

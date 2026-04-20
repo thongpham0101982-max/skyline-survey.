@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db"
+﻿import { prisma } from "@/lib/db"
 import { ParentAccountsClient } from "./client"
 
 export default async function ParentAccountsPage() {
@@ -8,6 +8,10 @@ export default async function ParentAccountsPage() {
   })
   const defaultYearId = years.find(y => y.status === "ACTIVE")?.id || years[0]?.id || null
 
+  const campuses = await prisma.campus.findMany({
+    orderBy: { name: "asc" }
+  })
+
   const classes = await prisma.class.findMany({
     include: { campus: true, academicYear: { select: { id: true, name: true } } },
     orderBy: [{ academicYear: { startDate: "desc" } }, { className: "asc" }]
@@ -16,10 +20,10 @@ export default async function ParentAccountsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Danh Muc Tai Khoan PHHS</h1>
-        <p className="text-slate-500 mt-2 font-medium">Trung tam khoi tao tai khoan Phu huynh theo Nam hoc.</p>
+        <h1 className="text-3xl font-black text-slate-900 tracking-tight">Danh Mục Tài Khoản PHHS</h1>
+        <p className="text-slate-500 mt-2 font-bold opacity-80">Khởi tạo và quản lý tài khoản truy cập dành cho Phụ huynh.</p>
       </div>
-      <ParentAccountsClient classes={classes} years={years} defaultYearId={defaultYearId} />
+      <ParentAccountsClient classes={classes} years={years} campuses={campuses} defaultYearId={defaultYearId} />
     </div>
   )
 }
