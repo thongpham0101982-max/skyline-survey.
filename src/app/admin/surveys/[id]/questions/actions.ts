@@ -1,4 +1,4 @@
-"use server"
+﻿"use server"
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 
@@ -14,11 +14,9 @@ export async function saveSurveyQuestionsAction(surveyPeriodId, questions) {
   for (const [index, q] of questions.entries()) {
     const isNew = q.id.startsWith("new_")
 
-    // Use sectionId directly from dropdown
     let activeSectionId = q.sectionId || null
     if (activeSectionId === "") activeSectionId = null
 
-    // Legacy fallback: category name lookup
     if (!activeSectionId && q.category && q.category.trim() !== "") {
       let section = await prisma.surveySection.findFirst({ where: { name: q.category.trim() } })
       if (!section) {
@@ -29,6 +27,12 @@ export async function saveSurveyQuestionsAction(surveyPeriodId, questions) {
       if (section) activeSectionId = section.id
     }
 
+    // Handle options: avoid double stringify if already a string
+    let finalOptions = q.options
+    if (finalOptions && typeof finalOptions !== "string") {
+      finalOptions = JSON.stringify(finalOptions)
+    }
+
     const data = {
       code: q.code || `Q-${Date.now()}-${index}`,
       questionText: q.questionText,
@@ -36,7 +40,7 @@ export async function saveSurveyQuestionsAction(surveyPeriodId, questions) {
       isRequired: q.isRequired,
       ratingScaleMin: q.ratingScaleMin,
       ratingScaleMax: q.ratingScaleMax,
-      options: q.options ? JSON.stringify(q.options) : null,
+      options: finalOptions,
       weight: q.weight,
       sortOrder: index,
       surveyPeriodId,
