@@ -12,6 +12,13 @@ async function getDefaultCampusId() {
   return campus.id
 }
 
+/** Tim campusId theo name hoac id */
+async function resolveCampusId(value: string | null | undefined): Promise<string | null> {
+  if (!value) return null
+  const campus = await prisma.campus.findFirst({ where: { OR: [{ id: value }, { campusName: value }, { campusCode: value }] } })
+  return campus?.id || null
+}
+
 /** Tim departmentId theo name (neu truyen string name) hoac lay chinh no neu la id */
 async function resolveDepartmentId(value: string | null | undefined): Promise<string | null> {
   if (!value) return null
@@ -74,7 +81,6 @@ export async function createTeacherAction(data: any) {
   const existing = await prisma.teacher.findUnique({ where: { teacherCode: data.teacherCode } })
   if (existing) throw new Error("Ma GV da ton tai: " + data.teacherCode)
 
-  // Resolve FK IDs from name values
   const departmentId = await resolveDepartmentId(data.department)
   const mainSubjectId = await resolveSubjectId(data.mainSubject)
 
@@ -106,7 +112,6 @@ export async function updateTeacherAction(data: any) {
   if (dateOfBirth !== undefined) updateData.dateOfBirth = dateOfBirth ? new Date(dateOfBirth) : null
   if (campusId !== undefined) updateData.campusId = campusId
 
-  // Resolve FK IDs
   if (data.department !== undefined) {
     updateData.departmentId = await resolveDepartmentId(data.department)
   }
@@ -137,7 +142,7 @@ export async function deleteTeacherAction(id: string) {
 }
 
 export async function importTeachersAction(rows: any[], academicYearId?: string) {
-  const campusId = await getDefaultCampusId()
+  const defaultCampusId = await getDefaultCampusId()
   let created = 0, skipped = 0
   const errors: string[] = []
 
@@ -161,6 +166,7 @@ export async function importTeachersAction(rows: any[], academicYearId?: string)
 
       const departmentId = await resolveDepartmentId(row.department)
       const mainSubjectId = await resolveSubjectId(row.mainSubject)
+      const campusId = await resolveCampusId(row.campus) || defaultCampusId
 
       const teacher = await prisma.teacher.create({
         data: {
