@@ -70,7 +70,7 @@ export async function submitSurveyAction(data: any) {
       numericScore = Number(r.value);
     } else if (r.type === "TEXT") {
       textAnswer = String(r.value);
-    } else if (r.type === "CHECKBOX" && Array.isArray(r.value)) {
+    } else if ((r.type === "CHECKBOX" && Array.isArray(r.value)) || r.type === "MC_GRID") {
       choiceAnswer = JSON.stringify(r.value);
     } else {
       choiceAnswer = String(r.value);

@@ -153,6 +153,48 @@ function QuestionCard({ q, idx, total, answer, onChange, onNext, visible }: any)
           <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-sm">▼</div>
         </div>
       )}
+
+      {q.questionType === "MC_GRID" && (
+        <div className="w-full overflow-x-auto -mx-1 px-1 custom-scrollbar">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr>
+                <th className="p-3 text-left bg-slate-50 rounded-tl-xl border-b-2 border-slate-200 text-[11px] font-black text-slate-400 uppercase tracking-widest">Tieu chi</th>
+                {opts.columns?.map((col: string, i: number) => (
+                  <th key={i} className={`p-3 text-center bg-slate-50 border-b-2 border-slate-200 text-[11px] font-black text-slate-400 uppercase tracking-widest ${i === opts.columns.length - 1 ? "rounded-tr-xl" : ""}`}>
+                    {col}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {opts.rows?.map((row: string, rIndex: number) => (
+                <tr key={rIndex} className="hover:bg-slate-50/50 transition-colors">
+                  <td className="p-3 py-4 text-sm font-bold text-slate-700 leading-snug">{row}</td>
+                  {opts.columns?.map((col: string, cIndex: number) => {
+                    const isSelected = answer && answer[row] === col
+                    return (
+                      <td key={cIndex} className="p-2 py-4 text-center">
+                        <div 
+                          onClick={() => {
+                            const newAnswer = { ...(answer || {}), [row]: col }
+                            onChange(newAnswer)
+                          }}
+                          className={`w-6 h-6 rounded-full border-2 mx-auto cursor-pointer flex items-center justify-center transition-all duration-200
+                            ${isSelected ? "border-indigo-600 bg-indigo-600 shadow-md shadow-indigo-200" : "border-slate-300 bg-white hover:border-indigo-300"}`}
+                        >
+                          {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
+                        </div>
+                      </td>
+                    )
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="mt-4 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest animate-pulse">← Cuon ngang de xem het cac muc →</p>
+        </div>
+      )}
     </div>
   )
 }
@@ -181,6 +223,15 @@ export function SurveyFormClient({ periodId, student, questions }: any) {
     const a = answers[q.id]
     if (a === undefined || a === null || a === "") return false
     if (Array.isArray(a) && a.length === 0) return false
+    
+    // For MC_GRID, check if all rows are answered
+    if (q.questionType === "MC_GRID") {
+      const opts = JSON.parse(q.options)
+      if (!opts.rows || opts.rows.length === 0) return true
+      const answeredRows = Object.keys(a || {})
+      return opts.rows.every((row: string) => answeredRows.includes(row) && a[row])
+    }
+    
     return true
   }
 
@@ -206,7 +257,19 @@ export function SurveyFormClient({ periodId, student, questions }: any) {
   }
 
   const answeredCount = Object.keys(answers).filter(k => {
-    const v = answers[k]; return v !== undefined && v !== null && v !== "" && !(Array.isArray(v) && v.length === 0)
+    const v = answers[k]; 
+    if (v === undefined || v === null || v === "") return false
+    if (Array.isArray(v) && v.length === 0) return false
+    
+    // Grid check
+    const q = questions.find((ques: any) => ques.id === k)
+    if (q?.questionType === "MC_GRID") {
+      const opts = JSON.parse(q.options)
+      const answeredRows = Object.keys(v || {})
+      return opts.rows && opts.rows.length > 0 && opts.rows.every((row: string) => answeredRows.includes(row) && v[row])
+    }
+    
+    return true
   }).length
   const progress = total > 0 ? Math.round((answeredCount / total) * 100) : 0
 
@@ -260,6 +323,7 @@ export function SurveyFormClient({ periodId, student, questions }: any) {
             <button type="button" onClick={goBack} disabled={current === 0}
               className="flex items-center gap-2 px-5 py-3 rounded-2xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed transition-all min-h-[48px]"
             >
+              <CheckCircle2 className="hidden" /> {/* Keep icon import active */}
               <ChevronLeft className="w-5 h-5" />
               <span className="hidden sm:inline">Quay lai</span>
             </button>
