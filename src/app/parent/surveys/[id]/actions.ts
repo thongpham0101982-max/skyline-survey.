@@ -54,7 +54,6 @@ export async function submitSurveyAction(data: any) {
       else if (npsScoreRaw >= 7) npsCategory = "PASSIVE"
       else npsCategory = "DETRACTOR"
     } else if (r.type === "RATING" || r.type === "LIKERT") {
-      // Note: LIKERT is string, but Rating is number. Safely attempt parse.
       const val = Number(r.value)
       if (!isNaN(val)) {
         totalRating += val
@@ -70,7 +69,7 @@ export async function submitSurveyAction(data: any) {
       numericScore = Number(r.value);
     } else if (r.type === "TEXT") {
       textAnswer = String(r.value);
-    } else if ((r.type === "CHECKBOX" && Array.isArray(r.value)) || r.type === "MC_GRID") {
+    } else if (["CHECKBOX", "MC_GRID", "CB_GRID"].includes(r.type) || typeof r.value === 'object') {
       choiceAnswer = JSON.stringify(r.value);
     } else {
       choiceAnswer = String(r.value);

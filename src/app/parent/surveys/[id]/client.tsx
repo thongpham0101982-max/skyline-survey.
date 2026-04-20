@@ -99,12 +99,6 @@ function QuestionCard({ q, idx, total, answer, onChange, onNext, visible }: any)
             <span>Rat khong hai long</span>
             <span>Rat hai long</span>
           </div>
-          {answer !== undefined && answer !== null && (
-            <div className={`mt-4 flex items-center justify-center gap-2 p-3 rounded-2xl font-bold text-sm
-              ${answer <= 3 ? "bg-red-50 text-red-600" : answer <= 6 ? "bg-amber-50 text-amber-600" : answer <= 8 ? "bg-lime-50 text-lime-700" : "bg-emerald-50 text-emerald-700"}`}>
-              Ban da chon diem <span className="text-xl font-black">{answer}</span>/10
-            </div>
-          )}
         </div>
       )}
 
@@ -126,11 +120,6 @@ function QuestionCard({ q, idx, total, answer, onChange, onNext, visible }: any)
               </button>
             ))}
           </div>
-          {(hoverStar || answer) > 0 && (
-            <p className="font-bold text-amber-600 text-sm">
-              {["","Rat te","Te","Binh thuong","Tot","Xuat sac"][hoverStar || answer]}
-            </p>
-          )}
         </div>
       )}
 
@@ -154,7 +143,7 @@ function QuestionCard({ q, idx, total, answer, onChange, onNext, visible }: any)
         </div>
       )}
 
-      {q.questionType === "MC_GRID" && (
+      {(q.questionType === "MC_GRID" || q.questionType === "CB_GRID") && (
         <div className="w-full overflow-x-auto -mx-1 px-1 custom-scrollbar">
           <table className="w-full border-collapse">
             <thead>
@@ -172,18 +161,35 @@ function QuestionCard({ q, idx, total, answer, onChange, onNext, visible }: any)
                 <tr key={rIndex} className="hover:bg-slate-50/50 transition-colors">
                   <td className="p-3 py-4 text-sm font-bold text-slate-700 leading-snug">{row}</td>
                   {opts.columns?.map((col: string, cIndex: number) => {
-                    const isSelected = answer && answer[row] === col
+                    const isCheckbox = q.questionType === "CB_GRID"
+                    const isSelected = isCheckbox 
+                      ? (answer && answer[row] && Array.isArray(answer[row]) && answer[row].includes(col))
+                      : (answer && answer[row] === col)
+                    
                     return (
                       <td key={cIndex} className="p-2 py-4 text-center">
                         <div 
                           onClick={() => {
-                            const newAnswer = { ...(answer || {}), [row]: col }
-                            onChange(newAnswer)
+                            let newValue;
+                            if (isCheckbox) {
+                              const currentSelected = (answer && answer[row] && Array.isArray(answer[row])) ? answer[row] : []
+                              newValue = currentSelected.includes(col) 
+                                ? currentSelected.filter((v: string) => v !== col)
+                                : [...currentSelected, col]
+                            } else {
+                              newValue = col
+                            }
+                            onChange({ ...(answer || {}), [row]: newValue })
                           }}
-                          className={`w-6 h-6 rounded-full border-2 mx-auto cursor-pointer flex items-center justify-center transition-all duration-200
+                          className={`w-6 h-6 border-2 mx-auto cursor-pointer flex items-center justify-center transition-all duration-200
+                            ${isCheckbox ? "rounded-md" : "rounded-full"}
                             ${isSelected ? "border-indigo-600 bg-indigo-600 shadow-md shadow-indigo-200" : "border-slate-300 bg-white hover:border-indigo-300"}`}
                         >
-                          {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
+                          {isSelected && (
+                            isCheckbox 
+                              ? <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                              : <div className="w-2 h-2 rounded-full bg-white" />
+                          )}
                         </div>
                       </td>
                     )
@@ -224,12 +230,15 @@ export function SurveyFormClient({ periodId, student, questions }: any) {
     if (a === undefined || a === null || a === "") return false
     if (Array.isArray(a) && a.length === 0) return false
     
-    // For MC_GRID, check if all rows are answered
-    if (q.questionType === "MC_GRID") {
+    if (q.questionType === "MC_GRID" || q.questionType === "CB_GRID") {
       const opts = JSON.parse(q.options)
       if (!opts.rows || opts.rows.length === 0) return true
       const answeredRows = Object.keys(a || {})
-      return opts.rows.every((row: string) => answeredRows.includes(row) && a[row])
+      return opts.rows.every((row: string) => {
+        const val = a[row]
+        if (q.questionType === "CB_GRID") return Array.isArray(val) && val.length > 0
+        return val !== undefined && val !== null && val !== ""
+      })
     }
     
     return true
@@ -244,7 +253,7 @@ export function SurveyFormClient({ periodId, student, questions }: any) {
 
   const handleSubmit = async () => {
     for (let i = 0; i < total; i++) {
-      if (!validate(i)) { setCurrent(i); showToast(`Cau hoi ${i + 1} la bat buoc.`); return }
+        if (!validate(i)) { setCurrent(i); showToast(`Cau hoi ${i + 1} la bat buoc.`); return }
     }
     setLoading(true)
     try {
@@ -261,32 +270,34 @@ export function SurveyFormClient({ periodId, student, questions }: any) {
     if (v === undefined || v === null || v === "") return false
     if (Array.isArray(v) && v.length === 0) return false
     
-    // Grid check
     const q = questions.find((ques: any) => ques.id === k)
-    if (q?.questionType === "MC_GRID") {
+    if (q?.questionType === "MC_GRID" || q?.questionType === "CB_GRID") {
       const opts = JSON.parse(q.options)
       const answeredRows = Object.keys(v || {})
-      return opts.rows && opts.rows.length > 0 && opts.rows.every((row: string) => answeredRows.includes(row) && v[row])
+      return opts.rows && opts.rows.length > 0 && opts.rows.every((row: string) => {
+          const val = v[row]
+          if (q.questionType === "CB_GRID") return Array.isArray(val) && val.length > 0
+          return val !== undefined && val !== null && val !== ""
+      })
     }
-    
     return true
   }).length
   const progress = total > 0 ? Math.round((answeredCount / total) * 100) : 0
 
   if (done) return (
-    <div className="flex flex-col items-center justify-center text-center py-20 px-6">
+    <div className="flex flex-col items-center justify-center text-center py-20 px-6 font-outfit">
       <div className="w-28 h-28 rounded-full bg-emerald-100 flex items-center justify-center mb-6 shadow-xl shadow-emerald-100">
         <CheckCircle2 className="w-14 h-14 text-emerald-500" strokeWidth={1.5} />
       </div>
       <h2 className="text-3xl font-black text-slate-900 mb-3">Cam on ban!</h2>
       <p className="text-slate-500 text-lg max-w-md leading-relaxed">
-        Phan hoi cua ban ve hoc sinh <strong className="text-slate-800">{student.studentName}</strong> da duoc ghi nhan thanh cong.
+        Phan hoi da duoc ghi nhan thanh cong.
       </p>
     </div>
   )
 
   return (
-    <div className="relative w-full max-w-2xl mx-auto">
+    <div className="relative w-full max-w-2xl mx-auto font-outfit">
       {/* Progress */}
       <div className="mb-6">
         <div className="flex justify-between items-center mb-2">
@@ -295,13 +306,6 @@ export function SurveyFormClient({ periodId, student, questions }: any) {
         </div>
         <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
           <div className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-500 ease-out" style={{ width: `${progress}%` }} />
-        </div>
-        <div className="flex gap-1 mt-2">
-          {questions.map((_: any, i: number) => (
-            <button key={i} type="button" onClick={() => setCurrent(i)}
-              className={`h-1 flex-1 rounded-full transition-all duration-300 ${i < current ? "bg-indigo-400" : i === current ? "bg-indigo-600" : "bg-slate-200"}`}
-            />
-          ))}
         </div>
       </div>
 
@@ -318,22 +322,18 @@ export function SurveyFormClient({ periodId, student, questions }: any) {
             ))}
           </div>
 
-          {/* Nav */}
           <div className="flex items-center justify-between mt-10 pt-6 border-t border-slate-100">
             <button type="button" onClick={goBack} disabled={current === 0}
-              className="flex items-center gap-2 px-5 py-3 rounded-2xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed transition-all min-h-[48px]"
+              className="flex items-center gap-2 px-5 py-3 rounded-2xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 disabled:opacity-30 transition-all min-h-[48px]"
             >
-              <CheckCircle2 className="hidden" /> {/* Keep icon import active */}
               <ChevronLeft className="w-5 h-5" />
               <span className="hidden sm:inline">Quay lai</span>
             </button>
-
             <div className="flex gap-1.5 items-center">
               {questions.map((_: any, i: number) => (
                 <div key={i} className={`rounded-full transition-all duration-300 ${i === current ? "w-6 h-2 bg-indigo-600" : "w-2 h-2 bg-slate-200"}`} />
               ))}
             </div>
-
             {current < total - 1 ? (
               <button type="button" onClick={goNext}
                 className="flex items-center gap-2 px-7 py-3 rounded-2xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:scale-95 shadow-lg shadow-indigo-500/30 transition-all min-h-[48px]"
@@ -352,15 +352,6 @@ export function SurveyFormClient({ periodId, student, questions }: any) {
           </div>
         </div>
       </div>
-
-      {/* Toast */}
-      {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-red-600 text-white px-5 py-3.5 rounded-2xl shadow-2xl shadow-red-500/40 font-semibold text-sm max-w-sm">
-          <AlertCircle className="w-5 h-5 flex-shrink-0" />
-          <span>{toast}</span>
-          <button onClick={() => setToast("")} className="ml-2 hover:opacity-70"><X className="w-4 h-4" /></button>
-        </div>
-      )}
     </div>
   )
 }
