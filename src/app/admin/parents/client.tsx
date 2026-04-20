@@ -125,7 +125,7 @@ export function ParentAccountsClient({ classes, years, campuses, defaultYearId }
                     onClick={() => setSelectedCampusId(c.id)}
                     className={`px-5 py-2.5 rounded-2xl font-black transition-all border-2 ${selectedCampusId === c.id ? "bg-[#d90429] text-white border-[#d90429] shadow-lg shadow-red-200" : "bg-slate-50 text-slate-500 border-slate-50 hover:border-red-200"}`}
                   >
-                    {c.name}
+                    {c.campusName}
                   </button>
                 ))}
               </div>
@@ -147,7 +147,7 @@ export function ParentAccountsClient({ classes, years, campuses, defaultYearId }
                   <option value="">-- Click để chọn Lớp học --</option>
                   {filteredClasses.map((c: any) => (
                     <option key={c.id} value={c.id}>
-                      {c.className} (Năm học: {c.academicYear?.name || "?"} | {c.campus?.name || "N/A"})
+                      {c.className} (Năm học: {c.academicYear?.name || "?"} | {c.campus?.campusName || "N/A"})
                     </option>
                   ))}
                 </select>
@@ -302,4 +302,5 @@ export function ParentAccountsClient({ classes, years, campuses, defaultYearId }
     </div>
   )
 }
+
 
