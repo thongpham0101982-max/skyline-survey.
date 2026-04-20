@@ -2,59 +2,7 @@
 import { useState, Fragment } from "react"
 import { Shield, Plus, Save } from "lucide-react"
 import { savePermissions } from "./actions"
-
-// Modules grouped by category
-const CATEGORY_MODULES = [
-  {
-    category: "Hệ thống",
-    color: "text-violet-700 bg-violet-50 border-violet-200",
-    modules: [
-      { code: "ROLES",      name: "Quản lý Nhóm quyền" },
-      { code: "USERS",      name: "Tài khoản Nhân sự" },
-      { code: "FACILITIES", name: "Quản lý Cơ sở" },
-    ],
-  },
-  {
-    category: "Quản lý Đào tạo",
-    color: "text-blue-700 bg-blue-50 border-blue-200",
-    modules: [
-      { code: "TEACHERS",      name: "Quản lý Giáo viên" },
-      { code: "DEPARTMENTS",   name: "Tổ chuyên môn" },
-      { code: "SUBJECTS",      name: "Quản lý môn học" },
-      { code: "ACADEMIC_YEARS",name: "Năm học & Học kỳ" },
-      { code: "MANAGE_CLASSES",name: "Quản lý Lớp học" },
-      { code: "ASSIGNMENTS",   name: "Phân công giảng dạy" },
-    ],
-  },
-  {
-    category: "Khảo thí",
-    color: "text-emerald-700 bg-emerald-50 border-emerald-200",
-    modules: [
-      { code: "INPUT_ASSESSMENTS",   name: "Quản lý KSNL Đầu vào" },
-      { code: "STUDENT_ACHIEVEMENTS",name: "Thành tích Học sinh" },
-    ],
-  },
-  {
-    category: "Khảo sát",
-    color: "text-amber-700 bg-amber-50 border-amber-200",
-    modules: [
-      { code: "MANAGE_SURVEYS", name: "Quản lý Khảo sát" },
-      { code: "SURVEY_CATALOG", name: "Danh mục Khảo sát" },
-      { code: "PARENTS",        name: "Tài khoản PHHS" },
-      { code: "FEEDBACK",       name: "Theo dõi Phản hồi" },
-    ],
-  },
-  {
-    category: "Công việc khác",
-    color: "text-slate-700 bg-slate-100 border-slate-200",
-    modules: [
-      { code: "TASKS",         name: "Điều hành Công việc" },
-      { code: "WEEKLY_REPORTS",name: "Báo cáo Tuần" },
-    ],
-  },
-];
-
-const ALL_MODULES = CATEGORY_MODULES.flatMap(c => c.modules);
+import { APP_CATEGORIES, ALL_APP_MODULES } from "@/config/modules"
 
 const emptyPerm = (code: string) => ({
   module: code, canRead: false, canCreate: false, canUpdate: false, canDelete: false,
@@ -67,7 +15,7 @@ export function RolesClient({ initialRoles }: any) {
 
   const buildPerms = (roleCode: string) => {
     const r = roles.find((r: any) => r.code === roleCode);
-    return ALL_MODULES.map(m => {
+    return ALL_APP_MODULES.map(m => {
       const existing = r?.permissions?.find((p: any) => p.module === m.code);
       return existing ? { ...existing } : emptyPerm(m.code);
     });
@@ -100,6 +48,14 @@ export function RolesClient({ initialRoles }: any) {
     setSavingMatrix(false);
   };
 
+  const colorStyles: Record<string, string> = {
+    violet: "bg-violet-50 text-violet-700 border-violet-100",
+    blue: "bg-blue-50 text-blue-700 border-blue-100",
+    emerald: "bg-emerald-50 text-emerald-700 border-emerald-100",
+    amber: "bg-amber-50 text-amber-700 border-amber-100",
+    slate: "bg-slate-50 text-slate-700 border-slate-100"
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
       {/* Roles List */}
@@ -108,12 +64,12 @@ export function RolesClient({ initialRoles }: any) {
           <h3 className="font-bold text-slate-700 flex items-center gap-2">
             <Shield className="w-5 h-5 text-indigo-600"/> Nhóm Quyền
           </h3>
-          <button className="text-indigo-600 hover:bg-indigo-100 p-1.5 rounded-lg"><Plus className="w-4 h-4"/></button>
+          <button className="text-indigo-600 hover:bg-indigo-100 p-1.5 rounded-lg transition-colors"><Plus className="w-4 h-4"/></button>
         </div>
         <div className="p-2 space-y-1">
           {roles.map((r: any) => (
             <button key={r.code} onClick={() => switchRole(r.code)}
-              className={`w-full text-left px-4 py-3 rounded-xl transition-all ${activeRole === r.code ? "bg-indigo-50 border border-indigo-100" : "hover:bg-slate-50 border border-transparent"}`}>
+              className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 ${activeRole === r.code ? "bg-indigo-50 border border-indigo-100 shadow-sm" : "hover:bg-slate-50 border border-transparent"}`}>
               <div className={`font-semibold text-sm ${activeRole === r.code ? "text-indigo-700" : "text-slate-700"}`}>{r.name}</div>
               <div className="text-xs text-slate-500 mt-1 line-clamp-1">{r.description || r.code}</div>
             </button>
@@ -125,59 +81,71 @@ export function RolesClient({ initialRoles }: any) {
       <div className="lg:col-span-3 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50/50">
           <div>
-            <h3 className="font-bold text-slate-800 text-lg">Ma Trận Phân Quyền</h3>
-            <p className="text-sm text-slate-500 mt-1">
-              Tuỳ chỉnh thao tác cho nhóm:{" "}
+            <h3 className="font-bold text-slate-800 text-lg tracking-tight">Ma Trận Phân Quyền</h3>
+            <p className="text-sm text-slate-500 mt-0.5">
+              Phân quyền chi tiết cho nhóm:{" "}
               <span className="font-semibold text-indigo-600">
                 {roles.find((r: any) => r.code === activeRole)?.name}
               </span>
             </p>
           </div>
           <button onClick={handleSavePerms} disabled={savingMatrix}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold flex items-center hover:bg-indigo-700 shadow-sm transition-all disabled:opacity-60">
+            className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold flex items-center hover:bg-indigo-700 active:scale-95 shadow-md shadow-indigo-200 transition-all disabled:opacity-60">
             <Save className="w-4 h-4 mr-2"/> Lưu Cấu Hình
           </button>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
-            <thead className="bg-white border-b border-slate-200 sticky top-0 z-10">
-              <tr>
-                <th className="px-6 py-4 font-bold text-slate-700 text-sm w-1/2">Chức năng / Module</th>
-                <th className="px-4 py-4 font-semibold text-slate-600 text-sm text-center">Xem (Read)</th>
-                <th className="px-4 py-4 font-semibold text-slate-600 text-sm text-center">Thêm (Create)</th>
-                <th className="px-4 py-4 font-semibold text-slate-600 text-sm text-center">Sửa (Update)</th>
-                <th className="px-4 py-4 font-semibold text-slate-600 text-sm text-center">Xóa (Delete)</th>
+            <thead>
+              <tr className="bg-slate-50/80 border-b border-slate-200">
+                <th className="px-6 py-4 font-bold text-slate-700 text-xs uppercase tracking-wider w-[40%]">Chức năng / Module</th>
+                <th className="px-4 py-4 font-bold text-slate-600 text-[10px] uppercase tracking-widest text-center">Xem</th>
+                <th className="px-4 py-4 font-bold text-slate-600 text-[10px] uppercase tracking-widest text-center">Thêm</th>
+                <th className="px-4 py-4 font-bold text-slate-600 text-[10px] uppercase tracking-widest text-center">Sửa</th>
+                <th className="px-4 py-4 font-bold text-slate-600 text-[10px] uppercase tracking-widest text-center">Xóa</th>
               </tr>
             </thead>
-            <tbody>
-              {CATEGORY_MODULES.map(({ category, color, modules }) => (
-                <Fragment key={category}>
+            <tbody className="divide-y divide-slate-100">
+              {APP_CATEGORIES.map((cat) => (
+                <Fragment key={cat.id}>
                   {/* Category Header Row */}
-                  <tr>
-                    <td colSpan={5} className={`px-6 py-2.5 border-y font-bold text-xs uppercase tracking-widest ${color}`}>
-                      {category}
+                  <tr className="group">
+                    <td colSpan={5} className={`px-6 py-3 border-y font-bold text-[10px] uppercase tracking-[0.2em] transition-colors ${colorStyles[cat.color] || colorStyles.slate}`}>
+                      <div className="flex items-center gap-2">
+                        <cat.icon className="w-3.5 h-3.5" />
+                        {cat.name}
+                      </div>
                     </td>
                   </tr>
                   {/* Module Rows */}
-                  {modules.map(m => {
+                  {cat.modules.map(m => {
                     const p = permissions.find(x => x.module === m.code) || emptyPerm(m.code);
                     return (
-                      <tr key={m.code} className="hover:bg-slate-50/60 transition-colors border-b border-slate-100 last:border-0">
-                        <td className="px-8 py-3.5">
-                          <div className="font-medium text-slate-700 text-sm">{m.name}</div>
-                          <div className="text-xs text-slate-400 font-mono mt-0.5">{m.code}</div>
+                      <tr key={m.code} className="hover:bg-slate-50/80 transition-colors group">
+                        <td className="px-8 py-4">
+                          <div className="flex items-center gap-3">
+                             <div className="p-1.5 rounded-lg bg-slate-50 group-hover:bg-white transition-colors border border-slate-100">
+                               <m.icon className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors" />
+                             </div>
+                             <div>
+                               <div className="font-semibold text-slate-700 text-sm">{m.name}</div>
+                               <div className="text-[10px] text-slate-400 font-mono mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">{m.code}</div>
+                             </div>
+                          </div>
                         </td>
                         {(["canRead","canCreate","canUpdate","canDelete"] as const).map(field => (
-                          <td key={field} className="px-4 py-3.5 text-center">
-                            <input type="checkbox" checked={!!p[field]}
-                              onChange={() => togglePerm(m.code, field)}
-                              className={`w-4 h-4 rounded cursor-pointer focus:ring-2 border-slate-300 ${
-                                field === "canDelete"
-                                  ? "text-red-500 focus:ring-red-400 border-red-300"
-                                  : "text-indigo-600 focus:ring-indigo-500"
-                              }`}
-                            />
+                          <td key={field} className="px-4 py-4 text-center">
+                            <label className="inline-flex items-center justify-center cursor-pointer p-1">
+                              <input type="checkbox" checked={!!p[field]}
+                                onChange={() => togglePerm(m.code, field)}
+                                className={`w-5 h-5 rounded-md transition-all cursor-pointer focus:ring-offset-2 border-slate-300 focus:ring-2 ${
+                                  field === "canDelete"
+                                    ? "text-red-500 focus:ring-red-400 border-red-200"
+                                    : "text-indigo-600 focus:ring-indigo-500 border-slate-200"
+                                } shadow-sm`}
+                              />
+                            </label>
                           </td>
                         ))}
                       </tr>
