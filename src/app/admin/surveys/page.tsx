@@ -7,40 +7,40 @@ export const metadata = { title: "Quản lý Khảo sát | Admin Portal" }
 export default async function AdminSurveysPage() {
   let surveys: any[] = []
   let years: any[] = []
-  let error: string | null = null
+  let debugInfo: string = ""
 
   try {
-    // Try simplest query possible to test DB health
-    const sResult = await prisma.surveyPeriod.findMany({
-      include: { 
-        academicYear: { select: { id: true, name: true } }
-      }
-    });
-    const yResult = await prisma.academicYear.findMany({
-      select: { id: true, name: true, status: true }
-    });
-    
+    const rawSurveys = await prisma.surveyPeriod.findMany();
+    debugInfo = "Raw Count: " + rawSurveys.length;
+
+    const [sResult, yResult] = await Promise.all([
+      prisma.surveyPeriod.findMany({
+        include: { 
+          academicYear: { select: { id: true, name: true } }
+        }
+      }),
+      prisma.academicYear.findMany({
+        select: { id: true, name: true, status: true }
+      })
+    ])
     surveys = sResult;
     years = yResult;
+    debugInfo += " | Included Count: " + surveys.length;
   } catch (e: any) {
-    error = e.message;
-    console.error(e);
+    debugInfo = "Error: " + e.message;
   }
 
   return (
     <div className="space-y-6">
+      <div className="p-2 bg-slate-800 text-white text-[10px] rounded opacity-50">
+        Debug: {debugInfo}
+      </div>
+
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Quản lý Khảo sát</h1>
         </div>
       </div>
-
-      {error && (
-        <div className="p-4 bg-red-100 border border-red-200 text-red-700 rounded-xl mb-4">
-          <p className="font-bold">Lỗi truy xuất dữ liệu:</p>
-          <code className="text-xs break-all">{error}</code>
-        </div>
-      )}
 
       <AdminSurveysClient
         initialSurveys={surveys}
