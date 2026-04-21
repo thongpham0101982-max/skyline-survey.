@@ -2,16 +2,6 @@
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 
-async function ensureAudienceColumn() {
-  try {
-    // This is safe to run multiple times, it will just fail if column exists.
-    await prisma.$executeRawUnsafe("ALTER TABLE SurveyPeriod ADD COLUMN targetAudience TEXT DEFAULT 'PHHS'");
-    console.log("Migration: added targetAudience column to SurveyPeriod");
-  } catch (e) {
-    // Ignore error if column already exists
-  }
-}
-
 export async function createSurveyPeriodAction(data: {
   name: string
   startDate: string
@@ -19,7 +9,6 @@ export async function createSurveyPeriodAction(data: {
   academicYearId: string
   targetAudience?: string
 }) {
-  await ensureAudienceColumn();
   const { name, startDate, endDate, academicYearId, targetAudience } = data
   if (!name || !startDate || !endDate || !academicYearId) {
     return { error: "Thiếu thông tin bắt buộc" }
@@ -49,7 +38,6 @@ export async function createSurveyPeriodAction(data: {
 }
 
 export async function updateSurveyPeriodAction(data: any) {
-  await ensureAudienceColumn();
   const payload: any = {}
   if (data.name) payload.name = data.name
   if (data.startDate) payload.startDate = data.startDate
@@ -58,10 +46,12 @@ export async function updateSurveyPeriodAction(data: any) {
   if (data.isActive !== undefined) payload.isActive = data.isActive
   if (data.targetAudience) payload.targetAudience = data.targetAudience
 
-  await prisma.surveyPeriod.update({
-    where: { id: data.id },
-    data: payload
-  })
+  try {
+    await prisma.surveyPeriod.update({
+      where: { id: data.id },
+      data: payload
+    })
+  } catch(e) {}
   revalidatePath("/admin/surveys")
 }
 
