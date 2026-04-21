@@ -306,7 +306,11 @@ export function AdminSurveysClient({ initialSurveys, years, createAction, update
                     <div className="flex justify-center gap-2">
                       <Link href={"/admin/surveys/" + s.id + "/questions"}
                         className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-full font-medium transition-colors text-xs border border-indigo-100 shadow-sm">
-                        <Settings2 className="w-4 h-4" /> Bọ câu hỏi
+                        <Settings2 className="w-4 h-4" /> Bộ câu hỏi
+                      </Link>
+                      <Link href={"/admin/surveys/" + s.id + "/publish"}
+                        className="inline-flex items-center gap-1 text-emerald-600 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-full font-medium transition-colors text-xs border border-emerald-100 shadow-sm">
+                        <Send className="w-4 h-4" /> Phát hành
                       </Link>
                     </div>
                   </td>
