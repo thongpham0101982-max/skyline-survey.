@@ -4,10 +4,28 @@ import { createSurveyPeriodAction, updateSurveyPeriodAction, deleteSurveyPeriodA
 
 export const metadata = { title: "Quản lý Khảo sát | Admin Portal" }
 
+async function runAutoMigration() {
+  try {
+    // Try to check if column exists
+    await prisma.('SELECT targetAudience FROM SurveyPeriod LIMIT 1');
+  } catch (e) {
+    console.log("Migration: targetAudience missing, adding...");
+    try {
+      await prisma.("ALTER TABLE SurveyPeriod ADD COLUMN targetAudience TEXT DEFAULT 'PHHS'");
+      console.log("Migration: targetAudience added successfully!");
+    } catch (err) {
+      console.error("Migration Failed:", err);
+    }
+  }
+}
+
 export default async function AdminSurveysPage() {
   let surveys: any[] = []
   let years: any[] = []
   let error: string | null = null
+
+  // RUN MIGRATION ON MOUNT
+  await runAutoMigration();
 
   try {
     const [sResult, yResult] = await Promise.all([
@@ -33,7 +51,7 @@ export default async function AdminSurveysPage() {
     <div className="space-y-6">
       {error && (
         <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl mb-4">
-          <p className="font-bold">Lỗi dữ liệu hệ thống:</p>
+          <p className="font-bold">Lỗi dữ liệu hệ thống (Vui lòng tải lại trang):</p>
           <code className="text-xs">{error}</code>
         </div>
       )}
