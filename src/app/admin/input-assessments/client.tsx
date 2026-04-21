@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import {
   Plus, Search, Edit2, Trash2, Users, Settings, Clock, BarChart3,
-  Upload, Layers, Database, UserCheck, Calendar, X, Check, AlertCircle,
+  Upload, Download, Layers, Database, UserCheck, Calendar, X, Check, AlertCircle,
   ChevronDown, ChevronUp, Loader2, BookOpen, GraduationCap, RefreshCw,
   Tag, FolderOpen, Hash, MoreVertical, PenLine, CheckCircle2,
   Filter, ClipboardCheck, ArrowRight, UserPlus, Info
@@ -147,6 +147,29 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   const [yearId, setYearId] = useState(academicYears[0]?.id || "")
   const [toast, setToast] = useState<{msg:string;type:"ok"|"err"}|null>(null)
   const notify = (msg:string, type:"ok"|"err"="ok") => { setToast({msg,type}); setTimeout(()=>setToast(null),3200) }
+  const handleDownloadTemplate = () => {
+    const ws = XLSX.utils.json_to_sheet([
+      { 
+        "Mã HS KS *": "HS_001", 
+        "Họ và Tên *": "Nguyễn Văn A", 
+        "Ngay sinh": "20/05/2010",
+        "Khối": "6",
+        "Lớp": "6A1",
+        "Học kỳ": "HK1",
+        "Diện khảo sát": "",
+        "Hình thức KS": "",
+        "Loại tuyển sinh": "",
+        "KQGD Tiểu học": "",
+        "Kết quả Học tập": "",
+        "Kết quả Rèn luyện": ""
+      }
+    ])
+    ws["!cols"] = [{ wch: 15 }, { wch: 25 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }]
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, "DS_HocSinh")
+    XLSX.writeFile(wb, "Mau_Import_HS_KhaoSat.xlsx")
+  }
+
 
   // ───────── COMMON STATES ─────────
   const [periods, setPeriods] = useState<Period[]>([])
@@ -288,13 +311,83 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
       const d = await file.arrayBuffer()
       const wb = XLSX.read(d)
       const ws = wb.Sheets[wb.SheetNames[0]]
-      const rows: any[] = XLSX.utils.sheet_to_json(ws, { defval:"" })
-      const mapped = rows.map((row:any) => ({
-        studentCode: String(row["Ma_HS_KS"]||row["Mã HS KS"]||row["MaHS"]||row["studentCode"]||"").trim(),
-        fullName:    String(row["Ho ten"]||row["Họ tên"]||"").trim(),
-        periodId: sPeriodId, 
-        batchId: sBatchId||null
-      })).filter((r:any) => r.studentCode && r.fullName)
+            const rawData = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][];
+      if (!rawData || rawData.length === 0) return;
+
+      let headerRowIndex = -1;
+      for (let i = 0; i < rawData.length; i++) {
+        const row = rawData[i];
+        if (row.some(cell => String(cell).toLowerCase().includes("mã") || String(cell).toLowerCase().includes("học sinh") || String(cell).toLowerCase().includes("student"))) {
+          headerRowIndex = i;
+          break;
+        }
+      }
+
+      if (headerRowIndex === -1) {
+        notify("Không tìm thấy dòng tiêu đề trong file","err");
+        setImporting(false);
+        return;
+      }
+
+      const rows = XLSX.utils.sheet_to_json(ws, { range: headerRowIndex, defval: "" }) as any[];
+
+      const mapped = rows.map((row:any) => {
+        const findVal = (row: any, keywords: string[]) => {
+          const keys = Object.keys(row);
+          for (const key of keys) {
+            const k = key.toLowerCase().trim();
+            if (keywords.some(kw => k.includes(kw.toLowerCase()))) return row[key];
+          }
+          return null;
+        };
+
+        let parsedDate = null;
+        const rawDate = row["Ngay sinh"] || row["Ngày sinh"] || row["dateOfBirth"];
+        if (rawDate) {
+          if (typeof rawDate === "number") {
+            const date = new Date(Math.round((rawDate - 25569)*86400*1000));
+            parsedDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000).toISOString();
+          } else if (typeof rawDate === "string") {
+            const parts = rawDate.split(/[\/\-]/);
+            if (parts.length === 3 && parts[0].length <= 2) {
+               parsedDate = parts[2] + "-" + parts[1].padStart(2,"0") + "-" + parts[0].padStart(2,"0") + "T00:00:00.000Z";
+            } else { 
+               const d = new Date(rawDate);
+               if (!isNaN(d.getTime())) parsedDate = d.toISOString();
+            }
+          }
+        }
+        return {
+                  const studentCode = String(findVal(row, ["mã hs ks", "ma_hs_ks", "mahs", "studentcode"]) || "").trim();
+        const fullName = String(findVal(row, ["họ và tên", "họ tên", "ho ten", "fullname", "full name"]) || "").trim();
+        const grade = String(findVal(row, ["khối", "khoi", "grade"]) || "").trim();
+        const className = String(findVal(row, ["lớp", "lop", "class"]) || "").trim();
+        const hocKy = String(findVal(row, ["học kỳ", "hoc ky", "semester"]) || "").trim();
+        const admissionCriteria = String(findVal(row, ["diện khảo sát", "dien khao sat", "criteria"]) || "").trim();
+        const surveySystem = String(findVal(row, ["hình thức ks", "hinh thuc ks", "survey system"]) || "").trim();
+        const targetType = String(findVal(row, ["loại tuyển sinh", "loai tuyen sinh", "target type"]) || "").trim();
+        const kqgdTieuHoc = String(findVal(row, ["kqgd tiểu học", "kqgd tieu hoc"]) || "").trim();
+        const kqHocTap = String(findVal(row, ["kết quả học tập", "kq hoc tap"]) || "").trim();
+        const kqRenLuyen = String(findVal(row, ["kết quả rèn luyện", "kq ren luyen"]) || "").trim();
+
+        return {
+          studentCode,
+          fullName,
+          dateOfBirth: parsedDate,
+          grade,
+          className,
+          hocKy,
+          admissionCriteria,
+          surveySystem,
+          targetType,
+          kqgdTieuHoc,
+          kqHocTap,
+          kqRenLuyen,
+          periodId: sPeriodId,
+          batchId: sBatchId || null
+        };
+
+      }).filter((r:any) => r.studentCode && r.fullName)
       const res = await fetch("/api/input-assessment-students", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({action:"BULK_CREATE", data:mapped}) })
       if (res.ok) { notify("Import thành công"); fetchStudents() }
     } finally { setImporting(false); if (fileRef.current) fileRef.current.value="" }
@@ -716,6 +809,9 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                  <div className="flex items-center gap-2 pb-1">
                     <button onClick={fetchStudents} disabled={!sPeriodId} className="px-6 py-3 bg-slate-800 text-white text-xs font-black rounded-2xl hover:bg-black disabled:opacity-30 transition-all uppercase tracking-widest shadow-lg shadow-slate-100">Tìm kiếm</button>
                     <button onClick={openAddStudent} disabled={!sPeriodId} className="px-6 py-3 bg-indigo-600 text-white text-xs font-black rounded-2xl hover:bg-indigo-700 disabled:opacity-30 transition-all uppercase tracking-widest shadow-lg shadow-indigo-100">Thêm mới</button>
+                    <button onClick={handleDownloadTemplate} disabled={!sPeriodId} className="w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center hover:bg-blue-700 shadow-lg shadow-blue-50 transition-all mr-2">
+                       <Download className="w-5 h-5"/>
+                    </button>
                     <button onClick={()=>fileRef.current?.click()} disabled={!sPeriodId||importing} className="w-12 h-12 bg-emerald-600 text-white rounded-2xl flex items-center justify-center hover:bg-emerald-700 shadow-lg shadow-emerald-50 transition-all">
                        <Upload className="w-5 h-5"/>
                     </button>
@@ -831,12 +927,58 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
 
       <Modal open={sModal} onClose={()=>setSModal(false)} title="Thông tin Học sinh" size="lg" footer={<><button onClick={()=>setSModal(false)} className="flex-1 text-xs font-black uppercase text-slate-400">Đóng</button> <button onClick={saveStudent} className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-indigo-50">Lưu dữ liệu</button></>}>
         <div className="space-y-4 pt-1">
-           <div className="grid grid-cols-2 gap-4"><Field label="Mã HS KS" required><input value={sForm.studentCode} onChange={e=>setSForm(f=>({...f,studentCode:e.target.value}))} className={inp} disabled={!!editS}/></Field><Field label="Ngày sinh"><input type="date" value={sForm.dateOfBirth} onChange={e=>setSForm(f=>({...f,dateOfBirth:e.target.value}))} className={inp}/></Field></div>
+           <div className="grid grid-cols-2 gap-4">
+              <Field label="Mã HS KS" required><input value={sForm.studentCode} onChange={e=>setSForm(f=>({...f,studentCode:e.target.value}))} className={inp} disabled={!!editS}/></Field>
+              <Field label="Ngày sinh"><input type="date" value={sForm.dateOfBirth} onChange={e=>setSForm(f=>({...f,dateOfBirth:e.target.value}))} className={inp}/></Field>
+           </div>
            <Field label="Họ và Tên" required><input value={sForm.fullName} onChange={e=>setSForm(f=>({...f,fullName:e.target.value}))} className={inp}/></Field>
+           
            <div className="grid grid-cols-3 gap-4">
               <Field label="Khối"><select value={sForm.grade} onChange={e=>setSForm(f=>({...f,grade:e.target.value}))} className={inp}><option value="">--</option>{grades.map(g=><option key={g} value={g}>{g}</option>)}</select></Field>
               <Field label="Lớp"><input value={sForm.className} onChange={e=>setSForm(f=>({...f,className:e.target.value}))} className={inp}/></Field>
               <Field label="Học kỳ"><input value={sForm.hocKy} onChange={e=>setSForm(f=>({...f,hocKy:e.target.value}))} className={inp}/></Field>
+           </div>
+
+           <div className="grid grid-cols-3 gap-4">
+              <Field label="Diện Khảo sát">
+                <select value={sForm.admissionCriteria} onChange={e=>setSForm(f=>({...f,admissionCriteria:e.target.value}))} className={inp}>
+                  <option value="">--</option>
+                  {configs.filter(c => c.categoryType === "DIEN_KS").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                </select>
+              </Field>
+              <Field label="Hình thức KS">
+                <select value={sForm.surveySystem} onChange={e=>setSForm(f=>({...f,surveySystem:e.target.value}))} className={inp}>
+                  <option value="">--</option>
+                  {configs.filter(c => c.categoryType === "HINH_THUC_KS").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                </select>
+              </Field>
+              <Field label="Loại Tuyển sinh">
+                <select value={sForm.targetType} onChange={e=>setSForm(f=>({...f,targetType:e.target.value}))} className={inp}>
+                  <option value="">--</option>
+                  {configs.filter(c => c.categoryType === "LOAI_TUYEN_SINH").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                </select>
+              </Field>
+           </div>
+
+           <div className="grid grid-cols-3 gap-4">
+              <Field label="KQGD Tiểu học">
+                <select value={sForm.kqgdTieuHoc} onChange={e=>setSForm(f=>({...f,kqgdTieuHoc:e.target.value}))} className={inp}>
+                  <option value="">--</option>
+                  {configs.filter(c => c.categoryType === "KQGD_TIEU_HOC").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                </select>
+              </Field>
+              <Field label="Kết quả Học tập">
+                <select value={sForm.kqHocTap} onChange={e=>setSForm(f=>({...f,kqHocTap:e.target.value}))} className={inp}>
+                  <option value="">--</option>
+                  {configs.filter(c => c.categoryType === "KQ_HOC_TAP").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                </select>
+              </Field>
+              <Field label="Kết quả Rèn luyện">
+                <select value={sForm.kqRenLuyen} onChange={e=>setSForm(f=>({...f,kqRenLuyen:e.target.value}))} className={inp}>
+                  <option value="">--</option>
+                  {configs.filter(c => c.categoryType === "KQ_REN_LUYEN").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                </select>
+              </Field>
            </div>
         </div>
       </Modal>

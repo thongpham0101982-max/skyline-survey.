@@ -17,8 +17,8 @@ export function AdminClassStudentsClient({ classId, initialStudents }: any) {
 
   const handleDownloadTemplate = () => {
     const ws = xlsx.utils.json_to_sheet([
-      { "STT": 1, "Mã HS (Bắt buộc)*": "HS-10A1-001", "Họ và Tên (Bắt buộc)*": "Nguyễn Văn A", "Giới tính": "Nam", "Ngày sinh": "2010-05-20" },
-      { "STT": 2, "Mã HS (Bắt buộc)*": "HS-10A1-002", "Họ và Tên (Bắt buộc)*": "Trần Thị B", "Giới tính": "Nữ", "Ngày sinh": "2010-12-15" }
+      { "STT": 1, "Mã học sinh *": "HS-10A1-001", "Họ và Tên *": "Nguyễn Văn A", "Giới tính": "Nam", "Ngày sinh": "20/05/2010" },
+      { "STT": 2, "Mã học sinh *": "HS-10A1-002", "Họ và Tên *": "Trần Thị B", "Giới tính": "Nữ", "Ngày sinh": "15/12/2010" }
     ])
     ws["!cols"] = [{ wch: 5 }, { wch: 25 }, { wch: 30 }, { wch: 12 }, { wch: 18 }]
     const wb = xlsx.utils.book_new()
@@ -33,23 +33,69 @@ export function AdminClassStudentsClient({ classId, initialStudents }: any) {
     const reader = new FileReader()
     reader.onload = async (evt) => {
       try {
-        const bstr = evt.target?.result
-        const wb = xlsx.read(bstr, { type: "binary" })
+        const buffer = evt.target?.result
+        const wb = xlsx.read(buffer, { type: "array" })
         const ws = wb.Sheets[wb.SheetNames[0]]
-        const data = xlsx.utils.sheet_to_json(ws) as any[]
+        
+        const rawData = xlsx.utils.sheet_to_json(ws, { header: 1 }) as any[][];
+        if (!rawData || rawData.length === 0) return;
+
+        let headerRowIndex = -1;
+        for (let i = 0; i < rawData.length; i++) {
+          const row = rawData[i];
+          if (row.some(cell => String(cell).toLowerCase().includes("mã") || String(cell).toLowerCase().includes("học sinh"))) {
+            headerRowIndex = i;
+            break;
+          }
+        }
+
+        if (headerRowIndex === -1) {
+          alert("Không tìm thấy dòng tiêu đề trong file Excel. Vui lòng đảm bảo có cột 'Mã học sinh' hoặc 'Họ và Tên'.");
+          setUploading(false);
+          return;
+        }
+
+        const data = xlsx.utils.sheet_to_json(ws, { range: headerRowIndex }) as any[];
         const payload = data.map((row: any) => {
+          const findVal = (row: any, keywords: string[]) => {
+            const keys = Object.keys(row);
+            for (const key of keys) {
+              const k = key.toLowerCase().trim();
+              if (keywords.some(kw => k.includes(kw.toLowerCase()))) return row[key];
+            }
+            return null;
+          };
+
           let parsedDate = null
-          const rawDate = row["Ngày sinh"] || row["Ngay sinh"]
+          const rawDate = findVal(row, ["ngày sinh", "ngay sinh", "dob", "birth"]);
           if (rawDate) {
             if (typeof rawDate === "number") {
               const date = new Date(Math.round((rawDate - 25569)*86400*1000))
               parsedDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000)
-            } else { parsedDate = new Date(rawDate) }
+            } else if (typeof rawDate === "string") {
+              const parts = String(rawDate).split(/[\\/\\-]/);
+              if (parts.length === 3) {
+                const d = parseInt(parts[0], 10);
+                const m = parseInt(parts[1], 10) - 1;
+                const y = parseInt(parts[2], 10);
+                if (parts[0].length === 4) parsedDate = new Date(String(rawDate));
+                else parsedDate = new Date(y, m, d);
+              } else {
+                parsedDate = new Date(String(rawDate));
+              }
+            } else {
+              parsedDate = new Date(rawDate);
+            }
           }
+
+          const studentCode = String(findVal(row, ["mã học sinh", "mã hs", "ma hs", "studentcode"]) || "").trim() || `HS-${Date.now()}-${Math.floor(Math.random()*1000)}`;
+          const studentName = String(findVal(row, ["họ và tên", "họ tên", "ho ten", "studentname", "full name"]) || "").trim() || "Unnamed";
+          const gender = String(findVal(row, ["giới tính", "gioi tinh", "gender"]) || "Nam").trim();
+
           return {
-            studentCode: row["Mã HS (Bắt buộc)*"] || row["Mã HS"] || row["Ma HS"] || `HS-${Date.now()}-${Math.floor(Math.random()*1000)}`,
-            studentName: row["Họ và Tên (Bắt buộc)*"] || row["Họ và Tên"] || row["Ho va Ten"] || "Unnamed",
-            gender: row["Giới tính"] || row["Gioi tinh"] || "Chưa rõ",
+            studentCode,
+            studentName,
+            gender,
             dateOfBirth: parsedDate && !isNaN(parsedDate.getTime()) ? parsedDate : null
           }
         })
@@ -65,7 +111,7 @@ export function AdminClassStudentsClient({ classId, initialStudents }: any) {
       setUploading(false)
       if (fileInputRef.current) fileInputRef.current.value = ""
     }
-    reader.readAsBinaryString(file)
+    reader.readAsArrayBuffer(file)
   }
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {

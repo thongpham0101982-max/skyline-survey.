@@ -9,24 +9,33 @@ export async function importStudentsAction(classId: string, data: any[]) {
   let count = 0
   for (const item of data) {
     try {
-      await prisma.student.upsert({
-        where: { studentCode: item.studentCode },
-        update: {
-          studentName: item.studentName,
-          gender: item.gender,
-          dateOfBirth: item.dateOfBirth
-        },
-        create: {
-          studentCode: item.studentCode,
-          studentName: item.studentName,
-          gender: item.gender,
-          dateOfBirth: item.dateOfBirth,
-          classId: cls.id,
-          campusId: cls.campusId,
-          academicYearId: cls.academicYearId,
-          status: "ACTIVE"
-        }
+      const existing = await prisma.student.findFirst({
+        where: { studentCode: item.studentCode }
       })
+
+      if (existing) {
+        await prisma.student.update({
+          where: { id: existing.id },
+          data: {
+            studentName: item.studentName,
+            gender: item.gender,
+            dateOfBirth: item.dateOfBirth
+          }
+        })
+      } else {
+        await prisma.student.create({
+          data: {
+            studentCode: item.studentCode,
+            studentName: item.studentName,
+            gender: item.gender,
+            dateOfBirth: item.dateOfBirth,
+            classId: cls.id,
+            campusId: cls.campusId,
+            academicYearId: cls.academicYearId,
+            status: "ACTIVE"
+          }
+        })
+      }
       count++
     } catch(e) {
       console.error("Error importing student: ", item, e)

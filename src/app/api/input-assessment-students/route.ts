@@ -70,33 +70,50 @@ export async function POST(req) {
       for (let i = 0; i < data.length; i++) {
         const d = data[i];
         try {
-          const result = await (prisma as any).inputAssessmentStudent.create({
-            data: {
-              studentCode: d.studentCode,
-              fullName: d.fullName,
-              dateOfBirth: d.dateOfBirth ? new Date(d.dateOfBirth) : null,
-              className: d.className || null,
-              academicRating: d.academicRating || null,
-              conductRating: d.conductRating || null,
-              admissionCriteria: d.admissionCriteria || null,
-              surveySystem: d.surveySystem || null,
-              targetType: d.targetType || null,
-              surveyFormType: d.surveyFormType || null,
-              signatureName: d.signatureName || null,
-              hocKy: d.hocKy || null,
-              kqgdTieuHoc: d.kqgdTieuHoc || null,
-              kqHocTap: d.kqHocTap || null,
-              hoSoCtQuocTe: d.hoSoCtQuocTe || null,
-              kqRenLuyen: d.kqRenLuyen || null,
-              psychologyScore: d.psychologyScore ? parseFloat(d.psychologyScore) : null,
-              writtenEnglishScore: d.writtenEnglishScore ? parseFloat(d.writtenEnglishScore) : null,
-              oralEnglishScore: d.oralEnglishScore ? parseFloat(d.oralEnglishScore) : null,
-              mathScore: d.mathScore ? parseFloat(d.mathScore) : null,
-              literatureScore: d.literatureScore ? parseFloat(d.literatureScore) : null,
-              periodId: d.periodId,
-              batchId: d.batchId || null,
-            }
+          const existing = await (prisma as any).inputAssessmentStudent.findUnique({
+            where: { studentCode_periodId: { studentCode: d.studentCode, periodId: d.periodId } }
           });
+
+          const studentData = {
+            fullName: d.fullName,
+            dateOfBirth: d.dateOfBirth ? new Date(d.dateOfBirth) : null,
+            className: d.className || null,
+            grade: d.grade || null,
+            academicRating: d.academicRating || null,
+            conductRating: d.conductRating || null,
+            admissionCriteria: d.admissionCriteria || null,
+            surveySystem: d.surveySystem || null,
+            targetType: d.targetType || null,
+            surveyFormType: d.surveyFormType || null,
+            signatureName: d.signatureName || null,
+            hocKy: d.hocKy || null,
+            kqgdTieuHoc: d.kqgdTieuHoc || null,
+            kqHocTap: d.kqHocTap || null,
+            hoSoCtQuocTe: d.hoSoCtQuocTe || null,
+            kqRenLuyen: d.kqRenLuyen || null,
+            psychologyScore: d.psychologyScore ? parseFloat(d.psychologyScore) : null,
+            writtenEnglishScore: d.writtenEnglishScore ? parseFloat(d.writtenEnglishScore) : null,
+            oralEnglishScore: d.oralEnglishScore ? parseFloat(d.oralEnglishScore) : null,
+            mathScore: d.mathScore ? parseFloat(d.mathScore) : null,
+            literatureScore: d.literatureScore ? parseFloat(d.literatureScore) : null,
+            batchId: d.batchId || null,
+          };
+
+          let result;
+          if (existing) {
+            result = await (prisma as any).inputAssessmentStudent.update({
+              where: { id: existing.id },
+              data: studentData
+            });
+          } else {
+            result = await (prisma as any).inputAssessmentStudent.create({
+              data: {
+                studentCode: d.studentCode,
+                periodId: d.periodId,
+                ...studentData
+              }
+            });
+          }
           results.push(result);
         } catch (err) {
           errors.push({ row: i + 1, code: d.studentCode, error: err.message });
