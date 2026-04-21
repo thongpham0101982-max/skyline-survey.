@@ -1,4 +1,4 @@
-﻿import { prisma } from "@/lib/db"
+import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
 import PublishSurveyClient from "./client"
@@ -28,8 +28,18 @@ async function PublishSurveyPageContent({ id }: { id: string }) {
     
     if (!period) return notFound()
 
+    // Key Change: Include surveyForms count to see what's already published
     const classes = await prisma.class.findMany({
-      include: { campus: true },
+      include: { 
+        campus: true,
+        _count: {
+          select: {
+            surveyForms: {
+              where: { surveyPeriodId: id }
+            }
+          }
+        }
+      },
       orderBy: { className: "asc" }
     })
 

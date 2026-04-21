@@ -2,6 +2,7 @@
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 
+// ... (applyEmergencyDbFix remains same) ...
 export async function applyEmergencyDbFix() {
   try {
     await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "SurveyForm_backup" AS SELECT * FROM "SurveyForm"`)
@@ -37,7 +38,6 @@ export async function dispatchSurveyAction(surveyPeriodId: string, classIds: str
     const period = await prisma.surveyPeriod.findUnique({ where: { id: surveyPeriodId } })
     if (!period) return { error: "Không tìm thấy đợt khảo sát" }
 
-    // CRITICAL: Ensure AY-2026 exists to prevent Foreign Key errors
     await prisma.academicYear.upsert({
        where: { id: "AY-2026" },
        update: {},
@@ -60,24 +60,19 @@ export async function dispatchSurveyAction(surveyPeriodId: string, classIds: str
     const existingStudentIds = new Set(existingForms.filter(f => !f.parentId).map(f => f.studentId))
 
     let createdCount = 0
-    let skippedCount = 0
     let samples: any[] = []
 
     for (const cls of classes) {
       for (const student of cls.students) {
         if (isStudentSurvey) {
-          if (existingStudentIds.has(student.id)) {
-            skippedCount++
-            continue
-          }
-          
+          if (existingStudentIds.has(student.id)) continue
           samples.push({
             id: `sf_${Math.random().toString(36).substr(2, 9)}_${Date.now()}_${createdCount}`,
             surveyPeriodId,
             studentId: student.id,
             classId: cls.id,
             campusId: cls.campusId,
-            academicYearId: cls.academicYearId || "AY-2026", // Fallback to avoid FK error
+            academicYearId: cls.academicYearId || "AY-2026",
             status: "PENDING",
             parentId: null
           })
@@ -100,8 +95,8 @@ export async function dispatchSurveyAction(surveyPeriodId: string, classIds: str
       await prisma.surveyPeriod.update({ where: { id: surveyPeriodId }, data: { isActive: true } })
     }
 
-    revalidatePath("/admin/surveys")
-    return { success: true, created: createdCount, skipped: skippedCount, classCount: classIds.length, totalParticipants: createdCount }
+    revalidatePath(`/admin/surveys/${surveyPeriodId}/publish`)
+    return { success: true, created: createdCount, classCount: classIds.length, totalParticipants: createdCount }
   } catch (err: any) {
     return { error: `Lỗi hệ thống: ${err.message}` }
   }
@@ -110,9 +105,9 @@ export async function dispatchSurveyAction(surveyPeriodId: string, classIds: str
 export async function revokeSurveyAction(surveyPeriodId: string, classIds: string[]) {
   try {
     const res = await prisma.surveyForm.deleteMany({
-      where: { surveyPeriodId, classId: { in: classIds }, status: "PENDING" }
+      where: { surveyPeriodId, classId: { in: classIds } }
     })
-    revalidatePath("/admin/surveys")
+    revalidatePath(`/admin/surveys/${surveyPeriodId}/publish`)
     return { success: true, count: res.count, classCount: classIds.length }
   } catch (err: any) {
     return { error: `Lỗi khi thu hồi: ${err.message}` }
