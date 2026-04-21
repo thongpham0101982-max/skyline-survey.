@@ -1,5 +1,5 @@
 ﻿"use client"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import {
   Send, RotateCcw, CheckCircle2, Clock, Users, GraduationCap,
   UserCheck, Layers, ChevronDown, ChevronRight, Search,
@@ -16,14 +16,22 @@ const AUDIENCE_MAP: Record<string, { label: string; icon: any; color: string; bg
 }
 
 export default function PublishSurveyClient({ initialSurvey, classes }: any) {
-  const [survey] = useState(initialSurvey)
+  const [mounted, setMounted] = useState(false)
   const [selectedClassIds, setSelectedClassIds] = useState<string[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [expandedCampus, setExpandedCampus] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [result, setResult] = useState<{ type: "success" | "error" | "revoke"; message: string } | null>(null)
 
-  const aud = (survey && survey.targetAudience && AUDIENCE_MAP[survey.targetAudience]) ? AUDIENCE_MAP[survey.targetAudience] : AUDIENCE_MAP.PHHS
+  useEffect(() => { setMounted(true) }, [])
+
+  const survey = initialSurvey
+  const aud = useMemo(() => {
+    const val = survey?.targetAudience || "PHHS"
+    // Normalize targetAudience match
+    const match = Object.keys(AUDIENCE_MAP).find(k => k.toLowerCase() === val.toLowerCase())
+    return match ? AUDIENCE_MAP[match] : AUDIENCE_MAP.PHHS
+  }, [survey])
 
   const campusGroups = useMemo(() => {
     if (!classes) return []
@@ -81,8 +89,9 @@ export default function PublishSurveyClient({ initialSurvey, classes }: any) {
   }
 
   const fmt = (d: string) => {
+    if (!mounted) return "" // Don't render dates on server to avoid hydration mismatch
     try { return new Date(d).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" }) }
-    catch (e) { return d }
+    catch (e) { return String(d) }
   }
 
   if (!survey) return <div className="p-10 text-center">Đang tải...</div>
@@ -99,6 +108,7 @@ export default function PublishSurveyClient({ initialSurvey, classes }: any) {
         </div>
       </div>
 
+      {/* Info Card */}
       <div className={`bg-white border ${aud.border} rounded-3xl p-6 shadow-sm`}>
         <div className="flex items-start gap-4">
           <div className={`p-4 rounded-2xl ${aud.bg} flex-shrink-0`}>
@@ -130,6 +140,7 @@ export default function PublishSurveyClient({ initialSurvey, classes }: any) {
         </div>
       )}
 
+      {/* Class List */}
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
           <div>
@@ -149,49 +160,53 @@ export default function PublishSurveyClient({ initialSurvey, classes }: any) {
         </div>
 
         <div className="divide-y divide-slate-50">
-          {campusGroups.length === 0 && (
+          {!mounted ? (
+             <div className="py-20 text-center text-slate-300">Đang chuẩn bị...</div>
+          ) : campusGroups.length === 0 ? (
             <div className="py-16 text-center text-slate-400">
               <Layers className="w-10 h-10 mx-auto mb-3 opacity-40" />
               <p className="text-sm font-medium">Không tìm thấy lớp nào</p>
             </div>
-          )}
-          {campusGroups.map((group: any) => {
-            const campusName = group.campus?.campusName || "Chưa phân cơ sở"
-            const campusIds = group.classes.map((c: any) => c.id)
-            const campusSelected = campusIds.filter((id: string) => selectedClassIds.includes(id)).length
-            const campusAllSelected = campusSelected === campusIds.length
-            const isExpanded = expandedCampus === group.key || campusGroups.length === 1 || !!searchQuery
-            return (
-              <div key={group.key}>
-                <div className="flex items-center gap-3 px-6 py-3.5 bg-slate-50/70 hover:bg-slate-100 cursor-pointer" onClick={() => setExpandedCampus(isExpanded ? null : group.key)}>
-                  <button onClick={e => { e.stopPropagation(); toggleCampusAll(group) }} className="flex-shrink-0">
-                    {campusAllSelected ? <CheckSquare className="w-4 h-4 text-[#BE1E2E]" /> : campusSelected > 0 ? <div className="w-4 h-4 border-2 border-[#BE1E2E] rounded bg-red-50 flex items-center justify-center"><div className="w-2 h-2 bg-[#BE1E2E] rounded-sm" /></div> : <Square className="w-4 h-4 text-slate-300" />}
-                  </button>
-                  <Building2 className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                  <span className="font-bold text-slate-700 text-sm flex-1">{campusName}</span>
-                  <span className="text-[11px] font-bold text-slate-400">{campusSelected}/{campusIds.length} lớp</span>
-                  {isExpanded ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
-                </div>
-                {isExpanded && (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 px-6 py-4">
-                    {group.classes.map((cls: any) => {
-                      const sel = selectedClassIds.includes(cls.id)
-                      return (
-                        <button key={cls.id} onClick={() => toggleClass(cls.id)}
-                          className={`flex items-center gap-2.5 px-4 py-3 rounded-2xl border text-sm font-bold transition-all text-left ${sel ? "bg-[#BE1E2E] border-[#BE1E2E] text-white shadow-md shadow-red-100" : "bg-white border-slate-200 text-slate-700 hover:border-[#BE1E2E] hover:text-[#BE1E2E]"}`}>
-                          {sel ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> : <Layers className="w-4 h-4 flex-shrink-0 opacity-40" />}
-                          <span className="truncate">{cls.className}</span>
-                        </button>
-                      )
-                    })}
+          ) : (
+            campusGroups.map((group: any) => {
+              const campusName = group.campus?.campusName || "Chưa phân cơ sở"
+              const campusIds = group.classes.map((c: any) => c.id)
+              const campusSelected = campusIds.filter((id: string) => selectedClassIds.includes(id)).length
+              const campusAllSelected = campusSelected === campusIds.length
+              const isExpanded = expandedCampus === group.key || campusGroups.length === 1 || !!searchQuery
+              return (
+                <div key={group.key}>
+                  <div className="flex items-center gap-3 px-6 py-3.5 bg-slate-50/70 hover:bg-slate-100 cursor-pointer" onClick={() => setExpandedCampus(isExpanded ? null : group.key)}>
+                    <button onClick={e => { e.stopPropagation(); toggleCampusAll(group) }} className="flex-shrink-0">
+                      {campusAllSelected ? <CheckSquare className="w-4 h-4 text-[#BE1E2E]" /> : campusSelected > 0 ? <div className="w-4 h-4 border-2 border-[#BE1E2E] rounded bg-red-50 flex items-center justify-center"><div className="w-2 h-2 bg-[#BE1E2E] rounded-sm" /></div> : <Square className="w-4 h-4 text-slate-300" />}
+                    </button>
+                    <Building2 className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                    <span className="font-bold text-slate-700 text-sm flex-1">{campusName}</span>
+                    <span className="text-[11px] font-bold text-slate-400">{campusSelected}/{campusIds.length} lớp</span>
+                    {isExpanded ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
                   </div>
-                )}
-              </div>
-            )
-          })}
+                  {isExpanded && (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 px-6 py-4">
+                      {group.classes.map((cls: any) => {
+                        const sel = selectedClassIds.includes(cls.id)
+                        return (
+                          <button key={cls.id} onClick={() => toggleClass(cls.id)}
+                            className={`flex items-center gap-2.5 px-4 py-3 rounded-2xl border text-sm font-bold transition-all text-left ${sel ? "bg-[#BE1E2E] border-[#BE1E2E] text-white shadow-md shadow-red-100" : "bg-white border-slate-200 text-slate-700 hover:border-[#BE1E2E] hover:text-[#BE1E2E]"}`}>
+                            {sel ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> : <Layers className="w-4 h-4 flex-shrink-0 opacity-40" />}
+                            <span className="truncate">{cls.className}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )
+            })
+          )}
         </div>
       </div>
 
+      {/* Buttons */}
       <div className="flex flex-col sm:flex-row gap-3 sticky bottom-4">
         <button onClick={handleRevoke} disabled={isLoading || selectedClassIds.length === 0}
           className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-2xl font-black text-sm transition-all border-2 ${selectedClassIds.length === 0 ? "border-slate-200 bg-white text-slate-300 cursor-not-allowed" : "border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 shadow-md"}`}>
