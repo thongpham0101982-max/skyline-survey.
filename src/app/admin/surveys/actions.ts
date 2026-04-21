@@ -1,4 +1,4 @@
-"use server"
+﻿"use server"
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 
@@ -8,8 +8,9 @@ export async function createSurveyPeriodAction(data: {
   endDate: string
   academicYearId: string
   targetAudience?: string
+  campusId?: string
 }) {
-  const { name, startDate, endDate, academicYearId, targetAudience } = data
+  const { name, startDate, endDate, academicYearId, targetAudience, campusId } = data
   if (!name || !startDate || !endDate || !academicYearId) {
     return { error: "Thiếu thông tin bắt buộc" }
   }
@@ -25,6 +26,7 @@ export async function createSurveyPeriodAction(data: {
         endDate: new Date(endDate),
         academicYearId,
         targetAudience: targetAudience || "PHHS",
+        campusId: campusId || null,
         status: "ACTIVE",
         isActive: true,
       }
@@ -45,6 +47,7 @@ export async function updateSurveyPeriodAction(data: any) {
   if (data.status) payload.status = data.status
   if (data.isActive !== undefined) payload.isActive = data.isActive
   if (data.targetAudience) payload.targetAudience = data.targetAudience
+  if (data.campusId !== undefined) payload.campusId = data.campusId || null
 
   try {
     await prisma.surveyPeriod.update({
@@ -64,5 +67,5 @@ export async function deleteMultipleSurveysAction(ids: string[]) {
   await prisma.surveyPeriod.deleteMany({
     where: { id: { in: ids } }
   }).catch(()=>{})
-  revalidatePath('/admin/surveys')
+  revalidatePath("/admin/surveys")
 }

@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 import { useState, useMemo } from "react"
 import {
   ClipboardList, Trash2, Edit2, Check, X,
@@ -11,7 +11,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 
-export function AdminSurveysClient({ initialSurveys, years, createAction, updateAction, deleteAction, deleteMultipleAction }: any) {
+export function AdminSurveysClient({ initialSurveys, years, campuses, createAction, updateAction, deleteAction, deleteMultipleAction }: any) {
   const [surveys, setSurveys] = useState(initialSurveys)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [viewMode, setViewMode] = useState<"list" | "grid">("list")
@@ -27,7 +27,7 @@ export function AdminSurveysClient({ initialSurveys, years, createAction, update
     startDate: "",
     endDate: "",
     academicYearId: years.find((y: any) => y.status === "ACTIVE")?.id || years[0]?.id || "",
-    targetAudience: "PHHS"
+    targetAudience: "PHHS", campusId: ""
   })
 
   const audiences = [
@@ -52,7 +52,7 @@ export function AdminSurveysClient({ initialSurveys, years, createAction, update
       startDate: "",
       endDate: "",
       academicYearId: years.find((y: any) => y.status === "ACTIVE")?.id || years[0]?.id || "",
-      targetAudience: "PHHS"
+      targetAudience: "PHHS", campusId: ""
     })
     setModalType("create")
     setErrorMsg("")
@@ -174,7 +174,7 @@ export function AdminSurveysClient({ initialSurveys, years, createAction, update
                         </div>
                         <div>
                           <p className="font-bold text-slate-800 group-hover:text-[#BE1E2E] transition-colors line-clamp-1">{s.name}</p>
-                          <p className="text-[10px] text-slate-400 font-medium">{s.code}</p>
+                          <p className="text-[10px] text-slate-400 font-medium">{s.code} {s.campus ? `• ${s.campus.campusName}` : ""}</p>
                         </div>
                       </div>
                     </td>
@@ -285,8 +285,7 @@ export function AdminSurveysClient({ initialSurveys, years, createAction, update
                              {years.map((y: any) => <option key={y.id} value={y.id}>{y.name}</option>)}
                           </select>
                        </div>
-                       <div>
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-2 block">Đối tượng</label>
+                       <div>`r`n                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-2 block">Cơ sở (Nếu có)</label>`r`n                           <select value={form.campusId} onChange={e => setForm({...form, campusId: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-sm outline-none">`r`n                              <option value="">Tất cả cơ sở</option>`r`n                              {campuses.map((c: any) => <option key={c.id} value={c.id}>{c.campusName}</option>)}`r`n                           </select>`r`n                        </div>`r`n                        <div>`r`n                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-2 block">Đối tượng</label>
                           <select value={form.targetAudience} onChange={e => setForm({...form, targetAudience: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-sm font-bold text-indigo-600 focus:ring-2 focus:ring-indigo-500 outline-none">
                              {audiences.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
                           </select>

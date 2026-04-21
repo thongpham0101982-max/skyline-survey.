@@ -8,38 +8,35 @@ export const metadata = { title: "Quản lý Khảo sát | Skyline Academy" }
 export default async function AdminSurveysPage() {
   let surveys: any[] = []
   let years: any[] = []
+  let campuses: any[] = []
   let error: string | null = null
 
   try {
-    // 1. Ensure DB Column exists (Self-healing)
-    try {
-      await prisma.$executeRawUnsafe("ALTER TABLE SurveyPeriod ADD COLUMN targetAudience TEXT DEFAULT 'PHHS'");
-    } catch (e) {
-      // Column probably already exists, ignore
-    }
-
-    // 2. Fetch data with extreme caution
     const sResult = await prisma.surveyPeriod.findMany({
-      include: { academicYear: { select: { id: true, name: true } } },
+      include: { 
+        academicYear: { select: { id: true, name: true } },
+        campus: { select: { id: true, campusName: true } }
+      },
       orderBy: { startDate: "desc" }
-    }).catch(async (e) => {
-       console.error("Survey Fetch Failed:", e.message);
-       // Fallback: try without include
-       return await prisma.surveyPeriod.findMany({ orderBy: { startDate: "desc" } });
-    });
+    })
 
     const yResult = await prisma.academicYear.findMany({
       select: { id: true, name: true, status: true },
       orderBy: { startDate: "desc" }
-    }).catch(() => []);
+    })
 
-    surveys = sResult || [];
-    years = yResult || [];
+    const cResult = await prisma.campus.findMany({
+      orderBy: { campusName: "asc" }
+    })
+
+    surveys = sResult || []
+    years = yResult || []
+    campuses = cResult || []
   } catch (e: any) {
-    error = e.message;
+    error = e.message
   }
 
-  const activeYear = years.find(y => y.status === 'ACTIVE')?.name || "2023-2024"
+  const activeYear = years.find(y => y.status === "ACTIVE")?.name || "2023-2024"
 
   return (
     <div className="space-y-6 pb-20 animate-in fade-in duration-700">
@@ -61,16 +58,10 @@ export default async function AdminSurveysPage() {
         </div>
       </div>
 
-      {error && (
-        <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-xs font-bold flex items-center gap-3">
-          <AlertCircle className="w-5 h-5" />
-          <span>Lỗi truy xuất hệ thống: {error}. Vui lòng thử lại sau.</span>
-        </div>
-      )}
-
-      <AdminSurveysClient
+      <AdminSurveysClient 
         initialSurveys={surveys}
         years={years}
+        campuses={campuses}
         createAction={createSurveyPeriodAction}
         updateAction={updateSurveyPeriodAction}
         deleteAction={deleteSurveyPeriodAction}
