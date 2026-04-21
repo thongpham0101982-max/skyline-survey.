@@ -368,8 +368,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
             }
           }
         }
-        return {
-                  const studentCode = String(findVal(row, ["mã hs ks", "ma_hs_ks", "mahs", "studentcode"]) || "").trim();
+        const studentCode = String(findVal(row, ["mã hs ks", "ma_hs_ks", "mahs", "studentcode"]) || "").trim();
         const fullName = String(findVal(row, ["họ và tên", "họ tên", "ho ten", "fullname", "full name"]) || "").trim();
         const grade = String(findVal(row, ["khối", "khoi", "grade"]) || "").trim();
         const className = String(findVal(row, ["lớp", "lop", "class"]) || "").trim();
