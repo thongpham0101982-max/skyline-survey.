@@ -400,7 +400,19 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
 
       }).filter((r:any) => r.studentCode && r.fullName)
       const res = await fetch("/api/input-assessment-students", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({action:"BULK_CREATE", data:mapped}) })
-      if (res.ok) { notify("Import thành công"); fetchStudents() }
+      if (res.ok) { 
+        const dr = await res.json();
+        if (dr.errors && dr.errors.length > 0) {
+          notify(`Import xong nhưng có ${dr.errors.length} lỗi. Kiểm tra console.`, "err");
+          console.error("Import Errors:", dr.errors);
+        } else {
+          notify("Import thành công " + (dr.created || "") + " học sinh"); 
+        }
+        fetchStudents() 
+      } else {
+        const errData = await res.json().catch(()=>({}));
+        notify("Lỗi server: " + (errData.error || res.statusText), "err");
+      }
     } finally { setImporting(false); if (fileRef.current) fileRef.current.value="" }
   }
 
