@@ -1,8 +1,9 @@
 ﻿"use client"
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { 
   Users, CheckCircle2, AlertCircle, ArrowLeft, 
-  Send, Loader2, Info, ChevronRight, GraduationCap 
+  Send, Loader2, Info, ChevronRight, GraduationCap,
+  MapPin, Filter, Search
 } from "lucide-react"
 import Link from "next/link"
 import { dispatchSurveyAction } from "./actions"
@@ -12,13 +13,44 @@ export default function PublishSurveyClient({ initialSurvey, classes }: any) {
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState<any>(null)
   const [error, setError] = useState("")
+  const [selectedCampus, setSelectedCampus] = useState<string>("ALL")
+  const [searchQuery, setSearchQuery] = useState("")
 
   const isStudentSurvey = initialSurvey.targetAudience === "HocSinh" || initialSurvey.targetAudience === "Hoc sinh"
+
+  // Extract unique campuses
+  const campuses = useMemo(() => {
+    const map = new Map()
+    classes.forEach((c: any) => {
+      if (c.campus) map.set(c.campus.id, c.campus.campusName)
+    })
+    return Array.from(map.entries()).map(([id, name]) => ({ id, name }))
+  }, [classes])
+
+  const filteredClasses = useMemo(() => {
+    return classes.filter((c: any) => {
+      const matchCampus = selectedCampus === "ALL" || c.campusId === selectedCampus
+      const matchSearch = c.className.toLowerCase().includes(searchQuery.toLowerCase())
+      return matchCampus && matchSearch
+    })
+  }, [classes, selectedCampus, searchQuery])
 
   const toggleClass = (id: string) => {
     setSelectedClasses(prev => 
       prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
     )
+  }
+
+  const handleSelectAllFiltered = () => {
+    const filteredIds = filteredClasses.map((c: any) => c.id)
+    const allInFilteredSelected = filteredIds.every(id => selectedClasses.includes(id))
+    
+    if (allInFilteredSelected) {
+      setSelectedClasses(selectedClasses.filter(id => !filteredIds.includes(id)))
+    } else {
+      const newSelected = Array.from(new Set([...selectedClasses, ...filteredIds]))
+      setSelectedClasses(newSelected)
+    }
   }
 
   const handleDispatch = async () => {
@@ -39,8 +71,7 @@ export default function PublishSurveyClient({ initialSurvey, classes }: any) {
   }
 
   if (results) {
-    const hasMissing = !isStudentSurvey && results.missingRequirementCount > 0
-
+    const hasMissing = !isStudentSurvey && (results.missingRequirementCount > 0)
     return (
       <div className="max-w-2xl mx-auto animate-in zoom-in duration-300">
         <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100">
@@ -52,42 +83,15 @@ export default function PublishSurveyClient({ initialSurvey, classes }: any) {
                {hasMissing ? "Phát hiện thiếu thông tin!" : "Phát hành thành công!"}
             </h2>
             <p className="text-slate-500 mt-2 font-medium">
-               {isStudentSurvey 
-                 ? "Hệ thống đã chuẩn bị phiếu khảo sát cho học sinh." 
-                 : "Hệ thống đã chuẩn bị phiếu khảo sát cho phụ huynh."}
+               {isStudentSurvey ? "Phiếu khảo sát cho học sinh đã sẵn sàng." : "Phiếu khảo sát cho phụ huynh đã sẵn sàng."}
             </p>
           </div>
-
-          <div className="p-10 space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              <ResultCard label="Tổng học sinh" value={results.totalStudents} sub="Trong các lớp đã chọn" />
-              <ResultCard label="Phiếu đã tạo" value={results.created} sub="Sẵn sàng khảo sát" color="text-[#BE1E2E]" />
-              <ResultCard label="Đã có trước đó" value={results.alreadyExisted} sub="Không tạo trùng" />
-              <ResultCard 
-                label={isStudentSurvey ? "Hợp lệ" : "Có Phụ huynh"} 
-                value={results.eligibleCount} 
-                sub={isStudentSurvey ? "Học sinh được gán" : "Hs có liên kết PH"} 
-              />
-            </div>
-
-            {hasMissing && (
-              <div className="p-5 bg-red-50 border border-red-100 rounded-3xl flex gap-4 items-start">
-                 <Info className="w-6 h-6 text-red-500 flex-shrink-0 mt-1" />
-                 <div>
-                    <p className="text-red-700 font-bold text-sm">{results.missingRequirementCount} học sinh chưa được gán Phụ huynh.</p>
-                    <p className="text-red-600/70 text-xs mt-1 leading-relaxed">Vì đây là khảo sát cho Phụ huynh, những học sinh này sẽ không nhận được phiếu. Vui lòng kiểm tra lại danh mục tài khoản PHHS.</p>
-                 </div>
-              </div>
-            )}
-
-            <div className="pt-6">
-              <Link 
-                href="/admin/surveys"
-                className="w-full flex items-center justify-center gap-2 py-5 bg-slate-900 text-white rounded-2xl font-black text-lg hover:shadow-xl transition-all"
-              >
-                Hoàn tất & Quay về <ArrowLeft className="w-5 h-5 rotate-180" />
-              </Link>
-            </div>
+          <div className="p-10 space-y-4">
+             <div className="grid grid-cols-2 gap-3">
+                <ResultItem label="Đã tạo mới" value={results.created} />
+                <ResultItem label="Đã có" value={results.alreadyExisted} />
+             </div>
+             <Link href="/admin/surveys" className="w-full flex items-center justify-center gap-2 py-4 bg-slate-900 text-white rounded-2xl font-bold mt-6">Quay về danh sách</Link>
           </div>
         </div>
       </div>
@@ -95,101 +99,128 @@ export default function PublishSurveyClient({ initialSurvey, classes }: any) {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500">
-      <div className="flex justify-between items-center bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-full -mr-16 -mt-16" />
-        <div className="relative z-10 flex items-center gap-6">
-           <div className="w-16 h-16 bg-[#BE1E2E]/10 rounded-[1.5rem] flex items-center justify-center">
-              {isStudentSurvey ? <GraduationCap className="w-8 h-8 text-[#BE1E2E]" /> : <Users className="w-8 h-8 text-[#BE1E2E]" />}
-           </div>
-           <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Cấu hình phát hành</p>
-              <h1 className="text-2xl font-black text-slate-900 tracking-tight">{initialSurvey.name}</h1>
-              <div className="flex gap-2 mt-2">
-                 <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${isStudentSurvey ? 'bg-blue-100 text-blue-600' : 'bg-amber-100 text-amber-600'}`}>
-                    Đối tượng: {initialSurvey.targetAudience}
-                 </span>
-              </div>
-           </div>
-        </div>
-        <Link href="/admin/surveys" className="text-slate-400 hover:text-slate-900 font-bold text-sm flex items-center gap-2 transition-colors">
-           <ArrowLeft className="w-4 h-4" /> Quay lại
-        </Link>
+    <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
+      <div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
+         <div className="flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${isStudentSurvey ? 'bg-blue-50 text-blue-600' : 'bg-red-50 text-[#BE1E2E]'}`}>
+               {isStudentSurvey ? <GraduationCap className="w-6 h-6" /> : <Users className="w-6 h-6" />}
+            </div>
+            <div>
+               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Phát hành đợt</p>
+               <h1 className="text-xl font-black text-slate-900 tracking-tight">{initialSurvey.name}</h1>
+            </div>
+         </div>
+         <Link href="/admin/surveys" className="text-slate-400 hover:text-slate-900 font-bold text-sm flex items-center gap-2">
+            <ArrowLeft className="w-4 h-4" /> Quay lại
+         </Link>
       </div>
 
-      <div className="grid md:grid-cols-[1fr,320px] gap-8">
-        <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden">
-           <div className="p-8 border-b border-slate-100 flex justify-between items-center">
-              <h3 className="font-black text-slate-800 text-lg">Chọn lớp tham gia</h3>
-              <button 
-                onClick={() => setSelectedClasses(selectedClasses.length === classes.length ? [] : classes.map((c:any)=>c.id))}
-                className="text-xs font-bold text-indigo-600 hover:bg-indigo-50 px-3 py-1.5 rounded-lg transition-colors"
-              >
-                {selectedClasses.length === classes.length ? "Bỏ chọn hết" : "Chọn tất cả"}
-              </button>
-           </div>
-           
-           <div className="p-4 max-h-[500px] overflow-y-auto custom-scrollbar">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                 {classes.map((cls: any) => (
-                    <button
-                      key={cls.id}
-                      onClick={() => toggleClass(cls.id)}
-                      className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${selectedClasses.includes(cls.id) ? 'bg-indigo-50/50 border-indigo-600 ring-2 ring-indigo-600/10' : 'bg-slate-50 border-transparent border-slate-200'}`}
+      <div className="grid md:grid-cols-[1fr,350px] gap-6">
+         <div className="space-y-6">
+            {/* Filter Bar - Premium */}
+            <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm flex flex-wrap items-center gap-4">
+               <div className="flex bg-slate-100 p-1 rounded-xl items-center gap-1">
+                  <button 
+                    onClick={() => setSelectedCampus("ALL")}
+                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${selectedCampus === "ALL" ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600"}`}
+                  >
+                     Tất cả
+                  </button>
+                  {campuses.map(c => (
+                    <button 
+                      key={c.id}
+                      onClick={() => setSelectedCampus(c.id)}
+                      className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${selectedCampus === c.id ? "bg-white text-[#BE1E2E] shadow-sm" : "text-slate-400 hover:text-slate-600"}`}
                     >
-                       <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm ${selectedClasses.includes(cls.id) ? 'bg-indigo-600 text-white' : 'bg-white text-slate-400'}`}>
-                             {cls.className.charAt(0)}
-                          </div>
-                          <div className="text-left">
-                             <p className={`font-black text-sm ${selectedClasses.includes(cls.id) ? 'text-indigo-900' : 'text-slate-700'}`}>{cls.className}</p>
-                             <p className="text-[10px] font-bold text-slate-400 uppercase">{cls.campus?.campusName}</p>
-                          </div>
-                       </div>
-                       {selectedClasses.includes(cls.id) && <CheckCircle2 className="w-5 h-5 text-indigo-600" />}
+                       {c.name}
                     </button>
-                 ))}
-              </div>
-           </div>
-        </div>
+                  ))}
+               </div>
+               
+               <div className="relative flex-1 min-w-[200px]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input 
+                    type="text" 
+                    placeholder="Tìm tên lớp..." 
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 bg-slate-50 border-none rounded-xl text-xs font-bold outline-none ring-1 ring-slate-200 focus:ring-indigo-500 transition-all"
+                  />
+               </div>
+            </div>
 
-        <div className="space-y-6">
-           <div className="bg-[#BE1E2E] p-8 rounded-[2rem] text-white shadow-xl shadow-red-500/20">
-              <h4 className="font-black text-xl mb-4">Tổng hợp</h4>
-              <div className="space-y-4">
-                 <div className="flex justify-between items-center py-2 border-b border-white/10">
-                    <span className="text-sm font-medium opacity-80">Số lớp đã chọn</span>
-                    <span className="text-xl font-black">{selectedClasses.length}</span>
-                 </div>
-                 <div className="flex justify-between items-center py-2">
-                    <span className="text-sm font-medium opacity-80">Đối tượng phát</span>
-                    <span className="text-sm font-black uppercase tracking-widest">{isStudentSurvey ? "Học sinh" : "Phụ huynh"}</span>
-                 </div>
-              </div>
-              <button 
-                onClick={handleDispatch}
-                disabled={loading || selectedClasses.length === 0}
-                className="w-full mt-8 bg-white text-[#BE1E2E] py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg hover:shadow-2xl hover:scale-[1.02] transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Send className="w-4 h-4" /> Phát hành ngay</>}
-              </button>
-           </div>
+            {/* Class Cards */}
+            <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden">
+               <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+                  <h3 className="font-black text-slate-800 text-sm uppercase tracking-widest flex items-center gap-2">
+                     <GraduationCap className="w-4 h-4 text-[#BE1E2E]" /> Chọn lớp ({selectedClasses.length} đã chọn)
+                  </h3>
+                  <button onClick={handleSelectAllFiltered} className="text-xs font-black text-indigo-600 uppercase hover:underline">
+                     {filteredClasses.every(c => selectedClasses.includes(c.id)) ? "Bỏ chọn các lớp đang hiện" : "Chọn các lớp đang hiện"}
+                  </button>
+               </div>
+               
+               <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 max-h-[550px] overflow-y-auto">
+                  {filteredClasses.length === 0 ? (
+                    <div className="col-span-full py-20 text-center text-slate-400 font-bold">Không tìm thấy lớp nào phù hợp.</div>
+                  ) : (
+                    filteredClasses.map((cls: any) => (
+                      <button
+                        key={cls.id}
+                        onClick={() => toggleClass(cls.id)}
+                        className={`group p-4 rounded-2xl border-2 text-left transition-all relative overflow-hidden ${selectedClasses.includes(cls.id) ? 'bg-indigo-50/30 border-indigo-600' : 'bg-slate-50 border-slate-100 hover:border-slate-300'}`}
+                      >
+                         <div className="flex items-center gap-4 relative z-10">
+                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-xs ${selectedClasses.includes(cls.id) ? 'bg-indigo-600 text-white' : 'bg-white text-slate-400'}`}>
+                               {cls.className.charAt(0)}
+                            </div>
+                            <div>
+                               <p className="font-black text-slate-900 group-hover:text-indigo-600 transition-colors uppercase">{cls.className}</p>
+                               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                                  <MapPin className="w-2.5 h-2.5" /> {cls.campus?.campusName}
+                               </p>
+                            </div>
+                         </div>
+                         {selectedClasses.includes(cls.id) && (
+                           <div className="absolute top-2 right-2 bg-indigo-600 text-white rounded-full p-1">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                           </div>
+                         )}
+                      </button>
+                    ))
+                  )}
+               </div>
+            </div>
+         </div>
 
-           <div className="p-6 bg-slate-50 rounded-[2rem] border border-slate-200">
-              <h5 className="font-bold text-slate-800 text-sm mb-3 flex items-center gap-2">
-                 <Info className="w-4 h-4 text-slate-400" /> Lưu ý
-              </h5>
-              <p className="text-xs text-slate-500 leading-relaxed font-medium">
-                 {isStudentSurvey 
-                   ? "Mỗi học sinh trong lớp đã chọn sẽ được cấp một phiếu khảo sát riêng biệt. Họ có thể đăng nhập bằng Mã Học sinh để thực hiện."
-                   : "Mỗi Phụ huynh có liên kết với học sinh trong các lớp này sẽ nhận được lời mời khảo sát. Đảm bảo dữ liệu PHHS đã được gán đầy đủ."}
-              </p>
-           </div>
-        </div>
+         {/* Sidebar Actions */}
+         <div className="space-y-6">
+            <div className="bg-[#BE1E2E] p-8 rounded-[2.5rem] text-white shadow-2xl shadow-red-500/20 sticky top-28">
+               <h4 className="font-black text-xl mb-6">Xác nhận</h4>
+               <div className="space-y-4 mb-8">
+                  <SummaryItem label="Tổng số lớp đã chọn" value={selectedClasses.length} />
+                  <SummaryItem label="Đối tượng khảo sát" value={isStudentSurvey ? "Học sinh" : "Phụ huynh"} />
+               </div>
+               <button 
+                  onClick={handleDispatch}
+                  disabled={loading || selectedClasses.length === 0}
+                  className="w-full py-5 bg-white text-[#BE1E2E] rounded-2xl font-black text-sm uppercase tracking-[0.2em] shadow-lg hover:shadow-2xl hover:-translate-y-1 active:translate-y-0 transition-all disabled:opacity-50 flex items-center justify-center gap-3"
+               >
+                  {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Send className="w-5 h-5" /> Phát hành ngay</>}
+               </button>
+            </div>
+            
+            <div className="p-6 bg-amber-50 rounded-3xl border border-amber-100 flex gap-3">
+               <Info className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+               <p className="text-xs text-amber-900 font-medium leading-relaxed">
+                  Bạn nên lọc theo **Cơ sở** trước để dễ dàng quản lý danh sách lớp. Hệ thống sẽ bỏ qua những học sinh đã được tạo phiếu trước đó.
+               </p>
+            </div>
+         </div>
       </div>
 
       {error && (
-        <div className="p-4 bg-red-100 border border-red-200 text-red-700 rounded-2xl text-sm font-bold animate-shake text-center">
+        <div className="fixed bottom-8 right-8 p-4 bg-red-600 text-white rounded-2xl font-bold shadow-2xl animate-in slide-in-from-right-full">
            {error}
         </div>
       )}
@@ -197,12 +228,20 @@ export default function PublishSurveyClient({ initialSurvey, classes }: any) {
   )
 }
 
-function ResultCard({ label, value, sub, color = "text-slate-900" }: any) {
+function SummaryItem({ label, value }: any) {
   return (
-    <div className="p-5 bg-slate-50 rounded-3xl border border-slate-100">
+    <div className="flex justify-between items-center py-3 border-b border-white/10 last:border-0">
+       <span className="text-xs font-bold opacity-80 uppercase tracking-widest">{label}</span>
+       <span className="text-lg font-black">{value}</span>
+    </div>
+  )
+}
+
+function ResultItem({ label, value }: any) {
+  return (
+    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-center">
        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{label}</p>
-       <p className={`text-2xl font-black ${color}`}>{value}</p>
-       <p className="text-[10px] font-medium text-slate-400 mt-0.5">{sub}</p>
+       <p className="text-2xl font-black text-slate-800">{value}</p>
     </div>
   )
 }
