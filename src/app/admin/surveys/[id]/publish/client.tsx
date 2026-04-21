@@ -2,7 +2,7 @@
 import { useState, useMemo } from "react"
 import {
   Send, RotateCcw, CheckCircle2, Clock, Users, GraduationCap,
-  UserCheck, School, ChevronDown, ChevronRight, Search,
+  UserCheck, Layers, ChevronDown, ChevronRight, Search,
   AlertCircle, Info, ArrowLeft, CheckSquare, Square, Building2,
   Loader2, X
 } from "lucide-react"
@@ -10,9 +10,9 @@ import Link from "next/link"
 import { dispatchSurveyAction, revokeSurveyAction } from "./actions"
 
 const AUDIENCE_MAP: Record<string, { label: string; icon: any; color: string; bg: string; border: string }> = {
-  PHHS: { label: "Phu huynh hoc sinh", icon: Users, color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-100" },
-  HocSinh: { label: "Hoc sinh", icon: GraduationCap, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-100" },
-  GiaoVien: { label: "Giao vien", icon: UserCheck, color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-100" },
+  PHHS: { label: "Phụ huynh học sinh", icon: Users, color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-100" },
+  HocSinh: { label: "Học sinh", icon: GraduationCap, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-100" },
+  GiaoVien: { label: "Giáo viên", icon: UserCheck, color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-100" },
 }
 
 export default function PublishSurveyClient({ initialSurvey, classes }: any) {
@@ -23,12 +23,13 @@ export default function PublishSurveyClient({ initialSurvey, classes }: any) {
   const [isLoading, setIsLoading] = useState(false)
   const [result, setResult] = useState<{ type: "success" | "error" | "revoke"; message: string } | null>(null)
 
-  const aud = AUDIENCE_MAP[survey.targetAudience] || AUDIENCE_MAP.PHHS
+  const aud = (survey && survey.targetAudience && AUDIENCE_MAP[survey.targetAudience]) ? AUDIENCE_MAP[survey.targetAudience] : AUDIENCE_MAP.PHHS
 
   const campusGroups = useMemo(() => {
+    if (!classes) return []
     const filtered = classes.filter((c: any) =>
-      c.className.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.classCode.toLowerCase().includes(searchQuery.toLowerCase())
+      (c.className || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (c.classCode || "").toLowerCase().includes(searchQuery.toLowerCase())
     )
     const groups = new Map<string, { campus: any; classes: any[] }>()
     for (const cls of filtered) {
@@ -58,28 +59,33 @@ export default function PublishSurveyClient({ initialSurvey, classes }: any) {
   }
 
   const handleDispatch = async () => {
-    if (selectedClassIds.length === 0) { setResult({ type: "error", message: "Vui long chon it nhat mot lop de phat hanh." }); return }
+    if (selectedClassIds.length === 0) { setResult({ type: "error", message: "Vui lòng chọn ít nhất một lớp để phát hành." }); return }
     setIsLoading(true); setResult(null)
     try {
       const res: any = await dispatchSurveyAction(survey.id, selectedClassIds)
       if (res?.error) setResult({ type: "error", message: res.error })
-      else setResult({ type: "success", message: `Da tao ${res.created} phieu moi. ${res.alreadyExisted > 0 ? `${res.alreadyExisted} phieu da ton tai.` : ""} ${res.missingRequirementCount > 0 ? `${res.missingRequirementCount} HS chua co PH lien ket.` : ""}` })
-    } catch (e: any) { setResult({ type: "error", message: e?.message || "Co loi xay ra." }) }
+      else setResult({ type: "success", message: `✅ Đã phát hành ${res.created} phiếu. ${res.alreadyExisted > 0 ? `${res.alreadyExisted} phiếu đã tồn tại.` : ""} ${res.missingRequirementCount > 0 ? `${res.missingRequirementCount} HS chưa có PH.` : ""}` })
+    } catch (e: any) { setResult({ type: "error", message: e?.message || "Lỗi hệ thống!" }) }
     setIsLoading(false)
   }
 
   const handleRevoke = async () => {
-    if (selectedClassIds.length === 0) { setResult({ type: "error", message: "Vui long chon lop de thu hoi." }); return }
-    if (!confirm(`Thu hoi phieu PENDING cua ${selectedClassIds.length} lop?`)) return
+    if (selectedClassIds.length === 0) { setResult({ type: "error", message: "Vui lòng chọn lớp để thu hồi." }); return }
+    if (!confirm(`Thu hồi phiếu PENDING của ${selectedClassIds.length} lớp?`)) return
     setIsLoading(true); setResult(null)
     try {
       const res: any = await revokeSurveyAction(survey.id, selectedClassIds)
-      if (res?.success) setResult({ type: "revoke", message: `Da thu hoi ${res.count} phieu chua hoan thanh.` })
-    } catch (e: any) { setResult({ type: "error", message: e?.message || "Co loi xay ra." }) }
+      if (res?.success) setResult({ type: "revoke", message: `🔙 Đã thu hồi ${res.count} phiếu.` })
+    } catch (e: any) { setResult({ type: "error", message: e?.message || "Lỗi hệ thống!" }) }
     setIsLoading(false)
   }
 
-  const fmt = (d: string) => new Date(d).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })
+  const fmt = (d: string) => {
+    try { return new Date(d).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" }) }
+    catch (e) { return d }
+  }
+
+  if (!survey) return <div className="p-10 text-center">Đang tải...</div>
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-24">
@@ -88,8 +94,8 @@ export default function PublishSurveyClient({ initialSurvey, classes }: any) {
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div>
-          <h1 className="text-2xl font-black text-slate-900">Phat hanh Khao Sat</h1>
-          <p className="text-sm text-slate-400 font-medium mt-0.5">Chon lop de phan bo phieu khao sat</p>
+          <h1 className="text-2xl font-black text-slate-900 leading-tight">Phát hành Khảo Sát</h1>
+          <p className="text-sm text-slate-400 font-medium mt-0.5">Chọn lớp để phân bổ phiếu khảo sát</p>
         </div>
       </div>
 
@@ -103,13 +109,13 @@ export default function PublishSurveyClient({ initialSurvey, classes }: any) {
               <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{survey.code}</span>
               <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${aud.bg} ${aud.color} ${aud.border} uppercase`}>{aud.label}</span>
               <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${survey.isActive ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-slate-100 text-slate-400 border-slate-200"} uppercase`}>
-                {survey.isActive ? "Dang hoat dong" : "Ban nhap"}
+                {survey.isActive ? "Đang hoạt động" : "Bản nháp"}
               </span>
             </div>
-            <h2 className="text-xl font-black text-slate-900">{survey.name}</h2>
-            <div className="flex flex-wrap gap-4 mt-2 text-sm text-slate-500">
+            <h2 className="text-xl font-black text-slate-900 break-words">{survey.name}</h2>
+            <div className="flex flex-wrap gap-4 mt-2 text-sm text-slate-500 font-bold">
               <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" />{fmt(survey.startDate)} - {fmt(survey.endDate)}</span>
-              <span className="flex items-center gap-1.5"><School className="w-3.5 h-3.5" />{survey.academicYear?.name}</span>
+              <span className="flex items-center gap-1.5"><GraduationCap className="w-3.5 h-3.5" />{survey.academicYear?.name || "N/A"}</span>
               {survey.campus && <span className="flex items-center gap-1.5"><Building2 className="w-3.5 h-3.5" />{survey.campus.campusName}</span>}
             </div>
           </div>
@@ -127,17 +133,17 @@ export default function PublishSurveyClient({ initialSurvey, classes }: any) {
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
           <div>
-            <h3 className="font-black text-slate-800 text-lg">Chon Lop Phat Hanh</h3>
-            <p className="text-xs text-slate-400 font-medium mt-0.5">Da chon <span className="text-[#BE1E2E] font-black">{selectedClassIds.length}</span> / {classes.length} lop</p>
+            <h3 className="font-black text-slate-800 text-lg">Chọn Lớp Phát Hành</h3>
+            <p className="text-xs text-slate-400 font-medium mt-0.5">Đã chọn <span className="text-[#BE1E2E] font-black">{selectedClassIds.length}</span> / {classes?.length || 0} lớp</p>
           </div>
           <div className="flex items-center gap-3 w-full sm:w-auto">
             <div className="relative flex-1 sm:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input type="text" placeholder="Tim lop..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-slate-300" />
+              <input type="text" placeholder="Tìm lớp..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-slate-300" />
             </div>
             <button onClick={toggleAll} className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-bold text-slate-600 whitespace-nowrap">
               {isAllSelected ? <CheckSquare className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
-              {isAllSelected ? "Bo tat ca" : "Chon tat ca"}
+              {isAllSelected ? "Bỏ tất cả" : "Chọn tất cả"}
             </button>
           </div>
         </div>
@@ -145,12 +151,12 @@ export default function PublishSurveyClient({ initialSurvey, classes }: any) {
         <div className="divide-y divide-slate-50">
           {campusGroups.length === 0 && (
             <div className="py-16 text-center text-slate-400">
-              <School className="w-10 h-10 mx-auto mb-3 opacity-40" />
-              <p className="text-sm font-medium">Khong tim thay lop nao</p>
+              <Layers className="w-10 h-10 mx-auto mb-3 opacity-40" />
+              <p className="text-sm font-medium">Không tìm thấy lớp nào</p>
             </div>
           )}
           {campusGroups.map((group: any) => {
-            const campusName = group.campus?.campusName || "Chua phan co so"
+            const campusName = group.campus?.campusName || "Chưa phân cơ sở"
             const campusIds = group.classes.map((c: any) => c.id)
             const campusSelected = campusIds.filter((id: string) => selectedClassIds.includes(id)).length
             const campusAllSelected = campusSelected === campusIds.length
@@ -163,7 +169,7 @@ export default function PublishSurveyClient({ initialSurvey, classes }: any) {
                   </button>
                   <Building2 className="w-4 h-4 text-slate-400 flex-shrink-0" />
                   <span className="font-bold text-slate-700 text-sm flex-1">{campusName}</span>
-                  <span className="text-[11px] font-bold text-slate-400">{campusSelected}/{campusIds.length} lop</span>
+                  <span className="text-[11px] font-bold text-slate-400">{campusSelected}/{campusIds.length} lớp</span>
                   {isExpanded ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
                 </div>
                 {isExpanded && (
@@ -173,7 +179,7 @@ export default function PublishSurveyClient({ initialSurvey, classes }: any) {
                       return (
                         <button key={cls.id} onClick={() => toggleClass(cls.id)}
                           className={`flex items-center gap-2.5 px-4 py-3 rounded-2xl border text-sm font-bold transition-all text-left ${sel ? "bg-[#BE1E2E] border-[#BE1E2E] text-white shadow-md shadow-red-100" : "bg-white border-slate-200 text-slate-700 hover:border-[#BE1E2E] hover:text-[#BE1E2E]"}`}>
-                          {sel ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> : <School className="w-4 h-4 flex-shrink-0 opacity-40" />}
+                          {sel ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> : <Layers className="w-4 h-4 flex-shrink-0 opacity-40" />}
                           <span className="truncate">{cls.className}</span>
                         </button>
                       )
@@ -190,12 +196,12 @@ export default function PublishSurveyClient({ initialSurvey, classes }: any) {
         <button onClick={handleRevoke} disabled={isLoading || selectedClassIds.length === 0}
           className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-2xl font-black text-sm transition-all border-2 ${selectedClassIds.length === 0 ? "border-slate-200 bg-white text-slate-300 cursor-not-allowed" : "border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 shadow-md"}`}>
           {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <RotateCcw className="w-5 h-5" />}
-          Thu hoi ({selectedClassIds.length} lop)
+          Thu hồi ({selectedClassIds.length} lớp)
         </button>
         <button onClick={handleDispatch} disabled={isLoading || selectedClassIds.length === 0}
           className={`flex-[2] flex items-center justify-center gap-2.5 py-4 rounded-2xl font-black text-sm transition-all shadow-xl ${selectedClassIds.length === 0 ? "bg-slate-200 text-slate-400 cursor-not-allowed shadow-none" : "bg-[#BE1E2E] hover:bg-[#a01927] text-white shadow-red-200 active:scale-[0.98]"}`}>
           {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-          Phat hanh cho {selectedClassIds.length} lop da chon
+          Phát hành cho {selectedClassIds.length} lớp đã chọn
         </button>
       </div>
     </div>
