@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 import { useState } from "react"
 import {
   ClipboardList, Trash2, Edit2, Check, X,
@@ -28,9 +28,9 @@ export function AdminSurveysClient({ initialSurveys, years, createAction, update
   })
 
   const audiences = [
-    { value: "PHHS", label: "Phụ huynh (PHHS)", icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
-    { value: "HocSinh", label: "Học sinh", icon: GraduationCap, color: "text-indigo-600", bg: "bg-indigo-50" },
-    { value: "GiaoVien", label: "Giáo viên", icon: UserCheck, color: "text-emerald-600", bg: "bg-emerald-50" }
+    { value: "PHHS", label: "Phụ huynh (PHHS)", icon: Users },
+    { value: "HocSinh", label: "Học sinh", icon: GraduationCap },
+    { value: "GiaoVien", label: "Giáo viên", icon: UserCheck }
   ]
 
   const handleCreate = async () => {
@@ -170,9 +170,9 @@ export function AdminSurveysClient({ initialSurveys, years, createAction, update
                     key={aud.value}
                     onClick={() => setNewForm({...newForm, targetAudience: aud.value})}
                     type="button"
-                    className={lex-1 flex flex-col items-center gap-1 p-2 rounded-xl border-2 transition-all }
+                    className={"flex-1 flex flex-col items-center gap-1 p-2 rounded-xl border-2 transition-all " + (newForm.targetAudience === aud.value ? "border-indigo-500 bg-indigo-50 text-indigo-700 shadow-sm" : "border-slate-100 bg-slate-50 text-slate-500 hover:border-slate-200")}
                   >
-                    <aud.icon className={w-4 h-4 } />
+                    <aud.icon className={"w-4 h-4 " + (newForm.targetAudience === aud.value ? "text-indigo-600" : "text-slate-400")} />
                     <span className="text-[10px] font-bold uppercase truncate w-full text-center">{aud.label.split("(")[0]}</span>
                   </button>
                 ))}
@@ -213,7 +213,7 @@ export function AdminSurveysClient({ initialSurveys, years, createAction, update
             </button>
           </div>
         </div>
-      }
+      )}
 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <table className="w-full text-left whitespace-nowrap">
@@ -243,7 +243,7 @@ export function AdminSurveysClient({ initialSurveys, years, createAction, update
                 const aud = getAudienceLabel(s.targetAudience)
                 const AudIcon = aud.icon
                 return (
-                  <tr key={s.id} className={hover:bg-indigo-50/30 transition-all \}>
+                  <tr key={s.id} className={"hover:bg-indigo-50/30 transition-all " + (selectedIds.includes(s.id) ? "bg-indigo-50/50" : "")}>
                     <td className="px-5 py-5 text-center">
                       <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 transition-all cursor-pointer" checked={selectedIds.includes(s.id)} onChange={() => handleSelectOne(s.id)} />
                     </td>
@@ -273,7 +273,7 @@ export function AdminSurveysClient({ initialSurveys, years, createAction, update
                           {audiences.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
                         </select>
                       ) : (
-                        <div className={inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full \ \ border border-current shadow-sm text-[11px] font-bold}>
+                        <div className={"inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-50 text-indigo-600 border border-current shadow-sm text-[11px] font-bold"}>
                           <AudIcon className="w-3.5 h-3.5" />
                           {aud.label.split("(")[0]}
                         </div>
@@ -318,11 +318,11 @@ export function AdminSurveysClient({ initialSurveys, years, createAction, update
                           </div>
                         ) : (
                           <>
-                            <Link href={/admin/surveys/\/questions} className="inline-flex items-center gap-1.5 px-3 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-xl font-bold transition-all text-[11px] border border-indigo-100 shadow-sm uppercase group">
+                            <Link href={"/admin/surveys/" + s.id + "/questions"} className="inline-flex items-center gap-1.5 px-3 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-xl font-bold transition-all text-[11px] border border-indigo-100 shadow-sm uppercase group">
                               <Settings2 className="w-4 h-4 group-hover:rotate-45 transition-transform" />
                               Câu hỏi
                             </Link>
-                            <Link href={/admin/surveys/\/publish} className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-xl font-bold transition-all text-[11px] border border-emerald-100 shadow-sm uppercase group">
+                            <Link href={"/admin/surveys/" + s.id + "/publish"} className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-xl font-bold transition-all text-[11px] border border-emerald-100 shadow-sm uppercase group">
                               <Send className="w-4 h-4 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-transform" />
                               Gửi tin
                             </Link>
@@ -339,7 +339,8 @@ export function AdminSurveysClient({ initialSurveys, years, createAction, update
                     </td>
                   </tr>
                 )
-              })}
+              })
+            )}
           </tbody>
         </table>
       </div>
