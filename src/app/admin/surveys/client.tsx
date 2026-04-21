@@ -65,7 +65,7 @@ export function AdminSurveysClient({ initialSurveys, years, campuses, createActi
       startDate: new Date(s.startDate).toISOString().split("T")[0],
       endDate: new Date(s.endDate).toISOString().split("T")[0],
       academicYearId: s.academicYearId,
-      targetAudience: s.targetAudience || "PHHS"
+      targetAudience: s.targetAudience || "PHHS", campusId: s.campusId || ""
     })
     setModalType("edit")
     setErrorMsg("")

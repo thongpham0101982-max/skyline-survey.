@@ -1,8 +1,10 @@
-﻿import { prisma } from "@/lib/db"
+import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
 import PublishSurveyClient from "./client"
 
 export default async function PublishSurveyPage({ params }: any) {
+  const { id } = await params
+  console.log('Publishing for survey:', id) PublishSurveyPage({ params }: any) {
   const { id } = await params
   
   try {
