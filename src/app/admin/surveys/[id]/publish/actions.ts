@@ -4,16 +4,11 @@ import { revalidatePath } from "next/cache"
 
 export async function applyEmergencyDbFix() {
   try {
-    // 1. Check if fix is already applied
     const info: any = await prisma.$queryRawUnsafe(`PRAGMA table_info(SurveyForm)`)
     const parentIdCol = info.find((c: any) => c.name === "parentId")
     if (parentIdCol && parentIdCol.notnull === 0) return { success: true, message: "Database đã được sửa từ trước." }
 
-    // 2. Perform the table migration (SQLite standard way)
-    // Note: We do this in individual steps because Turso/Prisma might not handle multi-statement batches well
     await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "SurveyForm_backup" AS SELECT * FROM "SurveyForm"`)
-    
-    // We recreate the table with parentId TEXT (nullable by default)
     await prisma.$executeRawUnsafe(`DROP TABLE "SurveyForm"`)
     await prisma.$executeRawUnsafe(`
       CREATE TABLE "SurveyForm" (
@@ -33,11 +28,8 @@ export async function applyEmergencyDbFix() {
       )
     `)
     
-    // Restore data
     await prisma.$executeRawUnsafe(`INSERT INTO "SurveyForm" SELECT * FROM "SurveyForm_backup"`)
     await prisma.$executeRawUnsafe(`DROP TABLE "SurveyForm_backup"`)
-    
-    // Re-create the unique index
     await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX "SurveyForm_parentId_studentId_surveyPeriodId_key" ON "SurveyForm"("parentId", "studentId", "surveyPeriodId")`)
     
     return { success: true, message: "✅ Đã sửa xong cấu trúc Database! Bây giờ bạn có thể phát hành." }
@@ -74,6 +66,7 @@ export async function dispatchSurveyAction(surveyPeriodId: string, classIds: str
         if (isStudentSurvey) {
           if (existingStudentIds.has(student.id)) continue
           formsToCreate.push({
+            id: `sf_${Math.random().toString(36).substr(2, 9)}_${Date.now()}`, // Manual ID for createMany
             surveyPeriodId,
             studentId: student.id,
             classId: cls.id,
@@ -88,7 +81,9 @@ export async function dispatchSurveyAction(surveyPeriodId: string, classIds: str
 
     if (formsToCreate.length > 0) {
       try {
-        await prisma.surveyForm.createMany({ data: formsToCreate, skipDuplicates: true })
+        // SQLite doesn't support skipDuplicates in createMany. 
+        // We already deduplicated using the 'Set' above.
+        await prisma.surveyForm.createMany({ data: formsToCreate })
       } catch (e: any) {
         if (e.message.includes("NOT NULL constraint failed: SurveyForm.parentId")) {
           return { error: "DATABASE_MIGRATION_REQUIRED" }
