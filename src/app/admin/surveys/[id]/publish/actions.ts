@@ -1,4 +1,4 @@
-"use server"
+﻿"use server"
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 
@@ -8,7 +8,6 @@ export async function dispatchSurveyAction(surveyPeriodId: string, classIds: str
   })
   if (!period) return { error: "Không tìm thấy đợt khảo sát" }
 
-  // More robust audience check (normalized)
   const aud = (period.targetAudience || "").toLowerCase()
   const isStudentSurvey = aud.includes("hocsinh") || aud.includes("hoc sinh")
 
@@ -23,17 +22,11 @@ export async function dispatchSurveyAction(surveyPeriodId: string, classIds: str
 
   let created = 0
   let alreadyExisted = 0
-  let totalStudents = 0
-  let eligibleCount = 0
   let missingRequirementCount = 0
   
   for (const cls of classes) {
     for (const student of cls.students) {
-      totalStudents++
-      
       if (isStudentSurvey) {
-        eligibleCount++
-        // Double check existence for student
         const exists = await prisma.surveyForm.findFirst({
           where: { studentId: student.id, surveyPeriodId, parentId: null }
         })
@@ -55,12 +48,10 @@ export async function dispatchSurveyAction(surveyPeriodId: string, classIds: str
           alreadyExisted++
         }
       } else {
-        // Parent Survey
         if (student.parents.length === 0) {
           missingRequirementCount++
           continue
         }
-        eligibleCount++
         for (const ps of student.parents) {
           if (ps.parent && ps.parentId) {
             const exists = await prisma.surveyForm.findFirst({
@@ -93,7 +84,6 @@ export async function dispatchSurveyAction(surveyPeriodId: string, classIds: str
     }
   }
 
-  // Auto-activate period if we published forms
   if (created > 0) {
     await prisma.surveyPeriod.update({
       where: { id: surveyPeriodId },
@@ -105,11 +95,9 @@ export async function dispatchSurveyAction(surveyPeriodId: string, classIds: str
   return { 
     success: true, 
     created, 
-    alreadyExisted, 
-    totalStudents,
-    eligibleCount,
-    missingRequirementCount,
-    isStudentSurvey
+    classCount: classIds.length,
+    alreadyExisted,
+    missingRequirementCount
   }
 }
 
@@ -123,5 +111,5 @@ export async function revokeSurveyAction(surveyPeriodId: string, classIds: strin
   })
   
   revalidatePath("/admin/surveys")
-  return { success: true, count: res.count }
+  return { success: true, count: res.count, classCount: classIds.length }
 }
