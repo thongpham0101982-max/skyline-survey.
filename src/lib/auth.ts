@@ -15,13 +15,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null
 
-        const identifier = credentials.email as string
+        let identifier = credentials.email as string
+        const password = credentials.password as string
         let user: any = null
 
-        // 1. Check User table (Email)
+        // 1. Direct User table match (Admin / Staff)
         user = await prisma.user.findUnique({ where: { email: identifier } })
 
-        // 2. Check Teacher Code
+        // 2. Teacher Code Match
         if (!user) {
           const teacher = await prisma.teacher.findUnique({
             where: { teacherCode: identifier },
@@ -30,7 +31,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           if (teacher?.user) user = teacher.user
         }
 
-        // 3. Check Parent Code
+        // 3. Parent Code Match (P + Mã HS)
         if (!user) {
           const parent = await prisma.parent.findUnique({
             where: { parentCode: identifier },
@@ -39,7 +40,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           if (parent?.user) user = parent.user
         }
 
-        // 4. Check Student Code
+        // 4. Student Code Match
         if (!user) {
           const student = await prisma.student.findUnique({
             where: { studentCode: identifier },
@@ -48,17 +49,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           if (student?.user) user = student.user
         }
 
-        // 5. Fallback for KT_DBCL by Name
+        // 5. If STILL not found, and it follows the convention, maybe we need to find by Name fallback
         if (!user) {
           user = await prisma.user.findFirst({ where: { fullName: identifier } })
         }
 
         if (!user || user.status !== "ACTIVE") return null
 
-        const isValid = await bcrypt.compare(
-          credentials.password as string,
-          user.passwordHash
-        )
+        // Validate Password
+        const isValid = await bcrypt.compare(password, user.passwordHash)
         if (!isValid) return null
 
         return {
@@ -88,5 +87,4 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
   },
   pages: { signIn: "/login" },
-  useSecureCookies: false,
 })

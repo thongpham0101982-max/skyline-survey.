@@ -1,4 +1,4 @@
-﻿generator client {
+generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["driverAdapters"]
 }
@@ -24,6 +24,7 @@ model User {
   taskAttachments                  TaskAttachment[]                   @relation("TaskAttachments")
   taskComments                     TaskComment[]                      @relation("TaskComments")
   teacher                          Teacher?
+  student                          Student?
   weeklyReports                    WeeklyReport[]
   receivedTasks                    WorkTask[]                         @relation("TaskAssignee")
   assignedTasks                    WorkTask[]                         @relation("TaskAssigner")
