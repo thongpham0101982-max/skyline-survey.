@@ -4,10 +4,7 @@ import { revalidatePath } from "next/cache"
 
 export async function applyEmergencyDbFix() {
   try {
-    const info: any = await prisma.$queryRawUnsafe(`PRAGMA table_info(SurveyForm)`)
-    const parentIdCol = info.find((c: any) => c.name === "parentId")
-    if (parentIdCol && parentIdCol.notnull === 0) return { success: true, message: "Database đã được sửa từ trước." }
-
+    // We recreate the table with parentId TEXT (nullable)
     await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "SurveyForm_backup" AS SELECT * FROM "SurveyForm"`)
     await prisma.$executeRawUnsafe(`DROP TABLE "SurveyForm"`)
     await prisma.$executeRawUnsafe(`
@@ -27,15 +24,12 @@ export async function applyEmergencyDbFix() {
         "status" TEXT NOT NULL DEFAULT 'DRAFT'
       )
     `)
-    
     await prisma.$executeRawUnsafe(`INSERT INTO "SurveyForm" SELECT * FROM "SurveyForm_backup"`)
     await prisma.$executeRawUnsafe(`DROP TABLE "SurveyForm_backup"`)
     await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX "SurveyForm_parentId_studentId_surveyPeriodId_key" ON "SurveyForm"("parentId", "studentId", "surveyPeriodId")`)
-    
-    return { success: true, message: "✅ Đã sửa xong cấu trúc Database! Bây giờ bạn có thể phát hành." }
+    return { success: true, message: "✅ Database đã được cập nhật thành công!" }
   } catch (err: any) {
-    console.error("Migration Error:", err)
-    return { error: `Không thể sửa tự động: ${err.message}` }
+    return { error: `Lỗi Migrator: ${err.message}` }
   }
 }
 
@@ -57,16 +51,23 @@ export async function dispatchSurveyAction(surveyPeriodId: string, classIds: str
       select: { studentId: true, parentId: true }
     })
 
+    // Improved deduplication check
     const existingStudentIds = new Set(existingForms.filter(f => !f.parentId).map(f => f.studentId))
-    const existingParentStudentKeys = new Set(existingForms.filter(f => f.parentId).map(f => `${f.parentId}_${f.studentId}`))
 
-    const formsToCreate: any[] = []
+    let createdCount = 0
+    let skippedCount = 0
+    let samples: any[] = []
+
     for (const cls of classes) {
       for (const student of cls.students) {
         if (isStudentSurvey) {
-          if (existingStudentIds.has(student.id)) continue
-          formsToCreate.push({
-            id: `sf_${Math.random().toString(36).substr(2, 9)}_${Date.now()}`, // Manual ID for createMany
+          if (existingStudentIds.has(student.id)) {
+            skippedCount++
+            continue
+          }
+          
+          samples.push({
+            id: `sf_${Math.random().toString(36).substr(2, 9)}_${Date.now()}_${createdCount}`,
             surveyPeriodId,
             studentId: student.id,
             classId: cls.id,
@@ -75,20 +76,24 @@ export async function dispatchSurveyAction(surveyPeriodId: string, classIds: str
             status: "PENDING",
             parentId: null
           })
+          createdCount++
         }
       }
     }
 
-    if (formsToCreate.length > 0) {
+    if (samples.length > 0) {
       try {
-        // SQLite doesn't support skipDuplicates in createMany. 
-        // We already deduplicated using the 'Set' above.
-        await prisma.surveyForm.createMany({ data: formsToCreate })
+        // Break into smaller batches for Turso stability
+        const batchSize = 50
+        for (let i = 0; i < samples.length; i += batchSize) {
+          const batch = samples.slice(i, i + batchSize)
+          await prisma.surveyForm.createMany({ data: batch })
+        }
       } catch (e: any) {
-        if (e.message.includes("NOT NULL constraint failed: SurveyForm.parentId")) {
+        if (e.message.includes("NOT NULL constraint failed")) {
           return { error: "DATABASE_MIGRATION_REQUIRED" }
         }
-        throw e
+        return { error: `Lỗi Database khi lưu mẫu tin: ${e.message}` }
       }
       
       await prisma.surveyPeriod.update({ where: { id: surveyPeriodId }, data: { isActive: true } })
@@ -97,9 +102,10 @@ export async function dispatchSurveyAction(surveyPeriodId: string, classIds: str
     revalidatePath("/admin/surveys")
     return { 
       success: true, 
-      created: formsToCreate.length,
+      created: createdCount,
+      skipped: skippedCount,
       classCount: classIds.length,
-      totalParticipants: formsToCreate.length
+      totalParticipants: createdCount
     }
   } catch (err: any) {
     return { error: `Lỗi hệ thống: ${err.message}` }
