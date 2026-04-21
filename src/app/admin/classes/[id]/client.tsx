@@ -67,7 +67,7 @@ export function AdminClassStudentsClient({ classId, initialStudents }: any) {
 
         data = xlsx.utils.sheet_to_json(ws, { range: headerRowIndex }) as any[];
 
-        const payload = data.map((row: any) => {
+        const payload = data.filter(row => Object.values(row).some(v => v !== null && v !== "")).map((row: any) => {
           const findVal = (row: any, keywords: string[]) => {
             const keys = Object.keys(row);
             for (const key of keys) {
@@ -112,7 +112,7 @@ export function AdminClassStudentsClient({ classId, initialStudents }: any) {
         })
         const res = await importStudentsAction(classId, payload)
         if (res.success) {
-          alert(`Đã import thành công ${res.count} học sinh!`)
+          alert(`[Vêrsion 2.1] Đã import thành công ${res.count} học sinh! Skipped: ${res.skipped || 0}`)
           window.location.reload()
         } else {
           alert("Lỗi server: " + res.error)
