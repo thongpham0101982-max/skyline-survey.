@@ -35,27 +35,38 @@ export function AdminClassStudentsClient({ classId, initialStudents }: any) {
       try {
         const buffer = evt.target?.result
         const wb = xlsx.read(buffer, { type: "array" })
-        const ws = wb.Sheets[wb.SheetNames[0]]
-        
-        const rawData = xlsx.utils.sheet_to_json(ws, { header: 1 }) as any[][];
-        if (!rawData || rawData.length === 0) return;
-
+                let ws = null;
+        let data: any[] = [];
         let headerRowIndex = -1;
-        for (let i = 0; i < rawData.length; i++) {
-          const row = rawData[i];
-          if (row.some(cell => String(cell).toLowerCase().includes("mã") || String(cell).toLowerCase().includes("học sinh"))) {
-            headerRowIndex = i;
-            break;
+
+        // Try all sheets until we find data
+        for (const sheetName of wb.SheetNames) {
+          const currentWs = wb.Sheets[sheetName];
+          const rawData = xlsx.utils.sheet_to_json(currentWs, { header: 1 }) as any[][];
+          if (!rawData || rawData.length === 0) continue;
+
+          for (let i = 0; i < rawData.length; i++) {
+            const row = rawData[i];
+            if (row.some(cell => {
+              const c = String(cell).toLowerCase();
+              return c.includes("mã") || c.includes("học sinh") || c.includes("tên") || c.includes("hs") || c.includes("student");
+            })) {
+              headerRowIndex = i;
+              ws = currentWs;
+              break;
+            }
           }
+          if (ws) break;
         }
 
-        if (headerRowIndex === -1) {
-          alert("Không tìm thấy dòng tiêu đề trong file Excel. Vui lòng đảm bảo có cột 'Mã học sinh' hoặc 'Họ và Tên'.");
+        if (!ws || headerRowIndex === -1) {
+          alert("Không tìm thấy dữ liệu học sinh. Vui lòng kiểm tra lại file Excel (Cột 'Mã HS', 'Họ tên'...).");
           setUploading(false);
           return;
         }
 
-        const data = xlsx.utils.sheet_to_json(ws, { range: headerRowIndex }) as any[];
+        data = xlsx.utils.sheet_to_json(ws, { range: headerRowIndex }) as any[];
+
         const payload = data.map((row: any) => {
           const findVal = (row: any, keywords: string[]) => {
             const keys = Object.keys(row);

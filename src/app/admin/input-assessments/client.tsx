@@ -310,26 +310,37 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
     try {
       const d = await file.arrayBuffer()
       const wb = XLSX.read(d)
-      const ws = wb.Sheets[wb.SheetNames[0]]
-            const rawData = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][];
-      if (!rawData || rawData.length === 0) return;
-
+            let ws = null;
+      let rows: any[] = [];
       let headerRowIndex = -1;
-      for (let i = 0; i < rawData.length; i++) {
-        const row = rawData[i];
-        if (row.some(cell => String(cell).toLowerCase().includes("mã") || String(cell).toLowerCase().includes("học sinh") || String(cell).toLowerCase().includes("student"))) {
-          headerRowIndex = i;
-          break;
+
+      for (const sheetName of wb.SheetNames) {
+        const currentWs = wb.Sheets[sheetName];
+        const rawData = XLSX.utils.sheet_to_json(currentWs, { header: 1 }) as any[][];
+        if (!rawData || rawData.length === 0) continue;
+
+        for (let i = 0; i < rawData.length; i++) {
+          const row = rawData[i];
+          if (row.some(cell => {
+            const c = String(cell).toLowerCase();
+            return c.includes("mã") || c.includes("học sinh") || c.includes("tên") || c.includes("hs") || c.includes("student");
+          })) {
+            headerRowIndex = i;
+            ws = currentWs;
+            break;
+          }
         }
+        if (ws) break;
       }
 
-      if (headerRowIndex === -1) {
-        notify("Không tìm thấy dòng tiêu đề trong file","err");
+      if (!ws || headerRowIndex === -1) {
+        notify("Không tìm thấy dữ liệu học sinh trong file","err");
         setImporting(false);
         return;
       }
 
-      const rows = XLSX.utils.sheet_to_json(ws, { range: headerRowIndex, defval: "" }) as any[];
+      rows = XLSX.utils.sheet_to_json(ws, { range: headerRowIndex, defval: "" }) as any[];
+
 
       const mapped = rows.map((row:any) => {
         const findVal = (row: any, keywords: string[]) => {
