@@ -1,4 +1,4 @@
-﻿generator client {
+generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["driverAdapters"]
 }
@@ -65,6 +65,7 @@ model Teacher {
 }
 
 model Campus {
+  surveyPeriods   SurveyPeriod[]
   id                     String                  @id @default(cuid())
   campusCode             String                  @unique
   campusName             String
