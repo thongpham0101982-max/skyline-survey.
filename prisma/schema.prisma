@@ -170,6 +170,7 @@ model SurveyPeriod {
   classSummaries  SummaryByClass[]
   systemSummaries SummarySystem?
   surveyForms     SurveyForm[]
+  targetAudience  String            @default("PHHS")
   academicYear    AcademicYear      @relation(fields: [academicYearId], references: [id])
   questions       SurveyQuestion[]
 }
