@@ -1,10 +1,9 @@
-﻿"use server"
+"use server"
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 
 export async function applyEmergencyDbFix() {
   try {
-    // We recreate the table with parentId TEXT (nullable)
     await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "SurveyForm_backup" AS SELECT * FROM "SurveyForm"`)
     await prisma.$executeRawUnsafe(`DROP TABLE "SurveyForm"`)
     await prisma.$executeRawUnsafe(`
@@ -38,6 +37,13 @@ export async function dispatchSurveyAction(surveyPeriodId: string, classIds: str
     const period = await prisma.surveyPeriod.findUnique({ where: { id: surveyPeriodId } })
     if (!period) return { error: "Không tìm thấy đợt khảo sát" }
 
+    // CRITICAL: Ensure AY-2026 exists to prevent Foreign Key errors
+    await prisma.academicYear.upsert({
+       where: { id: "AY-2026" },
+       update: {},
+       create: { id: "AY-2026", name: "2025-2026", startDate: new Date("2025-01-01"), endDate: new Date("2026-12-31") }
+    })
+
     const aud = (period.targetAudience || "").toLowerCase()
     const isStudentSurvey = aud.includes("hocsinh") || aud.includes("hoc sinh")
 
@@ -51,7 +57,6 @@ export async function dispatchSurveyAction(surveyPeriodId: string, classIds: str
       select: { studentId: true, parentId: true }
     })
 
-    // Improved deduplication check
     const existingStudentIds = new Set(existingForms.filter(f => !f.parentId).map(f => f.studentId))
 
     let createdCount = 0
@@ -72,7 +77,7 @@ export async function dispatchSurveyAction(surveyPeriodId: string, classIds: str
             studentId: student.id,
             classId: cls.id,
             campusId: cls.campusId,
-            academicYearId: cls.academicYearId,
+            academicYearId: cls.academicYearId || "AY-2026", // Fallback to avoid FK error
             status: "PENDING",
             parentId: null
           })
@@ -83,30 +88,20 @@ export async function dispatchSurveyAction(surveyPeriodId: string, classIds: str
 
     if (samples.length > 0) {
       try {
-        // Break into smaller batches for Turso stability
         const batchSize = 50
         for (let i = 0; i < samples.length; i += batchSize) {
           const batch = samples.slice(i, i + batchSize)
           await prisma.surveyForm.createMany({ data: batch })
         }
       } catch (e: any) {
-        if (e.message.includes("NOT NULL constraint failed")) {
-          return { error: "DATABASE_MIGRATION_REQUIRED" }
-        }
-        return { error: `Lỗi Database khi lưu mẫu tin: ${e.message}` }
+        if (e.message.includes("NOT NULL constraint failed")) return { error: "DATABASE_MIGRATION_REQUIRED" }
+        return { error: `Lỗi Database: ${e.message}` }
       }
-      
       await prisma.surveyPeriod.update({ where: { id: surveyPeriodId }, data: { isActive: true } })
     }
 
     revalidatePath("/admin/surveys")
-    return { 
-      success: true, 
-      created: createdCount,
-      skipped: skippedCount,
-      classCount: classIds.length,
-      totalParticipants: createdCount
-    }
+    return { success: true, created: createdCount, skipped: skippedCount, classCount: classIds.length, totalParticipants: createdCount }
   } catch (err: any) {
     return { error: `Lỗi hệ thống: ${err.message}` }
   }

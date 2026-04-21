@@ -33,7 +33,7 @@ export function AdminSurveysClient({ initialSurveys, years, campuses, createActi
   const audiences = [
     { value: "PHHS", label: "Ph? huynh (PHHS)", icon: Users, color: "bg-blue-600", light: "bg-blue-50", text: "text-blue-600", border: "border-blue-100" },
     { value: "HocSinh", label: "H?c sinh", icon: GraduationCap, color: "bg-emerald-600", light: "bg-emerald-50", text: "text-emerald-600", border: "border-emerald-100" },
-    { value: "GiaoVien", label: "Giáo viên", icon: UserCheck, color: "bg-amber-600", light: "bg-amber-50", text: "text-amber-600", border: "border-amber-100" }
+    { value: "GiaoVien", label: "Giï¿½o viï¿½n", icon: UserCheck, color: "bg-amber-600", light: "bg-amber-50", text: "text-amber-600", border: "border-amber-100" }
   ]
 
   const stats = useMemo(() => ({
@@ -72,7 +72,7 @@ export function AdminSurveysClient({ initialSurveys, years, campuses, createActi
   }
 
   const handleSubmit = async () => {
-    if (!form.name.trim()) { setErrorMsg("Vui l?ng nh?p tên ð?t kh?o sát!"); return }
+    if (!form.name.trim()) { setErrorMsg("Vui l?ng nh?p tï¿½n ï¿½?t kh?o sï¿½t!"); return }
     if (!form.startDate || !form.endDate) { setErrorMsg("Vui l?ng ch?n th?i gian!"); return }
     setIsSubmitting(true)
     try {
@@ -99,7 +99,7 @@ export function AdminSurveysClient({ initialSurveys, years, campuses, createActi
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Xác nh?n xóa ð?t kh?o sát này?")) return
+    if (!confirm("Xï¿½c nh?n xï¿½a ï¿½?t kh?o sï¿½t nï¿½y?")) return
     setSurveys(surveys.filter((s: any) => s.id !== id))
     await deleteAction(id).catch(() => window.location.reload())
   }
@@ -110,15 +110,15 @@ export function AdminSurveysClient({ initialSurveys, years, campuses, createActi
     <div className="space-y-6">
       {/* Stats Dashboard - Refined */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="T?ng Ð?t Kh?o Sát" value={stats.total} icon={ClipboardList} color="text-indigo-600" bg="bg-indigo-50" />
-        <StatCard title="Ðang Ho?t Ð?ng" value={stats.active} icon={CheckCircle2} color="text-emerald-600" bg="bg-emerald-50" />
+        <StatCard title="T?ng ï¿½?t Kh?o Sï¿½t" value={stats.total} icon={ClipboardList} color="text-indigo-600" bg="bg-indigo-50" />
+        <StatCard title="ï¿½ang Ho?t ï¿½?ng" value={stats.active} icon={CheckCircle2} color="text-emerald-600" bg="bg-emerald-50" />
         <StatCard title="S?p Di?n Ra" value={stats.upcoming} icon={Clock} color="text-amber-600" bg="bg-amber-50" />
         <div className="bg-white p-5 rounded-2xl border border-slate-200 flex flex-col justify-center">
             <button 
               onClick={handleOpenCreate}
               className="w-full flex items-center justify-center gap-2 py-3 bg-[#BE1E2E] hover:bg-[#a01927] text-white rounded-xl text-sm font-bold shadow-lg shadow-red-100 transition-all active:scale-[0.98]"
             >
-              <Plus className="w-5 h-5" /> T?o Ð?t M?i
+              <Plus className="w-5 h-5" /> T?o ï¿½?t M?i
             </button>
         </div>
       </div>
@@ -129,7 +129,7 @@ export function AdminSurveysClient({ initialSurveys, years, campuses, createActi
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input 
             type="text" 
-            placeholder="T?m theo tên ð?t..." 
+            placeholder="T?m theo tï¿½n ï¿½?t..." 
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl text-sm focus:ring-1 focus:ring-slate-300 transition-all outline-none"
@@ -154,12 +154,12 @@ export function AdminSurveysClient({ initialSurveys, years, campuses, createActi
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100">
-                <th className="pl-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ð?t kh?o sát</th>
-                <th className="px-4 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ð?i tý?ng</th>
-                <th className="px-4 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Nãm h?c</th>
+                <th className="pl-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">ï¿½?t kh?o sï¿½t</th>
+                <th className="px-4 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">ï¿½?i tï¿½?ng</th>
+                <th className="px-4 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Nï¿½m h?c</th>
                 <th className="px-4 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Th?i gian</th>
-                <th className="px-4 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Tr?ng thái</th>
-                <th className="pr-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Thao tác</th>
+                <th className="px-4 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Tr?ng thï¿½i</th>
+                <th className="pr-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Thao tï¿½c</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -174,7 +174,7 @@ export function AdminSurveysClient({ initialSurveys, years, campuses, createActi
                         </div>
                         <div>
                           <p className="font-bold text-slate-800 group-hover:text-[#BE1E2E] transition-colors line-clamp-1">{s.name}</p>
-                          <p className="text-[10px] text-slate-400 font-medium">{s.code} {s.campus ? `• ${s.campus.campusName}` : ""}</p>
+                          <p className="text-[10px] text-slate-400 font-medium">{s.code} {s.campus ? `ï¿½ ${s.campus.campusName}` : ""}</p>
                         </div>
                       </div>
                     </td>
@@ -207,13 +207,13 @@ export function AdminSurveysClient({ initialSurveys, years, campuses, createActi
                         <Tooltip label="S?a">
                            <button onClick={() => handleOpenEdit(s)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg"><Edit2 className="w-4 h-4" /></button>
                         </Tooltip>
-                        <Tooltip label="B? câu h?i">
+                        <Tooltip label="B? cï¿½u h?i">
                            <Link href={"/admin/surveys/"+s.id+"/questions"} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"><Settings2 className="w-4 h-4" /></Link>
                         </Tooltip>
-                        <Tooltip label="Phát hành">
+                        <Tooltip label="Phï¿½t hï¿½nh">
                            <Link href={"/admin/surveys/"+s.id+"/publish"} className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg"><Send className="w-4 h-4" /></Link>
                         </Tooltip>
-                        <Tooltip label="Xóa">
+                        <Tooltip label="Xï¿½a">
                            <button onClick={() => handleDelete(s.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4" /></button>
                         </Tooltip>
                       </div>
@@ -236,7 +236,7 @@ export function AdminSurveysClient({ initialSurveys, years, campuses, createActi
                       <ClipboardList className={`w-6 h-6 ${aud.text}`} />
                    </div>
                    <div className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${s.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-slate-100 text-slate-400'}`}>
-                      {s.status === 'ACTIVE' ? 'Ho?t ð?ng' : 'B?n nháp'}
+                      {s.status === 'ACTIVE' ? 'Ho?t ï¿½?ng' : 'B?n nhï¿½p'}
                    </div>
                 </div>
                 <h4 className="text-lg font-bold text-slate-800 mb-2 truncate group-hover:text-[#BE1E2E] transition-colors">{s.name}</h4>
@@ -246,10 +246,10 @@ export function AdminSurveysClient({ initialSurveys, years, campuses, createActi
                 </div>
                 <div className="grid grid-cols-2 gap-2 mt-auto">
                    <Link href={"/admin/surveys/"+s.id+"/questions"} className="flex items-center justify-center gap-2 py-2.5 bg-slate-100 hover:bg-indigo-600 hover:text-white rounded-xl text-xs font-bold transition-all">
-                      <Settings2 className="w-3.5 h-3.5" /> Câu h?i
+                      <Settings2 className="w-3.5 h-3.5" /> Cï¿½u h?i
                    </Link>
                    <Link href={"/admin/surveys/"+s.id+"/publish"} className="flex items-center justify-center gap-2 py-2.5 bg-slate-100 hover:bg-emerald-600 hover:text-white rounded-xl text-xs font-bold transition-all">
-                      <Send className="w-3.5 h-3.5" /> Phát hành
+                      <Send className="w-3.5 h-3.5" /> Phï¿½t hï¿½nh
                    </Link>
                 </div>
               </div>
@@ -265,8 +265,8 @@ export function AdminSurveysClient({ initialSurveys, years, campuses, createActi
               <div className="p-8">
                  <div className="flex justify-between items-start mb-8">
                     <div>
-                       <h3 className="text-2xl font-black text-slate-900 tracking-tight">{modalType === 'create' ? 'T?o Ð?t M?i' : 'S?a Thông Tin'}</h3>
-                       <p className="text-slate-400 text-sm font-medium mt-1">Vui l?ng nh?p ð?y ð? các trý?ng dý?i ðây</p>
+                       <h3 className="text-2xl font-black text-slate-900 tracking-tight">{modalType === 'create' ? 'T?o ï¿½?t M?i' : 'S?a Thï¿½ng Tin'}</h3>
+                       <p className="text-slate-400 text-sm font-medium mt-1">Vui l?ng nh?p ï¿½?y ï¿½? cï¿½c trï¿½?ng dï¿½?i ï¿½ï¿½y</p>
                     </div>
                     <button onClick={() => setModalType(null)} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><X className="w-5 h-5 text-slate-400" /></button>
                  </div>
@@ -275,17 +275,17 @@ export function AdminSurveysClient({ initialSurveys, years, campuses, createActi
 
                  <div className="space-y-5">
                     <div>
-                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-2 block">Tên ð?t kh?o sát</label>
-                       <input type="text" value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-sm focus:ring-2 focus:ring-indigo-500 transition-all" placeholder="Ví d?: Review HK1..." />
+                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-2 block">Tï¿½n ï¿½?t kh?o sï¿½t</label>
+                       <input type="text" value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-sm focus:ring-2 focus:ring-indigo-500 transition-all" placeholder="Vï¿½ d?: Review HK1..." />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                        <div>
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-2 block">Nãm h?c</label>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-2 block">Nï¿½m h?c</label>
                           <select value={form.academicYearId} onChange={e => setForm({...form, academicYearId: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
                              {years.map((y: any) => <option key={y.id} value={y.id}>{y.name}</option>)}
                           </select>
                        </div>
-                       <div>                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-2 block">Cõ s? (N?u có)</label>                           <select value={form.campusId} onChange={e => setForm({...form, campusId: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-sm outline-none">                              <option value="">T?t c? cõ s?</option>                              {campuses.map((c: any) => <option key={c.id} value={c.id}>{c.campusName}</option>)}                           </select>                        </div>                        <div>                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-2 block">Ð?i tý?ng</label>
+                       <div>                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-2 block">Cï¿½ s? (N?u cï¿½)</label>                           <select value={form.campusId} onChange={e => setForm({...form, campusId: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-sm outline-none">                              <option value="">T?t c? cï¿½ s?</option>                              {campuses.map((c: any) => <option key={c.id} value={c.id}>{c.campusName}</option>)}                           </select>                        </div>                        <div>                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-2 block">ï¿½?i tï¿½?ng</label>
                           <select value={form.targetAudience} onChange={e => setForm({...form, targetAudience: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-sm font-bold text-indigo-600 focus:ring-2 focus:ring-indigo-500 outline-none">
                              {audiences.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
                           </select>
@@ -293,11 +293,11 @@ export function AdminSurveysClient({ initialSurveys, years, campuses, createActi
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-2 block">Ngày b?t ð?u</label>
+                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-2 block">Ngï¿½y b?t ï¿½?u</label>
                            <input type="date" value={form.startDate} onChange={e => setForm({...form, startDate: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-sm focus:ring-2 focus:ring-indigo-500" />
                         </div>
                         <div>
-                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-2 block">Ngày k?t thúc</label>
+                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-2 block">Ngï¿½y k?t thï¿½c</label>
                            <input type="date" value={form.endDate} onChange={e => setForm({...form, endDate: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-sm focus:ring-2 focus:ring-indigo-500" />
                         </div>
                     </div>
@@ -306,7 +306,7 @@ export function AdminSurveysClient({ initialSurveys, years, campuses, createActi
                  <div className="mt-10 flex gap-3">
                     <button onClick={() => setModalType(null)} className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl font-bold transition-all">Quay l?i</button>
                     <button onClick={handleSubmit} disabled={isSubmitting} className="flex-[2] py-4 bg-[#BE1E2E] hover:bg-[#a01927] text-white rounded-2xl font-bold shadow-lg shadow-red-100 transition-all disabled:opacity-50">
-                       {isSubmitting ? "Ðang x? l?..." : "Lýu thay ð?i"}
+                       {isSubmitting ? "ï¿½ang x? l?..." : "Lï¿½u thay ï¿½?i"}
                     </button>
                  </div>
               </div>
