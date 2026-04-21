@@ -9,10 +9,8 @@ const AUDIENCE_MAP: Record<string, { label: string; color: string; bg: string; b
   GiaoVien: { label: "Giáo viên", color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-100" },
 }
 
-// Minimalist fallback icons to avoid lucide-react resolution errors in production
 const IconS = () => <span className="text-lg">🏫</span>
 const IconP = () => <span className="text-lg">👥</span> 
-const IconT = () => <span className="text-lg">👨‍🏫</span>
 
 export default function PublishSurveyClient({ initialSurvey, classes }: any) {
   const [mounted, setMounted] = useState(false)
@@ -75,11 +73,11 @@ export default function PublishSurveyClient({ initialSurvey, classes }: any) {
       } else {
         setResult({ 
           type: "success", 
-          message: `✅ Đã phát hành thành công cho ${res.classCount} lớp, tổng cộng ${res.created} phiếu khảo sát. ${res.missingRequirementCount > 0 ? `(${res.missingRequirementCount} học sinh chưa có thông tin PHHS)` : ""}` 
+          message: `✅ PHÁT HÀNH THÀNH CÔNG: Đã phát hành cho ${res.classCount} lớp, tổng cộng ${res.totalParticipants} học sinh tham gia khảo sát.` 
         })
       }
     } catch (e: any) { 
-      setResult({ type: "error", message: "Đã có lỗi xảy ra khi phát hành." }) 
+      setResult({ type: "error", message: "Đã có lỗi xảy ra khi phát hành: " + e.message }) 
     }
     setIsLoading(false)
     window.scrollTo({ top: 0, behavior: "smooth" })
@@ -92,7 +90,9 @@ export default function PublishSurveyClient({ initialSurvey, classes }: any) {
     try {
       const res: any = await revokeSurveyAction(survey.id, selectedClassIds)
       if (res?.success) {
-        setResult({ type: "revoke", message: `🔙 Đã thu hồi thành công phiếu của ${res.classCount} lớp (tổng ${res.count} phiếu).` })
+        setResult({ type: "revoke", message: `🔙 ĐÃ THU HỒI: Đã thu hồi phiếu của ${res.classCount} lớp, tổng số ${res.count} phiếu khảo sát.` })
+      } else {
+        setResult({ type: "error", message: res.error })
       }
     } catch (e: any) { 
       setResult({ type: "error", message: "Đã có lỗi xảy ra khi thu hồi." }) 
@@ -116,10 +116,10 @@ export default function PublishSurveyClient({ initialSurvey, classes }: any) {
       </div>
 
       {result && (
-        <div className={`p-5 rounded-2xl text-sm font-bold border-2 animate-in slide-in-from-top-4 duration-300 ${result.type === "success" ? "bg-emerald-50 text-emerald-700 border-emerald-100" : result.type === "revoke" ? "bg-amber-50 text-amber-700 border-amber-100" : "bg-red-50 text-red-700 border-red-100"}`}>
+        <div className={`p-6 rounded-[2rem] text-sm font-black border-2 animate-in slide-in-from-top-4 duration-300 ${result.type === "success" ? "bg-emerald-50 text-emerald-800 border-emerald-200" : result.type === "revoke" ? "bg-amber-50 text-amber-800 border-amber-200" : "bg-red-50 text-red-800 border-red-200"}`}>
            <div className="flex items-center justify-between gap-4">
-              <span className="flex-1">{result.message}</span>
-              <button onClick={() => setResult(null)} className="opacity-40 hover:opacity-100 italic">ẩn [x]</button>
+              <span className="flex-1 text-base">{result.message}</span>
+              <button onClick={() => setResult(null)} className="opacity-40 hover:opacity-100 italic font-medium px-3 py-1 bg-white/50 rounded-lg whitespace-nowrap">ẩn [x]</button>
            </div>
         </div>
       )}
