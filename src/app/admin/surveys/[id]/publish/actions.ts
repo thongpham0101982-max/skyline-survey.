@@ -8,7 +8,9 @@ export async function dispatchSurveyAction(surveyPeriodId: string, classIds: str
   })
   if (!period) return { error: "Không tìm thấy đợt khảo sát" }
 
-  const isStudentSurvey = period.targetAudience === "HocSinh" || period.targetAudience === "Hoc sinh"
+  // More robust audience check (normalized)
+  const aud = (period.targetAudience || "").toLowerCase()
+  const isStudentSurvey = aud.includes("hocsinh") || aud.includes("hoc sinh")
 
   const classes = await prisma.class.findMany({
     where: { id: { in: classIds } },
@@ -31,6 +33,7 @@ export async function dispatchSurveyAction(surveyPeriodId: string, classIds: str
       
       if (isStudentSurvey) {
         eligibleCount++
+        // Double check existence for student
         const exists = await prisma.surveyForm.findFirst({
           where: { studentId: student.id, surveyPeriodId, parentId: null }
         })
@@ -41,7 +44,7 @@ export async function dispatchSurveyAction(surveyPeriodId: string, classIds: str
               surveyPeriodId,
               studentId: student.id,
               classId: cls.id,
-              campusId: cls.campusId,
+              campusId: cls.campusId || null,
               academicYearId: cls.academicYearId,
               status: "PENDING",
               parentId: null
@@ -52,6 +55,7 @@ export async function dispatchSurveyAction(surveyPeriodId: string, classIds: str
           alreadyExisted++
         }
       } else {
+        // Parent Survey
         if (student.parents.length === 0) {
           missingRequirementCount++
           continue
@@ -59,13 +63,11 @@ export async function dispatchSurveyAction(surveyPeriodId: string, classIds: str
         eligibleCount++
         for (const ps of student.parents) {
           if (ps.parent && ps.parentId) {
-            const exists = await prisma.surveyForm.findUnique({
+            const exists = await prisma.surveyForm.findFirst({
               where: {
-                parentId_studentId_surveyPeriodId: {
-                  parentId: ps.parentId,
-                  studentId: student.id,
-                  surveyPeriodId
-                }
+                surveyPeriodId,
+                parentId: ps.parentId,
+                studentId: student.id
               }
             })
 
@@ -76,7 +78,7 @@ export async function dispatchSurveyAction(surveyPeriodId: string, classIds: str
                   parentId: ps.parentId,
                   studentId: student.id,
                   classId: cls.id,
-                  campusId: cls.campusId,
+                  campusId: cls.campusId || null,
                   academicYearId: cls.academicYearId,
                   status: "PENDING"
                 }
@@ -91,10 +93,13 @@ export async function dispatchSurveyAction(surveyPeriodId: string, classIds: str
     }
   }
 
-  await prisma.surveyPeriod.update({
-    where: { id: surveyPeriodId },
-    data: { isActive: true }
-  })
+  // Auto-activate period if we published forms
+  if (created > 0) {
+    await prisma.surveyPeriod.update({
+      where: { id: surveyPeriodId },
+      data: { isActive: true }
+    })
+  }
 
   revalidatePath("/admin/surveys")
   return { 
@@ -113,7 +118,7 @@ export async function revokeSurveyAction(surveyPeriodId: string, classIds: strin
     where: {
       surveyPeriodId,
       classId: { in: classIds },
-      status: "PENDING" // Only revoke if not yet started/completed
+      status: "PENDING" 
     }
   })
   
