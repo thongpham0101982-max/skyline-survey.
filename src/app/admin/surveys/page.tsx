@@ -1,9 +1,9 @@
-import { prisma } from "@/lib/db"
+﻿import { prisma } from "@/lib/db"
 import { AdminSurveysClient } from "./client"
 import { createSurveyPeriodAction, updateSurveyPeriodAction, deleteSurveyPeriodAction, deleteMultipleSurveysAction } from "./actions"
 import { CalendarDays, Sparkles, AlertCircle } from "lucide-react"
 
-export const metadata = { title: "He thong Khao sat | Skyline Academy" }
+export const metadata = { title: "Hệ thống Khảo sát | Skyline Academy" }
 
 export default async function AdminSurveysPage() {
   let surveys: any[] = []
@@ -12,26 +12,7 @@ export default async function AdminSurveysPage() {
   let error: string | null = null
 
   try {
-    // Attempt self-healing migrations for Turso (one by one)
-    try { await prisma.$executeRawUnsafe("ALTER TABLE SurveyPeriod ADD COLUMN targetAudience TEXT DEFAULT 'PHHS'") } catch (e) {}
-    try { await prisma.$executeRawUnsafe("ALTER TABLE SurveyPeriod ADD COLUMN campusId TEXT") } catch (e) {}
-
-    // Fetch surveys - defensively
-    const rawSurveys = await prisma.surveyPeriod.findMany({
-      include: { 
-        academicYear: { select: { id: true, name: true } }
-      },
-      orderBy: { startDate: "desc" }
-    })
-    
-    // Clean data for Client Component (dates to strings)
-    surveys = rawSurveys.map(s => ({
-      ...s,
-      startDate: s.startDate.toISOString(),
-      endDate: s.endDate.toISOString(),
-      campus: null // temporary hide campus relation if missing in DB
-    }))
-
+    // 1. Fetch Years and Campuses first (Stable tables)
     years = await prisma.academicYear.findMany({
       select: { id: true, name: true, status: true },
       orderBy: { startDate: "desc" }
@@ -40,9 +21,30 @@ export default async function AdminSurveysPage() {
     campuses = await prisma.campus.findMany({
       orderBy: { campusName: "asc" }
     })
+
+    // 2. Fetch Surveys with defensive mapping
+    const rawSurveys = await prisma.surveyPeriod.findMany({
+       include: {
+          academicYear: { select: { id: true, name: true } }
+       },
+       orderBy: { startDate: "desc" }
+    })
+
+    surveys = rawSurveys.map(s => ({
+       id: s.id,
+       code: s.code,
+       name: s.name,
+       targetAudience: (s as any).targetAudience || "PHHS",
+       status: s.status,
+       isActive: s.isActive,
+       startDate: s.startDate.toISOString(),
+       endDate: s.endDate.toISOString(),
+       academicYear: s.academicYear
+    }))
+
   } catch (e: any) {
-    console.error("Critical AdminSurveysPage error:", e);
-    error = e.message;
+    console.error("SURVEY_PAGE_ERROR:", e.message)
+    error = e.message
   }
 
   const activeYear = years.find(y => y.status === "ACTIVE")?.name || ""
@@ -54,14 +56,18 @@ export default async function AdminSurveysPage() {
           <div className="flex items-center gap-2 text-[#BE1E2E] font-black text-[10px] uppercase tracking-[0.2em]">
             <Sparkles className="w-3 h-3" /> Skyline Admin System
           </div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Quan ly Khao sat</h1>
-          {error && <p className="text-red-500 text-xs font-bold flex items-center gap-2"><AlertCircle className="w-4 h-4" /> Error: {error}</p>}
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Quản lý Khảo sát</h1>
+          {error && (
+            <div className="bg-red-50 p-4 rounded-2xl border border-red-100 flex items-center gap-3 text-red-600 font-bold text-xs">
+               <AlertCircle className="w-4 h-4" /> Hệ thống đang bận hoặc có lỗi cấu trúc: {error}
+            </div>
+          )}
         </div>
         {activeYear && (
           <div className="bg-white px-4 py-2.5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
             <CalendarDays className="w-5 h-5 text-[#BE1E2E]" />
             <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Nam hoc</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Năm học</p>
               <p className="text-sm font-black text-slate-800">{activeYear}</p>
             </div>
           </div>
