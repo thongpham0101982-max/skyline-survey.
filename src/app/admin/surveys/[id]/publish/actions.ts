@@ -10,7 +10,6 @@ export async function dispatchSurveyAction(surveyPeriodId: string, classIds: str
 
   const isStudentSurvey = period.targetAudience === "HocSinh" || period.targetAudience === "Hoc sinh"
 
-  // Find all students in selected classes
   const classes = await prisma.class.findMany({
     where: { id: { in: classIds } },
     include: {
@@ -31,20 +30,15 @@ export async function dispatchSurveyAction(surveyPeriodId: string, classIds: str
       totalStudents++
       
       if (isStudentSurvey) {
-        // For Students: No parent needed
         eligibleCount++
         const exists = await prisma.surveyForm.findFirst({
-          where: {
-            studentId: student.id,
-            surveyPeriodId: surveyPeriodId,
-            parentId: null
-          }
+          where: { studentId: student.id, surveyPeriodId, parentId: null }
         })
 
         if (!exists) {
           await prisma.surveyForm.create({
             data: {
-              surveyPeriodId: surveyPeriodId,
+              surveyPeriodId,
               studentId: student.id,
               classId: cls.id,
               campusId: cls.campusId,
@@ -58,7 +52,6 @@ export async function dispatchSurveyAction(surveyPeriodId: string, classIds: str
           alreadyExisted++
         }
       } else {
-        // For Parents: Need at least one parent
         if (student.parents.length === 0) {
           missingRequirementCount++
           continue
@@ -71,7 +64,7 @@ export async function dispatchSurveyAction(surveyPeriodId: string, classIds: str
                 parentId_studentId_surveyPeriodId: {
                   parentId: ps.parentId,
                   studentId: student.id,
-                  surveyPeriodId: surveyPeriodId
+                  surveyPeriodId
                 }
               }
             })
@@ -79,7 +72,7 @@ export async function dispatchSurveyAction(surveyPeriodId: string, classIds: str
             if (!exists) {
               await prisma.surveyForm.create({
                 data: {
-                  surveyPeriodId: surveyPeriodId,
+                  surveyPeriodId,
                   parentId: ps.parentId,
                   studentId: student.id,
                   classId: cls.id,
@@ -113,4 +106,17 @@ export async function dispatchSurveyAction(surveyPeriodId: string, classIds: str
     missingRequirementCount,
     isStudentSurvey
   }
+}
+
+export async function revokeSurveyAction(surveyPeriodId: string, classIds: string[]) {
+  const res = await prisma.surveyForm.deleteMany({
+    where: {
+      surveyPeriodId,
+      classId: { in: classIds },
+      status: "PENDING" // Only revoke if not yet started/completed
+    }
+  })
+  
+  revalidatePath("/admin/surveys")
+  return { success: true, count: res.count }
 }
