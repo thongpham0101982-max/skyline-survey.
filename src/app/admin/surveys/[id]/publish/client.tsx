@@ -1,235 +1,208 @@
-"use client"
+﻿"use client"
 import { useState } from "react"
-import { Users, Send, CheckCircle2, X, AlertTriangle, Info } from "lucide-react"
-import { dispatchSurveyAction } from "./actions"
+import { 
+  Users, CheckCircle2, AlertCircle, ArrowLeft, 
+  Send, Loader2, Info, ChevronRight, GraduationCap 
+} from "lucide-react"
 import Link from "next/link"
+import { dispatchSurveyAction } from "./actions"
 
-export function PublishSurveyClient({ period, classes }: any) {
+export default function PublishSurveyClient({ initialSurvey, classes }: any) {
   const [selectedClasses, setSelectedClasses] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
-  const [result, setResult] = useState<any>(null)
-  const [showConfirm, setShowConfirm] = useState(false)
+  const [results, setResults] = useState<any>(null)
   const [error, setError] = useState("")
 
-  const toggleClass = (id: string) => {
-    if (selectedClasses.includes(id)) {
-      setSelectedClasses(selectedClasses.filter(c => c !== id))
-    } else {
-      setSelectedClasses([...selectedClasses, id])
-    }
-  }
+  const isStudentSurvey = initialSurvey.targetAudience === "HocSinh" || initialSurvey.targetAudience === "Hoc sinh"
 
-  const toggleAll = () => {
-    if (selectedClasses.length === classes.length) {
-      setSelectedClasses([])
-    } else {
-      setSelectedClasses(classes.map((c: any) => c.id))
-    }
+  const toggleClass = (id: string) => {
+    setSelectedClasses(prev => 
+      prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
+    )
   }
 
   const handleDispatch = async () => {
-    setShowConfirm(false)
+    if (selectedClasses.length === 0) {
+      setError("Vui lòng chọn ít nhất một lớp!")
+      return
+    }
     setLoading(true)
     setError("")
     try {
-      const res = await dispatchSurveyAction(period.id, selectedClasses)
-      if (res.success) {
-        setResult(res)
-      } else {
-        setError("Co loi xay ra khi phat hanh. Vui long thu lai.")
-      }
+      const res = await dispatchSurveyAction(initialSurvey.id, selectedClasses)
+      setResults(res)
     } catch (e: any) {
-      setError(e.message || "Co loi xay ra.")
+      setError(e.message)
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
-  const groupedClasses = classes.reduce((acc: any, cls: any) => {
-    const campusName = cls.campus?.campusName || "Co so chua ro"
-    if (!acc[campusName]) acc[campusName] = []
-    acc[campusName].push(cls)
-    return acc
-  }, {})
-
-  if (result !== null) {
-    const totalForms = result.created + result.alreadyExisted
-    const hasNewForms = result.created > 0
-    const allExisted = result.created === 0 && result.alreadyExisted > 0
-    const noParentsFound = result.studentsWithoutParents > 0
+  if (results) {
+    const hasMissing = !isStudentSurvey && results.missingRequirementCount > 0
 
     return (
-      <div className="bg-white p-10 rounded-2xl shadow-sm border border-slate-200 max-w-2xl mx-auto mt-10 space-y-6">
-        <div className="text-center">
-          <div className={`w-20 h-20 ${hasNewForms ? 'bg-green-100 text-green-600' : allExisted ? 'bg-blue-100 text-blue-600' : 'bg-amber-100 text-amber-600'} rounded-full flex items-center justify-center mx-auto mb-6`}>
-            {hasNewForms || allExisted ? <CheckCircle2 className="w-10 h-10" /> : <AlertTriangle className="w-10 h-10" />}
+      <div className="max-w-2xl mx-auto animate-in zoom-in duration-300">
+        <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100">
+          <div className={`p-10 text-center ${hasMissing ? 'bg-amber-50' : 'bg-emerald-50'}`}>
+            <div className={`w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center ${hasMissing ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600'}`}>
+              {hasMissing ? <AlertCircle className="w-10 h-10" /> : <CheckCircle2 className="w-10 h-10" />}
+            </div>
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight">
+               {hasMissing ? "Phát hiện thiếu thông tin!" : "Phát hành thành công!"}
+            </h2>
+            <p className="text-slate-500 mt-2 font-medium">
+               {isStudentSurvey 
+                 ? "Hệ thống đã chuẩn bị phiếu khảo sát cho học sinh." 
+                 : "Hệ thống đã chuẩn bị phiếu khảo sát cho phụ huynh."}
+            </p>
           </div>
-          <h2 className="text-3xl font-bold text-slate-800 mb-4">
-            {hasNewForms ? 'Phat hanh thanh cong!' : allExisted ? 'Da phat hanh truoc do!' : 'Khong tim thay Phu huynh!'}
-          </h2>
-        </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-4 text-center">
-          <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-100">
-            <div className="text-2xl font-bold text-indigo-700">{result.created}</div>
-            <div className="text-sm text-indigo-600 font-medium">Phieu moi tao</div>
-          </div>
-          <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-            <div className="text-2xl font-bold text-slate-700">{result.alreadyExisted}</div>
-            <div className="text-sm text-slate-500 font-medium">Đã co truoc do</div>
-          </div>
-          <div className="bg-green-50 rounded-xl p-4 border border-green-100">
-            <div className="text-2xl font-bold text-green-700">{result.totalStudents}</div>
-            <div className="text-sm text-green-600 font-medium">Tong Hoc sinh</div>
-          </div>
-          <div className="bg-purple-50 rounded-xl p-4 border border-purple-100">
-            <div className="text-2xl font-bold text-purple-700">{result.studentsWithParents}</div>
-            <div className="text-sm text-purple-600 font-medium">HS co Phu huynh</div>
-          </div>
-        </div>
+          <div className="p-10 space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <ResultCard label="Tổng học sinh" value={results.totalStudents} sub="Trong các lớp đã chọn" />
+              <ResultCard label="Phiếu đã tạo" value={results.created} sub="Sẵn sàng khảo sát" color="text-[#BE1E2E]" />
+              <ResultCard label="Đã có trước đó" value={results.alreadyExisted} sub="Không tạo trùng" />
+              <ResultCard 
+                label={isStudentSurvey ? "Hợp lệ" : "Có Phụ huynh"} 
+                value={results.eligibleCount} 
+                sub={isStudentSurvey ? "Học sinh được gán" : "Hs có liên kết PH"} 
+              />
+            </div>
 
-        {allExisted && (
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
-            <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-            <div className="text-sm text-blue-800">
-              <strong>Tat ca {result.alreadyExisted} phieu khao sat da duoc tao truoc do.</strong> Khong co phieu moi nao duoc tao them. Neu muon tao lai, hay xoa phieu cu truoc.
+            {hasMissing && (
+              <div className="p-5 bg-red-50 border border-red-100 rounded-3xl flex gap-4 items-start">
+                 <Info className="w-6 h-6 text-red-500 flex-shrink-0 mt-1" />
+                 <div>
+                    <p className="text-red-700 font-bold text-sm">{results.missingRequirementCount} học sinh chưa được gán Phụ huynh.</p>
+                    <p className="text-red-600/70 text-xs mt-1 leading-relaxed">Vì đây là khảo sát cho Phụ huynh, những học sinh này sẽ không nhận được phiếu. Vui lòng kiểm tra lại danh mục tài khoản PHHS.</p>
+                 </div>
+              </div>
+            )}
+
+            <div className="pt-6">
+              <Link 
+                href="/admin/surveys"
+                className="w-full flex items-center justify-center gap-2 py-5 bg-slate-900 text-white rounded-2xl font-black text-lg hover:shadow-xl transition-all"
+              >
+                Hoàn tất & Quay về <ArrowLeft className="w-5 h-5 rotate-180" />
+              </Link>
             </div>
           </div>
-        )}
-
-        {noParentsFound && (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-            <div className="text-sm text-amber-800">
-              <strong>{result.studentsWithoutParents} hoc sinh chua duoc gan Phu huynh.</strong> Vui long kiem tra lai muc <strong>Quan ly Tài khoản PHHS</strong> de dam bao moi HS deu co tai khoan PH lien ket.
-            </div>
-          </div>
-        )}
-
-        {result.totalStudents === 0 && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
-            <X className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-            <div className="text-sm text-red-800">
-              <strong>Khong co hoc sinh nao trong cac lop da chon!</strong> Vui long kiem tra lai danh sach lop va dam bao cac lop da co hoc sinh.
-            </div>
-          </div>
-        )}
-
-        <div className="text-center pt-2">
-          <Link href="/admin/surveys" className="inline-flex items-center px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition">
-            Tro ve trang quan tri
-          </Link>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="max-w-4xl space-y-6 relative">
-      {/* Confirm Modal */}
-      {showConfirm && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
-                <AlertTriangle className="w-6 h-6 text-amber-600" />
+    <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500">
+      <div className="flex justify-between items-center bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-full -mr-16 -mt-16" />
+        <div className="relative z-10 flex items-center gap-6">
+           <div className="w-16 h-16 bg-[#BE1E2E]/10 rounded-[1.5rem] flex items-center justify-center">
+              {isStudentSurvey ? <GraduationCap className="w-8 h-8 text-[#BE1E2E]" /> : <Users className="w-8 h-8 text-[#BE1E2E]" />}
+           </div>
+           <div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Cấu hình phát hành</p>
+              <h1 className="text-2xl font-black text-slate-900 tracking-tight">{initialSurvey.name}</h1>
+              <div className="flex gap-2 mt-2">
+                 <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${isStudentSurvey ? 'bg-blue-100 text-blue-600' : 'bg-amber-100 text-amber-600'}`}>
+                    Đối tượng: {initialSurvey.targetAudience}
+                 </span>
               </div>
-              <div>
-                <h3 className="text-lg font-bold text-slate-800">Xac nhan Phat hanh</h3>
-                <p className="text-sm text-slate-500">Hanh dong nay khong the huy</p>
-              </div>
-            </div>
-            <p className="text-slate-600 mb-2 leading-relaxed">
-              Ban co chac muon phat hanh khao sat <strong className="text-indigo-700">"{period.name}"</strong> cho <strong className="text-indigo-700">{selectedClasses.length} lop hoc</strong> da chon?
-            </p>
-            <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-6">
-              He thong se tu dong tao phieu khao sat va gui toi tat ca Phu huynh trong cac lop duoc chon.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowConfirm(false)}
-                className="flex-1 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition"
-              >
-                Hủy bo
-              </button>
-              <button
-                onClick={handleDispatch}
-                className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold shadow-lg shadow-green-600/30 transition flex items-center justify-center gap-2"
-              >
-                <Send className="w-4 h-4" />
-                Xac nhan Phat hanh
-              </button>
-            </div>
-          </div>
+           </div>
         </div>
-      )}
+        <Link href="/admin/surveys" className="text-slate-400 hover:text-slate-900 font-bold text-sm flex items-center gap-2 transition-colors">
+           <ArrowLeft className="w-4 h-4" /> Quay lại
+        </Link>
+      </div>
+
+      <div className="grid md:grid-cols-[1fr,320px] gap-8">
+        <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden">
+           <div className="p-8 border-b border-slate-100 flex justify-between items-center">
+              <h3 className="font-black text-slate-800 text-lg">Chọn lớp tham gia</h3>
+              <button 
+                onClick={() => setSelectedClasses(selectedClasses.length === classes.length ? [] : classes.map((c:any)=>c.id))}
+                className="text-xs font-bold text-indigo-600 hover:bg-indigo-50 px-3 py-1.5 rounded-lg transition-colors"
+              >
+                {selectedClasses.length === classes.length ? "Bỏ chọn hết" : "Chọn tất cả"}
+              </button>
+           </div>
+           
+           <div className="p-4 max-h-[500px] overflow-y-auto custom-scrollbar">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                 {classes.map((cls: any) => (
+                    <button
+                      key={cls.id}
+                      onClick={() => toggleClass(cls.id)}
+                      className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${selectedClasses.includes(cls.id) ? 'bg-indigo-50/50 border-indigo-600 ring-2 ring-indigo-600/10' : 'bg-slate-50 border-transparent border-slate-200'}`}
+                    >
+                       <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm ${selectedClasses.includes(cls.id) ? 'bg-indigo-600 text-white' : 'bg-white text-slate-400'}`}>
+                             {cls.className.charAt(0)}
+                          </div>
+                          <div className="text-left">
+                             <p className={`font-black text-sm ${selectedClasses.includes(cls.id) ? 'text-indigo-900' : 'text-slate-700'}`}>{cls.className}</p>
+                             <p className="text-[10px] font-bold text-slate-400 uppercase">{cls.campus?.campusName}</p>
+                          </div>
+                       </div>
+                       {selectedClasses.includes(cls.id) && <CheckCircle2 className="w-5 h-5 text-indigo-600" />}
+                    </button>
+                 ))}
+              </div>
+           </div>
+        </div>
+
+        <div className="space-y-6">
+           <div className="bg-[#BE1E2E] p-8 rounded-[2rem] text-white shadow-xl shadow-red-500/20">
+              <h4 className="font-black text-xl mb-4">Tổng hợp</h4>
+              <div className="space-y-4">
+                 <div className="flex justify-between items-center py-2 border-b border-white/10">
+                    <span className="text-sm font-medium opacity-80">Số lớp đã chọn</span>
+                    <span className="text-xl font-black">{selectedClasses.length}</span>
+                 </div>
+                 <div className="flex justify-between items-center py-2">
+                    <span className="text-sm font-medium opacity-80">Đối tượng phát</span>
+                    <span className="text-sm font-black uppercase tracking-widest">{isStudentSurvey ? "Học sinh" : "Phụ huynh"}</span>
+                 </div>
+              </div>
+              <button 
+                onClick={handleDispatch}
+                disabled={loading || selectedClasses.length === 0}
+                className="w-full mt-8 bg-white text-[#BE1E2E] py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg hover:shadow-2xl hover:scale-[1.02] transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Send className="w-4 h-4" /> Phát hành ngay</>}
+              </button>
+           </div>
+
+           <div className="p-6 bg-slate-50 rounded-[2rem] border border-slate-200">
+              <h5 className="font-bold text-slate-800 text-sm mb-3 flex items-center gap-2">
+                 <Info className="w-4 h-4 text-slate-400" /> Lưu ý
+              </h5>
+              <p className="text-xs text-slate-500 leading-relaxed font-medium">
+                 {isStudentSurvey 
+                   ? "Mỗi học sinh trong lớp đã chọn sẽ được cấp một phiếu khảo sát riêng biệt. Họ có thể đăng nhập bằng Mã Học sinh để thực hiện."
+                   : "Mỗi Phụ huynh có liên kết với học sinh trong các lớp này sẽ nhận được lời mời khảo sát. Đảm bảo dữ liệu PHHS đã được gán đầy đủ."}
+              </p>
+           </div>
+        </div>
+      </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-5 py-4 flex items-center gap-3 font-medium">
-          <X className="w-5 h-5 flex-shrink-0" />{error}
+        <div className="p-4 bg-red-100 border border-red-200 text-red-700 rounded-2xl text-sm font-bold animate-shake text-center">
+           {error}
         </div>
       )}
+    </div>
+  )
+}
 
-      <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
-        <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center">
-          <Send className="w-5 h-5 mr-3 text-indigo-500" /> Chon doi tuong ap dung (Lop hoc)
-        </h2>
-        
-        <div className="flex justify-between items-center bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6 font-medium">
-          <div className="text-slate-600">
-            Đã chon: <span className="text-indigo-600 font-bold text-lg mx-1">{selectedClasses.length}</span> / {classes.length} lop hoc
-          </div>
-          <button onClick={toggleAll} className="text-indigo-600 hover:text-indigo-800 font-semibold underline underline-offset-2">
-            {selectedClasses.length === classes.length ? "Bo chon tat ca" : "Chon tat ca"}
-          </button>
-        </div>
-
-        {Object.keys(groupedClasses).map(campus => (
-          <div key={campus} className="mb-8 last:mb-0">
-            <h3 className="font-semibold text-slate-700 uppercase tracking-widest text-xs mb-3 text-indigo-800 bg-indigo-50 px-3 py-1.5 rounded-md inline-block max-w-max">{campus}</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {groupedClasses[campus].map((c: any) => {
-                const isSelected = selectedClasses.includes(c.id)
-                return (
-                  <div
-                    key={c.id}
-                    onClick={() => toggleClass(c.id)}
-                    className={`cursor-pointer border-2 rounded-xl p-4 flex flex-col items-center justify-center transition-all ${isSelected ? "border-indigo-600 bg-indigo-50 shadow-md shadow-indigo-100" : "border-slate-200 hover:border-indigo-300 bg-white hover:bg-slate-50"}`}
-                  >
-                    {isSelected && (
-                      <div className="w-5 h-5 rounded-full bg-indigo-600 flex items-center justify-center mb-2">
-                        <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                    )}
-                    <span className={`font-bold text-lg ${isSelected ? "text-indigo-800" : "text-slate-700"}`}>{c.className}</span>
-                    <span className="text-xs text-slate-500 mt-1 flex items-center"><Users className="w-3 h-3 mr-1"/>{c._count?.students || 0} HS</span>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="flex justify-end p-2 mt-8">
-        <button
-          onClick={() => {
-            if (selectedClasses.length === 0) {
-              setError("Vui long chon it nhat 1 lop hoc!")
-              return
-            }
-            setError("")
-            setShowConfirm(true)
-          }}
-          disabled={loading || selectedClasses.length === 0}
-          className="flex items-center px-8 py-3.5 bg-green-600 text-white rounded-xl font-bold shadow-lg shadow-green-600/30 hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed text-lg"
-        >
-          <Send className="w-5 h-5 mr-3" />
-          {loading ? "Dang phan bo & Gan Form..." : "Phat hanh & Gan Form Khao sat"}
-        </button>
-      </div>
+function ResultCard({ label, value, sub, color = "text-slate-900" }: any) {
+  return (
+    <div className="p-5 bg-slate-50 rounded-3xl border border-slate-100">
+       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{label}</p>
+       <p className={`text-2xl font-black ${color}`}>{value}</p>
+       <p className="text-[10px] font-medium text-slate-400 mt-0.5">{sub}</p>
     </div>
   )
 }

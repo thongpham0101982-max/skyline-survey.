@@ -9,43 +9,48 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     CredentialsProvider({
       name: "Credentials",
       credentials: {
-        email: { label: "Email hoac Username", type: "text" },
+        email: { label: "Account", type: "text" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null
 
         const identifier = credentials.email as string
+        let user: any = null
 
-        // 1. Try finding by email
-        let user = await prisma.user.findUnique({
-          where: { email: identifier },
-        })
+        // 1. Check User table (Email)
+        user = await prisma.user.findUnique({ where: { email: identifier } })
 
-        // 2. If not found by email, try finding via Teacher code
+        // 2. Check Teacher Code
         if (!user) {
           const teacher = await prisma.teacher.findUnique({
             where: { teacherCode: identifier },
-            include: { user: true },
+            include: { user: true }
           })
           if (teacher?.user) user = teacher.user
         }
 
-        // 3. If not found yet, try finding via Parent code
+        // 3. Check Parent Code
         if (!user) {
           const parent = await prisma.parent.findUnique({
             where: { parentCode: identifier },
-            include: { user: true },
+            include: { user: true }
           })
           if (parent?.user) user = parent.user
         }
 
-        // 4. If still not found, try finding by fullName (for KT_DBCL users)
+        // 4. Check Student Code
         if (!user) {
-          const byName = await prisma.user.findFirst({
-            where: { fullName: identifier },
+          const student = await prisma.student.findUnique({
+            where: { studentCode: identifier },
+            include: { user: true }
           })
-          if (byName) user = byName
+          if (student?.user) user = student.user
+        }
+
+        // 5. Fallback for KT_DBCL by Name
+        if (!user) {
+          user = await prisma.user.findFirst({ where: { fullName: identifier } })
         }
 
         if (!user || user.status !== "ACTIVE") return null
@@ -82,8 +87,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return session
     },
   },
-  pages: {
-    signIn: "/login",
-  },
-  useSecureCookies: false, // Force non-secure cookies
+  pages: { signIn: "/login" },
+  useSecureCookies: false,
 })
