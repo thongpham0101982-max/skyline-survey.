@@ -19,7 +19,10 @@ export async function importStudentsAction(classId: string, data: any[]) {
           data: {
             studentName: item.studentName,
             gender: item.gender,
-            dateOfBirth: item.dateOfBirth
+            dateOfBirth: item.dateOfBirth,
+            classId: cls.id,
+            campusId: cls.campusId,
+            academicYearId: cls.academicYearId
           }
         })
       } else {

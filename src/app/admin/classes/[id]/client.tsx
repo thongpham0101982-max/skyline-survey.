@@ -114,6 +114,8 @@ export function AdminClassStudentsClient({ classId, initialStudents }: any) {
         if (res.success) {
           alert(`Đã import thành công ${res.count} học sinh!`)
           window.location.reload()
+        } else {
+          alert("Lỗi server: " + res.error)
         }
       } catch(e) {
         console.error(e)
