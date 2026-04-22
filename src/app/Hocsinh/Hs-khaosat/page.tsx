@@ -1,5 +1,5 @@
 ﻿'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { GraduationCap, Lock, User, ArrowRight, Eye, EyeOff, AlertCircle } from 'lucide-react'
 
@@ -25,75 +25,61 @@ export default function HsLoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
-      style={{ background: 'linear-gradient(135deg,#0f0a0a 0%,#1a0507 50%,#0f1521 100%)' }}>
-      <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full opacity-20"
-        style={{ background: 'radial-gradient(circle,#BE1E2E,transparent)' }} />
-      <div className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full opacity-10"
-        style={{ background: 'radial-gradient(circle,#BE1E2E,transparent)' }} />
+    <div className="min-h-screen flex items-center justify-center p-4 bg-[#FFF9E6] relative overflow-hidden font-sans">
+      <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-amber-200/30 rounded-full blur-[100px]" />
+      <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] bg-amber-300/20 rounded-full blur-[80px]" />
 
-      <div className="relative z-10 w-full max-w-md">
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl mb-5 shadow-2xl relative"
-            style={{ background: 'linear-gradient(135deg,#BE1E2E,#8b0000)', boxShadow: '0 20px 60px rgba(190,30,46,0.4)' }}>
-            <GraduationCap className="w-10 h-10 text-white" />
-            <span className="absolute -top-1 -right-1 w-6 h-6 bg-amber-400 rounded-full border-2 border-slate-900 flex items-center justify-center text-[9px] font-black text-slate-900">HS</span>
+      <div className="relative z-10 w-full max-w-[450px]">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-24 h-24 bg-[#78350f] rounded-[2rem] mb-6 shadow-2xl relative">
+            <GraduationCap className="w-12 h-12 text-white" />
+            <div className="absolute -top-1 -right-1 w-7 h-7 bg-amber-500 rounded-full border-4 border-[#FFF9E6] flex items-center justify-center text-[10px] font-black text-[#78350f]">HS</div>
           </div>
-          <h1 className="text-3xl font-black text-white tracking-tight">SKYLINE ACADEMY</h1>
-          <p className="text-white/40 text-sm mt-1">Cong thong tin khao sat hoc sinh</p>
+          <h1 className="text-5xl font-black text-[#451a03] tracking-[10px] uppercase">SQMS</h1>
+          <p className="text-[#a16207] text-[10px] font-black uppercase tracking-[4px] mt-2 opacity-60">KHAO SAT HOC SINH SKYLINE</p>
         </div>
 
-        <div className="rounded-3xl p-8 border border-white/10 shadow-2xl backdrop-blur-2xl" style={{ background: 'rgba(255,255,255,0.04)' }}>
-          <h2 className="text-xl font-black text-white mb-1">Dang nhap Hoc Sinh</h2>
-          <p className="text-white/40 text-sm mb-8">Nhap ma hoc sinh de tham gia khao sat</p>
+        <div className="bg-white/80 backdrop-blur-2xl rounded-[3rem] p-10 shadow-2xl border border-white">
+          <h2 className="text-2xl font-black text-[#451a03] text-center mb-2">Hoc Sinh</h2>
+          <p className="text-[#78350f]/60 text-center text-xs font-bold mb-8 uppercase tracking-widest">Khao sat chat luong giao duc</p>
 
           {err && (
-            <div className="mb-6 p-4 rounded-2xl flex items-center gap-3 text-red-400 border border-red-500/20" style={{ background: 'rgba(239,68,68,0.08)' }}>
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <p className="text-sm font-bold">{err}</p>
+            <div className="mb-6 p-4 rounded-2xl flex items-center gap-3 bg-red-50 text-red-700 border border-red-100">
+              <AlertCircle className="w-5 h-5 shrink-0" />
+              <p className="text-sm font-black">{err}</p>
             </div>
           )}
 
-          <form onSubmit={login} className="space-y-5">
+          <form onSubmit={login} className="space-y-6">
             <div>
-              <label className="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-2">Ma Hoc Sinh</label>
+              <label className="block text-[10px] font-black text-[#78350f]/40 uppercase tracking-widest mb-2 ml-1">Ma hoc sinh</label>
               <div className="relative">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-                <input id="hs-code" type="text" value={code} onChange={e => setCode(e.target.value)}
-                  placeholder="Vi du: HS2025001"
-                  className="w-full rounded-2xl pl-12 pr-4 py-4 text-white font-mono font-bold transition-all outline-none"
-                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
+                <User className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#78350f]/30" />
+                <input type="text" value={code} onChange={e => setCode(e.target.value)} placeholder="HS000000"
+                  className="w-full rounded-2xl pl-14 pr-6 py-4 bg-[#78350f]/5 border-2 border-transparent focus:bg-white focus:border-[#78350f] text-lg font-bold text-[#451a03] outline-none transition-all" />
               </div>
             </div>
+
             <div>
-              <label className="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-2">Mat Khau</label>
+              <label className="block text-[10px] font-black text-[#78350f]/40 uppercase tracking-widest mb-2 ml-1">Mat khau</label>
               <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-                <input id="hs-pass" type={show ? 'text' : 'password'} value={pass} onChange={e => setPass(e.target.value)}
-                  placeholder="Mac dinh: Ma hoc sinh"
-                  className="w-full rounded-2xl pl-12 pr-14 py-4 text-white font-mono font-bold transition-all outline-none"
-                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
-                <button type="button" onClick={() => setShow(v => !v)} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60">
-                  {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#78350f]/30" />
+                <input type={show ? 'text' : 'password'} value={pass} onChange={e => setPass(e.target.value)} placeholder="••••••••"
+                  className="w-full rounded-2xl pl-14 pr-14 py-4 bg-[#78350f]/5 border-2 border-transparent focus:bg-white focus:border-[#78350f] text-lg font-bold text-[#451a03] outline-none transition-all" />
+                <button type="button" onClick={() => setShow(!show)} className="absolute right-5 top-1/2 -translate-y-1/2 text-[#78350f]/20 hover:text-[#78350f]">
+                  {show ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
-              <p className="text-[10px] text-white/25 mt-2 ml-1">* Mat khau mac dinh chinh la ma hoc sinh</p>
+              <p className="text-[10px] text-[#a16207]/50 font-black italic mt-2 ml-1">* Mat khau mac dinh la ma hoc sinh</p>
             </div>
-            <button id="hs-login-btn" type="submit" disabled={loading}
-              className="w-full py-4 rounded-2xl text-white font-black flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50"
-              style={{ background: 'linear-gradient(135deg,#BE1E2E,#a01927)', boxShadow: '0 8px 32px rgba(190,30,46,0.35)' }}>
-              {loading
-                ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Dang xac thuc...</>
-                : <>Dang nhap <ArrowRight className="w-4 h-4" /></>}
+
+            <button type="submit" disabled={loading}
+              className="w-full py-5 bg-[#78350f] text-white rounded-2xl text-lg font-black shadow-xl shadow-[#78350f]/30 flex items-center justify-center gap-2 hover:bg-[#451a03] transition-all disabled:opacity-50">
+              {loading ? 'DANG XAC THUC...' : <>DANG NHAP <ArrowRight className="w-5 h-5" /></>}
             </button>
           </form>
-
-          <div className="mt-6 p-4 rounded-2xl border border-white/5" style={{ background: 'rgba(255,255,255,0.03)' }}>
-            <p className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-1">Huong dan</p>
-            <p className="text-xs text-white/30 leading-relaxed">Nhap <span className="text-white/50 font-bold">ma hoc sinh</span> vao ca hai o dang nhap va mat khau.</p>
-          </div>
         </div>
-        <p className="text-center text-white/15 text-xs mt-8">2026 Skyline Education Group</p>
+        <p className="text-center text-[#78350f]/20 text-[10px] font-black uppercase tracking-[4px] mt-10">2026 SKYLINE EDUCATION GROUP</p>
       </div>
     </div>
   )
