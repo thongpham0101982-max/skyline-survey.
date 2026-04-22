@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
       where: { 
         studentId: student.id, 
         status: 'DRAFT',
-        surveyPeriod: { status: 'ACTIVE' }
+        surveyPeriod: { targetAudience: 'HocSinh' }
       },
       select: { id: true }
     })
