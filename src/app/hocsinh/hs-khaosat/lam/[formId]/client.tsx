@@ -146,7 +146,10 @@ export default function HsFormClient({ formId, periodName, studentName, classNam
                 {/* CHOICE, MULTIPLE_CHOICE, DROPDOWN logic */}
                 {(['CHOICE', 'MULTIPLE_CHOICE', 'DROPDOWN'].includes(q.questionType?.toUpperCase())) && q.options && (() => {
                   let opts: string[] = []
-                  try { opts = JSON.parse(q.options) } catch { opts = q.options.split(',').map((s:string) => s.trim()) }
+                  try {
+                    const parsed = JSON.parse(q.options)
+                    opts = Array.isArray(parsed) ? parsed : (parsed.choices || [])
+                  } catch { opts = q.options.split(',').map((s:string) => s.trim()) }
                   return (
                     <div className="space-y-2">
                       {opts.map((opt: string) => (
@@ -167,7 +170,10 @@ export default function HsFormClient({ formId, periodName, studentName, classNam
                 {/* CHECKBOX logic */}
                 {(q.questionType?.toUpperCase() === 'CHECKBOX') && q.options && (() => {
                   let opts: string[] = []
-                  try { opts = JSON.parse(q.options) } catch { opts = q.options.split(',').map((s:string) => s.trim()) }
+                  try {
+                    const parsed = JSON.parse(q.options)
+                    opts = Array.isArray(parsed) ? parsed : (parsed.choices || [])
+                  } catch { opts = q.options.split(',').map((s:string) => s.trim()) }
                   const currentVals = answers[q.id] || []
                   const toggle = (v: string) => {
                     const next = currentVals.includes(v) ? currentVals.filter((x:any) => x !== v) : [...currentVals, v]
@@ -189,6 +195,57 @@ export default function HsFormClient({ formId, periodName, studentName, classNam
                           </div>
                         </button>
                       ))}
+                    </div>
+                  )
+                })()}
+                {/* MC_GRID / CB_GRID (Grid question) */}
+                {(['MC_GRID', 'CB_GRID'].includes(q.questionType?.toUpperCase())) && q.options && (() => {
+                  let gridOpts: any = { rows: [], columns: [] }
+                  try { gridOpts = JSON.parse(q.options) } catch {}
+                  const isCheckGrid = q.questionType?.toUpperCase() === 'CB_GRID'
+                  const currentGrid = answers[q.id] || {}
+                  return (
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse text-sm">
+                        <thead>
+                          <tr>
+                            <th className="p-2 text-left text-[10px] font-black text-slate-400 uppercase">Tiêu chí</th>
+                            {(gridOpts.columns || []).map((col: string, ci: number) => (
+                              <th key={ci} className="p-2 text-center text-[10px] font-black text-slate-400 uppercase">{col}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(gridOpts.rows || []).map((row: string, ri: number) => (
+                            <tr key={ri} className="border-t border-slate-100">
+                              <td className="p-3 text-sm font-bold text-slate-600">{row}</td>
+                              {(gridOpts.columns || []).map((_: string, ci: number) => {
+                                const rowVals = currentGrid[ri] || []
+                                const isSelected = isCheckGrid ? rowVals.includes(ci) : currentGrid[ri] === ci
+                                return (
+                                  <td key={ci} className="p-3 text-center">
+                                    <button
+                                      onClick={() => {
+                                        if (isCheckGrid) {
+                                          const next = { ...currentGrid }
+                                          const prev = next[ri] || []
+                                          next[ri] = prev.includes(ci) ? prev.filter((x: number) => x !== ci) : [...prev, ci]
+                                          ans(q.id, next)
+                                        } else {
+                                          ans(q.id, { ...currentGrid, [ri]: ci })
+                                        }
+                                      }}
+                                      className={`w-7 h-7 mx-auto flex items-center justify-center border-2 transition-all ${isCheckGrid ? 'rounded-lg' : 'rounded-full'}`}
+                                      style={{ borderColor: isSelected ? '#BE1E2E' : '#e2e8f0', background: isSelected ? '#BE1E2E' : 'white' }}>
+                                      {isSelected && <div className={`bg-white ${isCheckGrid ? 'w-2 h-2 rounded-sm' : 'w-2.5 h-2.5 rounded-full'}`} />}
+                                    </button>
+                                  </td>
+                                )
+                              })}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   )
                 })()}
