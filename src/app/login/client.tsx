@@ -83,7 +83,7 @@ export function LoginClient() {
         </div>
         <div className="bg-white/40 backdrop-blur-md p-1.5 rounded-[2rem] border border-white/50 mb-6 flex gap-1.5 shadow-sm">
           {['STAFF', 'PARENT', 'STUDENT'].map((r) => {
-            const labels = { STAFF: 'Can bo', PARENT: 'Phu huynh', STUDENT: 'Iboc sinh' };
+            const labels = { STAFF: 'Can bo', PARENT: 'Phu huynh', STUDENT: 'Hoc sinh' };
             const icons = { STAFF: ShieldCheck, PARENT: Users, STUDENT: GraduationCap };
             const Icon = icons[r];
             return (
