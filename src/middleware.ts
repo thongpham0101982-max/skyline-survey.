@@ -4,9 +4,8 @@ import { NextResponse } from 'next/server'
 export default auth((req) => {
   const { pathname } = req.nextUrl
   
-  // CRITICAL: Always allow everything under /hocsinh and /api/hocsinh to pass through middleware
-  // Students use their own JWT session, not NextAuth session.
-  if (pathname.toLowerCase().startsWith('/hocsinh') || pathname.toLowerCase().startsWith('/api/hocsinh')) {
+  // Middleware should explicitly do nothing for these routes
+  if (pathname.toLowerCase().includes('hocsinh')) {
     return NextResponse.next()
   }
 
@@ -26,18 +25,11 @@ export default auth((req) => {
     if (role === 'TEACHER') return NextResponse.redirect(new URL('/teacher', req.nextUrl))
     return NextResponse.redirect(new URL('/admin', req.nextUrl))
   }
-
-  if (isLoggedIn && !isOnLogin) {
-    const role = (req.auth?.user as any)?.role
-    const isStaff = role !== 'PARENT' && role !== 'TEACHER'
-    if (pathname.startsWith('/admin') && !isStaff) return NextResponse.redirect(new URL('/login', req.nextUrl))
-    if (pathname.startsWith('/teacher') && role !== 'TEACHER' && !isStaff) return NextResponse.redirect(new URL('/login', req.nextUrl))
-    if (pathname.startsWith('/parent') && role !== 'PARENT' && !isStaff) return NextResponse.redirect(new URL('/login', req.nextUrl))
-  }
   
   return NextResponse.next()
 })
 
+// REMOVED 'hocsinh' FROM MATCHER - Middleware will not even trigger for student pages
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!api|hocsinh|_next/static|_next/image|favicon.ico).*)'],
 }
