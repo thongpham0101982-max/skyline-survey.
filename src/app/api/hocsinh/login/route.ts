@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
        return NextResponse.json({ error: `Mã học sinh "${code}" không tồn tại trên hệ thống. Vui lòng kiểm tra lại.` }, { status: 401 })
     }
 
-    if (student.status !== 'ACTIVE') {
+    if (student.status && student.status !== 'ACTIVE') {
        console.log(`[LOGIN] Student inactive: "${code}"`)
        return NextResponse.json({ error: 'Tài khoản học sinh này hiện đang bị khóa hoặc không hoạt động.' }, { status: 401 })
     }
