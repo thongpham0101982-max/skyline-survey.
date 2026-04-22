@@ -9,7 +9,7 @@ export default async function HsDanhSachPage() {
   const forms = await prisma.surveyForm.findMany({
     where: {
       studentId: session.studentId,
-      surveyPeriod: { targetAudience: 'HocSinh', status: 'ACTIVE', isActive: true }
+      surveyPeriod: { targetAudience: 'HocSinh' }
     },
     include: { surveyPeriod: true },
     orderBy: { surveyPeriod: { endDate: 'asc' } }
