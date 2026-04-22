@@ -21,7 +21,7 @@ export default function HsLoginPage() {
     })
     const d = await res.json()
     if (!res.ok) { setErr(d.error || 'Dang nhap that bai'); setLoading(false); return }
-    router.push('/hocsinh/Hs-khaosat/danh-sach')
+    if (d.formId) router.push('/hocsinh/Hs-khaosat/lam/' + d.formId); else router.push('/hocsinh/Hs-khaosat/danh-sach');
   }
 
   return (
