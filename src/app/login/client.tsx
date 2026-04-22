@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { 
   User, Lock, GraduationCap, Users, ShieldCheck, 
-  ArrowRight, Eye, EyeOff, AlertCircle
+  Eye, EyeOff, AlertCircle, CheckCircle2, Loader2
 } from 'lucide-react'
 
 export function LoginClient() {
@@ -14,6 +14,7 @@ export function LoginClient() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [loadingSteps, setLoadingSteps] = useState([])
   const [debugLog, setDebugLog] = useState<string[]>([]);
   const [showPassword, setShowPassword] = useState(false)
   const [mounted, setMounted] = useState(false)
@@ -21,61 +22,139 @@ export function LoginClient() {
   useEffect(() => { setMounted(true) }, [])
 
   const log = (msg: string) => { console.log(msg); setDebugLog(prev => [...prev.slice(-4), msg]); };
+
+  const addStep = (text: string) => {
+    setLoadingSteps((prev: any[]) => {
+      const updated = prev.map((s: any, i: number) =>
+        i === prev.length - 1 ? { ...s, done: true } : s
+      );
+      return [...updated, { text, done: false }];
+    });
+  };
   const handleSubmit = async (e: React.FormEvent) => {
-    
     e.preventDefault()
-    log("Bắt đầu xử lý đăng nhập " + role);
     setError('')
     setLoading(true)
-
+    setLoadingSteps([])
 
     try {
       if (role === 'STUDENT') {
+        setLoadingSteps([{ text: 'Đang xác thực...', done: false }])
+        await new Promise(r => setTimeout(r, 600))
+
+        addStep('Bắt đầu xử lý đăng nhập Student...')
+        await new Promise(r => setTimeout(r, 400))
+
         const res = await fetch('/api/hocsinh/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ studentCode: identifier.trim(), password: (password && password.trim()) || identifier.trim() })
+          body: JSON.stringify({
+            studentCode: identifier.trim(),
+            password: (password && password.trim()) || identifier.trim()
+          })
         })
         const data = await res.json()
-        if (!res.ok) {
-           setError(data.error || 'Thong tin khong hop le')
-           setLoading(false); return
-        }
-        
-        const targetUrl = data.formId 
-          ? '/hocsinh/hs-khaosat/lam/' + data.formId 
-          : '/hocsinh/hs-khaosat/danh-sach';
-        
-        // FORCED COOKIE SYNC
-        document.cookie = "hs_token=" + data.token + "; path=/; max-age=" + (2*24*60*60) + "; SameSite=Lax";
-        
-        // IMMEDIATE HARD REDIRECT
-        window.location.href = targetUrl;
 
+        if (!res.ok) {
+          setError(data.error || 'Thông tin không hợp lệ')
+          setLoading(false)
+          setLoadingSteps([])
+          return
+        }
+
+        setLoadingSteps((prev: any[]) => prev.map(s => ({ ...s, done: true })))
+        addStep('Đăng nhập thành công! Đang chuyển trang...')
+        await new Promise(r => setTimeout(r, 500))
+
+        const targetUrl = data.formId
+          ? '/hocsinh/hs-khaosat/lam/' + data.formId
+          : '/hocsinh/hs-khaosat/danh-sach'
+
+        document.cookie =
+          'hs_token=' + data.token +
+          '; path=/; max-age=' + (2 * 24 * 60 * 60) +
+          '; SameSite=Lax'
+
+        window.location.href = targetUrl
 
       } else {
+        setLoadingSteps([{ text: 'Đang xác thực tài khoản...', done: false }])
+        await new Promise(r => setTimeout(r, 400))
+
         const result = await signIn('credentials', {
           email: identifier.trim(),
           password,
           redirect: false,
         })
         if (result?.error) {
-           setError('Sai ten dang nhap hoac mat khau!')
-           setLoading(false)
+          setError('Sai tên đăng nhập hoặc mật khẩu!')
+          setLoading(false)
+          setLoadingSteps([])
         } else {
-           window.location.assign('/')
+          setLoadingSteps((prev: any[]) => prev.map(s => ({ ...s, done: true })))
+          addStep('Đăng nhập thành công! Đang chuyển trang...')
+          await new Promise(r => setTimeout(r, 400))
+          window.location.assign('/')
         }
       }
     } catch (err) {
-      setError('Loi ket noi. Vui long thu lai.')
+      setError('Lỗi kết nối. Vui lòng thử lại.')
       setLoading(false)
+      setLoadingSteps([])
     }
   }
 
   if (!mounted) return null
 
+  const roleLabel =
+    role === 'STUDENT' ? 'Học sinh' :
+    role === 'PARENT' ? 'Phụ huynh' : 'Cán bộ'
+
   return (
-    <div className="login-wrapper min-h-screen flex flex-col items-center justify-center p-6 font-sans relative overflow-hidden" 
+    <>
+      {loading && loadingSteps.length > 0 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center"
+             style={{ background: 'rgba(20,10,0,0.75)', backdropFilter: 'blur(12px)' }}>
+          <div className="bg-[#FFFCF2] rounded-[2.5rem] p-10 shadow-2xl max-w-sm w-full mx-6"
+               style={{ animation: 'fadeInScale 0.3s ease' }}>
+            <div className="flex justify-center mb-6">
+              <div className="relative w-20 h-20">
+                <div className="absolute inset-0 rounded-full border-4 border-orange-100" />
+                <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#A14902] animate-spin" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <GraduationCap className="w-8 h-8 text-[#A14902]" />
+                </div>
+              </div>
+            </div>
+            <h3 className="text-center text-xl font-black text-[#451C03] mb-1">Đang đăng nhập</h3>
+            <p className="text-center text-sm text-[#8B4513]/60 font-semibold mb-6">{roleLabel}</p>
+            <div className="space-y-3">
+              {(loadingSteps as any[]).map((step: any, i: number) => (
+                <div key={i} className="flex items-center gap-3 px-2"
+                     style={{ animation: 'slideInLeft 0.3s ease' }}>
+                  {step.done
+                    ? <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+                    : <Loader2 className="w-5 h-5 text-[#A14902] shrink-0 animate-spin" />}
+                  <span className={`text-sm font-bold ${step.done ? 'text-emerald-600 line-through opacity-60' : 'text-[#451C03]'}`}>
+                    {step.text}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+      <style>{`
+        @keyframes fadeInScale {
+          from { opacity: 0; transform: scale(0.9); }
+          to   { opacity: 1; transform: scale(1); }
+        }
+        @keyframes slideInLeft {
+          from { opacity: 0; transform: translateX(-12px); }
+          to   { opacity: 1; transform: translateX(0); }
+        }
+      `}</style>
+      <div className="login-wrapper min-h-screen flex flex-col items-center justify-center p-6 font-sans relative overflow-hidden" 
          style={{ background: 'linear-gradient(180deg, #FFF6D1 0%, #FF9900 100%)' }}>
       <div className="absolute top-[10%] right-[10%] w-64 h-64 bg-white/20 rounded-full blur-3xl opacity-60" />
       <div className="absolute bottom-[10%] left-[5%] w-80 h-80 bg-white/10 rounded-full blur-3xl opacity-40" />
@@ -103,7 +182,7 @@ export function LoginClient() {
             const icons = { STAFF: ShieldCheck, PARENT: Users, STUDENT: GraduationCap };
             const Icon = icons[r];
             return (
-              <button key={r} onClick={() => {setRole(r); setError('');}}
+              <button key={r} onClick={() => {setRole(r); setError(''); setLoadingSteps([]);}}
                 className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${role === r ? 'bg-[#8B4513] text-white shadow-lg' : 'text-[#8B4513]/60 hover:bg-white/40'}`}>
                 <Icon className="w-4 h-4" /> <span className="hidden sm:inline">{labels[r]}</span>
               </button>
@@ -155,18 +234,16 @@ export function LoginClient() {
             <button type="button" onClick={handleSubmit} disabled={loading}
               className="w-full py-5 bg-[#A14902] text-white rounded-3xl text-xl font-black shadow-xl shadow-[#A14902]/30 flex items-center justify-center gap-3 hover:translate-y-[-2px] hover:bg-[#8B4513] transition-all disabled:opacity-60 overflow-hidden relative group">
               <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-              {loading ? 'DANG XAC THUC...' : 'Dang nhap'}
+              {loading
+                  ? <><Loader2 className="w-5 h-5 animate-spin" /><span>Đang xác thực...</span></>
+                  : <span>Đăng nhập</span>}
             </button>
 
-            {debugLog.length > 0 && (
-              <div className="mt-8 p-4 bg-black/80 rounded-2xl border border-white/20 text-emerald-400 font-mono text-[10px] space-y-1">
-                {debugLog.map((l, i) => <div key={i}>{"> "} {l}</div>)}
-              </div>
-            )}
           </div>
         </div>
         <p className="text-center mt-12 text-sm font-extrabold text-[#5C2E0B]/50 tracking-wider">© 2026 SQMS • Skyline Education</p>
       </div>
     </div>
+    </>
   )
 }
