@@ -95,7 +95,7 @@ export function LoginClient() {
             const Icon = icons[r];
             return (
               <button key={r} onClick={() => {setRole(r); setError('');}}
-                className={lex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all }>
+                                className={lex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all \}>
                 <Icon className="w-4 h-4" /> <span className="hidden sm:inline">{labels[r]}</span>
               </button>
             )
