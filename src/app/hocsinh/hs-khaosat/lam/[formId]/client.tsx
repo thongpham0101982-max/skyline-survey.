@@ -112,7 +112,7 @@ export default function HsFormClient({ formId, periodName, studentName, classNam
                 </div>
 
                 {/* RATING, NPS, LIKERT logic */}
-                {(q.questionType === 'RATING' || q.questionType === 'NPS' || q.questionType === 'LIKERT' || q.questionType === 'Rating') && (
+                {(['RATING', 'NPS', 'LIKERT'].includes(q.questionType?.toUpperCase())) && (
                   <div>
                     <div className="flex gap-2 flex-wrap">
                       {Array.from({ length: (q.ratingMax || 10) - (q.ratingMin || 0) + 1 }, (_, k) => k + (q.ratingMin || 0)).map(v => (
@@ -136,7 +136,7 @@ export default function HsFormClient({ formId, periodName, studentName, classNam
                 )}
 
                 {/* TEXT logic */}
-                {(q.questionType === 'TEXT' || q.questionType === 'Text' || q.questionType === 'OPEN_ENDED') && (
+                {(['TEXT', 'OPEN_ENDED'].includes(q.questionType?.toUpperCase())) && (
                   <textarea value={answers[q.id] || ''} onChange={e => ans(q.id, e.target.value)} rows={4}
                     placeholder="Nhập ý kiến của bạn tại đây..."
                     className="w-full rounded-2xl px-5 py-4 text-sm text-slate-700 outline-none resize-none transition-all border-2 border-slate-100 focus:border-red-200"
@@ -144,7 +144,7 @@ export default function HsFormClient({ formId, periodName, studentName, classNam
                 )}
 
                 {/* CHOICE, MULTIPLE_CHOICE, DROPDOWN logic */}
-                {(q.questionType === 'CHOICE' || q.questionType === 'MULTIPLE_CHOICE' || q.questionType === 'DROPDOWN' || q.questionType === 'Multiple Choice') && q.options && (() => {
+                {(['CHOICE', 'MULTIPLE_CHOICE', 'DROPDOWN'].includes(q.questionType?.toUpperCase())) && q.options && (() => {
                   let opts: string[] = []
                   try { opts = JSON.parse(q.options) } catch { opts = q.options.split(',').map((s:string) => s.trim()) }
                   return (
@@ -165,7 +165,7 @@ export default function HsFormClient({ formId, periodName, studentName, classNam
                 })()}
 
                 {/* CHECKBOX logic */}
-                {(q.questionType === 'CHECKBOX') && q.options && (() => {
+                {(q.questionType?.toUpperCase() === 'CHECKBOX') && q.options && (() => {
                   let opts: string[] = []
                   try { opts = JSON.parse(q.options) } catch { opts = q.options.split(',').map((s:string) => s.trim()) }
                   const currentVals = answers[q.id] || []
