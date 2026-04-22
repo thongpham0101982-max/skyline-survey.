@@ -20,21 +20,31 @@ export async function POST(req: NextRequest) {
     if (pwd !== student.studentCode) return NextResponse.json({ error: 'Mật khẩu không đúng.' }, { status: 401 })
     
     const pendingForm = await prisma.surveyForm.findFirst({
-      where: { studentId: student.id, status: 'DRAFT' },
+      where: { 
+        studentId: student.id, 
+        status: 'DRAFT',
+        surveyPeriod: { status: 'ACTIVE' }
+      },
       select: { id: true }
     })
 
     const token = signStudentToken({
       studentId: student.id, studentCode: student.studentCode, studentName: student.studentName,
       classId: student.classId, className: student.class?.className || '',
-      campusName: student.campus?.campusName || '', exp: Date.now() + 24 * 60 * 60 * 1000
+      campusName: student.campus?.campusName || '', exp: Date.now() + 2 * 24 * 60 * 60 * 1000 // 2 days
     })
     
-    // Set cookie on server AND return token for client to be sure
-    const res = NextResponse.json({ ok: true, token, formId: pendingForm?.id || null, studentName: student.studentName })
+    const res = NextResponse.json({ ok: true, formId: pendingForm?.id || null, studentName: student.studentName })
+    
+    // Set cookie with broad compatibility
     res.cookies.set('hs_token', token, {
-      httpOnly: true, secure: true, sameSite: 'lax', maxAge: 24 * 60 * 60, path: '/'
+      httpOnly: false, // temporarily false for compatibility check
+      secure: false,   // temporarily false for compatibility check
+      sameSite: 'lax',
+      maxAge: 2 * 24 * 60 * 60,
+      path: '/'
     })
+    
     return res
   } catch (e: any) {
     return NextResponse.json({ error: 'Lỗi: ' + e.message }, { status: 500 })

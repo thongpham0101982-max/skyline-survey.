@@ -2,7 +2,8 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 
-const SECRET = process.env.AUTH_SECRET || 'skyline-hs-2025'
+// Use a fixed hardcoded secret for students to avoid environment-sync issues on Vercel
+const SECRET = 'skyline-student-survey-secure-key-2025'
 const COOKIE = 'hs_token'
 
 export interface StudentSession {
@@ -19,21 +20,26 @@ export function signStudentToken(p: StudentSession): string {
 export function verifyStudentToken(token: string): StudentSession | null {
   try {
     const [b64, sig] = token.split('.')
+    if (!b64 || !sig) return null
     const expected = createHmac('sha256', SECRET).update(b64).digest('base64url')
     if (sig !== expected) return null
     const p = JSON.parse(Buffer.from(b64, 'base64url').toString()) as StudentSession
     return p.exp < Date.now() ? null : p
-  } catch { return null }
+  } catch (e) { 
+    return null 
+  }
 }
 
 export async function getStudentSession(): Promise<StudentSession | null> {
   const store = await cookies()
   const token = store.get(COOKIE)?.value
-  return token ? verifyStudentToken(token) : null
+  if (!token) return null
+  return verifyStudentToken(token)
 }
 
 export async function requireStudentSession(): Promise<StudentSession> {
   const s = await getStudentSession()
-  if (!s) redirect('/hocsinh/hs-khaosat')
+  // Redirect to the MAIN login if session fails
+  if (!s) redirect('/login')
   return s
 }
