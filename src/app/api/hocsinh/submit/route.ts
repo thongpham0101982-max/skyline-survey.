@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    await prisma.([
+    await prisma.$transaction([
       prisma.surveyResponse.createMany({ data: responseData, skipDuplicates: true }),
       prisma.surveyForm.update({ where: { id: formId }, data: { status: 'SUBMITTED', submissionDateTime: new Date() } })
     ])
