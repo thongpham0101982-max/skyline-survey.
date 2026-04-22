@@ -23,11 +23,12 @@ export default async function HsDanhSachPage() {
       status: 'ACTIVE',
       id: { notIn: existingPeriodIds },
       OR: [
-        { targetAudience: 'HocSinh' },
-        { targetAudience: 'HS' },
-        { targetAudience: 'Học sinh' },
-        { targetAudience: 'hocsinh' },
-        { campusId: session.campusId }
+        { targetAudience: { contains: 'Hoc' } },
+        { targetAudience: { contains: 'HS' } },
+        { targetAudience: { contains: 'học' } },
+        { targetAudience: { contains: 'HỌC' } },
+        { campusId: session.campusId },
+        { campusId: null }
       ]
     },
     orderBy: { endDate: 'asc' }
