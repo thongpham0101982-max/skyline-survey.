@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { getStudentSession } from "@/lib/student-session"
 import { GraduationCap, LogOut, ClipboardList } from "lucide-react"
 import Link from "next/link"
