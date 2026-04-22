@@ -240,6 +240,7 @@ export function LoginClient() {
           </div>
         </div>
         <p className="text-center mt-12 text-sm font-extrabold text-[#5C2E0B]/50 tracking-wider">© 2026 SQMS • Skyline Education</p>
+        <p className="text-center text-[10px] text-slate-400 mt-2 font-bold uppercase tracking-widest opacity-50 italic">He thong da cap nhat v2.0 - 16:37</p>
       </div>
     </div>
     </>
