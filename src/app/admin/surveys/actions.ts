@@ -49,7 +49,8 @@ export async function updateSurveyPeriodAction(data: any) {
   if (data.status) payload.status = data.status
   if (data.isActive !== undefined) payload.isActive = data.isActive
   if (data.targetAudience) payload.targetAudience = data.targetAudience
-  if (data.campusId !== undefined) payload.campusId = data.campusId || null\n  if (data.academicYearId) payload.academicYearId = data.academicYearId
+  if (data.campusId !== undefined) payload.campusId = data.campusId || null
+  if (data.academicYearId) payload.academicYearId = data.academicYearId
 
   try {
     await prisma.surveyPeriod.update({

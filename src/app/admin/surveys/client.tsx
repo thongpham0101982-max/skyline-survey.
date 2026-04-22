@@ -80,7 +80,8 @@ export function AdminSurveysClient({ initialSurveys, years, campuses, createActi
         const res = await createAction(form)
         if (res?.error) throw new Error(res.error)
       } else {
-        const res = await updateAction({ ...form, id: currentSurvey.id })\n        if (res?.error) throw new Error(res.error)
+        const res = await updateAction({ ...form, id: currentSurvey.id })
+        if (res?.error) throw new Error(res.error)
       }
       setModalType(null)
       window.location.reload()
