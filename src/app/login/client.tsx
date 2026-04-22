@@ -61,14 +61,10 @@ export function LoginClient() {
   return (
     <div className="login-wrapper min-h-screen flex flex-col items-center justify-center p-6 font-sans relative overflow-hidden" 
          style={{ background: 'linear-gradient(180deg, #FFF6D1 0%, #FF9900 100%)' }}>
-      
-      {/* Decorative Blur Circles from Image */}
       <div className="absolute top-[10%] right-[10%] w-64 h-64 bg-white/20 rounded-full blur-3xl opacity-60" />
       <div className="absolute bottom-[10%] left-[5%] w-80 h-80 bg-white/10 rounded-full blur-3xl opacity-40" />
       <div className="absolute top-[40%] left-[10%] w-48 h-48 bg-white/30 rounded-full blur-3xl opacity-40" />
-
       <div className="login-container relative z-10 w-full max-w-[480px]">
-        {/* Brand Header */}
         <div className="text-center mb-12 animate-in fade-in zoom-in duration-700">
           <div className="inline-flex items-center justify-center w-24 h-24 mb-6 relative">
              <div className="w-full h-full bg-[#78350f] rounded-[2rem] shadow-xl flex items-center justify-center">
@@ -79,30 +75,25 @@ export function LoginClient() {
                 </svg>
              </div>
           </div>
-          
           <h1 className="text-6xl font-black text-[#5C2E0B] tracking-[10px] uppercase drop-shadow-sm mb-2">SQMS</h1>
           <div className="space-y-1">
             <h2 className="text-lg font-black text-[#8B4513] uppercase tracking-wider">He thong Quan tri Chat luong Truong hoc</h2>
             <p className="text-[11px] font-bold text-[#A0522D] uppercase tracking-[3px] opacity-70">School Quality Management System</p>
           </div>
         </div>
-
-        {/* Unified Role Tabs */}
         <div className="bg-white/40 backdrop-blur-md p-1.5 rounded-[2rem] border border-white/50 mb-6 flex gap-1.5 shadow-sm">
           {['STAFF', 'PARENT', 'STUDENT'].map((r) => {
-            const labels = { STAFF: 'Can bo', PARENT: 'Phu huynh', STUDENT: 'Hoc sinh' };
+            const labels = { STAFF: 'Can bo', PARENT: 'Phu huynh', STUDENT: 'Iboc sinh' };
             const icons = { STAFF: ShieldCheck, PARENT: Users, STUDENT: GraduationCap };
             const Icon = icons[r];
             return (
               <button key={r} onClick={() => {setRole(r); setError('');}}
-                                className={lex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all \}>
+                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${role === r ? 'bg-[#8B4513] text-white shadow-lg' : 'text-[#8B4513]/60 hover:bg-white/40'}`}>
                 <Icon className="w-4 h-4" /> <span className="hidden sm:inline">{labels[r]}</span>
               </button>
             )
           })}
         </div>
-
-        {/* Login Card */}
         <div className="bg-[#FFFCF2] rounded-[3.5rem] p-10 sm:p-12 shadow-2xl border border-white/30 animate-in slide-in-from-bottom-8 duration-700">
           <div className="text-center mb-8">
             <h3 className="text-3xl font-black text-[#451C03] mb-3">Dang nhap</h3>
@@ -112,14 +103,12 @@ export function LoginClient() {
               {role === 'STUDENT' && 'Nhap ma hoc sinh de tham gia khao sat'}
             </p>
           </div>
-
           {error && (
             <div className="mb-6 p-4 rounded-2xl flex items-center gap-3 bg-red-50 text-red-700 border border-red-100 animate-in fade-in zoom-in">
               <AlertCircle className="w-5 h-5 shrink-0" />
               <p className="text-sm font-black">{error}</p>
             </div>
           )}
-
           <form onSubmit={handleSubmit} className="space-y-7">
             <div>
               <label className="block text-sm font-black text-[#451C03] mb-3 ml-1">Tai khoan</label>
@@ -129,10 +118,9 @@ export function LoginClient() {
                 </div>
                 <input type="text" required value={identifier} onChange={e => setIdentifier(e.target.value)} 
                   placeholder={role === 'STAFF' ? 'admin@skyline.edu' : 'Ma so cua ban'}
-                  className="w-full pl-14 pr-6 py-4.5 bg-[#ECF3FF] border border-[#DEE9FF] rounded-2xl text-lg font-medium text-slate-800 focus:bg-white focus:border-orange-200 outline-none transition-all shadow-inner" />
+                  className="w-full pl-14 pr-6 py-4 bg-[#ECF3FF] border border-[#DEE9FF] rounded-2xl text-lg font-medium text-slate-800 focus:bg-white focus:border-orange-200 outline-none transition-all shadow-inner" />
               </div>
             </div>
-
             <div>
               <label className="block text-sm font-black text-[#451C03] mb-3 ml-1">Mat khau</label>
               <div className="relative group">
@@ -141,35 +129,22 @@ export function LoginClient() {
                 </div>
                 <input type={showPassword ? 'text' : 'password'} required={role !== 'STUDENT'} value={password} onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••••"
-                  className="w-full pl-14 pr-16 py-4.5 bg-[#ECF3FF] border border-[#DEE9FF] rounded-2xl text-lg font-medium text-slate-800 focus:bg-white focus:border-orange-200 outline-none transition-all shadow-inner" />
+                  className="w-full pl-14 pr-16 py-4 bg-[#ECF3FF] border border-[#DEE9FF] rounded-2xl text-lg font-medium text-slate-800 focus:bg-white focus:border-orange-200 outline-none transition-all shadow-inner" />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-5 top-1/2 -translate-y-1/2 p-2 text-slate-400 hover:text-orange-900 transition-colors">
                   {showPassword ? <EyeOff className="w-6 h-6" /> : <Eye className="w-6 h-6" />}
                 </button>
               </div>
               {role === 'STUDENT' && <p className="text-[10px] text-orange-800/40 font-bold mt-2 ml-1 italic">* Mat khau mac dinh la ma hoc sinh</p>}
             </div>
-
             <button type="submit" disabled={loading}
               className="w-full py-5 bg-[#A14902] text-white rounded-3xl text-xl font-black shadow-xl shadow-[#A14902]/30 flex items-center justify-center gap-3 hover:translate-y-[-2px] hover:bg-[#8B4513] transition-all disabled:opacity-60 overflow-hidden relative group">
               <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-              {loading ? 'DANG XAC THUC...' : <>Dang nhap <ArrowRight className="w-6 h-6" /></>}
+              {loading ? 'DANG XAC THUC...' : 'Dang nhap'}
             </button>
           </form>
         </div>
-
         <p className="text-center mt-12 text-sm font-extrabold text-[#5C2E0B]/50 tracking-wider">© 2026 SQMS • Skyline Education</p>
       </div>
-
-      <style jsx global>{
-        .py-4.5 { padding-top: 1.125rem; padding-bottom: 1.125rem; }
-        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slide-in-bottom { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes zoom-in { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-        .animate-in { animation-duration: 700ms; animation-fill-mode: both; }
-        .fade-in { animation-name: fade-in; }
-        .zoom-in { animation-name: zoom-in; }
-        .slide-in-from-bottom-8 { animation-name: slide-in-bottom; }
-      }</style>
     </div>
   )
 }
