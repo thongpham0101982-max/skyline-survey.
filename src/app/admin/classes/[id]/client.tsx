@@ -301,6 +301,11 @@ export function AdminClassStudentsClient({ classId, initialStudents }: any) {
                   <td className="px-6 py-4 text-slate-600 border-r border-slate-200">
                     {student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString("vi-VN") : "Chưa cập nhật"}
                   </td>
+                  <td className="px-6 py-4 border-r border-slate-200">
+                    <span className={`px-2 py-1 rounded-full text-[10px] font-bold ${(!student.status || student.status === "ACTIVE") ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"}`}>
+                      {(!student.status || student.status === "ACTIVE") ? "HOẠT ĐỘNG" : "BỊ KHÓA"}
+                    </span>
+                  </td>
                   <td className="px-6 py-4 text-center">
                      <div className="flex justify-center gap-1">
                         <button onClick={() => openEdit(student)} className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Sửa">
