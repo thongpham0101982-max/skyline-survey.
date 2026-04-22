@@ -1,28 +1,78 @@
-﻿import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { signStudentToken } from '@/lib/student-session'
 
 export async function POST(req: NextRequest) {
   try {
     const { studentCode, password } = await req.json()
-    const code = String(studentCode || "").trim()
+    const code = String(studentCode || '').trim()
     
-    // Step 1: Find student (This worked in diagnostic API, so it is safe)
+    // Tìm học sinh
     const student = await prisma.student.findUnique({
       where: { studentCode: code },
-      select: { id: true, studentCode: true, studentName: true, classId: true, status: true, class: { select: { className: true } }, campus: { select: { campusName: true } } }
+      select: { 
+        id: true, 
+        studentCode: true, 
+        studentName: true, 
+        classId: true, 
+        campusId: true,
+        academicYearId: true,
+        status: true, 
+        class: { select: { className: true } }, 
+        campus: { select: { campusName: true } } 
+      }
     })
     
     if (!student) return NextResponse.json({ error: 'Mã học sinh không đúng.' }, { status: 401 })
     
-    // Step 2: Immediate token generation (Skip slow survey search for now)
+    // Tìm đợt khảo sát đang hoạt động cho học sinh
+    const activePeriod = await prisma.surveyPeriod.findFirst({
+      where: {
+        status: 'ACTIVE',
+        OR: [
+          { targetAudience: 'HocSinh' },
+          { targetAudience: 'HS' },
+          { targetAudience: 'Học sinh' },
+          { targetAudience: 'hocsinh' }
+        ]
+      },
+      orderBy: { endDate: 'desc' }
+    })
+
+    let formId = null;
+
+    if (activePeriod) {
+      // Tìm form đã được gán cho học sinh này trong đợt này
+      const form = await prisma.surveyForm.findFirst({
+        where: {
+          studentId: student.id,
+          surveyPeriodId: activePeriod.id,
+          parentId: null
+        }
+      })
+      
+      if (form) {
+        formId = form.id;
+      }
+    }
+    
     const token = signStudentToken({
-      studentId: student.id, studentCode: student.studentCode, studentName: student.studentName,
-      classId: student.classId, className: student.class?.className || '',
-      campusName: student.campus?.campusName || '', exp: Date.now() + 2 * 24 * 60 * 60 * 1000
+      studentId: student.id, 
+      studentCode: student.studentCode, 
+      studentName: student.studentName,
+      classId: student.classId, 
+      className: student.class?.className || '',
+      campusName: student.campus?.campusName || '', 
+      exp: Date.now() + 2 * 24 * 60 * 60 * 1000
     })
     
-    const res = NextResponse.json({ ok: true, token, formId: null, studentName: student.studentName })
+    const res = NextResponse.json({ 
+      ok: true, 
+      token, 
+      formId: formId,
+      studentName: student.studentName 
+    })
+    
     res.cookies.set('hs_token', token, { path: '/', maxAge: 2 * 24 * 60 * 60 })
     return res
     
