@@ -123,7 +123,7 @@ export function LoginClient() {
               <p className="text-sm font-black">{error}</p>
             </div>
           )}
-          <form onSubmit={handleSubmit} className="space-y-7">
+          <div className="space-y-7">
             <div>
               <label className="block text-sm font-black text-[#451C03] mb-3 ml-1">Tai khoan</label>
               <div className="relative group">
@@ -150,12 +150,12 @@ export function LoginClient() {
               </div>
               {role === 'STUDENT' && <p className="text-[10px] text-orange-800/40 font-bold mt-2 ml-1 italic">* Mat khau mac dinh la ma hoc sinh</p>}
             </div>
-            <button type="submit" disabled={loading}
+            <button type="button" onClick={handleSubmit} disabled={loading}
               className="w-full py-5 bg-[#A14902] text-white rounded-3xl text-xl font-black shadow-xl shadow-[#A14902]/30 flex items-center justify-center gap-3 hover:translate-y-[-2px] hover:bg-[#8B4513] transition-all disabled:opacity-60 overflow-hidden relative group">
               <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
               {loading ? 'DANG XAC THUC...' : 'Dang nhap'}
             </button>
-          </form>
+          </div>
         </div>
         <p className="text-center mt-12 text-sm font-extrabold text-[#5C2E0B]/50 tracking-wider">© 2026 SQMS • Skyline Education</p>
       </div>
