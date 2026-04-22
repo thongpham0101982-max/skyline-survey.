@@ -36,13 +36,17 @@ export function LoginClient() {
            setError(data.error || 'Thong tin khong hop le')
            setLoading(false); return
         }
-        console.log('Login success, redirecting...'); 
-        if (data.formId) {
-          router.push('/hocsinh/hs-khaosat/lam/' + data.formId);
-        } else {
-          router.push('/hocsinh/hs-khaosat/danh-sach');
-        }
-        router.refresh();
+        
+        const targetUrl = data.formId 
+          ? '/hocsinh/hs-khaosat/lam/' + data.formId 
+          : '/hocsinh/hs-khaosat/danh-sach';
+        
+        // FORCED COOKIE SYNC
+        document.cookie = "hs_token=" + data.token + "; path=/; max-age=" + (2*24*60*60) + "; SameSite=Lax";
+        
+        // IMMEDIATE HARD REDIRECT
+        window.location.href = targetUrl;
+
 
       } else {
         const result = await signIn('credentials', {
