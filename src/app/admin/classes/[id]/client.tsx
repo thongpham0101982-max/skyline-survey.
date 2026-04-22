@@ -11,7 +11,7 @@ export function AdminClassStudentsClient({ classId, initialStudents }: any) {
   const [submitting, setSubmitting] = useState(false)
   const [editingStudent, setEditingStudent] = useState<any>(null)
   const [showAddModal, setShowAddModal] = useState(false)
-  const [formData, setFormData] = useState({ studentCode: "", studentName: "", gender: "Nam", dateOfBirth: "" })
+  const [formData, setFormData] = useState({ studentCode: "", studentName: "", gender: "Nam", dateOfBirth: "", status: "ACTIVE" })
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -183,7 +183,7 @@ export function AdminClassStudentsClient({ classId, initialStudents }: any) {
       studentCode: s.studentCode,
       studentName: s.studentName,
       gender: s.gender || "Nam",
-      dateOfBirth: s.dateOfBirth ? new Date(s.dateOfBirth).toISOString().split("T")[0] : ""
+      dateOfBirth: s.dateOfBirth ? new Date(s.dateOfBirth).toISOString().split("T")[0] : "", status: s.status || "ACTIVE"
     })
     setShowAddModal(true)
   }
@@ -222,6 +222,7 @@ export function AdminClassStudentsClient({ classId, initialStudents }: any) {
                      <option value="Khác">Khác</option>
                    </select>
                  </div>
+                 {editingStudent && (<div><label className="block text-sm font-semibold text-slate-700 mb-1">Trạng thái</label><select value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value })} className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500 transition-all"><option value="ACTIVE">⚡ Đang hoạt động</option><option value="LOCKED">🔒 Đã khóa</option></select></div>)}
                  <div>
                    <label className="block text-sm font-semibold text-slate-700 mb-1">Ngày sinh</label>
                    <input type="date" value={formData.dateOfBirth} onChange={e => setFormData({ ...formData, dateOfBirth: e.target.value })} className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" />
@@ -270,7 +271,7 @@ export function AdminClassStudentsClient({ classId, initialStudents }: any) {
               <th className="px-6 py-4 border-r border-slate-200">Mã HS</th>
               <th className="px-6 py-4 border-r border-slate-200">Họ và Tên</th>
               <th className="px-6 py-4 border-r border-slate-200">Giới tính</th>
-              <th className="px-6 py-4 border-r border-slate-200">Ngày sinh</th>
+              <th className="px-6 py-4 border-r border-slate-200">Ngày sinh</th><th className="px-6 py-4 border-r border-slate-200">Trạng thái</th>
               <th className="px-6 py-4 text-center">Thao tác</th>
             </tr>
           </thead>
