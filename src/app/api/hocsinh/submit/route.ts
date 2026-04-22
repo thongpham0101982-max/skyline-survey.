@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     if (!formId || !answers) return NextResponse.json({ error: 'Thieu du lieu' }, { status: 400 })
 
     const form = await prisma.surveyForm.findFirst({
-      where: { id: formId, studentId: session.studentId, status: 'DRAFT' },
+      where: { id: formId, studentId: session.studentId, status: { in: ['DRAFT', 'PENDING', 'pending'] } },
       include: { surveyPeriod: { include: { questions: true } } }
     })
     if (!form) return NextResponse.json({ error: 'Phieu khao sat khong hop le hoac da nop' }, { status: 404 })

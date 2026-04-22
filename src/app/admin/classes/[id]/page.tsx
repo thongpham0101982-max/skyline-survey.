@@ -7,6 +7,11 @@ import { AdminClassStudentsClient } from "./client"
 export default async function AdminClassDetailPage({ params }: any) {
   const { id: classId } = await params
   
+  const activeSurveys = await prisma.surveyPeriod.findMany({
+    where: { status: 'ACTIVE', targetAudience: { contains: 'Hoc' } },
+    orderBy: { endDate: 'asc' }
+  });
+
   const classInfo = await prisma.class.findUnique({
     where: { id: classId },
     include: {
@@ -31,7 +36,7 @@ export default async function AdminClassDetailPage({ params }: any) {
         </div>
       </div>
 
-      <AdminClassStudentsClient classId={classId} initialStudents={classInfo.students} />
+      <AdminClassStudentsClient classId={classId} initialStudents={classInfo.students} activeSurveys={activeSurveys} />
     </div>
   )
 }

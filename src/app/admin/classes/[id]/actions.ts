@@ -114,3 +114,41 @@ export async function deleteStudentsAction(classId: string, studentIds: string[]
     return { success: false, error: e.message }
   }
 }
+export async function assignSurveyToStudentAction(studentId: string, surveyPeriodId: string) {
+  try {
+    const student = await prisma.student.findUnique({
+      where: { id: studentId },
+      include: { class: true }
+    })
+    if (!student) return { success: false, error: "Không tìm thấy học sinh" }
+
+    const period = await prisma.surveyPeriod.findUnique({
+      where: { id: surveyPeriodId }
+    })
+    if (!period) return { success: false, error: "Không tìm thấy đợt khảo sát" }
+
+    const existing = await prisma.surveyForm.findFirst({
+      where: {
+        studentId: student.id,
+        surveyPeriodId: period.id,
+        parentId: null
+      }
+    })
+    if (existing) return { success: false, error: "Đã gán đợt khảo sát này cho học sinh." }
+
+    await prisma.surveyForm.create({
+      data: {
+        surveyPeriodId: period.id,
+        studentId: student.id,
+        classId: student.classId,
+        campusId: student.campusId,
+        academicYearId: student.academicYearId || 'AY-2026',
+        status: 'PENDING'
+      }
+    })
+
+    return { success: true }
+  } catch (e: any) {
+    return { success: false, error: e.message }
+  }
+}

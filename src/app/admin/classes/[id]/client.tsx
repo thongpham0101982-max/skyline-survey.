@@ -1,16 +1,19 @@
 "use client"
 import { useState, useRef } from "react"
-import { Upload, Download, UserCircle2, Plus, Trash2, Edit2, X, Save } from "lucide-react"
+import { Upload, Download, UserCircle2, Plus, Trash2, Edit2, X, Save, Send } from "lucide-react"
 import * as xlsx from "xlsx"
-import { importStudentsAction, addStudentAction, updateStudentAction, deleteStudentsAction } from "./actions"
+import { importStudentsAction, addStudentAction, updateStudentAction, deleteStudentsAction, assignSurveyToStudentAction } from "./actions"
 
-export function AdminClassStudentsClient({ classId, initialStudents }: any) {
+export function AdminClassStudentsClient({ classId, initialStudents, activeSurveys = [] }: any) {
   const [students, setStudents] = useState(initialStudents)
   const [uploading, setUploading] = useState(false)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [editingStudent, setEditingStudent] = useState<any>(null)
   const [showAddModal, setShowAddModal] = useState(false)
+  const [showAssignModal, setShowAssignModal] = useState(false)
+  const [selectedSurveyId, setSelectedSurveyId] = useState('')
+  const [assigningStudent, setAssigningStudent] = useState<any>(null)
   const [formData, setFormData] = useState({ studentCode: "", studentName: "", gender: "Nam", dateOfBirth: "", status: "ACTIVE" })
 
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -159,6 +162,20 @@ export function AdminClassStudentsClient({ classId, initialStudents }: any) {
     setSubmitting(false)
   }
 
+  
+  const handleAssign = async () => {
+    if (!selectedSurveyId || !assigningStudent) return
+    setSubmitting(true)
+    const res = await assignSurveyToStudentAction(assigningStudent.id, selectedSurveyId)
+    if (res.success) {
+      alert("Đã gán khảo sát thành công!")
+      setShowAssignModal(false)
+    } else {
+      alert("Lỗi: " + res.error)
+    }
+    setSubmitting(false)
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSubmitting(true)
@@ -197,6 +214,37 @@ export function AdminClassStudentsClient({ classId, initialStudents }: any) {
   return (
     <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
       {/* Modal for Add/Edit */}
+      
+      {/* Modal for Assign Survey */}
+      {showAssignModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-6 py-4 border-b bg-emerald-50 flex items-center justify-between">
+               <h3 className="font-bold text-emerald-800">Gán Khảo Sát cho {assigningStudent?.studentName}</h3>
+               <button onClick={() => setShowAssignModal(false)} className="p-1 hover:bg-emerald-200 rounded-full transition-colors"><X className="w-5 h-5 text-emerald-500" /></button>
+            </div>
+            <div className="p-6 space-y-4">
+               <div>
+                 <label className="block text-sm font-semibold text-slate-700 mb-1">Chọn đợt khảo sát *</label>
+                 <select value={selectedSurveyId} onChange={e => setSelectedSurveyId(e.target.value)} className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500 transition-all">
+                   <option value="">-- Chọn đợt khảo sát --</option>
+                   {activeSurveys.map((s: any) => (
+                     <option key={s.id} value={s.id}>{s.name} (Hết hạn: {new Date(s.endDate).toLocaleDateString('vi-VN')})</option>
+                   ))}
+                 </select>
+                 {activeSurveys.length === 0 && <p className="text-xs text-amber-600 mt-1">Không có đợt khảo sát nào đang hoạt động.</p>}
+               </div>
+               <div className="pt-4 flex gap-3">
+                 <button onClick={() => setShowAssignModal(false)} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl transition-all">Hủy</button>
+                 <button onClick={handleAssign} disabled={submitting || !selectedSurveyId} className="flex-[2] bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl transition-all shadow-lg shadow-emerald-200 disabled:opacity-50">
+                   {submitting ? "Đang xử lý..." : "Xác nhận Gán"}
+                 </button>
+               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
@@ -308,6 +356,9 @@ export function AdminClassStudentsClient({ classId, initialStudents }: any) {
                   </td>
                   <td className="px-6 py-4 text-center">
                      <div className="flex justify-center gap-1">
+                        <button onClick={() => { setAssigningStudent(student); setSelectedSurveyId(''); setShowAssignModal(true); }} className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors" title="Gán khảo sát">
+                          <Send className="w-4 h-4" />
+                        </button>
                         <button onClick={() => openEdit(student)} className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Sửa">
                           <Edit2 className="w-4 h-4" />
                         </button>
