@@ -1,4 +1,4 @@
-﻿"use server"
+"use server"
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 
@@ -40,10 +40,12 @@ export async function createSurveyPeriodAction(data: {
 }
 
 export async function updateSurveyPeriodAction(data: any) {
+  if (!data.id) return { error: "Thiếu ID" }
+
   const payload: any = {}
   if (data.name) payload.name = data.name
-  if (data.startDate) payload.startDate = data.startDate
-  if (data.endDate) payload.endDate = data.endDate
+  if (data.startDate) payload.startDate = new Date(data.startDate)
+  if (data.endDate) payload.endDate = new Date(data.endDate)
   if (data.status) payload.status = data.status
   if (data.isActive !== undefined) payload.isActive = data.isActive
   if (data.targetAudience) payload.targetAudience = data.targetAudience
@@ -54,18 +56,32 @@ export async function updateSurveyPeriodAction(data: any) {
       where: { id: data.id },
       data: payload
     })
-  } catch(e) {}
-  revalidatePath("/admin/surveys")
+    revalidatePath("/admin/surveys")
+    return { success: true }
+  } catch(e: any) {
+    console.error('Update Survey Error:', e)
+    return { error: e.message }
+  }
 }
 
 export async function deleteSurveyPeriodAction(id: string) {
-  await prisma.surveyPeriod.delete({ where: { id } }).catch(()=>{})
-  revalidatePath("/admin/surveys")
+  try {
+    await prisma.surveyPeriod.delete({ where: { id } })
+    revalidatePath("/admin/surveys")
+    return { success: true }
+  } catch (e: any) {
+    return { error: e.message }
+  }
 }
 
 export async function deleteMultipleSurveysAction(ids: string[]) {
-  await prisma.surveyPeriod.deleteMany({
-    where: { id: { in: ids } }
-  }).catch(()=>{})
-  revalidatePath("/admin/surveys")
+  try {
+    await prisma.surveyPeriod.deleteMany({
+      where: { id: { in: ids } }
+    })
+    revalidatePath("/admin/surveys")
+    return { success: true }
+  } catch (e: any) {
+    return { error: e.message }
+  }
 }
