@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
       campusName: student.campus?.campusName || '', exp: Date.now() + 2 * 24 * 60 * 60 * 1000 // 2 days
     })
     
-    const res = NextResponse.json({ ok: true, formId: pendingForm?.id || null, studentName: student.studentName })
+    const res = NextResponse.json({ ok: true, token, formId: pendingForm?.id || null, studentName: student.studentName })
     
     // Set cookie with broad compatibility
     res.cookies.set('hs_token', token, {
