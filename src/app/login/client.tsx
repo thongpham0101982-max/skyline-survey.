@@ -36,7 +36,7 @@ export function LoginClient() {
            setError(data.error || 'Thong tin khong hop le')
            setLoading(false); return
         }
-        if (data.formId) window.location.assign('/hocsinh/Hs-khaosat/lam/' + data.formId); else window.location.assign('/hocsinh/Hs-khaosat/danh-sach');
+        console.log('Login success, redirecting...'); if (data.formId) window.location.href = '/hocsinh/Hs-khaosat/lam/' + data.formId; else window.location.href = '/hocsinh/Hs-khaosat/danh-sach';
       } else {
         const result = await signIn('credentials', {
           email: identifier.trim(),
