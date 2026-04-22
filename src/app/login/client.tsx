@@ -157,6 +157,12 @@ export function LoginClient() {
               <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
               {loading ? 'DANG XAC THUC...' : 'Dang nhap'}
             </button>
+
+            {debugLog.length > 0 && (
+              <div className="mt-8 p-4 bg-black/80 rounded-2xl border border-white/20 text-emerald-400 font-mono text-[10px] space-y-1">
+                {debugLog.map((l, i) => <div key={i}>{"> "} {l}</div>)}
+              </div>
+            )}
           </div>
         </div>
         <p className="text-center mt-12 text-sm font-extrabold text-[#5C2E0B]/50 tracking-wider">© 2026 SQMS • Skyline Education</p>
