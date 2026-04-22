@@ -40,21 +40,6 @@ export async function POST(req: NextRequest) {
     })
 
     let formId = null;
-
-    if (activePeriod) {
-      // Tìm form đã được gán cho học sinh này trong đợt này
-      const form = await prisma.surveyForm.findFirst({
-        where: {
-          studentId: student.id,
-          surveyPeriodId: activePeriod.id,
-          parentId: null
-        }
-      })
-      
-      if (form) {
-        formId = form.id;
-      }
-    }
     
     const token = signStudentToken({
       studentId: student.id, 
