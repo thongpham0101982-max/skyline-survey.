@@ -6,7 +6,8 @@ export default auth((req) => {
   const isOnApiAuthRoute = req.nextUrl.pathname.startsWith('/api/auth')
   const isOnLogin = req.nextUrl.pathname.startsWith('/login')
   
-  if (isOnApiAuthRoute) return
+  const isOnHocSinh = req.nextUrl.pathname.toLowerCase().startsWith('/hocsinh');
+  if (isOnApiAuthRoute || isOnHocSinh) return
   
   if (!isLoggedIn && !isOnLogin) {
     return NextResponse.redirect(new URL('/login', req.nextUrl))
