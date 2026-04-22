@@ -37,11 +37,10 @@ export function LoginClient() {
            setLoading(false); return
         }
         console.log('Login success, redirecting...'); 
-        alert("Đăng nhập thành công! Đang chuyển hướng cho học sinh: " + data.studentName);
         if (data.formId) {
-          router.push('/hocsinh/Hs-khaosat/lam/' + data.formId);
+          router.push('/hocsinh/hs-khaosat/lam/' + data.formId);
         } else {
-          router.push('/hocsinh/Hs-khaosat/danh-sach');
+          router.push('/hocsinh/hs-khaosat/danh-sach');
         }
         router.refresh();
 
