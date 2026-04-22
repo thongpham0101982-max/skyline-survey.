@@ -14,15 +14,17 @@ export function LoginClient() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [debugLog, setDebugLog] = useState<string[]>([]);
   const [showPassword, setShowPassword] = useState(false)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => { setMounted(true) }, [])
 
+  const log = (msg: string) => { console.log(msg); setDebugLog(prev => [...prev.slice(-4), msg]); };
   const handleSubmit = async (e: React.FormEvent) => {
     
     e.preventDefault()
-    console.log("Submit triggered for role:", role);
+    log("Bắt đầu xử lý đăng nhập " + role);
     setError('')
     setLoading(true)
 
