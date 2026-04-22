@@ -1,14 +1,20 @@
-﻿import { createHmac } from 'crypto'
+import { createHmac } from 'crypto'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 
-// Use a fixed hardcoded secret for students to avoid environment-sync issues on Vercel
 const SECRET = 'skyline-student-survey-secure-key-2025'
 const COOKIE = 'hs_token'
 
 export interface StudentSession {
-  studentId: string; studentCode: string; studentName: string
-  classId: string; className: string; campusName: string; exp: number
+  studentId: string; 
+  studentCode: string; 
+  studentName: string;
+  classId: string; 
+  className: string; 
+  campusId: string;
+  campusName: string; 
+  academicYearId: string;
+  exp: number;
 }
 
 export function signStudentToken(p: StudentSession): string {
@@ -39,7 +45,6 @@ export async function getStudentSession(): Promise<StudentSession | null> {
 
 export async function requireStudentSession(): Promise<StudentSession> {
   const s = await getStudentSession()
-  // Redirect to the MAIN login if session fails
   if (!s) redirect('/login')
   return s
 }
