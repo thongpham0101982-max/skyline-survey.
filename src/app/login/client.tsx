@@ -66,9 +66,7 @@ export function LoginClient() {
         addStep('Đăng nhập thành công! Đang chuyển trang...')
         await new Promise(r => setTimeout(r, 500))
 
-        const targetUrl = data.formId
-          ? '/hocsinh/hs-khaosat/lam/' + data.formId
-          : '/hocsinh/hs-khaosat/danh-sach'
+        const targetUrl = '/hocsinh/hs-khaosat/danh-sach'
 
         document.cookie =
           'hs_token=' + data.token +
