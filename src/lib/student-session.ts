@@ -34,6 +34,6 @@ export async function getStudentSession(): Promise<StudentSession | null> {
 
 export async function requireStudentSession(): Promise<StudentSession> {
   const s = await getStudentSession()
-  if (!s) redirect('/hocsinh/Hs-khaosat')
+  if (!s) redirect('/hocsinh/hs-khaosat')
   return s
 }

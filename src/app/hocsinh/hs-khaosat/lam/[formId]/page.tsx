@@ -16,9 +16,9 @@ export default async function HsLamPage({ params }: { params: Promise<{ formId: 
     }
   })
 
-  if (!form) redirect('/hocsinh/Hs-khaosat/danh-sach')
-  if (form.status === 'SUBMITTED') redirect('/hocsinh/Hs-khaosat/danh-sach')
-  if (!form.surveyPeriod.questions.length) redirect('/hocsinh/Hs-khaosat/danh-sach')
+  if (!form) redirect('/hocsinh/hs-khaosat/danh-sach')
+  if (form.status === 'SUBMITTED') redirect('/hocsinh/hs-khaosat/danh-sach')
+  if (!form.surveyPeriod.questions.length) redirect('/hocsinh/hs-khaosat/danh-sach')
 
   return (
     <HsFormClient

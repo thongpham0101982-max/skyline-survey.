@@ -48,7 +48,7 @@ export default function HsFormClient({ formId, periodName, studentName, classNam
     })
     if (!res.ok) { const d = await res.json(); setErr(d.error || 'Loi gui bai'); setSubmitting(false); return }
     setDone(true)
-    setTimeout(() => router.push('/hocsinh/Hs-khaosat/danh-sach'), 3000)
+    setTimeout(() => router.push('/hocsinh/hs-khaosat/danh-sach'), 3000)
   }
 
   if (done) return (
@@ -69,7 +69,7 @@ export default function HsFormClient({ formId, periodName, studentName, classNam
       <div className="text-white sticky top-0 z-50 shadow-lg" style={{ background: 'linear-gradient(135deg,#BE1E2E,#8b0000)' }}>
         <div className="max-w-2xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between mb-2">
-            <Link href="/hocsinh/Hs-khaosat/danh-sach" className="flex items-center gap-1.5 text-white/70 hover:text-white text-xs font-bold transition-colors">
+            <Link href="/hocsinh/hs-khaosat/danh-sach" className="flex items-center gap-1.5 text-white/70 hover:text-white text-xs font-bold transition-colors">
               <ArrowLeft className="w-4 h-4" /> Quay lai
             </Link>
             <span className="text-[10px] font-black text-white/50 uppercase tracking-widest flex items-center gap-1">

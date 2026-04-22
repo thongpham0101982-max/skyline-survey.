@@ -102,7 +102,7 @@ export default async function HsDanhSachPage() {
                         </div>
                       </div>
                     </div>
-                    <Link href={'/hocsinh/Hs-khaosat/lam/' + form.id}
+                    <Link href={'/hocsinh/hs-khaosat/lam/' + form.id}
                       className="flex items-center justify-center gap-2 px-6 py-3 rounded-2xl text-xs font-black text-white uppercase tracking-wider transition-all hover:scale-105 active:scale-95 whitespace-nowrap"
                       style={{ background: '#0f172a' }}>
                       Lam ngay <ArrowRight className="w-4 h-4" />
