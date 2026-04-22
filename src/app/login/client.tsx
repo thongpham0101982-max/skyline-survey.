@@ -36,7 +36,15 @@ export function LoginClient() {
            setError(data.error || 'Thong tin khong hop le')
            setLoading(false); return
         }
-        console.log('Login success, redirecting...'); if (data.formId) window.location.href = '/hocsinh/Hs-khaosat/lam/' + data.formId; else window.location.href = '/hocsinh/Hs-khaosat/danh-sach';
+        console.log('Login success, redirecting...'); 
+        alert("Đăng nhập thành công! Đang chuyển hướng cho học sinh: " + data.studentName);
+        if (data.formId) {
+          router.push('/hocsinh/Hs-khaosat/lam/' + data.formId);
+        } else {
+          router.push('/hocsinh/Hs-khaosat/danh-sach');
+        }
+        router.refresh();
+
       } else {
         const result = await signIn('credentials', {
           email: identifier.trim(),
