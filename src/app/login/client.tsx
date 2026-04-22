@@ -20,16 +20,19 @@ export function LoginClient() {
   useEffect(() => { setMounted(true) }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
+    
     e.preventDefault()
+    console.log("Submit triggered for role:", role);
     setError('')
     setLoading(true)
+
 
     try {
       if (role === 'STUDENT') {
         const res = await fetch('/api/hocsinh/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ studentCode: identifier.trim(), password: password || identifier.trim() })
+          body: JSON.stringify({ studentCode: identifier.trim(), password: (password && password.trim()) || identifier.trim() })
         })
         const data = await res.json()
         if (!res.ok) {
