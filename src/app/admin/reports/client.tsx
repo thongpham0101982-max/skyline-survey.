@@ -1,4 +1,5 @@
-﻿"use client"
+﻿import Link from 'next/link'
+"use client"
 import { useState, useEffect, useMemo } from "react"
 import { 
   getSurveyPeriodTrackingAction, 
@@ -349,16 +350,26 @@ export function TrackingClient({ periods }: any) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
           <div className="space-y-2">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">1. Đợt khảo sát (Period)</label>
-            <select 
-              value={selectedPeriod} 
-              onChange={(e) => setSelectedPeriod(e.target.value)}
-              className="w-full p-4 border-2 border-slate-100 rounded-2xl focus:border-indigo-500 font-bold text-indigo-900 bg-slate-50 outline-none transition-all shadow-sm"
-            >
-              <option value="">-- Click để chọn Mốc Khảo Sát --</option>
-              {periods.map((p: any) => (
-                 <option key={p.id} value={p.id}>{p.name} ({p.status})</option>
-              ))}
-            </select>
+            <div className="flex gap-2">
+              <select 
+                value={selectedPeriod} 
+                onChange={(e) => setSelectedPeriod(e.target.value)}
+                className="flex-1 p-4 border-2 border-slate-100 rounded-2xl focus:border-indigo-500 font-bold text-indigo-900 bg-slate-50 outline-none transition-all shadow-sm"
+              >
+                <option value="">-- Click để chọn Mốc Khảo Sát --</option>
+                {periods.map((p: any) => (
+                   <option key={p.id} value={p.id}>{p.name} ({p.status})</option>
+                ))}
+              </select>
+              {selectedPeriod && (
+                <Link 
+                  href={`/admin/surveys/${selectedPeriod}/results`}
+                  className="px-6 py-4 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase flex items-center gap-2 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100"
+                >
+                  <BarChart3 className="w-4 h-4" /> Phân tích
+                </Link>
+              )}
+            </div>
           </div>
 
           <div className="space-y-2">
