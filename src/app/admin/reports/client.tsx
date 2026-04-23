@@ -330,7 +330,7 @@ export function TrackingClient({ periods }: any) {
            <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center shadow-inner"><LayoutDashboard className="w-6 h-6" /></div>
               <div>
-                 <h2 className="text-xl font-black text-slate-800 tracking-tight">Cấu hình Đợt khảo sát</h2>
+                 <h2 className="text-xl font-black text-slate-800 tracking-tight">Cấu hình Đợt khảo sát (v2)</h2>
                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Chọn mốc thời gian & Lọc dữ liệu lớp học</p>
               </div>
            </div>
@@ -641,5 +641,6 @@ export function TrackingClient({ periods }: any) {
     </div>
   )
 }
+
 
 
