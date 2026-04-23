@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useState, useMemo } from 'react'
-import { Building2, GraduationCap, LayoutGrid, BarChart3, PieChart, Users, TrendingUp, AlertCircle } from 'lucide-react'
+import { Building2, GraduationCap, LayoutGrid, BarChart3, PieChart, Users, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
 
 interface FormResponse {
