@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { GraduationCap, Lock, User, ArrowRight, Eye, EyeOff, AlertCircle } from 'lucide-react'

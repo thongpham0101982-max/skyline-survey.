@@ -1,3 +1,3 @@
-﻿export default function HsLayout({ children }: { children: React.ReactNode }) {
+export default function HsLayout({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }

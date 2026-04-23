@@ -1,4 +1,4 @@
-﻿import { prisma } from "@/lib/db"
+import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { ClipboardList, ArrowRight, CalendarDays, CheckCircle2, Clock } from "lucide-react"
 import Link from "next/link"

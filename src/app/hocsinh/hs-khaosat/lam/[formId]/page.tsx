@@ -1,4 +1,4 @@
-﻿import { requireStudentSession } from '@/lib/student-session'
+import { requireStudentSession } from '@/lib/student-session'
 import { prisma } from '@/lib/db'
 import { redirect } from 'next/navigation'
 import HsFormClient from './client'
