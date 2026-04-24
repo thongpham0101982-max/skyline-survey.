@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useState, useMemo, useEffect } from 'react'
-import { BarChart3, Filter, Download, ChevronRight, PieChart as PieIcon, Layout, Database, Share2, Info } from 'lucide-react'
+import { BarChart3, Filter, Download, ChevronRight, PieChart as PieIcon, Layout, Database, Share2, Info, Users, MessageSquare, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts'
 

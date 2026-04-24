@@ -1,8 +1,13 @@
 ﻿import { prisma } from "@/lib/db"
+import { auth } from "@/lib/auth"
 import { ParentAccountsClient } from "./client"
 import { ShieldCheck } from "lucide-react"
 
 export default async function ParentAccountsPage() {
+  const session = await auth();
+  const user = session?.user as any;
+  const isGDCS = user?.role === 'GDCS';
+  const allowedCampusIds = user?.campusIds || [];
   const years = await prisma.academicYear.findMany({
     orderBy: { startDate: "desc" },
     select: { id: true, name: true, status: true }
@@ -10,10 +15,12 @@ export default async function ParentAccountsPage() {
   const defaultYearId = years.find(y => y.status === "ACTIVE")?.id || years[0]?.id || null
 
   const campuses = await prisma.campus.findMany({
+    where: isGDCS ? { id: { in: allowedCampusIds } } : { status: "ACTIVE" },
     orderBy: { campusName: "asc" }
   })
 
   const classes = await prisma.class.findMany({
+    where: isGDCS ? { campusId: { in: allowedCampusIds } } : {},
     include: { campus: true, academicYear: { select: { id: true, name: true } } },
     orderBy: [{ academicYear: { startDate: "desc" } }, { className: "asc" }]
   })

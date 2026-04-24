@@ -6,7 +6,7 @@ import { createUser, updateUser, deleteUser, deleteUsers } from "./actions"
 export function UsersClient({ initialUsers, roles, campuses = [] }: any) {
   const [users, setUsers] = useState(initialUsers || []);
   const [editingId, setEditingId] = useState("");
-  const [formData, setFormData] = useState({ employeeCode: "", fullName: "", password: "", roleCode: "ADMIN" });
+  const [formData, setFormData] = useState({ employeeCode: "", fullName: "", password: "", roleCode: "ADMIN", campusIds: [] as string[] });
   const [loading, setLoading] = useState(false);
   const [filterRole, setFilterRole] = useState("ALL");
   const [filterCampus, setFilterCampus] = useState("ALL");
@@ -17,11 +17,18 @@ export function UsersClient({ initialUsers, roles, campuses = [] }: any) {
   const startEdit = (u?: any) => {
     if (u) {
       setEditingId(u.id);
-      setFormData({ employeeCode: u.email, fullName: u.fullName, password: "", roleCode: u.role || "ADMIN" });
+      setFormData({ employeeCode: u.email, fullName: u.fullName, password: "", roleCode: u.role || "ADMIN", campusIds: u.campusIds || [] });
     } else {
       setEditingId("new");
-      setFormData({ employeeCode: "", fullName: "", password: "", roleCode: filterRole !== "ALL" ? filterRole : (roles[0]?.code || "ADMIN") });
+      setFormData({ employeeCode: "", fullName: "", password: "", roleCode: filterRole !== "ALL" ? filterRole : (roles[0]?.code || "ADMIN"), campusIds: [] });
     }
+  }
+
+  
+  const toggleCampus = (id: string) => {
+    const current = formData.campusIds || [];
+    if (current.includes(id)) setFormData({ ...formData, campusIds: current.filter(x => x !== id) });
+    else setFormData({ ...formData, campusIds: [...current, id] });
   }
 
   const cancelEdit = () => {
@@ -157,11 +164,24 @@ export function UsersClient({ initialUsers, roles, campuses = [] }: any) {
                   <td className="px-6 py-3"></td>
                   <td className="px-6 py-3"><input value={formData.employeeCode} onChange={e=>setFormData({...formData, employeeCode: e.target.value})} placeholder="Vd: NV001" className="w-32 p-1.5 rounded border text-sm" /></td>
                   <td className="px-6 py-3"><input value={formData.fullName} onChange={e=>setFormData({...formData, fullName: e.target.value})} placeholder="Nguyễn Văn A" className="w-full p-1.5 rounded border text-sm" /></td>
+                  
                   <td className="px-6 py-3">
                     <select value={formData.roleCode} onChange={e=>setFormData({...formData, roleCode: e.target.value})} className="p-1.5 rounded border text-sm bg-white border-slate-300">
                       {roles.map((r:any) => <option key={r.code} value={r.code}>{r.name} ({r.code})</option>)}
                     </select>
+                    {formData.roleCode === "GDCS" && (
+                      <div className="mt-2 p-2 bg-white border rounded-lg space-y-1">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase">Gán Cơ sở quản lý:</p>
+                        {campuses.map((c: any) => (
+                          <label key={c.id} className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-1 rounded">
+                            <input type="checkbox" checked={formData.campusIds.includes(c.id)} onChange={() => toggleCampus(c.id)} className="w-3 h-3" />
+                            <span className="text-[11px] font-medium">{c.campusName}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
                   </td>
+
                   <td className="px-6 py-3 border-l border-slate-200"><input type="password" value={formData.password} onChange={e=>setFormData({...formData, password: e.target.value})} placeholder="Nhập mật khẩu..." className="w-32 p-1.5 rounded border text-sm" /></td>
                   <td className="px-6 py-3 text-right">
                     <button onClick={handleSave} disabled={loading} className="px-2 py-1 text-green-600 hover:bg-green-100 rounded-lg mr-2"><CheckCircle2 className="w-5 h-5"/></button>
@@ -174,11 +194,24 @@ export function UsersClient({ initialUsers, roles, campuses = [] }: any) {
                   <td className="px-6 py-3"></td>
                   <td className="px-6 py-3"><input value={formData.employeeCode} onChange={e=>setFormData({...formData, employeeCode: e.target.value})} className="w-32 p-1.5 rounded border text-sm font-semibold border-slate-300" /></td>
                   <td className="px-6 py-3"><input value={formData.fullName} onChange={e=>setFormData({...formData, fullName: e.target.value})} className="w-full p-1.5 rounded border text-sm border-slate-300" /></td>
+                  
                   <td className="px-6 py-3">
-                    <select value={formData.roleCode} onChange={e=>setFormData({...formData, roleCode: e.target.value})} className="p-1.5 rounded border text-sm bg-white font-medium text-indigo-700 border-slate-300">
-                      {roles.map((r:any) => <option key={r.code} value={r.code}>{r.name}</option>)}
+                    <select value={formData.roleCode} onChange={e=>setFormData({...formData, roleCode: e.target.value})} className="p-1.5 rounded border text-sm bg-white border-slate-300">
+                      {roles.map((r:any) => <option key={r.code} value={r.code}>{r.name} ({r.code})</option>)}
                     </select>
+                    {formData.roleCode === "GDCS" && (
+                      <div className="mt-2 p-2 bg-white border rounded-lg space-y-1">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase">Gán Cơ sở quản lý:</p>
+                        {campuses.map((c: any) => (
+                          <label key={c.id} className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-1 rounded">
+                            <input type="checkbox" checked={formData.campusIds.includes(c.id)} onChange={() => toggleCampus(c.id)} className="w-3 h-3" />
+                            <span className="text-[11px] font-medium">{c.campusName}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
                   </td>
+
                   <td className="px-6 py-3 border-l border-slate-200"><input type="password" value={formData.password} onChange={e=>setFormData({...formData, password: e.target.value})} placeholder="(Bỏ trống nếu giữ nguyên)" className="w-48 p-1.5 rounded border text-sm border-slate-300" /></td>
                   <td className="px-6 py-3 text-right">
                     <button onClick={handleSave} disabled={loading} className="px-2 py-1 text-green-600 hover:bg-green-100 rounded-lg mr-2"><CheckCircle2 className="w-5 h-5"/></button>
@@ -198,11 +231,23 @@ export function UsersClient({ initialUsers, roles, campuses = [] }: any) {
                   </td>
                   <td className="px-6 py-3 font-semibold text-slate-700 text-sm">{u.email}</td>
                   <td className="px-6 py-3 text-slate-800 text-sm">{u.fullName}</td>
+                  
                   <td className="px-6 py-3">
-                    <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
-                      {roles.find((r:any) => r.code === u.role)?.name || u.role}
-                    </span>
+                    <div className="flex flex-col gap-1">
+                      <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 w-fit">
+                        {roles.find((r:any) => r.code === u.role)?.name || u.role}
+                      </span>
+                      {u.campusIds && u.campusIds.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {u.campusIds.map((cid: string) => {
+                            const c = campuses.find((cx: any) => cx.id === cid);
+                            return c ? <span key={cid} className="text-[9px] bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded border border-emerald-100 font-bold uppercase">{c.campusName}</span> : null;
+                          })}
+                        </div>
+                      )}
+                    </div>
                   </td>
+
                   <td className="px-6 py-3 border-l border-slate-200 text-xs text-slate-400 italic">*** (Đã mã hóa)</td>
                   <td className="px-6 py-3 text-right">
                     <button onClick={() => startEdit(u)} className="p-2 text-slate-400 hover:text-indigo-600 rounded-lg"><Edit2 className="w-4 h-4"/></button>

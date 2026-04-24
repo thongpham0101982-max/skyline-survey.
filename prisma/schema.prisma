@@ -28,6 +28,7 @@ model User {
   weeklyReports                    WeeklyReport[]
   receivedTasks                    WorkTask[]                         @relation("TaskAssignee")
   assignedTasks                    WorkTask[]                         @relation("TaskAssigner")
+  campusAssignments                UserCampusAssignment[]
 }
 
 model Parent {
@@ -77,6 +78,7 @@ model Campus {
   summaries              SummaryByCampus[]
   surveyForms            SurveyForm[]
   teachers               Teacher[]
+  userAssignments        UserCampusAssignment[]
 }
 
 model AcademicYear {
@@ -661,3 +663,13 @@ model StudentAssessmentScore {
 
 
 
+
+model UserCampusAssignment {
+  id       String @id @default(cuid())
+  userId   String
+  campusId String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campus   Campus @relation(fields: [campusId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, campusId])
+}

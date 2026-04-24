@@ -1,10 +1,15 @@
 import { prisma } from "@/lib/db"
+import { auth } from "@/lib/auth"
 import { InputAssessmentsClient } from "./client"
 
 export const metadata = { title: "Quản lý KSNL đầu vào | Admin" }
 export const dynamic = "force-dynamic";
 
 export default async function InputAssessmentsPage() {
+  const session = await auth();
+  const user = session?.user as any;
+  const isGDCS = user?.role === 'GDCS';
+  const allowedCampusIds = user?.campusIds || [];
   let academicYears: any[] = [];
   let campuses: any[] = [];
   let examBoardUsers: any[] = [];
@@ -20,7 +25,7 @@ export default async function InputAssessmentsPage() {
     const pAny = prisma as any;
 
     academicYears = await prisma.academicYear.findMany({ orderBy: { startDate: "desc" } }).catch(e => { console.error("AY fetch", e); return []; });
-    campuses = await prisma.campus.findMany({ where: { status: "ACTIVE" }, orderBy: { campusName: "asc" } }).catch(() => []);
+    campuses = await prisma.campus.findMany({ where: isGDCS ? { id: { in: allowedCampusIds } } : { status: "ACTIVE" }, orderBy: { campusName: "asc" } }).catch(() => []);
     examBoardUsers = await prisma.user.findMany({ 
       where: { role: { in: ["ADMIN", "KT_DBCL"] }, status: "ACTIVE" }, 
       select: { id: true, fullName: true } 

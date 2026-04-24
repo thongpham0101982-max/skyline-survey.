@@ -20,7 +20,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         let user: any = null
 
         // 1. Direct User table match (Admin / Staff)
-        user = await prisma.user.findUnique({ where: { email: identifier } })
+        user = await prisma.user.findUnique({ where: { email: identifier }, include: { campusAssignments: true } })
 
         // 2. Teacher Code Match
         if (!user) {
@@ -65,6 +65,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           email: user.email,
           name: user.fullName,
           role: user.role,
+          campusIds: user.campusAssignments?.map((a: any) => a.campusId) || []
         }
       },
     }),
@@ -75,6 +76,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         token.id = user.id
         token.role = (user as any).role
+        token.campusIds = (user as any).campusIds
       }
       return token
     },
@@ -82,6 +84,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (token && session.user) {
         session.user.id = token.id as string
         ;(session.user as any).role = token.role as string
+        ;(session.user as any).campusIds = token.campusIds as string[]
       }
       return session
     },

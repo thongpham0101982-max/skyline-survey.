@@ -6,7 +6,7 @@ import bcrypt from "bcryptjs"
 export async function createUser(data: any) {
   try {
     const passwordHash = await bcrypt.hash(data.password, 10);
-    await prisma.user.create({
+    const newUser = await prisma.user.create({
       data: {
         email: data.employeeCode,
         fullName: data.fullName,
@@ -15,6 +15,11 @@ export async function createUser(data: any) {
         status: "ACTIVE"
       }
     });
+    if (data.campusIds && data.campusIds.length > 0) {
+      await prisma.userCampusAssignment.createMany({
+        data: data.campusIds.map((cid: string) => ({ userId: newUser.id, campusId: cid }))
+      });
+    }
     revalidatePath("/admin/users");
     return { success: true };
   } catch (e: any) {
@@ -38,6 +43,14 @@ export async function updateUser(id: string, data: any) {
       where: { id },
       data: updateData
     });
+    if (data.campusIds) {
+      await prisma.userCampusAssignment.deleteMany({ where: { userId: id } });
+      if (data.campusIds.length > 0) {
+        await prisma.userCampusAssignment.createMany({
+          data: data.campusIds.map((cid: string) => ({ userId: id, campusId: cid }))
+        });
+      }
+    }
     revalidatePath("/admin/users");
     return { success: true };
   } catch (e: any) {

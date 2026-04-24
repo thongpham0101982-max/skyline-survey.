@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
+import { auth } from "@/lib/auth"
 
 export async function GET(req) {
+  const session = await auth();
+  const user = session?.user as any;
+  const isGDCS = user?.role === 'GDCS';
+  const allowedCampusIds = user?.campusIds || [];
   try {
     const { searchParams } = new URL(req.url);
     const periodId = searchParams.get("periodId");

@@ -8,6 +8,7 @@ export default async function UsersPage() {
   const users = await prisma.user.findMany({
     orderBy: { createdAt: 'desc' },
     include: {
+      campusAssignments: true,
       parent: {
         include: {
           students: {
@@ -29,7 +30,7 @@ export default async function UsersPage() {
 
   // Map users to include their campus IDs
   const mappedUsers = users.map((u: any) => {
-    let campusIds: string[] = [];
+    let campusIds: string[] = u.campusAssignments.map((a: any) => a.campusId);
     if (u.teacher && u.teacher.campusId) campusIds.push(u.teacher.campusId);
     if (u.parent) {
       u.parent.students.forEach((link: any) => {
