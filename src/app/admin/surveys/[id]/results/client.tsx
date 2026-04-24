@@ -382,7 +382,7 @@ one, fontSize: 12px, boxShadow:   4px 6px -1px rgb(0 0 0 / 0.1) }} />
                                  <tr key={item.name} className="border-b border-slate-50/50 last:border-0 hover:bg-slate-50">
                                     <td className="py-1 font-bold text-slate-600">{item.name}</td>
                                     <td className="py-1 font-black text-slate-900 text-right">{item.value}</td>
-                                    <td className="py-1 font-bold text-indigo-500 text-right">{q.count > 0 ? ((item.value / q.count) * 100).toFixed(1) : 0}%</td>
+                                    <td className="py-1 font-bold text-indigo-500 text-right">{filteredForms.length > 0 ? ((item.value / filteredForms.length) * 100).toFixed(1) : 0}%</td>
                                  </tr>
                               ))}
                            </tbody>
