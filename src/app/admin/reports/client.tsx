@@ -361,7 +361,7 @@ export function TrackingClient({ periods }: any) {
                    <option key={p.id} value={p.id}>{p.name} ({p.status})</option>
                 ))}
               </select>
-              true && (
+              {true && (
                 <Link 
                   href={`/admin/surveys/${selectedPeriod}/results`}
                   className="px-6 py-4 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase flex items-center gap-2 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100"
@@ -641,6 +641,7 @@ export function TrackingClient({ periods }: any) {
     </div>
   )
 }
+
 
 
 
