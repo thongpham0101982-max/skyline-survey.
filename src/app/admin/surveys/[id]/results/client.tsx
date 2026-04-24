@@ -1,7 +1,8 @@
 ﻿'use client'
 import { useState, useMemo } from 'react'
-import { Building2, GraduationCap, LayoutGrid, BarChart3, PieChart, Users, TrendingUp } from 'lucide-react'
+import { Building2, GraduationCap, LayoutGrid, BarChart3, PieChart as PieChartIcon, Users, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts'
 
 interface FormResponse {
   questionId: string
@@ -42,6 +43,8 @@ interface Props {
   forms: Form[]
   totalForms: number
 }
+
+const COLORS = ['#10b981', '#fbbf24', '#ef4444', '#6366f1', '#8b5cf6', '#ec4899', '#14b8a6']
 
 export function ResultsDashboardClient({ periodId, periodName, periodCode, questions, forms, totalForms }: Props) {
   const [filterType, setFilterType] = useState<'ALL' | 'CAMPUS' | 'CLASS'>('ALL')
@@ -104,7 +107,14 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
     })
 
     const nps = totalNpsResponses > 0 ? Math.round(((promoters - detractors) / totalNpsResponses) * 100) : null
-    return { promoters, passives, detractors, totalNpsResponses, nps }
+    
+    const pieData = [
+      { name: 'Promoters', value: promoters },
+      { name: 'Passives', value: passives },
+      { name: 'Detractors', value: detractors },
+    ]
+
+    return { promoters, passives, detractors, totalNpsResponses, nps, pieData }
   }, [filteredForms, questions])
 
   // Calculate Average/Distribution per Question
@@ -131,7 +141,19 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
       })
 
       const average = count > 0 && sum > 0 ? (sum / count).toFixed(2) : null
-      return { ...q, average, count, distribution }
+      
+      const chartData = Object.entries(distribution).map(([name, value]) => ({
+        name: name,
+        value: value
+      })).sort((a,b) => {
+        // Try to sort numerically if keys are numbers
+        const numA = Number(a.name)
+        const numB = Number(b.name)
+        if(!isNaN(numA) && !isNaN(numB)) return numA - numB
+        return a.name.localeCompare(b.name)
+      })
+
+      return { ...q, average, count, distribution, chartData }
     })
   }, [questions, filteredForms])
 
@@ -139,7 +161,7 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
     <div className="space-y-6 pb-20 animate-in fade-in duration-700 font-outfit">
       {/* Header */}
       <div className="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-sm relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-[#BE1E2E]/5 rounded-full blur-3xl -mr-20 -mt-20" />
+        <div className="absolute top-0 right-0 w-64 h-64 bg-[#BE1E2E]/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
         <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="space-y-2">
              <div className="flex items-center gap-2 mb-2">
@@ -212,7 +234,7 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
              <TrendingUp className="w-8 h-8 text-emerald-500" />
           </div>
           <div>
-             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Tỷ lệ hoàn thành</p>
+             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Tỷ lệ tham gia</p>
              <h3 className="text-3xl font-black text-slate-800">
                {totalForms > 0 && filterType === 'ALL' ? Math.round((forms.length / totalForms) * 100) : '--'}%
              </h3>
@@ -226,7 +248,7 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
              <BarChart3 className="w-8 h-8" />
           </div>
           <div className="relative z-10">
-             <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${npsData.nps !== null ? (npsData.nps > 0 ? 'text-emerald-700' : 'text-red-700') : 'text-slate-400'}`}>Chỉ số NPS</p>
+             <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${npsData.nps !== null ? (npsData.nps > 0 ? 'text-emerald-700' : 'text-red-700') : 'text-slate-400'}`}>Chỉ số NPS Tổng</p>
              <h3 className={`text-4xl font-black ${npsData.nps !== null ? (npsData.nps > 0 ? 'text-emerald-600' : 'text-[#BE1E2E]') : 'text-slate-800'}`}>
                {npsData.nps !== null ? npsData.nps : 'N/A'}
              </h3>
@@ -234,21 +256,59 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
         </div>
       </div>
 
-      {/* NPS Breakdown */}
+      {/* NPS Breakdown Chart */}
       {npsData.totalNpsResponses > 0 && (
-        <div className="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-sm">
-           <h3 className="text-lg font-black text-slate-800 flex items-center gap-2 mb-6">
-             <PieChart className="w-5 h-5 text-indigo-500" /> Phân bổ NPS (Tổng {npsData.totalNpsResponses} phản hồi)
-           </h3>
-           <div className="h-4 w-full rounded-full flex overflow-hidden mb-4">
-             <div style={{ width: `${(npsData.promoters/npsData.totalNpsResponses)*100}%` }} className="bg-emerald-500" />
-             <div style={{ width: `${(npsData.passives/npsData.totalNpsResponses)*100}%` }} className="bg-amber-400" />
-             <div style={{ width: `${(npsData.detractors/npsData.totalNpsResponses)*100}%` }} className="bg-[#BE1E2E]" />
+        <div className="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+           <div>
+               <h3 className="text-lg font-black text-slate-800 flex items-center gap-2 mb-6">
+                 <PieChartIcon className="w-5 h-5 text-indigo-500" /> Phân bổ NPS (Tổng {npsData.totalNpsResponses} phản hồi)
+               </h3>
+               
+               <div className="space-y-4">
+                 <div className="flex items-center justify-between p-4 rounded-xl bg-emerald-50 border border-emerald-100">
+                    <span className="font-bold text-emerald-700">Promoters (Ủng hộ)</span>
+                    <div className="text-right">
+                       <p className="text-lg font-black text-emerald-600">{npsData.promoters}</p>
+                       <p className="text-xs font-bold text-emerald-600/70">{(npsData.promoters/npsData.totalNpsResponses*100).toFixed(1)}%</p>
+                    </div>
+                 </div>
+                 <div className="flex items-center justify-between p-4 rounded-xl bg-amber-50 border border-amber-100">
+                    <span className="font-bold text-amber-700">Passives (Bình thường)</span>
+                    <div className="text-right">
+                       <p className="text-lg font-black text-amber-600">{npsData.passives}</p>
+                       <p className="text-xs font-bold text-amber-600/70">{(npsData.passives/npsData.totalNpsResponses*100).toFixed(1)}%</p>
+                    </div>
+                 </div>
+                 <div className="flex items-center justify-between p-4 rounded-xl bg-red-50 border border-red-100">
+                    <span className="font-bold text-[#BE1E2E]">Detractors (Chỉ trích)</span>
+                    <div className="text-right">
+                       <p className="text-lg font-black text-[#BE1E2E]">{npsData.detractors}</p>
+                       <p className="text-xs font-bold text-[#BE1E2E]/70">{(npsData.detractors/npsData.totalNpsResponses*100).toFixed(1)}%</p>
+                    </div>
+                 </div>
+               </div>
            </div>
-           <div className="flex justify-between text-xs font-bold px-2">
-              <span className="text-emerald-600">{npsData.promoters} Promoters ({(npsData.promoters/npsData.totalNpsResponses*100).toFixed(1)}%)</span>
-              <span className="text-amber-600">{npsData.passives} Passives ({(npsData.passives/npsData.totalNpsResponses*100).toFixed(1)}%)</span>
-              <span className="text-[#BE1E2E]">{npsData.detractors} Detractors ({(npsData.detractors/npsData.totalNpsResponses*100).toFixed(1)}%)</span>
+           
+           <div className="h-64 md:h-full min-h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={npsData.pieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    <Cell fill="#10b981" />
+                    <Cell fill="#fbbf24" />
+                    <Cell fill="#ef4444" />
+                  </Pie>
+                  <Tooltip formatter={(value: number) => [`${value} phản hồi`, 'Số lượng']} />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
            </div>
         </div>
       )}
@@ -256,18 +316,18 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
       {/* Results by Criterion */}
       <div className="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-sm space-y-8">
         <h3 className="text-xl font-black text-slate-800 flex items-center gap-3 border-b border-slate-100 pb-4">
-          <LayoutGrid className="w-6 h-6 text-[#BE1E2E]" /> Kết quả chi tiết theo từng Tiêu chí
+          <LayoutGrid className="w-6 h-6 text-[#BE1E2E]" /> Thống kê chi tiết theo Tiêu chí Khảo sát
         </h3>
 
         {questionAnalytics.length === 0 ? (
            <div className="text-center py-10 text-slate-400 font-bold">Không có tiêu chí nào.</div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-8">
             {questionAnalytics.map((q, i) => (
-              <div key={q.id} className="p-6 rounded-[1.5rem] bg-slate-50 border border-slate-100 hover:border-indigo-100 hover:shadow-md transition-all">
-                 <div className="flex justify-between items-start gap-4 mb-4">
+              <div key={q.id} className="p-6 rounded-[1.5rem] bg-slate-50 border border-slate-100">
+                 <div className="flex justify-between items-start gap-4 mb-6">
                    <p className="font-bold text-slate-800 text-sm leading-relaxed flex-1">
-                     <span className="text-[#BE1E2E] mr-2">Q{i + 1}.</span> {q.questionText}
+                     <span className="text-[#BE1E2E] mr-2">Câu {i + 1}.</span> {q.questionText}
                    </p>
                    {q.average !== null && (
                      <div className="bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm text-center shrink-0">
@@ -277,15 +337,25 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
                    )}
                  </div>
 
-                 {/* Distribution logic for Choice / Rating */}
-                 {Object.keys(q.distribution).length > 0 && (
-                   <div className="mt-4 flex flex-wrap gap-2">
-                     {Object.entries(q.distribution).sort((a,b) => Number(b[0]) - Number(a[0])).map(([key, val]) => (
-                       <div key={key} className="bg-white px-3 py-1.5 rounded-lg border border-slate-200 flex items-center gap-2 text-xs font-bold">
-                         <span className="text-slate-600">{key}:</span>
-                         <span className="text-indigo-600">{val}</span>
-                       </div>
-                     ))}
+                 {/* Chart for Distribution */}
+                 {q.chartData && q.chartData.length > 0 && (
+                   <div className="h-64 w-full mt-4">
+                     <ResponsiveContainer width="100%" height="100%">
+                       <BarChart data={q.chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                         <XAxis dataKey="name" tick={{fontSize: 12, fill: '#64748b'}} axisLine={false} tickLine={false} />
+                         <YAxis allowDecimals={false} tick={{fontSize: 12, fill: '#64748b'}} axisLine={false} tickLine={false} />
+                         <Tooltip 
+                           cursor={{fill: '#f1f5f9'}}
+                           contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
+                         />
+                         <Bar dataKey="value" name="Số lượng" radius={[4, 4, 0, 0]}>
+                           {q.chartData.map((entry, index) => (
+                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                           ))}
+                         </Bar>
+                       </BarChart>
+                     </ResponsiveContainer>
                    </div>
                  )}
               </div>
