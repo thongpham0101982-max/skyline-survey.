@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useState, useMemo } from 'react'
-import { Building2, GraduationCap, LayoutGrid, BarChart3, PieChart as PieChartIcon, Users, TrendingUp, Info, MessageSquare, User, List } from 'lucide-react'
+import { Building2, GraduationCap, LayoutGrid, BarChart3, PieChart as PieChartIcon, Users, TrendingUp, Info, MessageSquare, User, List, Target, Hash } from 'lucide-react'
 import Link from 'next/link'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts'
 
@@ -52,7 +52,7 @@ interface TextOpinion {
   questionId: string
 }
 
-const COLORS = ['#10b981', '#fbbf24', '#ef4444', '#6366f1', '#8b5cf6', '#ec4899', '#14b8a6']
+const COLORS = ['#BE1E2E', '#3b82f6', '#10b981', '#fbbf24', '#8b5cf6', '#ec4899', '#6366f1']
 
 export function ResultsDashboardClient({ periodId, periodName, periodCode, questions, forms, totalForms }: Props) {
   const [filterType, setFilterType] = useState<'ALL' | 'CAMPUS' | 'CLASS'>('ALL')
@@ -68,40 +68,52 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
     return rows
   }
 
-  // Helper to calculate NPS for a subset of forms
-  const calculateNps = (targetForms: Form[]) => {
+  // Helper to calculate NPS & Stats
+  const calculateStats = (targetForms: Form[]) => {
     let promoters = 0, passives = 0, detractors = 0, totalNpsResponses = 0
-    const rawScores: number[] = []
+    let totalScore = 0, scoreCount = 0
+    const allScores: number[] = []
 
     targetForms.forEach(form => {
       form.responses.forEach(r => {
         const q = questions.find(x => x.id === r.questionId)
         if (!q) return
-        if (q.questionType?.toUpperCase() === 'NPS' && r.numericScore !== null) {
-          totalNpsResponses++
+
+        if (r.numericScore !== null) {
           const score = Number(r.numericScore)
-          rawScores.push(score)
-          const max = q.ratingScaleMax || 10
-          
-          if (max >= 9) { // 10-point scale
-            if (score >= 9) promoters++
-            else if (score >= 7) passives++
-            else detractors++
-          } else if (max === 5) { // 5-point scale
-            if (score === 5) promoters++
-            else if (score === 4) passives++
-            else detractors++
-          } else { // Generic
-            if (score === max) promoters++
-            else if (score >= max - 1) passives++
-            else detractors++
+          allScores.push(score)
+          totalScore += score
+          scoreCount++
+
+          if (q.questionType?.toUpperCase() === 'NPS') {
+            totalNpsResponses++
+            const max = q.ratingScaleMax || 10
+            if (max >= 9) {
+              if (score >= 9) promoters++
+              else if (score >= 7) passives++
+              else detractors++
+            } else {
+              if (score === max) promoters++
+              else if (score >= max - 1) passives++
+              else detractors++
+            }
           }
         }
       })
     })
 
     const nps = totalNpsResponses > 0 ? Math.round(((promoters - detractors) / totalNpsResponses) * 100) : null
-    return { promoters, passives, detractors, totalNpsResponses, nps, rawScores }
+    const average = scoreCount > 0 ? (totalScore / scoreCount).toFixed(2) : '0'
+    
+    // Calculate Median
+    let median = 0
+    if (allScores.length > 0) {
+      const sorted = [...allScores].sort((a, b) => a - b)
+      const mid = Math.floor(sorted.length / 2)
+      median = sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2
+    }
+
+    return { promoters, passives, detractors, totalNpsResponses, nps, average, median: median.toFixed(2), totalResponses: scoreCount }
   }
 
   // Derive unique campuses and classes
@@ -121,7 +133,6 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name))
   }, [forms, selectedCampus])
 
-  // Filter forms based on selection
   const filteredForms = useMemo(() => {
     return forms.filter(f => {
       if (filterType === 'ALL') return true
@@ -131,30 +142,11 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
     })
   }, [forms, filterType, selectedCampus, selectedClass])
 
-  // Main NPS Data
-  const npsData = useMemo(() => {
-    const data = calculateNps(filteredForms)
-    const pieData = [
-      { name: 'Promoters', value: data.promoters },
-      { name: 'Passives', value: data.passives },
-      { name: 'Detractors', value: data.detractors },
-    ]
-    return { ...data, pieData }
-  }, [filteredForms, questions])
+  const stats = useMemo(() => calculateStats(filteredForms), [filteredForms, questions])
 
-  // Campus comparison data
-  const campusComparison = useMemo(() => {
-    return campuses.map(c => {
-      const campusForms = forms.filter(f => f.campusId === c.id)
-      const data = calculateNps(campusForms)
-      return { ...c, ...data }
-    }).sort((a, b) => (b.nps ?? -200) - (a.nps ?? -200))
-  }, [campuses, forms, questions])
-
-  // Calculate Average/Distribution per Question
   const questionAnalytics = useMemo(() => {
     return questions.map(q => {
-      let sum = 0, count = 0
+      let qSum = 0, qCount = 0
       const distribution: Record<string, number> = {}
       const textResponses: TextOpinion[] = []
       const gridDistribution: Record<string, Record<string, number>> = {}
@@ -164,8 +156,8 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
         if (!r) return
 
         if (r.numericScore !== null) {
-          sum += r.numericScore
-          count++
+          qSum += r.numericScore
+          qCount++
           distribution[r.numericScore] = (distribution[r.numericScore] || 0) + 1
         } else if (r.choiceAnswer) {
           if (r.choiceAnswer.startsWith('{')) {
@@ -183,26 +175,18 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
               distribution[c] = (distribution[c] || 0) + 1
             })
           }
-          count++
+          qCount++
         } else if (r.textAnswer) {
-          if (r.textAnswer.startsWith('{')) {
-             try {
-               const parsed = JSON.parse(r.textAnswer)
-               Object.entries(parsed).forEach(([rowKey, val]: [string, any]) => {
-                 if (rowKey === 'rows') return
-                 if (!gridDistribution[rowKey]) gridDistribution[rowKey] = {}
-                 gridDistribution[rowKey][val] = (gridDistribution[rowKey][val] || 0) + 1
-               })
-             } catch (e) {
-               textResponses.push({
-                 text: r.textAnswer,
-                 respondent: 'Phụ huynh/Học sinh',
-                 className: form.className || 'Chưa rõ',
-                 campusName: form.campusName || 'Chưa rõ',
-                 questionId: q.id
-               })
-             }
-          } else {
+           if (r.textAnswer.startsWith('{')) {
+              try {
+                const parsed = JSON.parse(r.textAnswer)
+                Object.entries(parsed).forEach(([rowKey, val]: [string, any]) => {
+                  if (rowKey === 'rows') return
+                  if (!gridDistribution[rowKey]) gridDistribution[rowKey] = {}
+                  gridDistribution[rowKey][val] = (gridDistribution[rowKey][val] || 0) + 1
+                })
+              } catch (e) {}
+           } else {
             textResponses.push({
               text: r.textAnswer,
               respondent: 'Phụ huynh/Học sinh',
@@ -210,240 +194,219 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
               campusName: form.campusName || 'Chưa rõ',
               questionId: q.id
             })
-          }
-          count++
+           }
+           qCount++
         }
       })
 
-      const average = count > 0 && sum > 0 ? (sum / count).toFixed(2) : null
+      const average = qCount > 0 && qSum > 0 ? (qSum / qCount).toFixed(2) : null
       const chartData = Object.entries(distribution).map(([name, value]) => ({ name, value }))
         .sort((a,b) => (Number(a.name) || 0) - (Number(b.name) || 0))
 
-      return { ...q, average, count, distribution, chartData, textResponses, gridDistribution }
+      return { ...q, average, count: qCount, distribution, chartData, textResponses, gridDistribution }
     })
   }, [questions, filteredForms])
 
   return (
-    <div className="space-y-6 pb-20 animate-in fade-in duration-700 font-outfit">
-      {/* Header */}
-      <div className="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-sm relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-[#BE1E2E]/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
-        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-          <div className="space-y-2">
-             <div className="flex items-center gap-2 mb-2">
-               <span className="bg-[#BE1E2E]/10 text-[#BE1E2E] px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-[#BE1E2E]/20">
-                 Kết quả khảo sát
-               </span>
-               <span className="bg-slate-100 text-slate-500 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-slate-200">
-                 {periodCode}
-               </span>
-             </div>
-             <h1 className="text-3xl font-black text-slate-900 tracking-tight">{periodName}</h1>
-          </div>
-          <Link href="/admin/surveys" className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl transition-all text-sm">
-            Quay lại Danh sách
-          </Link>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="bg-white rounded-[2rem] p-6 border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-center">
-        <div className="flex bg-slate-100 p-1.5 rounded-2xl w-full md:w-auto">
-          <button onClick={() => { setFilterType('ALL'); setSelectedCampus('ALL'); setSelectedClass('ALL'); }}
-            className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl text-sm font-black transition-all ${filterType === 'ALL' ? 'bg-white text-[#BE1E2E] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
-            Toàn hệ thống
-          </button>
-          <button onClick={() => setFilterType('CAMPUS')}
-            className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl text-sm font-black transition-all ${filterType === 'CAMPUS' ? 'bg-white text-[#BE1E2E] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
-            Theo Cơ sở
-          </button>
-          <button onClick={() => setFilterType('CLASS')}
-            className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl text-sm font-black transition-all ${filterType === 'CLASS' ? 'bg-white text-[#BE1E2E] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
-            Theo Lớp
-          </button>
-        </div>
-
-        {filterType !== 'ALL' && (
-          <div className="flex gap-4 w-full md:w-auto">
-            {(filterType === 'CAMPUS' || filterType === 'CLASS') && (
-              <select value={selectedCampus} onChange={(e) => { setSelectedCampus(e.target.value); if (filterType === 'CLASS') setSelectedClass('ALL'); }}
-                className="flex-1 md:flex-none px-4 py-3 rounded-2xl border-2 border-slate-100 bg-slate-50 text-slate-700 font-bold outline-none focus:border-[#BE1E2E] transition-all">
-                <option value="ALL">Tất cả Cơ sở</option>
-                {campuses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-            )}
-            {filterType === 'CLASS' && (
-              <select value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)}
-                className="flex-1 md:flex-none px-4 py-3 rounded-2xl border-2 border-slate-100 bg-slate-50 text-slate-700 font-bold outline-none focus:border-[#BE1E2E] transition-all">
-                <option value="ALL">Chọn Lớp...</option>
-                {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm flex items-center gap-6">
-          <div className="w-16 h-16 rounded-[1.5rem] bg-indigo-50 flex items-center justify-center shrink-0">
-             <Users className="w-8 h-8 text-indigo-500" />
-          </div>
-          <div>
-             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Phiếu đã nộp</p>
-             <h3 className="text-3xl font-black text-slate-800">{filteredForms.length}</h3>
-          </div>
-        </div>
+    <div className="bg-[#f8fafc] min-h-screen p-6 font-outfit text-slate-800">
+      <div className="max-w-[1600px] mx-auto space-y-6">
         
-        <div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm flex items-center gap-6">
-          <div className="w-16 h-16 rounded-[1.5rem] bg-emerald-50 flex items-center justify-center shrink-0">
-             <TrendingUp className="w-8 h-8 text-emerald-500" />
+        {/* Top Navigation & Filters */}
+        <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col lg:flex-row justify-between items-center gap-6">
+          <div className="flex items-center gap-4">
+             <div className="w-12 h-12 bg-[#BE1E2E] rounded-2xl flex items-center justify-center text-white shadow-lg shadow-red-100">
+               <BarChart3 className="w-6 h-6" />
+             </div>
+             <div>
+                <h1 className="text-xl font-black tracking-tight">{periodName}</h1>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{periodCode} • BÁO CÁO PHÂN TÍCH</p>
+             </div>
           </div>
-          <div>
-             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Tỷ lệ tham gia</p>
-             <h3 className="text-3xl font-black text-slate-800">
-               {totalForms > 0 && filterType === 'ALL' ? Math.round((forms.length / totalForms) * 100) : '--'}%
-             </h3>
+
+          <div className="flex flex-wrap items-center gap-3 bg-slate-50 p-2 rounded-2xl border border-slate-100">
+            <select value={selectedCampus} onChange={(e) => { setSelectedCampus(e.target.value); setFilterType(e.target.value === 'ALL' ? 'ALL' : 'CAMPUS'); }}
+              className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-xs font-black outline-none focus:ring-2 focus:ring-[#BE1E2E]/20 transition-all">
+              <option value="ALL">TẤT CẢ CƠ SỞ</option>
+              {campuses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+            <select value={selectedClass} onChange={(e) => { setSelectedClass(e.target.value); if (e.target.value !== 'ALL') setFilterType('CLASS'); }}
+              className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-xs font-black outline-none focus:ring-2 focus:ring-[#BE1E2E]/20 transition-all">
+              <option value="ALL">TẤT CẢ LỚP</option>
+              {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+            <Link href="/admin/surveys" className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-500 border border-slate-200 font-black rounded-xl transition-all text-[10px] uppercase">
+              Thoát
+            </Link>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm flex items-center gap-6 relative overflow-hidden"
-             style={{ background: npsData.nps !== null ? (npsData.nps > 0 ? 'linear-gradient(135deg, #f0fdf4, #dcfce7)' : 'linear-gradient(135deg, #fff1f2, #ffe4e6)') : '#fff' }}>
-          <div className={`w-16 h-16 rounded-[1.5rem] flex items-center justify-center shrink-0 
-            ${npsData.nps !== null ? (npsData.nps > 0 ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-200' : 'bg-[#BE1E2E] text-white shadow-lg shadow-red-200') : 'bg-slate-100 text-slate-400'}`}>
-             <BarChart3 className="w-8 h-8" />
-          </div>
-          <div className="relative z-10">
-             <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${npsData.nps !== null ? (npsData.nps > 0 ? 'text-emerald-700' : 'text-red-700') : 'text-slate-400'}`}>Chỉ số NPS Tổng</p>
-             <h3 className={`text-4xl font-black ${npsData.nps !== null ? (npsData.nps > 0 ? 'text-emerald-600' : 'text-[#BE1E2E]') : 'text-slate-800'}`}>
-               {npsData.nps !== null ? npsData.nps : 'N/A'}
-             </h3>
-          </div>
+        {/* KPI Row */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+           <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm text-center relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-20 h-20 bg-blue-50 rounded-full -mr-10 -mt-10 group-hover:scale-110 transition-transform" />
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 relative z-10">CHỈ SỐ NPS</p>
+              <h3 className={`text-4xl font-black relative z-10 ${stats.nps !== null && stats.nps > 0 ? 'text-emerald-500' : 'text-[#BE1E2E]'}`}>
+                {stats.nps !== null ? stats.nps : '--'}%
+              </h3>
+              <div className="mt-2 text-[9px] font-bold text-slate-400 uppercase">N = {stats.totalNpsResponses}</div>
+           </div>
+
+           <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm text-center relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-50 rounded-full -mr-10 -mt-10 group-hover:scale-110 transition-transform" />
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 relative z-10">ĐIỂM TRUNG BÌNH</p>
+              <h3 className="text-4xl font-black text-slate-800 relative z-10">{stats.average}</h3>
+              <div className="mt-2 text-[9px] font-bold text-slate-400 uppercase">THANG ĐIỂM 10</div>
+           </div>
+
+           <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm text-center relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-20 h-20 bg-amber-50 rounded-full -mr-10 -mt-10 group-hover:scale-110 transition-transform" />
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 relative z-10">ĐIỂM TRUNG VỊ</p>
+              <h3 className="text-4xl font-black text-slate-800 relative z-10">{stats.median}</h3>
+              <div className="mt-2 text-[9px] font-bold text-slate-400 uppercase">MEDIAN SCORE</div>
+           </div>
+
+           <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm text-center relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-20 h-20 bg-indigo-50 rounded-full -mr-10 -mt-10 group-hover:scale-110 transition-transform" />
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 relative z-10">PHẢN HỒI THU VỀ</p>
+              <h3 className="text-4xl font-black text-slate-800 relative z-10">{filteredForms.length}</h3>
+              <div className="mt-2 text-[9px] font-bold text-slate-400 uppercase">TỔNG PHIẾU NỘP</div>
+           </div>
         </div>
-      </div>
 
-      {/* Results by Criterion */}
-      <div className="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-sm space-y-8">
-        <h3 className="text-xl font-black text-slate-800 flex items-center gap-3 border-b border-slate-100 pb-4">
-          <LayoutGrid className="w-6 h-6 text-[#BE1E2E]" /> Thống kê chi tiết theo Tiêu chí Khảo sát
-        </h3>
+        {/* Grid 1: Opinions & Main Chart */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+           {/* Opinion Table */}
+           <div className="lg:col-span-1 bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden flex flex-col">
+              <div className="bg-[#1e293b] p-4 flex items-center justify-between">
+                 <h3 className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-2">
+                   <MessageSquare className="w-4 h-4 text-emerald-400" /> TỔNG HỢP Ý KIẾN
+                 </h3>
+                 <span className="bg-white/10 text-white/50 px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase">LỚP | NỘI DUNG</span>
+              </div>
+              <div className="flex-1 overflow-y-auto max-h-[500px] custom-scrollbar p-0">
+                 <table className="w-full text-left border-collapse">
+                    <tbody>
+                       {questionAnalytics.flatMap(q => q.textResponses).slice(0, 20).map((op, idx) => (
+                         <tr key={idx} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
+                            <td className="p-3 align-top">
+                               <span className="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-[9px] font-black uppercase whitespace-nowrap">{op.className}</span>
+                            </td>
+                            <td className="p-3 text-[11px] text-slate-600 leading-relaxed italic border-l border-slate-50">
+                               "{op.text}"
+                            </td>
+                         </tr>
+                       ))}
+                    </tbody>
+                 </table>
+              </div>
+           </div>
 
-        {questionAnalytics.length === 0 ? (
-           <div className="text-center py-10 text-slate-400 font-bold">Không có tiêu chí nào.</div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {questionAnalytics.map((q, i) => (
-              <div key={q.id} className="p-6 rounded-[1.5rem] bg-slate-50 border border-slate-100 flex flex-col min-h-[350px]">
-                 <div className="flex justify-between items-start gap-4 mb-4">
-                   <p className="font-bold text-slate-800 text-sm leading-relaxed flex-1">
-                     <span className="text-[#BE1E2E] mr-2">Q{i + 1}.</span> {q.questionText}
-                   </p>
-                   {q.average !== null && (
-                     <div className="bg-white px-3 py-1 rounded-lg border border-slate-200 text-center shrink-0 shadow-sm">
-                       <p className="text-[10px] font-black text-slate-400 uppercase leading-none mb-1">TB</p>
-                       <p className="text-sm font-black text-[#BE1E2E]">{q.average}</p>
-                     </div>
-                   )}
+           {/* Main NPS Bar Chart */}
+           <div className="lg:col-span-2 bg-white rounded-3xl border border-slate-100 shadow-sm p-6 flex flex-col">
+              <div className="flex items-center justify-between mb-8">
+                 <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                    <Target className="w-5 h-5 text-[#BE1E2E]" /> PHÂN BỔ ĐIỂM SỐ CHI TIẾT
+                 </h3>
+                 <div className="flex items-center gap-4 text-[9px] font-black text-slate-400 uppercase">
+                    <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-[#BE1E2E]" /> NPS</div>
+                    <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-slate-200" /> TRUNG BÌNH</div>
                  </div>
+              </div>
+              <div className="flex-1 min-h-[350px]">
+                 <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={questionAnalytics[0]?.chartData || []} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                       <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#94a3b8', fontWeight: 'bold'}} />
+                       <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#94a3b8'}} />
+                       <Tooltip cursor={{fill: '#f8fafc'}} contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'}} />
+                       <Bar dataKey="value" fill="#BE1E2E" radius={[6, 6, 0, 0]} barSize={40}>
+                          {(questionAnalytics[0]?.chartData || []).map((entry, index) => (
+                             <Cell key={`cell-${index}`} fill={index > 7 ? '#10b981' : index > 5 ? '#fbbf24' : '#BE1E2E'} />
+                          ))}
+                       </Bar>
+                    </BarChart>
+                 </ResponsiveContainer>
+              </div>
+           </div>
+        </div>
 
-                 {/* Grid Question Table Summary */}
-                 {Object.keys(q.gridDistribution || {}).length > 0 ? (
-                    <div className="mt-auto space-y-3">
-                       {Object.entries(q.gridDistribution || {}).map(([rowKey, dist], subIdx) => {
-                          const labels = getGridLabels(q.id)
-                          const rowLabel = labels[parseInt(rowKey)] || `Tiêu chí ${parseInt(rowKey) + 1}`
-                          const rowData = Object.entries(dist).map(([name, value]) => ({ name, value }))
-                             .sort((a,b) => (Number(a.name) || 0) - (Number(b.name) || 0))
-                          
-                          return (
-                             <div key={subIdx} className="p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
-                                <p className="text-[10px] font-black text-[#BE1E2E] uppercase mb-2 border-b border-slate-50 pb-1">{rowLabel}</p>
-                                <table className="w-full text-[9px]">
-                                   <thead>
-                                      <tr className="text-slate-400 font-black uppercase tracking-wider">
-                                         <th className="text-left pb-1">Phương án</th>
-                                         <th className="text-right pb-1">SL</th>
-                                         <th className="text-right pb-1">%</th>
-                                      </tr>
-                                   </thead>
-                                   <tbody>
-                                      {rowData.map((item: any) => (
-                                         <tr key={item.name} className="border-t border-slate-50">
-                                            <td className="py-1 font-bold text-slate-600">{item.name}</td>
-                                            <td className="py-1 font-black text-slate-900 text-right">{item.value}</td>
-                                            <td className="py-1 font-bold text-indigo-500 text-right">
-                                               {filteredForms.length > 0 ? ((item.value / filteredForms.length) * 100).toFixed(1) : 0}%
-                                            </td>
-                                         </tr>
-                                      ))}
-                                   </tbody>
-                                </table>
-                             </div>
-                          )
-                       })}
-                    </div>
-                 ) : q.chartData && q.chartData.length > 0 ? (
-                   <div className="flex flex-col gap-4 mt-auto">
-                     <div className="h-40 w-full">
-                       <ResponsiveContainer width="100%" height="100%">
-                         <BarChart data={q.chartData} margin={{ top: 5, right: 5, left: -30, bottom: 0 }}>
-                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                           <XAxis dataKey="name" tick={{fontSize: 9, fill: "#64748b"}} axisLine={false} tickLine={false} />
-                           <YAxis allowDecimals={false} tick={{fontSize: 9, fill: "#64748b"}} axisLine={false} tickLine={false} />
-                           <Tooltip cursor={{fill: "#f1f5f9"}} contentStyle={{borderRadius: "12px", border: "none", fontSize: "11px", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)"}} />
-                           <Bar dataKey="value" name="Số lượng" radius={[4, 4, 0, 0]}>
-                             {q.chartData.map((entry, index) => (
-                               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                             ))}
-                           </Bar>
-                         </BarChart>
-                       </ResponsiveContainer>
-                     </div>
-                     <div className="bg-white rounded-xl border border-slate-100 p-2 overflow-y-auto max-h-32 custom-scrollbar">
-                        <table className="w-full text-[9px] text-left">
-                           <thead>
-                              <tr className="border-b border-slate-50">
-                                 <th className="pb-1 font-black text-slate-400 uppercase tracking-wider">Mức/Lựa chọn</th>
-                                 <th className="pb-1 font-black text-slate-400 uppercase tracking-wider text-right">SL</th>
-                                 <th className="pb-1 font-black text-slate-400 uppercase tracking-wider text-right">%</th>
-                              </tr>
-                           </thead>
-                           <tbody>
-                              {q.chartData.map((item: any) => (
-                                 <tr key={item.name} className="border-b border-slate-50/50 last:border-0 hover:bg-slate-50">
-                                    <td className="py-1 font-bold text-slate-600">{item.name}</td>
-                                    <td className="py-1 font-black text-slate-900 text-right">{item.value}</td>
-                                    <td className="py-1 font-bold text-indigo-500 text-right">{filteredForms.length > 0 ? ((item.value / filteredForms.length) * 100).toFixed(1) : 0}%</td>
-                                 </tr>
-                              ))}
-                           </tbody>
-                        </table>
-                     </div>
+        {/* Detailed Analytics Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+           {questionAnalytics.slice(1).map((q, i) => (
+             <div key={q.id} className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 flex flex-col h-full group hover:border-[#BE1E2E]/20 transition-all">
+                <div className="flex justify-between items-start gap-4 mb-6">
+                   <h4 className="text-[11px] font-black text-slate-800 leading-tight flex-1 group-hover:text-[#BE1E2E] transition-colors">
+                     <span className="text-slate-300 mr-1">#{i + 2}</span> {q.questionText}
+                   </h4>
+                   <div className="bg-slate-50 px-3 py-1.5 rounded-xl text-center border border-slate-100">
+                      <p className="text-[8px] font-black text-slate-400 uppercase leading-none mb-1">TB</p>
+                      <p className="text-xs font-black text-slate-700">{q.average || '--'}</p>
                    </div>
-                 ) : q.textResponses && q.textResponses.length > 0 ? (
-                   <div className="mt-auto space-y-2">
-                      <p className="text-[10px] font-black text-slate-400 uppercase flex items-center gap-1 mb-2">
-                        <MessageSquare className="w-3 h-3" /> Ý kiến phản hồi ({q.textResponses.length})
-                      </p>
-                      <div className="max-h-60 overflow-y-auto custom-scrollbar pr-1 space-y-2">
-                        {q.textResponses.map((opinion, idx) => (
-                          <div key={idx} className="p-2 bg-slate-50 rounded-lg text-[11px] text-slate-600 border-l-2 border-[#BE1E2E]/20">
-                             "{opinion.text}"
-                          </div>
-                        ))}
+                </div>
+
+                {Object.keys(q.gridDistribution || {}).length > 0 ? (
+                   <div className="space-y-3">
+                      {Object.entries(q.gridDistribution || {}).map(([rowKey, dist], subIdx) => {
+                         const labels = getGridLabels(q.id)
+                         const rowLabel = labels[parseInt(rowKey)] || `Tiêu chí ${parseInt(rowKey) + 1}`
+                         const rowData = Object.entries(dist).map(([name, value]) => ({ name, value }))
+                            .sort((a,b) => (Number(a.name) || 0) - (Number(b.name) || 0))
+                         
+                         return (
+                            <div key={subIdx} className="bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
+                               <p className="text-[9px] font-black text-slate-500 uppercase mb-2 truncate">{rowLabel}</p>
+                               <div className="flex flex-wrap gap-2">
+                                  {rowData.map((item: any) => (
+                                     <div key={item.name} className="flex items-center gap-1 bg-white px-2 py-1 rounded-lg border border-slate-100">
+                                        <span className="text-[9px] font-black text-slate-400">{item.name}đ:</span>
+                                        <span className="text-[9px] font-black text-[#BE1E2E]">{item.value}</span>
+                                     </div>
+                                  ))}
+                               </div>
+                            </div>
+                         )
+                      })}
+                   </div>
+                ) : q.chartData && q.chartData.length > 0 ? (
+                   <div className="flex-1 flex flex-col">
+                      <div className="h-40 w-full mb-4">
+                         <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                               <Pie data={q.chartData} cx="50%" cy="50%" innerRadius={40} outerRadius={65} paddingAngle={4} dataKey="value">
+                                  {q.chartData.map((entry, index) => (
+                                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                  ))}
+                               </Pie>
+                               <Tooltip />
+                            </PieChart>
+                         </ResponsiveContainer>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 mt-auto">
+                         {q.chartData.slice(0, 4).map((item, idx) => (
+                            <div key={idx} className="flex items-center justify-between p-2 bg-slate-50 rounded-xl border border-slate-100">
+                               <span className="text-[9px] font-bold text-slate-500 truncate max-w-[60px]">{item.name}</span>
+                               <span className="text-[9px] font-black text-slate-800">{Math.round((item.value / filteredForms.length) * 100)}%</span>
+                            </div>
+                         ))}
                       </div>
                    </div>
-                 ) : (
-                   <div className="mt-auto h-48 flex items-center justify-center text-slate-300 text-xs font-bold italic border-2 border-dashed border-slate-100 rounded-2xl">
-                     Chưa có dữ liệu phản hồi
-                   </div>
-                 )}
-              </div>
-            ))}
-          </div>
-        )}
+                ) : (
+                  <div className="h-40 flex items-center justify-center text-slate-300 text-[10px] font-black uppercase italic">
+                    Chưa có phản hồi
+                  </div>
+                )}
+             </div>
+           ))}
+        </div>
+
       </div>
 
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+      `}</style>
     </div>
   )
 }
