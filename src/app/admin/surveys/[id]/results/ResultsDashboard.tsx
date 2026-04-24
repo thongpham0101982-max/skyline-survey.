@@ -101,23 +101,32 @@ export function ResultsDashboard({ periodId, periodName, periodCode, questions, 
   }, [forms, compareBy, selectedGroup, searchQuery])
 
   const stats = useMemo(() => {
-    let npsT = 0, npsP = 0, npsD = 0, sum = 0, count = 0
+    let npsT = 0, npsP = 0, npsD = 0
+    let globalSum = 0, globalCount = 0
+
+    // 1. Calculate NPS
     filteredForms.forEach(f => {
       f.responses.forEach(r => {
-        if (r.numericScore !== null) {
-          sum += r.numericScore; count++
-          if (r.questionType?.toUpperCase() === 'NPS') {
-            npsT++; if (r.numericScore >= 9) npsP++; else if (r.numericScore < 7) npsD++
-          }
+        if (r.questionType?.toUpperCase() === 'NPS' && r.numericScore !== null) {
+          npsT++; if (r.numericScore >= 9) npsP++; else if (r.numericScore < 7) npsD++
         }
       })
     })
+
+    // 2. Aggregate Avg Score from questionAnalytics to be completely consistent
+    questionAnalytics.forEach(qa => {
+      if (!qa.isOpinion && qa.rawSum > 0) {
+         globalSum += qa.rawSum
+         globalCount += qa.rawCount
+      }
+    })
+
     return { 
       nps: npsT > 0 ? Math.round(((npsP - npsD) / npsT) * 100) : 0, 
-      avg: count > 0 ? (sum / count).toFixed(2) : '0.00',
+      avg: globalCount > 0 ? (globalSum / globalCount).toFixed(2) : '0.00',
       completionRate: totalForms > 0 ? Math.round((forms.length / totalForms) * 100) : 0
     }
-  }, [filteredForms, forms, totalForms])
+  }, [filteredForms, forms, totalForms, questionAnalytics])
 
   const groups = useMemo(() => {
     const set = new Set<string>(); forms.forEach(f => set.add(compareBy === 'CAMPUS' ? f.campusName : f.className))
@@ -145,13 +154,17 @@ export function ResultsDashboard({ periodId, periodName, periodCode, questions, 
             Object.entries(p).forEach(([rk, v]: [string, any]) => {
               if (rk === 'rows' || rk === 'columns') return
               dist[v] = (dist[v] || 0) + 1
-              const nV = parseInt(v); if (!isNaN(nV)) { qSum += nV; qCount++ }
+              // For GRID, v is usually the 0-based column index. Score should be index + 1 (e.g. 1 to 5)
+              const nV = parseInt(v); 
+              if (!isNaN(nV)) { qSum += (nV + 1); qCount++ }
             })
           } catch(e){}
         } else if (r.textAnswer || r.choiceAnswer) {
           const v = r.choiceAnswer || r.textAnswer || ''
           if (!v.includes('{')) {
-            dist[v] = (dist[v] || 0) + 1; qCount++
+            dist[v] = (dist[v] || 0) + 1; 
+            const nV = parseInt(v);
+            if (!isNaN(nV) && !isOpinion) { qSum += nV; qCount++ } else { qCount++ }
             if (isOpinion && r.textAnswer) opinions.push({ text: r.textAnswer, class: f.className, campus: f.campusName })
           }
         }
@@ -164,7 +177,7 @@ export function ResultsDashboard({ periodId, periodName, periodCode, questions, 
         percentage: Math.round((v / tC) * 100)
       })).sort((a,b) => b.value - a.value)
 
-      return { ...q, isOpinion, isGrid, avg: qCount > 0 ? (qSum / qCount).toFixed(2) : '0.00', chartData, opinions }
+      return { ...q, isOpinion, isGrid, rawSum: qSum, rawCount: qCount, avg: qCount > 0 ? (qSum / qCount).toFixed(2) : '0.00', chartData, opinions }
     })
   }, [questions, filteredForms])
 
