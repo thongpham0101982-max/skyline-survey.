@@ -356,13 +356,12 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
                        <ResponsiveContainer width="100%" height="100%">
                          <BarChart data={q.chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                           <XAxis dataKey="name" tick={{fontSize: 10, fill: #64748b }} axisLine={false} tickLine={false} />
-                           <YAxis allowDecimals={false} tick={{fontSize: 10, fill: #64748b }} axisLine={false} tickLine={false} />
-                           <Tooltip cursor={{fill: #f1f5f9 }} contentStyle={{borderRadius: 12px, border: 
-one, fontSize: 12px, boxShadow:   4px 6px -1px rgb(0 0 0 / 0.1) }} />
+                           <XAxis dataKey="name" tick={{fontSize: 10, fill: "#64748b"}} axisLine={false} tickLine={false} />
+                           <YAxis allowDecimals={false} tick={{fontSize: 10, fill: "#64748b"}} axisLine={false} tickLine={false} />
+                           <Tooltip cursor={{fill: "#f1f5f9"}} contentStyle={{borderRadius: "12px", border: "none", fontSize: "12px", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)"}} />
                            <Bar dataKey="value" name="Số lượng" radius={[4, 4, 0, 0]}>
                              {q.chartData.map((entry, index) => (
-                               <Cell key={cell- + index} fill={COLORS[index % COLORS.length]} />
+                               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                              ))}
                            </Bar>
                          </BarChart>
