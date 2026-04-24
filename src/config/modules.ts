@@ -59,7 +59,7 @@ export const APP_CATEGORIES = [
     icon: FileSpreadsheet,
     modules: [
       { code: "MANAGE_SURVEYS", name: "Quản lý Khảo sát", icon: FileSpreadsheet, href: "/admin/surveys" },
-      { code: "FEEDBACK", name: "Phân tích NPS", icon: PieChart, href: "/admin/nps" },
+      { name: "Phân tích NPS", icon: PieChart, href: "/admin/nps" },
       { code: "SURVEY_CATALOG", name: "Danh mục Khảo sát", icon: Layers, href: "/admin/categories" },
       { code: "PARENTS", name: "Tài khoản PHHS", icon: UserPlus, href: "/admin/parents" },
       { code: "FEEDBACK", name: "Theo dõi Phản hồi", icon: PieChart, href: "/admin/reports" },
@@ -78,6 +78,7 @@ export const APP_CATEGORIES = [
 ];
 
 export const ALL_APP_MODULES = APP_CATEGORIES.flatMap(c => c.modules);
+
 
 
 
