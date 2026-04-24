@@ -49,11 +49,9 @@ const GRID_COLORS: Record<string, string> = {
   "default": "#cbd5e1"
 }
 
-const COLORS = ['#0a4a9b', '#10b981', '#f59e0b', '#BE1E2E', '#8b5cf6', '#ec4899']
-
 export function ResultsDashboard({ periodId, periodName, periodCode, questions, forms, totalForms }: Props) {
   useEffect(() => {
-    console.log("--- DASHBOARD RELOADED v4.7 (Exact Colors & Labels) ---");
+    console.log("--- DASHBOARD RELOADED v4.8 (Hotfix) ---");
   }, []);
 
   const [compareBy, setCompareBy] = useState<'CAMPUS' | 'CLASS'>('CAMPUS')
@@ -162,17 +160,10 @@ export function ResultsDashboard({ periodId, periodName, periodCode, questions, 
         else if (name.includes("Hài lòng")) color = GRID_COLORS["Hài lòng"]
         else if (name.includes("Không hài lòng")) color = GRID_COLORS["Không hài lòng"]
         
-        return { 
-          name, 
-          value: v, 
-          percentage: Math.round((v / totalCount) * 100),
-          fill: color
-        }
+        return { name, value: v, percentage: Math.round((v / totalCount) * 100), fill: color }
       }).sort((a,b) => {
-        // Sort to match image: Hài lòng, Rất hài lòng, Không hài lòng, Rất không hài lòng
         const order = ["Hài lòng", "Rất hài lòng", "Không hài lòng", "Rất không hài lòng"]
-        const idxA = order.findIndex(o => a.name.includes(o))
-        const idxB = order.findIndex(o => b.name.includes(o))
+        const idxA = order.findIndex(o => a.name.includes(o)); const idxB = order.findIndex(o => b.name.includes(o))
         return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB)
       })
 
@@ -181,11 +172,8 @@ export function ResultsDashboard({ periodId, periodName, periodCode, questions, 
   }, [questions, filteredForms])
 
   const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, value, percentage }: any) => {
-    const RADIAN = Math.PI / 180;
-    const radius = outerRadius + 30;
-    const x = cx + radius * Math.cos(-midAngle * RADIAN);
-    const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
+    const RADIAN = Math.PI / 180; const radius = outerRadius + 30;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN); const y = cy + radius * Math.sin(-midAngle * RADIAN);
     return (
       <text x={x} y={y} fill="#475569" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" className="text-[11px] font-black">
         {`${value} (${percentage}%)`}
@@ -196,10 +184,7 @@ export function ResultsDashboard({ periodId, periodName, periodCode, questions, 
   return (
     <div className="bg-[#fcfcfc] min-h-screen p-6 lg:p-14 font-sans text-slate-800">
       <div className="max-w-[1500px] mx-auto space-y-14">
-        
-        {/* Header */}
         <div className="flex flex-col lg:flex-row justify-between items-end border-b border-slate-200 pb-12 gap-8 relative">
-          <div className="absolute top-0 right-0 animate-pulse text-[#BE1E2E] text-[10px] font-black uppercase tracking-widest">Version 4.7 Exact Style</div>
           <div>
             <h1 className="text-3xl font-black text-slate-900 tracking-tight uppercase mb-2">{periodName}</h1>
             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{periodCode} • BÁO CÁO PHÂN TÍCH TỔNG HỢP</p>
@@ -216,7 +201,6 @@ export function ResultsDashboard({ periodId, periodName, periodCode, questions, 
           </div>
         </div>
 
-        {/* Indicators */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-10">
            {[
              { label: 'NPS Score', val: stats.nps + '%', color: 'text-[#BE1E2E]' },
@@ -231,13 +215,12 @@ export function ResultsDashboard({ periodId, periodName, periodCode, questions, 
            ))}
         </div>
 
-        {/* Analysis Section */}
         <div className="grid grid-cols-1 gap-14 pb-20">
            {questionAnalytics.map((q, i) => (
-             <div key={q.id} className="bg-white rounded-[4rem] border border-slate-100 shadow-sm p-14 flex flex-col gap-10 hover:shadow-2xl transition-all duration-700 overflow-visible">
+             <div key={q.id} className="bg-white rounded-[4rem] border border-slate-100 shadow-sm p-14 flex flex-col gap-10 hover:shadow-2xl transition-all duration-700">
                 <div className="flex flex-col gap-2">
                    <div className="flex items-center gap-3">
-                      <span className="w-10 h-10 rounded-full bg-slate-900 text-white text-xs font-black flex items-center justify-center shadow-lg">Q{i+1}</span>
+                      <span className="w-10 h-10 rounded-full bg-slate-900 text-white text-xs font-black flex items-center justify-center">Q{i+1}</span>
                       <span className="text-[11px] font-black text-[#BE1E2E] uppercase tracking-widest">Tiêu chí khảo sát</span>
                    </div>
                    <h4 className="text-2xl font-black text-[#BE1E2E] leading-tight mt-4 uppercase tracking-tight">{q.questionText}</h4>
@@ -247,7 +230,7 @@ export function ResultsDashboard({ periodId, periodName, periodCode, questions, 
                    {q.isOpinion ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full">
                          {q.opinions.slice(0, 9).map((op, idx) => (
-                            <div key={idx} className="bg-slate-50/50 p-8 rounded-3xl border border-slate-100 italic text-sm text-slate-600 leading-relaxed group hover:bg-white transition-all shadow-sm">
+                            <div key={idx} className="bg-slate-50/50 p-8 rounded-3xl border border-slate-100 italic text-sm text-slate-600 leading-relaxed shadow-sm">
                                "{op.text}"
                                <p className="text-[9px] font-black text-slate-400 uppercase mt-6 not-italic">{op.campus} • {op.class}</p>
                             </div>
@@ -263,20 +246,19 @@ export function ResultsDashboard({ periodId, periodName, periodCode, questions, 
                                        <Cell key={idx} fill={e.fill} stroke="none" />
                                     ))}
                                  </Pie>
-                                 <Tooltip contentStyle={{borderRadius: '20px', border: 'none', shadow: '0 20px 40px rgba(0,0,0,0.1)'}} />
+                                 <Tooltip contentStyle={{borderRadius: '20px', border: 'none'}} />
                               </PieChart>
                            </ResponsiveContainer>
                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
-                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">AVG</p>
                               <p className="text-4xl font-black text-slate-900">{q.avg}</p>
                            </div>
                         </div>
                         <div className="w-full lg:w-2/5 space-y-6">
                            <h5 className="text-lg font-black text-slate-800 uppercase tracking-tight border-b border-slate-100 pb-4">PHẢN HỒI</h5>
                            {q.chartData.map((item, idx) => (
-                              <div key={idx} className="flex items-center justify-between group">
+                              <div key={idx} className="flex items-center justify-between">
                                  <div className="flex items-center gap-4">
-                                    <div className="w-4 h-4 rounded-full shadow-sm" style={{ backgroundColor: item.fill }} />
+                                    <div className="w-4 h-4 rounded-full" style={{ backgroundColor: item.fill }} />
                                     <span className="text-sm font-black text-slate-600 uppercase tracking-tight">{item.name}</span>
                                  </div>
                                  <div className="flex items-center gap-3">
@@ -289,49 +271,6 @@ export function ResultsDashboard({ periodId, periodName, periodCode, questions, 
                       </>
                    )}
                 </div>
-
-                {q.isGrid && (
-                   <div className="mt-10 pt-10 border-t border-slate-50 space-y-8">
-                      <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">Bảng phân tích chi tiết tiêu chí</p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                         {Object.entries(q.gridDist).map(([rk, dist], idx) => {
-                            const info = getGridInfo(q.id)
-                            const label = info.rows[parseInt(rk)] || `Tiêu chí ${parseInt(rk)+1}`
-                            const totalRow = Object.values(dist).reduce((a, b) => a + b, 0) || 1
-                            return (
-                               <div key={idx} className="bg-slate-50/50 p-8 rounded-[2.5rem] border border-slate-100 group hover:border-[#BE1E2E]/20 transition-all">
-                                  <p className="text-[12px] font-black text-slate-800 mb-6 uppercase tracking-tight flex items-center gap-3">
-                                     <div className="w-2 h-2 rounded-full bg-[#BE1E2E]" /> {label}
-                                  </p>
-                                  <div className="space-y-4">
-                                     {info.cols.map((col, cIdx) => {
-                                        const count = dist[cIdx.toString()] || dist[col] || 0
-                                        const pct = Math.round((count / totalRow) * 100)
-                                        let cFill = GRID_COLORS["default"]
-                                        if (col.includes("Rất hài lòng")) cFill = GRID_COLORS["Rất hài lòng"]
-                                        else if (col.includes("Rất không hài lòng")) cFill = GRID_COLORS["Rất không hài lòng"]
-                                        else if (col.includes("Hài lòng")) cFill = GRID_COLORS["Hài lòng"]
-                                        else if (col.includes("Không hài lòng")) cFill = GRID_COLORS["Không hài lòng"]
-
-                                        return (
-                                           <div key={cIdx} className="space-y-2">
-                                              <div className="flex justify-between text-[10px] font-black text-slate-400 uppercase">
-                                                 <span>{col}</span>
-                                                 <span className="text-slate-900">{pct}% ({count})</span>
-                                              </div>
-                                              <div className="h-2 bg-white rounded-full overflow-hidden border border-slate-50 shadow-inner">
-                                                 <div className="h-full transition-all duration-1000" style={{ width: `${pct}%`, backgroundColor: cFill }} />
-                                              </div>
-                                           </div>
-                                        )
-                                     })}
-                                  </div>
-                               </div>
-                            )
-                         })}
-                      </div>
-                   </div>
-                )}
              </div>
            ))}
         </div>
