@@ -1,6 +1,6 @@
 ﻿'use client'
-import { useState, useMemo } from 'react'
-import { Building2, GraduationCap, LayoutGrid, BarChart3, PieChart as PieChartIcon, Users, TrendingUp, Info, MessageSquare, User, List, Target, Hash, Filter } from 'lucide-react'
+import { useState, useMemo, useEffect } from 'react'
+import { Building2, GraduationCap, LayoutGrid, BarChart3, PieChart as PieChartIcon, Users, TrendingUp, Info, MessageSquare, User, List, Target, Hash, Filter, Zap } from 'lucide-react'
 import Link from 'next/link'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts'
 
@@ -52,15 +52,18 @@ interface TextOpinion {
   questionId: string
 }
 
-const COLORS = ['#BE1E2E', '#ef4444', '#fbbf24', '#f59e0b', '#3b82f6', '#10b981', '#059669']
+const COLORS = ['#BE1E2E', '#ef4444', '#fbbf24', '#f59e0b', '#3b82f6', '#10b981', '#059669', '#6366f1', '#8b5cf6', '#ec4899']
 
 export function ResultsDashboardClient({ periodId, periodName, periodCode, questions, forms, totalForms }: Props) {
+  useEffect(() => {
+    console.log("%c SKYLINE SURVEY DASHBOARD UPDATED v2.1 ", "background: #BE1E2E; color: white; font-weight: bold; padding: 4px; border-radius: 4px;");
+  }, []);
+
   const [filterType, setFilterType] = useState<'ALL' | 'CAMPUS' | 'CLASS'>('ALL')
   const [selectedCampus, setSelectedCampus] = useState<string>('ALL')
   const [selectedClass, setSelectedClass] = useState<string>('ALL')
   const [compareBy, setCompareBy] = useState<'CAMPUS' | 'CLASS'>('CAMPUS')
 
-  // Helper to parse Grid options
   const getGridLabels = (qId: string) => {
     const q = questions.find(x => x.id === qId)
     if (!q || !q.options) return []
@@ -69,7 +72,6 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
     return rows
   }
 
-  // Helper to calculate NPS & Stats
   const calculateStats = (targetForms: Form[]) => {
     let promoters = 0, passives = 0, detractors = 0, totalNpsResponses = 0
     let totalScore = 0, scoreCount = 0
@@ -149,8 +151,6 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
       const distribution: Record<string, number> = {}
       const textResponses: TextOpinion[] = []
       const gridDistribution: Record<string, Record<string, number>> = {}
-      
-      // Comparison Data
       const comparisonMap = new Map<string, Record<string, number>>()
 
       filteredForms.forEach(form => {
@@ -231,71 +231,80 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
       <div className="max-w-[1600px] mx-auto space-y-6">
         
         {/* Header & Controls */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col lg:flex-row justify-between items-center gap-6">
+        <div className="bg-white rounded-3xl p-6 shadow-xl border border-slate-100 flex flex-col lg:flex-row justify-between items-center gap-6 relative">
+          <div className="absolute -top-3 left-10 bg-red-600 text-white px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg animate-pulse">
+            <Zap className="w-3 h-3" /> PHIÊN BẢN MỚI NHẤT 24/04
+          </div>
+
           <div className="flex items-center gap-4">
-             <div className="w-12 h-12 bg-[#BE1E2E] rounded-2xl flex items-center justify-center text-white shadow-lg shadow-red-100">
-               <BarChart3 className="w-6 h-6" />
+             <div className="w-14 h-14 bg-[#BE1E2E] rounded-2xl flex items-center justify-center text-white shadow-xl shadow-red-100">
+               <BarChart3 className="w-7 h-7" />
              </div>
              <div>
-                <h1 className="text-xl font-black tracking-tight">{periodName}</h1>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{periodCode} • BÁO CÁO PHÂN TÍCH TIẾN ĐỘ</p>
+                <h1 className="text-2xl font-black tracking-tight text-slate-900">{periodName}</h1>
+                <p className="text-[11px] font-black text-[#BE1E2E] uppercase tracking-widest">Skyline Analytics Dashboard • v2.1</p>
              </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 bg-slate-50 p-2 rounded-2xl border border-slate-100">
-            <div className="flex bg-white rounded-xl border border-slate-200 p-1">
-               <button onClick={() => setCompareBy('CAMPUS')} className={`px-3 py-1.5 rounded-lg text-[9px] font-black transition-all ${compareBy === 'CAMPUS' ? 'bg-[#BE1E2E] text-white' : 'text-slate-400 hover:text-slate-600'}`}>CƠ SỞ</button>
-               <button onClick={() => setCompareBy('CLASS')} className={`px-3 py-1.5 rounded-lg text-[9px] font-black transition-all ${compareBy === 'CLASS' ? 'bg-[#BE1E2E] text-white' : 'text-slate-400 hover:text-slate-600'}`}>LỚP</button>
+          <div className="flex flex-wrap items-center gap-3 bg-slate-100 p-2 rounded-2xl border border-slate-200">
+            <div className="flex bg-white rounded-xl border border-slate-200 p-1 shadow-sm">
+               <button onClick={() => setCompareBy('CAMPUS')} className={`px-4 py-2 rounded-lg text-[10px] font-black transition-all ${compareBy === 'CAMPUS' ? 'bg-[#BE1E2E] text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}>CƠ SỞ</button>
+               <button onClick={() => setCompareBy('CLASS')} className={`px-4 py-2 rounded-lg text-[10px] font-black transition-all ${compareBy === 'CLASS' ? 'bg-[#BE1E2E] text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}>LỚP</button>
             </div>
             <select value={selectedCampus} onChange={(e) => { setSelectedCampus(e.target.value); setFilterType(e.target.value === 'ALL' ? 'ALL' : 'CAMPUS'); }}
-              className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-xs font-black outline-none focus:ring-2 focus:ring-[#BE1E2E]/20">
+              className="px-5 py-2.5 rounded-xl border-2 border-slate-200 bg-white text-xs font-black outline-none focus:border-[#BE1E2E] transition-all">
               <option value="ALL">TẤT CẢ CƠ SỞ</option>
               {campuses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
-            <Link href="/admin/surveys" className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-500 border border-slate-200 font-black rounded-xl transition-all text-[10px] uppercase">
-              Thoát
+            <Link href="/admin/surveys" className="px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-black rounded-xl transition-all text-[10px] uppercase shadow-lg">
+              Quay lại
             </Link>
           </div>
         </div>
 
         {/* KPI Summary */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-           <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm text-center">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">CHỈ SỐ NPS</p>
-              <h3 className={`text-4xl font-black ${stats.nps !== null && stats.nps > 0 ? 'text-emerald-500' : 'text-[#BE1E2E]'}`}>
+           <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-md text-center group hover:bg-red-50 transition-colors">
+              <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2 group-hover:text-red-400">CHỈ SỐ NPS</p>
+              <h3 className={`text-5xl font-black ${stats.nps !== null && stats.nps > 0 ? 'text-emerald-500' : 'text-[#BE1E2E]'}`}>
                 {stats.nps !== null ? stats.nps : '--'}%
               </h3>
            </div>
-           <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm text-center">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">TRUNG BÌNH</p>
-              <h3 className="text-4xl font-black text-slate-800">{stats.average}</h3>
+           <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-md text-center group hover:bg-indigo-50 transition-colors">
+              <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2 group-hover:text-indigo-400">TRUNG BÌNH</p>
+              <h3 className="text-5xl font-black text-slate-800">{stats.average}</h3>
            </div>
-           <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm text-center">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">TRUNG VỊ</p>
-              <h3 className="text-4xl font-black text-slate-800">{stats.median}</h3>
+           <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-md text-center group hover:bg-amber-50 transition-colors">
+              <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2 group-hover:text-amber-400">TRUNG VỊ</p>
+              <h3 className="text-5xl font-black text-slate-800">{stats.median}</h3>
            </div>
-           <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm text-center">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">PHIẾU ĐÃ NỘP</p>
-              <h3 className="text-4xl font-black text-slate-800">{filteredForms.length}</h3>
+           <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-md text-center group hover:bg-emerald-50 transition-colors">
+              <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2 group-hover:text-emerald-400">PHIẾU ĐÃ NỘP</p>
+              <h3 className="text-5xl font-black text-slate-800">{filteredForms.length}</h3>
            </div>
         </div>
 
-        {/* Main Opinion & Overview Row */}
+        {/* Main Content Row */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-           <div className="lg:col-span-1 bg-[#1e293b] rounded-3xl shadow-lg flex flex-col overflow-hidden">
-              <div className="p-5 border-b border-white/10 flex items-center justify-between">
-                 <h3 className="text-xs font-black text-white uppercase tracking-widest">TỔNG HỢP Ý KIẾN</h3>
-                 <span className="text-emerald-400 text-[9px] font-black">{questionAnalytics.flatMap(q => q.textResponses).length} Ý KIẾN</span>
+           {/* Opinion Table */}
+           <div className="lg:col-span-1 bg-[#1e293b] rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-white/5">
+              <div className="p-6 bg-slate-900 border-b border-white/10 flex items-center justify-between">
+                 <h3 className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-2">
+                   <MessageSquare className="w-4 h-4 text-emerald-400" /> Ý KIẾN PHẢN HỒI
+                 </h3>
+                 <span className="bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
+                   {questionAnalytics.flatMap(q => q.textResponses).length} FEEDBACK
+                 </span>
               </div>
-              <div className="flex-1 overflow-y-auto max-h-[500px] custom-scrollbar">
+              <div className="flex-1 overflow-y-auto max-h-[600px] custom-scrollbar">
                  <table className="w-full text-left">
                     <tbody>
                        {questionAnalytics.flatMap(q => q.textResponses).map((op, idx) => (
-                         <tr key={idx} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                            <td className="p-4 align-top w-1/4">
-                               <span className="text-[9px] font-black text-slate-400 uppercase">{op.className}</span>
+                         <tr key={idx} className="border-b border-white/5 hover:bg-white/5 transition-all">
+                            <td className="p-5 align-top w-1/4">
+                               <span className="text-[10px] font-black text-slate-500 uppercase tracking-tight">{op.className}</span>
                             </td>
-                            <td className="p-4 text-[11px] text-slate-300 leading-relaxed italic border-l border-white/5">
+                            <td className="p-5 text-[12px] text-slate-300 leading-relaxed italic border-l border-white/5">
                                "{op.text}"
                             </td>
                          </tr>
@@ -305,18 +314,26 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
               </div>
            </div>
 
-           <div className="lg:col-span-2 bg-white rounded-3xl border border-slate-100 shadow-sm p-8 flex flex-col">
-              <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-8 border-b border-slate-50 pb-4">
-                SO SÁNH TỶ LỆ PHÂN BỔ THEO {compareBy === 'CAMPUS' ? 'CƠ SỞ' : 'LỚP'} (Q1)
-              </h3>
-              <div className="flex-1 min-h-[400px]">
+           {/* Unit Comparison Chart */}
+           <div className="lg:col-span-2 bg-white rounded-3xl border border-slate-100 shadow-xl p-8 flex flex-col">
+              <div className="flex items-center justify-between mb-8 border-b border-slate-50 pb-6">
+                 <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                    <Target className="w-6 h-6 text-[#BE1E2E]" /> BIỂU ĐỒ CỘT CHỒNG: SO SÁNH THEO {compareBy === 'CAMPUS' ? 'CƠ SỞ' : 'LỚP'}
+                 </h3>
+                 <div className="flex items-center gap-4 text-[10px] font-black text-slate-400 uppercase">
+                    <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-[#BE1E2E]" /> THẤP</div>
+                    <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-amber-400" /> TRUNG BÌNH</div>
+                    <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> CAO</div>
+                 </div>
+              </div>
+              <div className="flex-1 min-h-[450px]">
                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart layout="vertical" data={questionAnalytics[0]?.comparisonData || []} margin={{ left: 60, right: 30 }}>
+                    <BarChart layout="vertical" data={questionAnalytics[0]?.comparisonData || []} margin={{ left: 80, right: 30 }}>
                        <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
                        <XAxis type="number" hide />
-                       <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 'bold', fill: '#64748b'}} width={80} />
-                       <Tooltip />
-                       <Legend wrapperStyle={{paddingTop: '20px'}} iconType="circle" />
+                       <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fontSize: 11, fontWeight: 'black', fill: '#475569'}} width={100} />
+                       <Tooltip cursor={{fill: '#f8fafc'}} contentStyle={{borderRadius: '20px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)'}} />
+                       <Legend wrapperStyle={{paddingTop: '30px'}} iconType="circle" />
                        {Array.from({length: 11}).map((_, score) => (
                           <Bar key={score} dataKey={`score_${score}`} name={`${score}đ`} stackId="a" fill={score >= 9 ? '#10b981' : score >= 7 ? '#fbbf24' : '#BE1E2E'} radius={0} />
                        ))}
@@ -326,39 +343,41 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
            </div>
         </div>
 
-        {/* Question Details Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Question Details Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pb-10">
            {questionAnalytics.slice(1).map((q, i) => (
-             <div key={q.id} className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8 space-y-6">
-                <div className="flex justify-between items-start gap-4">
-                   <h4 className="text-[13px] font-black text-slate-800 leading-tight">
-                      <span className="text-[#BE1E2E] mr-2">Q{i + 2}.</span> {q.questionText}
+             <div key={q.id} className="bg-white rounded-[3rem] border border-slate-100 shadow-xl p-10 space-y-8 hover:shadow-2xl transition-shadow relative overflow-hidden group">
+                <div className="absolute top-0 left-0 w-2 h-full bg-[#BE1E2E] group-hover:w-3 transition-all" />
+                
+                <div className="flex justify-between items-start gap-6">
+                   <h4 className="text-[15px] font-black text-slate-800 leading-tight">
+                      <span className="text-[#BE1E2E]/30 text-2xl mr-2">#{i + 2}</span> {q.questionText}
                    </h4>
-                   <div className="bg-slate-50 px-4 py-2 rounded-2xl text-center shrink-0 border border-slate-100">
-                      <p className="text-[9px] font-black text-slate-400 leading-none mb-1">TRUNG BÌNH</p>
-                      <p className="text-sm font-black text-slate-700">{q.average || '--'}</p>
+                   <div className="bg-[#BE1E2E]/5 px-5 py-2.5 rounded-2xl text-center shrink-0 border border-[#BE1E2E]/10">
+                      <p className="text-[10px] font-black text-[#BE1E2E] leading-none mb-1">AVG</p>
+                      <p className="text-lg font-black text-slate-800">{q.average || '--'}</p>
                    </div>
                 </div>
 
-                <div className="h-[250px] w-full">
+                <div className="h-[300px] w-full">
                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart layout="vertical" data={q.comparisonData.slice(0, 8)} margin={{ left: 50, right: 30 }}>
+                      <BarChart layout="vertical" data={q.comparisonData.slice(0, 10)} margin={{ left: 60, right: 30 }}>
                          <XAxis type="number" hide />
-                         <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fontSize: 9, fill: '#94a3b8'}} width={70} />
-                         <Tooltip />
-                         {/* Dynamic bars based on available scores */}
+                         <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 'bold', fill: '#94a3b8'}} width={80} />
+                         <Tooltip cursor={{fill: '#f8fafc'}} />
                          {Object.keys(q.distribution).sort((a,b) => Number(a)-Number(b)).map((score, idx) => (
-                            <Bar key={score} dataKey={`score_${score}`} stackId="a" fill={COLORS[idx % COLORS.length]} barSize={20} />
+                            <Bar key={score} dataKey={`score_${score}`} stackId="a" fill={COLORS[idx % COLORS.length]} barSize={25} />
                          ))}
                       </BarChart>
                    </ResponsiveContainer>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-4">
                    {q.chartData.map((item, idx) => (
-                      <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                         <span className="text-[10px] font-bold text-slate-500">{item.name}đ:</span>
-                         <span className="text-[10px] font-black text-slate-800">{Math.round((item.value / (filteredForms.length || 1)) * 100)}%</span>
+                      <div key={idx} className="flex flex-col items-center p-4 bg-slate-50 rounded-3xl border border-slate-100 hover:bg-white hover:shadow-md transition-all">
+                         <span className="text-[10px] font-black text-slate-400 uppercase mb-1">{item.name} ĐIỂM</span>
+                         <span className="text-sm font-black text-slate-800">{Math.round((item.value / (filteredForms.length || 1)) * 100)}%</span>
+                         <span className="text-[9px] font-bold text-slate-400">({item.value} phiếu)</span>
                       </div>
                    ))}
                 </div>
@@ -368,8 +387,10 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
 
       </div>
       <style jsx global>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
       `}</style>
     </div>
   )
