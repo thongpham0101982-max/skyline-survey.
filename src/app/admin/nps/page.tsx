@@ -11,7 +11,7 @@ export default async function NpsDashboardPage() {
     include: {
       _count: {
         select: {
-          forms: true
+          surveyForms: true
         }
       }
     }
@@ -48,7 +48,7 @@ export default async function NpsDashboardPage() {
 
       <div className="grid gap-4">
         {periods.map((p) => {
-          const total = p._count.forms
+          const total = p._count.surveyForms
           const submitted = submittedMap[p.id] ?? 0
           const rate = total > 0 ? Math.round((submitted / total) * 100) : 0
           return (
@@ -93,3 +93,4 @@ export default async function NpsDashboardPage() {
     </div>
   )
 }
+
