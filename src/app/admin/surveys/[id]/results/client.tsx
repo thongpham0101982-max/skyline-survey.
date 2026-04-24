@@ -63,7 +63,6 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
   const getGridLabels = (qId: string) => {
     const q = questions.find(x => x.id === qId)
     if (!q || !q.options) return []
-    // Expected format: Row1,Row2,Row3|Col1,Col2
     const parts = q.options.split('|')
     const rows = parts[0].split(',').map(s => s.trim())
     return rows
@@ -158,7 +157,6 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
       let sum = 0, count = 0
       const distribution: Record<string, number> = {}
       const textResponses: TextOpinion[] = []
-      // For Grid questions: rowKey -> { score -> count }
       const gridDistribution: Record<string, Record<string, number>> = {}
 
       filteredForms.forEach(form => {
@@ -174,13 +172,11 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
              try {
                const parsed = JSON.parse(r.choiceAnswer)
                Object.entries(parsed).forEach(([rowKey, val]: [string, any]) => {
+                 if (rowKey === 'rows') return
                  if (!gridDistribution[rowKey]) gridDistribution[rowKey] = {}
                  gridDistribution[rowKey][val] = (gridDistribution[rowKey][val] || 0) + 1
-                 distribution[val] = (distribution[val] || 0) + 1 // Keep for legacy
                })
-             } catch (e) {
-               distribution[r.choiceAnswer] = (distribution[r.choiceAnswer] || 0) + 1
-             }
+             } catch (e) {}
           } else {
             const choices = r.choiceAnswer.split(',').map(s => s.trim())
             choices.forEach(c => {
@@ -190,14 +186,13 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
           count++
         } else if (r.textAnswer) {
           if (r.textAnswer.startsWith('{')) {
-             // Handle if grid data is in textAnswer
              try {
                const parsed = JSON.parse(r.textAnswer)
                Object.entries(parsed).forEach(([rowKey, val]: [string, any]) => {
+                 if (rowKey === 'rows') return
                  if (!gridDistribution[rowKey]) gridDistribution[rowKey] = {}
                  gridDistribution[rowKey][val] = (gridDistribution[rowKey][val] || 0) + 1
                })
-               count++
              } catch (e) {
                textResponses.push({
                  text: r.textAnswer,
@@ -206,7 +201,6 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
                  campusName: form.campusName || 'Chưa rõ',
                  questionId: q.id
                })
-               count++
              }
           } else {
             textResponses.push({
@@ -216,8 +210,8 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
               campusName: form.campusName || 'Chưa rõ',
               questionId: q.id
             })
-            count++
           }
+          count++
         }
       })
 
@@ -352,46 +346,43 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
                    )}
                  </div>
 
-                 {/* Grid Question Table */}
+                 {/* Grid Question Table Summary */}
                  {Object.keys(q.gridDistribution || {}).length > 0 ? (
-                   <div className="mt-auto space-y-4">
-                      {Object.entries(q.gridDistribution || {}).map(([rowKey, dist], subIdx) => {
-                        const labels = getGridLabels(q.id)
-                        const rowLabel = labels[parseInt(rowKey)] || `Tiêu chí ${parseInt(rowKey) + 1}`
-                        const rowChartData = Object.entries(dist).map(([name, value]) => ({ name, value }))
-                          .sort((a,b) => (Number(a.name) || 0) - (Number(b.name) || 0))
-                        
-                        return (
-                          <div key={subIdx} className="bg-white p-3 rounded-xl border border-slate-200">
-                             <p className="text-[10px] font-black text-[#BE1E2E] uppercase mb-2 flex items-center gap-2">
-                               <List className="w-3 h-3" /> {rowLabel}
-                             </p>
-                             <table className="w-full text-[9px] text-left">
-                                <thead>
-                                   <tr className="border-b border-slate-100">
-                                      <th className="pb-1 font-black text-slate-400 uppercase">Mức điểm</th>
-                                      <th className="pb-1 font-black text-slate-400 uppercase text-right">SL</th>
-                                      <th className="pb-1 font-black text-slate-400 uppercase text-right">%</th>
-                                   </tr>
-                                </thead>
-                                <tbody>
-                                   {rowChartData.map((item: any) => (
-                                      <tr key={item.name} className="border-b border-slate-50/50 last:border-0">
-                                         <td className="py-1 font-bold text-slate-600">{item.name}</td>
-                                         <td className="py-1 font-black text-slate-900 text-right">{item.value}</td>
-                                         <td className="py-1 font-bold text-indigo-500 text-right">
-                                           {filteredForms.length > 0 ? ((item.value / filteredForms.length) * 100).toFixed(1) : 0}%
-                                         </td>
+                    <div className="mt-auto space-y-3">
+                       {Object.entries(q.gridDistribution || {}).map(([rowKey, dist], subIdx) => {
+                          const labels = getGridLabels(q.id)
+                          const rowLabel = labels[parseInt(rowKey)] || `Tiêu chí ${parseInt(rowKey) + 1}`
+                          const rowData = Object.entries(dist).map(([name, value]) => ({ name, value }))
+                             .sort((a,b) => (Number(a.name) || 0) - (Number(b.name) || 0))
+                          
+                          return (
+                             <div key={subIdx} className="p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
+                                <p className="text-[10px] font-black text-[#BE1E2E] uppercase mb-2 border-b border-slate-50 pb-1">{rowLabel}</p>
+                                <table className="w-full text-[9px]">
+                                   <thead>
+                                      <tr className="text-slate-400 font-black uppercase tracking-wider">
+                                         <th className="text-left pb-1">Phương án</th>
+                                         <th className="text-right pb-1">SL</th>
+                                         <th className="text-right pb-1">%</th>
                                       </tr>
-                                   ))}
-                                </tbody>
-                             </table>
-                          </div>
-                        )
-                      })}
-                   </div>
+                                   </thead>
+                                   <tbody>
+                                      {rowData.map((item: any) => (
+                                         <tr key={item.name} className="border-t border-slate-50">
+                                            <td className="py-1 font-bold text-slate-600">{item.name}</td>
+                                            <td className="py-1 font-black text-slate-900 text-right">{item.value}</td>
+                                            <td className="py-1 font-bold text-indigo-500 text-right">
+                                               {filteredForms.length > 0 ? ((item.value / filteredForms.length) * 100).toFixed(1) : 0}%
+                                            </td>
+                                         </tr>
+                                      ))}
+                                   </tbody>
+                                </table>
+                             </div>
+                          )
+                       })}
+                    </div>
                  ) : q.chartData && q.chartData.length > 0 ? (
-                   /* Standard Choice/Rating Questions */
                    <div className="flex flex-col gap-4 mt-auto">
                      <div className="h-40 w-full">
                        <ResponsiveContainer width="100%" height="100%">
@@ -430,19 +421,14 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
                      </div>
                    </div>
                  ) : q.textResponses && q.textResponses.length > 0 ? (
-                   /* Text Questions (Anonymous) */
                    <div className="mt-auto space-y-2">
                       <p className="text-[10px] font-black text-slate-400 uppercase flex items-center gap-1 mb-2">
-                        <MessageSquare className="w-3 h-3" /> Danh sách ý kiến ({q.textResponses.length})
+                        <MessageSquare className="w-3 h-3" /> Ý kiến phản hồi ({q.textResponses.length})
                       </p>
-                      <div className="max-h-60 overflow-y-auto custom-scrollbar pr-1 space-y-3">
+                      <div className="max-h-60 overflow-y-auto custom-scrollbar pr-1 space-y-2">
                         {q.textResponses.map((opinion, idx) => (
-                          <div key={idx} className="p-3 bg-white rounded-xl border border-slate-100 shadow-sm relative group transition-all hover:border-[#BE1E2E]/30">
-                             <p className="text-[11px] text-slate-600 leading-relaxed italic">"{opinion.text}"</p>
-                             <div className="mt-2 flex justify-end gap-1">
-                                <span className="bg-slate-50 text-slate-400 px-2 py-0.5 rounded-full text-[8px] font-bold uppercase">{opinion.className}</span>
-                                <span className="bg-slate-50 text-slate-400 px-2 py-0.5 rounded-full text-[8px] font-bold uppercase">{opinion.campusName}</span>
-                             </div>
+                          <div key={idx} className="p-2 bg-slate-50 rounded-lg text-[11px] text-slate-600 border-l-2 border-[#BE1E2E]/20">
+                             "{opinion.text}"
                           </div>
                         ))}
                       </div>
