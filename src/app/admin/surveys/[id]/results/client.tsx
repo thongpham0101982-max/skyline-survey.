@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useState, useMemo } from 'react'
-import { Building2, GraduationCap, LayoutGrid, BarChart3, PieChart as PieChartIcon, Users, TrendingUp } from 'lucide-react'
+import { Building2, GraduationCap, LayoutGrid, BarChart3, PieChart as PieChartIcon, Users, TrendingUp, Info } from 'lucide-react'
 import Link from 'next/link'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts'
 
@@ -51,6 +51,38 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
   const [selectedCampus, setSelectedCampus] = useState<string>('ALL')
   const [selectedClass, setSelectedClass] = useState<string>('ALL')
 
+  // Helper to calculate NPS for a subset of forms
+  const calculateNps = (targetForms: Form[]) => {
+    let promoters = 0, passives = 0, detractors = 0, totalNpsResponses = 0
+
+    targetForms.forEach(form => {
+      form.responses.forEach(r => {
+        const q = questions.find(x => x.id === r.questionId)
+        if (!q) return
+        if (q.questionType?.toUpperCase() === 'NPS' && r.numericScore !== null) {
+          totalNpsResponses++
+          const max = q.ratingScaleMax || 10
+          if (max >= 9) { // 10-point scale
+            if (r.numericScore >= 9) promoters++
+            else if (r.numericScore >= 7) passives++
+            else detractors++
+          } else if (max === 5) { // 5-point scale
+            if (r.numericScore === 5) promoters++
+            else if (r.numericScore === 4) passives++
+            else detractors++
+          } else { // Generic
+            if (r.numericScore === max) promoters++
+            else if (r.numericScore >= max - 1) passives++
+            else detractors++
+          }
+        }
+      })
+    })
+
+    const nps = totalNpsResponses > 0 ? Math.round(((promoters - detractors) / totalNpsResponses) * 100) : null
+    return { promoters, passives, detractors, totalNpsResponses, nps }
+  }
+
   // Derive unique campuses and classes
   const campuses = useMemo(() => {
     const map = new Map<string, string>()
@@ -78,44 +110,25 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
     })
   }, [forms, filterType, selectedCampus, selectedClass])
 
-  // Calculate NPS
+  // Main NPS Data
   const npsData = useMemo(() => {
-    let promoters = 0, passives = 0, detractors = 0, totalNpsResponses = 0
-
-    filteredForms.forEach(form => {
-      form.responses.forEach(r => {
-        const q = questions.find(x => x.id === r.questionId)
-        if (!q) return
-        if (q.questionType?.toUpperCase() === 'NPS' && r.numericScore !== null) {
-          totalNpsResponses++
-          const max = q.ratingScaleMax || 10
-          if (max >= 9) { // 10-point scale
-            if (r.numericScore >= 9) promoters++
-            else if (r.numericScore >= 7) passives++
-            else detractors++
-          } else if (max === 5) { // 5-point scale
-            if (r.numericScore === 5) promoters++
-            else if (r.numericScore === 4) passives++
-            else detractors++
-          } else { // Generic
-            if (r.numericScore === max) promoters++
-            else if (r.numericScore >= max - 1) passives++
-            else detractors++
-          }
-        }
-      })
-    })
-
-    const nps = totalNpsResponses > 0 ? Math.round(((promoters - detractors) / totalNpsResponses) * 100) : null
-    
+    const data = calculateNps(filteredForms)
     const pieData = [
-      { name: 'Promoters', value: promoters },
-      { name: 'Passives', value: passives },
-      { name: 'Detractors', value: detractors },
+      { name: 'Promoters', value: data.promoters },
+      { name: 'Passives', value: data.passives },
+      { name: 'Detractors', value: data.detractors },
     ]
-
-    return { promoters, passives, detractors, totalNpsResponses, nps, pieData }
+    return { ...data, pieData }
   }, [filteredForms, questions])
+
+  // Campus comparison data
+  const campusComparison = useMemo(() => {
+    return campuses.map(c => {
+      const campusForms = forms.filter(f => f.campusId === c.id)
+      const data = calculateNps(campusForms)
+      return { ...c, ...data }
+    }).sort((a, b) => (b.nps ?? -200) - (a.nps ?? -200))
+  }, [campuses, forms, questions])
 
   // Calculate Average/Distribution per Question
   const questionAnalytics = useMemo(() => {
@@ -141,17 +154,8 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
       })
 
       const average = count > 0 && sum > 0 ? (sum / count).toFixed(2) : null
-      
-      const chartData = Object.entries(distribution).map(([name, value]) => ({
-        name: name,
-        value: value
-      })).sort((a,b) => {
-        // Try to sort numerically if keys are numbers
-        const numA = Number(a.name)
-        const numB = Number(b.name)
-        if(!isNaN(numA) && !isNaN(numB)) return numA - numB
-        return a.name.localeCompare(b.name)
-      })
+      const chartData = Object.entries(distribution).map(([name, value]) => ({ name, value }))
+        .sort((a,b) => (Number(a.name) || 0) - (Number(b.name) || 0))
 
       return { ...q, average, count, distribution, chartData }
     })
@@ -256,51 +260,28 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
         </div>
       </div>
 
-      {/* NPS Breakdown Chart */}
-      {npsData.totalNpsResponses > 0 && (
-        <div className="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-           <div>
-               <h3 className="text-lg font-black text-slate-800 flex items-center gap-2 mb-6">
-                 <PieChartIcon className="w-5 h-5 text-indigo-500" /> Phân bổ NPS (Tổng {npsData.totalNpsResponses} phản hồi)
-               </h3>
-               
-               <div className="space-y-4">
-                 <div className="flex items-center justify-between p-4 rounded-xl bg-emerald-50 border border-emerald-100">
-                    <span className="font-bold text-emerald-700">Promoters (Ủng hộ)</span>
-                    <div className="text-right">
-                       <p className="text-lg font-black text-emerald-600">{npsData.promoters}</p>
-                       <p className="text-xs font-bold text-emerald-600/70">{(npsData.promoters/npsData.totalNpsResponses*100).toFixed(1)}%</p>
-                    </div>
-                 </div>
-                 <div className="flex items-center justify-between p-4 rounded-xl bg-amber-50 border border-amber-100">
-                    <span className="font-bold text-amber-700">Passives (Bình thường)</span>
-                    <div className="text-right">
-                       <p className="text-lg font-black text-amber-600">{npsData.passives}</p>
-                       <p className="text-xs font-bold text-amber-600/70">{(npsData.passives/npsData.totalNpsResponses*100).toFixed(1)}%</p>
-                    </div>
-                 </div>
-                 <div className="flex items-center justify-between p-4 rounded-xl bg-red-50 border border-red-100">
-                    <span className="font-bold text-[#BE1E2E]">Detractors (Chỉ trích)</span>
-                    <div className="text-right">
-                       <p className="text-lg font-black text-[#BE1E2E]">{npsData.detractors}</p>
-                       <p className="text-xs font-bold text-[#BE1E2E]/70">{(npsData.detractors/npsData.totalNpsResponses*100).toFixed(1)}%</p>
-                    </div>
-                 </div>
-               </div>
-           </div>
-           
-           <div className="h-64 md:h-full min-h-[300px]">
+      {/* NPS Definition Info */}
+      <div className="bg-blue-50 border border-blue-100 p-4 rounded-2xl flex gap-3 items-start">
+         <Info className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+         <div className="text-xs text-blue-700 space-y-1">
+            <p className="font-bold">Công thức: NPS = % Promoters – % Detractors</p>
+            <p>• <span className="font-bold text-emerald-600">Promoters (9-10):</span> Khách hàng rất hài lòng, sẵn sàng giới thiệu.</p>
+            <p>• <span className="font-bold text-amber-600">Passives (7-8):</span> Khách hàng hài lòng nhưng không chắc chắn đề xuất.</p>
+            <p>• <span className="font-bold text-red-600">Detractors (0-6):</span> Khách hàng không hài lòng.</p>
+         </div>
+      </div>
+
+      {/* Main Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* NPS Pie Chart */}
+        <div className="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-sm flex flex-col h-full">
+           <h3 className="text-lg font-black text-slate-800 flex items-center gap-2 mb-6">
+             <PieChartIcon className="w-5 h-5 text-indigo-500" /> Phân bổ NPS (N = {npsData.totalNpsResponses})
+           </h3>
+           <div className="flex-1 min-h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie
-                    data={npsData.pieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
+                  <Pie data={npsData.pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={5} dataKey="value">
                     <Cell fill="#10b981" />
                     <Cell fill="#fbbf24" />
                     <Cell fill="#ef4444" />
@@ -311,7 +292,30 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
               </ResponsiveContainer>
            </div>
         </div>
-      )}
+
+        {/* Campus Comparison Table */}
+        <div className="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-sm h-full flex flex-col">
+           <h3 className="text-lg font-black text-slate-800 flex items-center gap-2 mb-6">
+             <Building2 className="w-5 h-5 text-indigo-500" /> So sánh NPS giữa các Cơ sở
+           </h3>
+           <div className="space-y-3 overflow-y-auto max-h-[300px] pr-2 custom-scrollbar">
+              {campusComparison.map(c => (
+                <div key={c.id} className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50 hover:bg-white transition-all group">
+                   <div className="flex items-center gap-3">
+                      <div className="w-2 h-8 rounded-full bg-indigo-200 group-hover:bg-[#BE1E2E] transition-all" />
+                      <span className="font-bold text-slate-700">{c.name}</span>
+                   </div>
+                   <div className="text-right">
+                      <span className={`text-xl font-black ${c.nps !== null ? (c.nps > 0 ? 'text-emerald-600' : 'text-[#BE1E2E]') : 'text-slate-400'}`}>
+                         {c.nps !== null ? c.nps : '--'}
+                      </span>
+                      <p className="text-[10px] font-bold text-slate-400">N={c.totalNpsResponses}</p>
+                   </div>
+                </div>
+              ))}
+           </div>
+        </div>
+      </div>
 
       {/* Results by Criterion */}
       <div className="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-sm space-y-8">
@@ -322,33 +326,29 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
         {questionAnalytics.length === 0 ? (
            <div className="text-center py-10 text-slate-400 font-bold">Không có tiêu chí nào.</div>
         ) : (
-          <div className="space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {questionAnalytics.map((q, i) => (
-              <div key={q.id} className="p-6 rounded-[1.5rem] bg-slate-50 border border-slate-100">
-                 <div className="flex justify-between items-start gap-4 mb-6">
+              <div key={q.id} className="p-6 rounded-[1.5rem] bg-slate-50 border border-slate-100 flex flex-col">
+                 <div className="flex justify-between items-start gap-4 mb-4">
                    <p className="font-bold text-slate-800 text-sm leading-relaxed flex-1">
-                     <span className="text-[#BE1E2E] mr-2">Câu {i + 1}.</span> {q.questionText}
+                     <span className="text-[#BE1E2E] mr-2">Q{i + 1}.</span> {q.questionText}
                    </p>
                    {q.average !== null && (
-                     <div className="bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm text-center shrink-0">
-                       <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Điểm TB</p>
-                       <p className="text-xl font-black text-[#BE1E2E]">{q.average} <span className="text-xs text-slate-400">/ {q.ratingScaleMax}</span></p>
+                     <div className="bg-white px-3 py-1 rounded-lg border border-slate-200 text-center shrink-0 shadow-sm">
+                       <p className="text-[10px] font-black text-slate-400 uppercase leading-none mb-1">TB</p>
+                       <p className="text-sm font-black text-[#BE1E2E]">{q.average}</p>
                      </div>
                    )}
                  </div>
 
-                 {/* Chart for Distribution */}
                  {q.chartData && q.chartData.length > 0 && (
-                   <div className="h-64 w-full mt-4">
+                   <div className="h-48 w-full mt-auto">
                      <ResponsiveContainer width="100%" height="100%">
-                       <BarChart data={q.chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                       <BarChart data={q.chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                         <XAxis dataKey="name" tick={{fontSize: 12, fill: '#64748b'}} axisLine={false} tickLine={false} />
-                         <YAxis allowDecimals={false} tick={{fontSize: 12, fill: '#64748b'}} axisLine={false} tickLine={false} />
-                         <Tooltip 
-                           cursor={{fill: '#f1f5f9'}}
-                           contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
-                         />
+                         <XAxis dataKey="name" tick={{fontSize: 10, fill: '#64748b'}} axisLine={false} tickLine={false} />
+                         <YAxis allowDecimals={false} tick={{fontSize: 10, fill: '#64748b'}} axisLine={false} tickLine={false} />
+                         <Tooltip cursor={{fill: '#f1f5f9'}} contentStyle={{borderRadius: '12px', border: 'none', fontSize: '12px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
                          <Bar dataKey="value" name="Số lượng" radius={[4, 4, 0, 0]}>
                            {q.chartData.map((entry, index) => (
                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
