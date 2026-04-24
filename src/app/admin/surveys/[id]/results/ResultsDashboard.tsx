@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useState, useMemo, useEffect } from 'react'
-import { Building2, GraduationCap, LayoutGrid, BarChart3, PieChart as PieChartIcon, Users, TrendingUp, Info, MessageSquare, User, List, Target, Hash, Filter, Zap } from 'lucide-react'
+import { Building2, GraduationCap, LayoutGrid, BarChart3, PieChart as PieChartIcon, Users, TrendingUp, Info, MessageSquare, User, List, Target, Hash, Filter, Zap, CheckCircle2 } from 'lucide-react'
 import Link from 'next/link'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts'
 
@@ -55,10 +55,6 @@ interface TextOpinion {
 const COLORS = ['#BE1E2E', '#ef4444', '#fbbf24', '#f59e0b', '#3b82f6', '#10b981', '#059669', '#6366f1', '#8b5cf6', '#ec4899']
 
 export function ResultsDashboard({ periodId, periodName, periodCode, questions, forms, totalForms }: Props) {
-  useEffect(() => {
-    console.log("--- DASHBOARD RE-LOADED v3.1 ---");
-  }, []);
-
   const [filterType, setFilterType] = useState<'ALL' | 'CAMPUS' | 'CLASS'>('ALL')
   const [selectedCampus, setSelectedCampus] = useState<string>('ALL')
   const [selectedClass, setSelectedClass] = useState<string>('ALL')
@@ -90,16 +86,9 @@ export function ResultsDashboard({ periodId, periodName, periodCode, questions, 
 
           if (q.questionType?.toUpperCase() === 'NPS') {
             totalNpsResponses++
-            const max = q.ratingScaleMax || 10
-            if (max >= 9) {
-              if (score >= 9) promoters++
-              else if (score >= 7) passives++
-              else detractors++
-            } else {
-              if (score === max) promoters++
-              else if (score >= max - 1) passives++
-              else detractors++
-            }
+            if (score >= 9) promoters++
+            else if (score >= 7) passives++
+            else detractors++
           }
         }
       })
@@ -107,15 +96,13 @@ export function ResultsDashboard({ periodId, periodName, periodCode, questions, 
 
     const nps = totalNpsResponses > 0 ? Math.round(((promoters - detractors) / totalNpsResponses) * 100) : null
     const average = scoreCount > 0 ? (totalScore / scoreCount).toFixed(2) : '0'
-    
     let median = 0
     if (allScores.length > 0) {
       const sorted = [...allScores].sort((a, b) => a - b)
       const mid = Math.floor(sorted.length / 2)
       median = sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2
     }
-
-    return { promoters, passives, detractors, totalNpsResponses, nps, average, median: median.toFixed(2), totalResponses: scoreCount }
+    return { nps, average, median: median.toFixed(2), totalResponses: scoreCount }
   }
 
   const campuses = useMemo(() => {
@@ -162,73 +149,47 @@ export function ResultsDashboard({ periodId, periodName, periodCode, questions, 
 
         if (r.numericScore !== null) {
           const val = r.numericScore
-          qSum += val
-          qCount++
+          qSum += val; qCount++
           distribution[val] = (distribution[val] || 0) + 1
           comparisonMap.get(groupKey)![val] = (comparisonMap.get(groupKey)![val] || 0) + 1
-        } else if (r.choiceAnswer) {
-          if (r.choiceAnswer.startsWith('{')) {
-             try {
-               const parsed = JSON.parse(r.choiceAnswer)
-               Object.entries(parsed).forEach(([rowKey, val]: [string, any]) => {
-                 if (rowKey === 'rows') return
-                 if (!gridDistribution[rowKey]) gridDistribution[rowKey] = {}
-                 gridDistribution[rowKey][val] = (gridDistribution[rowKey][val] || 0) + 1
-                 distribution[val] = (distribution[val] || 0) + 1
-                 comparisonMap.get(groupKey)![val] = (comparisonMap.get(groupKey)![val] || 0) + 1
-                 qSum += (Number(val) || 0)
-                 qCount++
-               })
-             } catch (e) {}
-          } else {
-            const choices = r.choiceAnswer.split(',').map(s => s.trim())
-            choices.forEach(c => {
-              distribution[c] = (distribution[c] || 0) + 1
-              comparisonMap.get(groupKey)![c] = (comparisonMap.get(groupKey)![c] || 0) + 1
-            })
-            qCount++
-          }
+        } else if (r.choiceAnswer?.startsWith('{') || r.textAnswer?.startsWith('{')) {
+           try {
+             const parsed = JSON.parse(r.choiceAnswer || r.textAnswer || '{}')
+             Object.entries(parsed).forEach(([rowKey, val]: [string, any]) => {
+               if (rowKey === 'rows') return
+               if (!gridDistribution[rowKey]) gridDistribution[rowKey] = {}
+               gridDistribution[rowKey][val] = (gridDistribution[rowKey][val] || 0) + 1
+               distribution[val] = (distribution[val] || 0) + 1
+               comparisonMap.get(groupKey)![val] = (comparisonMap.get(groupKey)![val] || 0) + 1
+               qSum += (Number(val) || 0)
+               qCount++
+             })
+           } catch (e) {}
         } else if (r.textAnswer) {
-           if (r.textAnswer.startsWith('{')) {
-              try {
-                const parsed = JSON.parse(r.textAnswer)
-                Object.entries(parsed).forEach(([rowKey, val]: [string, any]) => {
-                  if (rowKey === 'rows') return
-                  if (!gridDistribution[rowKey]) gridDistribution[rowKey] = {}
-                  gridDistribution[rowKey][val] = (gridDistribution[rowKey][val] || 0) + 1
-                  distribution[val] = (distribution[val] || 0) + 1
-                  comparisonMap.get(groupKey)![val] = (comparisonMap.get(groupKey)![val] || 0) + 1
-                  qSum += (Number(val) || 0)
-                  qCount++
-                })
-              } catch (e) {}
-           } else {
-            textResponses.push({
-              text: r.textAnswer,
-              respondent: 'Phụ huynh/Học sinh',
-              className: form.className || 'Chưa rõ',
-              campusName: form.campusName || 'Chưa rõ',
-              questionId: q.id
-            })
-            qCount++
-           }
+          textResponses.push({
+            text: r.textAnswer,
+            respondent: 'Phụ huynh/Học sinh',
+            className: form.className || 'Chưa rõ',
+            campusName: form.campusName || 'Chưa rõ',
+            questionId: q.id
+          })
         }
       })
 
-      const average = qCount > 0 ? (qSum / qCount).toFixed(2) : null
-      const chartData = Object.entries(distribution).map(([name, value]) => ({ name, value }))
+      const totalResponsesForQ = qCount || 1
+      const chartData = Object.entries(distribution).map(([name, value]) => ({ name, value, percentage: Math.round((value / totalResponsesForQ) * 100) }))
         .sort((a,b) => (Number(a.name) || 0) - (Number(b.name) || 0))
 
       const comparisonData = Array.from(comparisonMap.entries()).map(([name, scores]) => {
-        const total = Object.values(scores).reduce((a, b) => a + b, 0)
+        const total = Object.values(scores).reduce((a, b) => a + b, 0) || 1
         const row: any = { name }
         Object.entries(scores).forEach(([score, val]) => {
-           row[`score_${score}`] = total > 0 ? Math.round((val / total) * 100) : 0
+           row[`score_${score}`] = Math.round((val / total) * 100)
         })
         return row
       })
 
-      return { ...q, average, count: qCount, distribution, chartData, textResponses, gridDistribution, comparisonData }
+      return { ...q, average: qCount > 0 ? (qSum / qCount).toFixed(2) : '0.00', chartData, textResponses, gridDistribution, comparisonData }
     })
   }, [questions, filteredForms, compareBy])
 
@@ -236,37 +197,32 @@ export function ResultsDashboard({ periodId, periodName, periodCode, questions, 
     <div className="bg-[#f1f5f9] min-h-screen p-4 lg:p-8 font-sans text-slate-800">
       <div className="max-w-[1600px] mx-auto space-y-8">
         
-        {/* Header */}
-        <div className="bg-white rounded-[2.5rem] p-8 shadow-2xl border border-slate-100 flex flex-col lg:flex-row justify-between items-center gap-8 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-[#BE1E2E]/5 rounded-full -mr-32 -mt-32 blur-3xl" />
-          <div className="flex items-center gap-6 relative z-10">
-             <div className="w-16 h-16 bg-[#BE1E2E] rounded-[1.5rem] flex items-center justify-center text-white shadow-2xl shadow-red-200">
+        {/* Header Section */}
+        <div className="bg-white rounded-[2.5rem] p-8 shadow-2xl flex flex-col lg:flex-row justify-between items-center gap-8 border border-slate-100">
+          <div className="flex items-center gap-6">
+             <div className="w-16 h-16 bg-[#BE1E2E] rounded-[1.5rem] flex items-center justify-center text-white shadow-xl">
                <BarChart3 className="w-8 h-8" />
              </div>
              <div>
-                <h1 className="text-3xl font-black tracking-tight text-slate-900">{periodName}</h1>
-                <div className="flex items-center gap-2 mt-1">
-                   <span className="bg-[#BE1E2E] text-white px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest">Bản cập nhật v3.1</span>
-                   <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">{periodCode}</span>
-                </div>
+                <h1 className="text-3xl font-black text-slate-900">{periodName}</h1>
+                <p className="text-[10px] font-black text-[#BE1E2E] uppercase tracking-widest mt-1">DASHBOARD PHÂN TÍCH CHÍNH XÁC v4.0</p>
              </div>
           </div>
-
-          <div className="flex flex-wrap items-center gap-4 bg-slate-50 p-2.5 rounded-3xl border border-slate-200 relative z-10">
-            <div className="flex bg-white rounded-2xl border border-slate-200 p-1 shadow-sm">
-               <button onClick={() => setCompareBy('CAMPUS')} className={`px-5 py-2 rounded-xl text-xs font-black transition-all ${compareBy === 'CAMPUS' ? 'bg-[#BE1E2E] text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}>CƠ SỞ</button>
-               <button onClick={() => setCompareBy('CLASS')} className={`px-5 py-2 rounded-xl text-xs font-black transition-all ${compareBy === 'CLASS' ? 'bg-[#BE1E2E] text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}>LỚP</button>
+          <div className="flex flex-wrap items-center gap-4 bg-slate-50 p-2.5 rounded-3xl border border-slate-200">
+            <div className="flex bg-white rounded-2xl border border-slate-200 p-1">
+               <button onClick={() => setCompareBy('CAMPUS')} className={`px-5 py-2 rounded-xl text-xs font-black transition-all ${compareBy === 'CAMPUS' ? 'bg-[#BE1E2E] text-white' : 'text-slate-400 hover:text-slate-600'}`}>CƠ SỞ</button>
+               <button onClick={() => setCompareBy('CLASS')} className={`px-5 py-2 rounded-xl text-xs font-black transition-all ${compareBy === 'CLASS' ? 'bg-[#BE1E2E] text-white' : 'text-slate-400 hover:text-slate-600'}`}>LỚP</button>
             </div>
             <select value={selectedCampus} onChange={(e) => { setSelectedCampus(e.target.value); setFilterType(e.target.value === 'ALL' ? 'ALL' : 'CAMPUS'); }}
-              className="px-6 py-3 rounded-2xl border-2 border-slate-200 bg-white text-xs font-black outline-none focus:border-[#BE1E2E] transition-all">
+              className="px-6 py-3 rounded-2xl border-2 border-slate-200 bg-white text-xs font-black outline-none focus:border-[#BE1E2E]">
               <option value="ALL">TẤT CẢ CƠ SỞ</option>
               {campuses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
-            <Link href="/admin/surveys" className="px-6 py-3 bg-slate-900 text-white font-black rounded-2xl text-xs uppercase">Thoát</Link>
+            <Link href="/admin/surveys" className="px-6 py-3 bg-slate-900 text-white font-black rounded-2xl text-xs uppercase shadow-lg">Quay lại</Link>
           </div>
         </div>
 
-        {/* KPIs */}
+        {/* Top KPIs */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
            {[
              { label: 'CHỈ SỐ NPS', value: stats.nps + '%', color: 'text-[#BE1E2E]' },
@@ -281,87 +237,84 @@ export function ResultsDashboard({ periodId, periodName, periodCode, questions, 
            ))}
         </div>
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-           <div className="lg:col-span-1 bg-[#1e293b] rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden">
-              <div className="p-8 bg-slate-900 border-b border-white/10 flex items-center justify-between text-white">
-                 <h3 className="text-sm font-black uppercase">Ý KIẾN ĐÓNG GÓP</h3>
-                 <span className="text-emerald-400 text-[11px] font-black">{questionAnalytics.flatMap(q => q.textResponses).length} FEEDBACKS</span>
-              </div>
-              <div className="flex-1 overflow-y-auto max-h-[600px] custom-scrollbar">
-                 <table className="w-full text-left">
-                    <tbody>
-                       {questionAnalytics.flatMap(q => q.textResponses).map((op, idx) => (
-                         <tr key={idx} className="border-b border-white/5 hover:bg-white/5 transition-all">
-                            <td className="p-6 align-top w-1/4">
-                               <span className="text-[10px] font-black text-slate-500 uppercase">{op.className}</span>
-                            </td>
-                            <td className="p-6 text-[13px] text-slate-300 leading-relaxed italic border-l border-white/5">"{op.text}"</td>
-                         </tr>
-                       ))}
-                    </tbody>
-                 </table>
-              </div>
-           </div>
-
-           <div className="lg:col-span-2 bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl p-10">
-              <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-10 border-b border-slate-50 pb-8">PHÂN BỔ TỶ LỆ THEO {compareBy === 'CAMPUS' ? 'CƠ SỞ' : 'LỚP'}</h3>
-              <div className="h-[400px]">
-                 <ResponsiveContainer width="100%" height="100%">
-                    <BarChart layout="vertical" data={questionAnalytics[0]?.comparisonData || []} margin={{ left: 100 }}>
-                       <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
-                       <XAxis type="number" hide />
-                       <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fontSize: 12, fontWeight: 'black', fill: '#475569'}} width={120} />
-                       <Tooltip cursor={{fill: '#f8fafc'}} />
-                       <Legend wrapperStyle={{paddingTop: '40px'}} iconSize={12} iconType="circle" />
-                       {Array.from({length: 11}).map((_, score) => (
-                          <Bar key={score} dataKey={`score_${score}`} name={`${score}đ`} stackId="a" fill={score >= 9 ? '#10b981' : score >= 7 ? '#fbbf24' : '#BE1E2E'} />
-                       ))}
-                    </BarChart>
-                 </ResponsiveContainer>
-              </div>
-           </div>
-        </div>
-
-        {/* Details */}
+        {/* Questions Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-           {questionAnalytics.slice(1).map((q, i) => (
-             <div key={q.id} className="bg-white rounded-[3.5rem] border border-slate-100 shadow-2xl p-12 space-y-10">
-                <div className="flex justify-between items-start">
-                   <h4 className="text-[16px] font-black text-slate-800 leading-tight flex-1">
-                      <span className="text-[#BE1E2E]/20 text-3xl font-black mr-3">Q{i + 2}</span> {q.questionText}
+           {questionAnalytics.map((q, i) => (
+             <div key={q.id} className="bg-white rounded-[3.5rem] border border-slate-100 shadow-2xl p-10 flex flex-col gap-8">
+                <div className="flex justify-between items-start gap-6 border-b border-slate-50 pb-6">
+                   <h4 className="text-[15px] font-black text-slate-800 leading-tight flex-1">
+                      <span className="text-[#BE1E2E]/20 text-3xl font-black mr-2">Q{i + 1}</span> {q.questionText}
                    </h4>
-                   <div className="bg-slate-50 px-6 py-3 rounded-3xl border border-slate-100 shadow-inner">
-                      <p className="text-[10px] font-black text-slate-400 mb-1 uppercase">AVG</p>
-                      <p className="text-xl font-black text-[#BE1E2E]">{q.average || '--'}</p>
+                   <div className="bg-[#BE1E2E]/5 px-5 py-2.5 rounded-2xl border border-[#BE1E2E]/10 text-center shrink-0">
+                      <p className="text-[9px] font-black text-[#BE1E2E] mb-1">AVERAGE</p>
+                      <p className="text-xl font-black text-slate-800">{q.average}</p>
                    </div>
                 </div>
 
-                <div className="h-[350px]">
+                {/* Stacked Comparison Chart per Question */}
+                <div className="h-[250px] w-full">
+                   <p className="text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">SO SÁNH THEO {compareBy === 'CAMPUS' ? 'CƠ SỞ' : 'LỚP'}</p>
                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart layout="vertical" data={q.comparisonData} margin={{ left: 60 }}>
+                      <BarChart layout="vertical" data={q.comparisonData.slice(0, 10)} margin={{ left: 60 }}>
                          <XAxis type="number" hide />
-                         <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 'bold', fill: '#94a3b8'}} width={80} />
-                         <Tooltip />
+                         <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 'bold', fill: '#475569'}} width={80} />
+                         <Tooltip cursor={{fill: '#f8fafc'}} />
                          {Object.keys(q.distribution).sort((a,b) => Number(a)-Number(b)).map((score, idx) => (
-                            <Bar key={score} dataKey={`score_${score}`} stackId="a" fill={COLORS[idx % COLORS.length]} barSize={25} />
+                            <Bar key={score} dataKey={`score_${score}`} stackId="a" fill={score >= 9 ? '#10b981' : score >= 7 ? '#fbbf24' : '#BE1E2E'} barSize={25} />
                          ))}
                       </BarChart>
                    </ResponsiveContainer>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                   {q.chartData.map((item, idx) => (
-                      <div key={idx} className="flex justify-between p-4 bg-slate-50 rounded-[1.5rem] border border-slate-100">
-                         <span className="text-[11px] font-black text-slate-500 uppercase">{item.name} ĐIỂM:</span>
-                         <span className="text-sm font-black text-slate-900">{Math.round((item.value / (filteredForms.length || 1)) * 100)}% ({item.value})</span>
+                {/* Summary Table for Grid questions */}
+                {Object.keys(q.gridDistribution).length > 0 && (
+                   <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100">
+                      <p className="text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">CHI TIẾT THEO TIÊU CHÍ</p>
+                      <div className="space-y-4">
+                         {Object.entries(q.gridDistribution).map(([rowKey, dist], idx) => {
+                            const labels = getGridLabels(q.id)
+                            const label = labels[parseInt(rowKey)] || `Tiêu chí ${parseInt(rowKey) + 1}`
+                            const totalRow = Object.values(dist).reduce((a, b) => a + b, 0) || 1
+                            return (
+                               <div key={idx} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                                  <p className="text-[11px] font-black text-slate-700 mb-3 uppercase flex items-center gap-2">
+                                     <CheckCircle2 className="w-3 h-3 text-emerald-500" /> {label}
+                                  </p>
+                                  <div className="grid grid-cols-5 gap-2">
+                                     {Object.entries(dist).sort((a,b) => Number(a[0])-Number(b[0])).map(([score, count]) => (
+                                        <div key={score} className="text-center">
+                                           <p className="text-[8px] font-black text-slate-400">{score}đ</p>
+                                           <p className="text-[10px] font-black text-slate-800">{Math.round((count / totalRow) * 100)}%</p>
+                                        </div>
+                                     ))}
+                                  </div>
+                               </div>
+                            )
+                         })}
                       </div>
-                   ))}
-                </div>
+                   </div>
+                )}
+
+                {/* Simple distribution grid */}
+                {Object.keys(q.gridDistribution).length === 0 && (
+                   <div className="grid grid-cols-3 gap-3 mt-auto">
+                      {q.chartData.map((item, idx) => (
+                         <div key={idx} className="flex flex-col items-center p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                            <span className="text-[10px] font-black text-slate-400 uppercase mb-1">{item.name} ĐIỂM</span>
+                            <span className="text-sm font-black text-slate-800">{item.percentage}%</span>
+                         </div>
+                      ))}
+                   </div>
+                )}
              </div>
            ))}
         </div>
+
       </div>
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+      `}</style>
     </div>
   )
 }
