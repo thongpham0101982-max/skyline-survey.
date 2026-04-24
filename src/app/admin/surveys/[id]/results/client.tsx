@@ -285,7 +285,7 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
               <div className="flex-1 overflow-y-auto max-h-[500px] custom-scrollbar p-0">
                  <table className="w-full text-left border-collapse">
                     <tbody>
-                       {questionAnalytics.flatMap(q => q.textResponses).slice(0, 30).map((op, idx) => (
+                       {questionAnalytics.flatMap(q => q.textResponses).slice(0, 50).map((op, idx) => (
                          <tr key={idx} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
                             <td className="p-3 align-top">
                                <span className="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-[9px] font-black uppercase whitespace-nowrap">{op.className}</span>
@@ -303,11 +303,12 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
            <div className="lg:col-span-2 bg-white rounded-3xl border border-slate-100 shadow-sm p-6 flex flex-col">
               <div className="flex items-center justify-between mb-8">
                  <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
-                    <Target className="w-5 h-5 text-[#BE1E2E]" /> PHÂN BỔ ĐIỂM SỐ CHI TIẾT
+                    <Target className="w-5 h-5 text-[#BE1E2E]" /> PHÂN BỔ ĐIỂM SỐ TỔNG THỂ
                  </h3>
                  <div className="flex items-center gap-4 text-[9px] font-black text-slate-400 uppercase">
-                    <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-[#BE1E2E]" /> NPS</div>
-                    <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-slate-200" /> TRUNG BÌNH</div>
+                    <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-[#BE1E2E]" /> THẤP</div>
+                    <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-amber-400" /> TRUNG BÌNH</div>
+                    <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-500" /> CAO</div>
                  </div>
               </div>
               <div className="flex-1 min-h-[350px]">
@@ -318,9 +319,10 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
                        <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#94a3b8'}} />
                        <Tooltip cursor={{fill: '#f8fafc'}} contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'}} />
                        <Bar dataKey="value" fill="#BE1E2E" radius={[6, 6, 0, 0]} barSize={40}>
-                          {(questionAnalytics[0]?.chartData || []).map((entry, index) => (
-                             <Cell key={`cell-${index}`} fill={index > 7 ? '#10b981' : index > 5 ? '#fbbf24' : '#BE1E2E'} />
-                          ))}
+                          {(questionAnalytics[0]?.chartData || []).map((entry, index) => {
+                             const score = parseInt(entry.name)
+                             return <Cell key={`cell-${index}`} fill={score >= 9 ? '#10b981' : score >= 7 ? '#fbbf24' : '#BE1E2E'} />
+                          })}
                        </Bar>
                     </BarChart>
                  </ResponsiveContainer>
@@ -328,11 +330,12 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
            </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Detailed Analytics Grid with Bar Charts */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
            {questionAnalytics.slice(1).map((q, i) => (
              <div key={q.id} className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 flex flex-col h-full group hover:border-[#BE1E2E]/20 transition-all">
                 <div className="flex justify-between items-start gap-4 mb-6">
-                   <h4 className="text-[11px] font-black text-slate-800 leading-tight flex-1 group-hover:text-[#BE1E2E] transition-colors">
+                   <h4 className="text-[12px] font-black text-slate-800 leading-tight flex-1 group-hover:text-[#BE1E2E] transition-colors">
                      <span className="text-slate-300 mr-1">#{i + 2}</span> {q.questionText}
                    </h4>
                    <div className="bg-slate-50 px-3 py-1.5 rounded-xl text-center border border-slate-100">
@@ -342,7 +345,7 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
                 </div>
 
                 {Object.keys(q.gridDistribution || {}).length > 0 ? (
-                   <div className="space-y-3">
+                   <div className="space-y-4">
                       {Object.entries(q.gridDistribution || {}).map(([rowKey, dist], subIdx) => {
                          const labels = getGridLabels(q.id)
                          const rowLabel = labels[parseInt(rowKey)] || `Tiêu chí ${parseInt(rowKey) + 1}`
@@ -350,15 +353,20 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
                             .sort((a,b) => (Number(a.name) || 0) - (Number(b.name) || 0))
                          
                          return (
-                            <div key={subIdx} className="bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
-                               <p className="text-[9px] font-black text-slate-500 uppercase mb-2 truncate">{rowLabel}</p>
-                               <div className="flex flex-wrap gap-2">
-                                  {rowData.map((item: any) => (
-                                     <div key={item.name} className="flex items-center gap-1 bg-white px-2 py-1 rounded-lg border border-slate-100">
-                                        <span className="text-[9px] font-black text-slate-400">{item.name}đ:</span>
-                                        <span className="text-[9px] font-black text-[#BE1E2E]">{item.value}</span>
-                                     </div>
-                                  ))}
+                            <div key={subIdx} className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                               <p className="text-[10px] font-black text-[#BE1E2E] uppercase mb-3 truncate">{rowLabel}</p>
+                               <div className="h-24 w-full">
+                                  <ResponsiveContainer width="100%" height="100%">
+                                     <BarChart data={rowData} margin={{ top: 0, right: 0, left: -40, bottom: 0 }}>
+                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 9, fill: '#94a3b8'}} />
+                                        <YAxis axisLine={false} tickLine={false} hide />
+                                        <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={20}>
+                                           {rowData.map((entry, index) => (
+                                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                           ))}
+                                        </Bar>
+                                     </BarChart>
+                                  </ResponsiveContainer>
                                </div>
                             </div>
                          )
@@ -366,35 +374,41 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
                    </div>
                 ) : q.chartData && q.chartData.length > 0 ? (
                    <div className="flex-1 flex flex-col">
-                      <div className="h-40 w-full mb-4">
+                      <div className="h-48 w-full mb-4">
                          <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                               <Pie data={q.chartData} cx="50%" cy="50%" innerRadius={40} outerRadius={65} paddingAngle={4} dataKey="value">
+                            <BarChart data={q.chartData} margin={{ top: 10, right: 10, left: -30, bottom: 0 }}>
+                               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                               <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#94a3b8'}} />
+                               <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#94a3b8'}} />
+                               <Tooltip cursor={{fill: '#f8fafc'}} contentStyle={{borderRadius: '12px', border: 'none'}} />
+                               <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={30}>
                                   {q.chartData.map((entry, index) => (
                                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                   ))}
-                               </Pie>
-                               <Tooltip />
-                            </PieChart>
+                               </Bar>
+                            </BarChart>
                          </ResponsiveContainer>
                       </div>
-                      <div className="grid grid-cols-2 gap-2 mt-auto">
-                         {q.chartData.slice(0, 4).map((item, idx) => (
-                            <div key={idx} className="flex items-center justify-between p-2 bg-slate-50 rounded-xl border border-slate-100">
-                               <span className="text-[9px] font-bold text-slate-500 truncate max-w-[60px]">{item.name}</span>
-                               <span className="text-[9px] font-black text-slate-800">{Math.round((item.value / filteredForms.length) * 100)}%</span>
-                            </div>
-                         ))}
+                      <div className="bg-slate-50 rounded-2xl p-3 border border-slate-100">
+                         <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+                            {q.chartData.map((item, idx) => (
+                               <div key={idx} className="flex justify-between items-center text-[10px]">
+                                  <span className="font-bold text-slate-500">{item.name}:</span>
+                                  <span className="font-black text-slate-800">{item.value} ({Math.round((item.value / (filteredForms.length || 1)) * 100)}%)</span>
+                               </div>
+                            ))}
+                         </div>
                       </div>
                    </div>
                 ) : (
-                  <div className="h-40 flex items-center justify-center text-slate-300 text-[10px] font-black uppercase italic">
-                    Chưa có phản hồi
+                  <div className="h-48 flex items-center justify-center text-slate-300 text-[10px] font-black uppercase italic border-2 border-dashed border-slate-100 rounded-3xl">
+                    Chưa có phản hồi thu về
                   </div>
                 )}
              </div>
            ))}
         </div>
+
       </div>
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
