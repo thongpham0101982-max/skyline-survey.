@@ -1,6 +1,6 @@
-﻿import { prisma } from '@/lib/db'
+import { prisma } from '@/lib/db'
 import { notFound } from 'next/navigation'
-import { ResultsDashboardClient } from './client'
+import { ResultsDashboard as ResultsDashboardClient } from './ResultsDashboard'
 
 export const dynamic = 'force-dynamic'
 
