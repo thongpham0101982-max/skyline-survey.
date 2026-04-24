@@ -1,8 +1,8 @@
 ﻿'use client'
-import { useState, useMemo } from 'react'
-import { BarChart3, TrendingUp, MessageSquare, Users, Star, Quote, ChevronRight } from 'lucide-react'
+import { useState, useMemo, useEffect } from 'react'
+import { BarChart3, TrendingUp, MessageSquare, Users, Star, Quote, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts'
 
 interface FormResponse {
   questionId: string
@@ -40,25 +40,31 @@ interface Props {
   totalForms: number
 }
 
-const COLORS = ['#10b981', '#3b82f6', '#fbbf24', '#BE1E2E', '#8b5cf6', '#ec4899']
+const COLORS = ['#10b981', '#3b82f6', '#fbbf24', '#BE1E2E', '#8b5cf6', '#ec4899', '#f43f5e']
 
 export function ResultsDashboard({ periodId, periodName, periodCode, questions, forms, totalForms }: Props) {
+  useEffect(() => {
+    console.log("--- DASHBOARD RELOADED v4.5 (FORCE REFRESH) ---");
+  }, []);
+
   const [compareBy, setCompareBy] = useState<'CAMPUS' | 'CLASS'>('CAMPUS')
   const [selectedGroup, setSelectedGroup] = useState<string>('ALL')
 
   const getChoiceLabel = (qId: string, val: string) => {
     const q = questions.find(x => x.id === qId)
     if (!q || !q.options) return val
-    if (q.options.includes('|')) {
-      const cols = q.options.split('|')[1].split(',').map(s => s.trim())
-      const idx = parseInt(val)
-      if (!isNaN(idx) && cols[idx]) return cols[idx]
-      return cols.find(c => c.startsWith(val)) || val
-    } else {
-      const opts = q.options.split(',').map(s => s.trim())
-      const idx = parseInt(val)
-      return opts[idx] || val
-    }
+    try {
+      if (q.options.includes('|')) {
+        const cols = q.options.split('|')[1].split(',').map(s => s.trim())
+        const idx = parseInt(val)
+        return (!isNaN(idx) && cols[idx]) ? cols[idx] : val
+      } else if (q.options.startsWith('[')) {
+        const opts = JSON.parse(q.options)
+        const idx = parseInt(val)
+        return (!isNaN(idx) && opts[idx]) ? opts[idx] : val
+      }
+    } catch(e) {}
+    return val
   }
 
   const filteredForms = useMemo(() => {
@@ -92,8 +98,9 @@ export function ResultsDashboard({ periodId, periodName, periodCode, questions, 
 
   const questionAnalytics = useMemo(() => {
     return questions.map(q => {
-      const isOpinion = q.questionType?.toUpperCase() === 'TEXT' || q.questionText.toLowerCase().includes('ý kiến')
-      const isGrid = q.questionType?.toUpperCase() === 'MC_GRID' || q.questionType?.toUpperCase() === 'CB_GRID' || q.options?.includes('|')
+      const type = q.questionType?.toUpperCase() || ''
+      const isGrid = type.includes('GRID') || (q.options?.includes('|'))
+      const isOpinion = type === 'TEXT' || q.questionText.toLowerCase().includes('ý kiến')
       
       let qSum = 0, qCount = 0
       const dist: Record<string, number> = {}
@@ -110,147 +117,151 @@ export function ResultsDashboard({ periodId, periodName, periodCode, questions, 
           try {
             const p = JSON.parse(r.choiceAnswer || r.textAnswer || '{}')
             Object.entries(p).forEach(([rk, v]: [string, any]) => {
-              if (rk === 'rows') return
+              if (rk === 'rows' || rk === 'columns') return
               dist[v] = (dist[v] || 0) + 1
-              qSum += (Number(v) || 0); qCount++
+              const numVal = parseInt(v); if (!isNaN(numVal)) { qSum += numVal; qCount++ }
             })
           } catch(e){}
         } else if (r.textAnswer || r.choiceAnswer) {
           const v = r.choiceAnswer || r.textAnswer || ''
-          dist[v] = (dist[v] || 0) + 1; qCount++
-          if (isOpinion && r.textAnswer) opinions.push({ text: r.textAnswer, class: f.className, campus: f.campusName })
+          if (!v.includes('{')) {
+            dist[v] = (dist[v] || 0) + 1; qCount++
+            if (isOpinion && r.textAnswer) opinions.push({ text: r.textAnswer, class: f.className, campus: f.campusName })
+          }
         }
       })
 
       const chartData = Object.entries(dist).map(([n, v]) => ({ 
         name: getChoiceLabel(q.id, n), 
-        rawName: n,
         value: v, 
-        percentage: Math.round((v / (qCount || 1)) * 100) 
+        percentage: Math.round((v / (Object.values(dist).reduce((a,b)=>a+b,0) || 1)) * 100) 
       })).sort((a,b) => b.name.localeCompare(a.name))
 
-      return { ...q, isOpinion, isGrid, avg: qCount > 0 ? (qSum / qCount).toFixed(2) : '0.00', chartData, opinions }
+      return { ...q, isOpinion, isGrid, avg: qSum > 0 ? (qSum / qCount).toFixed(2) : '0.00', chartData, opinions }
     })
   }, [questions, filteredForms])
 
   return (
     <div className="bg-[#f8fafc] min-h-screen p-6 lg:p-12 font-sans text-slate-800">
-      <div className="max-w-[1500px] mx-auto space-y-12">
+      <div className="max-w-[1400px] mx-auto space-y-12">
         
-        {/* Modern Minimalist Header */}
-        <div className="flex flex-col lg:flex-row justify-between items-end border-b border-slate-200 pb-10 gap-8">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-               <div className="w-10 h-10 bg-[#BE1E2E] rounded-xl flex items-center justify-center text-white shadow-lg">
-                 <BarChart3 className="w-5 h-5" />
-               </div>
-               <span className="text-[10px] font-black text-[#BE1E2E] uppercase tracking-[0.3em]">Skyline Survey Dashboard</span>
-            </div>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight">{periodName}</h1>
-            <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">{periodCode} • BÁO CÁO PHÂN TÍCH TỔNG HỢP</p>
-          </div>
+        {/* Version Marker Header */}
+        <div className="flex flex-col lg:flex-row justify-between items-center bg-white p-8 rounded-[3rem] shadow-xl border border-slate-100 gap-8 relative overflow-hidden">
+           <div className="absolute top-0 right-0 bg-[#BE1E2E] text-white px-6 py-1 text-[8px] font-black uppercase tracking-widest rotate-45 translate-x-10 translate-y-4 shadow-lg animate-pulse">
+              Version 4.5 NEW
+           </div>
+           
+           <div className="flex items-center gap-6">
+              <div className="w-16 h-16 bg-[#BE1E2E] rounded-2xl flex items-center justify-center text-white shadow-2xl">
+                 <BarChart3 className="w-8 h-8" />
+              </div>
+              <div>
+                 <h1 className="text-3xl font-black text-slate-900 leading-tight uppercase">{periodName}</h1>
+                 <p className="text-[10px] font-black text-slate-400 mt-1 tracking-widest uppercase">SKYLINE PREMIUM ANALYTICS • {periodCode}</p>
+              </div>
+           </div>
 
-          <div className="flex items-center gap-3 bg-white p-2 rounded-2xl border border-slate-200 shadow-sm">
-             <div className="flex p-1 bg-slate-50 rounded-xl">
-               <button onClick={() => { setCompareBy('CAMPUS'); setSelectedGroup('ALL'); }} className={`px-5 py-2 rounded-lg text-[10px] font-black transition-all ${compareBy === 'CAMPUS' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}>CƠ SỞ</button>
-               <button onClick={() => { setCompareBy('CLASS'); setSelectedGroup('ALL'); }} className={`px-5 py-2 rounded-lg text-[10px] font-black transition-all ${compareBy === 'CLASS' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}>LỚP</button>
-             </div>
-             <select value={selectedGroup} onChange={(e) => setSelectedGroup(e.target.value)} className="bg-transparent px-4 py-2 text-[10px] font-black uppercase outline-none border-l border-slate-100 min-w-[150px]">
+           <div className="flex items-center gap-4 bg-slate-50 p-2 rounded-2xl border border-slate-200">
+              <div className="flex p-1 bg-white rounded-xl shadow-sm border border-slate-100">
+                <button onClick={() => { setCompareBy('CAMPUS'); setSelectedGroup('ALL'); }} className={`px-5 py-2 rounded-lg text-[10px] font-black transition-all ${compareBy === 'CAMPUS' ? 'bg-[#BE1E2E] text-white shadow-md' : 'text-slate-400'}`}>CƠ SỞ</button>
+                <button onClick={() => { setCompareBy('CLASS'); setSelectedGroup('ALL'); }} className={`px-5 py-2 rounded-lg text-[10px] font-black transition-all ${compareBy === 'CLASS' ? 'bg-[#BE1E2E] text-white shadow-md' : 'text-slate-400'}`}>LỚP</button>
+              </div>
+              <select value={selectedGroup} onChange={(e) => setSelectedGroup(e.target.value)} className="bg-transparent px-4 py-2 text-[10px] font-black uppercase outline-none border-l border-slate-200 min-w-[150px]">
                 <option value="ALL">Tất cả {compareBy === 'CAMPUS' ? 'Cơ sở' : 'Lớp'}</option>
                 {groups.map(g => <option key={g} value={g}>{g}</option>)}
-             </select>
-             <Link href="/admin/surveys" className="px-6 py-2.5 bg-slate-900 text-white text-[10px] font-black rounded-xl hover:bg-black transition-all uppercase">Thoát</Link>
-          </div>
+              </select>
+              <Link href="/admin/surveys" className="px-6 py-3 bg-slate-900 text-white text-[10px] font-black rounded-xl uppercase shadow-xl hover:bg-black transition-all">Thoát</Link>
+           </div>
         </div>
 
-        {/* High-Level KPIs */}
+        {/* Top Indicators */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
            {[
-             { label: 'Chỉ số NPS', val: stats.nps + '%', color: 'text-[#BE1E2E]' },
-             { label: 'Trung bình', val: stats.avg, color: 'text-slate-800' },
-             { label: 'Phản hồi', val: questionAnalytics.reduce((a, b) => a + b.opinions.length, 0), color: 'text-slate-800' },
-             { label: 'Phiếu đã nộp', val: filteredForms.length, color: 'text-slate-800' }
+             { label: 'NPS Score', val: stats.nps + '%', color: 'text-[#BE1E2E]' },
+             { label: 'Average', val: stats.avg, color: 'text-slate-800' },
+             { label: 'Feedbacks', val: questionAnalytics.reduce((a, b) => a + b.opinions.length, 0), color: 'text-slate-800' },
+             { label: 'Submitted', val: filteredForms.length, color: 'text-slate-800' }
            ].map((k, i) => (
-             <div key={i} className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm text-center">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">{k.label}</p>
+             <div key={i} className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm text-center hover:border-[#BE1E2E]/20 transition-all">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">{k.label}</p>
                 <h3 className={`text-5xl font-black ${k.color}`}>{k.val}</h3>
              </div>
            ))}
         </div>
 
-        {/* Analysis Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+        {/* Detailed Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 pb-20">
            {questionAnalytics.map((q, i) => (
-             <div key={q.id} className="bg-white rounded-[3rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col h-full group hover:shadow-xl transition-all duration-500">
-                <div className="p-10 pb-6">
+             <div key={q.id} className="bg-white rounded-[3rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col h-full hover:shadow-2xl transition-all duration-700 group">
+                <div className="p-10 pb-6 border-b border-slate-50">
                    <div className="flex justify-between items-start mb-6">
                       <div className="flex items-center gap-3">
-                         <span className="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 text-[10px] font-black flex items-center justify-center border border-slate-100 uppercase">Q{i+1}</span>
-                         <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Tiêu chí khảo sát</span>
+                         <span className="w-8 h-8 rounded-lg bg-[#BE1E2E]/5 text-[#BE1E2E] text-[10px] font-black flex items-center justify-center border border-[#BE1E2E]/10">Q{i+1}</span>
+                         {q.isGrid && <span className="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-tighter">Lưới trắc nghiệm</span>}
                       </div>
                       {!q.isOpinion && (
-                        <div className="text-right">
-                           <p className="text-[9px] font-black text-slate-400 uppercase">Average</p>
-                           <p className="text-xl font-black text-slate-900">{q.avg}</p>
+                        <div className="bg-slate-50 px-4 py-2 rounded-xl text-right">
+                           <p className="text-[8px] font-black text-slate-400 uppercase">Mean</p>
+                           <p className="text-lg font-black text-slate-900">{q.avg}</p>
                         </div>
                       )}
                    </div>
                    <h4 className="text-lg font-black text-slate-800 leading-snug">{q.questionText}</h4>
                 </div>
 
-                <div className="px-10 pb-10 flex-1">
+                <div className="p-10 flex-1">
                    {q.isOpinion ? (
-                      /* Opinion Cards */
-                      <div className="space-y-4">
-                         {q.opinions.slice(0, 5).map((op, idx) => (
-                            <div key={idx} className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100">
-                               <p className="text-sm text-slate-600 leading-relaxed italic">"{op.text}"</p>
-                               <p className="text-[9px] font-black text-slate-400 uppercase mt-4">{op.campus} • {op.class}</p>
+                      <div className="grid grid-cols-1 gap-4">
+                         {q.opinions.slice(0, 10).map((op, idx) => (
+                            <div key={idx} className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100 hover:bg-white transition-all group/op">
+                               <p className="text-sm text-slate-600 leading-relaxed italic group-hover/op:text-slate-900 transition-colors">"{op.text}"</p>
+                               <div className="flex justify-between items-center mt-4">
+                                  <span className="text-[8px] font-black text-[#BE1E2E] uppercase">{op.campus}</span>
+                                  <span className="text-[8px] font-black text-slate-400 uppercase">{op.class}</span>
+                               </div>
                             </div>
                          ))}
-                         {q.opinions.length > 5 && <p className="text-center text-[9px] font-black text-slate-300 uppercase mt-4">Và {q.opinions.length - 5} ý kiến khác...</p>}
                       </div>
-                   ) : q.isGrid ? (
-                      /* DOUGHNUT CHART for Grid/Radio Grid as per user request */
-                      <div className="flex flex-col lg:flex-row items-center gap-8 py-4">
-                         <div className="w-full lg:w-1/2 h-[280px] relative">
+                   ) : q.isGrid || q.chartData.length > 5 ? (
+                      /* FORCE DOUGHNUT FOR GRID */
+                      <div className="flex flex-col lg:flex-row items-center gap-10 h-full">
+                         <div className="w-full lg:w-1/2 h-[300px] relative">
                             <ResponsiveContainer width="100%" height="100%">
                                <PieChart>
-                                  <Pie data={q.chartData} cx="50%" cy="50%" innerRadius={65} outerRadius={90} paddingAngle={4} dataKey="value">
+                                  <Pie data={q.chartData} cx="50%" cy="50%" innerRadius={70} outerRadius={100} paddingAngle={4} dataKey="value">
                                      {q.chartData.map((e, idx) => (
                                         <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
                                      ))}
                                   </Pie>
-                                  <Tooltip />
+                                  <Tooltip contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)'}} />
                                </PieChart>
                             </ResponsiveContainer>
                          </div>
                          <div className="w-full lg:w-1/2 flex flex-col gap-3">
-                            <p className="text-[10px] font-black text-slate-400 uppercase mb-2">Phân bổ phản hồi</p>
+                            <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-2 border-b border-slate-50 pb-2">Thống kê phản hồi</p>
                             {q.chartData.map((item, idx) => (
-                               <div key={idx} className="flex items-center justify-between group/item">
+                               <div key={idx} className="flex items-center justify-between">
                                   <div className="flex items-center gap-3">
-                                     <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
-                                     <span className="text-[11px] font-bold text-slate-600 truncate max-w-[150px]">{item.name}</span>
+                                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
+                                     <span className="text-[10px] font-bold text-slate-600">{item.name}</span>
                                   </div>
                                   <div className="flex items-center gap-2">
-                                     <span className="text-[11px] font-black text-slate-900">{item.value}</span>
-                                     <span className="text-[10px] font-bold text-slate-300">({item.percentage}%)</span>
+                                     <span className="text-[10px] font-black text-slate-900">{item.value}</span>
+                                     <span className="text-[9px] font-bold text-slate-300">({item.percentage}%)</span>
                                   </div>
                                </div>
                             ))}
                          </div>
                       </div>
                    ) : (
-                      /* Default Slim Bar Chart for other quantitative types */
-                      <div className="flex flex-col h-full">
-                         <div className="h-[200px] w-full mb-8">
+                      /* SLIM BARS FOR SINGLE CHOICE */
+                      <div className="flex flex-col h-full justify-center">
+                         <div className="h-[200px] w-full mb-10">
                             <ResponsiveContainer width="100%" height="100%">
                                <BarChart data={q.chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 9, fontWeight: 'black', fill: '#cbd5e1'}} />
                                   <YAxis axisLine={false} tickLine={false} tick={{fontSize: 9, fill: '#cbd5e1'}} />
-                                  <Tooltip cursor={{fill: '#fafafa'}} contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.05)'}} />
                                   <Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={40}>
                                      {q.chartData.map((e, idx) => (
                                         <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
@@ -274,10 +285,6 @@ export function ResultsDashboard({ periodId, periodName, periodCode, questions, 
            ))}
         </div>
       </div>
-      <style jsx global>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-      `}</style>
     </div>
   )
 }
