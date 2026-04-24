@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useState, useMemo } from 'react'
-import { Building2, GraduationCap, LayoutGrid, BarChart3, PieChart as PieChartIcon, Users, TrendingUp, Info, MessageSquare } from 'lucide-react'
+import { Building2, GraduationCap, LayoutGrid, BarChart3, PieChart as PieChartIcon, Users, TrendingUp, Info, MessageSquare, User } from 'lucide-react'
 import Link from 'next/link'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts'
 
@@ -42,6 +42,13 @@ interface Props {
   questions: Question[]
   forms: Form[]
   totalForms: number
+}
+
+interface TextOpinion {
+  text: string
+  respondent: string
+  className: string
+  campusName: string
 }
 
 const COLORS = ['#10b981', '#fbbf24', '#ef4444', '#6366f1', '#8b5cf6', '#ec4899', '#14b8a6']
@@ -139,7 +146,7 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
     return questions.map(q => {
       let sum = 0, count = 0
       const distribution: Record<string, number> = {}
-      const textResponses: string[] = []
+      const textResponses: TextOpinion[] = []
 
       filteredForms.forEach(form => {
         const r = form.responses.find(x => x.questionId === q.id)
@@ -150,7 +157,7 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
           count++
           distribution[r.numericScore] = (distribution[r.numericScore] || 0) + 1
         } else if (r.choiceAnswer) {
-          // Handle Grid/Complex answers if they look like JSON
+          // Handle Grid/Complex answers
           if (r.choiceAnswer.startsWith('{')) {
              try {
                const parsed = JSON.parse(r.choiceAnswer)
@@ -168,7 +175,12 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
           }
           count++
         } else if (r.textAnswer) {
-          textResponses.push(r.textAnswer)
+          textResponses.push({
+            text: r.textAnswer,
+            respondent: form.studentName || 'Ẩn danh',
+            className: form.className || 'Chưa rõ',
+            campusName: form.campusName || 'Chưa rõ'
+          })
           count++
         }
       })
@@ -353,7 +365,7 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {questionAnalytics.map((q, i) => (
-              <div key={q.id} className="p-6 rounded-[1.5rem] bg-slate-50 border border-slate-100 flex flex-col">
+              <div key={q.id} className="p-6 rounded-[1.5rem] bg-slate-50 border border-slate-100 flex flex-col min-h-[350px]">
                  <div className="flex justify-between items-start gap-4 mb-4">
                    <p className="font-bold text-slate-800 text-sm leading-relaxed flex-1">
                      <span className="text-[#BE1E2E] mr-2">Q{i + 1}.</span> {q.questionText}
@@ -366,16 +378,16 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
                    )}
                  </div>
 
-                 {/* Rendering for Choice/Rating questions */}
+                 {/* Choice/Rating Questions */}
                  {q.chartData && q.chartData.length > 0 ? (
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-auto">
-                     <div className="h-48 w-full">
+                   <div className="flex flex-col gap-4 mt-auto">
+                     <div className="h-40 w-full">
                        <ResponsiveContainer width="100%" height="100%">
-                         <BarChart data={q.chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                         <BarChart data={q.chartData} margin={{ top: 5, right: 5, left: -30, bottom: 0 }}>
                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                           <XAxis dataKey="name" tick={{fontSize: 10, fill: "#64748b"}} axisLine={false} tickLine={false} />
-                           <YAxis allowDecimals={false} tick={{fontSize: 10, fill: "#64748b"}} axisLine={false} tickLine={false} />
-                           <Tooltip cursor={{fill: "#f1f5f9"}} contentStyle={{borderRadius: "12px", border: "none", fontSize: "12px", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)"}} />
+                           <XAxis dataKey="name" tick={{fontSize: 9, fill: "#64748b"}} axisLine={false} tickLine={false} />
+                           <YAxis allowDecimals={false} tick={{fontSize: 9, fill: "#64748b"}} axisLine={false} tickLine={false} />
+                           <Tooltip cursor={{fill: "#f1f5f9"}} contentStyle={{borderRadius: "12px", border: "none", fontSize: "11px", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)"}} />
                            <Bar dataKey="value" name="Số lượng" radius={[4, 4, 0, 0]}>
                              {q.chartData.map((entry, index) => (
                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -384,8 +396,8 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
                          </BarChart>
                        </ResponsiveContainer>
                      </div>
-                     <div className="bg-white rounded-xl border border-slate-100 p-2 overflow-y-auto max-h-48 custom-scrollbar">
-                        <table className="w-full text-[10px] text-left">
+                     <div className="bg-white rounded-xl border border-slate-100 p-2 overflow-y-auto max-h-32 custom-scrollbar">
+                        <table className="w-full text-[9px] text-left">
                            <thead>
                               <tr className="border-b border-slate-50">
                                  <th className="pb-1 font-black text-slate-400 uppercase tracking-wider">Mức/Lựa chọn</th>
@@ -406,15 +418,29 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
                      </div>
                    </div>
                  ) : q.textResponses && q.textResponses.length > 0 ? (
-                   <div className="mt-auto bg-white rounded-xl border border-slate-100 p-3 max-h-48 overflow-y-auto custom-scrollbar space-y-2">
-                      <p className="text-[10px] font-black text-slate-400 uppercase flex items-center gap-1">
+                   <div className="mt-auto space-y-2">
+                      <p className="text-[10px] font-black text-slate-400 uppercase flex items-center gap-1 mb-2">
                         <MessageSquare className="w-3 h-3" /> Danh sách ý kiến ({q.textResponses.length})
                       </p>
-                      {q.textResponses.map((txt, idx) => (
-                        <div key={idx} className="p-2 bg-slate-50 rounded-lg text-[11px] text-slate-600 border-l-2 border-[#BE1E2E]/20">
-                           {txt}
-                        </div>
-                      ))}
+                      <div className="max-h-60 overflow-y-auto custom-scrollbar pr-1 space-y-3">
+                        {q.textResponses.map((opinion, idx) => (
+                          <div key={idx} className="p-3 bg-white rounded-xl border border-slate-100 shadow-sm relative group transition-all hover:border-[#BE1E2E]/30">
+                             <div className="flex items-center justify-between mb-2 pb-2 border-b border-slate-50">
+                                <div className="flex items-center gap-2">
+                                   <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center">
+                                      <User className="w-3 h-3 text-slate-400" />
+                                   </div>
+                                   <span className="text-[10px] font-black text-slate-700">{opinion.respondent}</span>
+                                </div>
+                                <div className="flex gap-1">
+                                   <span className="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full text-[8px] font-bold uppercase">{opinion.className}</span>
+                                   <span className="bg-slate-50 text-slate-500 px-2 py-0.5 rounded-full text-[8px] font-bold uppercase">{opinion.campusName}</span>
+                                </div>
+                             </div>
+                             <p className="text-[11px] text-slate-600 leading-relaxed italic">"{opinion.text}"</p>
+                          </div>
+                        ))}
+                      </div>
                    </div>
                  ) : (
                    <div className="mt-auto h-48 flex items-center justify-center text-slate-300 text-xs font-bold italic border-2 border-dashed border-slate-100 rounded-2xl">
