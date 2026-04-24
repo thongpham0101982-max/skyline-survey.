@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useState, useMemo } from 'react'
-import { Building2, GraduationCap, LayoutGrid, BarChart3, PieChart as PieChartIcon, Users, TrendingUp, Info } from 'lucide-react'
+import { Building2, GraduationCap, LayoutGrid, BarChart3, PieChart as PieChartIcon, Users, TrendingUp, Info, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts'
 
@@ -139,6 +139,7 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
     return questions.map(q => {
       let sum = 0, count = 0
       const distribution: Record<string, number> = {}
+      const textResponses: string[] = []
 
       filteredForms.forEach(form => {
         const r = form.responses.find(x => x.questionId === q.id)
@@ -149,10 +150,25 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
           count++
           distribution[r.numericScore] = (distribution[r.numericScore] || 0) + 1
         } else if (r.choiceAnswer) {
-          const choices = r.choiceAnswer.split(',').map(s => s.trim())
-          choices.forEach(c => {
-            distribution[c] = (distribution[c] || 0) + 1
-          })
+          // Handle Grid/Complex answers if they look like JSON
+          if (r.choiceAnswer.startsWith('{')) {
+             try {
+               const parsed = JSON.parse(r.choiceAnswer)
+               Object.values(parsed).forEach((val: any) => {
+                 distribution[val] = (distribution[val] || 0) + 1
+               })
+             } catch (e) {
+               distribution[r.choiceAnswer] = (distribution[r.choiceAnswer] || 0) + 1
+             }
+          } else {
+            const choices = r.choiceAnswer.split(',').map(s => s.trim())
+            choices.forEach(c => {
+              distribution[c] = (distribution[c] || 0) + 1
+            })
+          }
+          count++
+        } else if (r.textAnswer) {
+          textResponses.push(r.textAnswer)
           count++
         }
       })
@@ -161,7 +177,7 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
       const chartData = Object.entries(distribution).map(([name, value]) => ({ name, value }))
         .sort((a,b) => (Number(a.name) || 0) - (Number(b.name) || 0))
 
-      return { ...q, average, count, distribution, chartData }
+      return { ...q, average, count, distribution, chartData, textResponses }
     })
   }, [questions, filteredForms])
 
@@ -350,7 +366,8 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
                    )}
                  </div>
 
-                 {q.chartData && q.chartData.length > 0 && (
+                 {/* Rendering for Choice/Rating questions */}
+                 {q.chartData && q.chartData.length > 0 ? (
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-auto">
                      <div className="h-48 w-full">
                        <ResponsiveContainer width="100%" height="100%">
@@ -387,6 +404,21 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
                            </tbody>
                         </table>
                      </div>
+                   </div>
+                 ) : q.textResponses && q.textResponses.length > 0 ? (
+                   <div className="mt-auto bg-white rounded-xl border border-slate-100 p-3 max-h-48 overflow-y-auto custom-scrollbar space-y-2">
+                      <p className="text-[10px] font-black text-slate-400 uppercase flex items-center gap-1">
+                        <MessageSquare className="w-3 h-3" /> Danh sách ý kiến ({q.textResponses.length})
+                      </p>
+                      {q.textResponses.map((txt, idx) => (
+                        <div key={idx} className="p-2 bg-slate-50 rounded-lg text-[11px] text-slate-600 border-l-2 border-[#BE1E2E]/20">
+                           {txt}
+                        </div>
+                      ))}
+                   </div>
+                 ) : (
+                   <div className="mt-auto h-48 flex items-center justify-center text-slate-300 text-xs font-bold italic border-2 border-dashed border-slate-100 rounded-2xl">
+                     Chưa có dữ liệu phản hồi
                    </div>
                  )}
               </div>
