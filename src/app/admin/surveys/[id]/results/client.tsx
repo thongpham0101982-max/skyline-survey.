@@ -208,7 +208,7 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
   }, [questions, filteredForms])
 
   return (
-    <div className="bg-[#f8fafc] min-h-screen p-6 font-outfit text-slate-800">
+    <div className="bg-[#f8fafc] min-h-screen p-6 font-sans text-slate-800">
       <div className="max-w-[1600px] mx-auto space-y-6">
         
         {/* Top Navigation & Filters */}
@@ -275,7 +275,6 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
 
         {/* Grid 1: Opinions & Main Chart */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-           {/* Opinion Table */}
            <div className="lg:col-span-1 bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden flex flex-col">
               <div className="bg-[#1e293b] p-4 flex items-center justify-between">
                  <h3 className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-2">
@@ -286,7 +285,7 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
               <div className="flex-1 overflow-y-auto max-h-[500px] custom-scrollbar p-0">
                  <table className="w-full text-left border-collapse">
                     <tbody>
-                       {questionAnalytics.flatMap(q => q.textResponses).slice(0, 20).map((op, idx) => (
+                       {questionAnalytics.flatMap(q => q.textResponses).slice(0, 30).map((op, idx) => (
                          <tr key={idx} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
                             <td className="p-3 align-top">
                                <span className="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-[9px] font-black uppercase whitespace-nowrap">{op.className}</span>
@@ -301,7 +300,6 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
               </div>
            </div>
 
-           {/* Main NPS Bar Chart */}
            <div className="lg:col-span-2 bg-white rounded-3xl border border-slate-100 shadow-sm p-6 flex flex-col">
               <div className="flex items-center justify-between mb-8">
                  <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
@@ -330,7 +328,6 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
            </div>
         </div>
 
-        {/* Detailed Analytics Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
            {questionAnalytics.slice(1).map((q, i) => (
              <div key={q.id} className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 flex flex-col h-full group hover:border-[#BE1E2E]/20 transition-all">
@@ -398,14 +395,11 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
              </div>
            ))}
         </div>
-
       </div>
-
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
       `}</style>
     </div>
   )
