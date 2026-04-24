@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useState, useMemo } from 'react'
-import { Building2, GraduationCap, LayoutGrid, BarChart3, PieChart as PieChartIcon, Users, TrendingUp, Info, MessageSquare, User } from 'lucide-react'
+import { Building2, GraduationCap, LayoutGrid, BarChart3, PieChart as PieChartIcon, Users, TrendingUp, Info, MessageSquare, User, List } from 'lucide-react'
 import Link from 'next/link'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts'
 
@@ -49,6 +49,7 @@ interface TextOpinion {
   respondent: string
   className: string
   campusName: string
+  questionId: string
 }
 
 const COLORS = ['#10b981', '#fbbf24', '#ef4444', '#6366f1', '#8b5cf6', '#ec4899', '#14b8a6']
@@ -57,6 +58,16 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
   const [filterType, setFilterType] = useState<'ALL' | 'CAMPUS' | 'CLASS'>('ALL')
   const [selectedCampus, setSelectedCampus] = useState<string>('ALL')
   const [selectedClass, setSelectedClass] = useState<string>('ALL')
+
+  // Helper to parse Grid options
+  const getGridLabels = (qId: string) => {
+    const q = questions.find(x => x.id === qId)
+    if (!q || !q.options) return []
+    // Expected format: Row1,Row2,Row3|Col1,Col2
+    const parts = q.options.split('|')
+    const rows = parts[0].split(',').map(s => s.trim())
+    return rows
+  }
 
   // Helper to calculate NPS for a subset of forms
   const calculateNps = (targetForms: Form[]) => {
@@ -157,7 +168,6 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
           count++
           distribution[r.numericScore] = (distribution[r.numericScore] || 0) + 1
         } else if (r.choiceAnswer) {
-          // Handle Grid/Complex answers
           if (r.choiceAnswer.startsWith('{')) {
              try {
                const parsed = JSON.parse(r.choiceAnswer)
@@ -179,7 +189,8 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
             text: r.textAnswer,
             respondent: form.studentName || 'Ẩn danh',
             className: form.className || 'Chưa rõ',
-            campusName: form.campusName || 'Chưa rõ'
+            campusName: form.campusName || 'Chưa rõ',
+            questionId: q.id
           })
           count++
         }
@@ -422,24 +433,58 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
                       <p className="text-[10px] font-black text-slate-400 uppercase flex items-center gap-1 mb-2">
                         <MessageSquare className="w-3 h-3" /> Danh sách ý kiến ({q.textResponses.length})
                       </p>
-                      <div className="max-h-60 overflow-y-auto custom-scrollbar pr-1 space-y-3">
-                        {q.textResponses.map((opinion, idx) => (
-                          <div key={idx} className="p-3 bg-white rounded-xl border border-slate-100 shadow-sm relative group transition-all hover:border-[#BE1E2E]/30">
-                             <div className="flex items-center justify-between mb-2 pb-2 border-b border-slate-50">
-                                <div className="flex items-center gap-2">
-                                   <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center">
-                                      <User className="w-3 h-3 text-slate-400" />
-                                   </div>
-                                   <span className="text-[10px] font-black text-slate-700">{opinion.respondent}</span>
-                                </div>
-                                <div className="flex gap-1">
-                                   <span className="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full text-[8px] font-bold uppercase">{opinion.className}</span>
-                                   <span className="bg-slate-50 text-slate-500 px-2 py-0.5 rounded-full text-[8px] font-bold uppercase">{opinion.campusName}</span>
-                                </div>
-                             </div>
-                             <p className="text-[11px] text-slate-600 leading-relaxed italic">"{opinion.text}"</p>
-                          </div>
-                        ))}
+                      <div className="max-h-80 overflow-y-auto custom-scrollbar pr-1 space-y-3">
+                        {q.textResponses.map((opinion, idx) => {
+                          let isJson = false
+                          let parsedData: any = null
+                          if (opinion.text.startsWith('{')) {
+                             try {
+                               parsedData = JSON.parse(opinion.text)
+                               isJson = true
+                             } catch (e) {}
+                          }
+
+                          return (
+                            <div key={idx} className="p-3 bg-white rounded-xl border border-slate-100 shadow-sm relative group transition-all hover:border-[#BE1E2E]/30">
+                               <div className="flex items-center justify-between mb-2 pb-2 border-b border-slate-50">
+                                  <div className="flex items-center gap-2">
+                                     <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center">
+                                        <User className="w-3 h-3 text-slate-400" />
+                                     </div>
+                                     <span className="text-[10px] font-black text-slate-700">{opinion.respondent}</span>
+                                  </div>
+                                  <div className="flex gap-1">
+                                     <span className="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full text-[8px] font-bold uppercase">{opinion.className}</span>
+                                     <span className="bg-slate-50 text-slate-500 px-2 py-0.5 rounded-full text-[8px] font-bold uppercase">{opinion.campusName}</span>
+                                  </div>
+                               </div>
+                               
+                               {isJson && parsedData ? (
+                                 <div className="space-y-2">
+                                    <p className="text-[9px] font-black text-slate-400 uppercase flex items-center gap-1">
+                                      <List className="w-2.5 h-2.5" /> Chi tiết đánh giá:
+                                    </p>
+                                    <div className="grid grid-cols-1 gap-1.5">
+                                      {Object.entries(parsedData).map(([key, val]: [string, any], subIdx) => {
+                                        const labels = getGridLabels(opinion.questionId)
+                                        const rowLabel = labels[parseInt(key)] || `Tiêu chí ${parseInt(key) + 1}`
+                                        return (
+                                          <div key={subIdx} className="flex justify-between items-center p-2 bg-slate-50 rounded-lg border border-slate-100">
+                                             <span className="text-[10px] font-bold text-slate-600">{rowLabel}</span>
+                                             <span className="text-[10px] font-black text-[#BE1E2E] bg-white px-2 py-0.5 rounded-md border border-slate-200">
+                                               {val} điểm
+                                             </span>
+                                          </div>
+                                        )
+                                      })}
+                                    </div>
+                                 </div>
+                               ) : (
+                                 <p className="text-[11px] text-slate-600 leading-relaxed italic">"{opinion.text}"</p>
+                               )}
+                            </div>
+                          )
+                        })}
                       </div>
                    </div>
                  ) : (
