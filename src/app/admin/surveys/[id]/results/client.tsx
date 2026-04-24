@@ -158,6 +158,8 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
       let sum = 0, count = 0
       const distribution: Record<string, number> = {}
       const textResponses: TextOpinion[] = []
+      // For Grid questions: rowKey -> { score -> count }
+      const gridDistribution: Record<string, Record<string, number>> = {}
 
       filteredForms.forEach(form => {
         const r = form.responses.find(x => x.questionId === q.id)
@@ -171,8 +173,10 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
           if (r.choiceAnswer.startsWith('{')) {
              try {
                const parsed = JSON.parse(r.choiceAnswer)
-               Object.values(parsed).forEach((val: any) => {
-                 distribution[val] = (distribution[val] || 0) + 1
+               Object.entries(parsed).forEach(([rowKey, val]: [string, any]) => {
+                 if (!gridDistribution[rowKey]) gridDistribution[rowKey] = {}
+                 gridDistribution[rowKey][val] = (gridDistribution[rowKey][val] || 0) + 1
+                 distribution[val] = (distribution[val] || 0) + 1 // Keep for legacy
                })
              } catch (e) {
                distribution[r.choiceAnswer] = (distribution[r.choiceAnswer] || 0) + 1
@@ -185,14 +189,35 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
           }
           count++
         } else if (r.textAnswer) {
-          textResponses.push({
-            text: r.textAnswer,
-            respondent: form.studentName || 'Ẩn danh',
-            className: form.className || 'Chưa rõ',
-            campusName: form.campusName || 'Chưa rõ',
-            questionId: q.id
-          })
-          count++
+          if (r.textAnswer.startsWith('{')) {
+             // Handle if grid data is in textAnswer
+             try {
+               const parsed = JSON.parse(r.textAnswer)
+               Object.entries(parsed).forEach(([rowKey, val]: [string, any]) => {
+                 if (!gridDistribution[rowKey]) gridDistribution[rowKey] = {}
+                 gridDistribution[rowKey][val] = (gridDistribution[rowKey][val] || 0) + 1
+               })
+               count++
+             } catch (e) {
+               textResponses.push({
+                 text: r.textAnswer,
+                 respondent: 'Phụ huynh/Học sinh',
+                 className: form.className || 'Chưa rõ',
+                 campusName: form.campusName || 'Chưa rõ',
+                 questionId: q.id
+               })
+               count++
+             }
+          } else {
+            textResponses.push({
+              text: r.textAnswer,
+              respondent: 'Phụ huynh/Học sinh',
+              className: form.className || 'Chưa rõ',
+              campusName: form.campusName || 'Chưa rõ',
+              questionId: q.id
+            })
+            count++
+          }
         }
       })
 
@@ -200,7 +225,7 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
       const chartData = Object.entries(distribution).map(([name, value]) => ({ name, value }))
         .sort((a,b) => (Number(a.name) || 0) - (Number(b.name) || 0))
 
-      return { ...q, average, count, distribution, chartData, textResponses }
+      return { ...q, average, count, distribution, chartData, textResponses, gridDistribution }
     })
   }, [questions, filteredForms])
 
@@ -303,68 +328,6 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
         </div>
       </div>
 
-      {/* NPS Definition Info */}
-      <div className="bg-blue-50 border border-blue-100 p-4 rounded-2xl flex gap-3 items-start">
-         <Info className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
-         <div className="text-xs text-blue-700 space-y-1">
-            <p className="font-bold">Công thức: NPS = % Promoters – % Detractors</p>
-            <p>• <span className="font-bold text-emerald-600">Promoters (9-10):</span> Khách hàng rất hài lòng, sẵn sàng giới thiệu.</p>
-            <p>• <span className="font-bold text-amber-600">Passives (7-8):</span> Khách hàng hài lòng nhưng không chắc chắn đề xuất.</p>
-            <p>• <span className="font-bold text-red-600">Detractors (0-6):</span> Khách hàng không hài lòng.</p>
-            {npsData.rawScores.length > 0 && (
-              <div className="mt-2 pt-2 border-t border-blue-200">
-                <span className="font-bold">Dữ liệu điểm hiện tại:</span> {npsData.rawScores.join(', ')}
-              </div>
-            )}
-         </div>
-      </div>
-
-      {/* Main Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* NPS Pie Chart */}
-        <div className="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-sm flex flex-col h-full">
-           <h3 className="text-lg font-black text-slate-800 flex items-center gap-2 mb-6">
-             <PieChartIcon className="w-5 h-5 text-indigo-500" /> Phân bổ NPS (N = {npsData.totalNpsResponses})
-           </h3>
-           <div className="flex-1 min-h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={npsData.pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={5} dataKey="value">
-                    <Cell fill="#10b981" />
-                    <Cell fill="#fbbf24" />
-                    <Cell fill="#ef4444" />
-                  </Pie>
-                  <Tooltip formatter={(value: number) => [`${value} phản hồi`, 'Số lượng']} />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-           </div>
-        </div>
-
-        {/* Campus Comparison Table */}
-        <div className="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-sm h-full flex flex-col">
-           <h3 className="text-lg font-black text-slate-800 flex items-center gap-2 mb-6">
-             <Building2 className="w-5 h-5 text-indigo-500" /> So sánh NPS giữa các Cơ sở
-           </h3>
-           <div className="space-y-3 overflow-y-auto max-h-[300px] pr-2 custom-scrollbar">
-              {campusComparison.map(c => (
-                <div key={c.id} className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50 hover:bg-white transition-all group">
-                   <div className="flex items-center gap-3">
-                      <div className="w-2 h-8 rounded-full bg-indigo-200 group-hover:bg-[#BE1E2E] transition-all" />
-                      <span className="font-bold text-slate-700">{c.name}</span>
-                   </div>
-                   <div className="text-right">
-                      <span className={`text-xl font-black ${c.nps !== null ? (c.nps > 0 ? 'text-emerald-600' : 'text-[#BE1E2E]') : 'text-slate-400'}`}>
-                         {c.nps !== null ? c.nps : '--'}
-                      </span>
-                      <p className="text-[10px] font-bold text-slate-400">N={c.totalNpsResponses}</p>
-                   </div>
-                </div>
-              ))}
-           </div>
-        </div>
-      </div>
-
       {/* Results by Criterion */}
       <div className="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-sm space-y-8">
         <h3 className="text-xl font-black text-slate-800 flex items-center gap-3 border-b border-slate-100 pb-4">
@@ -389,8 +352,46 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
                    )}
                  </div>
 
-                 {/* Choice/Rating Questions */}
-                 {q.chartData && q.chartData.length > 0 ? (
+                 {/* Grid Question Table */}
+                 {Object.keys(q.gridDistribution || {}).length > 0 ? (
+                   <div className="mt-auto space-y-4">
+                      {Object.entries(q.gridDistribution || {}).map(([rowKey, dist], subIdx) => {
+                        const labels = getGridLabels(q.id)
+                        const rowLabel = labels[parseInt(rowKey)] || `Tiêu chí ${parseInt(rowKey) + 1}`
+                        const rowChartData = Object.entries(dist).map(([name, value]) => ({ name, value }))
+                          .sort((a,b) => (Number(a.name) || 0) - (Number(b.name) || 0))
+                        
+                        return (
+                          <div key={subIdx} className="bg-white p-3 rounded-xl border border-slate-200">
+                             <p className="text-[10px] font-black text-[#BE1E2E] uppercase mb-2 flex items-center gap-2">
+                               <List className="w-3 h-3" /> {rowLabel}
+                             </p>
+                             <table className="w-full text-[9px] text-left">
+                                <thead>
+                                   <tr className="border-b border-slate-100">
+                                      <th className="pb-1 font-black text-slate-400 uppercase">Mức điểm</th>
+                                      <th className="pb-1 font-black text-slate-400 uppercase text-right">SL</th>
+                                      <th className="pb-1 font-black text-slate-400 uppercase text-right">%</th>
+                                   </tr>
+                                </thead>
+                                <tbody>
+                                   {rowChartData.map((item: any) => (
+                                      <tr key={item.name} className="border-b border-slate-50/50 last:border-0">
+                                         <td className="py-1 font-bold text-slate-600">{item.name}</td>
+                                         <td className="py-1 font-black text-slate-900 text-right">{item.value}</td>
+                                         <td className="py-1 font-bold text-indigo-500 text-right">
+                                           {filteredForms.length > 0 ? ((item.value / filteredForms.length) * 100).toFixed(1) : 0}%
+                                         </td>
+                                      </tr>
+                                   ))}
+                                </tbody>
+                             </table>
+                          </div>
+                        )
+                      })}
+                   </div>
+                 ) : q.chartData && q.chartData.length > 0 ? (
+                   /* Standard Choice/Rating Questions */
                    <div className="flex flex-col gap-4 mt-auto">
                      <div className="h-40 w-full">
                        <ResponsiveContainer width="100%" height="100%">
@@ -429,62 +430,21 @@ export function ResultsDashboardClient({ periodId, periodName, periodCode, quest
                      </div>
                    </div>
                  ) : q.textResponses && q.textResponses.length > 0 ? (
+                   /* Text Questions (Anonymous) */
                    <div className="mt-auto space-y-2">
                       <p className="text-[10px] font-black text-slate-400 uppercase flex items-center gap-1 mb-2">
                         <MessageSquare className="w-3 h-3" /> Danh sách ý kiến ({q.textResponses.length})
                       </p>
-                      <div className="max-h-80 overflow-y-auto custom-scrollbar pr-1 space-y-3">
-                        {q.textResponses.map((opinion, idx) => {
-                          let isJson = false
-                          let parsedData: any = null
-                          if (opinion.text.startsWith('{')) {
-                             try {
-                               parsedData = JSON.parse(opinion.text)
-                               isJson = true
-                             } catch (e) {}
-                          }
-
-                          return (
-                            <div key={idx} className="p-3 bg-white rounded-xl border border-slate-100 shadow-sm relative group transition-all hover:border-[#BE1E2E]/30">
-                               <div className="flex items-center justify-between mb-2 pb-2 border-b border-slate-50">
-                                  <div className="flex items-center gap-2">
-                                     <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center">
-                                        <User className="w-3 h-3 text-slate-400" />
-                                     </div>
-                                     <span className="text-[10px] font-black text-slate-700">{opinion.respondent}</span>
-                                  </div>
-                                  <div className="flex gap-1">
-                                     <span className="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full text-[8px] font-bold uppercase">{opinion.className}</span>
-                                     <span className="bg-slate-50 text-slate-500 px-2 py-0.5 rounded-full text-[8px] font-bold uppercase">{opinion.campusName}</span>
-                                  </div>
-                               </div>
-                               
-                               {isJson && parsedData ? (
-                                 <div className="space-y-2">
-                                    <p className="text-[9px] font-black text-slate-400 uppercase flex items-center gap-1">
-                                      <List className="w-2.5 h-2.5" /> Chi tiết đánh giá:
-                                    </p>
-                                    <div className="grid grid-cols-1 gap-1.5">
-                                      {Object.entries(parsedData).map(([key, val]: [string, any], subIdx) => {
-                                        const labels = getGridLabels(opinion.questionId)
-                                        const rowLabel = labels[parseInt(key)] || `Tiêu chí ${parseInt(key) + 1}`
-                                        return (
-                                          <div key={subIdx} className="flex justify-between items-center p-2 bg-slate-50 rounded-lg border border-slate-100">
-                                             <span className="text-[10px] font-bold text-slate-600">{rowLabel}</span>
-                                             <span className="text-[10px] font-black text-[#BE1E2E] bg-white px-2 py-0.5 rounded-md border border-slate-200">
-                                               {val} điểm
-                                             </span>
-                                          </div>
-                                        )
-                                      })}
-                                    </div>
-                                 </div>
-                               ) : (
-                                 <p className="text-[11px] text-slate-600 leading-relaxed italic">"{opinion.text}"</p>
-                               )}
-                            </div>
-                          )
-                        })}
+                      <div className="max-h-60 overflow-y-auto custom-scrollbar pr-1 space-y-3">
+                        {q.textResponses.map((opinion, idx) => (
+                          <div key={idx} className="p-3 bg-white rounded-xl border border-slate-100 shadow-sm relative group transition-all hover:border-[#BE1E2E]/30">
+                             <p className="text-[11px] text-slate-600 leading-relaxed italic">"{opinion.text}"</p>
+                             <div className="mt-2 flex justify-end gap-1">
+                                <span className="bg-slate-50 text-slate-400 px-2 py-0.5 rounded-full text-[8px] font-bold uppercase">{opinion.className}</span>
+                                <span className="bg-slate-50 text-slate-400 px-2 py-0.5 rounded-full text-[8px] font-bold uppercase">{opinion.campusName}</span>
+                             </div>
+                          </div>
+                        ))}
                       </div>
                    </div>
                  ) : (
