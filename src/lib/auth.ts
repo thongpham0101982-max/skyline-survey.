@@ -4,7 +4,7 @@ import { prisma } from "./db"
 import bcrypt from "bcryptjs"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  secret: process.env.AUTH_SECRET || "skyline-survey-super-secret-key-change-in-production",
+  secret: "skyline-survey-super-secret-key-change-in-production", // FORCE exact secret
   trustHost: true,
   providers: [
     CredentialsProvider({
