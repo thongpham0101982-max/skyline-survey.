@@ -1,14 +1,6 @@
 ﻿import type { Metadata } from "next"
-import { Be_Vietnam_Pro } from "next/font/google"
 import "./globals.css"
 import { AuthProvider } from "@/components/AuthProvider"
-
-const beVietnamPro = Be_Vietnam_Pro({
-  subsets: ['latin', 'vietnamese'],
-  weight: ['300', '400', '500', '600', '700'],
-  variable: '--font-sans',
-  display: 'swap',
-});
 
 export const metadata: Metadata = {
   title: "Skyline Survey System",
@@ -21,8 +13,14 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="vi" className={beVietnamPro.variable} suppressHydrationWarning>
-      <body className={beVietnamPro.className} suppressHydrationWarning>
+    <html lang="vi" suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+        <style>{`body { font-family: 'Be Vietnam Pro', sans-serif; }`}</style>
+      </head>
+      <body suppressHydrationWarning>
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
