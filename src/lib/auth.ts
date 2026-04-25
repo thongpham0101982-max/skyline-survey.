@@ -19,8 +19,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const password = credentials.password as string
         let user: any = null
 
+        console.log('[AUTH] Attempting login for:', identifier)
         // 1. Direct User table match (Admin / Staff)
         user = await prisma.user.findUnique({ where: { email: identifier }, include: { campusAssignments: true } })
+        console.log('[AUTH] User found in User table:', user ? 'YES' : 'NO')
 
         // 2. Teacher Code Match
         if (!user) {
@@ -28,7 +30,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             where: { teacherCode: identifier },
             include: { user: true }
           })
-          if (teacher?.user) user = teacher.user
+          if (teacher?.user) {
+            user = teacher.user
+            console.log('[AUTH] User found via Teacher Code:', identifier)
+          }
         }
 
         // 3. Parent Code Match (P + Mã HS)
@@ -37,7 +42,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             where: { parentCode: identifier },
             include: { user: true }
           })
-          if (parent?.user) user = parent.user
+          if (parent?.user) {
+            user = parent.user
+            console.log('[AUTH] User found via Parent Code:', identifier)
+          }
         }
 
         // 4. Student Code Match
@@ -46,18 +54,25 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             where: { studentCode: identifier },
             include: { user: true }
           })
-          if (student?.user) user = student.user
+          if (student?.user) {
+            user = student.user
+            console.log('[AUTH] User found via Student Code:', identifier)
+          }
         }
 
-        // 5. If STILL not found, and it follows the convention, maybe we need to find by Name fallback
         if (!user) {
-          user = await prisma.user.findFirst({ where: { fullName: identifier } })
+          console.log('[AUTH] User not found for identifier:', identifier)
+          return null
         }
 
-        if (!user || user.status !== "ACTIVE") return null
+        if (user.status !== "ACTIVE") {
+          console.log('[AUTH] User found but not ACTIVE status:', user.status)
+          return null
+        }
 
         // Validate Password
         const isValid = await bcrypt.compare(password, user.passwordHash)
+        console.log('[AUTH] Password check for:', identifier, 'Result:', isValid)
         if (!isValid) return null
 
         return {

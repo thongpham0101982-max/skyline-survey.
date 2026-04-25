@@ -85,7 +85,8 @@ export function LoginClient() {
           redirect: false,
         })
         if (result?.error) {
-          setError('Sai tên đăng nhập hoặc mật khẩu!')
+          console.error('[LOGIN] SignIn Error:', result.error)
+          setError(`Sai tên đăng nhập hoặc mật khẩu! (${result.error})`)
           setLoading(false)
           setLoadingSteps([])
         } else {
