@@ -100,39 +100,6 @@ export function ResultsDashboard({ periodId, periodName, periodCode, questions, 
     return result
   }, [forms, compareBy, selectedGroup, searchQuery])
 
-  const stats = useMemo(() => {
-    let npsT = 0, npsP = 0, npsD = 0
-    let globalSum = 0, globalCount = 0
-
-    // 1. Calculate NPS
-    filteredForms.forEach(f => {
-      f.responses.forEach(r => {
-        if (r.questionType?.toUpperCase() === 'NPS' && r.numericScore !== null) {
-          npsT++; if (r.numericScore >= 9) npsP++; else if (r.numericScore < 7) npsD++
-        }
-      })
-    })
-
-    // 2. Aggregate Avg Score from questionAnalytics to be completely consistent
-    questionAnalytics.forEach(qa => {
-      if (!qa.isOpinion && qa.rawSum > 0) {
-         globalSum += qa.rawSum
-         globalCount += qa.rawCount
-      }
-    })
-
-    return { 
-      nps: npsT > 0 ? Math.round(((npsP - npsD) / npsT) * 100) : 0, 
-      avg: globalCount > 0 ? (globalSum / globalCount).toFixed(2) : '0.00',
-      completionRate: totalForms > 0 ? Math.round((forms.length / totalForms) * 100) : 0
-    }
-  }, [filteredForms, forms, totalForms, questionAnalytics])
-
-  const groups = useMemo(() => {
-    const set = new Set<string>(); forms.forEach(f => set.add(compareBy === 'CAMPUS' ? f.campusName : f.className))
-    return Array.from(set).filter(Boolean).sort()
-  }, [forms, compareBy])
-
   const questionAnalytics = useMemo(() => {
     return questions.map(q => {
       const type = q.questionType?.toUpperCase() || ''
@@ -180,6 +147,41 @@ export function ResultsDashboard({ periodId, periodName, periodCode, questions, 
       return { ...q, isOpinion, isGrid, rawSum: qSum, rawCount: qCount, avg: qCount > 0 ? (qSum / qCount).toFixed(2) : '0.00', chartData, opinions }
     })
   }, [questions, filteredForms])
+
+  const stats = useMemo(() => {
+    let npsT = 0, npsP = 0, npsD = 0
+    let globalSum = 0, globalCount = 0
+
+    // 1. Calculate NPS
+    filteredForms.forEach(f => {
+      f.responses.forEach(r => {
+        if (r.questionType?.toUpperCase() === 'NPS' && r.numericScore !== null) {
+          npsT++; if (r.numericScore >= 9) npsP++; else if (r.numericScore < 7) npsD++
+        }
+      })
+    })
+
+    // 2. Aggregate Avg Score from questionAnalytics to be completely consistent
+    questionAnalytics.forEach(qa => {
+      if (!qa.isOpinion && qa.rawSum > 0) {
+         globalSum += qa.rawSum
+         globalCount += qa.rawCount
+      }
+    })
+
+    return { 
+      nps: npsT > 0 ? Math.round(((npsP - npsD) / npsT) * 100) : 0, 
+      avg: globalCount > 0 ? (globalSum / globalCount).toFixed(2) : '0.00',
+      completionRate: totalForms > 0 ? Math.round((forms.length / totalForms) * 100) : 0
+    }
+  }, [filteredForms, forms, totalForms, questionAnalytics])
+
+  const groups = useMemo(() => {
+    const set = new Set<string>(); forms.forEach(f => set.add(compareBy === 'CAMPUS' ? f.campusName : f.className))
+    return Array.from(set).filter(Boolean).sort()
+  }, [forms, compareBy])
+
+
 
   return (
     <div className="bg-[#F4F7F9] min-h-screen text-slate-800 font-sans selection:bg-red-100 selection:text-red-900">
