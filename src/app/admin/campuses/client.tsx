@@ -135,7 +135,7 @@ export function CampusManagerClient({ initialCampuses }: any) {
                     </span>
                   </td>
                   <td className="px-8 py-6 text-right">
-                    <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                    <div className="flex items-center justify-end gap-3 opacity-100 transition-all ">
                       <button onClick={() => { setEditingId(c.id); setForm({ code: c.campusCode, name: c.campusName, address: c.address || "" }); setShowAddForm(false); }}
                         className="p-2.5 text-indigo-600 hover:bg-white hover:shadow-md rounded-xl transition-all border border-transparent hover:border-indigo-100">
                         <Edit2 className="w-4 h-4" />

@@ -27,16 +27,16 @@ export async function savePermissions(roleCode: string, permissions: any[]) {
     // Drop all old and set new to avoid duplicate keys
     await prisma.permission.deleteMany({ where: { roleCode } })
     if (permissions.length > 0) {
-      await prisma.permission.createMany({
-        data: permissions.map(p => ({
+      await Promise.all(permissions.map(p => prisma.permission.create({
+        data: {
           roleCode,
           module: p.module,
           canRead: p.canRead,
           canCreate: p.canCreate,
           canUpdate: p.canUpdate,
           canDelete: p.canDelete
-        }))
-      })
+        }
+      })));
     }
     revalidatePath("/admin/roles")
     return { success: true }
