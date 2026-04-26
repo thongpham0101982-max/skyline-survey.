@@ -1,13 +1,14 @@
 ﻿import { getAdminMetrics } from "@/services/dashboard"
 import { KPICard } from "@/components/KPICard"
 import { WelcomeAlert } from "@/components/WelcomeAlert"
-import { auth } from "@/lib/auth"
+import { getAdminSession } from "@/lib/session"
 
 export default async function AdminDashboard() {
-  const session = await auth()
-  const userName = session?.user?.name || "Thành viên"
+  const session = await getAdminSession()
+  const userName = (session as any)?.name || "Thành viên"
   
-  const metrics = await getAdminMetrics().catch(() => ({ 
+  // Use campus scoping for metrics
+  const metrics = await getAdminMetrics(session.allowedCampusIds).catch(() => ({ 
     totalStudents: 0, 
     surveyedStudents: 0, 
     notSurveyedStudents: 0, 
@@ -22,6 +23,11 @@ export default async function AdminDashboard() {
       
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Admin Dashboard</h1>
+        {session.allowedCampusIds.length > 0 && (
+          <span className="text-xs font-black bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full uppercase tracking-widest">
+            Phạm vi: {session.allowedCampusIds.length} cơ sở
+          </span>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">

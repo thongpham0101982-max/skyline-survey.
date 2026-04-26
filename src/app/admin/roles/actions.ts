@@ -27,14 +27,16 @@ export async function savePermissions(roleCode: string, permissions: any[]) {
     // Drop all old and set new to avoid duplicate keys
     await prisma.permission.deleteMany({ where: { roleCode } })
     if (permissions.length > 0) {
-      await Promise.all(permissions.map(p => prisma.permission.create({
+      // Defensive: Filter out any permissions without a valid module code before saving
+      const validPermissions = permissions.filter(p => !!p.module);
+      await Promise.all(validPermissions.map(p => prisma.permission.create({
         data: {
           roleCode,
           module: p.module,
-          canRead: p.canRead,
-          canCreate: p.canCreate,
-          canUpdate: p.canUpdate,
-          canDelete: p.canDelete
+          canRead: !!p.canRead,
+          canCreate: !!p.canCreate,
+          canUpdate: !!p.canUpdate,
+          canDelete: !!p.canDelete
         }
       })));
     }

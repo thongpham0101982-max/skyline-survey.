@@ -1,13 +1,13 @@
 ﻿import { prisma } from "@/lib/db"
-import { auth } from "@/lib/auth"
 import { ParentAccountsClient } from "./client"
 import { ShieldCheck } from "lucide-react"
+import { getAdminSession } from "@/lib/session"
 
 export default async function ParentAccountsPage() {
-  const session = await auth();
-  const user = session?.user as any;
-  const isGDCS = user?.role === 'GDCS';
-  const allowedCampusIds = user?.campusIds || [];
+  const session = await getAdminSession()
+  const isRestricted = !session.isFullAccess
+  const allowedCampusIds = session.allowedCampusIds
+
   const years = await prisma.academicYear.findMany({
     orderBy: { startDate: "desc" },
     select: { id: true, name: true, status: true }
@@ -15,12 +15,12 @@ export default async function ParentAccountsPage() {
   const defaultYearId = years.find(y => y.status === "ACTIVE")?.id || years[0]?.id || null
 
   const campuses = await prisma.campus.findMany({
-    where: isGDCS ? { id: { in: allowedCampusIds } } : { status: "ACTIVE" },
+    where: isRestricted ? { id: { in: allowedCampusIds } } : { status: "ACTIVE" },
     orderBy: { campusName: "asc" }
   })
 
   const classes = await prisma.class.findMany({
-    where: isGDCS ? { campusId: { in: allowedCampusIds } } : {},
+    where: isRestricted ? { campusId: { in: allowedCampusIds } } : {},
     include: { campus: true, academicYear: { select: { id: true, name: true } } },
     orderBy: [{ academicYear: { startDate: "desc" } }, { className: "asc" }]
   })
@@ -46,7 +46,14 @@ export default async function ParentAccountsPage() {
            </div>
         </div>
       </div>
-      <ParentAccountsClient classes={classes} years={years} campuses={campuses} defaultYearId={defaultYearId} />
+      <ParentAccountsClient 
+        classes={classes} 
+        years={years} 
+        campuses={campuses} 
+        defaultYearId={defaultYearId} 
+        isCampusLocked={isRestricted && allowedCampusIds.length === 1}
+        defaultCampusId={isRestricted ? allowedCampusIds[0] : null}
+      />
     </div>
   )
 }

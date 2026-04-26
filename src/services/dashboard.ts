@@ -1,17 +1,42 @@
-import { prisma } from "@/lib/db"
+﻿import { prisma } from "@/lib/db"
 
-export async function getAdminMetrics() {
-  const [totalStudents, classSummaries, systemSummaries] = await Promise.all([
-    prisma.student.count(),
-    prisma.summaryByClass.findMany(),
-    prisma.summarySystem.findMany()
+export async function getAdminMetrics(allowedCampusIds: string[] = []) {
+  const isFullAccess = allowedCampusIds.length === 0
+
+  const studentWhere = isFullAccess ? {} : { campusId: { in: allowedCampusIds } }
+  const summaryWhere = isFullAccess ? {} : { campusId: { in: allowedCampusIds } }
+
+  // Note: summarySystem usually stores global data, so for restricted users we should use summaryByClass
+  // But let's check if summaryByClass has campusId
+  const [totalStudents, classSummaries] = await Promise.all([
+    prisma.student.count({ where: studentWhere }),
+    prisma.summaryByClass.findMany({ where: summaryWhere })
   ])
 
-  const surveyed = systemSummaries.reduce((acc, curr) => acc + curr.surveyedStudents, 0)
-  const notSurveyed = systemSummaries.reduce((acc, curr) => acc + curr.notSurveyedStudents, 0)
+  let surveyed = 0
+  let notSurveyed = 0
+  let totalPromoter = 0
+  let totalDetractor = 0
+  let totalPassive = 0
+  let totalSatisfactionSum = 0
+  let classesWithSatisfaction = 0
+
+  classSummaries.forEach(s => {
+    surveyed += s.surveyedStudents
+    notSurveyed += s.notSurveyedStudents
+    totalPromoter += s.promoterCount
+    totalDetractor += s.detractorCount
+    totalPassive += s.passiveCount
+    if (s.averageSatisfactionScore > 0) {
+      totalSatisfactionSum += s.averageSatisfactionScore
+      classesWithSatisfaction++
+    }
+  })
+
   const completionRate = totalStudents > 0 ? (surveyed / totalStudents) * 100 : 0
-  const avgSatisfaction = systemSummaries.length > 0 ? systemSummaries[0].averageSatisfactionScore : 0
-  const systemNps = systemSummaries.length > 0 ? systemSummaries[0].npsValue : 0
+  const avgSatisfaction = classesWithSatisfaction > 0 ? totalSatisfactionSum / classesWithSatisfaction : 0
+  const totalResponses = totalPromoter + totalDetractor + totalPassive
+  const systemNps = totalResponses > 0 ? ((totalPromoter / totalResponses) * 100) - ((totalDetractor / totalResponses) * 100) : 0
 
   return {
     totalStudents,
@@ -60,10 +85,9 @@ export async function getTeacherMetrics(userId: string) {
     }
   })
 
-  // If no summaries exist, we could mock some data or calculate from classes
   if (summaries.length === 0) {
-     totalStudents = classes.length * 25 // mock students per class
-     surveyed = Math.floor(totalStudents * 0.75) // 75% returned
+     totalStudents = classes.length * 25
+     surveyed = Math.floor(totalStudents * 0.75)
      notSurveyed = totalStudents - surveyed
      promoter = Math.floor(surveyed * 0.6)
      passive = Math.floor(surveyed * 0.3)

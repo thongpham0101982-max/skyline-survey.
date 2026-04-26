@@ -3,7 +3,7 @@ import { useState } from "react"
 import { Plus, Edit2, Trash2, CheckCircle2, X, Filter } from "lucide-react"
 import { createUser, updateUser, deleteUser, deleteUsers } from "./actions"
 
-export function UsersClient({ initialUsers, roles, campuses = [] }: any) {
+export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked = false, defaultCampusId = null }: any) {
   const [users, setUsers] = useState(initialUsers || []);
   const [editingId, setEditingId] = useState("");
   const [formData, setFormData] = useState({ employeeCode: "", fullName: "", password: "", roleCode: "ADMIN", campusIds: [] as string[] });
@@ -20,7 +20,7 @@ export function UsersClient({ initialUsers, roles, campuses = [] }: any) {
       setFormData({ employeeCode: u.email, fullName: u.fullName, password: "", roleCode: u.role || "ADMIN", campusIds: u.campusIds || [] });
     } else {
       setEditingId("new");
-      setFormData({ employeeCode: "", fullName: "", password: "", roleCode: filterRole !== "ALL" ? filterRole : (roles[0]?.code || "ADMIN"), campusIds: [] });
+      setFormData({ employeeCode: "", fullName: "", password: "", roleCode: filterRole !== "ALL" ? filterRole : (roles[0]?.code || "ADMIN"), campusIds: defaultCampusId ? [defaultCampusId] : [] });
     }
   }
 
@@ -103,7 +103,7 @@ export function UsersClient({ initialUsers, roles, campuses = [] }: any) {
           </div>
         </div>
         
-        {(filterRole === "PARENT" || filterRole === "TEACHER" || filterRole === "ALL") && (
+        {(filterRole === "PARENT" || filterRole === "TEACHER" || filterRole === "ALL") && !isCampusLocked && (
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-4 pt-4 border-t border-slate-100">
             <div className="flex items-center gap-2">
               <span className="text-sm font-bold text-slate-700">Lọc theo Cơ sở:</span>
@@ -174,7 +174,7 @@ export function UsersClient({ initialUsers, roles, campuses = [] }: any) {
                         <p className="text-[10px] font-bold text-slate-400 uppercase">Gán Cơ sở quản lý:</p>
                         {campuses.map((c: any) => (
                           <label key={c.id} className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-1 rounded">
-                            <input type="checkbox" checked={formData.campusIds.includes(c.id)} onChange={() => toggleCampus(c.id)} className="w-3 h-3" />
+                            <input type="checkbox" checked={formData.campusIds.includes(c.id)} onChange={() => !isCampusLocked && toggleCampus(c.id)} disabled={isCampusLocked} className="w-3 h-3" />
                             <span className="text-[11px] font-medium">{c.campusName}</span>
                           </label>
                         ))}
@@ -204,7 +204,7 @@ export function UsersClient({ initialUsers, roles, campuses = [] }: any) {
                         <p className="text-[10px] font-bold text-slate-400 uppercase">Gán Cơ sở quản lý:</p>
                         {campuses.map((c: any) => (
                           <label key={c.id} className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-1 rounded">
-                            <input type="checkbox" checked={formData.campusIds.includes(c.id)} onChange={() => toggleCampus(c.id)} className="w-3 h-3" />
+                            <input type="checkbox" checked={formData.campusIds.includes(c.id)} onChange={() => !isCampusLocked && toggleCampus(c.id)} disabled={isCampusLocked} className="w-3 h-3" />
                             <span className="text-[11px] font-medium">{c.campusName}</span>
                           </label>
                         ))}

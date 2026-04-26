@@ -17,14 +17,20 @@ const EMPTY_NEW = {
 const EMPTY_EDIT = { teacherName: "", dateOfBirth: "", department: "", mainSubject: "", campusId: "" }
 
 export function TeacherManagerClient({ 
-  initialTeachers, years, defaultYearId, classes, departments, subjects, campuses 
+  initialTeachers, years, defaultYearId, classes, departments, subjects, campuses, isCampusLocked = false, defaultCampusId = null 
 }) {
   const [teachers, setTeachers] = useState(initialTeachers)
   const [search, setSearch] = useState("")
   const [editingId, setEditingId] = useState(null)
   const [editForm, setEditForm] = useState(EMPTY_EDIT)
   const [showAddForm, setShowAddForm] = useState(false)
-  const [newForm, setNewForm] = useState(EMPTY_NEW)
+  const [newForm, setNewForm] = useState(() => {
+    if (isCampusLocked && defaultCampusId) {
+      const campusName = (campuses || []).find(c => c.id === defaultCampusId)?.campusName || "";
+      return { ...EMPTY_NEW, campus: campusName };
+    }
+    return EMPTY_NEW;
+  })
   const [saving, setSaving] = useState(false)
   const [importing, setImporting] = useState(false)
   const [importResult, setImportResult] = useState(null)

@@ -19,7 +19,7 @@ import {
   Building2, GraduationCap, LayoutDashboard
 } from "lucide-react"
 
-export function TrackingClient({ periods }: any) {
+export function TrackingClient({ periods, campuses: initialCampuses = [], defaultCampusId = null, isCampusLocked = false }: any) {
   const [selectedPeriod, setSelectedPeriod] = useState("")
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
@@ -31,9 +31,9 @@ export function TrackingClient({ periods }: any) {
   const [modalLoading, setModalLoading] = useState(false)
 
   // Filters
-  const [filterCampus, setFilterCampus] = useState("ALL")
+  const [filterCampus, setFilterCampus] = useState(defaultCampusId || "ALL")
   const [filterLevel, setFilterLevel] = useState("ALL")
-  const [campuses, setCampuses] = useState<any[]>([])
+  const [campuses] = useState<any[]>(initialCampuses)
   const [levels, setLevels] = useState<string[]>([])
 
   // Add Student Modal
@@ -53,7 +53,7 @@ export function TrackingClient({ periods }: any) {
   }
 
   useEffect(() => {
-    getAllCampusesAction().then(setCampuses)
+    // Filtered campuses provided via props
     getAcademicLevelsAction().then(setLevels)
   }, [])
 
@@ -379,9 +379,9 @@ export function TrackingClient({ periods }: any) {
               <select 
                 value={filterCampus}
                 onChange={(e) => setFilterCampus(e.target.value)}
-                className="w-full p-4 pl-12 border-2 border-slate-100 rounded-2xl focus:border-indigo-500 font-bold text-slate-700 bg-slate-50 outline-none transition-all shadow-sm"
+                disabled={isCampusLocked} onChange={(e) => !isCampusLocked && setFilterCampus(e.target.value)} className={`w-full p-4 pl-12 border-2 rounded-2xl font-bold text-slate-700 outline-none transition-all shadow-sm ${isCampusLocked ? "border-indigo-200 bg-indigo-50 text-indigo-700 cursor-not-allowed" : "border-slate-100 bg-slate-50 focus:border-indigo-500"}`}
               >
-                <option value="ALL">Tất cả Cơ sở</option>
+                {!isCampusLocked && <option value="ALL">Tất cả Cơ sở</option>}
                 {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
               </select>
             </div>

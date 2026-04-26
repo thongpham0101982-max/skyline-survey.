@@ -1,9 +1,12 @@
 ﻿import { prisma } from "@/lib/db"
 import { TeacherManagerClient } from "./client"
+import { getAdminSession } from "@/lib/session"
 
 export const metadata = { title: "Quản lý Giáo viên | Cổng Quản trị" }
 
 export default async function TeacherManagerPage() {
+  const session = await getAdminSession()
+
   const years = await prisma.academicYear.findMany({
     orderBy: { startDate: "desc" },
     select: { id: true, name: true, status: true }
@@ -22,13 +25,18 @@ export default async function TeacherManagerPage() {
     select: { id: true, subjectCode: true, subjectName: true }
   })
 
+  // Filter campuses based on session
+  const campusWhere = session.isFullAccess ? { status: "ACTIVE" } : { id: { in: session.allowedCampusIds }, status: "ACTIVE" }
   const campuses = await prisma.campus.findMany({
-    where: { status: "ACTIVE" },
+    where: campusWhere,
     orderBy: { campusName: "asc" },
     select: { id: true, campusCode: true, campusName: true }
   })
 
+  // Filter teachers based on session
+  const teacherWhere = session.isFullAccess ? {} : { campusId: { in: session.allowedCampusIds } }
   const rawTeachers = await prisma.teacher.findMany({
+    where: teacherWhere,
     orderBy: { teacherName: "asc" },
     include: {
       user: { select: { email: true, status: true } },
@@ -38,7 +46,10 @@ export default async function TeacherManagerPage() {
     }
   })
 
+  // Filter classes based on session
+  const classWhere = session.isFullAccess ? {} : { campusId: { in: session.allowedCampusIds } }
   const classes = await prisma.class.findMany({
+    where: classWhere,
     orderBy: [{ academicYear: { startDate: "desc" } }, { className: "asc" }],
     include: {
       academicYear: { select: { id: true, name: true } },
@@ -85,6 +96,8 @@ export default async function TeacherManagerPage() {
         departments={departments}
         subjects={subjects}
         campuses={campuses}
+        isCampusLocked={!session.isFullAccess && session.allowedCampusIds.length === 1}
+        defaultCampusId={!session.isFullAccess ? session.allowedCampusIds[0] : null}
       />
     </div>
   )

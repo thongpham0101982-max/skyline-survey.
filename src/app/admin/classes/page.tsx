@@ -1,8 +1,14 @@
-import { prisma } from "@/lib/db"
+﻿import { prisma } from "@/lib/db"
 import { AdminClassesClient } from "./client"
+import { getAdminSession } from "@/lib/session"
 
 export default async function AdminClassesPage() {
+  const session = await getAdminSession()
+
+  // Filter classes based on session scope
+  const classWhere = session.isFullAccess ? {} : { campusId: { in: session.allowedCampusIds } }
   const classesData = await prisma.class.findMany({
+    where: classWhere,
     include: {
       campus: true,
       _count: { select: { students: true } }
@@ -10,7 +16,10 @@ export default async function AdminClassesPage() {
     orderBy: [{ campus: { campusName: "asc" } }, { level: "asc" }, { grade: "asc" }, { className: "asc" }]
   })
 
+  // Filter teachers based on session scope (if we want to only assign teachers from same campus)
+  const teacherWhere = session.isFullAccess ? {} : { campusId: { in: session.allowedCampusIds } }
   const teachers = await prisma.teacher.findMany({
+    where: teacherWhere,
     select: { id: true, teacherName: true }
   })
 
@@ -32,7 +41,12 @@ export default async function AdminClassesPage() {
     homeroomTeacher: c.homeroomTeacherId ? teacherMap[c.homeroomTeacherId] || "N/A" : "Chưa phân công"
   }))
 
-  const campuses = await prisma.campus.findMany()
+  // Filter campuses based on session scope
+  const campusWhere = session.isFullAccess ? {} : { id: { in: session.allowedCampusIds } }
+  const campuses = await prisma.campus.findMany({
+    where: campusWhere
+  })
+
   const academicYears = await prisma.academicYear.findMany({
     where: { status: "ACTIVE" },
     include: { educationSystems: true }
@@ -47,6 +61,8 @@ export default async function AdminClassesPage() {
         initialClasses={mappedClasses}
         campuses={campuses}
         academicYears={academicYears}
+        isCampusLocked={!session.isFullAccess && session.allowedCampusIds.length === 1}
+        defaultCampusId={!session.isFullAccess ? session.allowedCampusIds[0] : null}
       />
     </div>
   )
