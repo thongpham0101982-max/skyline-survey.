@@ -44,3 +44,16 @@ export async function savePermissions(roleCode: string, permissions: any[]) {
     return { success: false, error: e.message }
   }
 }
+
+export async function deleteRole(code: string) {
+  try {
+    if (code === 'ADMIN' || code === 'TEACHER' || code === 'PARENT') {
+       return { success: false, error: 'Không thể xóa nhóm quyền hệ thống này.' };
+    }
+    await prisma.role.delete({ where: { code } });
+    revalidatePath("/admin/roles");
+    return { success: true };
+  } catch(e:any) {
+    return { success: false, error: e.message };
+  }
+}

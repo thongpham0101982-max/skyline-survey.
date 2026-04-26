@@ -1,7 +1,7 @@
 ﻿"use client"
 import { useState, Fragment } from "react"
-import { Shield, Plus, Save } from "lucide-react"
-import { savePermissions } from "./actions"
+import { Shield, Plus, Save, Edit, Trash2, X } from "lucide-react"
+import { savePermissions, createRole, updateRole, deleteRole } from "./actions"
 import { APP_CATEGORIES, ALL_APP_MODULES } from "@/config/modules"
 
 const emptyPerm = (code: string) => ({
@@ -22,6 +22,11 @@ export function RolesClient({ initialRoles }: any) {
   };
 
   const [permissions, setPermissions] = useState<any[]>(() => buildPerms(activeRole));
+  
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<'ADD'|'EDIT'>('ADD');
+  const [formData, setFormData] = useState({ code: '', name: '', description: '' });
+  const [loading, setLoading] = useState(false);
 
   const switchRole = (code: string) => {
     setActiveRole(code);
@@ -57,6 +62,7 @@ export function RolesClient({ initialRoles }: any) {
   };
 
   return (
+    <>
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
       {/* Roles List */}
       <div className="lg:col-span-1 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-fit">
@@ -64,15 +70,33 @@ export function RolesClient({ initialRoles }: any) {
           <h3 className="font-bold text-slate-700 flex items-center gap-2">
             <Shield className="w-5 h-5 text-indigo-600"/> Nhóm Quyền
           </h3>
-          <button className="text-indigo-600 hover:bg-indigo-100 p-1.5 rounded-lg transition-colors"><Plus className="w-4 h-4"/></button>
+          <button 
+             onClick={() => { setModalMode('ADD'); setFormData({ code: '', name: '', description: '' }); setModalOpen(true); }}
+             className="text-indigo-600 hover:bg-indigo-100 p-1.5 rounded-lg transition-colors">
+            <Plus className="w-4 h-4"/>
+          </button>
         </div>
-        <div className="p-2 space-y-1">
+        <div className="p-2 space-y-1 overflow-y-auto max-h-[calc(100vh-200px)]">
           {roles.map((r: any) => (
-            <button key={r.code} onClick={() => switchRole(r.code)}
-              className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 ${activeRole === r.code ? "bg-indigo-50 border border-indigo-100 shadow-sm" : "hover:bg-slate-50 border border-transparent"}`}>
-              <div className={`font-semibold text-sm ${activeRole === r.code ? "text-indigo-700" : "text-slate-700"}`}>{r.name}</div>
-              <div className="text-xs text-slate-500 mt-1 line-clamp-1">{r.description || r.code}</div>
-            </button>
+            <div key={r.code} className={`group relative flex items-stretch w-full rounded-xl transition-all duration-200 ${activeRole === r.code ? "bg-indigo-50 border border-indigo-100 shadow-sm" : "hover:bg-slate-50 border border-transparent"}`}>
+              <button onClick={() => switchRole(r.code)} className="flex-1 text-left px-4 py-3">
+                <div className={`font-semibold text-sm ${activeRole === r.code ? "text-indigo-700" : "text-slate-700"}`}>{r.name}</div>
+                <div className="text-xs text-slate-500 mt-1 line-clamp-1">{r.description || r.code}</div>
+              </button>
+              
+              {!r.isSystem && (
+                <div className="opacity-0 group-hover:opacity-100 flex flex-col justify-center gap-1 px-2 border-l border-slate-200 transition-opacity">
+                  <button onClick={() => { setModalMode('EDIT'); setFormData({ code: r.code, name: r.name, description: r.description || '' }); setModalOpen(true); }} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-lg"><Edit className="w-3.5 h-3.5" /></button>
+                  <button onClick={async () => { 
+                      if(confirm('Bạn có chắc muốn xóa nhóm quyền này?')) {
+                         const res = await deleteRole(r.code);
+                         if(res.success) window.location.reload();
+                         else alert("Lỗi: " + res.error);
+                      }
+                  }} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-white rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>
+                </div>
+              )}
+            </div>
           ))}
         </div>
       </div>
@@ -158,5 +182,43 @@ export function RolesClient({ initialRoles }: any) {
         </div>
       </div>
     </div>
+
+      {modalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+              <h3 className="font-bold text-slate-800">{modalMode === 'ADD' ? 'Thêm Nhóm Quyền' : 'Sửa Nhóm Quyền'}</h3>
+              <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5"/></button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Mã nhóm (Code) *</label>
+                <input type="text" value={formData.code} onChange={e => setFormData({...formData, code: e.target.value.toUpperCase()})} disabled={modalMode === 'EDIT'} placeholder="VD: NHAN_SU" className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 disabled:bg-slate-100 disabled:text-slate-500" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Tên hiển thị *</label>
+                <input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="VD: Quản lý Nhân sự" className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Mô tả</label>
+                <textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} rows={3} placeholder="Mô tả chức năng của nhóm quyền này..." className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 resize-none" />
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+              <button onClick={() => setModalOpen(false)} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-200 rounded-xl transition-colors">Hủy</button>
+              <button disabled={loading || !formData.code || !formData.name} onClick={async () => {
+                 setLoading(true);
+                 const res = modalMode === 'ADD' ? await createRole(formData.code, formData.name, formData.description) : await updateRole(formData.code, formData.name, formData.description);
+                 if (res.success) { setModalOpen(false); window.location.reload(); }
+                 else { alert("Lỗi: " + res.error); }
+                 setLoading(false);
+              }} className="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-xl transition-colors flex items-center">
+                {loading ? 'Đang xử lý...' : 'Xác nhận'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
