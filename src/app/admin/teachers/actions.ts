@@ -47,8 +47,8 @@ async function assignHomeroomClass(teacherId: string, classId: string | null) {
     const cls = await prisma.class.findUnique({ where: { id: classId }, select: { className: true } })
     const className = cls?.className || ""
     await prisma.$executeRawUnsafe(
-      `UPDATE Teacher SET homeroomClass = ?, homeroomClassId = ? WHERE id = ?`,
-      className, classId, teacherId
+      `UPDATE Teacher SET homeroomClass = ? WHERE id = ?`,
+      className, teacherId
     )
   } else {
     await prisma.$executeRawUnsafe(
@@ -56,89 +56,101 @@ async function assignHomeroomClass(teacherId: string, classId: string | null) {
       teacherId
     )
     await prisma.$executeRawUnsafe(
-      `UPDATE Teacher SET homeroomClass = NULL, homeroomClassId = NULL WHERE id = ?`,
+      `UPDATE Teacher SET homeroomClass = NULL WHERE id = ?`,
       teacherId
     )
   }
 }
 
 export async function createTeacherAction(data: any) {
-  const campusId = data.campusId || await getDefaultCampusId()
-  const hashedPassword = await bcrypt.hash(data.teacherCode, 10)
+  try {
+    const campusId = data.campusId || await getDefaultCampusId()
+    const hashedPassword = await bcrypt.hash(data.teacherCode, 10)
 
-  const existingUser = await prisma.user.findUnique({ where: { email: data.teacherCode } })
-  let userId: string
+    const existingUser = await prisma.user.findUnique({ where: { email: data.teacherCode } })
+    let userId: string
 
-  if (existingUser) {
-    userId = existingUser.id
-  } else {
-    const user = await prisma.user.create({
-      data: { fullName: data.teacherName, email: data.teacherCode, passwordHash: hashedPassword, role: "TEACHER", status: "ACTIVE" }
-    })
-    userId = user.id
-  }
-
-  const existing = await prisma.teacher.findUnique({ where: { teacherCode: data.teacherCode } })
-  if (existing) throw new Error("Ma GV da ton tai: " + data.teacherCode)
-
-  const departmentId = await resolveDepartmentId(data.department)
-  const mainSubjectId = await resolveSubjectId(data.mainSubject)
-
-  const teacher = await prisma.teacher.create({
-    data: {
-      userId, teacherCode: data.teacherCode, teacherName: data.teacherName,
-      homeroomClass: null, email: data.email || null, phone: data.phone || null,
-      dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
-      departmentId: departmentId,
-      mainSubjectId: mainSubjectId,
-      campusId, status: "ACTIVE"
+    if (existingUser) {
+      userId = existingUser.id
+    } else {
+      const user = await prisma.user.create({
+        data: { fullName: data.teacherName, email: data.teacherCode, passwordHash: hashedPassword, role: "TEACHER", status: "ACTIVE" }
+      })
+      userId = user.id
     }
-  })
 
-  if (data.homeroomClassId) {
-    await assignHomeroomClass(teacher.id, data.homeroomClassId)
+    const existing = await prisma.teacher.findUnique({ where: { teacherCode: data.teacherCode } })
+    if (existing) return { success: false, error: "Mã GV đã tồn tại: " + data.teacherCode }
+
+    const departmentId = await resolveDepartmentId(data.department)
+    const mainSubjectId = await resolveSubjectId(data.mainSubject)
+
+    const teacher = await prisma.teacher.create({
+      data: {
+        userId, teacherCode: data.teacherCode, teacherName: data.teacherName,
+        homeroomClass: null, email: data.email || null, phone: data.phone || null,
+        dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
+        departmentId: departmentId,
+        mainSubjectId: mainSubjectId,
+        campusId, status: "ACTIVE"
+      }
+    })
+
+    if (data.homeroomClassId) {
+      await assignHomeroomClass(teacher.id, data.homeroomClassId)
+    }
+
+    revalidatePath("/admin/teachers")
+    revalidatePath("/admin/classes")
+    return { success: true }
+  } catch (e: any) {
+    return { success: false, error: e.message }
   }
-
-  revalidatePath("/admin/teachers")
-  revalidatePath("/admin/classes")
-  return { success: true }
 }
 
 export async function updateTeacherAction(data: any) {
-  const { id, teacherName, dateOfBirth, campusId } = data
+  try {
+    const { id, teacherName, dateOfBirth, campusId } = data
 
-  const updateData: any = {}
-  if (teacherName) updateData.teacherName = teacherName
-  if (dateOfBirth !== undefined) updateData.dateOfBirth = dateOfBirth ? new Date(dateOfBirth) : null
-  if (campusId !== undefined) updateData.campusId = campusId
+    const updateData: any = {}
+    if (teacherName) updateData.teacherName = teacherName
+    if (dateOfBirth !== undefined) updateData.dateOfBirth = dateOfBirth ? new Date(dateOfBirth) : null
+    if (campusId !== undefined) updateData.campusId = campusId
 
-  if (data.department !== undefined) {
-    updateData.departmentId = await resolveDepartmentId(data.department)
+    if (data.department !== undefined) {
+      updateData.departmentId = await resolveDepartmentId(data.department)
+    }
+    if (data.mainSubject !== undefined) {
+      updateData.mainSubjectId = await resolveSubjectId(data.mainSubject)
+    }
+
+    await prisma.teacher.update({ where: { id }, data: updateData })
+
+    if (teacherName) {
+      const teacher = await prisma.teacher.findUnique({ where: { id } })
+      if (teacher) await prisma.user.update({ where: { id: teacher.userId }, data: { fullName: teacherName } }).catch(() => {})
+    }
+
+    revalidatePath("/admin/teachers")
+    return { success: true }
+  } catch (e: any) {
+    return { success: false, error: e.message }
   }
-  if (data.mainSubject !== undefined) {
-    updateData.mainSubjectId = await resolveSubjectId(data.mainSubject)
-  }
-
-  await prisma.teacher.update({ where: { id }, data: updateData })
-
-  if (teacherName) {
-    const teacher = await prisma.teacher.findUnique({ where: { id } })
-    if (teacher) await prisma.user.update({ where: { id: teacher.userId }, data: { fullName: teacherName } }).catch(() => {})
-  }
-
-  revalidatePath("/admin/teachers")
-  return { success: true }
 }
 
 export async function deleteTeacherAction(id: string) {
-  await prisma.$executeRawUnsafe(`UPDATE Class SET homeroomTeacherId = NULL WHERE homeroomTeacherId = ?`, id)
-  const teacher = await prisma.teacher.findUnique({ where: { id } })
-  if (!teacher) return { success: false }
-  await prisma.teacher.delete({ where: { id } })
-  await prisma.user.delete({ where: { id: teacher.userId } }).catch(() => {})
-  revalidatePath("/admin/teachers")
-  revalidatePath("/admin/classes")
-  return { success: true }
+  try {
+    await prisma.$executeRawUnsafe(`UPDATE Class SET homeroomTeacherId = NULL WHERE homeroomTeacherId = ?`, id)
+    const teacher = await prisma.teacher.findUnique({ where: { id } })
+    if (!teacher) return { success: false, error: "Không tìm thấy giáo viên" }
+    await prisma.teacher.delete({ where: { id } })
+    await prisma.user.delete({ where: { id: teacher.userId } }).catch(() => {})
+    revalidatePath("/admin/teachers")
+    revalidatePath("/admin/classes")
+    return { success: true }
+  } catch (e: any) {
+    return { success: false, error: e.message }
+  }
 }
 
 export async function importTeachersAction(rows: any[], academicYearId?: string) {
