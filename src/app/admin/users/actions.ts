@@ -16,9 +16,12 @@ export async function createUser(data: any) {
       }
     });
     if (data.campusIds && data.campusIds.length > 0) {
-      await prisma.userCampusAssignment.createMany({
-        data: data.campusIds.map((cid: string) => ({ userId: newUser.id, campusId: cid }))
-      });
+      const uniqueCampusIds = Array.from(new Set(data.campusIds));
+      await Promise.all(uniqueCampusIds.map((cid: any) => 
+        prisma.userCampusAssignment.create({
+          data: { userId: newUser.id, campusId: cid }
+        })
+      ));
     }
     revalidatePath("/admin/users");
     return { success: true };
@@ -46,9 +49,12 @@ export async function updateUser(id: string, data: any) {
     if (data.campusIds) {
       await prisma.userCampusAssignment.deleteMany({ where: { userId: id } });
       if (data.campusIds.length > 0) {
-        await prisma.userCampusAssignment.createMany({
-          data: data.campusIds.map((cid: string) => ({ userId: id, campusId: cid }))
-        });
+        const uniqueCampusIds = Array.from(new Set(data.campusIds));
+        await Promise.all(uniqueCampusIds.map((cid: any) => 
+          prisma.userCampusAssignment.create({
+            data: { userId: id, campusId: cid }
+          })
+        ));
       }
     }
     revalidatePath("/admin/users");
