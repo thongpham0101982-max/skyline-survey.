@@ -137,7 +137,7 @@ export default async function TeacherClassDetailPage({ params }: any) {
                       <td className="px-4 py-4">{student.parents.length}</td>
                       <td className="px-4 py-4">
                         {hasSubmitted ? (
-                          <span className="bg-green-100 text-green-700 px-3 py-1.5 rounded-full text-xs font-bold tracking-wide">ĐÃ HOÀN THÀNH</span>
+                          <a href={`/teacher/classes/${classId}/${studentForms.find(f => f.status === "SUBMITTED" || f.status === "ĐÃ HOÀN THÀNH")?.id}`} className="inline-block bg-green-100 text-green-700 hover:bg-green-200 hover:text-green-800 px-3 py-1.5 rounded-full text-xs font-bold tracking-wide transition-colors cursor-pointer">ĐÃ HOÀN THÀNH (XEM)</a>
                         ) : (
                           <span className="bg-slate-100 text-slate-600 px-3 py-1.5 rounded-full text-xs font-bold tracking-wide">CHƯA KHẢO SÁT</span>
                         )}
