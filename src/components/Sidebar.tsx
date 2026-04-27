@@ -37,17 +37,19 @@ export function Sidebar({ role, permissionModules, actualRole, taskCount = 0 }: 
       </div>
 
       <nav className="flex flex-col space-y-1 flex-grow overflow-y-auto pr-2 custom-scrollbar">
-        <Link 
-          href={role === "ADMIN" ? "/admin" : role === "TEACHER" ? "/teacher" : "/parent"}
-          className={`group flex items-center px-3 py-2.5 rounded-xl transition-all duration-200 text-sm font-medium ${
-            pathname === (role === "ADMIN" ? "/admin" : "/teacher") 
-              ? "bg-indigo-600/20 text-white border border-indigo-500/30 shadow-[0_0_15px_-3px_rgba(79,70,229,0.2)]" 
-              : "text-slate-400 hover:text-white hover:bg-slate-800"
-          }`}
-        >
-          <LayoutDashboard className={`w-4 h-4 mr-3 ${pathname === (role === "ADMIN" ? "/admin" : "/teacher") ? "text-indigo-400" : "text-slate-500 group-hover:text-indigo-400"}`} />
-          Dashboard
-        </Link>
+        {role !== "TEACHER" && (
+          <Link 
+            href={role === "ADMIN" ? "/admin" : "/parent"}
+            className={`group flex items-center px-3 py-2.5 rounded-xl transition-all duration-200 text-sm font-medium ${
+              pathname === (role === "ADMIN" ? "/admin" : "/parent") 
+                ? "bg-indigo-600/20 text-white border border-indigo-500/30 shadow-[0_0_15px_-3px_rgba(79,70,229,0.2)]" 
+                : "text-slate-400 hover:text-white hover:bg-slate-800"
+            }`}
+          >
+            <LayoutDashboard className={`w-4 h-4 mr-3 ${pathname === (role === "ADMIN" ? "/admin" : "/parent") ? "text-indigo-400" : "text-slate-500 group-hover:text-indigo-400"}`} />
+            Dashboard
+          </Link>
+        )}
 
         {role === "ADMIN" && APP_CATEGORIES.map((cat) => {
           const visibleModules = cat.modules.filter(m => checkPermission(m.code, m.requiresAdmin))

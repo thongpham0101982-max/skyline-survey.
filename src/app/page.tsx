@@ -13,7 +13,7 @@ export default async function Home() {
   if (role === "STUDENT") {
     redirect("/Hocsinh/khaosat")
   } else if (role === "TEACHER") {
-    redirect("/teacher")
+    redirect("/teacher/classes")
   } else if (role === "PARENT") {
     redirect("/parent")
   } else if (role === "KT_DBCL") {
