@@ -27,7 +27,7 @@ export default async function TeacherClassDetailPage({ params }: any) {
   
   const forms = await prisma.surveyForm.findMany({
     where: { classId },
-    include: { responses: { include: { question: true } } }
+    include: { responses: { include: { question: { include: { section: true } } } } }
   })
   
   const submittedForms = forms.filter(f => f.status === "SUBMITTED" || f.status === "ĐÃ HOÀN THÀNH")
@@ -50,9 +50,15 @@ export default async function TeacherClassDetailPage({ params }: any) {
     // If npsScoreRaw exists on form, use it, otherwise find the NPS question in responses
     let npsScore = form.npsScoreRaw;
     if (npsScore === null) {
-       const npsRes = form.responses.find(r => r.question?.questionType === 'NPS');
-       if (npsRes && npsRes.numericScore !== null) {
-          npsScore = npsRes.numericScore;
+       const npsRes = form.responses.find(r => 
+         r.question?.questionType === 'NPS' || 
+         r.question?.section?.name?.toUpperCase().includes('NPS') ||
+         r.question?.section?.code?.toUpperCase().includes('NPS')
+       );
+       if (npsRes) {
+          if (npsRes.numericScore !== null) npsScore = npsRes.numericScore;
+          else if (npsRes.choiceAnswer && !isNaN(Number(npsRes.choiceAnswer))) npsScore = Number(npsRes.choiceAnswer);
+          else if (npsRes.textAnswer && !isNaN(Number(npsRes.textAnswer))) npsScore = Number(npsRes.textAnswer);
        }
     }
     
@@ -66,7 +72,13 @@ export default async function TeacherClassDetailPage({ params }: any) {
     let avgScore = form.overallAverageScore;
     if (avgScore === null) {
        // calculate from rating questions
-       const ratings = form.responses.filter(r => r.numericScore !== null && (r.question?.questionType === 'RATING' || r.question?.questionType === 'SATISFACTION' || r.question?.questionType === 'LIKERT'));
+       const ratings = form.responses.filter(r => {
+         const qType = r.question?.questionType || '';
+         const sName = r.question?.section?.name?.toUpperCase() || '';
+         const isRating = ['RATING', 'SATISFACTION', 'LIKERT'].includes(qType);
+         const isRatingSection = sName.includes('HÀI LÒNG') || sName.includes('SATISFACTION') || sName.includes('ĐÁNH GIÁ');
+         return r.numericScore !== null && (isRating || isRatingSection);
+       });
        if (ratings.length > 0) {
           avgScore = ratings.reduce((sum, r) => sum + (r.numericScore || 0), 0) / ratings.length;
        }
