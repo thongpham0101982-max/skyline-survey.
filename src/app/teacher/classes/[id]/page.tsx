@@ -22,25 +22,65 @@ export default async function TeacherClassDetailPage({ params }: any) {
   if (!classInfo) return notFound()
 
   // Calculate metrics
+
   const totalStudents = classInfo.students.length
   
   const forms = await prisma.surveyForm.findMany({
-    where: { classId }
+    where: { classId },
+    include: { responses: { include: { question: true } } }
   })
   
-  const submittedForms = forms.filter(f => f.status === "SUBMITTED")
+  const submittedForms = forms.filter(f => f.status === "SUBMITTED" || f.status === "ĐÃ HOÀN THÀNH")
   
   // Total parents is sum of all parent links for students in this class
   const totalParents = classInfo.students.reduce((acc, s) => acc + s.parents.length, 0)
-  const completionRate = totalParents > 0 ? (submittedForms.length / totalParents) * 100 : 0
   
-  const npsScores = submittedForms.map(f => f.npsScoreRaw).filter(s => s !== null) as number[]
-  const promoters = npsScores.filter(s => s >= 9).length
-  const detractors = npsScores.filter(s => s <= 6).length
-  const nps = npsScores.length > 0 ? Math.round(((promoters - detractors) / npsScores.length) * 100) : 0
+  // If no parents are linked, this is a student survey, so we use totalStudents as the target
+  const expectedSubmissions = totalParents > 0 ? totalParents : totalStudents
+  const completionRate = expectedSubmissions > 0 ? (submittedForms.length / expectedSubmissions) * 100 : 0
+  
+  // Calculate NPS and Satisfaction directly from responses since they might be null in the form table
+  let promoters = 0;
+  let detractors = 0;
+  let passive = 0;
+  let totalSatScore = 0;
+  let satCount = 0;
 
-  const avgScores = submittedForms.map(f => f.overallAverageScore).filter(s => s !== null) as number[]
-  const averageSatisfaction = avgScores.length > 0 ? (avgScores.reduce((a,b) => a+b, 0) / avgScores.length) : 0
+  submittedForms.forEach(form => {
+    // If npsScoreRaw exists on form, use it, otherwise find the NPS question in responses
+    let npsScore = form.npsScoreRaw;
+    if (npsScore === null) {
+       const npsRes = form.responses.find(r => r.question?.questionType === 'NPS');
+       if (npsRes && npsRes.numericScore !== null) {
+          npsScore = npsRes.numericScore;
+       }
+    }
+    
+    if (npsScore !== null && npsScore !== undefined) {
+       if (npsScore >= 9) promoters++;
+       else if (npsScore <= 6) detractors++;
+       else passive++;
+    }
+
+    // Average Satisfaction
+    let avgScore = form.overallAverageScore;
+    if (avgScore === null) {
+       // calculate from rating questions
+       const ratings = form.responses.filter(r => r.numericScore !== null && (r.question?.questionType === 'RATING' || r.question?.questionType === 'SATISFACTION' || r.question?.questionType === 'LIKERT'));
+       if (ratings.length > 0) {
+          avgScore = ratings.reduce((sum, r) => sum + (r.numericScore || 0), 0) / ratings.length;
+       }
+    }
+    
+    if (avgScore !== null && avgScore !== undefined && !isNaN(avgScore)) {
+       totalSatScore += avgScore;
+       satCount++;
+    }
+  });
+
+  const totalNPSResponses = promoters + detractors + passive;
+  const nps = totalNPSResponses > 0 ? Math.round(((promoters - detractors) / totalNPSResponses) * 100) : 0;
+  const averageSatisfaction = satCount > 0 ? (totalSatScore / satCount) : 0;
 
   return (
     <div className="space-y-6">
