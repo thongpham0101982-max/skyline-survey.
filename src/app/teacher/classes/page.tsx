@@ -33,12 +33,12 @@ export default async function TeacherClassesPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-slate-900 tracking-tight">My Classes</h1>
-      <p className="text-slate-500">Manage your assigned classes and view their satisfaction metrics.</p>
+      <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Lớp học của tôi</h1>
+      <p className="text-slate-500">Quản lý các lớp học được phân công và xem kết quả đánh giá mức độ hài lòng.</p>
       
       {classes.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm p-10 text-center border border-slate-100">
-          <p className="text-slate-500">No classes have been assigned to you yet.</p>
+          <p className="text-slate-500">Bạn chưa được phân công lớp học nào.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -66,7 +66,7 @@ export default async function TeacherClassesPage() {
                   </div>
                   <div className="flex items-center text-sm text-slate-600">
                     <Users className="w-4 h-4 mr-2 text-slate-400" />
-                    {c._count?.students || 0} Students
+                    {c._count?.students || 0} Học sinh
                   </div>
                 </div>
               </div>
@@ -76,7 +76,7 @@ export default async function TeacherClassesPage() {
                   href={`/teacher/classes/${c.id}`} 
                   className="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors"
                 >
-                  View Details &rarr;
+                  Xem chi tiết &rarr;
                 </Link>
               </div>
             </div>

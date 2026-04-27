@@ -28,7 +28,7 @@ export default async function TeacherClassDetailPage({ params }: any) {
     where: { classId }
   })
   
-  const submittedForms = forms.filter(f => f.status === "SUBMITTED")
+  const submittedForms = forms.filter(f => f.status === "ĐÃ HOÀN THÀNH")
   
   // Total parents is sum of all parent links for students in this class
   const totalParents = classInfo.students.reduce((acc, s) => acc + s.parents.length, 0)
@@ -43,7 +43,7 @@ export default async function TeacherClassDetailPage({ params }: any) {
   const averageSatisfaction = avgScores.length > 0 ? (avgScores.reduce((a,b) => a+b, 0) / avgScores.length) : 0
 
   return (
-    <div className="space-y-6">
+    <div classHọ và Tên="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 tracking-tight">{classInfo.className}</h1>
@@ -53,42 +53,42 @@ export default async function TeacherClassDetailPage({ params }: any) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-           <h3 className="text-sm font-medium text-slate-500 mb-2">Total Students</h3>
+           <h3 className="text-sm font-medium text-slate-500 mb-2">Tổng số Học sinh</h3>
            <div className="text-3xl font-bold text-slate-900">{totalStudents}</div>
         </div>
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-           <h3 className="text-sm font-medium text-slate-500 mb-2">Survey Completion</h3>
+           <h3 className="text-sm font-medium text-slate-500 mb-2">Tỷ lệ Hoàn thành</h3>
            <div className="text-3xl font-bold text-slate-900">{completionRate > 100 ? 100 : completionRate.toFixed(1)}%</div>
         </div>
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-           <h3 className="text-sm font-medium text-slate-500 mb-2">Avg Satisfaction</h3>
+           <h3 className="text-sm font-medium text-slate-500 mb-2">Hài lòng Trung bình</h3>
            <div className="text-3xl font-bold text-slate-900">{averageSatisfaction.toFixed(1)} / 5.0</div>
         </div>
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-           <h3 className="text-sm font-medium text-slate-500 mb-2">Net Promoter Score</h3>
+           <h3 className="text-sm font-medium text-slate-500 mb-2">Chỉ số NPS</h3>
            <div className="text-3xl font-bold text-slate-900">{nps}</div>
         </div>
       </div>
       
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col mt-8">
-        <h3 className="text-xl font-bold mb-4">Student Survey Status</h3>
+        <h3 className="text-xl font-bold mb-4">Trạng thái Khảo sát theo Học sinh</h3>
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
             <thead className="bg-slate-50 text-slate-600 border-b border-slate-200">
               <tr>
-                <th className="px-4 py-3 font-semibold rounded-tl-lg">Student Code</th>
+                <th className="px-4 py-3 font-semibold rounded-tl-lg">Mã Học sinh</th>
                 <th className="px-4 py-3 font-semibold">Name</th>
-                <th className="px-4 py-3 font-semibold">Parents Linked</th>
-                <th className="px-4 py-3 font-semibold rounded-tr-lg">Survey Status</th>
+                <th className="px-4 py-3 font-semibold">Số TK Phụ huynh</th>
+                <th className="px-4 py-3 font-semibold rounded-tr-lg">Trạng thái</th>
               </tr>
             </thead>
             <tbody>
               {classInfo.students.length === 0 ? (
-                <tr><td colSpan={4} className="text-center py-6 text-slate-500">No students found.</td></tr>
+                <tr><td colSpan={4} className="text-center py-6 text-slate-500">Chưa có học sinh nào trong lớp.</td></tr>
               ) : (
                 classInfo.students.map((student) => {
                   const studentForms = forms.filter(f => f.studentId === student.id)
-                  const hasSubmitted = studentForms.some(f => f.status === "SUBMITTED")
+                  const hasSubmitted = studentForms.some(f => f.status === "ĐÃ HOÀN THÀNH")
                   
                   return (
                     <tr key={student.id} className="border-b last:border-b-0 border-slate-100 hover:bg-slate-50 transition-colors">
@@ -99,7 +99,7 @@ export default async function TeacherClassDetailPage({ params }: any) {
                         {hasSubmitted ? (
                           <span className="bg-green-100 text-green-700 px-3 py-1.5 rounded-full text-xs font-bold tracking-wide">SUBMITTED</span>
                         ) : (
-                          <span className="bg-slate-100 text-slate-600 px-3 py-1.5 rounded-full text-xs font-bold tracking-wide">PENDING</span>
+                          <span className="bg-slate-100 text-slate-600 px-3 py-1.5 rounded-full text-xs font-bold tracking-wide">CHƯA KHẢO SÁT</span>
                         )}
                       </td>
                     </tr>
