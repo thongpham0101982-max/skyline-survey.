@@ -38,6 +38,7 @@ export default async function AdminClassesPage() {
     academicYearId: c.academicYearId,
     educationSystem: c.educationSystem || "",
     studentCount: c._count.students,
+    homeroomTeacherId: c.homeroomTeacherId,
     homeroomTeacher: c.homeroomTeacherId ? teacherMap[c.homeroomTeacherId] || "N/A" : "Chưa phân công"
   }))
 
@@ -61,6 +62,7 @@ export default async function AdminClassesPage() {
         initialClasses={mappedClasses}
         campuses={campuses}
         academicYears={academicYears}
+        teachers={teachers}
         isCampusLocked={!session.isFullAccess && session.allowedCampusIds.length === 1}
         defaultCampusId={!session.isFullAccess ? session.allowedCampusIds[0] : null}
       />

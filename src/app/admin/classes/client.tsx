@@ -12,7 +12,7 @@ const LEVELS = [
   { value: "THPT", label: "THPT" },
 ]
 
-export function AdminClassesClient({ initialClasses, campuses, academicYears, isCampusLocked = false, defaultCampusId = null }: any) {
+export function AdminClassesClient({ initialClasses, campuses, academicYears, teachers, isCampusLocked = false, defaultCampusId = null }: any) {
   const [classes, setClasses] = useState(initialClasses)
   const [selectedYearId, setSelectedYearId] = useState<string>(academicYears[0]?.id || "")
   const [selectedCampus, setSelectedCampus] = useState(defaultCampusId || "")
@@ -114,7 +114,8 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, is
       level: editModal.level,
       grade: editModal.grade,
       campusId: editModal.campusId,
-      educationSystem: editModal.educationSystem || ""
+      educationSystem: editModal.educationSystem || "",
+      homeroomTeacherId: editModal.homeroomTeacherId || null
     })
     if (res.success) setEditModal(null); else alert("Lỗi khi cập nhật!")
   }
@@ -267,6 +268,13 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, is
                   <select value={editModal.educationSystem || ""} onChange={e => setEditModal({...editModal, educationSystem: e.target.value})} className="w-full border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-purple-500 text-sm">
                     <option value="">-- Chưa chọn --</option>
                     {eduSystems.map((es: any) => <option key={es.id} value={es.code}>{es.code} - {es.name}</option>)}
+                  </select>
+                </div>
+                                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">Giáo viên chủ nhiệm (GVCN)</label>
+                  <select value={editModal.homeroomTeacherId || ""} onChange={e => setEditModal({...editModal, homeroomTeacherId: e.target.value})} className="w-full border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                    <option value="">-- Chưa phân công --</option>
+                    {teachers?.map((t: any) => <option key={t.id} value={t.id}>{t.teacherName}</option>)}
                   </select>
                 </div>
                 <div className="pt-4 flex items-center justify-end gap-3">

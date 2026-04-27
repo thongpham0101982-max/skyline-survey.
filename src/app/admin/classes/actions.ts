@@ -57,7 +57,8 @@ export async function updateClass(id: string, data: any) {
         level: data.level,
         grade: data.grade,
         campusId: data.campusId,
-        educationSystem: data.educationSystem || ""
+        educationSystem: data.educationSystem || "",
+        homeroomTeacherId: data.homeroomTeacherId
       }
     })
     revalidatePath("/admin/classes")
