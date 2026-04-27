@@ -1,5 +1,6 @@
 import { getTeacherMetrics } from "@/services/dashboard"
 import { auth } from "@/lib/auth"
+import { prisma } from "@/lib/db"
 import { KPICard } from "@/components/KPICard"
 import { Users, CheckCircle2, Award, ClipboardCheck, ArrowRight, Sparkles, BookOpen } from "lucide-react"
 import Link from "next/link"
@@ -7,6 +8,24 @@ import Link from "next/link"
 export default async function TeacherDashboard() {
   const session = await auth()
   const userName = session?.user?.name || "Thầy/Cô"
+
+  const teacher = await prisma.teacher.findUnique({ where: { userId: (session?.user as any)?.id || '' } })
+  
+  let homeroomClasses: any[] = []
+  let subjectAssignments: any[] = []
+  
+  if (teacher) {
+    homeroomClasses = await prisma.class.findMany({
+      where: { homeroomTeacherId: teacher.id },
+      include: { campus: true, _count: { select: { students: true } } }
+    })
+    
+    subjectAssignments = await prisma.teachingAssignment.findMany({
+      where: { teacherId: teacher.id },
+      include: { class: true, subject: true }
+    })
+  }
+
   const metrics = await getTeacherMetrics((session?.user as any)?.id || '').catch(() => ({ 
     totalStudents: 0, 
     surveyedStudents: 0, 
@@ -94,6 +113,61 @@ export default async function TeacherDashboard() {
           <p className="text-3xl font-black text-slate-800">{metrics.averageSatisfactionScore.toFixed(1)}</p>
         </div>
       </div>
+
+       
+       {/* Phân công Nhiệm vụ */}
+       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+         {/* Lớp Chủ Nhiệm */}
+         <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-xl shadow-slate-200/40">
+            <div className="flex items-center gap-3 mb-6">
+               <div className="p-3 bg-amber-50 text-amber-600 rounded-xl"><Users size={20} /></div>
+               <h3 className="text-xl font-bold text-slate-800">Lớp Chủ Nhiệm (GVCN)</h3>
+            </div>
+            {homeroomClasses.length === 0 ? (
+               <p className="text-slate-500 italic">Chưa được phân công chủ nhiệm lớp nào.</p>
+            ) : (
+               <div className="space-y-3">
+                 {homeroomClasses.map(c => (
+                   <div key={c.id} className="p-4 rounded-2xl border border-slate-100 hover:border-amber-200 transition-colors bg-slate-50 flex justify-between items-center">
+                      <div>
+                        <div className="font-bold text-slate-800 text-lg">{c.className}</div>
+                        <div className="text-sm text-slate-500">Sĩ số: {c._count.students} học sinh</div>
+                      </div>
+                      <div className="px-3 py-1 bg-white border border-slate-200 rounded-full text-xs font-semibold text-slate-600">
+                        {c.campus?.campusName || 'CS'}
+                      </div>
+                   </div>
+                 ))}
+               </div>
+            )}
+         </div>
+
+         {/* Lớp Bộ Môn */}
+         <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-xl shadow-slate-200/40">
+            <div className="flex items-center gap-3 mb-6">
+               <div className="p-3 bg-blue-50 text-blue-600 rounded-xl"><BookOpen size={20} /></div>
+               <h3 className="text-xl font-bold text-slate-800">Lớp Bộ Môn (GVBM)</h3>
+            </div>
+            {subjectAssignments.length === 0 ? (
+               <p className="text-slate-500 italic">Chưa có phân công giảng dạy bộ môn.</p>
+            ) : (
+               <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
+                 {subjectAssignments.map(a => (
+                   <div key={a.id} className="p-4 rounded-2xl border border-slate-100 hover:border-blue-200 transition-colors bg-slate-50 flex justify-between items-center">
+                      <div>
+                        <div className="font-bold text-slate-800 text-lg">{a.class.className}</div>
+                        <div className="text-sm font-medium text-blue-600">Môn: {a.subject.subjectName}</div>
+                      </div>
+                      <div className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold">
+                        Học kỳ {a.semester}
+                      </div>
+                   </div>
+                 ))}
+               </div>
+            )}
+         </div>
+       </div>
+
 
        {/* Quick Navigation / Next Task */}
        <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/40">
