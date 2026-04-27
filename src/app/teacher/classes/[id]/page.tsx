@@ -28,7 +28,7 @@ export default async function TeacherClassDetailPage({ params }: any) {
     where: { classId }
   })
   
-  const submittedForms = forms.filter(f => f.status === "ĐÃ HOÀN THÀNH")
+  const submittedForms = forms.filter(f => f.status === "SUBMITTED")
   
   // Total parents is sum of all parent links for students in this class
   const totalParents = classInfo.students.reduce((acc, s) => acc + s.parents.length, 0)
@@ -43,7 +43,7 @@ export default async function TeacherClassDetailPage({ params }: any) {
   const averageSatisfaction = avgScores.length > 0 ? (avgScores.reduce((a,b) => a+b, 0) / avgScores.length) : 0
 
   return (
-    <div classHọ và Tên="space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 tracking-tight">{classInfo.className}</h1>
@@ -77,7 +77,7 @@ export default async function TeacherClassDetailPage({ params }: any) {
             <thead className="bg-slate-50 text-slate-600 border-b border-slate-200">
               <tr>
                 <th className="px-4 py-3 font-semibold rounded-tl-lg">Mã Học sinh</th>
-                <th className="px-4 py-3 font-semibold">Name</th>
+                <th className="px-4 py-3 font-semibold">Họ và Tên</th>
                 <th className="px-4 py-3 font-semibold">Số TK Phụ huynh</th>
                 <th className="px-4 py-3 font-semibold rounded-tr-lg">Trạng thái</th>
               </tr>
@@ -88,7 +88,7 @@ export default async function TeacherClassDetailPage({ params }: any) {
               ) : (
                 classInfo.students.map((student) => {
                   const studentForms = forms.filter(f => f.studentId === student.id)
-                  const hasSubmitted = studentForms.some(f => f.status === "ĐÃ HOÀN THÀNH")
+                  const hasSubmitted = studentForms.some(f => f.status === "SUBMITTED")
                   
                   return (
                     <tr key={student.id} className="border-b last:border-b-0 border-slate-100 hover:bg-slate-50 transition-colors">
@@ -97,7 +97,7 @@ export default async function TeacherClassDetailPage({ params }: any) {
                       <td className="px-4 py-4">{student.parents.length}</td>
                       <td className="px-4 py-4">
                         {hasSubmitted ? (
-                          <span className="bg-green-100 text-green-700 px-3 py-1.5 rounded-full text-xs font-bold tracking-wide">SUBMITTED</span>
+                          <span className="bg-green-100 text-green-700 px-3 py-1.5 rounded-full text-xs font-bold tracking-wide">ĐÃ HOÀN THÀNH</span>
                         ) : (
                           <span className="bg-slate-100 text-slate-600 px-3 py-1.5 rounded-full text-xs font-bold tracking-wide">CHƯA KHẢO SÁT</span>
                         )}

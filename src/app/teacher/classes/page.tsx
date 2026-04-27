@@ -66,7 +66,7 @@ export default async function TeacherClassesPage() {
                   </div>
                   <div className="flex items-center text-sm text-slate-600">
                     <Users className="w-4 h-4 mr-2 text-slate-400" />
-                    {c._count?.students || 0} Học sinh
+                    {c._count?.students || 0} Students
                   </div>
                 </div>
               </div>
