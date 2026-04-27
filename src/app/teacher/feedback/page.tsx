@@ -9,11 +9,14 @@ export default async function TeacherFeedbackPage() {
   
   if (!userId) return notFound()
 
+  const teacher = await prisma.teacher.findUnique({ where: { userId } })
+  if (!teacher) return notFound()
+
   const classes = await prisma.class.findMany({
     where: {
       OR: [
-        { homeroomTeacherId: userId },
-        { teachingAssignments: { some: { teacherId: userId } } }
+        { homeroomTeacherId: teacher.id },
+        { teachers: { some: { teacherId: teacher.id } } }
       ]
     },
     select: { id: true }
