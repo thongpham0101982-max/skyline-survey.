@@ -149,21 +149,21 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   const notify = (msg:string, type:"ok"|"err"="ok") => { setToast({msg,type}); setTimeout(()=>setToast(null),3200) }
   const handleDownloadTemplate = () => {
     const ws = XLSX.utils.json_to_sheet([
-      { 
-        "Mã HS KS *": "HS_001", 
-        "Họ và Tên *": "Nguyễn Văn A", 
-        "Ngay sinh": "20/05/2010",
-        "Khối": "6",
-        "Lớp": "6A1",
-        "Học kỳ": "HK1",
-        "Diện khảo sát": "",
-        "Hình thức KS": "",
-        "Loại tuyển sinh": "",
-        "KQGD Tiểu học": "",
-        "Kết quả Học tập": "",
-        "Kết quả Rèn luyện": ""
-      }
-    ])
+        { 
+          "Mã HS KS *": "HS_001", 
+          "Họ và Tên *": "Nguyễn Văn A", 
+          "Ngày sinh": "20/05/2010",
+          "Khối": "6",
+          "Học kỳ / Năm TS": "HK1",
+          "Hệ Khảo sát": "",
+          "Hồ sơ / Bảng điểm": "",
+          "Diện khảo sát": "",
+          "Hình thức KS": "",
+          "Loại tuyển sinh": "",
+          "Kết quả Học tập": "",
+          "Kết quả Rèn luyện": ""
+        }
+      ])
     ws["!cols"] = [{ wch: 15 }, { wch: 25 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }]
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, "DS_HocSinh")
@@ -376,24 +376,25 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
         const admissionCriteria = String(findVal(row, ["diện khảo sát", "dien khao sat", "criteria"]) || "").trim();
         const surveySystem = String(findVal(row, ["hình thức ks", "hinh thuc ks", "survey system"]) || "").trim();
         const targetType = String(findVal(row, ["loại tuyển sinh", "loai tuyen sinh", "target type"]) || "").trim();
-        const kqgdTieuHoc = String(findVal(row, ["kqgd tiểu học", "kqgd tieu hoc"]) || "").trim();
-        const kqHocTap = String(findVal(row, ["kết quả học tập", "kq hoc tap"]) || "").trim();
-        const kqRenLuyen = String(findVal(row, ["kết quả rèn luyện", "kq ren luyen"]) || "").trim();
+        const surveyFormType = String(findVal(row, ["hệ khảo sát", "he khao sat", "h? kh?o st"]) || "").trim();
+          const hoSoCtQuocTe = String(findVal(row, ["hồ sơ / bảng điểm", "hồ sơ", "ho so"]) || "").trim();
+          const kqHocTap = String(findVal(row, ["kết quả học tập", "kq hoc tap", "k?t qu? h?c t?p"]) || "").trim();
+          const kqRenLuyen = String(findVal(row, ["kết quả rèn luyện", "kq ren luyen", "k?t qu? r?n luy?n"]) || "").trim();
 
-        return {
+return {
           studentCode,
           fullName,
           dateOfBirth: parsedDate,
           grade,
-          className,
           hocKy,
           admissionCriteria,
           surveySystem,
           targetType,
-          kqgdTieuHoc,
-          kqHocTap,
-          kqRenLuyen,
-          periodId: sPeriodId,
+            surveyFormType,
+            hoSoCtQuocTe,
+            kqHocTap,
+            kqRenLuyen,
+            periodId: sPeriodId,
           batchId: sBatchId || null
         };
 
