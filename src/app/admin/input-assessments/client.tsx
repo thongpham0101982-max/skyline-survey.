@@ -48,7 +48,7 @@ interface Props {
 const CATEGORY_TYPES = [
   { code: "DIEN_KS",       label: "Diện Khảo sát",      color: "from-violet-500 to-indigo-500" },
   { code: "HINH_THUC_KS",  label: "Hình thức KS",        color: "from-blue-500 to-cyan-500" },
-  { code: "HS_CT_QUOC_TE", label: "Hồ sơ/Bảng điểm",   color: "from-emerald-500 to-teal-500" },
+  { code: "HS_HT_HOC_SINH", label: "Hồ sơ/Bảng điểm",   color: "from-emerald-500 to-teal-500" },
   { code: "HOC_KY",        label: "Học kỳ / Năm TS",     color: "from-amber-500 to-orange-500" },
   { code: "KY_KS",          label: "Kỳ Khảo sát",         color: "from-orange-500 to-red-500" },
   { code: "KQ_HOC_TAP",    label: "Kết quả Học tập",     color: "from-sky-500 to-blue-500" },
@@ -966,7 +966,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                 <Field label="Hồ sơ/Bảng điểm">
                   <select value={sForm.hoSoCtQuocTe} onChange={e=>setSForm(f=>({...f,hoSoCtQuocTe:e.target.value}))} className={inp}>
                     <option value="">--</option>
-                    {configs.filter(c => c.categoryType === "HS_CT_QUOC_TE").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                    {configs.filter(c => c.categoryType === "HS_HT_HOC_SINH").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                   </select>
                 </Field>
            </div>
