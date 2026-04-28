@@ -851,7 +851,10 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                             <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Mã HS KS</th>
                             <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Họ và Tên</th>
                             <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Khối</th>
-                            <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Thao tác</th>
+                              <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Hệ Khảo sát</th>
+                              <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Hồ sơ / Bảng điểm</th>
+                              <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Hình thức KS</th>
+                              <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Thao tác</th>
                          </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-50">
@@ -860,7 +863,10 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                              <td className="p-5"><span className="font-mono text-xs font-black text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg">{s.studentCode}</span></td>
                              <td className="p-5"><span className="text-sm font-black text-slate-700">{s.fullName}</span></td>
                              <td className="p-5 text-center text-xs font-black text-slate-400">{s.grade}</td>
-                             <td className="p-5 text-right">
+                               <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.surveyFormType || "-"}</span></td>
+                               <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.hoSoCtQuocTe || "-"}</span></td>
+                               <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.surveySystem || "-"}</span></td>
+                               <td className="p-5 text-right">
                                 <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                    <button onClick={()=>openEditStudent(s)} className="p-2.5 text-slate-300 hover:text-indigo-600"><Edit2 className="w-4 h-4"/></button>
                                    <button onClick={()=>setConfirm({msg:`Xóa học sinh này?`,fn:()=>doDeleteStudent(s.id)})} className="p-2.5 text-slate-300 hover:text-rose-600"><Trash2 className="w-4 h-4"/></button>
