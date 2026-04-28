@@ -142,7 +142,7 @@ function Empty({ icon:Icon, text, sub }: { icon:any; text:string; sub?:string })
 }
 
 // ========= MAIN =========
-export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers, subjects: subjectsList, configs: initialConfigs, grades, teachers, departments }: Props) {
+export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers, subjects: subjectsList, eduSystems, configs: initialConfigs, grades, teachers, departments }: Props) {
   const [tab, setTab] = useState("periods")
   const [yearId, setYearId] = useState(academicYears[0]?.id || "")
   const [toast, setToast] = useState<{msg:string;type:"ok"|"err"}|null>(null)
