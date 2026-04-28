@@ -81,28 +81,27 @@ export default async function TeacherFeedbackPage() {
           <div className="bg-white rounded-xl p-12 text-center border border-slate-200">
             <MessageSquare className="w-12 h-12 text-slate-300 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-slate-900">Chưa có phản hồi nào</h3>
-            <p className="text-slate-500 mt-1">Hiện tại chưa có học sinh nào để lại ý kiến đóng góp bằng chữ.</p>
+            <p className="text-slate-500 mt-1">Hiện tại chưa có học sinh nào để lại ý kiến đóng góp, hoặc các ý kiến đều là rỗng ("không", "tốt").</p>
           </div>
         ) : (
-          feedbacks.map(fb => (
-            <div key={fb.id} className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 relative overflow-hidden">
-               <Quote className="w-24 h-24 text-slate-50 absolute -top-4 -right-4 rotate-12" />
-               <div className="relative z-10">
-                 <div className="flex justify-between items-start mb-4">
-                   <div>
-                     <div className="font-bold text-slate-800">{fb.student} <span className="text-slate-400 font-normal">({fb.className})</span></div>
-                     <div className="text-xs text-slate-500 mt-0.5">{fb.date ? new Date(fb.date).toLocaleString('vi-VN') : ''}</div>
-                   </div>
-                   <div className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full text-xs font-semibold max-w-xs truncate">
-                     Câu hỏi: {fb.question}
-                   </div>
-                 </div>
-                 <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 text-slate-700 italic">
-                   "{fb.answer}"
-                 </div>
+          <div className="flex flex-col gap-2 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+            {feedbacks.map(fb => (
+               <div key={fb.id} className="flex items-start gap-4 py-3 bg-white border border-slate-200 hover:bg-slate-50 transition-colors px-4 rounded-xl shadow-sm">
+                  <div className="min-w-[120px] pt-1 shrink-0">
+                     <span className="bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-md text-[10px] font-black tracking-wider uppercase border border-indigo-100">
+                        {fb.className}
+                     </span>
+                     <div className="text-[11px] font-bold text-slate-700 mt-2">{fb.student}</div>
+                     <div className="text-[9px] font-semibold text-slate-400 mt-0.5">{fb.date ? new Date(fb.date).toLocaleDateString('vi-VN') : ''}</div>
+                  </div>
+                  <div className="w-[1px] self-stretch bg-slate-100 mx-2"></div>
+                  <div className="flex-1">
+                     <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">CÂU HỎI: {fb.question}</div>
+                     <p className="text-[14px] text-slate-800 leading-relaxed font-medium">"{fb.answer}"</p>
+                  </div>
                </div>
-            </div>
-          ))
+            ))}
+          </div>
         )}
       </div>
     </div>
