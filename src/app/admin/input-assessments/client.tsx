@@ -474,8 +474,29 @@ return {
     } finally { setAsSubmitting(false) }
   }
 
-  const deleteAssignment = async (id: string) => {
-    const res = await fetch(`/api/input-assessment-assignments?id=${id}`, { method: "DELETE" })
+  
+  const groupedAssignments = useMemo(() => {
+    const groups: Record<string, any> = {};
+    assignments.forEach(a => {
+        const key = `${a.userId}_${a.subjectId}_${a.grade}_${a.batchId}`;
+        if (!groups[key]) {
+            groups[key] = {
+                ...a,
+                ids: [a.id],
+                educationSystems: [a.educationSystem]
+            };
+        } else {
+            groups[key].ids.push(a.id);
+            if (!groups[key].educationSystems.includes(a.educationSystem)) {
+                groups[key].educationSystems.push(a.educationSystem);
+            }
+        }
+    });
+    return Object.values(groups);
+  }, [assignments]);
+
+  const deleteAssignment = async (ids: string[]) => {
+    const res = await fetch(`/api/input-assessment-assignments?ids=${ids.join(",")}`, { method: "DELETE" })
     if (res.ok) {
       notify("Đã xóa phân công")
       fetchAssignments()
@@ -673,7 +694,7 @@ return {
           <div className="space-y-4">
              <div className="flex items-center justify-between px-2">
                 <h3 className="text-base font-black text-slate-800 flex items-center gap-2"><Search className="w-5 h-5 text-indigo-500"/> Danh sách đã Phân công</h3>
-                <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs font-black">{assignments.length} bản ghi</span>
+                <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs font-black">{groupedAssignments.length} nhóm phân công</span>
              </div>
 
              <div className="bg-white border border-slate-200 rounded-[2rem] shadow-sm overflow-hidden">
@@ -692,7 +713,7 @@ return {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-50">
-                        {assignments.map(a => (
+                        {groupedAssignments.map(a => (
                           <tr key={a.id} className="group hover:bg-slate-50/70 transition-colors">
                             <td className="p-5">
                               <div className="flex items-center gap-3">
@@ -712,11 +733,15 @@ return {
                               <span className="text-xs font-black text-slate-600">Khối {a.grade}</span>
                             </td>
                             <td className="p-5">
-                              <span className="px-2 py-0.5 border border-amber-100 bg-amber-50 text-amber-700 rounded-md text-[10px] font-black uppercase">{a.educationSystem}</span>
-                            </td>
+                                <div className="flex flex-wrap gap-1">
+                                  {a.educationSystems.map((sys: string) => (
+                                    <span key={sys} className="px-2 py-0.5 border border-amber-100 bg-amber-50 text-amber-700 rounded-md text-[10px] font-black uppercase">{sys}</span>
+                                  ))}
+                                </div>
+                              </td>
                             <td className="p-5 text-right">
                                <button 
-                                 onClick={() => setConfirm({ msg: `Xóa phân công của GV ${a.user?.fullName}?`, fn: () => deleteAssignment(a.id) })}
+                                 onClick={() => setConfirm({ msg: `Xóa phân công của GV ${a.user?.fullName}?`, fn: () => deleteAssignment(a.ids) })}
                                  className="p-2.5 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
                                >
                                  <Trash2 className="w-4 h-4"/>
