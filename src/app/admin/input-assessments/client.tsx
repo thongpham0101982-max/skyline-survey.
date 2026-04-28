@@ -958,8 +958,18 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
            
            <div className="grid grid-cols-3 gap-4">
               <Field label="Khối"><select value={sForm.grade} onChange={e=>setSForm(f=>({...f,grade:e.target.value}))} className={inp}><option value="">--</option>{grades.map(g=><option key={g} value={g}>{g}</option>)}</select></Field>
-              <Field label="Lớp"><input value={sForm.className} onChange={e=>setSForm(f=>({...f,className:e.target.value}))} className={inp}/></Field>
-              <Field label="Học kỳ"><input value={sForm.hocKy} onChange={e=>setSForm(f=>({...f,hocKy:e.target.value}))} className={inp}/></Field>
+                <Field label="Học kỳ / Năm TS">
+                  <select value={sForm.hocKy} onChange={e=>setSForm(f=>({...f,hocKy:e.target.value}))} className={inp}>
+                    <option value="">--</option>
+                    {configs.filter(c => c.categoryType === "HOC_KY").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                  </select>
+                </Field>
+                <Field label="Hồ sơ/Bảng điểm">
+                  <select value={sForm.hoSoCtQuocTe} onChange={e=>setSForm(f=>({...f,hoSoCtQuocTe:e.target.value}))} className={inp}>
+                    <option value="">--</option>
+                    {configs.filter(c => c.categoryType === "HS_CT_QUOC_TE").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                  </select>
+                </Field>
            </div>
 
            <div className="grid grid-cols-3 gap-4">
