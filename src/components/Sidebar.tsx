@@ -2,7 +2,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
-import { LogOut, LayoutDashboard, Layers, FileText, PieChart, MessageSquare } from "lucide-react"
+import { LogOut, LayoutDashboard, Layers, FileText, PieChart, MessageSquare, ClipboardCheck } from "lucide-react"
 import { APP_CATEGORIES } from "@/config/modules"
 
 interface SidebarProps {
@@ -101,6 +101,19 @@ export function Sidebar({ role, permissionModules, actualRole, taskCount = 0 }: 
                 Lớp học của tôi
               </Link>
             </div>
+            
+            
+            {checkPermission("INPUT_ASSESSMENTS") && (
+              <div className="pt-4">
+                <div className="px-3 py-2">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.1em]">Khảo thí</span>
+                </div>
+                <Link href="/teacher/input-assessments" className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/input-assessments') ? "bg-indigo-600/20 text-white border border-indigo-500/30" : "text-slate-400 hover:text-white hover:bg-slate-800"}`}>
+                  <ClipboardCheck className={`w-4 h-4 mr-3 ${pathname.includes('/teacher/input-assessments') ? "text-indigo-400" : "text-slate-500 group-hover:text-indigo-400"}`} />
+                  Quản lý KSNL Đầu vào
+                </Link>
+              </div>
+            )}
             
             <div className="pt-4">
               <div className="px-3 py-2">
