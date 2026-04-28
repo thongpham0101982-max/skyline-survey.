@@ -680,7 +680,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                   <Empty icon={UserPlus} text="Chưa có phân công nào" sub="Sử dụng form bên trên để tiến hành phân công GV"/>
                 ) : (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left">
+                    <table className="w-full text-left whitespace-nowrap">
                       <thead className="bg-slate-50 border-b border-slate-100">
                         <tr>
                           <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Giáo viên</th>
@@ -845,15 +845,21 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
            <div className="bg-white border border-slate-200 rounded-[2rem] shadow-sm overflow-hidden min-h-[400px]">
               {sLoading ? <Spin/> : filtStu.length === 0 ? <Empty icon={Users} text="Không tìm thấy học sinh nào" sub="Hãy chọn Kỳ và bấm 'Tìm kiếm'"/> : (
                 <div className="overflow-x-auto">
-                   <table className="w-full text-left">
+                   <table className="w-full text-left whitespace-nowrap">
                       <thead className="bg-slate-50 border-b border-slate-100">
                          <tr>
                             <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Mã HS KS</th>
                             <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Họ và Tên</th>
                             <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Khối</th>
+                              <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Ngày sinh</th>
                               <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Hệ Khảo sát</th>
                               <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Hồ sơ / Bảng điểm</th>
-                              <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Hình thức KS</th>
+                              <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Học kỳ / Năm TS</th>
+                                <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Diện khảo sát</th>
+                                <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Hình thức KS</th>
+                                <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Loại tuyển sinh</th>
+                                <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">KQ Học tập</th>
+                                <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">KQ Rèn luyện</th>
                               <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Thao tác</th>
                          </tr>
                       </thead>
@@ -863,9 +869,15 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
                              <td className="p-5"><span className="font-mono text-xs font-black text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg">{s.studentCode}</span></td>
                              <td className="p-5"><span className="text-sm font-black text-slate-700">{s.fullName}</span></td>
                              <td className="p-5 text-center text-xs font-black text-slate-400">{s.grade}</td>
+                               <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString('vi-VN') : "-"}</span></td>
                                <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.surveyFormType || "-"}</span></td>
                                <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.hoSoCtQuocTe || "-"}</span></td>
-                               <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.surveySystem || "-"}</span></td>
+                               <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.hocKy || "-"}</span></td>
+                                 <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.admissionCriteria || "-"}</span></td>
+                                 <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.surveySystem || "-"}</span></td>
+                                 <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.targetType || "-"}</span></td>
+                                 <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.kqHocTap || "-"}</span></td>
+                                 <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.kqRenLuyen || "-"}</span></td>
                                <td className="p-5 text-right">
                                 <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                    <button onClick={()=>openEditStudent(s)} className="p-2.5 text-slate-300 hover:text-indigo-600"><Edit2 className="w-4 h-4"/></button>
