@@ -44,6 +44,13 @@ export default async function TeacherFeedbackPage() {
   forms.forEach(form => {
      form.responses.forEach(r => {
         if (r.textAnswer && r.textAnswer.trim().length > 0 && r.textAnswer !== '[]' && r.textAnswer !== '{}') {
+           const textLower = r.textAnswer.trim().toLowerCase();
+           const noAccents = textLower.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+           const isJunk = ['không', 'khong', 'không có', 'khong co', 'ko', 'no', 'none', 'tốt', 'ok', 'bình thường', 'binh thuong', 'dạ không', 'da khong', 'không ạ', 'khong a'].includes(textLower) || 
+                          /^no+$/.test(textLower) || 
+                          /^khong+$/.test(noAccents) ||
+                          textLower.length < 3;
+           if (isJunk) return;
            // Ignore MC_GRID JSON
            try {
               JSON.parse(r.textAnswer);

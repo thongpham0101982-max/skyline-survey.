@@ -52,13 +52,18 @@ export default async function TeacherClassDetailPage({ params }: any) {
     if (npsScore === null) {
        const npsRes = form.responses.find(r => 
          r.question?.questionType === 'NPS' || 
-         r.question?.section?.name?.toUpperCase().includes('NPS') ||
-         r.question?.section?.code?.toUpperCase().includes('NPS')
+         (r.question?.section?.name && r.question.section.name.toUpperCase().includes('NPS')) ||
+         (r.question?.section?.code && r.question.section.code.toUpperCase().includes('NPS')) ||
+         (r.question?.questionText && r.question.questionText.toUpperCase().includes('NPS'))
        );
        if (npsRes) {
-          if (npsRes.numericScore !== null) npsScore = npsRes.numericScore;
-          else if (npsRes.choiceAnswer && !isNaN(Number(npsRes.choiceAnswer))) npsScore = Number(npsRes.choiceAnswer);
-          else if (npsRes.textAnswer && !isNaN(Number(npsRes.textAnswer))) npsScore = Number(npsRes.textAnswer);
+          if (npsRes.numericScore !== null) {
+             npsScore = npsRes.numericScore;
+          } else {
+             const strVal = npsRes.choiceAnswer || npsRes.textAnswer || '';
+             const match = strVal.match(/\d+/);
+             if (match) npsScore = parseInt(match[0], 10);
+          }
        }
     }
     
@@ -72,15 +77,28 @@ export default async function TeacherClassDetailPage({ params }: any) {
     let avgScore = form.overallAverageScore;
     if (avgScore === null) {
        // calculate from rating questions
-       const ratings = form.responses.filter(r => {
+       const ratings: number[] = [];
+       form.responses.forEach(r => {
          const qType = r.question?.questionType || '';
          const sName = r.question?.section?.name?.toUpperCase() || '';
+         const qText = r.question?.questionText?.toUpperCase() || '';
          const isRating = ['RATING', 'SATISFACTION', 'LIKERT'].includes(qType);
          const isRatingSection = sName.includes('HÀI LÒNG') || sName.includes('SATISFACTION') || sName.includes('ĐÁNH GIÁ');
-         return r.numericScore !== null && (isRating || isRatingSection);
+         const isRatingText = qText.includes('HÀI LÒNG') || qText.includes('ĐÁNH GIÁ') || qText.includes('SATISFACTION');
+         
+         if (isRating || isRatingSection || isRatingText) {
+            if (r.numericScore !== null) {
+               ratings.push(r.numericScore);
+            } else {
+               const strVal = r.choiceAnswer || r.textAnswer || '';
+               const match = strVal.match(/\d+/);
+               if (match) ratings.push(parseInt(match[0], 10));
+            }
+         }
        });
+       
        if (ratings.length > 0) {
-          avgScore = ratings.reduce((sum, r) => sum + (r.numericScore || 0), 0) / ratings.length;
+          avgScore = ratings.reduce((sum, val) => sum + val, 0) / ratings.length;
        }
     }
     

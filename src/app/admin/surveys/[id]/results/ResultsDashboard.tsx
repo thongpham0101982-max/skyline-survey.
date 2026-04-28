@@ -290,19 +290,32 @@ export function ResultsDashboard({ periodId, periodName, periodCode, questions, 
                    {/* SHEET CONTENT */}
                    <div className="p-8 flex-1">
                       {q.isOpinion ? (
-                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                            {q.opinions.slice(0, 12).map((op, idx) => (
-                               <div key={idx} className="bg-slate-50 p-5 rounded-3xl border border-slate-100 hover:bg-white hover:shadow-lg transition-all group/card flex flex-col justify-between">
-                                  <p className="text-[13px] text-slate-700 leading-relaxed font-medium italic">"{op.text}"</p>
-                                  <div className="mt-4 pt-4 border-t border-slate-200/50 flex items-center gap-3">
-                                     <div className="w-6 h-6 rounded-lg bg-red-100 text-red-600 flex items-center justify-center text-[9px] font-black">{op.campus?.charAt(0)}</div>
-                                     <div className="flex flex-col">
-                                        <span className="text-[9px] font-black text-slate-900 uppercase leading-none">{op.campus}</span>
-                                        <span className="text-[8px] font-bold text-slate-300 uppercase mt-1">{op.class}</span>
-                                     </div>
-                                  </div>
-                               </div>
-                            ))}
+                         <div className="flex flex-col gap-2 max-h-[500px] overflow-y-auto pr-4 custom-scrollbar">
+                            {q.opinions.map((op, idx) => {
+                               const textLower = op.text.trim().toLowerCase();
+                               // Optional: dim meaningless feedback
+                               const noAccents = textLower.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                               const isJunk = ['không', 'khong', 'không có', 'khong co', 'ko', 'no', 'none', 'tốt', 'ok', 'bình thường', 'binh thuong', 'dạ không', 'da khong', 'không ạ', 'khong a'].includes(textLower) || 
+                                              /^no+$/.test(textLower) || 
+                                              /^khong+$/.test(noAccents) ||
+                                              textLower.length < 3;
+                               
+                               if (isJunk) return null; // Filter out completely to keep list clean, or just render it? Let's just render it but compactly.
+                               
+                               return (
+                                 <div key={idx} className="flex items-start gap-4 py-3 border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors px-2 rounded-lg">
+                                    <div className="min-w-[90px] pt-0.5 shrink-0">
+                                       <span className="bg-red-50 text-red-600 px-2 py-0.5 rounded text-[10px] font-black tracking-wider uppercase border border-red-100">
+                                          {op.class}
+                                       </span>
+                                       <div className="text-[9px] font-bold text-slate-400 uppercase mt-1.5 ml-1">{op.campus}</div>
+                                    </div>
+                                    <p className="text-[13px] text-slate-700 flex-1 leading-relaxed">
+                                      {op.text}
+                                    </p>
+                                 </div>
+                               )
+                            })}
                          </div>
                       ) : q.isGrid ? (
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
