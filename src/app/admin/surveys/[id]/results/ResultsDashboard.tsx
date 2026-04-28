@@ -132,7 +132,7 @@ export function ResultsDashboard({ periodId, periodName, periodCode, questions, 
             dist[v] = (dist[v] || 0) + 1; 
             const nV = parseInt(v);
             if (!isNaN(nV) && !isOpinion) { qSum += nV; qCount++ } else { qCount++ }
-            if (isOpinion && r.textAnswer) opinions.push({ text: r.textAnswer, class: f.className, campus: f.campusName })
+            if (isOpinion && (r.textAnswer || r.choiceAnswer)) opinions.push({ text: r.textAnswer || r.choiceAnswer, class: f.className, campus: f.campusName })
           }
         }
       })
