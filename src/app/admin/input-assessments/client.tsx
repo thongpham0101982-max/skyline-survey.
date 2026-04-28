@@ -30,8 +30,8 @@ interface Student {
   grade?: string; admissionCriteria?: string; className?: string; surveySystem?: string;
   targetType?: string; hocKy?: string; kqgdTieuHoc?: string; kqHocTap?: string;
   kqRenLuyen?: string; admissionResult?: string; batchId?: string; periodId: string;
-  hoSoCtQuocTe?: string;
-}
+  hoSoCtQuocTe?: string; surveyFormType?: string;
+  }
 interface Assignment {
   id: string; periodId: string; batchId?: string; userId: string; 
   subjectId: string; grade: string; educationSystem: string;
@@ -198,7 +198,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   const [sModal, setSModal] = useState(false)
   const [editS, setEditS] = useState<Student|null>(null)
   const [sSelected, setSSelected] = useState<string[]>([])
-  const [sForm, setSForm] = useState({ studentCode:"", fullName:"", dateOfBirth:"", grade:"", admissionCriteria:"", className:"", hocKy:"", kqgdTieuHoc:"", kqHocTap:"", kqRenLuyen:"", targetType:"", surveySystem:"", hoSoCtQuocTe:"" })
+  const [sForm, setSForm] = useState({ studentCode:"", fullName:"", dateOfBirth:"", grade:"", admissionCriteria:"", className:"", hocKy:"", kqgdTieuHoc:"", kqHocTap:"", kqRenLuyen:"", targetType:"", surveySystem:"", hoSoCtQuocTe:"", surveyFormType:"" })
   const fileRef = useRef<HTMLInputElement>(null)
 
   // ───────── CONFIGS STATE ─────────
@@ -289,8 +289,8 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   }
   const doDeleteBatch = async (id:string) => { const r = await fetch(`/api/input-assessments?type=batch&id=${id}`,{method:"DELETE"}); if (r.ok) { fetchPeriods(); notify("Đã xóa đợt") } }
 
-  const openAddStudent = () => { setEditS(null); setSForm({ studentCode:"", fullName:"", dateOfBirth:"", grade:"", admissionCriteria:"", className:"", hocKy:"", kqgdTieuHoc:"", kqHocTap:"", kqRenLuyen:"", targetType:"", surveySystem:"", hoSoCtQuocTe:"" }); setSModal(true) }
-  const openEditStudent = (s:Student) => { setEditS(s); setSForm({ studentCode:s.studentCode, fullName:s.fullName, dateOfBirth:s.dateOfBirth?.slice(0,10)||"", grade:s.grade||"", admissionCriteria:s.admissionCriteria||"", className:s.className||"", hocKy:s.hocKy||"", kqgdTieuHoc:s.kqgdTieuHoc||"", kqHocTap:s.kqHocTap||"", kqRenLuyen:s.kqRenLuyen||"", targetType:s.targetType||"", surveySystem:s.surveySystem||"", hoSoCtQuocTe:s.hoSoCtQuocTe||"" }); setSModal(true) }
+  const openAddStudent = () => { setEditS(null); setSForm({ studentCode:"", fullName:"", dateOfBirth:"", grade:"", admissionCriteria:"", className:"", hocKy:"", kqgdTieuHoc:"", kqHocTap:"", kqRenLuyen:"", targetType:"", surveySystem:"", hoSoCtQuocTe:"", surveyFormType:"" }); setSModal(true) }
+  const openEditStudent = (s:Student) => { setEditS(s); setSForm({ studentCode:s.studentCode, fullName:s.fullName, dateOfBirth:s.dateOfBirth?.slice(0,10)||"", grade:s.grade||"", admissionCriteria:s.admissionCriteria||"", className:s.className||"", hocKy:s.hocKy||"", kqgdTieuHoc:s.kqgdTieuHoc||"", kqHocTap:s.kqHocTap||"", kqRenLuyen:s.kqRenLuyen||"", targetType:s.targetType||"", surveySystem:s.surveySystem||"", hoSoCtQuocTe:s.hoSoCtQuocTe||"", surveyFormType:s.surveyFormType||"" }); setSModal(true) }
   const saveStudent = async () => {
     if (!sForm.studentCode.trim()||!sForm.fullName.trim()) return notify("Cần nhập Mã HS và Họ tên","err")
     const r = editS
@@ -992,20 +992,26 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
               </Field>
            </div>
 
-           <div className="grid grid-cols-2 gap-4">
-              <Field label="Kết quả Học tập">
-                <select value={sForm.kqHocTap} onChange={e=>setSForm(f=>({...f,kqHocTap:e.target.value}))} className={inp}>
-                  <option value="">--</option>
-                  {configs.filter(c => c.categoryType === "KQ_HOC_TAP").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                </select>
-              </Field>
-              <Field label="Kết quả Rèn luyện">
-                <select value={sForm.kqRenLuyen} onChange={e=>setSForm(f=>({...f,kqRenLuyen:e.target.value}))} className={inp}>
-                  <option value="">--</option>
-                  {configs.filter(c => c.categoryType === "KQ_REN_LUYEN").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                </select>
-              </Field>
-           </div>
+           <div className="grid grid-cols-3 gap-4">
+                <Field label="Kết quả Học tập">
+                  <select value={sForm.kqHocTap} onChange={e=>setSForm(f=>({...f,kqHocTap:e.target.value}))} className={inp}>
+                    <option value="">--</option>
+                    {configs.filter(c => c.categoryType === "KQ_HOC_TAP").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                  </select>
+                </Field>
+                <Field label="Kết quả Rèn luyện">
+                  <select value={sForm.kqRenLuyen} onChange={e=>setSForm(f=>({...f,kqRenLuyen:e.target.value}))} className={inp}>
+                    <option value="">--</option>
+                    {configs.filter(c => c.categoryType === "KQ_REN_LUYEN").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                  </select>
+                </Field>
+                <Field label="Hệ Khảo sát">
+                  <select value={sForm.surveyFormType} onChange={e=>setSForm(f=>({...f,surveyFormType:e.target.value}))} className={inp}>
+                    <option value="">--</option>
+                    {eduSystems.map(es => <option key={es.code} value={es.name}>{es.name}</option>)}
+                  </select>
+                </Field>
+             </div>
         </div>
       </Modal>
 
