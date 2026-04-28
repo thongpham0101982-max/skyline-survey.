@@ -51,7 +51,6 @@ const CATEGORY_TYPES = [
   { code: "HS_CT_QUOC_TE", label: "Hồ sơ/Bảng điểm",   color: "from-emerald-500 to-teal-500" },
   { code: "HOC_KY",        label: "Học kỳ / Năm TS",     color: "from-amber-500 to-orange-500" },
   { code: "KY_KS",          label: "Kỳ Khảo sát",         color: "from-orange-500 to-red-500" },
-  { code: "KQGD_TIEU_HOC", label: "KQGD Tiểu học",       color: "from-rose-500 to-pink-500" },
   { code: "KQ_HOC_TAP",    label: "Kết quả Học tập",     color: "from-sky-500 to-blue-500" },
   { code: "KQ_REN_LUYEN",  label: "Kết quả Rèn luyện",   color: "from-green-500 to-emerald-500" },
   { code: "LOAI_TUYEN_SINH",label: "Loại Tuyển sinh",    color: "from-purple-500 to-violet-500" },
@@ -993,13 +992,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
               </Field>
            </div>
 
-           <div className="grid grid-cols-3 gap-4">
-              <Field label="KQGD Tiểu học">
-                <select value={sForm.kqgdTieuHoc} onChange={e=>setSForm(f=>({...f,kqgdTieuHoc:e.target.value}))} className={inp}>
-                  <option value="">--</option>
-                  {configs.filter(c => c.categoryType === "KQGD_TIEU_HOC").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                </select>
-              </Field>
+           <div className="grid grid-cols-2 gap-4">
               <Field label="Kết quả Học tập">
                 <select value={sForm.kqHocTap} onChange={e=>setSForm(f=>({...f,kqHocTap:e.target.value}))} className={inp}>
                   <option value="">--</option>
