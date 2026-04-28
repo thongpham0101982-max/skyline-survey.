@@ -15,6 +15,7 @@ export async function GET(req: any) {
             where: { userId: session.user.id },
             include: {
                 subject: true,
+                batch: true,
                 period: { include: { assignedUser: true } }
             }
         });
@@ -26,12 +27,30 @@ export async function GET(req: any) {
         const grade = searchParams.get("grade");
         const systemCode = searchParams.get("systemCode");
         const subjectId = searchParams.get("subjectId");
+        const batchId = searchParams.get("batchId");
+
+        let systemName = undefined;
+        if (systemCode) {
+            const eduSys = await prisma.educationSystem.findUnique({
+                where: { code: systemCode }
+            });
+            if (eduSys) {
+                systemName = eduSys.name;
+            }
+        }
+
+        const validSystems = [systemCode, systemName].filter(Boolean) as string[];
+        if (systemName) {
+            validSystems.push(systemName.toUpperCase());
+            validSystems.push(systemName.toLowerCase());
+        }
 
         const students = await prisma.inputAssessmentStudent.findMany({
             where: {
                 periodId: periodId,
                 grade: grade || undefined,
-                surveyFormType: systemCode || undefined
+                surveyFormType: validSystems.length > 0 ? { in: validSystems } : undefined,
+                batchId: batchId || undefined
             },
             include: {
                 scores: {

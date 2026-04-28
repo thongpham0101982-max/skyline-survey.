@@ -75,7 +75,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
         const systemCode = assignment.educationSystem || "";
         const grade = assignment.grade || "";
         
-        fetch(`/api/teacher-assessments?action=getStudents&periodId=${assignment.periodId}&grade=${grade}&systemCode=${systemCode}&subjectId=${assignment.subjectId}`)
+        fetch(`/api/teacher-assessments?action=getStudents&periodId=${assignment.periodId}&grade=${grade}&systemCode=${systemCode}&subjectId=${assignment.subjectId}&batchId=${assignment.batchId || ""}`)
             .then(res => res.json())
             .then(data => {
                 const enriched = data.map((st: any) => {
@@ -250,7 +250,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                         >
                             {availableAssignments.map(a => (
                                 <option key={a.id} value={a.id}>
-                                    {a.subject?.name} - Khối {a.grade || "Tất cả"} ({a.educationSystem || "Tất cả"})
+                                    {a.subject?.name} - Khối {a.grade || "Tất cả"} ({a.educationSystem || "Tất cả"}) {a.batch?.name ? ` - ${a.batch.name}` : ""}
                                 </option>
                             ))}
                             {availableAssignments.length === 0 && <option value="">Vui lòng chọn kỳ KS...</option>}
@@ -271,7 +271,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                             </h3>
                             <p className="text-sm text-slate-500 mt-1 flex items-center gap-2">
                                 <Layers className="w-3.5 h-3.5"/> Khối: <span className="font-semibold text-slate-700">{currentAssignment.grade || "Tất cả"}</span> | 
-                                Thuộc kỳ khảo sát: <span className="font-semibold text-slate-700">{currentAssignment.period.name}</span>
+                                Thuộc kỳ khảo sát: <span className="font-semibold text-slate-700">{currentAssignment.period.name} {currentAssignment.batch?.name ? ` - ${currentAssignment.batch.name}` : ""}</span>
                             </p>
                         </div>
                         {isLocked && <span className="text-sm font-bold bg-red-100 text-red-700 border border-red-200 px-4 py-1.5 rounded-full shadow-sm mr-2 flex items-center gap-1.5"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg> KỲ KHẢO SÁT ĐÃ KHÓA</span>}
