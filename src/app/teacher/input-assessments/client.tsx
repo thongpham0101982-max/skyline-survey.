@@ -316,7 +316,11 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                             <thead className="bg-slate-100 text-slate-700 border-b">
     <tr>
         <th className="px-3 py-4 w-12 text-center border-b border-r font-bold text-slate-700 bg-slate-100 uppercase tracking-wider md:sticky md:left-0 z-20">STT</th>
-        <th className="px-2 py-3 md:px-4 md:py-4 border-b border-r font-bold text-slate-700 bg-slate-100 uppercase tracking-wider md:sticky md:left-[48px] z-20 min-w-[280px] text-left">Thông tin Học sinh</th>
+        <th className="px-3 py-4 border-b border-r font-bold text-slate-700 bg-slate-100 uppercase tracking-wider whitespace-nowrap text-center">Mã HS KS</th>
+          <th className="px-3 py-4 border-b border-r font-bold text-slate-700 bg-slate-100 uppercase tracking-wider whitespace-nowrap text-left">Họ và Tên</th>
+          <th className="px-3 py-4 border-b border-r font-bold text-slate-700 bg-slate-100 uppercase tracking-wider whitespace-nowrap text-center">Khối</th>
+          <th className="px-3 py-4 border-b border-r font-bold text-slate-700 bg-slate-100 uppercase tracking-wider whitespace-nowrap text-center">Ngày sinh</th>
+          <th className="px-3 py-4 border-b border-r font-bold text-slate-700 bg-slate-100 uppercase tracking-wider whitespace-nowrap text-center">Hệ Khảo sát</th>
         <th className="px-4 py-4 border-b border-r font-bold text-amber-900 bg-amber-50 uppercase tracking-wider text-left">
             {isPsychologyForm ? `Đánh giá Sàng lọc Tâm lý - Khối ${gradeVal}` : "Chi tiết Điểm & Nhận xét"}
         </th>
@@ -327,59 +331,21 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                 {students.map((st, i) => (
                                     <tr key={st.id} className="hover:bg-slate-50/50 group">
                                         <td className="px-2 py-2 md:px-3 md:py-3 text-center text-slate-500 border-b border-r bg-white md:sticky md:left-0 z-10">{i+1}</td>
-                                        <td className="px-2 py-2 md:px-4 md:py-3 border-b border-r bg-white md:sticky md:left-[48px] z-10">
-                <div className="flex flex-col gap-2">
-                    {/* Tên và Khối */}
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-black text-slate-800 text-sm leading-tight">{st.fullName}</span>
-                        <span className="text-[10px] font-extrabold px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full border border-indigo-200">Khối {st.grade}</span>
-                    </div>
-                    {/* Mã HS và Ngày sinh */}
-                    <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded text-[10px] border border-indigo-100">{st.studentCode}</span>
-                        <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                            <CalendarDays className="w-3 h-3"/> {st.dateOfBirth ? new Date(st.dateOfBirth).toLocaleDateString("vi-VN") : "—"}
-                        </span>
-                    </div>
-                    {/* Các trường danh mục */}
-                    <div className="flex flex-wrap gap-1">
-                        {st.admissionCriteria && (
-                            <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md bg-violet-50 text-violet-700 border border-violet-100 font-semibold">
-                                <span className="w-1.5 h-1.5 rounded-full bg-violet-400 flex-none"/>Diện KS: {st.admissionCriteria}
-                            </span>
-                        )}
-                        {st.surveyFormType && (
-                            <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md bg-cyan-50 text-cyan-700 border border-cyan-100 font-semibold">
-                                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 flex-none"/>HT KS: {st.surveyFormType}
-                            </span>
-                        )}
-                        {st.targetType && (
-                            <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-100 font-semibold">
-                                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-none"/>Loại TS: {st.targetType}
-                            </span>
-                        )}
-                        {st.hocKy && (
-                            <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-100 font-semibold">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-none"/>Năm học TS: {st.hocKy}
-                            </span>
-                        )}
-                        {st.kqgdTieuHoc && (
-                            <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-100 font-semibold">
-                                <span className="w-1.5 h-1.5 rounded-full bg-rose-400 flex-none"/>HS CT Bộ: {st.kqgdTieuHoc}
-                            </span>
-                        )}
-                        {st.kqHocTap && (
-                            <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-100 font-semibold">
-                                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 flex-none"/>HS CT QT: {st.kqHocTap}
-                            </span>
-                        )}
-                        {st.kqRenLuyen && (
-                            <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md bg-teal-50 text-teal-700 border border-teal-100 font-semibold">
-                                <span className="w-1.5 h-1.5 rounded-full bg-teal-400 flex-none"/>KQ Rèn luyện: {st.kqRenLuyen}
-                            </span>
-                        )}
-                    </div>
-                </div></td>
+                                        <td className="px-3 py-3 border-b border-r bg-white text-center">
+                                              <span className="font-mono font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded text-xs border border-indigo-100">{st.studentCode}</span>
+                                          </td>
+                                          <td className="px-3 py-3 border-b border-r bg-white text-left">
+                                              <span className="font-black text-slate-800 text-sm whitespace-nowrap">{st.fullName}</span>
+                                          </td>
+                                          <td className="px-3 py-3 border-b border-r bg-white text-center">
+                                              <span className="text-xs font-extrabold px-2 py-1 bg-slate-100 text-slate-700 rounded-md whitespace-nowrap">{st.grade}</span>
+                                          </td>
+                                          <td className="px-3 py-3 border-b border-r bg-white text-center">
+                                              <span className="text-xs text-slate-500 whitespace-nowrap">{st.dateOfBirth ? new Date(st.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</span>
+                                          </td>
+                                          <td className="px-3 py-3 border-b border-r bg-white text-center">
+                                              <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded-md border border-amber-100 whitespace-nowrap uppercase">{st.surveyFormType || "—"}</span>
+                                          </td>
                                         
                                         <td className="px-4 py-4 border-b border-r bg-slate-50/20">
             {isPsychologyForm ? (
@@ -467,7 +433,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                 ))}
                                 {students.length === 0 && !loading && (
                                     <tr>
-                                        <td colSpan={10} className="px-4 py-12 text-center text-slate-500 bg-slate-50/50">Chưa có dữ liệu học sinh nào thỏa mãn Khối/Hệ môn học này trong kỳ Khảo sát.</td>
+                                        <td colSpan={8} className="px-4 py-12 text-center text-slate-500 bg-slate-50/50">Chưa có dữ liệu học sinh nào thỏa mãn Khối/Hệ môn học này trong kỳ Khảo sát.</td>
                                     </tr>
                                 )}
                             </tbody>

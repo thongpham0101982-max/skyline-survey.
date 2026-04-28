@@ -31,7 +31,7 @@ export async function GET(req: any) {
             where: {
                 periodId: periodId,
                 grade: grade || undefined,
-                surveySystem: systemCode || undefined
+                surveyFormType: systemCode || undefined
             },
             include: {
                 scores: {
