@@ -89,15 +89,15 @@ export default async function InputAssessmentsPage() {
         </div>
       </div>
       <InputAssessmentsClient
-        academicYears={academicYears}
-        campuses={campuses}
-        examBoardUsers={examBoardUsers}
-        subjects={subjects}
-        eduSystems={eduSystems}
-        grades={grades}
-        configs={configs}
-        teachers={teachers}
-        departments={departments}
+        academicYears={JSON.parse(JSON.stringify(academicYears))}
+        campuses={JSON.parse(JSON.stringify(campuses))}
+        examBoardUsers={JSON.parse(JSON.stringify(examBoardUsers))}
+        subjects={JSON.parse(JSON.stringify(subjects))}
+        eduSystems={JSON.parse(JSON.stringify(eduSystems))}
+        grades={JSON.parse(JSON.stringify(grades))}
+        configs={JSON.parse(JSON.stringify(configs))}
+        teachers={JSON.parse(JSON.stringify(teachers))}
+        departments={JSON.parse(JSON.stringify(departments))}
       />
     </div>
   )
