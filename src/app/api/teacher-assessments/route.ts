@@ -49,7 +49,6 @@ export async function GET(req: any) {
             where: {
                 periodId: periodId,
                 grade: grade || undefined,
-                surveyFormType: validSystems.length > 0 ? { in: validSystems } : undefined,
                 batchId: batchId || undefined
             },
             include: {
@@ -58,7 +57,20 @@ export async function GET(req: any) {
                 }
             }
         });
-        return NextResponse.json(students);
+
+        // Filter in memory to bypass any strict case-sensitivity issues of SQLite
+        const filteredStudents = students.filter(st => {
+            if (validSystems.length > 0) {
+                if (!st.surveyFormType) return false;
+                const stSys = st.surveyFormType.trim().toLowerCase();
+                // match if either the code or the name matches case-insensitively
+                const matchSys = validSystems.some(vs => vs.trim().toLowerCase() === stSys);
+                if (!matchSys) return false;
+            }
+            return true;
+        });
+
+        return NextResponse.json(filteredStudents);
     }
 
     
