@@ -478,15 +478,23 @@ return {
   const groupedAssignments = useMemo(() => {
     const groups: Record<string, any> = {};
     assignments.forEach(a => {
-        const key = `${a.userId}_${a.subjectId}_${a.grade}_${a.batchId}`;
+        const key = `${a.userId}_${a.batchId}`;
         if (!groups[key]) {
             groups[key] = {
                 ...a,
                 ids: [a.id],
+                subjects: a.subject ? [a.subject.name] : [],
+                grades: [a.grade],
                 educationSystems: [a.educationSystem]
             };
         } else {
             groups[key].ids.push(a.id);
+            if (a.subject && !groups[key].subjects.includes(a.subject.name)) {
+                groups[key].subjects.push(a.subject.name);
+            }
+            if (!groups[key].grades.includes(a.grade)) {
+                groups[key].grades.push(a.grade);
+            }
             if (!groups[key].educationSystems.includes(a.educationSystem)) {
                 groups[key].educationSystems.push(a.educationSystem);
             }
@@ -727,11 +735,19 @@ return {
                               </div>
                             </td>
                             <td className="p-5 px-6">
-                              <span className="px-3 py-1 bg-white border border-indigo-100 rounded-lg text-xs font-black text-indigo-600 shadow-sm">{a.subject?.name}</span>
-                            </td>
+                                <div className="flex flex-wrap gap-1">
+                                  {a.subjects.map((sub: string) => (
+                                    <span key={sub} className="px-3 py-1 bg-white border border-indigo-100 rounded-lg text-xs font-black text-indigo-600 shadow-sm">{sub}</span>
+                                  ))}
+                                </div>
+                              </td>
                             <td className="p-5">
-                              <span className="text-xs font-black text-slate-600">Khối {a.grade}</span>
-                            </td>
+                                <div className="flex flex-wrap gap-1">
+                                  {a.grades.map((g: string) => (
+                                    <span key={g} className="text-xs font-black text-slate-600 bg-slate-100 px-2 py-1 rounded-md">Khối {g}</span>
+                                  ))}
+                                </div>
+                              </td>
                             <td className="p-5">
                                 <div className="flex flex-wrap gap-1">
                                   {a.educationSystems.map((sys: string) => (
