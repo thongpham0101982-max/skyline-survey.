@@ -321,8 +321,8 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
           <th className="px-3 py-4 border-b border-r font-bold text-slate-700 bg-slate-100 uppercase tracking-wider whitespace-nowrap text-center">Khối</th>
           <th className="px-3 py-4 border-b border-r font-bold text-slate-700 bg-slate-100 uppercase tracking-wider whitespace-nowrap text-center">Ngày sinh</th>
           <th className="px-3 py-4 border-b border-r font-bold text-slate-700 bg-slate-100 uppercase tracking-wider whitespace-nowrap text-center">Hệ Khảo sát</th>
-        <th className="px-4 py-4 border-b border-r font-bold text-amber-900 bg-amber-50 uppercase tracking-wider text-left">
-            {isPsychologyForm ? `Đánh giá Sàng lọc Tâm lý - Khối ${gradeVal}` : "Chi tiết Điểm & Nhận xét"}
+        <th className="px-4 py-4 border-b border-r font-bold text-amber-900 bg-amber-50 uppercase tracking-wider text-center">
+            {isPsychologyForm ? "Form Khảo sát" : "Chi tiết Điểm & Nhận xét"}
         </th>
         <th className="px-2 py-3 md:px-4 md:py-4 text-center border-b font-bold text-emerald-800 bg-emerald-50 uppercase tracking-wider w-32 md:sticky md:right-0 z-20">Xác nhận</th>
     </tr>
@@ -349,7 +349,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                         
                                         <td className="px-4 py-4 border-b border-r bg-slate-50/20">
             {isPsychologyForm ? (
-              <div className="flex items-center gap-4">
+              <div className="flex items-center justify-center gap-4">
                   <button 
                     onClick={() => { setActivePsychStudent(st); setIsPsychModalOpen(true); }}
                     className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-6 rounded-2xl shadow-lg shadow-indigo-600/20 flex items-center gap-2 transition-all active:scale-95"
