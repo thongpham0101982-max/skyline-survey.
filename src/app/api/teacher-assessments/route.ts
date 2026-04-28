@@ -49,7 +49,7 @@ export async function GET(req: any) {
             where: {
                 periodId: periodId,
                 grade: grade || undefined,
-                batchId: batchId || undefined
+                ...(batchId ? { OR: [{ batchId: batchId }, { batchId: null }] } : {})
             },
             include: {
                 scores: {
@@ -61,11 +61,16 @@ export async function GET(req: any) {
         // Filter in memory to bypass any strict case-sensitivity issues of SQLite
         const filteredStudents = students.filter(st => {
             if (validSystems.length > 0) {
-                if (!st.surveyFormType) return false;
+                // If student has no system assigned (due to Excel import error), show them as fallback
+                if (!st.surveyFormType) return true;
                 const stSys = st.surveyFormType.trim().toLowerCase();
                 // match if either the code or the name matches case-insensitively
                 const matchSys = validSystems.some(vs => vs.trim().toLowerCase() === stSys);
-                if (!matchSys) return false;
+                
+                // Allow partial matches just in case
+                const partialMatchSys = validSystems.some(vs => stSys.includes(vs.trim().toLowerCase()) || vs.trim().toLowerCase().includes(stSys));
+                
+                if (!matchSys && !partialMatchSys) return false;
             }
             return true;
         });
