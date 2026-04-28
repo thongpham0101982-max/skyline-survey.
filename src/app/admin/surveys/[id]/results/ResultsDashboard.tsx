@@ -289,45 +289,30 @@ export function ResultsDashboard({ periodId, periodName, periodCode, questions, 
 
                    {/* SHEET CONTENT */}
                    <div className="p-8 flex-1">
-                      {q.isOpinion ? (() => {
-                            const validOpinions = q.opinions.filter(op => {
-                               if (!op.text) return false;
-                               const textLower = op.text.trim().toLowerCase();
-                               const noAccents = textLower.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-                               const isJunk = ['không', 'khong', 'không có', 'khong co', 'ko', 'no', 'none', 'tốt', 'ok', 'bình thường', 'binh thuong', 'dạ không', 'da khong', 'không ạ', 'khong a', 'không có ý kiến', 'không có ý kiến gì'].includes(textLower) || 
-                                              /^no+$/.test(textLower) || 
-                                              /^khong+$/.test(noAccents) ||
-                                              textLower.length < 3;
-                               return !isJunk;
-                            });
-
-                            if (validOpinions.length === 0) {
-                               return (
-                                 <div className="flex flex-col items-center justify-center py-10 text-slate-400">
-                                    <MessageSquare className="w-8 h-8 mb-2 opacity-50" />
-                                    <p className="text-sm font-medium">Không có ý kiến đóng góp nào.</p>
-                                 </div>
-                               );
-                            }
-
-                            return (
-                               <div className="flex flex-col gap-2 max-h-[500px] overflow-y-auto pr-4 custom-scrollbar">
-                                  {validOpinions.map((op, idx) => (
-                                     <div key={idx} className="flex items-start gap-4 py-3 border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors px-2 rounded-lg">
-                                        <div className="min-w-[90px] pt-0.5 shrink-0">
-                                           <span className="bg-red-50 text-red-600 px-2 py-0.5 rounded text-[10px] font-black tracking-wider uppercase border border-red-100">
-                                              {op.class}
-                                           </span>
-                                           <div className="text-[9px] font-bold text-slate-400 uppercase mt-1.5 ml-1">{op.campus}</div>
-                                        </div>
-                                        <p className="text-[13px] text-slate-700 flex-1 leading-relaxed">
-                                          "{op.text}"
-                                        </p>
-                                     </div>
-                                  ))}
+                      {q.isOpinion ? (
+                         <div className="flex flex-col gap-2 max-h-[500px] overflow-y-auto pr-4 custom-scrollbar">
+                            {q.opinions.length === 0 ? (
+                               <div className="flex flex-col items-center justify-center py-10 text-slate-400">
+                                  <MessageSquare className="w-8 h-8 mb-2 opacity-50" />
+                                  <p className="text-sm font-medium">Không có ý kiến đóng góp nào.</p>
                                </div>
-                            );
-                         })() : q.isGrid ? (
+                            ) : (
+                               q.opinions.map((op, idx) => (
+                                 <div key={idx} className="flex items-start gap-4 py-3 border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors px-2 rounded-lg">
+                                    <div className="min-w-[90px] pt-0.5 shrink-0">
+                                       <span className="bg-red-50 text-red-600 px-2 py-0.5 rounded text-[10px] font-black tracking-wider uppercase border border-red-100">
+                                          {op.class}
+                                       </span>
+                                       <div className="text-[9px] font-bold text-slate-400 uppercase mt-1.5 ml-1">{op.campus}</div>
+                                    </div>
+                                    <p className="text-[13px] text-slate-700 flex-1 leading-relaxed">
+                                      "{op.text}"
+                                    </p>
+                                 </div>
+                               ))
+                            )}
+                         </div>
+                      ) : q.isGrid ? (
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
                             <div className="h-[300px] relative">
                                <ResponsiveContainer width="100%" height="100%">
