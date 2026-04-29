@@ -158,9 +158,17 @@ function TransferOutModal({ onClose, onSaved }: { onClose: () => void, onSaved: 
 
   async function loadOptions() {
     setLoading(true)
-    const data = await getTransferFormOptionsAction()
-    setOptions(data)
-    if (data.years.length > 0) setForm(f => ({ ...f, academicYearId: data.years[0].id }))
+    try {
+      const data = await getTransferFormOptionsAction()
+      if (data && data.years) {
+        setOptions(data)
+        if (data.years.length > 0) setForm(f => ({ ...f, academicYearId: data.years[0].id }))
+      } else {
+        alert("Lỗi tải dữ liệu. Xin thử lại.")
+      }
+    } catch(e: any) {
+      alert("Lỗi tải form: " + e.message)
+    }
     setLoading(false)
   }
 

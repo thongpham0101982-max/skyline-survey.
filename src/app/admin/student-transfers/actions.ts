@@ -49,25 +49,35 @@ export async function createTransferOutAction(data: any) {
 }
 
 export async function getTransfersAction() {
-  const transfers = await prisma.studentTransfer.findMany({
-    orderBy: { createdAt: 'desc' },
-    include: {
-      student: {
-        include: {
-          class: { include: { campus: true } }
-        }
-      },
-      createdBy: { select: { name: true } }
-    }
-  })
-  return transfers
+  try {
+    const transfers = await prisma.studentTransfer.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        student: {
+          include: {
+            class: { include: { campus: true } }
+          }
+        },
+        createdBy: { select: { fullName: true } }
+      }
+    })
+    return transfers
+  } catch (e: any) {
+    console.error(e)
+    return []
+  }
 }
 
 export async function getTransferFormOptionsAction() {
-  const years = await prisma.academicYear.findMany({ orderBy: { code: 'asc' } })
-  const campuses = await prisma.campus.findMany({ orderBy: { campusName: 'asc' } })
-  
-  return { years, campuses }
+  try {
+    const years = await prisma.academicYear.findMany({ orderBy: { code: 'asc' } })
+    const campuses = await prisma.campus.findMany({ orderBy: { campusName: 'asc' } })
+    
+    return { years, campuses }
+  } catch(e: any) {
+    console.error(e)
+    return { years: [], campuses: [] }
+  }
 }
 
 export async function getClassesByCampusAndYearAction(campusId: string, academicYearId: string) {
