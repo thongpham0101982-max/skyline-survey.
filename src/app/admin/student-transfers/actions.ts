@@ -25,6 +25,8 @@ export async function createTransferOutAction(data: any) {
           destinationType: data.destinationType || null,
           destinationProvince: data.destinationProvince || null,
           destinationCountry: data.destinationCountry || null,
+          reserveStartDate: data.reserveStartDate ? new Date(data.reserveStartDate) : null,
+          reserveEndDate: data.reserveEndDate ? new Date(data.reserveEndDate) : null,
           reason: data.reason || null,
           createdById: userId,
         }

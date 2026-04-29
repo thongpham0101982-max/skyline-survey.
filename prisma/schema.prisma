@@ -692,6 +692,9 @@ model StudentTransfer {
   destinationProvince String?
   destinationCountry  String?
   
+  reserveStartDate    DateTime?
+  reserveEndDate      DateTime?
+  
   reason              String?
   
   createdAt           DateTime @default(now())

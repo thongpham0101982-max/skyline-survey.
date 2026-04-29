@@ -104,8 +104,8 @@ export function StudentTransfersClient() {
                       <td className="p-4 font-medium text-slate-700">{new Date(t.transferDate).toLocaleDateString('vi-VN')} <br/><span className="text-xs text-slate-400">{t.semester === 'HK1' ? 'Học kỳ 1' : t.semester === 'HK2' ? 'Học kỳ 2' : t.semester === 'SUMMER' ? 'Trong hè' : ''}</span></td>
                       <td className="p-4 font-bold text-slate-900">{t.student?.studentName} <br/><span className="text-xs font-medium text-slate-400">{t.student?.studentCode}</span></td>
                       <td className="p-4"><span className="px-2 py-1 bg-slate-100 rounded-md font-bold text-slate-600">{t.student?.class?.className}</span> <br/><span className="text-xs text-slate-500">{t.student?.class?.campus?.campusName}</span></td>
-                      <td className="p-4 font-medium text-rose-600">{t.transferCategory === "DOMESTIC" ? "Chuyển trường VN" : "Du học"}</td>
-                      <td className="p-4 text-slate-600">{t.transferCategory === "DOMESTIC" ? t.destinationSchool : t.destinationCountry}</td>
+                      <td className="p-4 font-medium text-rose-600">{t.transferCategory === "DOMESTIC" ? "Chuyển trường VN" : t.transferCategory === "ABROAD" ? "Du học" : "Bảo lưu"}</td>
+                      <td className="p-4 text-slate-600">{t.transferCategory === "DOMESTIC" ? t.destinationSchool : t.transferCategory === "ABROAD" ? t.destinationCountry : t.reserveStartDate ? `Từ ${new Date(t.reserveStartDate).toLocaleDateString('vi-VN')} đến ${new Date(t.reserveEndDate).toLocaleDateString('vi-VN')}` : "-"}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -196,6 +196,8 @@ function TransferOutModal({ onClose, onSaved }: { onClose: () => void, onSaved: 
     destinationType: "",
     destinationProvince: "",
     destinationCountry: "",
+    reserveStartDate: "",
+    reserveEndDate: "",
     reason: ""
   })
 
@@ -326,6 +328,7 @@ function TransferOutModal({ onClose, onSaved }: { onClose: () => void, onSaved: 
                   <option value="">Chọn diện</option>
                   <option value="DOMESTIC">Chuyển trường VN</option>
                   <option value="ABROAD">Du học</option>
+                  <option value="RESERVE">Bảo lưu</option>
                 </select>
               </div>
             </div>
@@ -364,6 +367,20 @@ function TransferOutModal({ onClose, onSaved }: { onClose: () => void, onSaved: 
                   </select>
               </div>
             )}
+
+            {form.transferCategory === "RESERVE" && (
+              <div className="grid grid-cols-2 gap-4 bg-yellow-50/50 p-4 rounded-2xl border border-yellow-100">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Từ ngày</label>
+                    <input required type="date" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-yellow-500 transition-colors" value={form.reserveStartDate} onChange={e => setForm({...form, reserveStartDate: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Đến ngày</label>
+                    <input required type="date" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-yellow-500 transition-colors" value={form.reserveEndDate} onChange={e => setForm({...form, reserveEndDate: e.target.value})} />
+                  </div>
+              </div>
+            )}
+
 
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Lý do chuyển</label>
