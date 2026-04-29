@@ -487,6 +487,7 @@ return {
                 ...a,
                 ids: [a.id],
                 subjects: a.subject ? [a.subject.name] : [],
+                subjectIds: a.subjectId ? [a.subjectId] : [],
                 grades: [a.grade],
                 educationSystems: [a.educationSystem]
             };
@@ -494,6 +495,9 @@ return {
             groups[key].ids.push(a.id);
             if (a.subject && !groups[key].subjects.includes(a.subject.name)) {
                 groups[key].subjects.push(a.subject.name);
+            }
+            if (a.subjectId && !groups[key].subjectIds.includes(a.subjectId)) {
+                groups[key].subjectIds.push(a.subjectId);
             }
             if (!groups[key].grades.includes(a.grade)) {
                 groups[key].grades.push(a.grade);
@@ -511,8 +515,8 @@ return {
     if (a.batchId) setAsBatchId(a.batchId); else setAsBatchId("");
     if (a.user?.departmentId) setAsDeptId(a.user?.departmentId); else setAsDeptId("");
     setAsTeacherId(a.userId);
-    setAsSelSubjects(a.subjectIds);
-    setAsSelGrades(a.grades);
+    setAsSelSubjects(a.subjectIds || []);
+    setAsSelGrades(a.grades || []);
     setAsSelSystems(a.educationSystems);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
