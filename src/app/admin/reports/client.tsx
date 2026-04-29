@@ -12,12 +12,14 @@ import {
   getAllCampusesAction,
   getAcademicLevelsAction,
   deleteSurveyFormsByClassAction,
-  resetSurveyFormAction
+  resetSurveyFormAction,
+  exportReportExcelAction
 } from "./actions"
+import * as xlsx from "xlsx"
 import { 
   BarChart3, ChevronDown, ChevronRight, CheckCircle2, Clock, Users, UserCog, UserCheck, 
   Filter, BellRing, Trash2, Eye, X, Star, FileText, MessageSquare, Plus, UserPlus, 
-  Building2, GraduationCap, LayoutDashboard
+  Building2, GraduationCap, LayoutDashboard, Download
 } from "lucide-react"
 
 export function TrackingClient({ periods, campuses: initialCampuses = [], defaultCampusId = null, isCampusLocked = false }: any) {
@@ -42,6 +44,7 @@ export function TrackingClient({ periods, campuses: initialCampuses = [], defaul
   const [studentsToAdd, setStudentsToAdd] = useState<any[]>([])
   const [selectedStudentToAddIds, setSelectedStudentToAddIds] = useState<string[]>([])
   const [addingStudents, setAddingStudents] = useState(false)
+  const [exporting, setExporting] = useState(false)
 
   const reload = () => {
     if (!selectedPeriod) return
@@ -133,7 +136,23 @@ export function TrackingClient({ periods, campuses: initialCampuses = [], defaul
     }
   }
 
+  
+  const handleExportExcel = async () => {
+    if (!selectedPeriod) return alert("Vui lòng chọn đợt khảo sát!")
+    setExporting(true)
+    const res = await exportReportExcelAction(selectedPeriod, filterCampus !== "ALL" ? filterCampus : undefined, filterLevel !== "ALL" ? filterLevel : undefined)
+    setExporting(false)
+    if (!res.success) return alert("Lỗi xuất Excel: " + res.error)
+    if (!res.data || res.data.length === 0) return alert("Không có dữ liệu để xuất!")
+    
+    const ws = xlsx.utils.json_to_sheet(res.data)
+    const wb = xlsx.utils.book_new()
+    xlsx.utils.book_append_sheet(wb, ws, "Khao_Sat")
+    xlsx.writeFile(wb, `Data_KhaoSat.xlsx`)
+  }
+
   // --- Add Students ---
+
   const handleOpenAddModal = async (e: any, classId: string, className: string) => {
     e.stopPropagation()
     setAddModal({ open: true, classId, className })
@@ -349,17 +368,26 @@ export function TrackingClient({ periods, campuses: initialCampuses = [], defaul
                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Chọn mốc thời gian & Lọc dữ liệu lớp học</p>
               </div>
            </div>
-           {selectedFormIds.length > 0 && (
+           <div className="flex items-center gap-3">
+             {selectedFormIds.length > 0 && (
+               <button
+                 onClick={handleDeleteSelected}
+                 disabled={deleting}
+                 className="flex items-center gap-2 px-6 py-3 bg-rose-600 text-white font-bold rounded-2xl shadow-xl shadow-rose-100 hover:bg-rose-700 transition-all active:scale-95 group"
+               >
+                 <Trash2 className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                 <span className="hidden sm:inline">Gỡ {selectedFormIds.length} học sinh</span>
+               </button>
+             )}
              <button
-               onClick={handleDeleteSelected}
-               disabled={deleting}
-               className="flex items-center gap-2 px-6 py-3 bg-rose-600 text-white font-bold rounded-2xl shadow-xl shadow-rose-100 hover:bg-rose-700 transition-all active:scale-95 group"
+               onClick={handleExportExcel}
+               disabled={exporting || !selectedPeriod}
+               className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white font-bold rounded-2xl shadow-xl shadow-emerald-100 hover:bg-emerald-700 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
              >
-               <Trash2 className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-               <span className="hidden sm:inline">Gỡ {selectedFormIds.length} học sinh khỏi Survey</span>
-               <span className="sm:hidden">{selectedFormIds.length}</span>
+               <Download className="w-5 h-5" />
+               <span className="hidden sm:inline">{exporting ? "Đang xuất..." : "Xuất Excel dữ liệu"}</span>
              </button>
-           )}
+           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">

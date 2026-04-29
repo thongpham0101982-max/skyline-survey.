@@ -338,3 +338,79 @@ export async function deleteMultipleSurveyFormsAction(formIds: string[]) {
     return { success: false, error: error.message }
   }
 }
+
+export async function exportReportExcelAction(periodId: string, campusId?: string, level?: string) {
+  try {
+    const where: any = { surveyPeriodId: periodId }
+    if (campusId) where.campusId = campusId
+    
+    // Level is on Class, so we need to filter classes first if level is provided
+    if (level) {
+      where.class = { level: level }
+    }
+
+    const forms = await prisma.surveyForm.findMany({
+      where,
+      include: {
+        student: true,
+        class: { include: { campus: true } },
+        responses: {
+          include: {
+            question: { select: { questionText: true, type: true } }
+          }
+        }
+      }
+    })
+
+    const exportData = forms.map(f => {
+      const isDone = f.status === 'COMPLETED' || f.status === 'SUBMITTED'
+      
+      const row: any = {
+        "Mã Học sinh": f.student?.studentCode || "",
+        "Họ và Tên": f.student?.studentName || "",
+        "Cơ sở": f.class?.campus?.campusName || "",
+        "Lớp": f.class?.className || "",
+        "Trạng thái": isDone ? "Đã nộp bài" : "Chưa mở / Đang làm",
+        "Ngày nộp": f.status === 'SUBMITTED' ? f.submissionDateTime?.toLocaleString('vi-VN') : "",
+        "Điểm trung bình CSKH": f.overallAverageScore || "",
+        "Điểm NPS": f.npsScoreRaw !== null ? f.npsScoreRaw : "",
+        "Phân loại NPS": f.npsCategory || ""
+      }
+
+      // Add responses
+      f.responses.forEach(r => {
+        if (!r.question) return;
+        const qText = r.question.questionText;
+        
+        let answerStr = "";
+        if (r.question.type === "NPS" || r.question.type === "LIKERT" || r.question.type === "RATING") {
+           answerStr = r.numericScore !== null ? r.numericScore.toString() : "";
+        } else if (r.question.type === "TEXT" || r.question.type === "PARAGRAPH") {
+           answerStr = r.textAnswer || "";
+        } else {
+           // MULTIPLE_CHOICE, CHECKBOX, DROPDOWN
+           answerStr = r.choiceAnswer || "";
+           // If it has textAnswer too (like "Other: abc"), append it
+           if (r.textAnswer) answerStr += ` (${r.textAnswer})`;
+        }
+
+        // Handle grid questions which might have multiple responses for the same question?
+        // Actually, grid questions are usually stored as separate questions or JSON in choiceAnswer.
+        // We'll just dump whatever is in answerStr.
+        if (row[qText]) {
+            // In case of multiple responses to the same question text (e.g. checkbox)
+            row[qText] += "; " + answerStr;
+        } else {
+            row[qText] = answerStr;
+        }
+      });
+
+      return row;
+    })
+
+    return { success: true, data: exportData }
+  } catch (error: any) {
+    console.error("Export error:", error)
+    return { success: false, error: error.message }
+  }
+}
