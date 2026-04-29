@@ -11,7 +11,8 @@ import {
   addStudentsToSurveyAction,
   getAllCampusesAction,
   getAcademicLevelsAction,
-  deleteSurveyFormsByClassAction
+  deleteSurveyFormsByClassAction,
+  resetSurveyFormAction
 } from "./actions"
 import { 
   BarChart3, ChevronDown, ChevronRight, CheckCircle2, Clock, Users, UserCog, UserCheck, 
@@ -108,9 +109,9 @@ export function TrackingClient({ periods, campuses: initialCampuses = [], defaul
 
   const handleDeleteSingle = async (e: any, formId: string, studentName: string) => {
     e.stopPropagation()
-    if (!confirm(`Bạn có chắc muốn XÓA BÀI KHẢO SÁT của học sinh ${studentName} không? (Thao tác này sẽ xóa mọi dữ liệu khảo sát của học sinh này để làm lại từ đầu)`)) return
+    if (!confirm(`Bạn có chắc muốn XÓA BÀI KHẢO SÁT của học sinh ${studentName} không? (Thao tác này sẽ xóa kết quả và đưa trạng thái về CHƯA MỞ để học sinh có thể làm lại từ đầu)`)) return
     setDeleting(true)
-    const res = await deleteMultipleSurveyFormsAction([formId])
+    const res = await resetSurveyFormAction(formId)
     setDeleting(false)
     if (res.success) {
       alert(`Đã xóa bài khảo sát của ${studentName}!`)

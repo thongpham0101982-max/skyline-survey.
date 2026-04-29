@@ -338,3 +338,26 @@ export async function deleteMultipleSurveyFormsAction(formIds: string[]) {
     return { success: false, error: error.message }
   }
 }
+export async function resetSurveyFormAction(formId: string) {
+  try {
+    await prisma.surveyResponse.deleteMany({ where: { formId } })
+    await prisma.surveyForm.update({
+      where: { id: formId },
+      data: {
+        status: "DRAFT",
+        submissionDateTime: new Date(), // Just reset to now, or maybe don't change
+        overallAverageScore: null,
+        npsScoreRaw: null,
+        npsCategory: null,
+        textAnswer: null,
+        choiceAnswer: null,
+        calculatedWeightedScore: null
+      }
+    })
+    revalidatePath('/admin/reports')
+    return { success: true }
+  } catch (error: any) {
+    console.error('Reset Form Error:', error)
+    return { success: false, error: error.message }
+  }
+}
