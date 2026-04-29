@@ -364,6 +364,20 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Đã chấm</span>
                         <span className="text-indigo-600 font-black text-lg">{st.scoreVals[6] || st.scoreVals[20] || '0'} <span className="text-xs text-slate-400 font-bold uppercase ml-1">Điểm</span></span>
                       </div>
+                      {["2", "3", "4", "5"].includes(st.grade) && (() => {
+                          const score = parseFloat(st.scoreVals[6] || st.scoreVals[20] || '0');
+                          let level = ""; let color = "";
+                          if (score <= 15) { level = "Bình thường"; color = "text-emerald-700 bg-emerald-50 border-emerald-200"; }
+                          else if (score <= 31) { level = "Dấu hiệu nhẹ"; color = "text-blue-700 bg-blue-50 border-blue-200"; }
+                          else if (score <= 47) { level = "Dấu hiệu vừa"; color = "text-amber-700 bg-amber-50 border-amber-200"; }
+                          else if (score <= 63) { level = "Nguy cơ cao"; color = "text-orange-700 bg-orange-50 border-orange-200"; }
+                          else { level = "Nguy cơ rất cao"; color = "text-red-700 bg-red-50 border-red-200"; }
+                          return (
+                              <div className={`ml-2 px-3 py-1.5 rounded-xl border font-bold text-[11px] uppercase tracking-wide shadow-sm ${color}`}>
+                                  {level}
+                              </div>
+                          );
+                      })()}
                     </div>
                   )}
                   {(!st.scoreVals || st.scoreVals.length < 7) && (
