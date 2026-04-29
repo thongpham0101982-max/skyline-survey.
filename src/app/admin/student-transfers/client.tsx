@@ -254,7 +254,14 @@ function TransferOutModal({ onClose, onSaved }: { onClose: () => void, onSaved: 
   }
 
   const COUNTRIES = ["Mỹ", "Anh", "Úc", "Canada", "Singapore", "Nhật Bản", "Hàn Quốc", "New Zealand", "Trung Quốc", "Đài Loan", "Pháp", "Đức", "Thụy Sĩ", "Hà Lan", "Phần Lan", "Ireland", "Nga", "Khác..."]
-  const PROVINCES = ["An Giang", "Bà Rịa - Vũng Tàu", "Bạc Liêu", "Bắc Giang", "Bắc Kạn", "Bắc Ninh", "Bến Tre", "Bình Dương", "Bình Định", "Bình Phước", "Bình Thuận", "Cà Mau", "Cao Bằng", "Cần Thơ", "Đà Nẵng", "Đắk Lắk", "Đắk Nông", "Điện Biên", "Đồng Nai", "Đồng Tháp", "Gia Lai", "Hà Giang", "Hà Nam", "Hà Nội", "Hà Tĩnh", "Hải Dương", "Hải Phòng", "Hậu Giang", "Hòa Bình", "Hưng Yên", "Khánh Hòa", "Kiên Giang", "Kon Tum", "Lai Châu", "Lạng Sơn", "Lào Cai", "Lâm Đồng", "Long An", "Nam Định", "Nghệ An", "Ninh Bình", "Ninh Thuận", "Phú Thọ", "Phú Yên", "Quảng Bình", "Quảng Nam", "Quảng Ngãi", "Quảng Ninh", "Quảng Trị", "Sóc Trăng", "Sơn La", "Tây Ninh", "Thái Bình", "Thái Nguyên", "Thanh Hóa", "Thừa Thiên Huế", "Tiền Giang", "TP Hồ Chí Minh", "Trà Vinh", "Tuyên Quang", "Vĩnh Long", "Vĩnh Phúc", "Yên Bái"]
+  const [provinces, setProvinces] = useState<string[]>([])
+
+  useEffect(() => {
+    fetch("https://provinces.open-api.vn/api/")
+      .then(res => res.json())
+      .then(data => setProvinces(data.map((p: any) => p.name)))
+      .catch(e => console.error("Lỗi tải tỉnh thành", e))
+  }, [])
 
   return (
     <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
@@ -352,7 +359,7 @@ function TransferOutModal({ onClose, onSaved }: { onClose: () => void, onSaved: 
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Tỉnh/TP</label>
                   <select className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 transition-colors" value={form.destinationProvince} onChange={e => setForm({...form, destinationProvince: e.target.value})}>
                     <option value="">Chọn Tỉnh/TP</option>
-                    {PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
+                    {provinces.map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
                 </div>
               </div>
