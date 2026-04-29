@@ -19,6 +19,7 @@ export async function createTransferOutAction(data: any) {
           studentId: data.studentId,
           type: "OUT",
           transferDate: new Date(data.transferDate),
+          semester: data.semester || null,
           transferCategory: data.transferCategory,
           destinationSchool: data.destinationSchool || null,
           destinationType: data.destinationType || null,
@@ -118,6 +119,7 @@ export async function createChangeClassAction(data: any) {
           studentId: data.studentId,
           type: "CHANGE_CLASS",
           transferDate: new Date(data.transferDate),
+          semester: data.semester || null,
           destinationSchool: destName, // Store human readable destination here
           reason: data.reason || null,
           createdById: userId,

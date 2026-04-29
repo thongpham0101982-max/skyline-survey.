@@ -101,7 +101,7 @@ export function StudentTransfersClient() {
                 <tbody className="divide-y divide-slate-100">
                   {outTransfers.map(t => (
                     <tr key={t.id} className="hover:bg-slate-50">
-                      <td className="p-4 font-medium text-slate-700">{new Date(t.transferDate).toLocaleDateString('vi-VN')}</td>
+                      <td className="p-4 font-medium text-slate-700">{new Date(t.transferDate).toLocaleDateString('vi-VN')} <br/><span className="text-xs text-slate-400">{t.semester === 'HK1' ? 'Học kỳ 1' : t.semester === 'HK2' ? 'Học kỳ 2' : t.semester === 'SUMMER' ? 'Trong hè' : ''}</span></td>
                       <td className="p-4 font-bold text-slate-900">{t.student?.studentName} <br/><span className="text-xs font-medium text-slate-400">{t.student?.studentCode}</span></td>
                       <td className="p-4"><span className="px-2 py-1 bg-slate-100 rounded-md font-bold text-slate-600">{t.student?.class?.className}</span> <br/><span className="text-xs text-slate-500">{t.student?.class?.campus?.campusName}</span></td>
                       <td className="p-4 font-medium text-rose-600">{t.transferCategory === "DOMESTIC" ? "Chuyển trường VN" : "Du học"}</td>
@@ -139,7 +139,7 @@ export function StudentTransfersClient() {
                 <tbody className="divide-y divide-slate-100">
                   {changeTransfers.map(t => (
                     <tr key={t.id} className="hover:bg-slate-50">
-                      <td className="p-4 font-medium text-slate-700">{new Date(t.transferDate).toLocaleDateString('vi-VN')}</td>
+                      <td className="p-4 font-medium text-slate-700">{new Date(t.transferDate).toLocaleDateString('vi-VN')} <br/><span className="text-xs text-slate-400">{t.semester === 'HK1' ? 'Học kỳ 1' : t.semester === 'HK2' ? 'Học kỳ 2' : t.semester === 'SUMMER' ? 'Trong hè' : ''}</span></td>
                       <td className="p-4 font-bold text-slate-900">{t.student?.studentName} <br/><span className="text-xs font-medium text-slate-400">{t.student?.studentCode}</span></td>
                       <td className="p-4 font-medium text-indigo-600">{t.destinationSchool}</td>
                       <td className="p-4 text-slate-600">{t.reason}</td>
@@ -190,6 +190,7 @@ function TransferOutModal({ onClose, onSaved }: { onClose: () => void, onSaved: 
     classId: "",
     studentId: "",
     transferDate: "",
+    semester: "",
     transferCategory: "", // DOMESTIC, ABROAD
     destinationSchool: "",
     destinationType: "",
@@ -304,10 +305,19 @@ function TransferOutModal({ onClose, onSaved }: { onClose: () => void, onSaved: 
             <div className="h-px bg-slate-100" />
 
             {/* Transfer Details */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Ngày chuyển</label>
                 <input required type="date" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 transition-colors" value={form.transferDate} onChange={e => setForm({...form, transferDate: e.target.value})} />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Kỳ học</label>
+                <select required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 transition-colors" value={form.semester} onChange={e => setForm({...form, semester: e.target.value})}>
+                  <option value="">Chọn kỳ</option>
+                  <option value="HK1">Học kỳ 1</option>
+                  <option value="HK2">Học kỳ 2</option>
+                  <option value="SUMMER">Trong hè</option>
+                </select>
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Diện chuyển</label>
@@ -389,6 +399,7 @@ function ChangeClassModal({ onClose, onSaved }: { onClose: () => void, onSaved: 
     destCampusId: "",
     destClassId: "",
     transferDate: "",
+    semester: "",
     reason: ""
   })
 
@@ -529,7 +540,16 @@ function ChangeClassModal({ onClose, onSaved }: { onClose: () => void, onSaved: 
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Ngày chuyển</label>
                 <input required type="date" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 transition-colors" value={form.transferDate} onChange={e => setForm({...form, transferDate: e.target.value})} />
               </div>
-              <div className="col-span-2">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Kỳ học</label>
+                <select required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 transition-colors" value={form.semester} onChange={e => setForm({...form, semester: e.target.value})}>
+                  <option value="">Chọn kỳ</option>
+                  <option value="HK1">Học kỳ 1</option>
+                  <option value="HK2">Học kỳ 2</option>
+                  <option value="SUMMER">Trong hè</option>
+                </select>
+              </div>
+              <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Lý do chuyển</label>
                 <input type="text" placeholder="Nhập lý do chi tiết..." className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 transition-colors" value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} />
               </div>

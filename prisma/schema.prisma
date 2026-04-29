@@ -683,6 +683,7 @@ model StudentTransfer {
   
   type                String   // "OUT", "IN", "CHANGE_CLASS"
   transferDate        DateTime
+  semester            String?
   
   // Details for OUT
   transferCategory    String?  // "DOMESTIC", "ABROAD"
