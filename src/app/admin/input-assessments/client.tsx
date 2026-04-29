@@ -506,6 +506,17 @@ return {
     return Object.values(groups);
   }, [assignments]);
 
+  const openEditAssignment = (a: any) => {
+    if (a.periodId) setAsPeriodId(a.periodId);
+    if (a.batchId) setAsBatchId(a.batchId); else setAsBatchId("");
+    if (a.user?.departmentId) setAsDeptId(a.user?.departmentId); else setAsDeptId("");
+    setAsTeacherId(a.userId);
+    setAsSelSubjects(a.subjectIds);
+    setAsSelGrades(a.grades);
+    setAsSelSystems(a.educationSystems);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   const deleteAssignment = async (ids: string[]) => {
     const res = await fetch(`/api/input-assessment-assignments?ids=${ids.join(",")}`, { method: "DELETE" })
     if (res.ok) {
@@ -765,7 +776,13 @@ return {
                                   ))}
                                 </div>
                               </td>
-                            <td className="p-5 text-right">
+                            <td className="p-5 text-right flex items-center justify-end">
+                               <button 
+                                 onClick={() => openEditAssignment(a)}
+                                 className="p-2.5 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all mr-1"
+                               >
+                                 <Edit2 className="w-4 h-4"/>
+                               </button>
                                <button 
                                  onClick={() => setConfirm({ msg: `Xóa phân công của GV ${a.user?.fullName}?`, fn: () => deleteAssignment(a.ids) })}
                                  className="p-2.5 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"

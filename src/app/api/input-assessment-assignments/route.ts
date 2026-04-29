@@ -34,6 +34,21 @@ export async function POST(req) {
     if (action === "BULK_ASSIGN") {
        let successCount = 0;
        
+       // Override mode: delete existing assignments for the specific teacher in this period & batch
+       if (assignments.length > 0) {
+          const firstTeacher = assignments[0].teacherId;
+          const isSingleTeacher = assignments.every(a => a.teacherId === firstTeacher);
+          if (isSingleTeacher) {
+              await prisma.inputAssessmentTeacherAssignment.deleteMany({
+                  where: {
+                      periodId,
+                      batchId: batchId || null,
+                      userId: firstTeacher
+                  }
+              });
+          }
+       }
+
        for (const a of assignments) {
           try {
              const existing = await prisma.inputAssessmentTeacherAssignment.findFirst({
