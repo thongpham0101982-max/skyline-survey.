@@ -81,6 +81,12 @@ export function StudentTransfersClient() {
                <Plus className="w-5 h-5 mr-2" /> Tạo phiếu Chuyển lớp
              </button>
            )}
+
+           {activeTab === "IN" && (
+             <button onClick={() => setShowInModal(true)} className="px-6 py-3 bg-emerald-600 text-white font-bold rounded-2xl hover:bg-emerald-700 transition-all flex items-center shadow-lg shadow-emerald-100">
+               <Plus className="w-5 h-5 mr-2" /> Tạo phiếu Chuyển đến
+             </button>
+           )}
         </div>
 
         {activeTab === "OUT" && (
@@ -159,19 +165,47 @@ export function StudentTransfersClient() {
           )
         )}
         
-        {activeTab === "IN" && (
+                {activeTab === "IN" && (
+          loadingList ? (
+            <div className="flex justify-center p-10"><Loader2 className="w-8 h-8 animate-spin text-slate-400" /></div>
+          ) : inTransfers.length > 0 ? (
+            <div className="border border-slate-200 rounded-2xl overflow-hidden">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-slate-50 text-slate-600 font-bold uppercase text-[10px] tracking-wider">
+                  <tr>
+                    <th className="p-4">Ngày nhập học</th>
+                    <th className="p-4">Học sinh</th>
+                    <th className="p-4">Lớp chuyển đến</th>
+                    <th className="p-4">Lý do</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {inTransfers.map(t => (
+                    <tr key={t.id} className="hover:bg-slate-50">
+                      <td className="p-4 font-medium text-slate-700">{new Date(t.transferDate).toLocaleDateString('vi-VN')} <br/><span className="text-xs text-slate-400">{t.semester === 'HK1' ? 'Học kỳ 1' : t.semester === 'HK2' ? 'Học kỳ 2' : t.semester === 'SUMMER' ? 'Trong hè' : ''}</span></td>
+                      <td className="p-4 font-bold text-slate-900">{t.student?.studentName} <br/><span className="text-xs font-medium text-slate-400">{t.student?.studentCode}</span></td>
+                      <td className="p-4 font-medium text-emerald-600">{t.destinationSchool}</td>
+                      <td className="p-4 text-slate-600">{t.reason}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
             <div className="bg-slate-50 border border-slate-100 rounded-2xl p-16 text-center">
                <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm border border-slate-100">
-                 <ArrowLeftToLine className="w-8 h-8 text-slate-300" />
+                 <ArrowLeftToLine className="w-8 h-8 text-emerald-300" />
                </div>
-               <h3 className="text-xl font-bold text-slate-700 mb-2">Tính năng đang phát triển</h3>
-               <p className="text-slate-500 font-medium">Tính năng này đang trong quá trình phát triển để liên kết với hệ thống nhân sự.</p>
+               <h3 className="text-xl font-bold text-slate-700 mb-2">Chưa có dữ liệu chuyển đến</h3>
+               <p className="text-slate-500 font-medium">Bấm "Tạo phiếu Chuyển đến" để thêm mới.</p>
             </div>
+          )
         )}
       </div>
 
-      {showOutModal && <TransferOutModal onClose={() => setShowOutModal(false)} onSaved={loadTransfers} />}
+{showOutModal && <TransferOutModal onClose={() => setShowOutModal(false)} onSaved={loadTransfers} />}
       {showChangeModal && <ChangeClassModal onClose={() => setShowChangeModal(false)} onSaved={loadTransfers} />}
+      {showInModal && <TransferInModal onClose={() => setShowInModal(false)} onSaved={loadTransfers} />}
     </div>
   )
 }
