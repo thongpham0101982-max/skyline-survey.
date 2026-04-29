@@ -17,6 +17,62 @@ interface QuestionsData {
     [key: string]: Section[]
 }
 
+
+const scaleOptions = ["0", "1", "2", "3", "4"]
+
+const grades2to5Questions = [
+    {
+        title: "I. Cảm xúc & điều hòa cảm xúc (4 mục)",
+        questions: [
+            { text: "1. Khi bị điểm kém hoặc bị giáo viên nhắc nhở, con thường phản ứng như thế nào?", options: scaleOptions },
+            { text: "2. Khi con và bạn có chuyện không vui (tranh giành đồ chơi, xích mích), con thường xử lý như thế nào?", options: scaleOptions },
+            { text: "3. Khi bị từ chối hoặc không được chọn trong trò chơi, con cảm thấy thế nào?", options: scaleOptions },
+            { text: "4. Trước giờ kiểm tra hoặc khi gặp một việc khó khăn, cảm xúc của con thường thế nào?", options: scaleOptions }
+        ]
+    },
+    {
+        title: "II. Hành vi & tự kiểm soát (3 mục)",
+        questions: [
+            { text: "5. Khi cô dặn phải ngồi yên hoặc chờ đến lượt, con làm thế nào?", options: scaleOptions },
+            { text: "6. Trong lớp, khi nhiều điều khiển con chú ý, con thường phản ứng thế nào?", options: scaleOptions },
+            { text: "7. Khi con cảm thấy bực hoặc tức giận, con thường làm gì để bình tĩnh lại?", options: scaleOptions }
+        ]
+    },
+    {
+        title: "III. Giao tiếp & tương tác xã hội (3 mục)",
+        questions: [
+            { text: "8. Khi gặp bạn mới, con làm gì để làm quen?", options: scaleOptions },
+            { text: "9. Khi chơi cùng bạn, con thường chia sẻ hoặc hợp tác như thế nào?", options: scaleOptions },
+            { text: "10. Khi con bị bạn trêu chọc hoặc bị hiểu lầm, con sẽ làm gì?", options: scaleOptions }
+        ]
+    },
+    {
+        title: "IV. Chú ý & kỹ năng học tập nền (4 mục)",
+        questions: [
+            { text: "11. Khi cô hướng dẫn nhiều bước, con thường ghi nhớ và làm như thế nào?", options: scaleOptions },
+            { text: "12. Khi nghe cô kể chuyện hoặc giảng bài, con nhớ lại điều gì sau đó?", options: scaleOptions },
+            { text: "13. Khi làm bài tập, con bắt đầu và hoàn thành như thế nào?", options: scaleOptions },
+            { text: "14. Khi trong lớp có tiếng ồn hoặc người khác làm việc, con phản ứng thế nào?", options: scaleOptions }
+        ]
+    },
+    {
+        title: "V. Ngôn ngữ - tư duy - giải quyết vấn đề (3 mục)",
+        questions: [
+            { text: "15. Khi nhìn thấy các đồ vật học tập, con nghĩ mỗi món dùng để làm gì?", options: scaleOptions },
+            { text: "16. Khi gặp tình huống thực tế (ví dụ: làm rơi đồ, bị bạn hiểu lầm), con thường làm gì?", options: scaleOptions },
+            { text: "17. Khi xảy ra việc bất ngờ, con nghĩ ra cách giải quyết như thế nào?", options: scaleOptions }
+        ]
+    },
+    {
+        title: "VI. Động lực học tập & thái độ trường học (3 mục)",
+        questions: [
+            { text: "18. Khi đến trường, điều gì khiến con cảm thấy vui nhất?", options: scaleOptions },
+            { text: "19. Khi cô giao bài, con thường bắt đầu như thế nào?", options: scaleOptions },
+            { text: "20. Khi con gặp bài khó, con làm gì để vượt qua?", options: scaleOptions }
+        ]
+    }
+]
+
 const questionsData: QuestionsData = {
     "1": [
         {
@@ -70,214 +126,10 @@ const questionsData: QuestionsData = {
             ]
         }
     ],
-    "2": [
-        {
-            title: "CẢM XÚC VÀ ĐIỀU HÒA CẢM XÚC",
-            questions: [
-                { text: "Quan sát và nhận biết cảm xúc của người khác.", options: ["Ít quan tâm", "Nhận biết cơ bản", "Rất nhạy bén"] },
-                { text: "Biết cách tự xoa dịu bản thân khi buồn bã.", options: ["Cần hỗ trợ nhiều", "Cần nhắc nhở", "Biết cách xử lý"] },
-                { text: "Sự kiên trì khi đối mặt với bài tập khó.", options: ["Dễ bỏ cuộc", "Cần động viên", "Nỗ lực hoàn thành"] },
-                { text: "Chấp nhận thất bại trong các trò chơi cạnh tranh.", options: ["Dễ tự ái/Giận dỗi", "Cần nhắc nhở", "Mạnh dạn chấp nhận"] }
-            ]
-        },
-        {
-            title: "HÀNH VI - KIỂM SOÁT BẢN THÂN",
-            questions: [
-                { text: "Tự giác thực hiện nội quy không cần nhắc nhở.", options: ["Luôn cần nhắc", "Đôi khi tự giác", "Rất tự giác"] },
-                { text: "Quản lý thời gian trong giờ giải lao.", options: ["Hay vào lớp muộn", "Cần nhắc nhở", "Luôn đúng giờ"] },
-                { text: "Ý thức bảo vệ môi trường (bỏ rác đúng nơi).", options: ["Hay quên", "Cần nhắc", "Tự giác"] }
-            ]
-        },
-        {
-            title: "QUAN HỆ XÃ HỘI & TƯƠNG TÁC NHÓM",
-            questions: [
-                { text: "Khả năng lắng nghe ý kiến của bạn bè.", options: ["Hay ngắt lời", "Lắng nghe một phần", "Lắng nghe tôn trọng"] },
-                { text: "Giải quyết mâu thuẫn bằng lời nói thay vì hành động.", options: ["Dễ dùng tay chân", "Cần can thiệp", "Giải quyết tốt"] },
-                { text: "Sẵn sàng giúp đỡ bạn bè trong học tập.", options: ["Ít khi", "Khi được yêu cầu", "Chủ động giúp đỡ"] }
-            ]
-        },
-        {
-            title: "HỌC TẬP & KHẢ NĂNG TỰ ĐỊNH HƯỚNG/ CHÚ Ý",
-            questions: [
-                { text: "Mức độ tập trung trong giờ học (20-25 phút).", options: ["Xao nhãng", "Ổn định", "Rất tập trung"] },
-                { text: "Ghi chép bài đầy đủ và cẩn thận.", options: ["Thiếu/Sẩu đoảng", "Đủ nhưng chưa đẹp", "Rất cẩn thận"] },
-                { text: "Khả năng làm việc độc lập theo hướng dẫn.", options: ["Luôn hỏi lại", "Cần hỗ trợ ít", "Làm tốt một mình"] },
-                { text: "Biết cách sắp xếp góc học tập cá nhân.", options: ["Bừa bộn", "Trung bình", "Ngăn nắp"] }
-            ]
-        },
-        {
-            title: "TỰ NHẬN THỨC & NGÔN NGỮ - GIẢI QUYẾT VẤN ĐỀ",
-            questions: [
-                { text: "Khả năng kể lại một câu chuyện rõ ràng mạch lạc.", options: ["Ngập ngừng", "Đủ ý", "Rất lôi cuốn"] },
-                { text: "Sử dụng vốn từ đa dạng trong giao tiếp.", options: ["Hạn chế", "Bình thường", "Phong phú"] },
-                { text: "Biết tự đưa ra giải pháp cho các tình huống đơn giản.", options: ["Chờ đợi", "Gợi ý mới làm", "Chủ động giải quyết"] }
-            ]
-        },
-        {
-            title: "ĐỘNG LỰC & ĐỊNH HƯỚNG TƯƠNG LAI",
-            questions: [
-                { text: "Tham gia các hoạt động ngoại khóa tích cực.", options: ["Ít tham gia", "Tham gia đủ", "Dẫn dắt phong trào"] },
-                { text: "Có mục tiêu học tập ngắn hạn rõ ràng.", options: ["Chưa có", "Sơ sài", "Rõ ràng"] },
-                { text: "Thể hiện trách nhiệm với các công việc được giao.", options: ["Hay quên", "Hoàn thành đủ", "Rất trách nhiệm"] }
-            ]
-        }
-    ],
-    "3": [
-         {
-            title: "CẢM XÚC VÀ ĐIỀU HÒA CẢM XÚC",
-            questions: [
-                { text: "Khả năng thấu cảm với hoàn cảnh của người khác.", options: ["Vô tâm", "Có biểu hiện", "Rất giàu cảm xúc"] },
-                { text: "Kiểm soát cảm xúc trong các tình huống áp lực.", options: ["Lo lắng thái quá", "Hồi hộp nhẹ", "Bình tĩnh"] },
-                { text: "Sự trung thực trong thi cử và sinh hoạt.", options: ["Cần giám sát", "Đôi khi nhắc nhở", "Luôn trung thực"] },
-                { text: "Sẵn sàng đón nhận các thử thách mới.", options: ["Ngại ngần", "Cần khích lệ", "Rất chủ động"] }
-            ]
-        },
-        {
-            title: "HÀNH VI - KIỂM SOÁT BẢN THÂN",
-            questions: [
-                { text: "Quản lý cảm xúc khi bị phê bình.", options: ["Phản ứng tiêu cực", "Im lặng", "Tiếp thu cầu tiến"] },
-                { text: "Tuân thủ luật chơi và tinh thần đồng đội.", options: ["Cá nhân", "Đôi khi nhắc nhở", "Fair-play"] },
-                { text: "Ý thức bảo vệ của công và tài sản chung.", options: ["Thiếu giữ gìn", "Bình thường", "Giữ gìn tốt"] }
-            ]
-        },
-        {
-            title: "QUAN HỆ XÃ HỘI & TƯƠNG TÁC NHÓM",
-            questions: [
-                { text: "Kỹ năng làm việc nhóm và phân công nhiệm vụ.", options: ["Lúng túng", "Hỗ trợ tốt", "Khả năng lãnh đạo"] },
-                { text: "Thể hiện thái độ tôn trọng với người lớn tuổi.", options: ["Cần nhắc nhở", "Lễ phép", "Rất mực chuẩn mực"] },
-                { text: "Khả năng khích lệ bạn bè cùng tiến bộ.", options: ["Chỉ lo mình", "Đôi khi", "Thường xuyên giúp đỡ"] }
-            ]
-        },
-        {
-            title: "HỌC TẬP & KHẢ NĂNG TỰ ĐỊNH HƯỚNG/ CHÚ Ý",
-            questions: [
-                { text: "Khả năng tự nghiên cứu bài học trước khi đến lớp.", options: ["Không thực hiện", "Đôi khi", "Thói quen tốt"] },
-                { text: "Tập trung cao độ trong các giờ học lý thuyết.", options: ["Hay mơ mộng", "Ổn định", "Rất tập trung"] },
-                { text: "Biết cách đặt câu hỏi phản biện mở rộng vấn đề.", options: ["Không bao giờ", "Đôi khi hỏi", "Hỏi rất hay"] },
-                { text: "Tốc độ hoàn thành các nhiệm vụ phức tạp.", options: ["Rất chậm", "Bình thường", "Nhanh và chính xác"] }
-            ]
-        },
-        {
-            title: "TỰ NHẬN THỨC & NGÔN NGỮ - GIẢI QUYẾT VẤN ĐỀ",
-            questions: [
-                { text: "Trình bày luận điểm một cách logic.", options: ["Lộn xộn", "Đủ ý", "Sắc sảo"] },
-                { text: "Khả năng thuyết trình trước đám đông.", options: ["Rụt rè", "Khá tốt", "Rất tự tin"] },
-                { text: "Xử lý linh hoạt các tình huống bất ngờ.", options: ["Hoảng hốt", "Lúng túng nhẹ", "Xử lý thông minh"] }
-            ]
-        },
-        {
-            title: "ĐỘNG LỰC & ĐỊNH HƯỚNG TƯƠNG LAI",
-            questions: [
-                { text: "Tự lập trong việc xây dựng thời khóa biểu.", options: ["Bố mẹ làm hộ", "Gợi ý mới làm", "Tự thực hiện"] },
-                { text: "Có biểu hiện về năng khiếu đặc biệt (Nhạc, Họa, Thể thao).", options: ["Chưa thấy", "Có tiềm năng", "Vượt trội"] },
-                { text: "Mong muốn đóng góp cho cộng đồng lớp học.", options: ["Thụ động", "Nhiệt tình", "Gương mẫu"] }
-            ]
-        }
-    ],
-    "4": [
-        {
-            title: "CẢM XÚC VÀ ĐIỀU HÒA CẢM XÚC",
-            questions: [
-                { text: "Quản lý cảm xúc trước những thay đổi tâm sinh lý sớm.", options: ["Rất hoang mang", "Cần tư vấn", "Thích nghi tốt"] },
-                { text: "Khả năng tự tạo động lực cho bản thân.", options: ["Cần ép buộc", "Cần nhắc nhở", "Tự giác cao"] },
-                { text: "Thái độ tích cực với các môn học khó.", options: ["Chán nản", "Cố gắng", "Kiên trì chinh phục"] },
-                { text: "Khả năng phục hồi sau những thất bại nhỏ.", options: ["Ủ rũ lâu", "Cần an ủi", "Mạnh mẽ vượt qua"] }
-            ]
-        },
-        {
-            title: "HÀNH VI - KIỂM SOÁT BẢN THÂN",
-            questions: [
-                { text: "Kiểm soát thời gian sử dụng thiết bị điện tử.", options: ["Nghiện nặng", "Cần giám sát", "Sử dụng thông minh"] },
-                { text: "Sự cẩn trọng trong các quyết định cá nhân.", options: ["Hấp tấp", "Đôi khi sai sót", "Chắc chắn"] },
-                { text: "Thực hiện kỷ luật tự giác cao.", options: ["Đối phó", "Bình thường", "Rất nghiêm túc"] }
-            ]
-        },
-        {
-            title: "QUAN HỆ XÃ HỘI & TƯƠNG TÁC NHÓM",
-            questions: [
-                { text: "Kỹ năng thương lượng và thỏa hiệp lành mạnh.", options: ["Cố chấp", "Biết lắng nghe", "Thuyết phục tốt"] },
-                { text: "Xây dựng hình ảnh cá nhân uy tín với bạn bè.", options: ["Chưa tốt", "Được tin tưởng", "Rất có uy tín"] },
-                { text: "Khả năng làm việc với nhiều nhóm đối tượng khác nhau.", options: ["Kén chọn", "Hòa đồng", "Thích nghi nhanh"] }
-            ]
-        },
-        {
-            title: "HỌC TẬP & KHẢ NĂNG TỰ ĐỊNH HƯỚNG/ CHÚ Ý",
-            questions: [
-                { text: "Khả năng ghi chú theo sơ đồ tư duy.", options: ["Chưa biết cách", "Đang tập làm", "Thành thạo"] },
-                { text: "Mức độ chuyên tâm khi làm dự án kéo dài 1-2 tuần.", options: ["Bỏ dở", "Làm cho xong", "Hoàn thành xuất sắc"] },
-                { text: "Biết tìm kiếm và chọn lọc thông tin trên Internet.", options: ["Dễ lạc lối", "Cần hướng dẫn", "Kỹ năng tốt"] },
-                { text: "Tư duy giải quyết vấn đề đa chiều.", options: ["Phiến diện", "Có nỗ lực", "Rất sáng tạo"] }
-            ]
-        },
-        {
-            title: "TỰ NHẬN THỨC & NGÔN NGỮ - GIẢI QUYẾT VẤN ĐỀ",
-            questions: [
-                { text: "Khả năng tranh luận văn minh về một chủ đề xã hội.", options: ["Dễ nóng nảy", "Đủ ý", "Sắc bén, thuyết phục"] },
-                { text: "Tự viết lách/sáng tạo nội dung có chiều sâu.", options: ["Hạn chế", "Khá tốt", "Rất ấn tượng"] },
-                { text: "Chủ động đề xuất các hoạt động đổi mới cho lớp.", options: ["Im lặng", "Hưởng ứng", "Khởi xướng"] }
-            ]
-        },
-        {
-            title: "ĐỘNG LỰC & ĐỊNH HƯỚNG TƯƠNG LAI",
-            questions: [
-                { text: "Có ước mơ nghề nghiệp và ý thức tìm hiểu.", options: ["Mơ hồ", "Có suy nghĩ", "Tìm hiểu nghiêm túc"] },
-                { text: "Khả năng tự quản lý tài chính cá nhân (tiền tiêu vặt).", options: ["Hoang phí", "Biết cân đối", "Tiết kiệm tốt"] },
-                { text: "Lòng tự trọng và ý thức bảo vệ danh dự bản thân.", options: ["Thấp", "Bình thường", "Cao"] }
-            ]
-        }
-    ],
-    "5": [
-        {
-            title: "CẢM XÚC VÀ ĐIỀU HÒA CẢM XÚC",
-            questions: [
-                { text: "Sẵn sàng tâm thế cho việc chuyển cấp lên THCS.", options: ["Lo lắng, sợ hãi", "Hơi lo âu", "Tự tin, sẵn sàng"] },
-                { text: "Khả năng điều tiết cảm xúc khi gặp áp lực thi cử.", options: ["Rất áp lực", "Căng thẳng nhẹ", "Tâm lý vững vàng"] },
-                { text: "Nhận thức rõ điểm mạnh và điểm yếu của bản thân.", options: ["Chưa định hình", "Biết cơ bản", "Hiểu rất rõ"] },
-                { text: "Xây dựng được các mối quan hệ bạn bè bền vững.", options: ["Hay mâu thuẫn", "Hòa đồng", "Gắn kết sâu sắc"] }
-            ]
-        },
-        {
-            title: "HÀNH VI - KIỂM SOÁT BẢN THÂN",
-            questions: [
-                { text: "Làm chủ hành vi trên môi trường mạng xã hội.", options: ["Chưa biết cách", "Cần nhắc nhở", "Rất văn minh"] },
-                { text: "Sự điềm tĩnh khi đối mặt với các tin đồn.", options: ["Dễ bị kích động", "Hơi ảnh hưởng", "Bản lĩnh"] },
-                { text: "Xây dựng và tuân thủ lối sống lành mạnh.", options: ["Thụ động", "Có cố gắng", "Rất khoa học"] }
-            ]
-        },
-        {
-            title: "QUAN HỆ XÃ HỘI & TƯƠNG TÁC NHÓM",
-            questions: [
-                { text: "Khả năng lãnh đạo và truyền cảm hứng cho bạn bè.", options: ["Thụ động", "Cán bộ lớp tốt", "Tầm ảnh hưởng lớn"] },
-                { text: "Tư duy cộng đồng và lòng trắc ẩn.", options: ["Ít quan tâm", "Biết sẻ chia", "Trái tim nhân hậu"] },
-                { text: "Kỹ năng thuyết phục và làm việc với cấp trên.", options: ["Lúng túng", "Khá tự tin", "Giao tiếp chuẩn mực"] }
-            ]
-        },
-        {
-            title: "HỌC TẬP & KHẢ NĂNG TỰ ĐỊNH HƯỚNG/ CHÚ Ý",
-            questions: [
-                { text: "Khả năng tự tổng hợp kiến thức từ nhiều nguồn.", options: ["Phụ thuộc SGK", "Biết tìm tòi", "Năng lực tự học cao"] },
-                { text: "Kỹ năng quản lý thời gian và dự án cá nhân.", options: ["Nước đến chân", "Xong việc", "Rất chuyên nghiệp"] },
-                { text: "Tư duy sáng tạo trong ứng dụng thực tiễn.", options: ["Máy móc", "Khá tốt", "Rất độc đáo"] },
-                { text: "Mức độ kiên trì với các mục tiêu dài hạn.", options: ["Mau chán", "Trung bình", "Bền bỉ"] }
-            ]
-        },
-        {
-            title: "TỰ NHẬN THỨC & NGÔN NGỮ - GIẢI QUYẾT VẤN ĐỀ",
-            questions: [
-                { text: "Khả năng hùng biện và bảo vệ quan điểm cá nhân.", options: ["Thiếu tự tin", "Thuyết phục", "Rất xuất sắc"] },
-                { text: "Ngôn ngữ cơ thể linh hoạt khi giao tiếp.", options: ["Cứng nhắc", "Khá ổn", "Rất lôi cuốn"] },
-                { text: "Khả năng phân tích tình huống phức tạp.", options: ["Chậm", "Đủ ý", "Sâu sắc"] }
-            ]
-        },
-        {
-            title: "ĐỘNG LỰC & ĐỊNH HƯỚNG TƯƠNG LAI",
-            questions: [
-                { text: "Định hướng rõ ràng về trường THCS mong muốn.", options: ["Chưa biết", "Có vài hướng", "Rất quyết tâm"] },
-                { text: "Ý thức về trách nhiệm của người anh/chị lớn trong trường.", options: ["Chưa có", "Cố gắng làm gương", "Tấm gương sáng"] },
-                { text: "Sự chuẩn bị kỹ lưỡng cho hành trình mới.", options: ["Bỏ ngỏ", "Hơi sẵn sàng", "Rất chủ động"] }
-            ]
-        }
-    ]
+    "2": grades2to5Questions,
+    "3": grades2to5Questions,
+    "4": grades2to5Questions,
+    "5": grades2to5Questions
 }
 
 const defaultQuestions = [
@@ -297,8 +149,9 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
     const rawGrade = student?.grade || ""
     const currentGrade = ["1", "2", "3", "4", "5"].includes(rawGrade) ? rawGrade : "default"
     const sections = questionsData[currentGrade] || defaultQuestions
+    const isGrades2to5 = ["2", "3", "4", "5"].includes(currentGrade)
 
-    const [scores, setScores] = useState<number[]>(Array(20).fill(1))
+    const [scores, setScores] = useState<number[]>(Array(20).fill(-1))
     const [notes, setNotes] = useState<string[]>(Array(20).fill(""))
     const [conclusion, setConclusion] = useState("")
     const [recommendation, setRecommendation] = useState("")
@@ -321,8 +174,13 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
                 
                 const parsedComments = JSON.parse(scoreData.comments || "[]")
                 if (parsedComments.length >= 2) {
+                    
                     setConclusion(parsedComments[0] || "")
                     setRecommendation(parsedComments[1] || "")
+                
+                    if (parsedComments.length >= 22) {
+                        setNotes(parsedComments.slice(2, 22))
+                    }
                 }
             } catch (e) {
                 console.error("Error parsing psychology scores", e)
@@ -351,7 +209,7 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
             const finalScores = [...sectionScores, totalScore, ...scores]
             
             // Map comments to the expected array structure: [Conclusion, Recommendation]
-            const finalComments = [conclusion, recommendation]
+            const finalComments = [conclusion, recommendation, ...notes]
             
             await onSave(student, finalScores, finalComments)
             alert("Lưu kết quả Tâm lý thành công!")
@@ -368,7 +226,7 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
         currentOffset += sections[i].questions.length
     }
 
-    const progress = Math.round((scores.filter(s => s > 0).length / 20) * 100)
+    const progress = Math.round((scores.filter(s => s >= 0).length / 20) * 100)
 
     return (
         <div className="bg-slate-50 min-h-screen p-3 md:p-6 font-sans text-slate-900 border-x">
@@ -396,6 +254,21 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
                         <div className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">Tiến độ: {progress}%</div>
                     </div>
                 </div>
+
+                
+                {isGrades2to5 && (
+                    <div className="bg-indigo-50/50 rounded-xl p-4 border border-indigo-100 shadow-sm text-sm">
+                        <h3 className="font-bold text-indigo-800 mb-2">5. Thang điểm chung cho mỗi câu hỏi:</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 mb-4">
+                            <div className="flex gap-2"><span className="font-bold text-indigo-600 w-4">0</span> <span className="text-slate-700">Không bao giờ / Không có biểu hiện</span></div>
+                            <div className="flex gap-2"><span className="font-bold text-indigo-600 w-4">1</span> <span className="text-slate-700">Hiếm khi / Biểu hiện rất nhẹ</span></div>
+                            <div className="flex gap-2"><span className="font-bold text-indigo-600 w-4">2</span> <span className="text-slate-700">Thỉnh thoảng / Biểu hiện nhẹ</span></div>
+                            <div className="flex gap-2"><span className="font-bold text-indigo-600 w-4">3</span> <span className="text-slate-700">Thường xuyên / Biểu hiện rõ</span></div>
+                            <div className="flex gap-2 md:col-span-2"><span className="font-bold text-indigo-600 w-4">4</span> <span className="text-slate-700">Rất thường xuyên / Ảnh hưởng rõ đến sinh hoạt hoặc học tập</span></div>
+                        </div>
+                        <h2 className="font-black text-indigo-900 text-lg uppercase">B. THANG ĐO SÀNG LỌC TÂM LÝ:</h2>
+                    </div>
+                )}
 
                 {/* Section Navigation */}
                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-2 overflow-x-auto custom-scrollbar flex gap-2">
@@ -438,38 +311,90 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
                                         <span className="text-slate-400 font-bold text-sm w-5 shrink-0 mt-0.5">{actualIdx + 1}.</span>
                                         <span className="text-slate-700 text-sm md:text-base font-medium leading-relaxed">{q.text}</span>
                                     </div>
-                                    <div className="lg:col-span-7 xl:col-span-6 flex gap-2 w-full ml-8 lg:ml-0">
-                                        {q.options.map((opt, oIdx) => (
+                                    <div className={`lg:col-span-7 xl:col-span-6 flex ${isGrades2to5 ? "gap-6 justify-start mt-2 lg:mt-0" : "gap-2"} w-full ml-8 lg:ml-0`}>
+                                        {q.options.map((opt, oIdx) => {
+                                            const optValue = q.options.length === 5 ? oIdx : oIdx + 1;
+                                            return isGrades2to5 ? (
+                                                <label key={oIdx} className="flex items-center gap-1.5 cursor-pointer group">
+                                                    <input 
+                                                        type="radio" 
+                                                        disabled={isLocked}
+                                                        name={`question-${actualIdx}`}
+                                                        checked={scores[actualIdx] === optValue}
+                                                        onChange={() => {
+                                                            const newScores = [...scores];
+                                                            newScores[actualIdx] = optValue;
+                                                            setScores(newScores);
+                                                        }}
+                                                        className="w-4 h-4 border-slate-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer"
+                                                    />
+                                                    <span className={`font-bold ${scores[actualIdx] === optValue ? "text-indigo-700" : "text-slate-600 group-hover:text-indigo-600"}`}>{opt}</span>
+                                                </label>
+                                            ) : (
                                             <button
                                                 key={oIdx}
                                                 disabled={isLocked}
                                                 onClick={() => {
                                                     const newScores = [...scores]
-                                                    newScores[actualIdx] = oIdx + 1
+                                                    newScores[actualIdx] = optValue
                                                     setScores(newScores)
                                                 }}
                                                 className={`flex-1 py-2.5 px-2 text-[11px] md:text-xs font-bold rounded-lg border transition-all ${
-                                                    scores[actualIdx] === oIdx + 1
+                                                    scores[actualIdx] === optValue
                                                         ? "bg-indigo-50 border-indigo-500 text-indigo-700 shadow-[0_0_0_1px_rgba(99,102,241,0.2)]"
                                                         : "bg-white border-slate-200 text-slate-500 hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50/30"
                                                 }`}
                                             >
                                                 {opt}
                                             </button>
-                                        ))}
+                                        )})}
                                     </div>
+                                    {isGrades2to5 && (
+                                        <div className="lg:col-span-12 w-full mt-1.5 ml-8 lg:ml-0 flex items-end gap-2">
+                                            <span className="text-[13px] font-semibold text-slate-700 whitespace-nowrap mb-0.5">Ghi chú quan sát:</span>
+                                            <input
+                                                type="text"
+                                                value={notes[actualIdx] || ""}
+                                                onChange={(e) => {
+                                                    const newNotes = [...notes]
+                                                    newNotes[actualIdx] = e.target.value
+                                                    setNotes(newNotes)
+                                                }}
+                                                disabled={isLocked}
+                                                className="flex-1 text-[13px] border-b border-slate-300 border-dashed bg-transparent outline-none focus:border-indigo-500 transition-all text-slate-800 px-1 py-0.5"
+                                            />
+                                        </div>
+                                    )}
                                 </div>
                             )
                         })}
                     </div>
                 </div>
 
+                {isGrades2to5 && (
+                    <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+                        <h3 className="font-bold text-slate-800 text-base mb-4">TỔNG HỢP:</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-y-3 gap-x-8 mb-4 text-sm font-medium text-slate-700">
+                            <div className="flex justify-between border-b border-dashed border-slate-200 pb-1"><span>Mục I :</span> <span className="font-bold text-indigo-600">{calculateSectionScore(0)}</span></div>
+                            <div className="flex justify-between border-b border-dashed border-slate-200 pb-1"><span>Mục III :</span> <span className="font-bold text-indigo-600">{calculateSectionScore(2)}</span></div>
+                            <div className="flex justify-between border-b border-dashed border-slate-200 pb-1"><span>Mục V :</span> <span className="font-bold text-indigo-600">{calculateSectionScore(4)}</span></div>
+                            <div className="flex justify-between border-b border-dashed border-slate-200 pb-1"><span>Mục II :</span> <span className="font-bold text-indigo-600">{calculateSectionScore(1)}</span></div>
+                            <div className="flex justify-between border-b border-dashed border-slate-200 pb-1"><span>Mục IV :</span> <span className="font-bold text-indigo-600">{calculateSectionScore(3)}</span></div>
+                            <div className="flex justify-between border-b border-dashed border-slate-200 pb-1"><span>Mục VI :</span> <span className="font-bold text-indigo-600">{calculateSectionScore(5)}</span></div>
+                        </div>
+                        <div className="flex items-center gap-2 pt-2">
+                            <span className="font-bold text-slate-800 text-sm">Tổng điểm:</span>
+                            <span className="font-black text-indigo-600 border-b border-slate-400 min-w-[60px] inline-block text-center text-lg">{totalScore}</span>
+                        </div>
+                    </div>
+                )}
+
                 {/* Conclusion and Recommendation */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col h-full">
                         <div className="flex items-center gap-2 mb-3">
                             <MessageSquare size={18} className="text-amber-500" />
-                            <h3 className="font-bold text-slate-800 text-sm">Kết luận chuyên môn</h3>
+                            <h3 className="font-bold text-slate-800 text-sm">{isGrades2to5 ? "C. KẾT LUẬN SƠ BỘ:" : "Kết luận chuyên môn"}</h3>
                         </div>
                         <textarea
                             disabled={isLocked}
@@ -483,7 +408,7 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
                     <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col h-full">
                         <div className="flex items-center gap-2 mb-3">
                             <Info size={18} className="text-emerald-500" />
-                            <h3 className="font-bold text-slate-800 text-sm">Kiến nghị hỗ trợ</h3>
+                            <h3 className="font-bold text-slate-800 text-sm">{isGrades2to5 ? "D. KHUYẾN NGHỊ DÀNH CHO PHỤ HUYNH (NẾU CÓ):" : "Kiến nghị hỗ trợ"}</h3>
                         </div>
                         <textarea
                             disabled={isLocked}
