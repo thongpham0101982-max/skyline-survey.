@@ -371,118 +371,92 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
     const progress = Math.round((scores.filter(s => s > 0).length / 20) * 100)
 
     return (
-        <div className="bg-slate-50 min-h-screen p-4 md:p-8 font-sans text-slate-900 border-x">
-            <div className="max-w-5xl mx-auto space-y-8">
+        <div className="bg-slate-50 min-h-screen p-3 md:p-6 font-sans text-slate-900 border-x">
+            <div className="max-w-5xl mx-auto space-y-4">
                 {/* Header Profile Section */}
-                <div className="bg-white rounded-3xl p-6 md:p-8 shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col md:flex-row gap-8 items-center relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50 rounded-full -mr-32 -mt-32 blur-3xl opacity-50 group-hover:bg-indigo-100 transition-colors duration-700"></div>
-                    <div className="relative">
-                        <div className="w-24 h-24 md:w-32 md:h-32 bg-gradient-to-tr from-indigo-500 to-violet-600 rounded-full flex items-center justify-center text-white shadow-2xl ring-4 ring-white">
-                            <User size={56} className="opacity-90" />
-                        </div>
-                        <div className="absolute -bottom-2 -right-2 bg-emerald-500 text-white p-2 rounded-full shadow-lg border-2 border-white">
-                            <BrainCircuit size={20} />
-                        </div>
+                <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col md:flex-row gap-5 items-center relative overflow-hidden">
+                    <div className="w-16 h-16 bg-gradient-to-tr from-indigo-500 to-violet-600 rounded-full flex items-center justify-center text-white shadow-md shrink-0">
+                        <User size={32} />
                     </div>
-                    <div className="flex-1 text-center md:text-left relative">
-                        <div className="flex flex-wrap justify-center md:justify-start gap-3 mb-3">
-                            <span className="bg-indigo-50 text-indigo-700 px-4 py-1 rounded-full text-xs font-bold tracking-widest border border-indigo-100 uppercase">
-                                Grade {rawGrade || "N/A"}
-                            </span>
+                    <div className="flex-1 text-center md:text-left">
+                        <div className="flex justify-center md:justify-start gap-2 items-center mb-1">
+                            <span className="bg-indigo-100 text-indigo-700 px-2.5 py-0.5 rounded text-xs font-bold border border-indigo-200">Khối {rawGrade || "N/A"}</span>
+                            <span className="text-slate-500 text-xs font-medium">ID: {student?.studentCode}</span>
                         </div>
-                        <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-2 leading-tight">
-                            {student?.fullName}
-                        </h1>
-                        <div className="flex flex-wrap justify-center md:justify-start gap-4 text-slate-500 text-sm">
-                            <span className="flex items-center gap-1.5 font-medium"><ClipboardCheck size={16} className="text-indigo-400"/> ID: {student?.studentCode}</span>
-                            <span className="flex items-center gap-1.5 font-medium"><Sparkles size={16} className="text-amber-400"/> Đánh giá Năng lực Tâm lý</span>
-                        </div>
+                        <h1 className="text-xl md:text-2xl font-bold text-slate-900 mb-1">{student?.fullName}</h1>
+                        <span className="inline-flex items-center gap-1.5 text-xs text-slate-500 font-medium bg-slate-100 px-2 py-0.5 rounded-full"><Sparkles size={12} className="text-amber-500"/> Phiếu đánh giá Tâm lý</span>
                     </div>
-                    <div className="w-full md:w-auto flex flex-col items-center md:items-end gap-3 pt-6 md:pt-0 border-t md:border-t-0 md:border-l border-slate-100 md:pl-8">
-                        <div className="text-center md:text-right">
-                            <div className="text-4xl font-black text-indigo-600 mb-1">{totalScore}</div>
-                            <div className="text-[10px] uppercase tracking-widest font-bold text-slate-400">Tổng điểm tích lũy</div>
+                    <div className="flex flex-col items-center md:items-end gap-1 mt-2 md:mt-0">
+                        <div className="text-3xl font-black text-indigo-600 flex items-baseline gap-1">
+                            {totalScore} <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Điểm</span>
                         </div>
-                        <div className="w-32 h-2 bg-slate-100 rounded-full overflow-hidden">
-                            <div 
-                                className="h-full bg-gradient-to-r from-emerald-400 to-indigo-500 transition-all duration-1000 ease-out"
-                                style={{ width: `${progress}%` }}
-                            ></div>
+                        <div className="w-32 h-1.5 bg-slate-100 rounded-full overflow-hidden mt-1">
+                            <div className="h-full bg-gradient-to-r from-emerald-400 to-indigo-500 transition-all duration-500" style={{ width: `${progress}%` }}></div>
                         </div>
-                        <div className="text-[10px] font-bold text-slate-500 uppercase">Tiến độ: {progress}%</div>
+                        <div className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">Tiến độ: {progress}%</div>
                     </div>
                 </div>
 
                 {/* Section Navigation */}
-                <div className="flex flex-wrap gap-2 pb-2">
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-2 overflow-x-auto custom-scrollbar flex gap-2">
                     {sections.map((section, idx) => (
                         <button
                             key={idx}
                             onClick={() => setActiveSection(idx)}
-                            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 border ${
+                            className={`whitespace-nowrap px-4 py-2 rounded-lg text-xs font-bold transition-colors border ${
                                 activeSection === idx
-                                    ? "bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-100 scale-105"
-                                    : "bg-white text-slate-500 border-slate-200 hover:border-indigo-300 hover:text-indigo-600"
+                                    ? "bg-indigo-50 text-indigo-700 border-indigo-200 shadow-sm"
+                                    : "bg-transparent text-slate-500 border-transparent hover:bg-slate-50 hover:text-slate-700"
                             }`}
                         >
-                            {section.questions.length > 0 ? (
-                                <div className="flex items-center gap-2">
-                                    <span className={`w-2 h-2 rounded-full ${activeSection === idx ? "bg-white" : "bg-indigo-400"}`}></span>
-                                    {section.title}
-                                </div>
-                            ) : section.title}
+                            <div className="flex items-center gap-2">
+                                <span className={`w-1.5 h-1.5 rounded-full ${activeSection === idx ? "bg-indigo-500" : "bg-slate-300"}`}></span>
+                                {section.title}
+                            </div>
                         </button>
                     ))}
                 </div>
 
-                {/* Question List */}
-                <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden min-h-[400px]">
-                    <div className="bg-slate-50 px-8 py-4 border-b border-slate-100 flex justify-between items-center">
-                        <h2 className="font-bold text-slate-700 uppercase tracking-wider text-sm flex items-center gap-2">
-                            <ChevronRight size={18} className="text-indigo-500" />
+                {/* Question List (Compact Layout) */}
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div className="bg-slate-50 px-5 py-3 border-b border-slate-200 flex justify-between items-center">
+                        <h2 className="font-bold text-slate-700 text-sm flex items-center gap-2">
+                            <ChevronRight size={16} className="text-indigo-500" />
                             {sections[activeSection].title}
                         </h2>
-                        <div className="bg-white px-3 py-1 rounded-full border border-slate-200 text-[10px] font-black text-indigo-600">
-                            SCORE: {calculateSectionScore(activeSection)}
+                        <div className="bg-indigo-100 px-3 py-1 rounded-md text-[11px] font-bold text-indigo-700">
+                            Điểm phần này: {calculateSectionScore(activeSection)}
                         </div>
                     </div>
 
-                    <div className="divide-y divide-slate-50">
+                    <div className="flex flex-col">
                         {currentQuestions.map((q, qIdx) => {
                             const actualIdx = currentOffset + qIdx
                             return (
-                                <div key={qIdx} className="p-6 md:p-8 hover:bg-slate-50/50 transition-colors group">
-                                    <div className="flex flex-col md:flex-row gap-6 md:items-center">
-                                        <div className="flex-1">
-                                            <div className="flex items-start gap-4">
-                                                <span className="text-slate-200 font-black text-4xl group-hover:text-indigo-100 transition-colors leading-none">
-                                                    {(actualIdx + 1).toString().padStart(2, '0')}
-                                                </span>
-                                                <p className="text-slate-700 font-semibold text-lg pt-1 leading-relaxed">
-                                                    {q.text}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div className="flex flex-wrap gap-2 shrink-0 md:justify-end">
-                                            {q.options.map((opt, oIdx) => (
-                                                <button
-                                                    key={oIdx}
-                                                    disabled={isLocked}
-                                                    onClick={() => {
-                                                        const newScores = [...scores]
-                                                        newScores[actualIdx] = oIdx + 1
-                                                        setScores(newScores)
-                                                    }}
-                                                    className={`px-5 py-3 rounded-2xl text-xs font-bold transition-all duration-300 border-2 ${
-                                                        scores[actualIdx] === oIdx + 1
-                                                            ? "bg-indigo-600 text-white border-indigo-600 shadow-md scale-105"
-                                                            : "bg-white text-slate-400 border-slate-100 hover:border-indigo-100 hover:text-indigo-600"
-                                                    }`}
-                                                >
-                                                    {opt}
-                                                </button>
-                                            ))}
-                                        </div>
+                                <div key={qIdx} className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-6 items-center p-4 md:p-5 border-b border-slate-100 hover:bg-slate-50/80 transition-colors">
+                                    <div className="lg:col-span-5 xl:col-span-6 flex items-start gap-3">
+                                        <span className="text-slate-400 font-bold text-sm w-5 shrink-0 mt-0.5">{actualIdx + 1}.</span>
+                                        <span className="text-slate-700 text-sm md:text-base font-medium leading-relaxed">{q.text}</span>
+                                    </div>
+                                    <div className="lg:col-span-7 xl:col-span-6 flex gap-2 w-full ml-8 lg:ml-0">
+                                        {q.options.map((opt, oIdx) => (
+                                            <button
+                                                key={oIdx}
+                                                disabled={isLocked}
+                                                onClick={() => {
+                                                    const newScores = [...scores]
+                                                    newScores[actualIdx] = oIdx + 1
+                                                    setScores(newScores)
+                                                }}
+                                                className={`flex-1 py-2.5 px-2 text-[11px] md:text-xs font-bold rounded-lg border transition-all ${
+                                                    scores[actualIdx] === oIdx + 1
+                                                        ? "bg-indigo-50 border-indigo-500 text-indigo-700 shadow-[0_0_0_1px_rgba(99,102,241,0.2)]"
+                                                        : "bg-white border-slate-200 text-slate-500 hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50/30"
+                                                }`}
+                                            >
+                                                {opt}
+                                            </button>
+                                        ))}
                                     </div>
                                 </div>
                             )
@@ -491,78 +465,62 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
                 </div>
 
                 {/* Conclusion and Recommendation */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="bg-white rounded-3xl p-8 shadow-xl shadow-slate-200/50 border border-slate-100 group">
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="p-3 bg-amber-50 text-amber-600 rounded-2xl group-hover:bg-amber-100 transition-colors duration-500 shadow-sm border border-amber-100">
-                                <MessageSquare size={24} />
-                            </div>
-                            <h3 className="font-black text-slate-800 uppercase tracking-widest text-sm">Kết luận chuyên môn</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col h-full">
+                        <div className="flex items-center gap-2 mb-3">
+                            <MessageSquare size={18} className="text-amber-500" />
+                            <h3 className="font-bold text-slate-800 text-sm">Kết luận chuyên môn</h3>
                         </div>
                         <textarea
                             disabled={isLocked}
                             value={conclusion}
                             onChange={(e) => setConclusion(e.target.value)}
-                            className="w-full min-h-[160px] p-5 rounded-2xl border-2 border-slate-50 bg-slate-50 focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50 outline-none transition-all duration-300 text-slate-700 font-medium placeholder:text-slate-300 placeholder:italic"
-                            placeholder="Nhập nhận định tổng quát về trạng thái tâm lý, cảm xúc của học sinh..."
+                            className="flex-1 w-full min-h-[120px] p-4 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-amber-400 focus:ring-2 focus:ring-amber-50 outline-none transition-all text-sm text-slate-700 resize-y"
+                            placeholder="Nhận định tổng quát..."
                         ></textarea>
                     </div>
 
-                    <div className="bg-white rounded-3xl p-8 shadow-xl shadow-slate-200/50 border border-slate-100 group">
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl group-hover:bg-emerald-100 transition-colors duration-500 shadow-sm border border-emerald-100">
-                                <Info size={24} />
-                            </div>
-                            <h3 className="font-black text-slate-800 uppercase tracking-widest text-sm">Kiến nghị hỗ trợ</h3>
+                    <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col h-full">
+                        <div className="flex items-center gap-2 mb-3">
+                            <Info size={18} className="text-emerald-500" />
+                            <h3 className="font-bold text-slate-800 text-sm">Kiến nghị hỗ trợ</h3>
                         </div>
                         <textarea
                             disabled={isLocked}
                             value={recommendation}
                             onChange={(e) => setRecommendation(e.target.value)}
-                            className="w-full min-h-[160px] p-5 rounded-2xl border-2 border-slate-50 bg-slate-50 focus:bg-white focus:border-emerald-400 focus:ring-4 focus:ring-emerald-50 outline-none transition-all duration-300 text-slate-700 font-medium placeholder:text-slate-300 placeholder:italic"
-                            placeholder="Gợi ý hướng can thiệp, hỗ trợ cho phụ huynh và giáo viên..."
+                            className="flex-1 w-full min-h-[120px] p-4 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-400 focus:ring-2 focus:ring-emerald-50 outline-none transition-all text-sm text-slate-700 resize-y"
+                            placeholder="Gợi ý can thiệp, hỗ trợ..."
                         ></textarea>
                     </div>
                 </div>
 
                 {/* Footer Actions */}
-                <div className="flex flex-col md:flex-row justify-between items-center gap-6 py-6 border-t border-slate-200">
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-widest bg-white border border-slate-100 px-4 py-2 rounded-full shadow-sm">
-                            <AlertCircle size={14} className="text-amber-500" />
-                            Đánh giá dựa trên quan sát thực tế
-                        </div>
+                <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4 sticky bottom-4 z-10">
+                    <div className="flex items-center gap-2 text-slate-500 text-xs font-medium">
+                        <AlertCircle size={14} className="text-indigo-500" />
+                        Lưu ý kiểm tra kỹ trước khi Xác nhận
                     </div>
+                    
+                    {progress === 100 && !isLocked && (
+                        <div className="hidden md:flex text-emerald-600 text-xs font-bold items-center gap-1.5 bg-emerald-50 px-3 py-1.5 rounded-lg">
+                            <CheckCircle2 size={14} /> Hoàn tất đánh giá
+                        </div>
+                    )}
+
                     <button
                         onClick={handleSave}
                         disabled={isSaving || isLocked}
-                        className="group flex items-center justify-center gap-3 px-12 py-5 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-2xl shadow-indigo-100 hover:from-indigo-700 hover:to-indigo-800 transform hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:hover:translate-y-0"
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {isSaving ? (
-                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                         ) : (
-                            <Save size={20} className="group-hover:scale-110 transition-transform" />
+                            <Save size={16} />
                         )}
-                        {isLocked ? "Form đã khóa" : "Lưu kết quả khảo sát"}
-                        <ChevronRight size={18} className="opacity-50 group-hover:translate-x-1 transition-transform" />
+                        {isLocked ? "Form đã khóa" : "Lưu Kết Quả"}
                     </button>
-                    {isLocked && (
-                        <div className="flex items-center gap-3 text-red-600 bg-red-50 px-6 py-3 rounded-2xl border border-red-100 font-bold text-sm shadow-sm animate-pulse">
-                            <AlertCircle size={20} />
-                            Hồ sơ đã được khóa từ quản trị viên
-                        </div>
-                    )}
                 </div>
-
-                {/* Status Indicator Bar */}
-                {progress === 100 && !isLocked && (
-                    <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100 rounded-2xl p-4 flex items-center justify-center gap-3 animate-in fade-in zoom-in duration-500 mt-4">
-                        <CheckCircle2 className="text-emerald-500" size={24} />
-                        <span className="text-emerald-700 font-bold text-sm tracking-wide">
-                            Tất cả 20 tiêu chí đã được đánh giá hoàn tất! Sẵn sàng để lưu.
-                        </span>
-                    </div>
-                )}
             </div>
         </div>
     )
