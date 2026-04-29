@@ -95,3 +95,56 @@ export async function getStudentsByClassAction(classId: string) {
   })
   return students
 }
+
+export async function createChangeClassAction(data: any) {
+  try {
+    const session = await auth()
+    const userId = (session?.user as any)?.id
+
+    if (!data.studentId) return { success: false, error: "Thiếu thông tin Học sinh" }
+    if (!data.transferDate) return { success: false, error: "Thiếu ngày chuyển" }
+    if (!data.destCampusId) return { success: false, error: "Thiếu Cơ sở chuyển đến" }
+    if (!data.destClassId) return { success: false, error: "Thiếu Lớp chuyển đến" }
+
+    await prisma.$transaction(async (tx) => {
+      // 1. Create transfer record
+      
+      // Fetch destination class name
+      const destClass = await tx.class.findUnique({ where: { id: data.destClassId }, include: { campus: true } });
+      const destName = destClass ? destClass.className + " (" + destClass.campus.campusName + ")" : data.destClassId;
+
+      await tx.studentTransfer.create({
+        data: {
+          studentId: data.studentId,
+          type: "CHANGE_CLASS",
+          transferDate: new Date(data.transferDate),
+          destinationSchool: destName, // Store human readable destination here
+          reason: data.reason || null,
+          createdById: userId,
+        }
+      })
+
+
+      // 2. Update student class and campus
+      await tx.student.update({
+        where: { id: data.studentId },
+        data: { 
+          classId: data.destClassId,
+          campusId: data.destCampusId,
+          status: "ACTIVE"
+        }
+      })
+    })
+
+    revalidatePath("/admin/student-transfers")
+    if (data.classId) {
+      revalidatePath(`/admin/classes/${data.classId}`)
+    }
+    revalidatePath(`/admin/classes/${data.destClassId}`)
+    
+    return { success: true }
+  } catch (e: any) {
+    console.error("createChangeClassAction Error:", e)
+    return { success: false, error: e.message }
+  }
+}
