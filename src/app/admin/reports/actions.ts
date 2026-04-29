@@ -356,7 +356,7 @@ export async function exportReportExcelAction(periodId: string, campusId?: strin
         class: { include: { campus: true } },
         responses: {
           include: {
-            question: { select: { questionText: true, type: true } }
+            question: { select: { questionText: true, questionType: true } }
           }
         }
       }
@@ -383,9 +383,9 @@ export async function exportReportExcelAction(periodId: string, campusId?: strin
         const qText = r.question.questionText;
         
         let answerStr = "";
-        if (r.question.type === "NPS" || r.question.type === "LIKERT" || r.question.type === "RATING") {
+        if (r.question.questionType === "NPS" || r.question.questionType === "LIKERT" || r.question.questionType === "RATING") {
            answerStr = r.numericScore !== null ? r.numericScore.toString() : "";
-        } else if (r.question.type === "TEXT" || r.question.type === "PARAGRAPH") {
+        } else if (r.question.questionType === "TEXT" || r.question.questionType === "PARAGRAPH") {
            answerStr = r.textAnswer || "";
         } else {
            // MULTIPLE_CHOICE, CHECKBOX, DROPDOWN
