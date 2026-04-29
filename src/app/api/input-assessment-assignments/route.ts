@@ -74,19 +74,6 @@ export async function POST(req) {
                 });
              }
              successCount++;
-             if (!existing) {
-                await prisma.inputAssessmentTeacherAssignment.create({
-                   data: {
-                      periodId,
-                      batchId: batchId || null,
-                      userId: a.teacherId,
-                      subjectId: a.subjectId,
-                      grade: a.grade,
-                      educationSystem: a.educationSystem
-                   }
-                });
-             }
-             successCount++;
           } catch(err) {
              console.error("Assignment err", err);
              return NextResponse.json({ error: err.message || String(err) }, { status: 500 });
