@@ -594,6 +594,13 @@ return {
                       </select>
                     </Field>
 
+                    <Field label="Đợt khảo sát (Không bắt buộc)">
+                      <select value={asBatchId} onChange={e=>setAsBatchId(e.target.value)} className={inp} disabled={!asPeriodId}>
+                         <option value="">-- Tất cả đợt --</option>
+                         {periods.find(p=>p.id===asPeriodId)?.batches?.map(b=><option key={b.id} value={b.id}>Đợt {b.batchNumber}: {b.name}</option>)}
+                      </select>
+                    </Field>
+
                     <Field label="Lọc theo Tổ chuyên môn (Không bắt buộc)">
                       <select value={asDeptId} onChange={e=>setAsDeptId(e.target.value)} className={inp}>
                         <option value="">Tất cả Tổ chuyên môn</option>
