@@ -29,6 +29,7 @@ model User {
   receivedTasks                    WorkTask[]                         @relation("TaskAssignee")
   assignedTasks                    WorkTask[]                         @relation("TaskAssigner")
   campusAssignments                UserCampusAssignment[]
+  studentTransfers StudentTransfer[]
 }
 
 model Parent {
@@ -148,6 +149,7 @@ model Student {
   campus         Campus              @relation(fields: [campusId], references: [id])
   class          Class               @relation(fields: [classId], references: [id])
   surveyForms    SurveyForm[]
+  studentTransfers    StudentTransfer[]
 //  user           User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
 }
 
@@ -672,4 +674,28 @@ model UserCampusAssignment {
   campus   Campus @relation(fields: [campusId], references: [id], onDelete: Cascade)
 
   @@unique([userId, campusId])
+}
+
+model StudentTransfer {
+  id                  String   @id @default(cuid())
+  studentId           String
+  student             Student  @relation(fields: [studentId], references: [id])
+  
+  type                String   // "OUT", "IN", "CHANGE_CLASS"
+  transferDate        DateTime
+  
+  // Details for OUT
+  transferCategory    String?  // "DOMESTIC", "ABROAD"
+  destinationSchool   String?
+  destinationType     String?  // "PRIVATE", "PUBLIC", "OTHER"
+  destinationProvince String?
+  destinationCountry  String?
+  
+  reason              String?
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  createdById         String?
+  createdBy           User?    @relation(fields: [createdById], references: [id])
 }

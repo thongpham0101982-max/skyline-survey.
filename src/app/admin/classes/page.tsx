@@ -11,7 +11,7 @@ export default async function AdminClassesPage() {
     where: classWhere,
     include: {
       campus: true,
-      _count: { select: { students: true } }
+      _count: { select: { students: { where: { status: 'ACTIVE' } } } }
     },
     orderBy: [{ campus: { campusName: "asc" } }, { level: "asc" }, { grade: "asc" }, { className: "asc" }]
   })

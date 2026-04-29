@@ -17,6 +17,7 @@ export default async function AdminClassDetailPage({ params }: any) {
     include: {
       campus: true,
       students: {
+        where: { status: 'ACTIVE' },
         orderBy: { studentName: 'asc' }
       }
     }
