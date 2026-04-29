@@ -5,9 +5,10 @@ import Link from 'next/link'
 
 export default async function ChildrenPage() {
   const session = await auth()
-  if (!session) return null
+  const userId = (session?.user as any)?.id;
+  if (!userId) return <div>Unauthorized</div>
   
-  const children = await getParentChildren(session.user.id)
+  const children = await getParentChildren(userId)
   const activePeriod = await getActiveSurveyPeriod()
 
   return (

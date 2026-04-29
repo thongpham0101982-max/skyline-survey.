@@ -1,4 +1,4 @@
-﻿import { 
+import { 
   Shield, 
   Users, 
   Building2, 
@@ -13,7 +13,8 @@
   UserPlus, 
   PieChart,
   Settings,
-  Briefcase
+  Briefcase,
+  ArrowRightLeft
 } from "lucide-react"
 
 export const APP_CATEGORIES = [
@@ -79,7 +80,3 @@ export const APP_CATEGORIES = [
 ];
 
 export const ALL_APP_MODULES = APP_CATEGORIES.flatMap(c => c.modules).filter((m: any) => !!m.code);
-
-
-
-
