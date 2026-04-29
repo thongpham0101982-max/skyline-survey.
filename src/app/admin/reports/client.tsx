@@ -106,6 +106,20 @@ export function TrackingClient({ periods, campuses: initialCampuses = [], defaul
     }
   }
 
+  const handleDeleteSingle = async (e: any, formId: string, studentName: string) => {
+    e.stopPropagation()
+    if (!confirm(`Bạn có chắc muốn XÓA BÀI KHẢO SÁT của học sinh ${studentName} không? (Thao tác này sẽ xóa mọi dữ liệu khảo sát của học sinh này để làm lại từ đầu)`)) return
+    setDeleting(true)
+    const res = await deleteMultipleSurveyFormsAction([formId])
+    setDeleting(false)
+    if (res.success) {
+      alert(`Đã xóa bài khảo sát của ${studentName}!`)
+      reload()
+    } else {
+      alert("Lỗi: " + (res.error || ""))
+    }
+  }
+
   const handleDeleteClass = async (e: any, classId: string, className: string) => {
     e.stopPropagation()
     if (!confirm(`CẢNH BÁO: Bạn có chắc muốn GỠ TOÀN BỘ LỚP ${className} khỏi đợt khảo sát này? Hệ thống sẽ xóa sạch tất cả form và kết quả liên quan của lớp này.`)) return
@@ -621,6 +635,13 @@ export function TrackingClient({ periods, campuses: initialCampuses = [], defaul
                                           className={`flex items-center gap-2 px-4 py-2 rounded-xl border-2 font-black text-[10px] uppercase tracking-wider transition-all ${isDone ? 'bg-white border-slate-100 text-indigo-600 hover:border-indigo-500 hover:shadow-lg shadow-sm' : 'bg-slate-50 border-transparent text-slate-300 opacity-50 cursor-not-allowed'}`}
                                         >
                                           <Eye className="w-3.5 h-3.5" /> Xem bài làm
+                                        </button>
+                                        <button
+                                          onClick={(e) => handleDeleteSingle(e, f.id, f.student?.studentName || "Không tên")}
+                                          className="p-2 rounded-xl border-2 border-rose-50 text-rose-300 hover:text-rose-600 hover:border-rose-200 transition-all hover:bg-rose-50"
+                                          title="Xóa khảo sát của học sinh"
+                                        >
+                                          <Trash2 className="w-4 h-4" />
                                         </button>
                                       </div>
                                     </td>
