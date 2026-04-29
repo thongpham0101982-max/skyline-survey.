@@ -25,6 +25,7 @@ export function StudentTransfersClient() {
 
   const outTransfers = transfers.filter(t => t.type === "OUT")
   const changeTransfers = transfers.filter(t => t.type === "CHANGE_CLASS")
+    const inTransfers = transfers.filter(t => t.type === "IN")
 
   return (
     <div className="bg-white rounded-[32px] shadow-sm border border-slate-200 overflow-hidden">
