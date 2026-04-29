@@ -5,7 +5,7 @@
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 
-const FULL_ACCESS_ROLES = ["ADMIN", "ADMINISTRATOR"]
+const FULL_ACCESS_ROLES = ["ADMIN", "ADMINISTRATOR", "KT_DBCL"]
 
 export interface AdminSession {
   userId: string
