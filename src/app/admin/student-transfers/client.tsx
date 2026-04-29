@@ -7,6 +7,7 @@ export function StudentTransfersClient() {
   const [activeTab, setActiveTab] = useState<"OUT" | "IN" | "CHANGE_CLASS">("OUT")
   const [showOutModal, setShowOutModal] = useState(false)
   const [showChangeModal, setShowChangeModal] = useState(false)
+  const [showInModal, setShowInModal] = useState(false)
   
   const [transfers, setTransfers] = useState<any[]>([])
   const [loadingList, setLoadingList] = useState(true)
