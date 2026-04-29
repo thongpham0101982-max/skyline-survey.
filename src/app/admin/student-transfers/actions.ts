@@ -152,3 +152,78 @@ export async function createChangeClassAction(data: any) {
     return { success: false, error: e.message }
   }
 }
+export async function getInputAssessmentStudentsAction() {
+  try {
+    // Only return students that are not already in the Student table (checking by studentCode)
+    const existingStudentCodes = (await prisma.student.findMany({ select: { studentCode: true } })).map(s => s.studentCode);
+    
+    const students = await prisma.inputAssessmentStudent.findMany({
+      where: {
+        studentCode: {
+          notIn: existingStudentCodes
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    return students;
+  } catch (error) {
+    console.error("Error fetching assessment students:", error);
+    return [];
+  }
+}
+
+export async function createTransferInAction(data: any) {
+  try {
+    const session = await getServerSession(authOptions)
+    const userId = session?.user?.id
+
+    if (!data.assessmentStudentId || !data.classId || !data.academicYearId || !data.campusId || !data.transferDate) {
+      return { success: false, error: "Thiếu thông tin bắt buộc" }
+    }
+
+    const assessmentStudent = await prisma.inputAssessmentStudent.findUnique({
+      where: { id: data.assessmentStudentId }
+    });
+
+    if (!assessmentStudent) {
+      return { success: false, error: "Không tìm thấy học sinh KSĐV" }
+    }
+
+    return await prisma.$transaction(async (tx) => {
+      // Create new student
+      const newStudent = await tx.student.create({
+        data: {
+          studentCode: assessmentStudent.studentCode,
+          studentName: assessmentStudent.fullName,
+          dateOfBirth: assessmentStudent.dateOfBirth,
+          classId: data.classId,
+          campusId: data.campusId,
+          academicYearId: data.academicYearId,
+          status: "ACTIVE"
+        }
+      });
+
+      // Fetch class info for recording
+      const destClass = await tx.class.findUnique({ where: { id: data.classId }, include: { campus: true } });
+      const destName = destClass ? destClass.className + " (" + destClass.campus.campusName + ")" : data.classId;
+
+      // Create transfer record
+      await tx.studentTransfer.create({
+        data: {
+          studentId: newStudent.id,
+          type: "IN",
+          transferDate: new Date(data.transferDate),
+          semester: data.semester || null,
+          destinationSchool: destName,
+          reason: data.reason || null,
+          createdById: userId,
+        }
+      });
+
+      return { success: true }
+    })
+  } catch (error: any) {
+    console.error("Error creating transfer in:", error)
+    return { success: false, error: error.message }
+  }
+}
