@@ -228,6 +228,16 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
 
     const progress = Math.round((scores.filter(s => s >= 0).length / 20) * 100)
 
+    const getEvaluation = (score: number) => {
+        if (score <= 15) return { level: "Bình thường", suggestion: "Có thể theo học bình thường", color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-200" };
+        if (score <= 31) return { level: "Dấu hiệu nhẹ", suggestion: "Theo dõi - hỗ trợ thích nghi", color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-200" };
+        if (score <= 47) return { level: "Dấu hiệu vừa", suggestion: "Quan sát sâu, can thiệp nhẹ nếu cần", color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-200" };
+        if (score <= 63) return { level: "Nguy cơ cao", suggestion: "Cần đánh giá chuyên sâu và can thiệp", color: "text-orange-600", bg: "bg-orange-50", border: "border-orange-200" };
+        return { level: "Nguy cơ rất cao", suggestion: "Cần can thiệp chuyên môn sớm (bảo đảm an toàn và hỗ trợ)", color: "text-red-600", bg: "bg-red-50", border: "border-red-200" };
+    };
+
+    const evaluation = isGrades2to5 ? getEvaluation(totalScore) : null;
+
     return (
         <div className="bg-slate-50 min-h-screen p-3 md:p-6 font-sans text-slate-900 border-x">
             <div className="max-w-5xl mx-auto space-y-4">
@@ -382,9 +392,29 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
                             <div className="flex justify-between border-b border-dashed border-slate-200 pb-1"><span>Mục IV :</span> <span className="font-bold text-indigo-600">{calculateSectionScore(3)}</span></div>
                             <div className="flex justify-between border-b border-dashed border-slate-200 pb-1"><span>Mục VI :</span> <span className="font-bold text-indigo-600">{calculateSectionScore(5)}</span></div>
                         </div>
-                        <div className="flex items-center gap-2 pt-2">
-                            <span className="font-bold text-slate-800 text-sm">Tổng điểm:</span>
-                            <span className="font-black text-indigo-600 border-b border-slate-400 min-w-[60px] inline-block text-center text-lg">{totalScore}</span>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-4 pt-4 mt-2 border-t border-slate-100">
+                            <div className="flex items-center gap-2 shrink-0">
+                                <span className="font-bold text-slate-800 text-sm">Tổng điểm:</span>
+                                <span className="font-black text-indigo-600 border-b border-slate-400 min-w-[60px] inline-block text-center text-lg">{totalScore}</span>
+                            </div>
+                            
+                            {progress === 100 && evaluation && (
+                                <div className={`flex-1 p-3 rounded-xl border ${evaluation.bg} ${evaluation.border}`}>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Mức độ:</span>
+                                        <span className={`font-black ${evaluation.color} uppercase`}>{evaluation.level}</span>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-0.5">Gợi ý đánh giá:</span>
+                                        <span className={`text-sm font-semibold ${evaluation.color}`}>{evaluation.suggestion}</span>
+                                    </div>
+                                </div>
+                            )}
+                            {progress < 100 && (
+                                <div className="flex-1 p-3 rounded-xl border border-slate-200 bg-slate-50 text-center sm:text-left">
+                                    <span className="text-xs font-medium text-slate-500 italic">Vui lòng đánh giá đủ 20 câu hỏi để xem kết quả phân tích mức độ tự động.</span>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
