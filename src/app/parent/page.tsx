@@ -8,6 +8,10 @@ export default async function ParentDashboard() {
   const session = await auth()
   const userId = (session?.user as any)?.id
   
+  if (!userId) {
+    return <div className="p-10 text-center">Unauthorized. Please log in.</div>
+  }
+
   // 1. Get Parent Info and linked Children (Students)
   const parent = await prisma.parent.findUnique({
     where: { userId },
