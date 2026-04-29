@@ -174,8 +174,8 @@ export async function getInputAssessmentStudentsAction() {
 
 export async function createTransferInAction(data: any) {
   try {
-    const session = await getServerSession(authOptions)
-    const userId = session?.user?.id
+    const session = await auth()
+    const userId = (session?.user as any)?.id
 
     if (!data.assessmentStudentId || !data.classId || !data.academicYearId || !data.campusId || !data.transferDate) {
       return { success: false, error: "Thiếu thông tin bắt buộc" }
