@@ -70,7 +70,7 @@ export async function getTransfersAction() {
 
 export async function getTransferFormOptionsAction() {
   try {
-    const years = await prisma.academicYear.findMany({ orderBy: { code: 'asc' } })
+    const years = await prisma.academicYear.findMany({ orderBy: { name: 'asc' } })
     const campuses = await prisma.campus.findMany({ orderBy: { campusName: 'asc' } })
     
     return { years, campuses }

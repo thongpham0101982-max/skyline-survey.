@@ -229,7 +229,7 @@ function TransferOutModal({ onClose, onSaved }: { onClose: () => void, onSaved: 
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Năm học</label>
                 <select required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 transition-colors" value={form.academicYearId} onChange={e => setForm({...form, academicYearId: e.target.value})}>
                   <option value="">Chọn năm học</option>
-                  {options.years.map(y => <option key={y.id} value={y.id}>{y.code}</option>)}
+                  {options.years.map(y => <option key={y.id} value={y.id}>{y.name}</option>)}
                 </select>
               </div>
               <div>
