@@ -516,6 +516,7 @@ model InputAssessmentStudent {
   studentCode         String
   fullName            String
   dateOfBirth         DateTime?
+    gender              String?
   className           String?
   academicRating      String?
   conductRating       String?

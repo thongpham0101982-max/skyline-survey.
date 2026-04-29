@@ -153,6 +153,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
           "Mã HS KS *": "HS_001", 
           "Họ và Tên *": "Nguyễn Văn A", 
           "Ngày sinh": "20/05/2010",
+          "Giới tính": "Nam",
           "Khối": "6",
           "Học kỳ / Năm TS": "HK1",
           "Hệ Khảo sát": "",
@@ -198,7 +199,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   const [sModal, setSModal] = useState(false)
   const [editS, setEditS] = useState<Student|null>(null)
   const [sSelected, setSSelected] = useState<string[]>([])
-  const [sForm, setSForm] = useState({ studentCode:"", fullName:"", dateOfBirth:"", grade:"", admissionCriteria:"", className:"", hocKy:"", kqgdTieuHoc:"", kqHocTap:"", kqRenLuyen:"", targetType:"", surveySystem:"", hoSoCtQuocTe:"", surveyFormType:"" })
+  const [sForm, setSForm] = useState({ studentCode:"", fullName:"", dateOfBirth:"", gender:"", grade:"", admissionCriteria:"", className:"", hocKy:"", kqgdTieuHoc:"", kqHocTap:"", kqRenLuyen:"", targetType:"", surveySystem:"", hoSoCtQuocTe:"", surveyFormType:"" })
   const fileRef = useRef<HTMLInputElement>(null)
 
   // ───────── CONFIGS STATE ─────────
@@ -353,7 +354,8 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
         };
 
         let parsedDate = null;
-        const rawDate = row["Ngay sinh"] || row["Ngày sinh"] || row["dateOfBirth"];
+        const gender = row["Giới tính"] || row["Gioi tinh"] || row["gender"];
+          const rawDate = row["Ngay sinh"] || row["Ngày sinh"] || row["dateOfBirth"];
         if (rawDate) {
           if (typeof rawDate === "number") {
             const date = new Date(Math.round((rawDate - 25569)*86400*1000));
@@ -385,6 +387,7 @@ return {
           studentCode,
           fullName,
           dateOfBirth: parsedDate,
+              gender: gender ? String(gender).trim() : null,
           grade,
           hocKy,
           admissionCriteria,
@@ -893,6 +896,7 @@ return {
                             <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Mã HS KS</th>
                             <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Họ và Tên</th>
                             <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Khối</th>
+                              <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Giới tính</th>
                               <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Ngày sinh</th>
                               <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Hệ Khảo sát</th>
                               <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Hồ sơ / Bảng điểm</th>
@@ -911,6 +915,7 @@ return {
                              <td className="p-5"><span className="font-mono text-xs font-black text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg">{s.studentCode}</span></td>
                              <td className="p-5"><span className="text-sm font-black text-slate-700">{s.fullName}</span></td>
                              <td className="p-5 text-center text-xs font-black text-slate-400">{s.grade}</td>
+                             <td className="p-5 text-center text-xs font-black text-slate-400">{s.gender || "-"}</td>
                                <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString('vi-VN') : "-"}</span></td>
                                <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.surveyFormType || "-"}</span></td>
                                <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.hoSoCtQuocTe || "-"}</span></td>
@@ -1016,7 +1021,8 @@ return {
            <Field label="Họ và Tên" required><input value={sForm.fullName} onChange={e=>setSForm(f=>({...f,fullName:e.target.value}))} className={inp}/></Field>
            
            <div className="grid grid-cols-3 gap-4">
-              <Field label="Khối"><select value={sForm.grade} onChange={e=>setSForm(f=>({...f,grade:e.target.value}))} className={inp}><option value="">--</option>{grades.map(g=><option key={g} value={g}>{g}</option>)}</select></Field>
+              <Field label="Giới tính"><select value={sForm.gender} onChange={e=>setSForm(f=>({...f,gender:e.target.value}))} className={inp}><option value="">--</option><option value="Nam">Nam</option><option value="Nữ">Nữ</option></select></Field>
+                <Field label="Khối"><select value={sForm.grade} onChange={e=>setSForm(f=>({...f,grade:e.target.value}))} className={inp}><option value="">--</option>{grades.map(g=><option key={g} value={g}>{g}</option>)}</select></Field>
                 <Field label="Học kỳ / Năm TS">
                   <select value={sForm.hocKy} onChange={e=>setSForm(f=>({...f,hocKy:e.target.value}))} className={inp}>
                     <option value="">--</option>

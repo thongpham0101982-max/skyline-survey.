@@ -42,6 +42,7 @@ export async function POST(req) {
            studentCode: data.studentCode,
            fullName: data.fullName,
            dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
+           gender: data.gender || null,
            className: data.className || null,
            grade: data.grade || null,
            academicRating: data.academicRating || null,
@@ -82,6 +83,7 @@ export async function POST(req) {
           const studentData = {
             fullName: d.fullName,
             dateOfBirth: d.dateOfBirth ? new Date(d.dateOfBirth) : null,
+            gender: d.gender || null,
             className: d.className || null,
             grade: d.grade || null,
             academicRating: d.academicRating || null,
@@ -143,6 +145,7 @@ export async function PUT(req) {
       data: {
          fullName: data.fullName,
          dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
+           gender: data.gender || null,
          className: data.className || null,
            grade: data.grade || null,
          academicRating: data.academicRating || null,
