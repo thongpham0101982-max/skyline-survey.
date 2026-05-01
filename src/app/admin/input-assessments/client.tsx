@@ -485,7 +485,8 @@ return {
         })
       })
       if (res.ok) {
-        notify("Đã hoàn tất phân công giáo viên")
+        const j = await res.json();
+        if (j.emailError) { notify(`Phân công thành công NHƯNG gửi mail thất bại: ${j.emailError}`, "err") } else { notify("Đã hoàn tất phân công và gửi email") }
         fetchAssignments()
         // Reset parts but keep period/dept
         setAsSelSubjects([]); setAsSelGrades([]); setAsSelSystems([])

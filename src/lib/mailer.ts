@@ -13,7 +13,7 @@ export const transporter = nodemailer.createTransport({
 export const sendMail = async (to: string, subject: string, html: string) => {
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
     console.warn("SMTP credentials not configured. Skipping email send.");
-    return false;
+    return { success: false, error: "SMTP credentials not configured" };
   }
   try {
     const info = await transporter.sendMail({
@@ -23,9 +23,9 @@ export const sendMail = async (to: string, subject: string, html: string) => {
       html,
     });
     console.log("Message sent: %s", info.messageId);
-    return true;
+    return { success: true };
   } catch (error) {
     console.error("Error sending email: ", error);
-    return false;
+    return { success: false, error: error.message || String(error) };
   }
 };

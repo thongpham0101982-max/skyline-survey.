@@ -124,10 +124,14 @@ export async function POST(req) {
                    `;
                    
                    // Send mail and await to prevent serverless execution halt
-                   await sendMail(teacherRecord.email, `[Skyline Survey] Phân công đánh giá: ${periodStr}`, html);
+                   const mailResult = await sendMail(teacherRecord.email, `[Skyline Survey] Phân công đánh giá: ${periodStr}`, html);
+                   if (mailResult && !mailResult.success) {
+                       return NextResponse.json({ success: true, count: successCount, emailError: mailResult.error });
+                   }
                }
            } catch(e) {
                console.error("Failed to send assignment notification email", e);
+               return NextResponse.json({ success: true, count: successCount, emailError: e.message || String(e) });
            }
        }
        return NextResponse.json({ success: true, count: successCount });
