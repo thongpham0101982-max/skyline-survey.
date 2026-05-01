@@ -163,8 +163,6 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     const subCode = (currentAssignment?.subject?.code || "").toLowerCase();
     const isPsychSubject = subName.includes("tâm lý") || subCode.includes("tly");
     const gradeVal = String(currentAssignment?.grade || "").replace("Khối ", "").trim();
-    const isPsychologyLevel = ["1", "2", "3", "4", "5"].includes(gradeVal);
-    const isPsychologyForm = isPsychSubject && isPsychologyLevel;
   
     const fetchAssignments = () => {
         fetch("/api/teacher-assessments?action=getAssignments")
@@ -276,7 +274,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                         </div>
                         {isLocked && <span className="text-sm font-bold bg-red-100 text-red-700 border border-red-200 px-4 py-1.5 rounded-full shadow-sm mr-2 flex items-center gap-1.5"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg> KỲ KHẢO SÁT ĐÃ KHÓA</span>}
                         <span className={"text-sm font-medium border px-4 py-1.5 rounded-full shadow-sm " + (isLocked ? "bg-slate-100 text-slate-500 border-slate-200" : "bg-emerald-100/50 text-emerald-700 border-emerald-200")}>
-                            {isPsychologyForm ? `Mẫu chuyên biệt Tâm lý Khối ${gradeVal}` : `Cấu hình: ${currentAssignment.subject.scoreColumns} cột điểm, ${currentAssignment.subject.commentColumns} cột nhận xét`}
+                            {isPsychSubject ? (gradeVal ? `Mẫu chuyên biệt Tâm lý Khối ${gradeVal}` : `Đánh giá Tâm lý`) : `Cấu hình: ${currentAssignment.subject.scoreColumns} cột điểm, ${currentAssignment.subject.commentColumns} cột nhận xét`}
                         </span>
                     </div>
 
@@ -313,50 +311,54 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                     )}
                     <div className="overflow-x-auto p-4 custom-scrollbar" style={{maxWidth: "100%", width: "100%"}}>
                         <table className="w-full text-sm text-left border-collapse min-w-max">
-                            <thead className="bg-slate-100 text-slate-700 border-b">
+                            <thead className="bg-slate-50 border-b-2 border-slate-200">
     <tr>
-        <th className="px-3 py-4 w-12 text-center border-b border-r font-bold text-slate-700 bg-slate-100 uppercase tracking-wider md:sticky md:left-0 z-20">STT</th>
-        <th className="px-3 py-4 border-b border-r font-bold text-slate-700 bg-slate-100 uppercase tracking-wider whitespace-nowrap text-center">Mã HS KS</th>
-          <th className="px-3 py-4 border-b border-r font-bold text-slate-700 bg-slate-100 uppercase tracking-wider whitespace-nowrap text-left">Họ và Tên</th>
-          <th className="px-3 py-4 border-b border-r font-bold text-slate-700 bg-slate-100 uppercase tracking-wider whitespace-nowrap text-center">Khối</th>
-          <th className="px-3 py-4 border-b border-r font-bold text-slate-700 bg-slate-100 uppercase tracking-wider whitespace-nowrap text-center">Ngày sinh</th>
-          <th className="px-3 py-4 border-b border-r font-bold text-slate-700 bg-slate-100 uppercase tracking-wider whitespace-nowrap text-center">Hệ Khảo sát</th>
-        <th className="px-4 py-4 border-b border-r font-bold text-amber-900 bg-amber-50 uppercase tracking-wider text-center">
-            {isPsychologyForm ? "Form Khảo sát" : "Chi tiết Điểm & Nhận xét"}
+        <th className="px-3 py-4 w-12 text-center font-bold text-slate-500 bg-slate-50/50 uppercase tracking-wider text-xs md:sticky md:left-0 z-20">STT</th>
+        <th className="px-3 py-4 font-bold text-slate-500 bg-slate-50/50 uppercase tracking-wider text-xs whitespace-nowrap text-center">Mã HS KS</th>
+          <th className="px-3 py-4 font-bold text-slate-500 bg-slate-50/50 uppercase tracking-wider text-xs whitespace-nowrap text-left">Họ và Tên</th>
+          <th className="px-3 py-4 font-bold text-slate-500 bg-slate-50/50 uppercase tracking-wider text-xs whitespace-nowrap text-center">Khối</th>
+          <th className="px-3 py-4 font-bold text-slate-500 bg-slate-50/50 uppercase tracking-wider text-xs whitespace-nowrap text-center">Giới tính</th>
+          <th className="px-3 py-4 font-bold text-slate-500 bg-slate-50/50 uppercase tracking-wider text-xs whitespace-nowrap text-center">Ngày sinh</th>
+          <th className="px-3 py-4 font-bold text-slate-500 bg-slate-50/50 uppercase tracking-wider text-xs whitespace-nowrap text-center">Hệ Khảo sát</th>
+        <th className="px-4 py-4 font-bold text-amber-800 bg-amber-50/50 uppercase tracking-wider text-xs text-center">
+            {isPsychSubject ? "Form Khảo sát" : "Chi tiết Điểm & Nhận xét"}
         </th>
-        <th className="px-2 py-3 md:px-4 md:py-4 text-center border-b font-bold text-emerald-800 bg-emerald-50 uppercase tracking-wider w-32 md:sticky md:right-0 z-20">Xác nhận</th>
+        <th className="px-2 py-3 md:px-4 md:py-4 text-center font-bold text-emerald-800 bg-emerald-50/50 uppercase tracking-wider text-xs w-32 md:sticky md:right-0 z-20">Xác nhận</th>
     </tr>
 </thead>
                             <tbody className="divide-y border-b">
                                 {students.map((st, i) => (
-                                    <tr key={st.id} className="hover:bg-slate-50/50 group">
-                                        <td className="px-2 py-2 md:px-3 md:py-3 text-center text-slate-500 border-b border-r bg-white md:sticky md:left-0 z-10">{i+1}</td>
-                                        <td className="px-3 py-3 border-b border-r bg-white text-center">
-                                              <span className="font-mono font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded text-xs border border-indigo-100">{st.studentCode}</span>
+                                    <tr key={st.id} className="hover:bg-indigo-50/30 group border-b border-slate-100 last:border-none transition-colors">
+                                        <td className="px-2 py-2 md:px-3 md:py-4 text-center text-slate-500 bg-transparent md:sticky md:left-0 z-10 font-medium text-sm">{i+1}</td>
+                                        <td className="px-3 py-3 bg-transparent text-center">
+                                              <span className="font-mono font-bold text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-full text-xs">{st.studentCode}</span>
                                           </td>
-                                          <td className="px-3 py-3 border-b border-r bg-white text-left">
-                                              <span className="font-black text-slate-800 text-sm whitespace-nowrap">{st.fullName}</span>
+                                          <td className="px-3 py-3 bg-transparent text-left">
+                                              <span className="font-bold text-slate-700 text-sm whitespace-nowrap">{st.fullName}</span>
                                           </td>
-                                          <td className="px-3 py-3 border-b border-r bg-white text-center">
-                                              <span className="text-xs font-extrabold px-2 py-1 bg-slate-100 text-slate-700 rounded-md whitespace-nowrap">{st.grade}</span>
-                                          </td>
-                                          <td className="px-3 py-3 border-b border-r bg-white text-center">
+                                          <td className="px-3 py-3 bg-transparent text-center">
+              <span className="text-xs font-bold text-slate-500 whitespace-nowrap">{st.grade}</span>
+          </td>
+          <td className="px-3 py-3 bg-transparent text-center">
+              <span className="text-xs font-medium text-slate-500 whitespace-nowrap">{st.gender === "M" || st.gender === "Nam" ? "Nam" : st.gender === "F" || st.gender === "Nữ" ? "Nữ" : st.gender || "—"}</span>
+          </td>
+                                          <td className="px-3 py-3 bg-transparent text-center">
                                               <span className="text-xs text-slate-500 whitespace-nowrap">{st.dateOfBirth ? new Date(st.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</span>
                                           </td>
-                                          <td className="px-3 py-3 border-b border-r bg-white text-center">
+                                          <td className="px-3 py-3 bg-transparent text-center">
                                               <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded-md border border-amber-100 whitespace-nowrap uppercase">{st.surveyFormType || "—"}</span>
                                           </td>
                                         
-                                        <td className="px-4 py-4 border-b border-r bg-slate-50/20">
-            {isPsychologyForm ? (
-              <div className="flex items-center justify-center gap-4">
+                                        <td className="px-4 py-4 bg-transparent">
+            {isPsychSubject ? (
+              <div className="flex flex-col items-center justify-center gap-2">
                   <button 
-                    onClick={() => { setActivePsychStudent(st); setIsPsychModalOpen(true); }}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-6 rounded-2xl shadow-lg shadow-indigo-600/20 flex items-center gap-2 transition-all active:scale-95"
-                  >
-                    <BookOpen className="w-4 h-4" /> 
-                    Mở Form Đánh giá Tâm lý
-                  </button>
+        onClick={() => { setActivePsychStudent(st); setIsPsychModalOpen(true); }}
+        className="bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white font-bold py-2 px-5 rounded-full shadow-sm flex items-center gap-2 transition-all active:scale-95 text-xs"
+    >
+        <BookOpen className="w-3.5 h-3.5" /> 
+        Mở Form Khối {st.grade || "Cơ bản"}
+    </button>
                   {st.scoreVals?.length >= 7 && (
                     <div className="flex items-center gap-3">
                       <div className="h-10 w-[1px] bg-slate-200"></div>
@@ -381,7 +383,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                     </div>
                   )}
                   {(!st.scoreVals || st.scoreVals.length < 7) && (
-                    <span className="text-xs text-slate-400 italic">Bấm để đánh giá →</span>
+                    <span className="text-[10px] text-slate-400 font-medium">Chưa đánh giá</span>
                   )}
               </div>
             ) : (
@@ -431,14 +433,14 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
             </div>
             )}
         </td>
-<td className="px-2 py-2 md:px-4 md:py-3 text-center border-b bg-emerald-50/50 md:sticky md:right-0 z-10 md:backdrop-blur-sm">
+<td className="px-2 py-2 md:px-4 md:py-4 text-center bg-transparent md:sticky md:right-0 z-10 md:backdrop-blur-sm">
                                             <button 
                                                 onClick={() => saveStudentScore(st)}
-                                                disabled={isLocked || isPsychologyForm}
-                                                className={`px-3 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center w-full gap-2 transition-all shadow-sm ${isLocked || isPsychologyForm ? "bg-slate-200 text-slate-400 cursor-not-allowed border-none" : 
+                                                disabled={isLocked || isPsychSubject}
+                                                className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-center w-full gap-2 transition-all shadow-sm ${isLocked || isPsychSubject ? "bg-slate-200 text-slate-400 cursor-not-allowed border-none" : 
                                                     saveStatus[st.id] === "saved" ? "bg-emerald-500 text-white" : 
                                                     saveStatus[st.id] === "saving" ? "bg-slate-200 text-slate-500" :
-                                                    "bg-white border border-indigo-200 text-indigo-600 hover:bg-indigo-600 hover:text-white hover:border-indigo-600"}`}
+                                                    "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300"}`}
                                             >
                                                 {saveStatus[st.id] === "saved" ? <><CheckCircle2 className="w-4 h-4"/> <span className="hidden md:inline">Đã lưu</span></> : <><Save className="w-4 h-4" /> <span className="hidden md:inline">Lưu</span></>}
                                             </button>
