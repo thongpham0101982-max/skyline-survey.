@@ -53,7 +53,7 @@ const CATEGORY_TYPES = [
   { code: "KY_KS",          label: "Kỳ Khảo sát",         color: "from-orange-500 to-red-500" },
   { code: "KQ_HOC_TAP",    label: "Kết quả Học tập",     color: "from-sky-500 to-blue-500" },
   { code: "KQ_REN_LUYEN",  label: "Kết quả Rèn luyện",   color: "from-green-500 to-emerald-500" },
-  { code: "LOAI_TUYEN_SINH",label: "Loại Tuyển sinh",    color: "from-purple-500 to-violet-500" },
+  
 ]
 const STATUS_OPTS = ["ACTIVE", "DRAFT", "CLOSED"]
 const STATUS_MAP: Record<string,{label:string,cls:string}> = {
@@ -931,7 +931,7 @@ return {
                               <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Học kỳ / Năm TS</th>
                                 <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Diện khảo sát</th>
                                 <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Hình thức KS</th>
-                                <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Loại tuyển sinh</th>
+                                
                                 <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">KQ Học tập</th>
                                 <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">KQ Rèn luyện</th>
                               <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Thao tác</th>
@@ -950,7 +950,7 @@ return {
                                <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.hocKy || "-"}</span></td>
                                  <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.admissionCriteria || "-"}</span></td>
                                  <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.surveySystem || "-"}</span></td>
-                                 <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.targetType || "-"}</span></td>
+                                 
                                  <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.kqHocTap || "-"}</span></td>
                                  <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.kqRenLuyen || "-"}</span></td>
                                <td className="p-5 text-right">
@@ -1084,12 +1084,7 @@ return {
                   {configs.filter(c => c.categoryType === "HINH_THUC_KS").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                 </select>
               </Field>
-              <Field label="Loại Tuyển sinh">
-                <select value={sForm.targetType} onChange={e=>setSForm(f=>({...f,targetType:e.target.value}))} className={inp}>
-                  <option value="">--</option>
-                  {configs.filter(c => c.categoryType === "LOAI_TUYEN_SINH").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                </select>
-              </Field>
+              
            </div>
 
            <div className="grid grid-cols-3 gap-4">
