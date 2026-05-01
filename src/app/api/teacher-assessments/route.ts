@@ -48,7 +48,7 @@ export async function GET(req: any) {
         const students = await prisma.inputAssessmentStudent.findMany({
             where: {
                 periodId: periodId,
-                grade: grade || undefined,
+                
                 ...(batchId ? { OR: [{ batchId: batchId }, { batchId: null }] } : {})
             },
             include: {
@@ -59,8 +59,25 @@ export async function GET(req: any) {
         });
 
         // Filter in memory to bypass any strict case-sensitivity issues of SQLite
+        
         const filteredStudents = students.filter(st => {
+            // Fuzzy grade matching
+            if (grade && grade.trim() !== "" && grade !== "Tất cả") {
+                const stGrade = (st.grade || "").toLowerCase().trim();
+                const qGrade = grade.toLowerCase().trim();
+                const qGradeNum = qGrade.replace("khối", "").trim();
+                
+                if (stGrade) {
+                    const matchGrade = stGrade === qGrade || 
+                                       stGrade === qGradeNum || 
+                                       stGrade.includes(qGradeNum) || 
+                                       qGrade.includes(stGrade);
+                    if (!matchGrade) return false;
+                }
+            }
+
             if (validSystems.length > 0) {
+
                 // If student has no system assigned (due to Excel import error), show them as fallback
                 if (!st.surveyFormType) return true;
                 const stSys = st.surveyFormType.trim().toLowerCase();
