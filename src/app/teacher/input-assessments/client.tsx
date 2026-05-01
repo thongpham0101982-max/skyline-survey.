@@ -163,6 +163,16 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     const subCode = (currentAssignment?.subject?.code || "").toLowerCase();
     const isPsychSubject = subName.includes("tâm lý") || subCode.includes("tly");
     const gradeVal = String(currentAssignment?.grade || "").replace("Khối ", "").trim();
+
+    // English grouping logic for tabs
+    const isEnglishAssignment = subName.includes("tiếng anh") || subCode.includes("eng") || subCode.includes("esl");
+    const relatedEnglishAssignments = isEnglishAssignment ? availableAssignments.filter(a => 
+        (a.subject?.name?.toLowerCase().includes("tiếng anh") || a.subject?.code?.toLowerCase().includes("eng") || a.subject?.code?.toLowerCase().includes("esl")) &&
+        a.grade === currentAssignment.grade &&
+        a.educationSystem === currentAssignment.educationSystem &&
+        a.batchId === currentAssignment.batchId &&
+        a.periodId === currentAssignment.periodId
+    ).sort((a,b) => (a.subject?.name || "").localeCompare(b.subject?.name || "")) : [];
   
     const fetchAssignments = () => {
         fetch("/api/teacher-assessments?action=getAssignments")
@@ -259,6 +269,24 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                     </div>
                 </div>
             </div>
+
+{currentAssignment && isEnglishAssignment && relatedEnglishAssignments.length > 0 && (
+    <div className="-mt-6 mx-auto w-[92%] bg-white/70 backdrop-blur-md p-3 rounded-2xl shadow-sm border border-indigo-200 mb-6 animate-in fade-in slide-in-from-top-4 flex flex-col gap-2 relative z-20">
+        <div className="text-xs font-black text-indigo-400 uppercase tracking-widest pl-1">Danh sách Môn Tiếng Anh:</div>
+        <div className="flex flex-wrap gap-2">
+            {relatedEnglishAssignments.map(a => (
+                <button 
+                    key={a.id}
+                    onClick={() => setSelectedAssignmentId(a.id)}
+                    className={`flex-1 min-w-[150px] py-3 px-4 rounded-xl font-bold text-sm transition-all shadow-sm flex items-center justify-center gap-2 ${selectedAssignmentId === a.id ? 'bg-indigo-600 text-white shadow-indigo-200 ring-2 ring-indigo-400 ring-offset-1' : 'bg-white text-indigo-700 hover:bg-indigo-50 border border-indigo-100'}`}
+                >
+                    <BookOpen className="w-4 h-4" />
+                    {a.subject?.name}
+                </button>
+            ))}
+        </div>
+    </div>
+)}
 {currentAssignment && (
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                     <div className="px-6 py-4 border-b bg-gradient-to-r from-indigo-50 to-white flex justify-between items-center">
