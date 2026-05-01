@@ -73,59 +73,63 @@ const grades2to5Questions = [
     }
 ]
 
+
+const grade1Questions = [
+    {
+        title: "I. Cảm xúc & điều hòa cảm xúc (4 mục)",
+        questions: [
+            { text: "1. Khi thua trong trò chơi, con phản ứng thế nào?", options: scaleOptions },
+            { text: "2. Khi rời cha mẹ vào lớp, con có dễ thích nghi không?", options: scaleOptions },
+            { text: "3. Khi bị cô nhắc nhở, con phản ứng thế nào?", options: scaleOptions },
+            { text: "4. Khi bạn trêu chọc, con phản ứng thế nào?", options: scaleOptions }
+        ]
+    },
+    {
+        title: "II. Hành vi & tự kiểm soát (3 mục)",
+        questions: [
+            { text: "5. Khi thầy/cô nói 'Ngồi yên nào', con có làm theo không?", options: scaleOptions },
+            { text: "6. Con có hay chen ngang hoặc nói leo khi thầy/cô đang nói không?", options: scaleOptions },
+            { text: "7. Con có thể ngồi tập trung làm một việc trong bao lâu?", options: scaleOptions }
+        ]
+    },
+    {
+        title: "III. Giao tiếp & tương tác xã hội (3 mục)",
+        questions: [
+            { text: "8. Khi gặp bạn mới, con có dễ bắt chuyện không?", options: scaleOptions },
+            { text: "9. Con có biết chia sẻ đồ chơi, hợp tác trong trò chơi không?", options: scaleOptions },
+            { text: "10. Khi bị bạn làm sai hoặc trêu chọc, con phản ứng thế nào?", options: scaleOptions }
+        ]
+    },
+    {
+        title: "IV. Chú ý & kỹ năng học tập nền (4 mục)",
+        questions: [
+            { text: "11. Khi nghe hướng dẫn gồm 2 việc ('Lấy bút và ngồi xuống'), con làm được không?", options: scaleOptions },
+            { text: "12. Khi nghe kể chuyện ngắn, con nhớ lại chi tiết được không?", options: scaleOptions },
+            { text: "13. Khi làm bài, con có làm vội, chưa nghe xong đã làm không?", options: scaleOptions },
+            { text: "14. Khi làm việc, con có bị sao nhãng bởi tiếng động hoặc bạn khác không?", options: scaleOptions }
+        ]
+    },
+    {
+        title: "V. Ngôn ngữ & tư duy (3 mục)",
+        questions: [
+            { text: "15. Khi được hỏi 'Cái nào dùng để viết: kéo hay bút?', con trả lời...", options: scaleOptions },
+            { text: "16. Khi hỏi 'Con mèo khác con chó ở điểm nào?', con trả lời...", options: scaleOptions },
+            { text: "17. Giáo viên đặt tình huống giả định, con có xử lý được không? (Ví dụ: Khi đi ra ngoài mà trời mưa/ nắng thì mình cần làm gì để khỏi bị nắng nóng/bị ướt? Khi bị bạn giật đồ chơi hoặc xô ngã thì con làm gì?).", options: scaleOptions }
+        ]
+    },
+    {
+        title: "VI. Thái độ & động lực học tập (3 mục)",
+        questions: [
+            { text: "18. Con có thích đến trường không?", options: scaleOptions },
+            { text: "19. Khi thầy/cô giao bài, con phản ứng thế nào?", options: scaleOptions },
+            { text: "20. Khi gặp bài khó, con xử lý thế nào?", options: scaleOptions }
+        ]
+    }
+]
+
 const questionsData: QuestionsData = {
-    "1": [
-        {
-            title: "CẢM XÚC VÀ ĐIỀU HÒA CẢM XÚC",
-            questions: [
-                { text: "Khả năng nhận diện và gọi tên các cảm xúc cơ bản của bản thân.", options: ["Hiếm khi", "Đôi khi", "Thường xuyên"] },
-                { text: "Thể hiện cảm xúc phù hợp với hoàn cảnh.", options: ["Cần nhắc nhở nhiều", "Cần nhắc nhở ít", "Tự giác thực hiện"] },
-                { text: "Khả năng kiềm chế cơn giận hoặc sự thất vọng.", options: ["Dễ bùng nổ", "Đôi khi mất kiểm soát", "Kiểm soát tốt"] },
-                { text: "Sự tự tin khi trình bày ý kiến trước lớp.", options: ["Rất rụt rè", "Cần động viên", "Tự tin"] }
-            ]
-        },
-        {
-            title: "HÀNH VI - KIỂM SOÁT BẢN THÂN",
-            questions: [
-                { text: "Tuân thủ các quy tắc trong lớp học.", options: ["Hay vi phạm", "Đôi khi nhắc nhở", "Chấp hành tốt"] },
-                { text: "Khả năng chờ đợi đến lượt mình.", options: ["Rất thiếu kiên nhẫn", "Cần nhắc nhở", "Kiên nhẫn chờ"] },
-                { text: "Thực hiện các nhiệm vụ cá nhân (chuẩn bị đồ dùng, dọn dẹp).", options: ["Cần hỗ trợ nhiều", "Đôi khi cần nhắc", "Chủ động thực hiện"] }
-            ]
-        },
-        {
-            title: "QUAN HỆ XÃ HỘI & TƯƠNG TÁC NHÓM",
-            questions: [
-                { text: "Khả năng kết bạn và làm quen với bạn mới.", options: ["Khép kín", "Cần thời gian", "Cởi mở, thân thiện"] },
-                { text: "Chia sẻ đồ dùng, đồ chơi với bạn bè.", options: ["Ít chia sẻ", "Đôi khi chia sẻ", "Luôn sẵn lòng"] },
-                { text: "Hợp tác trong các hoạt động nhóm.", options: ["Thường làm việc riêng", "Mức độ trung bình", "Hợp tác tích cực"] }
-            ]
-        },
-        {
-            title: "HỌC TẬP & KHẢ NĂNG TỰ ĐỊNH HƯỚNG/ CHÚ Ý",
-            questions: [
-                { text: "Mức độ tập trung trong giờ học (15-20 phút).", options: ["Hay xao nhãng", "Cần nhắc nhở", "Tập trung tốt"] },
-                { text: "Lắng nghe và thực hiện theo hướng dẫn của giáo viên.", options: ["Hay quên lệnh", "Cần nhắc lại", "Thực hiện nhanh"] },
-                { text: "Khả năng hoàn thành bài tập đúng hạn.", options: ["Thường xuyên trễ", "Xong nhưng cần nhắc", "Luôn đúng hạn"] },
-                { text: "Sự tò mò, ham học hỏi kiến thức mới.", options: ["Thụ động", "Bình thường", "Rất ham học hỏi"] }
-            ]
-        },
-        {
-            title: "TỰ NHẬN THỨC & NGÔN NGỮ - GIẢI QUYẾT VẤN ĐỀ",
-            questions: [
-                { text: "Khả năng dùng ngôn ngữ để diễn đạt nhu cầu bản thân.", options: ["Hạn chế", "Đủ dùng", "Linh hoạt, rõ ràng"] },
-                { text: "Sử dụng các từ ngữ lịch sự (cảm ơn, xin lỗi).", options: ["Cần nhắc nhở", "Đôi khi quên", "Đã thành thói quen"] },
-                { text: "Biết tìm sự giúp đỡ từ người lớn khi gặp khó khăn.", options: ["Im lặng/Khóc", "Cần nhắc", "Chủ động hỏi"] }
-            ]
-        },
-        {
-            title: "ĐỘNG LỰC & ĐỊNH HƯỚNG TƯƠNG LAI",
-            questions: [
-                { text: "Hào hứng khi đến trường.", options: ["Sợ hãi/Khóc", "Bình thường", "Rất hào hứng"] },
-                { text: "Thể hiện sở thích cá nhân rõ rệt.", options: ["Chưa rõ", "Bắt đầu bộc lộ", "Rất rõ ràng"] },
-                { text: "Có ý thức giữ gìn sách vở, đồ dùng học tập.", options: ["Hay làm mất/hỏng", "Đôi khi nhắc nhở", "Gìn giữ cẩn thận"] }
-            ]
-        }
-    ],
+    "1": grade1Questions,
+
     "2": grades2to5Questions,
     "3": grades2to5Questions,
     "4": grades2to5Questions,
@@ -149,7 +153,7 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
     const rawGrade = student?.grade || ""
     const currentGrade = ["1", "2", "3", "4", "5"].includes(rawGrade) ? rawGrade : "default"
     const sections = questionsData[currentGrade] || defaultQuestions
-    const isGrades2to5 = ["2", "3", "4", "5"].includes(currentGrade)
+    const isGrades1to5 = ["1", "2", "3", "4", "5"].includes(currentGrade)
 
     const [scores, setScores] = useState<number[]>(Array(20).fill(-1))
     const [notes, setNotes] = useState<string[]>(Array(20).fill(""))
@@ -236,7 +240,7 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
         return { level: "Nguy cơ rất cao", suggestion: "Cần can thiệp chuyên môn sớm (bảo đảm an toàn và hỗ trợ)", color: "text-red-600", bg: "bg-red-50", border: "border-red-200" };
     };
 
-    const evaluation = isGrades2to5 ? getEvaluation(totalScore) : null;
+    const evaluation = isGrades1to5 ? getEvaluation(totalScore) : null;
 
     return (
         <div className="bg-slate-50 min-h-screen p-3 md:p-6 font-sans text-slate-900 border-x">
@@ -266,7 +270,7 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
                 </div>
 
                 
-                {isGrades2to5 && (
+                {isGrades1to5 && (
                     <div className="bg-indigo-50/50 rounded-xl p-4 border border-indigo-100 shadow-sm text-sm">
                         <h3 className="font-bold text-indigo-800 mb-2">5. Thang điểm chung cho mỗi câu hỏi:</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 mb-4">
@@ -321,10 +325,10 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
                                         <span className="text-slate-400 font-bold text-sm w-5 shrink-0 mt-0.5">{actualIdx + 1}.</span>
                                         <span className="text-slate-700 text-sm md:text-base font-medium leading-relaxed">{q.text}</span>
                                     </div>
-                                    <div className={`lg:col-span-7 xl:col-span-6 flex ${isGrades2to5 ? "gap-6 justify-start mt-2 lg:mt-0" : "gap-2"} w-full ml-8 lg:ml-0`}>
+                                    <div className={`lg:col-span-7 xl:col-span-6 flex ${isGrades1to5 ? "gap-6 justify-start mt-2 lg:mt-0" : "gap-2"} w-full ml-8 lg:ml-0`}>
                                         {q.options.map((opt, oIdx) => {
                                             const optValue = q.options.length === 5 ? oIdx : oIdx + 1;
-                                            return isGrades2to5 ? (
+                                            return isGrades1to5 ? (
                                                 <label key={oIdx} className="flex items-center gap-1.5 cursor-pointer group">
                                                     <input 
                                                         type="radio" 
@@ -359,7 +363,7 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
                                             </button>
                                         )})}
                                     </div>
-                                    {isGrades2to5 && (
+                                    {isGrades1to5 && (
                                         <div className="lg:col-span-12 w-full mt-1.5 ml-8 lg:ml-0 flex items-end gap-2">
                                             <span className="text-[13px] font-semibold text-slate-700 whitespace-nowrap mb-0.5">Ghi chú quan sát:</span>
                                             <input
@@ -381,7 +385,7 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
                     </div>
                 </div>
 
-                {isGrades2to5 && (
+                {isGrades1to5 && (
                     <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
                         <h3 className="font-bold text-slate-800 text-base mb-4">TỔNG HỢP:</h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-y-3 gap-x-8 mb-4 text-sm font-medium text-slate-700">
@@ -424,7 +428,7 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
                     <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col h-full">
                         <div className="flex items-center gap-2 mb-3">
                             <MessageSquare size={18} className="text-amber-500" />
-                            <h3 className="font-bold text-slate-800 text-sm">{isGrades2to5 ? "C. KẾT LUẬN SƠ BỘ:" : "Kết luận chuyên môn"}</h3>
+                            <h3 className="font-bold text-slate-800 text-sm">{isGrades1to5 ? "C. KẾT LUẬN SƠ BỘ:" : "Kết luận chuyên môn"}</h3>
                         </div>
                         <textarea
                             disabled={isLocked}
@@ -438,7 +442,7 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
                     <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col h-full">
                         <div className="flex items-center gap-2 mb-3">
                             <Info size={18} className="text-emerald-500" />
-                            <h3 className="font-bold text-slate-800 text-sm">{isGrades2to5 ? "D. KHUYẾN NGHỊ DÀNH CHO PHỤ HUYNH (NẾU CÓ):" : "Kiến nghị hỗ trợ"}</h3>
+                            <h3 className="font-bold text-slate-800 text-sm">{isGrades1to5 ? "D. KHUYẾN NGHỊ DÀNH CHO PHỤ HUYNH (NẾU CÓ):" : "Kiến nghị hỗ trợ"}</h3>
                         </div>
                         <textarea
                             disabled={isLocked}
