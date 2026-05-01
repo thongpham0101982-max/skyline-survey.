@@ -92,6 +92,22 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     }, [selectedAssignmentId, assignments]);
 
     const handleScoreChange = (studentId: string, colIndex: number, val: string) => {
+        const assignment = assignments.find(a => a.id === selectedAssignmentId);
+        if (assignment) {
+            const subName = (assignment.subject?.name || "").toLowerCase();
+            const numVal = parseFloat(val);
+            if (!isNaN(numVal)) {
+                if (subName.includes("vấn đáp") && numVal > 30) {
+                    alert("Điểm Tiếng Anh (vấn đáp) tối đa là 30 đ!");
+                    val = "30";
+                } else if (subName.includes("viết") && numVal > 70) {
+                    alert("Điểm Tiếng Anh (viết) tối đa là 70 đ!");
+                    val = "70";
+                } else if (numVal > 10 && !subName.includes("tiếng anh") && !subName.includes("tâm lý")) {
+                    // Standard max score for other subjects might be 10, but we just enforce English for now
+                }
+            }
+        }
         setStudents(prev => prev.map(st => {
             if (st.id === studentId) {
                 const newScores = [...(st.scoreVals || [])];
@@ -432,9 +448,14 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                     let cName = "Điểm " + (colIdx+1);
                     try { if(currentAssignment.subject.columnNames) { const p = JSON.parse(currentAssignment.subject.columnNames); if(p.scores && p.scores[colIdx]) cName = p.scores[colIdx]; } } catch(e){}
                     const isTotal = cName.toLowerCase().includes("tổng");
+                    const subNameLower = (currentAssignment.subject.name || "").toLowerCase();
+                    let maxScoreStr = "";
+                    if (subNameLower.includes("vấn đáp")) maxScoreStr = " (Max 30)";
+                    else if (subNameLower.includes("viết")) maxScoreStr = " (Max 70)";
+                    
                     return (
                         <div key={"sc-input-"+colIdx} className="flex flex-col gap-1.5 w-24 flex-none">
-                            <span className="text-[10px] uppercase font-bold text-indigo-700/80 truncate border-b border-indigo-100 pb-1" title={cName}>{cName}</span>
+                            <span className="text-[10px] uppercase font-bold text-indigo-700/80 truncate border-b border-indigo-100 pb-1" title={cName + maxScoreStr}>{cName}{maxScoreStr && <span className="text-red-500 font-black ml-0.5">{maxScoreStr}</span>}</span>
                             {isTotal ? (
                                 <div className="w-full bg-indigo-50/80 border border-indigo-200 rounded-lg py-2 text-center font-black text-indigo-800 shadow-inner h-[42px] flex items-center justify-center">
                                     {(st.scoreVals || []).slice(0, colIdx).reduce((sum: number, val: any) => sum + (parseFloat(val) || 0), 0).toLocaleString("vi-VN", {maximumFractionDigits: 2})}
