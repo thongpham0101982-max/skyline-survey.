@@ -47,13 +47,13 @@ export async function GET(req: any) {
 
         const students = await prisma.inputAssessmentStudent.findMany({
             where: {
-                periodId: periodId,
+                periodId: periodId || undefined,
                 
                 ...(batchId ? { OR: [{ batchId: batchId }, { batchId: null }] } : {})
             },
             include: {
                 scores: {
-                    where: { subjectId: subjectId }
+                    where: { subjectId: subjectId || undefined }
                 }
             }
         });
