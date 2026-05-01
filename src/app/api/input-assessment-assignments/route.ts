@@ -123,8 +123,8 @@ export async function POST(req) {
                    </div>
                    `;
                    
-                   // Send mail in background
-                   sendMail(teacherRecord.email, `[Skyline Survey] Phân công đánh giá: ${periodStr}`, html);
+                   // Send mail and await to prevent serverless execution halt
+                   await sendMail(teacherRecord.email, `[Skyline Survey] Phân công đánh giá: ${periodStr}`, html);
                }
            } catch(e) {
                console.error("Failed to send assignment notification email", e);
