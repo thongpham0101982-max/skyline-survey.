@@ -116,6 +116,7 @@ export async function updateTeacherAction(data: any) {
     if (teacherName) updateData.teacherName = teacherName
     if (dateOfBirth !== undefined) updateData.dateOfBirth = dateOfBirth ? new Date(dateOfBirth) : null
     if (campusId !== undefined) updateData.campusId = campusId
+    if (data.status !== undefined) updateData.status = data.status
 
     if (data.department !== undefined) {
       updateData.departmentId = await resolveDepartmentId(data.department)
@@ -126,9 +127,14 @@ export async function updateTeacherAction(data: any) {
 
     await prisma.teacher.update({ where: { id }, data: updateData })
 
-    if (teacherName) {
+    if (teacherName || data.status !== undefined) {
       const teacher = await prisma.teacher.findUnique({ where: { id } })
-      if (teacher) await prisma.user.update({ where: { id: teacher.userId }, data: { fullName: teacherName } }).catch(() => {})
+      if (teacher) {
+        const userUpdate: any = {}
+        if (teacherName) userUpdate.fullName = teacherName
+        if (data.status !== undefined) userUpdate.status = data.status
+        await prisma.user.update({ where: { id: teacher.userId }, data: userUpdate }).catch(() => {})
+      }
     }
 
     revalidatePath("/admin/teachers")

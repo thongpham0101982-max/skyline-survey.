@@ -14,7 +14,7 @@ const EMPTY_NEW = {
   email: "", phone: "",
   dateOfBirth: "", department: "", mainSubject: "", campus: ""
 }
-const EMPTY_EDIT = { teacherName: "", dateOfBirth: "", department: "", mainSubject: "", campusId: "" }
+const EMPTY_EDIT = { teacherName: "", dateOfBirth: "", department: "", mainSubject: "", campusId: "", status: "ACTIVE" }
 
 export function TeacherManagerClient({ 
   initialTeachers, years, defaultYearId, classes, departments, subjects, campuses, isCampusLocked = false, defaultCampusId = null 
@@ -91,7 +91,8 @@ export function TeacherManagerClient({
       dateOfBirth: t.dateOfBirth ? new Date(t.dateOfBirth).toISOString().split("T")[0] : "",
       department: t.department || "",
       mainSubject: t.mainSubject || "",
-      campusId: t.campusId || ""
+      campusId: t.campusId || "",
+      status: t.status || "ACTIVE"
     })
   }
 
@@ -106,7 +107,8 @@ export function TeacherManagerClient({
         department: editForm.department || null,
         mainSubject: editForm.mainSubject || null,
         campusId: editForm.campusId || null,
-        campus: (campuses || []).find(c => c.id === editForm.campusId)?.campusName || null
+        campus: (campuses || []).find(c => c.id === editForm.campusId)?.campusName || null,
+        status: editForm.status
       } : t))
       setEditingId(null)
       setSuccessMsg("Đã lưu thay đổi thành công!")
@@ -360,9 +362,17 @@ export function TeacherManagerClient({
                       </div>
                     </td>
                     <td className="px-5 py-4 text-center">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${t.status==="ACTIVE" ? "bg-emerald-50 text-emerald-700 border border-emerald-100" : "bg-slate-100 text-slate-400"}`}>
-                        {t.status==="ACTIVE" ? "Đang dạy" : "Nghỉ"}
-                      </span>
+                      {isEditing ? (
+                        <select value={editForm.status} onChange={e => setEditForm({...editForm, status: e.target.value})}
+                          className="border border-indigo-300 rounded-lg px-1.5 py-1.5 text-xs outline-none bg-white font-bold w-24">
+                          <option value="ACTIVE">Đang dạy</option>
+                          <option value="INACTIVE">Nghỉ dạy</option>
+                        </select>
+                      ) : (
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${t.status==="ACTIVE" ? "bg-emerald-50 text-emerald-700 border border-emerald-100" : "bg-rose-50 text-rose-700 border border-rose-100"}`}>
+                          {t.status==="ACTIVE" ? "Đang dạy" : "Nghỉ dạy"}
+                        </span>
+                      )}
                     </td>
                     <td className="px-5 py-4 text-center">
                       <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
