@@ -319,6 +319,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
           <th className="px-3 py-4 font-bold text-slate-500 bg-slate-50/50 uppercase tracking-wider text-xs whitespace-nowrap text-center">Khối</th>
           <th className="px-3 py-4 font-bold text-slate-500 bg-slate-50/50 uppercase tracking-wider text-xs whitespace-nowrap text-center">Giới tính</th>
           <th className="px-3 py-4 font-bold text-slate-500 bg-slate-50/50 uppercase tracking-wider text-xs whitespace-nowrap text-center">Ngày sinh</th>
+          <th className="px-3 py-4 font-bold text-slate-500 bg-slate-50/50 uppercase tracking-wider text-xs whitespace-nowrap text-center">Cơ sở nhập học</th>
           <th className="px-3 py-4 font-bold text-slate-500 bg-slate-50/50 uppercase tracking-wider text-xs whitespace-nowrap text-center">Hệ Khảo sát</th>
         <th className="px-4 py-4 font-bold text-amber-800 bg-amber-50/50 uppercase tracking-wider text-xs text-center">
             {isPsychSubject ? "Form Khảo sát" : "Chi tiết Điểm & Nhận xét"}
@@ -350,6 +351,9 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
           </td>
                                           <td className="px-3 py-3 bg-transparent text-center">
                                               <span className="text-xs text-slate-500 whitespace-nowrap">{st.dateOfBirth ? new Date(st.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</span>
+                                          </td>
+                                          <td className="px-3 py-3 bg-transparent text-center">
+                                              <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100 whitespace-nowrap uppercase">{st.admissionCampus || "—"}</span>
                                           </td>
                                           <td className="px-3 py-3 bg-transparent text-center">
                                               <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded-md border border-amber-100 whitespace-nowrap uppercase">{st.surveyFormType || "—"}</span>
