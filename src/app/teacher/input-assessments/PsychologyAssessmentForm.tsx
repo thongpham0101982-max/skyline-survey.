@@ -150,8 +150,10 @@ const defaultQuestions = [
 ]
 
 export default function PsychologyAssessmentForm({ student, onSave, isLocked }: any) {
-    const rawGrade = student?.grade || ""
+    
+    const rawGrade = String(student?.grade || "").toLowerCase().replace("khối", "").replace("khoi", "").trim()
     const currentGrade = ["1", "2", "3", "4", "5"].includes(rawGrade) ? rawGrade : "default"
+
     const sections = questionsData[currentGrade] || defaultQuestions
     const isGrades1to5 = ["1", "2", "3", "4", "5"].includes(currentGrade)
 
@@ -323,7 +325,7 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
                                 <div key={qIdx} className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-6 items-center p-4 md:p-5 border-b border-slate-100 hover:bg-slate-50/80 transition-colors">
                                     <div className="lg:col-span-5 xl:col-span-6 flex items-start gap-3">
                                         <span className="text-slate-400 font-bold text-sm w-5 shrink-0 mt-0.5">{actualIdx + 1}.</span>
-                                        <span className="text-slate-700 text-sm md:text-base font-medium leading-relaxed">{q.text}</span>
+                                        <span className="text-slate-700 text-sm md:text-base font-medium leading-relaxed">{q.text.replace(/^\d+\.\s*/, "")}</span>
                                     </div>
                                     <div className={`lg:col-span-7 xl:col-span-6 flex ${isGrades1to5 ? "gap-6 justify-start mt-2 lg:mt-0" : "gap-2"} w-full ml-8 lg:ml-0`}>
                                         {q.options.map((opt, oIdx) => {
