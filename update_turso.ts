@@ -1,3 +1,4 @@
+// @ts-nocheck
 const { prisma } = require('./src/lib/db/index.ts');
 
 async function main() {
