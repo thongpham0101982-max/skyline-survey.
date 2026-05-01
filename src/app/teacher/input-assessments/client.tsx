@@ -366,7 +366,9 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Đã chấm</span>
                         <span className="text-indigo-600 font-black text-lg">{st.scoreVals[6] || st.scoreVals[20] || '0'} <span className="text-xs text-slate-400 font-bold uppercase ml-1">Điểm</span></span>
                       </div>
-                      {["2", "3", "4", "5"].includes(st.grade) && (() => {
+                      {(() => {
+                          const normalizedGrade = String(st.grade || "").toLowerCase().replace("khối", "").replace("khoi", "").trim();
+                          if (!["1", "2", "3", "4", "5"].includes(normalizedGrade)) return null;
                           const score = parseFloat(st.scoreVals[6] || st.scoreVals[20] || '0');
                           let level = ""; let color = "";
                           if (score <= 15) { level = "Bình thường"; color = "text-emerald-700 bg-emerald-50 border-emerald-200"; }
