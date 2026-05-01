@@ -181,8 +181,66 @@ const grades6to9Questions = [
     }
 ]
 
+
+const grades10to12Questions = [
+    {
+        title: "I. Cảm xúc & điều hòa cảm xúc (4 mục)",
+        questions: [
+            { text: "1. Khi đối diện với kỳ thi hoặc áp lực học tập, em cảm thấy thế nào?", options: scaleOptions },
+            { text: "2. Khi gặp thất bại (thi điểm thấp, không đạt kỳ vọng), em phản ứng thế nào?", options: scaleOptions },
+            { text: "3. Có khi nào em cảm thấy buồn, trống rỗng hoặc không còn hứng thú với mọi thứ xung quanh không? Khi đó, em thường làm gì?", options: scaleOptions },
+            { text: "4. Khi em tức giận hoặc căng thẳng, em thường làm gì để giúp mình bình tĩnh trở lại?", options: scaleOptions }
+        ]
+    },
+    {
+        title: "II. Hành vi – kiểm soát bản thân (3 mục)",
+        questions: [
+            { text: "5. Em thường duy trì thói quen học tập và sinh hoạt hằng ngày như thế nào? Có điều gì khiến em dễ bị xáo trộn không?", options: scaleOptions },
+            { text: "6. Khi cảm thấy bực tức hoặc bị hiểu lầm, em thường phản ứng ra sao? Có khi nào em nổi nóng, cãi lại hoặc bỏ đi không?", options: scaleOptions },
+            { text: "7. Khi em mắc lỗi, em thường làm gì? Em có dám nhận trách nhiệm và tìm cách sửa lỗi không?", options: scaleOptions }
+        ]
+    },
+    {
+        title: "III. Quan hệ xã hội & tương tác nhóm (3 mục)",
+        questions: [
+            { text: "8. Trong lớp và ở nhà, em cảm thấy mọi người – bạn bè, thầy cô, cha mẹ – có lắng nghe và tôn trọng ý kiến của em không?", options: scaleOptions },
+            { text: "9. Khi có mâu thuẫn hoặc bất đồng, em thường chọn cách nào để giải quyết? (Nói chuyện, im lặng, tránh né, hay phản ứng mạnh?)", options: scaleOptions },
+            { text: "10. Có khi nào em cảm thấy bị hiểu lầm, bị cô lập hoặc không thuộc về nhóm nào ở trường không? Em làm gì trong những tình huống đó?", options: scaleOptions }
+        ]
+    },
+    {
+        title: "IV. Học tập & khả năng tự định hướng (4 mục)",
+        questions: [
+            { text: "11. Em có xác định được mục tiêu học tập hoặc hướng phát triển cho bản thân trong giai đoạn này không? Mục tiêu và hướng phát triển đó là gì?", options: scaleOptions },
+            { text: "12. Khi cảm thấy mệt mỏi hoặc chán học, em thường làm gì để lấy lại động lực?", options: scaleOptions },
+            { text: "13. Khi gặp bài khó hoặc vấn đề trong học tập, em thường giải quyết bằng cách nào? (Tự tìm hiểu, hỏi người khác hay bỏ qua?)", options: scaleOptions },
+            { text: "14. Một ngày của em thường được sắp xếp ra sao giữa học, nghỉ ngơi và giải trí? Em có cảm thấy cân bằng không?", options: scaleOptions }
+        ]
+    },
+    {
+        title: "V. Tự nhận thức & hình ảnh bản thân (3 mục)",
+        questions: [
+            { text: "15. Em cảm thấy thế nào về bản thân mình – về năng lực, tính cách, và ngoại hình?", options: scaleOptions },
+            { text: "16. Khi nhìn thấy người khác giỏi hơn, thành công hơn, em thường nghĩ gì về bản thân mình?", options: scaleOptions },
+            { text: "17. Em có hiểu rõ điểm mạnh và điểm yếu của mình không? Em thường làm gì để cải thiện hoặc phát huy chúng?", options: scaleOptions }
+        ]
+    },
+    {
+        title: "VI. Động lực & định hướng tương lai (3 mục)",
+        questions: [
+            { text: "18. Em có định hướng rõ ràng cho bản thân sau khi tốt nghiệp THPT không? Em muốn làm gì hoặc học ngành gì?", options: scaleOptions },
+            { text: "19. Theo em, việc học hiện tại có ý nghĩa như thế nào đối với mục tiêu tương lai của em?", options: scaleOptions },
+            { text: "20. Khi gặp khó khăn trong cuộc sống hoặc học tập, điều gì giúp em có động lực để tiếp tục cố gắng?", options: scaleOptions }
+        ]
+    }
+]
+
 const questionsData: QuestionsData = {
     "1": grade1Questions,
+
+    "10": grades10to12Questions,
+    "11": grades10to12Questions,
+    "12": grades10to12Questions,
 
     "6": grades6to9Questions,
     "7": grades6to9Questions,
@@ -215,8 +273,8 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
 
     const sections = questionsData[currentGrade] || defaultQuestions
     const isGrades1to5 = ["1", "2", "3", "4", "5"].includes(currentGrade)
-    const isGrades6to9 = ["6", "7", "8", "9"].includes(currentGrade)
-    const isScoredForm = isGrades1to5 || isGrades6to9
+    const isGrades6to12 = ["6", "7", "8", "9", "10", "11", "12"].includes(currentGrade)
+    const isScoredForm = isGrades1to5 || isGrades6to12
 
     const [scores, setScores] = useState<number[]>(Array(20).fill(-1))
     const [notes, setNotes] = useState<string[]>(Array(20).fill(""))
@@ -296,7 +354,7 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
     const progress = Math.round((scores.filter(s => s >= 0).length / 20) * 100)
 
     const getEvaluation = (score: number) => {
-        if (isGrades6to9) {
+        if (isGrades6to12) {
             if (score <= 15) return { level: "Bình thường", suggestion: "Ổn định, thích nghi tốt", color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-200" };
             if (score <= 31) return { level: "Dấu hiệu nhẹ", suggestion: "Theo dõi - hỗ trợ tâm lý học đường", color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-200" };
             if (score <= 47) return { level: "Dấu hiệu vừa", suggestion: "Quan sát sâu, tư vấn cá nhân", color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-200" };
