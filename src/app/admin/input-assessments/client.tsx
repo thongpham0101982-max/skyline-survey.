@@ -160,7 +160,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
           "Hồ sơ / Bảng điểm": "",
           "Diện khảo sát": "",
           "Hình thức KS": "",
-          "Loại tuyển sinh": "",
+          
           "Kết quả Học tập": "",
           "Kết quả Rèn luyện": ""
         }
