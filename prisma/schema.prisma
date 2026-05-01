@@ -542,6 +542,7 @@ model InputAssessmentStudent {
   hoSoCtQuocTe        String?
   admissionResult     String?
   directorNote        String?
+  admissionCampus     String?
   batch               InputAssessmentBatch?    @relation(fields: [batchId], references: [id])
   period              InputAssessmentPeriod    @relation(fields: [periodId], references: [id], onDelete: Cascade)
   scores              StudentAssessmentScore[]
