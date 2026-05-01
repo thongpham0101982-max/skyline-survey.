@@ -30,7 +30,7 @@ interface Student {
   grade?: string; admissionCriteria?: string; className?: string; surveySystem?: string;
   targetType?: string; hocKy?: string; kqgdTieuHoc?: string; kqHocTap?: string;
   kqRenLuyen?: string; admissionResult?: string; batchId?: string; periodId: string;
-  hoSoCtQuocTe?: string; surveyFormType?: string;
+  hoSoCtQuocTe?: string; surveyFormType?: string; admissionCampus?: string;
   }
 interface Assignment {
   id: string; periodId: string; batchId?: string; userId: string; 
@@ -154,6 +154,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
           "Họ và Tên *": "Nguyễn Văn A", 
           "Ngày sinh": "20/05/2010",
           "Giới tính": "Nam",
+          "Cơ sở nhập học": "",
           "Khối": "6",
           "Học kỳ / Năm TS": "HK1",
           "Hệ Khảo sát": "",
@@ -199,7 +200,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   const [sModal, setSModal] = useState(false)
   const [editS, setEditS] = useState<Student|null>(null)
   const [sSelected, setSSelected] = useState<string[]>([])
-  const [sForm, setSForm] = useState({ studentCode:"", fullName:"", dateOfBirth:"", gender:"", grade:"", admissionCriteria:"", className:"", hocKy:"", kqgdTieuHoc:"", kqHocTap:"", kqRenLuyen:"", targetType:"", surveySystem:"", hoSoCtQuocTe:"", surveyFormType:"", batchId:"" })
+  const [sForm, setSForm] = useState({ studentCode:"", fullName:"", dateOfBirth:"", gender:"", grade:"", admissionCriteria:"", className:"", hocKy:"", kqgdTieuHoc:"", kqHocTap:"", kqRenLuyen:"", targetType:"", surveySystem:"", hoSoCtQuocTe:"", surveyFormType:"", batchId:"", admissionCampus:"" })
   const fileRef = useRef<HTMLInputElement>(null)
 
   // ───────── CONFIGS STATE ─────────
@@ -304,10 +305,10 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
     }
     const genCode = "HS" + nextNum.toString().padStart(3, "0");
 
-    setSForm({ studentCode: genCode, fullName: "", dateOfBirth: "", grade: "", admissionCriteria: "", className: "", hocKy: "", kqgdTieuHoc: "", kqHocTap: "", kqRenLuyen: "", targetType: "", surveySystem: "", hoSoCtQuocTe: "", surveyFormType: "", gender: "", batchId: sBatchId || "" });
+    setSForm({ studentCode: genCode, fullName: "", dateOfBirth: "", grade: "", admissionCriteria: "", className: "", hocKy: "", kqgdTieuHoc: "", kqHocTap: "", kqRenLuyen: "", targetType: "", surveySystem: "", hoSoCtQuocTe: "", surveyFormType: "", gender: "", batchId: sBatchId || "", admissionCampus: "" });
     setSModal(true);
 }
-  const openEditStudent = (s:Student) => { setEditS(s); setSForm({ studentCode:s.studentCode, fullName:s.fullName, dateOfBirth:s.dateOfBirth?.slice(0,10)||"", grade:s.grade||"", admissionCriteria:s.admissionCriteria||"", className:s.className||"", hocKy:s.hocKy||"", kqgdTieuHoc:s.kqgdTieuHoc||"", kqHocTap:s.kqHocTap||"", kqRenLuyen:s.kqRenLuyen||"", targetType:s.targetType||"", surveySystem:s.surveySystem||"", hoSoCtQuocTe:s.hoSoCtQuocTe||"", surveyFormType:s.surveyFormType||"" , gender:s.gender||"", batchId:s.batchId||"" }); setSModal(true) }
+  const openEditStudent = (s:Student) => { setEditS(s); setSForm({ studentCode:s.studentCode, fullName:s.fullName, dateOfBirth:s.dateOfBirth?.slice(0,10)||"", grade:s.grade||"", admissionCriteria:s.admissionCriteria||"", className:s.className||"", hocKy:s.hocKy||"", kqgdTieuHoc:s.kqgdTieuHoc||"", kqHocTap:s.kqHocTap||"", kqRenLuyen:s.kqRenLuyen||"", targetType:s.targetType||"", surveySystem:s.surveySystem||"", hoSoCtQuocTe:s.hoSoCtQuocTe||"", surveyFormType:s.surveyFormType||"" , gender:s.gender||"", batchId:s.batchId||"", admissionCampus:s.admissionCampus||"" }); setSModal(true) }
   const saveStudent = async () => {
     if (!sForm.studentCode.trim()||!sForm.fullName.trim()) return notify("Cần nhập Mã HS và Họ tên","err")
     const r = editS
@@ -388,6 +389,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
         }
         const studentCode = String(findVal(row, ["mã hs ks", "ma_hs_ks", "mahs", "studentcode"]) || "").trim();
         const fullName = String(findVal(row, ["họ và tên", "họ tên", "ho ten", "fullname", "full name"]) || "").trim();
+        const admissionCampus = String(findVal(row, ["cơ sở nhập học", "cơ sở", "co so", "campus"]) || "").trim();
         const grade = String(findVal(row, ["khối", "khoi", "grade"]) || "").trim();
         const className = String(findVal(row, ["lớp", "lop", "class"]) || "").trim();
         const hocKy = String(findVal(row, ["học kỳ", "hoc ky", "semester"]) || "").trim();
@@ -413,6 +415,7 @@ return {
             hoSoCtQuocTe,
             kqHocTap,
             kqRenLuyen,
+            admissionCampus,
             periodId: sPeriodId,
           batchId: sBatchId || null
         };
@@ -943,6 +946,7 @@ return {
                               <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Giới tính</th>
                               <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Ngày sinh</th>
                               <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Hệ Khảo sát</th>
+                              <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Cơ sở nhập học</th>
                               <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Hồ sơ / Bảng điểm</th>
                               <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Học kỳ / Năm TS</th>
                                 <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Diện khảo sát</th>
@@ -962,6 +966,7 @@ return {
                              <td className="p-5 text-center text-xs font-black text-slate-400">{s.gender || "-"}</td>
                                <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString('vi-VN') : "-"}</span></td>
                                <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.surveyFormType || "-"}</span></td>
+                               <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.admissionCampus || "-"}</span></td>
                                <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.hoSoCtQuocTe || "-"}</span></td>
                                <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.hocKy || "-"}</span></td>
                                  <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.admissionCriteria || "-"}</span></td>
@@ -1088,6 +1093,12 @@ return {
            </div>
 
            <div className="grid grid-cols-3 gap-4">
+              <Field label="Cơ sở nhập học">
+                <select value={sForm.admissionCampus} onChange={e=>setSForm(f=>({...f,admissionCampus:e.target.value}))} className={inp}>
+                  <option value="">-- Chọn cơ sở --</option>
+                  {campuses.map(c => <option key={c.id} value={c.campusName}>{c.campusName}</option>)}
+                </select>
+              </Field>
               <Field label="Diện Khảo sát">
                 <select value={sForm.admissionCriteria} onChange={e=>setSForm(f=>({...f,admissionCriteria:e.target.value}))} className={inp}>
                   <option value="">--</option>
@@ -1100,7 +1111,6 @@ return {
                   {configs.filter(c => c.categoryType === "HINH_THUC_KS").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                 </select>
               </Field>
-              
            </div>
 
            <div className="grid grid-cols-3 gap-4">
