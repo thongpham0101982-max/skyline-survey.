@@ -127,8 +127,67 @@ const grade1Questions = [
     }
 ]
 
+
+const grades6to9Questions = [
+    {
+        title: "I. Cảm xúc & điều hòa cảm xúc (4 mục)",
+        questions: [
+            { text: "1. Khi gặp áp lực học tập (thi, kiểm tra), em cảm thấy thế nào?", options: scaleOptions },
+            { text: "2. Khi bị cô/thầy phê bình trước lớp, em phản ứng ra sao?", options: scaleOptions },
+            { text: "3. Gần đây, có khi nào em cảm thấy buồn chán hoặc không muốn làm gì mà không rõ lý do không? Hãy kể cô/thầy nghe.", options: scaleOptions },
+            { text: "4. Khi em tức giận hoặc thất vọng, em thường làm gì để bình tĩnh lại?", options: scaleOptions }
+        ]
+    },
+    {
+        title: "II. Hành vi – kiểm soát bản thân (3 mục)",
+        questions: [
+            { text: "5. Khi không có cô/thầy trong lớp, em thường cư xử như thế nào với các bạn?", options: scaleOptions },
+            { text: "6. Khi có xung đột hay bất đồng với người khác, em thường làm gì đầu tiên?", options: scaleOptions },
+            { text: "7. Khi có bài tập hoặc việc được giao mà em không thích, em thường phản ứng như thế nào?", options: scaleOptions }
+        ]
+    },
+    {
+        title: "III. Quan hệ xã hội & tương tác nhóm (3 mục)",
+        questions: [
+            { text: "8. Trong lớp, em cảm thấy các bạn đối xử với nhau như thế nào? Mọi người có thân thiện không?", options: scaleOptions },
+            { text: "9. Khi em và bạn có hiểu lầm, em thường làm gì để giải quyết vấn đề đó?", options: scaleOptions },
+            { text: "10. Gần đây em có cảm thấy căng thẳng, bực mình hoặc hay xung đột với bạn bè, thầy cô hay cha mẹ không? Em thường phản ứng thế nào?", options: scaleOptions }
+        ]
+    },
+    {
+        title: "IV. Học tập & chú ý (4 mục)",
+        questions: [
+            { text: "11. Khi học bài hoặc nghe giảng, em có dễ tập trung không? Điều gì khiến em dễ mất tập trung?", options: scaleOptions },
+            { text: "12. Khi gặp một bài tập khó, em thường làm gì? Em mặc kệ hay tự tìm hiểu, nhờ sự giúp đỡ của người khác?", options: scaleOptions },
+            { text: "13. Em có thường xuyên hoàn thành bài tập đúng thời hạn không? Nguyên nhân nào khiến em không nộp bài đúng thời hạn?", options: scaleOptions },
+            { text: "14. Trong giờ học, có khi nào em thấy mình hay mơ màng hoặc làm việc riêng không? Khi đó, em nghĩ gì?", options: scaleOptions }
+        ]
+    },
+    {
+        title: "V. Tự nhận thức & hình ảnh bản thân (3 mục)",
+        questions: [
+            { text: "15. Em cảm thấy thế nào về bản thân mình trong học tập cũng như trong cuộc sống hằng ngày?", options: scaleOptions },
+            { text: "16. Khi nhìn thấy bạn học giỏi hơn, đẹp hơn hoặc chơi thể thao giỏi hơn, em thường nghĩ gì về bản thân?", options: scaleOptions },
+            { text: "17. Khi mắc lỗi, em có dám nhận và sửa lỗi, hay thường che giấu hoặc né tránh?", options: scaleOptions }
+        ]
+    },
+    {
+        title: "VI. Động lực & định hướng học tập (3 mục)",
+        questions: [
+            { text: "18. Em có đặt ra mục tiêu cho việc học hoặc tương lai của mình không? Mục tiêu đó là gì?", options: scaleOptions },
+            { text: "19. Khi gặp khó khăn trong học tập, em thường làm gì? Có cố gắng tiếp tục hay dễ bỏ cuộc?", options: scaleOptions },
+            { text: "20. Mỗi sáng đến trường, em cảm thấy thế nào? Có điều gì khiến em vui hay không thích đến lớp?", options: scaleOptions }
+        ]
+    }
+]
+
 const questionsData: QuestionsData = {
     "1": grade1Questions,
+
+    "6": grades6to9Questions,
+    "7": grades6to9Questions,
+    "8": grades6to9Questions,
+    "9": grades6to9Questions,
 
     "2": grades2to5Questions,
     "3": grades2to5Questions,
@@ -156,6 +215,8 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
 
     const sections = questionsData[currentGrade] || defaultQuestions
     const isGrades1to5 = ["1", "2", "3", "4", "5"].includes(currentGrade)
+    const isGrades6to9 = ["6", "7", "8", "9"].includes(currentGrade)
+    const isScoredForm = isGrades1to5 || isGrades6to9
 
     const [scores, setScores] = useState<number[]>(Array(20).fill(-1))
     const [notes, setNotes] = useState<string[]>(Array(20).fill(""))
@@ -235,6 +296,15 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
     const progress = Math.round((scores.filter(s => s >= 0).length / 20) * 100)
 
     const getEvaluation = (score: number) => {
+        if (isGrades6to9) {
+            if (score <= 15) return { level: "Bình thường", suggestion: "Ổn định, thích nghi tốt", color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-200" };
+            if (score <= 31) return { level: "Dấu hiệu nhẹ", suggestion: "Theo dõi - hỗ trợ tâm lý học đường", color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-200" };
+            if (score <= 47) return { level: "Dấu hiệu vừa", suggestion: "Quan sát sâu, tư vấn cá nhân", color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-200" };
+            if (score <= 63) return { level: "Nguy cơ cao", suggestion: "Đánh giá chuyên sâu, can thiệp định kỳ", color: "text-orange-600", bg: "bg-orange-50", border: "border-orange-200" };
+            return { level: "Nguy cơ rất cao", suggestion: "Cần can thiệp chuyên môn, phối hợp phụ huynh", color: "text-red-600", bg: "bg-red-50", border: "border-red-200" };
+        }
+        
+        // Grades 1-5 default
         if (score <= 15) return { level: "Bình thường", suggestion: "Có thể theo học bình thường", color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-200" };
         if (score <= 31) return { level: "Dấu hiệu nhẹ", suggestion: "Theo dõi - hỗ trợ thích nghi", color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-200" };
         if (score <= 47) return { level: "Dấu hiệu vừa", suggestion: "Quan sát sâu, can thiệp nhẹ nếu cần", color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-200" };
@@ -242,7 +312,7 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
         return { level: "Nguy cơ rất cao", suggestion: "Cần can thiệp chuyên môn sớm (bảo đảm an toàn và hỗ trợ)", color: "text-red-600", bg: "bg-red-50", border: "border-red-200" };
     };
 
-    const evaluation = isGrades1to5 ? getEvaluation(totalScore) : null;
+    const evaluation = isScoredForm ? getEvaluation(totalScore) : null;
 
     return (
         <div className="bg-slate-50 min-h-screen p-3 md:p-6 font-sans text-slate-900 border-x">
@@ -272,7 +342,7 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
                 </div>
 
                 
-                {isGrades1to5 && (
+                {isScoredForm && (
                     <div className="bg-indigo-50/50 rounded-xl p-4 border border-indigo-100 shadow-sm text-sm">
                         <h3 className="font-bold text-indigo-800 mb-2">5. Thang điểm chung cho mỗi câu hỏi:</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 mb-4">
@@ -327,10 +397,10 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
                                         <span className="text-slate-400 font-bold text-sm w-5 shrink-0 mt-0.5">{actualIdx + 1}.</span>
                                         <span className="text-slate-700 text-sm md:text-base font-medium leading-relaxed">{q.text.replace(/^\d+\.\s*/, "")}</span>
                                     </div>
-                                    <div className={`lg:col-span-7 xl:col-span-6 flex ${isGrades1to5 ? "gap-6 justify-start mt-2 lg:mt-0" : "gap-2"} w-full ml-8 lg:ml-0`}>
+                                    <div className={`lg:col-span-7 xl:col-span-6 flex ${isScoredForm ? "gap-6 justify-start mt-2 lg:mt-0" : "gap-2"} w-full ml-8 lg:ml-0`}>
                                         {q.options.map((opt, oIdx) => {
                                             const optValue = q.options.length === 5 ? oIdx : oIdx + 1;
-                                            return isGrades1to5 ? (
+                                            return isScoredForm ? (
                                                 <label key={oIdx} className="flex items-center gap-1.5 cursor-pointer group">
                                                     <input 
                                                         type="radio" 
@@ -365,7 +435,7 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
                                             </button>
                                         )})}
                                     </div>
-                                    {isGrades1to5 && (
+                                    {isScoredForm && (
                                         <div className="lg:col-span-12 w-full mt-1.5 ml-8 lg:ml-0 flex items-end gap-2">
                                             <span className="text-[13px] font-semibold text-slate-700 whitespace-nowrap mb-0.5">Ghi chú quan sát:</span>
                                             <input
@@ -387,7 +457,7 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
                     </div>
                 </div>
 
-                {isGrades1to5 && (
+                {isScoredForm && (
                     <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
                         <h3 className="font-bold text-slate-800 text-base mb-4">TỔNG HỢP:</h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-y-3 gap-x-8 mb-4 text-sm font-medium text-slate-700">
@@ -430,7 +500,7 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
                     <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col h-full">
                         <div className="flex items-center gap-2 mb-3">
                             <MessageSquare size={18} className="text-amber-500" />
-                            <h3 className="font-bold text-slate-800 text-sm">{isGrades1to5 ? "C. KẾT LUẬN SƠ BỘ:" : "Kết luận chuyên môn"}</h3>
+                            <h3 className="font-bold text-slate-800 text-sm">{isScoredForm ? "C. KẾT LUẬN SƠ BỘ:" : "Kết luận chuyên môn"}</h3>
                         </div>
                         <textarea
                             disabled={isLocked}
@@ -444,7 +514,7 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
                     <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col h-full">
                         <div className="flex items-center gap-2 mb-3">
                             <Info size={18} className="text-emerald-500" />
-                            <h3 className="font-bold text-slate-800 text-sm">{isGrades1to5 ? "D. KHUYẾN NGHỊ DÀNH CHO PHỤ HUYNH (NẾU CÓ):" : "Kiến nghị hỗ trợ"}</h3>
+                            <h3 className="font-bold text-slate-800 text-sm">{isScoredForm ? "D. KHUYẾN NGHỊ DÀNH CHO PHỤ HUYNH (NẾU CÓ):" : "Kiến nghị hỗ trợ"}</h3>
                         </div>
                         <textarea
                             disabled={isLocked}
