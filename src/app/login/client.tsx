@@ -87,7 +87,11 @@ export function LoginClient() {
         })
         if (result?.error) {
           console.error('[LOGIN] SignIn Error:', result.error)
-          setError(`Sai tên đăng nhập hoặc mật khẩu! (${result.error})`)
+          if (result.error === 'TAI_KHOAN_BI_KHOA' || result.error.includes('TAI_KHOAN_BI_KHOA')) {
+             setError('Tài khoản của bạn đã ngừng hoạt động (Nghỉ dạy).')
+          } else {
+             setError(`Sai tên đăng nhập hoặc mật khẩu!`)
+          }
           setLoading(false)
           setLoadingSteps([])
         } else {

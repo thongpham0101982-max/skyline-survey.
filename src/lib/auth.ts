@@ -1,5 +1,9 @@
 // @ts-nocheck
-﻿import NextAuth from "next-auth"
+﻿import NextAuth, { CredentialsSignin } from "next-auth"
+
+class InactiveUserError extends CredentialsSignin {
+  code = "TAI_KHOAN_BI_KHOA"
+}
 import CredentialsProvider from "next-auth/providers/credentials"
 import { prisma } from "./db"
 import bcrypt from "bcryptjs"
@@ -82,7 +86,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (user.status !== "ACTIVE") {
           console.log('[AUTH] User found but not ACTIVE status:', user.status)
-          return null
+          throw new InactiveUserError()
         }
 
         // Validate Password
