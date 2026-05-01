@@ -323,6 +323,12 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
         <th className="px-4 py-4 font-bold text-amber-800 bg-amber-50/50 uppercase tracking-wider text-xs text-center">
             {isPsychSubject ? "Form Khảo sát" : "Chi tiết Điểm & Nhận xét"}
         </th>
+        {isPsychSubject && (
+            <>
+                <th className="px-4 py-4 font-bold text-amber-800 bg-amber-50/50 uppercase tracking-wider text-xs text-left min-w-[200px]">Kết luận sơ bộ</th>
+                <th className="px-4 py-4 font-bold text-amber-800 bg-amber-50/50 uppercase tracking-wider text-xs text-left min-w-[200px]">Khuyến nghị (Nếu có)</th>
+            </>
+        )}
         <th className="px-2 py-3 md:px-4 md:py-4 text-center font-bold text-emerald-800 bg-emerald-50/50 uppercase tracking-wider text-xs w-32 md:sticky md:right-0 z-20">Xác nhận</th>
     </tr>
 </thead>
@@ -435,6 +441,16 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
             </div>
             )}
         </td>
+        {isPsychSubject && (
+            <>
+                <td className="px-4 py-3 bg-transparent text-left align-top max-w-[250px]">
+                    <div className="text-[12px] text-slate-700 whitespace-pre-wrap leading-relaxed max-h-[100px] overflow-y-auto custom-scrollbar font-medium">{st.commentVals?.[0] || "-"}</div>
+                </td>
+                <td className="px-4 py-3 bg-transparent text-left align-top max-w-[250px]">
+                    <div className="text-[12px] text-slate-700 whitespace-pre-wrap leading-relaxed max-h-[100px] overflow-y-auto custom-scrollbar font-medium">{st.commentVals?.[1] || "-"}</div>
+                </td>
+            </>
+        )}
 <td className="px-2 py-2 md:px-4 md:py-4 text-center bg-transparent md:sticky md:right-0 z-10 md:backdrop-blur-sm">
                                             <button 
                                                 onClick={() => saveStudentScore(st)}
