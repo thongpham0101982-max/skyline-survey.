@@ -484,7 +484,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
         </div>
       )}
 
-      {isPsychologyForm && activePsychStudent && isPsychModalOpen && (
+      {isPsychSubject && activePsychStudent && isPsychModalOpen && (
         <div className="fixed inset-0 z-[100] bg-white overflow-y-auto">
           <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b px-6 py-4 flex justify-between items-center shadow-sm">
             <h3 className="font-bold text-slate-800">Phiếu Đánh giá Tâm lý Chi tiết</h3>
@@ -497,7 +497,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
           </div>
           <PsychologyAssessmentForm 
             student={activePsychStudent}
-            onSave={(st, scores, comments) => saveStudentScore(st, scores, comments)}
+            onSave={(st: any, scores: any, comments: any) => saveStudentScore(st, scores, comments)}
             isLocked={isLocked}
           />
         </div>
