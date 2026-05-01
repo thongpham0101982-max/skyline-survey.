@@ -60,6 +60,8 @@ export async function GET(req: any) {
 
         // Filter in memory to bypass any strict case-sensitivity issues of SQLite
         
+        const filteredStudents = students; // Temporary: Return ALL students as requested by user "Hiện tất cả danh sách Học sinh theo Phân công"
+        /*
         const filteredStudents = students.filter(st => {
             // Fuzzy grade matching
             if (grade && grade.trim() !== "" && grade !== "Tất cả") {
@@ -77,7 +79,6 @@ export async function GET(req: any) {
             }
 
             if (validSystems.length > 0) {
-
                 // If student has no system assigned (due to Excel import error), show them as fallback
                 if (!st.surveyFormType) return true;
                 const stSys = st.surveyFormType.trim().toLowerCase();
@@ -89,8 +90,10 @@ export async function GET(req: any) {
                 
                 if (!matchSys && !partialMatchSys) return false;
             }
+            
             return true;
         });
+        */
 
         return NextResponse.json(filteredStudents);
     }
