@@ -2,7 +2,7 @@
 import { useState, useRef } from "react"
 import {
   Plus, Trash2, Edit2, Check, X, Upload, Download,
-  Key, GraduationCap, Search, Users, UserCheck, Building2
+  Key, GraduationCap, Search, Users, UserCheck, Building2, Mail
 } from "lucide-react"
 import {
   createTeacherAction, updateTeacherAction, deleteTeacherAction,
