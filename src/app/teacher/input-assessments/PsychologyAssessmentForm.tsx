@@ -269,7 +269,7 @@ const defaultQuestions = [
 export default function PsychologyAssessmentForm({ student, onSave, isLocked }: any) {
     
     const rawGrade = String(student?.grade || "").toLowerCase().replace("khối", "").replace("khoi", "").trim()
-    const currentGrade = ["1", "2", "3", "4", "5"].includes(rawGrade) ? rawGrade : "default"
+    const currentGrade = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"].includes(rawGrade) ? rawGrade : "default"
 
     const sections = questionsData[currentGrade] || defaultQuestions
     const isGrades1to5 = ["1", "2", "3", "4", "5"].includes(currentGrade)
