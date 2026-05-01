@@ -117,6 +117,7 @@ export async function updateTeacherAction(data: any) {
     if (dateOfBirth !== undefined) updateData.dateOfBirth = dateOfBirth ? new Date(dateOfBirth) : null
     if (campusId !== undefined) updateData.campusId = campusId
     if (data.status !== undefined) updateData.status = data.status
+    if (data.email !== undefined) updateData.email = data.email || null
 
     if (data.department !== undefined) {
       updateData.departmentId = await resolveDepartmentId(data.department)

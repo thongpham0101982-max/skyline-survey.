@@ -92,7 +92,8 @@ export function TeacherManagerClient({
       department: t.department || "",
       mainSubject: t.mainSubject || "",
       campusId: t.campusId || "",
-      status: t.status || "ACTIVE"
+      status: t.status || "ACTIVE",
+      email: t.email || ""
     })
   }
 
@@ -107,6 +108,7 @@ export function TeacherManagerClient({
         department: editForm.department || null,
         mainSubject: editForm.mainSubject || null,
         campusId: editForm.campusId || null,
+        email: editForm.email || null,
         campus: (campuses || []).find(c => c.id === editForm.campusId)?.campusName || null,
         status: editForm.status
       } : t))
@@ -228,7 +230,7 @@ export function TeacherManagerClient({
           <h3 className="font-bold text-slate-800 text-lg mb-4 flex items-center gap-2">
             <GraduationCap className="w-6 h-6 text-indigo-600" />Thêm Giáo Viên Mới
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-widest pl-1">Mã GV *</label>
               <input type="text" value={newForm.teacherCode}
@@ -242,6 +244,13 @@ export function TeacherManagerClient({
                 onChange={e => setNewForm({...newForm, teacherName: e.target.value})}
                 placeholder="Nguyễn Văn A"
                 className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-indigo-500 outline-none font-bold" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-widest pl-1">Email (Nhận thông báo)</label>
+              <input type="email" value={newForm.email}
+                onChange={e => setNewForm({...newForm, email: e.target.value.trim()})}
+                placeholder="GV@skylineschool.edu.vn"
+                className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-indigo-500 outline-none font-bold text-slate-600" />
             </div>
             <div>
               <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-widest pl-1">Cơ sở</label>
@@ -309,10 +318,21 @@ export function TeacherManagerClient({
                     </td>
                     <td className="px-5 py-4">
                       {isEditing ? (
-                        <input type="text" value={editForm.teacherName}
-                          onChange={e => setEditForm({...editForm, teacherName: e.target.value})}
-                          className="border border-indigo-300 rounded-lg px-2.5 py-1.5 text-sm w-44 outline-none font-bold" />
-                      ) : <span className="font-extrabold text-slate-900">{t.teacherName}</span>}
+                        <div className="flex flex-col gap-1.5">
+                          <input type="text" value={editForm.teacherName}
+                            onChange={e => setEditForm({...editForm, teacherName: e.target.value})}
+                            className="border border-indigo-300 rounded-lg px-2.5 py-1.5 text-sm w-44 outline-none font-bold" placeholder="Tên Giáo Viên" />
+                          <input type="email" value={editForm.email || ""}
+                            onChange={e => setEditForm({...editForm, email: e.target.value})}
+                            className="border border-indigo-300 rounded-lg px-2.5 py-1.5 text-xs w-44 outline-none font-medium text-slate-500 bg-slate-50" placeholder="Email nhận thông báo" />
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-1">
+                          <span className="font-extrabold text-slate-900">{t.teacherName}</span>
+                          {t.email && <span className="text-[10px] font-bold text-slate-500 bg-slate-50 px-2 py-0.5 rounded-md self-start border border-slate-100 flex items-center gap-1"><Mail className="w-3 h-3" />{t.email}</span>}
+                          {!t.email && <span className="text-[10px] font-medium text-red-400 self-start italic">Chưa có email</span>}
+                        </div>
+                      )}
                     </td>
                     <td className="px-5 py-4">
                       {isEditing ? (

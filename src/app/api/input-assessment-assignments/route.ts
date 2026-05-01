@@ -87,8 +87,9 @@ export async function POST(req) {
            try {
                const firstTeacherId = assignments[0].teacherId;
                const teacherUser = await prisma.user.findUnique({ where: { id: firstTeacherId } });
+               const teacherRecord = await prisma.teacher.findUnique({ where: { userId: firstTeacherId } });
                
-               if (teacherUser && teacherUser.email) {
+               if (teacherUser && teacherRecord && teacherRecord.email) {
                    const period = await prisma.inputAssessmentPeriod.findUnique({ where: { id: periodId } });
                    const batch = batchId ? await prisma.inputAssessmentBatch.findUnique({ where: { id: batchId } }) : null;
                    
@@ -123,7 +124,7 @@ export async function POST(req) {
                    `;
                    
                    // Send mail in background
-                   sendMail(teacherUser.email, `[Skyline Survey] Phân công đánh giá: ${periodStr}`, html);
+                   sendMail(teacherRecord.email, `[Skyline Survey] Phân công đánh giá: ${periodStr}`, html);
                }
            } catch(e) {
                console.error("Failed to send assignment notification email", e);
