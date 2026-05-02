@@ -23,7 +23,27 @@ export async function createUser(data: any) {
         })
       ));
     }
+
+    if (data.roleCode === "TEACHER" || data.roleCode.includes("TEACHER")) {
+      const defaultCampusId = data.campusIds && data.campusIds.length > 0 ? data.campusIds[0] : (await prisma.campus.findFirst())?.id;
+      if (defaultCampusId) {
+        const existingTeacher = await prisma.teacher.findUnique({ where: { teacherCode: data.employeeCode } });
+        if (!existingTeacher) {
+          await prisma.teacher.create({
+            data: {
+              userId: newUser.id,
+              teacherCode: data.employeeCode,
+              teacherName: data.fullName,
+              campusId: defaultCampusId,
+              status: "ACTIVE"
+            }
+          });
+        }
+      }
+    }
+
     revalidatePath("/admin/users");
+    revalidatePath("/admin/teachers");
     return { success: true };
   } catch (e: any) {
     if (e.code === 'P2002') return { success: false, error: "Mã NV (Tài khoản) này đã tồn tại!" };
@@ -57,7 +77,36 @@ export async function updateUser(id: string, data: any) {
         ));
       }
     }
+
+    const teacher = await prisma.teacher.findFirst({ where: { userId: id } });
+    if (teacher) {
+      await prisma.teacher.update({
+        where: { id: teacher.id },
+        data: {
+          teacherName: data.fullName,
+          teacherCode: data.employeeCode
+        }
+      });
+    } else if (data.roleCode === "TEACHER" || data.roleCode.includes("TEACHER")) {
+      const defaultCampusId = data.campusIds && data.campusIds.length > 0 ? data.campusIds[0] : (await prisma.campus.findFirst())?.id;
+      if (defaultCampusId) {
+        const existingTeacher = await prisma.teacher.findUnique({ where: { teacherCode: data.employeeCode } });
+        if (!existingTeacher) {
+          await prisma.teacher.create({
+            data: {
+              userId: id,
+              teacherCode: data.employeeCode,
+              teacherName: data.fullName,
+              campusId: defaultCampusId,
+              status: "ACTIVE"
+            }
+          });
+        }
+      }
+    }
+
     revalidatePath("/admin/users");
+    revalidatePath("/admin/teachers");
     return { success: true };
   } catch (e: any) {
     if (e.code === 'P2002') return { success: false, error: "Mã NV (Tài khoản) này đã bị trùng!" };
