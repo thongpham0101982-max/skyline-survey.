@@ -178,6 +178,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     const subName = (currentAssignment?.subject?.name || "").toLowerCase();
     const subCode = (currentAssignment?.subject?.code || "").toLowerCase();
     const isPsychSubject = subName.includes("tâm lý") || subCode.includes("tly");
+    const hideComments = ["toán", "tiếng việt", "ngữ văn"].some(s => subName.includes(s));
     const gradeVal = String(currentAssignment?.grade || "").replace("Khối ", "").trim();
 
     // English grouping logic for tabs
@@ -366,7 +367,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
           <th className="px-3 py-4 font-bold text-slate-500 bg-slate-50/50 uppercase tracking-wider text-xs whitespace-nowrap text-center">Cơ sở nhập học</th>
           <th className="px-3 py-4 font-bold text-slate-500 bg-slate-50/50 uppercase tracking-wider text-xs whitespace-nowrap text-center">Hệ Khảo sát</th>
         <th className="px-4 py-4 font-bold text-amber-800 bg-amber-50/50 uppercase tracking-wider text-xs text-center">
-            {isPsychSubject ? "Form Khảo sát" : "Chi tiết Điểm & Nhận xét"}
+            {isPsychSubject ? "Form Khảo sát" : (hideComments ? "Chi tiết Điểm" : "Chi tiết Điểm & Nhận xét")}
         </th>
         {isPsychSubject && (
             <>
@@ -474,7 +475,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                     );
                 })}
 
-                {Array.from({length: (currentAssignment.subject.commentColumns ?? 1)}).map((_, colIdx) => {
+                {!hideComments && Array.from({length: (currentAssignment.subject.commentColumns ?? 1)}).map((_, colIdx) => {
                     let cName = "Nhận xét " + (colIdx+1);
                     try { if(currentAssignment.subject.columnNames) { const p = JSON.parse(currentAssignment.subject.columnNames); if(p.comments && p.comments[colIdx]) cName = p.comments[colIdx]; } } catch(e){}
                     return (
