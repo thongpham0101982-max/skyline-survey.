@@ -178,7 +178,8 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     const subName = (currentAssignment?.subject?.name || "").toLowerCase();
     const subCode = (currentAssignment?.subject?.code || "").toLowerCase();
     const isPsychSubject = subName.includes("tâm lý") || subCode.includes("tly");
-    const hideComments = ["toán", "tiếng việt", "ngữ văn"].some(s => subName.includes(s));
+    const subNameNormalized = subName.normalize("NFC");
+    const hideComments = ["toa", "tvi", "nva"].some(c => subCode.includes(c)) || ["toán", "tiếng việt", "ngữ văn"].some(s => subNameNormalized.includes(s));
     const gradeVal = String(currentAssignment?.grade || "").replace("Khối ", "").trim();
 
     // English grouping logic for tabs
