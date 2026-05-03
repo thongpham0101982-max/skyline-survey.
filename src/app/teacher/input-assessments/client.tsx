@@ -49,16 +49,6 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
         return Array.from(pMap.values());
     }, [assignments]);
 
-    const uniqueAssignments = useMemo(() => {
-        if (!Array.isArray(assignments)) return [];
-        const map = new Map();
-        assignments.filter(a => a.periodId === selectedPeriodId).forEach(a => {
-            const key = `${a.subjectId}-${a.batchId || ''}`;
-            if (!map.has(key)) map.set(key, a);
-        });
-        return Array.from(map.values());
-    }, [assignments, selectedPeriodId]);
-
     const availableAssignments = useMemo(() => {
         if (!Array.isArray(assignments)) return [];
         return assignments.filter(a => a.periodId === selectedPeriodId);
@@ -193,8 +183,10 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
 
     // English grouping logic for tabs
     const isEnglishAssignment = subName.includes("tiếng anh") || subCode.includes("eng") || subCode.includes("esl");
-    const relatedEnglishAssignments = isEnglishAssignment ? uniqueAssignments.filter(a => 
+    const relatedEnglishAssignments = isEnglishAssignment ? availableAssignments.filter(a => 
         (a.subject?.name?.toLowerCase().includes("tiếng anh") || a.subject?.code?.toLowerCase().includes("eng") || a.subject?.code?.toLowerCase().includes("esl")) &&
+        a.grade === currentAssignment.grade &&
+        a.educationSystem === currentAssignment.educationSystem &&
         a.batchId === currentAssignment.batchId &&
         a.periodId === currentAssignment.periodId
     ).sort((a,b) => (a.subject?.name || "").localeCompare(b.subject?.name || "")) : [];
@@ -281,12 +273,12 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                             onChange={e => setSelectedAssignmentId(e.target.value)}
                             className="w-full bg-white border border-slate-200 rounded-2xl pl-5 pr-10 py-3.5 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
                         >
-                            {uniqueAssignments.map(a => (
+                            {availableAssignments.map(a => (
                                 <option key={a.id} value={a.id}>
-                                    {a.subject?.name}{a.batch?.name ? ` - ${a.batch.name}` : ""}
+                                    {a.subject?.name} - Khối {a.grade || "Tất cả"} ({a.educationSystem || "Tất cả"}) {a.batch?.name ? ` - ${a.batch.name}` : ""}
                                 </option>
                             ))}
-                            {uniqueAssignments.length === 0 && <option value="">Vui lòng chọn kỳ KS...</option>}
+                            {availableAssignments.length === 0 && <option value="">Vui lòng chọn kỳ KS...</option>}
                         </select>
                         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-indigo-500 transition-colors">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
