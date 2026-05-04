@@ -437,8 +437,11 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
           <th className="px-3 py-4 font-bold text-slate-500 bg-slate-50/50 uppercase tracking-wider text-xs whitespace-nowrap text-center">Cơ sở nhập học</th>
           <th className="px-3 py-4 font-bold text-slate-500 bg-slate-50/50 uppercase tracking-wider text-xs whitespace-nowrap text-center">Hệ Khảo sát</th>
         <th className="px-4 py-4 font-bold text-amber-800 bg-amber-50/50 uppercase tracking-wider text-xs text-center">
-            {isPsychSubject || isChildDevSubject ? "Form Khảo sát" : (hideComments ? "Chi tiết Điểm" : "Chi tiết Điểm & Nhận xét")}
+            {isPsychSubject || isChildDevSubject || isThinkingSkillsSubject ? "Form Khảo sát" : (hideComments ? "Chi tiết Điểm" : "Chi tiết Điểm & Nhận xét")}
         </th>
+        {(isChildDevSubject || isThinkingSkillsSubject) && (
+            <th className="px-4 py-4 font-bold text-amber-800 bg-amber-50/50 uppercase tracking-wider text-xs text-left min-w-[250px]">Nhận xét chung</th>
+        )}
         {isPsychSubject && (
             <>
                 <th className="px-4 py-4 font-bold text-amber-800 bg-amber-50/50 uppercase tracking-wider text-xs text-left min-w-[200px]">Kết luận sơ bộ</th>
