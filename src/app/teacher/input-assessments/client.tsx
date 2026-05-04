@@ -66,7 +66,29 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
 
     const availableAssignments = useMemo(() => {
         if (!Array.isArray(assignments)) return [];
-        return assignments.filter(a => a.periodId === selectedPeriodId && (selectedBatchId === "all" || a.batchId === selectedBatchId));
+        const filtered = assignments.filter(a => a.periodId === selectedPeriodId && (selectedBatchId === "all" || a.batchId === selectedBatchId));
+        
+        // Deduplicate and modify label for Child Dev Grade 1
+        const unique = new Map();
+        filtered.forEach(a => {
+            const subNameNormalized = (a.subject?.name || "").toLowerCase().normalize("NFC");
+            const subCode = (a.subject?.code || "").toLowerCase();
+            const gradeVal = String(a.grade || "").replace("Khối ", "").trim();
+            const isChildDev = (subNameNormalized.includes("chuẩn phát triển trẻ em") || subNameNormalized.includes("bộ chuẩn phát triển") || subCode.includes("cpt") || subCode.includes("tci")) && gradeVal === "1";
+            
+            if (isChildDev) {
+                // Use a unique key based on subject and grade to deduplicate across systems
+                const key = `${a.subjectId}-${gradeVal}`;
+                if (!unique.has(key)) {
+                    // Create a clone to safely modify the display property without mutating state
+                    unique.set(key, { ...a, overrideSystemLabel: "Tất cả các hệ", overrideSystemCode: "" });
+                }
+            } else {
+                unique.set(a.id, a);
+            }
+        });
+        
+        return Array.from(unique.values());
     }, [assignments, selectedPeriodId, selectedBatchId]);
 
     useEffect(() => {
@@ -91,7 +113,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
         if (!assignment) return;
 
         setLoading(true);
-        const systemCode = assignment.educationSystem || "";
+        const systemCode = assignment.overrideSystemCode !== undefined ? assignment.overrideSystemCode : (assignment.educationSystem || "");
         const grade = assignment.grade || "";
         
         fetch(`/api/teacher-assessments?action=getStudents&periodId=${assignment.periodId}&grade=${grade}&systemCode=${systemCode}&subjectId=${assignment.subjectId}&batchId=${assignment.batchId || ""}`)
@@ -319,7 +341,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                         >
                             {availableAssignments.map(a => (
                                 <option key={a.id} value={a.id}>
-                                    {a.subject?.name} - Khối {a.grade || "Tất cả"} ({a.educationSystem || "Tất cả"})
+                                    {a.subject?.name} - Khối {a.grade || "Tất cả"} ({a.overrideSystemLabel || a.educationSystem || "Tất cả"})
                                 </option>
                             ))}
                             {availableAssignments.length === 0 && <option value="">Vui lòng chọn kỳ KS...</option>}
