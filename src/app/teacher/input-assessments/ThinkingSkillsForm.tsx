@@ -83,7 +83,7 @@ export default function ThinkingSkillsForm({ student, onClose, onSave }: Thinkin
                                             key={opt}
                                             onClick={() => item.setter(opt)}
                                             disabled={isLocked}
-                                            className={`w-10 h-10 rounded-xl font-bold transition-all border-2 flex items-center justify-center \${
+                                            className={`w-10 h-10 rounded-xl font-bold transition-all border-2 flex items-center justify-center ${
                                                 item.value === opt 
                                                     ? "bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-200 scale-105" 
                                                     : "bg-white border-slate-200 text-slate-500 hover:border-indigo-300 hover:text-indigo-600"
