@@ -244,7 +244,7 @@ export default function ChildDevStandardForm({ student, onSave, isLocked, onClos
                                                     disabled={isLocked}
                                                     className="w-full p-2 h-[100px] text-sm border border-slate-200 rounded-xl outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 bg-slate-50 focus:bg-white transition-all resize-none placeholder-slate-400"
                                                     placeholder="Ghi chú thêm..."
-                                                </textarea>
+                                                />
                                             </td>
                                         </tr>
                                     </React.Fragment>
@@ -277,7 +277,7 @@ export default function ChildDevStandardForm({ student, onSave, isLocked, onClos
                         <span className="hidden sm:inline">Kiểm tra thông tin trước khi lưu. Form tự động cập nhật tiến độ.</span>
                     </div>
                     <button
-                        onClick=:handleSave}
+                        onClick={handleSave}
                         disabled={isSaving || isLocked}
                         className="flex items-center gap-2 px-8 py-3 bg-sky-600 hover:bg-sky-700 text-white rounded-xl font-bold shadow-md shadow-sky-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
