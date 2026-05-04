@@ -109,7 +109,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
             setStudents([]);
             return;
         }
-        const assignment = assignments.find(a => a.id === selectedAssignmentId);
+        const assignment = availableAssignments.find(a => a.id === selectedAssignmentId) || assignments.find(a => a.id === selectedAssignmentId);
         if (!assignment) return;
 
         setLoading(true);
@@ -130,7 +130,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 setStudents(enriched);
                 setLoading(false);
             });
-    }, [selectedAssignmentId, assignments]);
+    }, [selectedAssignmentId, assignments, availableAssignments]);
 
     const handleScoreChange = (studentId: string, colIndex: number, val: string) => {
         const assignment = assignments.find(a => a.id === selectedAssignmentId);
