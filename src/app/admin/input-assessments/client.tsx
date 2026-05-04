@@ -1045,12 +1045,20 @@ return {
              </select>
            </Field>
            <div className="grid grid-cols-2 gap-3"><Field label="Ngày bắt đầu"><input type="date" value={pForm.startDate} onChange={e=>setPForm(f=>({...f,startDate:e.target.value}))} className={inp}/></Field><Field label="Ngày kết thúc"><input type="date" value={pForm.endDate} onChange={e=>setPForm(f=>({...f,endDate:e.target.value}))} className={inp}/></Field></div>
-           <Field label="Người phụ trách">
-              <select value={pForm.assignedUserId} onChange={e=>setPForm(f=>({...f,assignedUserId:e.target.value}))} className={inp}>
-                 <option value="">-- Chưa gán --</option>
-                 {examBoardUsers.map(u=><option key={u.id} value={u.id}>{u.fullName}</option>)}
-              </select>
-           </Field>
+           <div className="grid grid-cols-2 gap-3">
+             <Field label="Cơ sở">
+                <select value={pForm.campusId} onChange={e=>setPForm(f=>({...f,campusId:e.target.value}))} className={inp}>
+                   <option value="">-- Chọn cơ sở --</option>
+                   {campuses.map(c=><option key={c.id} value={c.id}>{c.campusName}</option>)}
+                </select>
+             </Field>
+             <Field label="Người phụ trách">
+                <select value={pForm.assignedUserId} onChange={e=>setPForm(f=>({...f,assignedUserId:e.target.value}))} className={inp}>
+                   <option value="">-- Chưa gán --</option>
+                   {examBoardUsers.map(u=><option key={u.id} value={u.id}>{u.fullName}</option>)}
+                </select>
+             </Field>
+           </div>
         </div>
       </Modal>
 
