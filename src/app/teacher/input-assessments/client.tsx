@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { BookOpen, Users, Save, CheckCircle2, CalendarDays, Layers, X } from "lucide-react";
 import PsychologyAssessmentForm from "./PsychologyAssessmentForm";
 import ChildDevStandardForm from "./ChildDevStandardForm";
+import ThinkingSkillsForm from "./ThinkingSkillsForm";
 
 export default function TeacherAssessmentsClient({ user }: { user: any }) {
     const [assignments, setAssignments] = useState<any[]>([]);
@@ -18,6 +19,8 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     const [isPsychModalOpen, setIsPsychModalOpen] = useState(false);
     const [activePsychStudent, setActivePsychStudent] = useState<any>(null);
     const [isChildDevModalOpen, setIsChildDevModalOpen] = useState(false);
+    const [isThinkingSkillsModalOpen, setIsThinkingSkillsModalOpen] = useState(false);
+    const [activeThinkingSkillsStudent, setActiveThinkingSkillsStudent] = useState<any>(null);
     const [activeChildDevStudent, setActiveChildDevStudent] = useState<any>(null);
     
     const [students, setStudents] = useState<any[]>([]);
@@ -222,6 +225,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     const gradeVal = String(currentAssignment?.grade || "").replace("Khối ", "").trim();
     const isPsychSubject = subName.includes("tâm lý") || subCode.includes("tly");
     const isChildDevSubject = (subNameNormalized.includes("chuẩn phát triển trẻ em") || subNameNormalized.includes("bộ chuẩn phát triển") || subCode.includes("cpt") || subCode.includes("tci")) && gradeVal === "1";
+        const isThinkingSkillsSubject = (subNameNormalized.includes("năng lực tư duy") || subCode.includes("nltd")) && gradeVal === "1";
     const hideComments = ["toa", "tvi", "nva"].some(c => subCode.includes(c)) || ["toán", "tiếng việt", "ngữ văn"].some(s => subNameNormalized.includes(s));
 
     // English grouping logic for tabs
@@ -471,7 +475,34 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                           </td>
                                         
                                         <td className="px-4 py-4 bg-transparent">
-            {isChildDevSubject ? (
+            {isThinkingSkillsSubject ? (
+              <div className="flex flex-col items-center justify-center gap-2">
+                  <button 
+                    onClick={() => { setActiveThinkingSkillsStudent(st); setIsThinkingSkillsModalOpen(true); }}
+                    className="bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white font-bold py-2 px-5 rounded-full shadow-sm flex items-center gap-2 transition-all active:scale-95 text-xs"
+                  >
+                    <BookOpen className="w-3.5 h-3.5" /> 
+                    Mở Form Đánh giá
+                  </button>
+                  {st.scoreVals?.length >= 1 ? (
+                      <div className="flex flex-col gap-1 items-center max-w-xs text-center mt-1">
+                          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-200 w-fit">Đã đánh giá</span>
+                          <div className="text-[11px] text-slate-600 flex gap-1.5 flex-wrap justify-center mt-0.5">
+                              <span className="font-semibold text-emerald-600">Logic: {st.scoreVals[0] || "-"}</span>
+                              <span className="text-slate-300">|</span>
+                              <span className="font-semibold text-indigo-500">L.Tưởng: {st.scoreVals[1] || "-"}</span>
+                              <span className="text-slate-300">|</span>
+                              <span className="font-semibold text-rose-500">P.Biện: {st.scoreVals[2] || "-"}</span>
+                              <span className="text-slate-300">|</span>
+                              <span className="font-semibold text-amber-500">GQ.VĐ: {st.scoreVals[3] || "-"}</span>
+                          </div>
+                          <div className="text-[11px] font-bold text-sky-600 mt-0.5">HT Thử thách: {st.scoreVals[4] || "0"}%</div>
+                      </div>
+                  ) : (
+                      <span className="text-[10px] text-slate-400 font-medium">Chưa đánh giá</span>
+                  )}
+              </div>
+            ) : isChildDevSubject ? (
               <div className="flex flex-col items-center justify-center gap-2">
                   <button 
                     onClick={() => { setActiveChildDevStudent(st); setIsChildDevModalOpen(true); }}
@@ -588,7 +619,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
             </div>
             )}
         </td>
-        {isChildDevSubject && (
+        {(isChildDevSubject || isThinkingSkillsSubject) && (
             <td className="px-4 py-3 bg-transparent text-left align-top max-w-[250px]">
                 <div className="text-[12px] text-slate-700 whitespace-pre-wrap leading-relaxed max-h-[100px] overflow-y-auto custom-scrollbar font-medium italic">
                     {st.commentVals?.[0] ? `"${st.commentVals[0]}"` : "-"}
@@ -608,8 +639,8 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
 <td className="px-2 py-2 md:px-4 md:py-4 text-center bg-transparent md:sticky md:right-0 z-10 md:backdrop-blur-sm">
                                             <button 
                                                 onClick={() => saveStudentScore(st)}
-                                                disabled={isLocked || isPsychSubject || isChildDevSubject}
-                                                className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-center w-full gap-2 transition-all shadow-sm ${isLocked || isPsychSubject || isChildDevSubject ? "bg-slate-200 text-slate-400 cursor-not-allowed border-none" : 
+                                                disabled={isLocked || isPsychSubject || isChildDevSubject || isThinkingSkillsSubject}
+                                                className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-center w-full gap-2 transition-all shadow-sm ${isLocked || isPsychSubject || isChildDevSubject || isThinkingSkillsSubject ? "bg-slate-200 text-slate-400 cursor-not-allowed border-none" : 
                                                     saveStatus[st.id] === "saved" ? "bg-emerald-500 text-white" : 
                                                     saveStatus[st.id] === "saving" ? "bg-slate-200 text-slate-500" :
                                                     "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300"}`}
