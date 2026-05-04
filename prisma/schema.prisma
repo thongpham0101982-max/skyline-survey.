@@ -80,6 +80,7 @@ model Campus {
   surveyForms            SurveyForm[]
   teachers               Teacher[]
   userAssignments        UserCampusAssignment[]
+  inputAssessmentBatches InputAssessmentBatch[]
 }
 
 model AcademicYear {
@@ -476,6 +477,8 @@ model InputAssessmentBatch {
   status                           String                             @default("ACTIVE")
   createdAt                        DateTime                           @default(now())
   updatedAt                        DateTime                           @updatedAt
+  campusId                         String?
+  campus                           Campus?                            @relation(fields: [campusId], references: [id])
   period                           InputAssessmentPeriod              @relation(fields: [periodId], references: [id], onDelete: Cascade)
   students                         InputAssessmentStudent[]
   InputAssessmentTeacherAssignment InputAssessmentTeacherAssignment[]

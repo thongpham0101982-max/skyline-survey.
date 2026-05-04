@@ -188,7 +188,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   const [bModal, setBModal] = useState(false)
   const [editB, setEditB] = useState<Batch|null>(null)
   const [targetPeriodId, setTargetPeriodId] = useState("")
-  const [bForm, setBForm] = useState({ batchNumber:"1", name:"", startDate:"", endDate:"", status:"ACTIVE" })
+  const [bForm, setBForm] = useState({ batchNumber:"1", name:"", startDate:"", endDate:"", status:"ACTIVE", campusId:"" })
 
   // ───────── STUDENTS STATE ─────────
   const [students, setStudents] = useState<Student[]>([])
@@ -289,10 +289,10 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
     if (period && period.batches && period.batches.length > 0) {
         nextBatchNum = Math.max(...period.batches.map(b => b.batchNumber)) + 1;
     }
-    setBForm({ batchNumber: String(nextBatchNum), name:"", startDate:"", endDate:"", status:"ACTIVE" }); 
+    setBForm({ batchNumber: String(nextBatchNum), name:"", startDate:"", endDate:"", status:"ACTIVE", campusId:"" }); 
     setBModal(true); 
   }
-  const openEditBatch = (b:Batch) => { setTargetPeriodId(b.periodId); setEditB(b); setBForm({ batchNumber:String(b.batchNumber), name:b.name, startDate:b.startDate?.slice(0,10)||"", endDate:b.endDate?.slice(0,10)||"", status:b.status }); setBModal(true) }
+  const openEditBatch = (b:Batch) => { setTargetPeriodId(b.periodId); setEditB(b); setBForm({ batchNumber:String(b.batchNumber), name:b.name, startDate:b.startDate?.slice(0,10)||"", endDate:b.endDate?.slice(0,10)||"", status:b.status, campusId:b.campusId||"" }); setBModal(true) }
   const saveBatch = async () => {
     if (!bForm.name.trim()||!bForm.startDate||!bForm.endDate) return notify("Cần nhập đủ Tên, Ngày bắt/kết thúc","err")
     const r = await fetch("/api/input-assessments", { method: editB?"PUT":"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action: editB?"UPDATE_BATCH":"CREATE_BATCH", id:editB?.id, data:{...bForm, periodId:targetPeriodId, batchNumber:parseInt(bForm.batchNumber)||1} }) })
@@ -887,7 +887,7 @@ return {
                                   <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-[10px] font-black text-white">#{b.batchNumber}</div>
                                   <div>
                                     <p className="text-xs font-black text-slate-700">{b.name}</p>
-                                    <p className="text-[10px] font-bold text-slate-400 mt-0.5">{b.startDate?.slice(0,10)} - {b.endDate?.slice(0,10)}</p>
+                                    <p className="text-[10px] font-bold text-slate-400 mt-0.5">{b.startDate?.slice(0,10)} - {b.endDate?.slice(0,10)}{b.campusId ? ` • ${campuses.find(c=>c.id===b.campusId)?.campusName||""}` : ""}</p>
                                   </div>
                                </div>
                                <div className="flex items-center gap-0.5 ">
@@ -1077,6 +1077,12 @@ return {
            <div className="grid grid-cols-2 gap-3"><Field label="Số đợt"><input type="number" value={bForm.batchNumber} onChange={e=>setBForm(f=>({...f,batchNumber:e.target.value}))} className={inp}/></Field><Field label="Trạng thái"><select value={bForm.status} onChange={e=>setBForm(f=>({...f,status:e.target.value}))} className={inp}>{STATUS_OPTS.map(o=><option key={o} value={o}>{STATUS_MAP[o].label}</option>)}</select></Field></div>
            <Field label="Tên đợt" required><input value={bForm.name} onChange={e=>setBForm(f=>({...f,name:e.target.value}))} className={inp}/></Field>
            <div className="grid grid-cols-2 gap-3"><Field label="Từ ngày"><input type="date" value={bForm.startDate} onChange={e=>setBForm(f=>({...f,startDate:e.target.value}))} className={inp}/></Field><Field label="Đến ngày"><input type="date" value={bForm.endDate} onChange={e=>setBForm(f=>({...f,endDate:e.target.value}))} className={inp}/></Field></div>
+           <Field label="Cơ sở">
+              <select value={bForm.campusId} onChange={e=>setBForm(f=>({...f,campusId:e.target.value}))} className={inp}>
+                 <option value="">-- Chọn cơ sở --</option>
+                 {campuses.map(c=><option key={c.id} value={c.id}>{c.campusName}</option>)}
+              </select>
+           </Field>
         </div>
       </Modal>
 
