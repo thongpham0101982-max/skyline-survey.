@@ -105,7 +105,8 @@ export async function PUT(req) {
            name: data.name,
            startDate: new Date(data.startDate),
            endDate: new Date(data.endDate),
-           status: data.status
+           status: data.status,
+             campusId: data.campusId || null
         }
       });
       return NextResponse.json(result);
