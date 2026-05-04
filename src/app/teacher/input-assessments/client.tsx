@@ -722,6 +722,18 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
           />
         </div>
       )}
+      {isThinkingSkillsSubject && activeThinkingSkillsStudent && isThinkingSkillsModalOpen && (
+        <div className="fixed inset-0 z-[100] bg-white overflow-y-auto">
+          <ThinkingSkillsForm 
+            student={activeThinkingSkillsStudent}
+            onSave={(st, scores, comments) => {
+              saveStudentScore(st, scores, comments);
+              setIsThinkingSkillsModalOpen(false);
+            }}
+            onClose={() => setIsThinkingSkillsModalOpen(false)}
+          />
+        </div>
+      )}
         </div>
     );
 }
