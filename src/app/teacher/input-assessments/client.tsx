@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { BookOpen, Users, Save, CheckCircle2, CalendarDays, Layers, X } from "lucide-react";
 import PsychologyAssessmentForm from "./PsychologyAssessmentForm";
+import ChildDevStandardForm from "./ChildDevStandardForm";
 
 export default function TeacherAssessmentsClient({ user }: { user: any }) {
     const [assignments, setAssignments] = useState<any[]>([]);
@@ -15,6 +16,8 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     // Psychology Form States
     const [isPsychModalOpen, setIsPsychModalOpen] = useState(false);
     const [activePsychStudent, setActivePsychStudent] = useState<any>(null);
+    const [isChildDevModalOpen, setIsChildDevModalOpen] = useState(false);
+    const [activeChildDevStudent, setActiveChildDevStudent] = useState<any>(null);
     
     const [students, setStudents] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -178,6 +181,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     const subName = (currentAssignment?.subject?.name || "").toLowerCase();
     const subCode = (currentAssignment?.subject?.code || "").toLowerCase();
     const isPsychSubject = subName.includes("tâm lý") || subCode.includes("tly");
+    const isChildDevSubject = subNameNormalized.includes("chuẩn phát triển trẻ em") || subNameNormalized.includes("bộ chuẩn phát triển") || subCode.includes("cpt") || subCode.includes("tci");
     const subNameNormalized = subName.normalize("NFC");
     const hideComments = ["toa", "tvi", "nva"].some(c => subCode.includes(c)) || ["toán", "tiếng việt", "ngữ văn"].some(s => subNameNormalized.includes(s));
     const gradeVal = String(currentAssignment?.grade || "").replace("Khối ", "").trim();
@@ -320,7 +324,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                         </div>
                         {isLocked && <span className="text-sm font-bold bg-red-100 text-red-700 border border-red-200 px-4 py-1.5 rounded-full shadow-sm mr-2 flex items-center gap-1.5"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg> KỲ KHẢO SÁT ĐÃ KHÓA</span>}
                         <span className={"text-sm font-medium border px-4 py-1.5 rounded-full shadow-sm " + (isLocked ? "bg-slate-100 text-slate-500 border-slate-200" : "bg-emerald-100/50 text-emerald-700 border-emerald-200")}>
-                            {isPsychSubject ? (gradeVal ? `Mẫu chuyên biệt Tâm lý Khối ${gradeVal}` : `Đánh giá Tâm lý`) : `Cấu hình: ${currentAssignment.subject.scoreColumns} cột điểm, ${currentAssignment.subject.commentColumns} cột nhận xét`}
+                            {isPsychSubject ? (gradeVal ? `Mẫu chuyên biệt Tâm lý Khối ${gradeVal}` : `Đánh giá Tâm lý`) : isChildDevSubject ? "Cấu hình: 1 cột điểm, 1 cột nhận xét" : `Cấu hình: ${currentAssignment.subject.scoreColumns} cột điểm, ${currentAssignment.subject.commentColumns} cột nhận xét`}
                         </span>
                     </div>
 
@@ -368,7 +372,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
           <th className="px-3 py-4 font-bold text-slate-500 bg-slate-50/50 uppercase tracking-wider text-xs whitespace-nowrap text-center">Cơ sở nhập học</th>
           <th className="px-3 py-4 font-bold text-slate-500 bg-slate-50/50 uppercase tracking-wider text-xs whitespace-nowrap text-center">Hệ Khảo sát</th>
         <th className="px-4 py-4 font-bold text-amber-800 bg-amber-50/50 uppercase tracking-wider text-xs text-center">
-            {isPsychSubject ? "Form Khảo sát" : (hideComments ? "Chi tiết Điểm" : "Chi tiết Điểm & Nhận xét")}
+            {isPsychSubject || isChildDevSubject ? "Form Khảo sát" : (hideComments ? "Chi tiết Điểm" : "Chi tiết Điểm & Nhận xét")}
         </th>
         {isPsychSubject && (
             <>
@@ -509,8 +513,8 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
 <td className="px-2 py-2 md:px-4 md:py-4 text-center bg-transparent md:sticky md:right-0 z-10 md:backdrop-blur-sm">
                                             <button 
                                                 onClick={() => saveStudentScore(st)}
-                                                disabled={isLocked || isPsychSubject}
-                                                className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-center w-full gap-2 transition-all shadow-sm ${isLocked || isPsychSubject ? "bg-slate-200 text-slate-400 cursor-not-allowed border-none" : 
+                                                disabled={isLocked || isPsychSubject || isChildDevSubject}
+                                                className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-center w-full gap-2 transition-all shadow-sm ${isLocked || isPsychSubject || isChildDevSubject ? "bg-slate-200 text-slate-400 cursor-not-allowed border-none" : 
                                                     saveStatus[st.id] === "saved" ? "bg-emerald-500 text-white" : 
                                                     saveStatus[st.id] === "saving" ? "bg-slate-200 text-slate-500" :
                                                     "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300"}`}
