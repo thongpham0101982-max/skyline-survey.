@@ -588,6 +588,13 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
             </div>
             )}
         </td>
+        {isChildDevSubject && (
+            <td className="px-4 py-3 bg-transparent text-left align-top max-w-[250px]">
+                <div className="text-[12px] text-slate-700 whitespace-pre-wrap leading-relaxed max-h-[100px] overflow-y-auto custom-scrollbar font-medium italic">
+                    {st.commentVals?.[0] ? `"${st.commentVals[0]}"` : "-"}
+                </div>
+            </td>
+        )}
         {isPsychSubject && (
             <>
                 <td className="px-4 py-3 bg-transparent text-left align-top max-w-[250px]">
