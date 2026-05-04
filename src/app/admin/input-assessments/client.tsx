@@ -281,7 +281,17 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   }
   const doDeletePeriod = async (id:string) => { const r = await fetch(`/api/input-assessments?type=period&id=${id}`,{method:"DELETE"}); if (r.ok) { fetchPeriods(); notify("Đã xóa kỳ khảo sát") } }
 
-  const openAddBatch = (pid:string) => { setTargetPeriodId(pid); setEditB(null); setBForm({ batchNumber:"1", name:"", startDate:"", endDate:"", status:"ACTIVE" }); setBModal(true) }
+  const openAddBatch = (pid:string) => { 
+    setTargetPeriodId(pid); 
+    setEditB(null); 
+    const period = periods.find(p => p.id === pid);
+    let nextBatchNum = 1;
+    if (period && period.batches && period.batches.length > 0) {
+        nextBatchNum = Math.max(...period.batches.map(b => b.batchNumber)) + 1;
+    }
+    setBForm({ batchNumber: String(nextBatchNum), name:"", startDate:"", endDate:"", status:"ACTIVE" }); 
+    setBModal(true); 
+  }
   const openEditBatch = (b:Batch) => { setTargetPeriodId(b.periodId); setEditB(b); setBForm({ batchNumber:String(b.batchNumber), name:b.name, startDate:b.startDate?.slice(0,10)||"", endDate:b.endDate?.slice(0,10)||"", status:b.status }); setBModal(true) }
   const saveBatch = async () => {
     if (!bForm.name.trim()||!bForm.startDate||!bForm.endDate) return notify("Cần nhập đủ Tên, Ngày bắt/kết thúc","err")
