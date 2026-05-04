@@ -76,7 +76,7 @@ export default function ThinkingSkillsForm({ student, onClose, onSave }: Thinkin
                         
                         {criteria.map((item, idx) => (
                             <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4 last:border-0 last:pb-0">
-                                <label className="text-sm font-bold text-slate-700">{idx + 1}. {item.label}</label>
+                                <label className="text-sm font-bold text-slate-700">- {item.label}</label>
                                 <div className="flex gap-2">
                                     {options.map(opt => (
                                         <button
@@ -97,7 +97,7 @@ export default function ThinkingSkillsForm({ student, onClose, onSave }: Thinkin
                         ))}
 
                         <div className="pt-4 mt-2 border-t-2 border-dashed border-slate-200">
-                            <label className="block text-sm font-bold text-slate-700 mb-3">5. Em hoàn thành các thử thách của giáo viên đặt ra (%)</label>
+                            <label className="block text-sm font-bold text-slate-700 mb-3">Mức độ hoàn thành các thử thách của giáo viên đặt ra (%)</label>
                             <div className="relative">
                                 <input 
                                     type="number"
