@@ -61,6 +61,7 @@ export async function POST(req) {
         data: {
            periodId: data.periodId,
            batchNumber: parseInt(data.batchNumber),
+             campusId: data.campusId || null,
            name: data.name,
            startDate: new Date(data.startDate),
            endDate: new Date(data.endDate),
