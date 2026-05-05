@@ -217,6 +217,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   const [mappings, setMappings] = useState<any[]>([]);
   const [mappingLoading, setMappingLoading] = useState(false);
   const [assignSelSubjects, setAssignSelSubjects] = useState<string[]>([]);
+  const [editingMappingSubjectId, setEditingMappingSubjectId] = useState<string|null>(null);
   const [allMappings, setAllMappings] = useState<any[]>([]);
   const [allMappingsLoading, setAllMappingsLoading] = useState(false);
   const fetchAllMappings = async () => {
@@ -1168,8 +1169,9 @@ return {
             <div className="flex items-center gap-3 mb-5 border-b pb-4">
               <div className="bg-indigo-100 p-2 rounded-xl text-indigo-600"><Settings className="w-5 h-5"/></div>
               <div>
-                <h3 className="font-bold text-slate-800 text-lg">Gán Môn Khảo Sát</h3>
-                <p className="text-xs font-medium text-slate-500 mt-0.5">Chọn Khối, Hệ học và các Môn để cấu hình đồng loạt</p>
+                <h3 className="font-bold text-slate-800 text-lg">{editingMappingSubjectId ? "Chỉnh sửa Cấu hình Môn" : "Gán Môn Khảo Sát"}</h3>
+                <p className="text-xs font-medium text-slate-500 mt-0.5">{editingMappingSubjectId ? "Đang chỉnh sửa - thay đổi Khối/Hệ rồi bấm Cập Nhật" : "Chọn Khối, Hệ học và các Môn để cấu hình đồng loạt"}</p>
+                {editingMappingSubjectId && <button onClick={() => { setEditingMappingSubjectId(null); setSelGrades([]); setSelEdus([]); setAssignSelSubjects([]); }} className="text-xs text-red-500 hover:underline font-bold mt-1">✕ Hủy chỉnh sửa</button>}
               </div>
             </div>
             
@@ -1226,6 +1228,16 @@ return {
                         alert("Vui lòng chọn đủ Khối, Hệ học và ít nhất 1 Môn KS!"); return;
                       }
                       setMappingLoading(true);
+                      // If editing, delete ALL old mappings for these subjects first
+                      if (editingMappingSubjectId) {
+                        const oldMappingIds = allMappings
+                          .filter((m: any) => assignSelSubjects.includes(m.subjectId))
+                          .map((m: any) => m.id);
+                        for (const id of oldMappingIds) {
+                          await fetch("/api/grade-subject-mappings?id=" + id, { method: "DELETE" });
+                        }
+                      }
+                      // Create new mappings
                       for(const sid of assignSelSubjects) {
                         await fetch("/api/grade-subject-mappings", {
                           method: "POST", headers: { "Content-Type": "application/json" },
@@ -1234,14 +1246,14 @@ return {
                       }
                       setMappingLoading(false);
                       fetchAllMappings();
-                      setSelGrades([]); setSelEdus([]); setAssignSelSubjects([]);
-                      alert("Lưu cấu hình thành công!");
+                      setSelGrades([]); setSelEdus([]); setAssignSelSubjects([]); setEditingMappingSubjectId(null);
+                      alert(editingMappingSubjectId ? "Cập nhật cấu hình thành công!" : "Lưu cấu hình thành công!");
                     }}
                     disabled={mappingLoading || (!selGrades.length || !selEdus.length || !assignSelSubjects.length)}
                     className="w-full py-3.5 bg-indigo-600 text-white rounded-xl font-black text-sm uppercase tracking-widest shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:shadow-none flex justify-center items-center gap-2"
                   >
                     {mappingLoading ? <FileSpreadsheet className="w-4 h-4 animate-spin"/> : <Check className="w-4 h-4"/>}
-                    Lưu Cấu Hình
+                    {editingMappingSubjectId ? "Cập Nhật Cấu Hình" : "Lưu Cấu Hình"}
                   </button>
                 </div>
               </div>
@@ -1332,6 +1344,7 @@ return {
                                   setSelGrades(Array.from(g.grades) as string[]);
                                   setSelEdus(Array.from(g.edus) as string[]);
                                   setAssignSelSubjects([g.subject?.id]);
+                                  setEditingMappingSubjectId(g.subject?.id);
                                   window.scrollTo({ top: 0, behavior: 'smooth' });
                                 }} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all" title="Chỉnh sửa (Sẽ nạp lên form phía trên)">
                                   <Pencil className="w-4 h-4"/>
