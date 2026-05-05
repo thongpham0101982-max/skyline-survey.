@@ -20,7 +20,7 @@ interface EduSystem { id: string; name: string; code: string }
 interface AssessmentConfig { id: string; name: string; categoryType: string; sortOrder: number; code: string; academicYearId?: string }
 interface Teacher { userId: string; teacherName: string; departmentId?: string }
 interface Department { id: string; name: string }
-interface Batch { id: string; periodId: string; batchNumber: number; name: string; startDate: string; endDate: string; status: string }
+interface Batch { id: string; periodId: string; batchNumber: number; name: string; startDate: string; endDate: string; status: string; campusId?: string; assignedUserId?: string; assignedUser?: { id: string; fullName: string } }
 interface Period {
   id: string; code: string; name: string; academicYearId: string;
   campusId?: string; assignedUserId?: string; startDate?: string; endDate?: string;

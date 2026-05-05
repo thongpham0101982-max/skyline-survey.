@@ -21,6 +21,9 @@ export async function GET(req) {
         InputAssessmentTeacherAssignment: { select: { id: true, unlockRequestStatus: true, unlockReason: true, user: { select: { fullName: true, id: true } } } },
         assignedUser: { select: { fullName: true } },
         batches: {
+          include: {
+            assignedUser: { select: { id: true, fullName: true } }
+          },
           orderBy: { batchNumber: 'asc' }
         }
       },
@@ -60,9 +63,11 @@ export async function POST(req) {
            periodId: data.periodId,
            batchNumber: parseInt(data.batchNumber),
            name: data.name,
-           startDate: new Date(data.startDate),
-           endDate: new Date(data.endDate),
-           status: data.status || "ACTIVE"
+            startDate: new Date(data.startDate),
+            endDate: new Date(data.endDate),
+            campusId: data.campusId || null,
+            assignedUserId: data.assignedUserId || null,
+            status: data.status || "ACTIVE"
         }
       });
       return NextResponse.json(result);
@@ -99,9 +104,11 @@ export async function PUT(req) {
         where: { id },
         data: {
            name: data.name,
-           startDate: new Date(data.startDate),
-           endDate: new Date(data.endDate),
-           status: data.status,
+            startDate: new Date(data.startDate),
+            endDate: new Date(data.endDate),
+            campusId: data.campusId || null,
+            assignedUserId: data.assignedUserId || null,
+            status: data.status,
         }
       });
       return NextResponse.json(result);

@@ -29,6 +29,7 @@ model User {
   receivedTasks                    WorkTask[]                         @relation("TaskAssignee")
   assignedTasks                    WorkTask[]                         @relation("TaskAssigner")
   campusAssignments                UserCampusAssignment[]
+  inputAssessmentBatches           InputAssessmentBatch[]             @relation("BatchAssignee")
   studentTransfers StudentTransfer[]
 }
 
@@ -478,7 +479,9 @@ model InputAssessmentBatch {
   createdAt                        DateTime                           @default(now())
   updatedAt                        DateTime                           @updatedAt
   campusId                         String?
+  assignedUserId                   String?
   campus                           Campus?                            @relation(fields: [campusId], references: [id])
+  assignedUser                     User?                              @relation("BatchAssignee", fields: [assignedUserId], references: [id])
   period                           InputAssessmentPeriod              @relation(fields: [periodId], references: [id], onDelete: Cascade)
   students                         InputAssessmentStudent[]
   InputAssessmentTeacherAssignment InputAssessmentTeacherAssignment[]
