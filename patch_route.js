@@ -1,7 +1,11 @@
 ﻿const fs = require("fs");
-let content = fs.readFileSync("src/app/api/input-assessment-students/route.ts", "utf8");
+const file_path = "src/app/api/input-assessments/route.ts";
+let content = fs.readFileSync(file_path, "utf-8");
 
-content = content.replace(/className: data\.className \|\| null,/g, "className: data.className || null,\n           grade: data.grade || null,");
+content = content.replace(
+    /batchNumber: parseInt\(data\.batchNumber\) \|\| 1,/g,
+    "batchNumber: parseInt(data.batchNumber) || 1,\n             campusId: data.campusId || null,"
+);
 
-fs.writeFileSync("src/app/api/input-assessment-students/route.ts", content, "utf8");
-console.log("Patched route");
+fs.writeFileSync(file_path, content, "utf-8");
+console.log("Patched route.ts");

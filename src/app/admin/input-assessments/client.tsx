@@ -1147,10 +1147,123 @@ return {
             </div>
           )}
         </div>
+      )}      {/* ===== TAB: MAPPING (CAU HINH KHOI) ===== */}
+      {tab === "mapping" && (
+        <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+            <h3 className="font-bold text-slate-800 mb-3 flex items-center gap-2">
+              <Settings className="w-5 h-5 text-indigo-500"/> Cấu hình Môn KS theo Khối và Hệ học
+            </h3>
+            <p className="text-sm text-slate-500 mb-4">Chọn nhiều Khối và Hệ học để gán Môn KS đồng loạt.</p>
+            <div className="flex gap-8 items-start flex-wrap">
+              <div>
+                <span className="block font-semibold text-slate-700 text-sm mb-2">Khối:</span>
+                <div className="flex flex-wrap gap-2">
+                  <button onClick={() => setSelGrades(selGrades.length === grades.length ? [] : [...grades])} className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors ${selGrades.length === grades.length ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-indigo-600 border-indigo-300 hover:bg-indigo-50'}`}>Tất cả</button>
+                  {grades.map((g: string) => (
+                    <button key={g} onClick={() => toggleGrade(g)} className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors ${selGrades.includes(g) ? 'bg-indigo-100 text-indigo-700 border-indigo-300' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300'}`}>
+                      {selGrades.includes(g) && <Check className="w-3 h-3 inline mr-1"/>} K{g}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <span className="block font-semibold text-slate-700 text-sm mb-2">Hệ học:</span>
+                <div className="flex flex-wrap gap-2">
+                  <button onClick={() => setSelEdus(selEdus.length === eduSystems.length ? [] : eduSystems.map((e: any) => e.code))} className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors ${selEdus.length === eduSystems.length ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-purple-600 border-purple-300 hover:bg-purple-50'}`}>Tất cả</button>
+                  {eduSystems.map((es: any) => (
+                    <button key={es.code} onClick={() => toggleEdu(es.code)} className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors ${selEdus.includes(es.code) ? 'bg-purple-100 text-purple-700 border-purple-300' : 'bg-white text-slate-600 border-slate-200 hover:border-purple-300'}`}>
+                      {selEdus.includes(es.code) && <Check className="w-3 h-3 inline mr-1"/>} {es.code} - {es.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            {selGrades.length > 0 && selEdus.length > 0 && (
+              <div className="mt-4 p-3 bg-indigo-50 rounded-lg text-sm text-indigo-700">
+                <strong>Đang chọn:</strong> {selGrades.map(g => "K" + g).join(", ")} x {selEdus.join(", ")} = <strong>{selGrades.length * selEdus.length}</strong> tổ hợp
+              </div>
+            )}
+          </div>
+
+          {selGrades.length > 0 && selEdus.length > 0 && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200">
+                <div className="px-5 py-4 border-b bg-indigo-50/50">
+                  <h4 className="font-bold text-indigo-800 flex items-center gap-2">
+                    <BookOpen className="w-4 h-4"/> Môn đã gán ({uniqueAssigned.length})
+                  </h4>
+                  <p className="text-xs text-indigo-500 mt-1">Bỏ sẽ xóa khỏi tất cả tổ hợp đang chọn</p>
+                </div>
+                {mappingLoading ? (
+                  <div className="p-8 text-center text-slate-400">Đang tải...</div>
+                ) : uniqueAssigned.length === 0 ? (
+                  <div className="p-8 text-center text-slate-400">Chưa có môn nào được gán. Hãy thêm từ danh sách bên phải.</div>
+                ) : (
+                  <div className="p-4 space-y-2">
+                    {uniqueAssigned.map((m: any, i: number) => (
+                      <div key={m.subjectId} className="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-4 py-3 hover:border-indigo-300 group">
+                        <div className="flex items-center gap-3">
+                          <span className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold">{i + 1}</span>
+                          <div>
+                            <span className="font-bold text-slate-800">{m.subject?.name}</span>
+                            <span className="ml-2 text-xs font-mono text-slate-400">{m.subject?.code}</span>
+                            {m.subject?.subjectType && (
+                              <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                                {m.subject.subjectType === "VIET_NAM" ? "GV VN" : "GV NN"}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <button onClick={() => removeMapping(m.subjectId)} className="p-1.5 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 rounded-lg hover:bg-red-50 transition-all">
+                          <Trash2 className="w-4 h-4"/>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200">
+                <div className="px-5 py-4 border-b bg-emerald-50/50">
+                  <h4 className="font-bold text-emerald-800 flex items-center gap-2">
+                    <Plus className="w-4 h-4"/> Môn chưa gán ({availableSubjects.length})
+                  </h4>
+                  <p className="text-xs text-emerald-500 mt-1">Sẽ gán vào {selGrades.length * selEdus.length} tổ hợp đang chọn</p>
+                </div>
+                {availableSubjects.length === 0 ? (
+                  <div className="p-8 text-center text-slate-400">Đã gán tất cả các môn.</div>
+                ) : (
+                  <div className="p-4 space-y-2">
+                    {availableSubjects.map((s: any) => (
+                      <button key={s.id} onClick={() => addMapping(s.id)} className="w-full flex items-center justify-between bg-white border border-dashed border-slate-300 rounded-lg px-4 py-3 hover:border-emerald-400 hover:bg-emerald-50 text-left transition-all">
+                        <div className="flex items-center gap-3">
+                          <span className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                            <Plus className="w-3.5 h-3.5"/>
+                          </span>
+                          <div>
+                            <span className="font-bold text-slate-800">{s.name}</span>
+                            <span className="ml-2 text-xs font-mono text-slate-400">{s.code}</span>
+                            {s.subjectType && (
+                              <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                                {s.subjectType === "VIET_NAM" ? "GV VN" : "GV NN"}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <span className="text-xs text-emerald-600 font-bold">+ Gán</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       )}
 
       {/* ===== OTHER TABS PLACEHOLDERS ===== */}
-      {["mapping", "reports"].includes(tab) && (
+      {["reports"].includes(tab) && (
         <Empty icon={GraduationCap} text="Dang xay dung" sub="Phan nay se som duoc hoan thien"/>
       )}
 
