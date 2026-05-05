@@ -6,7 +6,8 @@ import {
   Upload, Download, Layers, Database, UserCheck, Calendar, X, Check, AlertCircle,
   ChevronDown, ChevronUp, Loader2, BookOpen, GraduationCap, RefreshCw,
   Tag, FolderOpen, Hash, MoreVertical, PenLine, CheckCircle2,
-  Filter, ClipboardCheck, ArrowRight, UserPlus, Info
+  Filter, ClipboardCheck, ArrowRight, UserPlus, Info,
+  FileSpreadsheet, Pencil
 } from "lucide-react"
 import * as XLSX from "xlsx"
 
