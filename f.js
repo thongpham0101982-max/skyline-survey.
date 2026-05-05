@@ -1,0 +1,1 @@
+const fs = require('fs'); const p = 'src/app/admin/input-assessments/client.tsx'; let c = fs.readFileSync(p, 'utf8').split('\n'); c.splice(1456, 7); fs.writeFileSync(p, c.join('\n'));

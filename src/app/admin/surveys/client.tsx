@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 import { useState, useMemo } from "react"
 import {
   ClipboardList, Trash2, Edit2, Check, X,
@@ -27,7 +27,7 @@ export function AdminSurveysClient({ initialSurveys, years, campuses, createActi
     startDate: "",
     endDate: "",
     academicYearId: years.find((y: any) => y.status === "ACTIVE")?.id || years[0]?.id || "",
-    targetAudience: "PHHS", campusId: ""
+    targetAudience: "PHHS"
   })
 
   const audiences = [
@@ -52,7 +52,7 @@ export function AdminSurveysClient({ initialSurveys, years, campuses, createActi
       startDate: "",
       endDate: "",
       academicYearId: years.find((y: any) => y.status === "ACTIVE")?.id || years[0]?.id || "",
-      targetAudience: "PHHS", campusId: ""
+      targetAudience: "PHHS"
     })
     setModalType("create")
     setErrorMsg("")
@@ -65,7 +65,7 @@ export function AdminSurveysClient({ initialSurveys, years, campuses, createActi
       startDate: new Date(s.startDate).toISOString().split("T")[0],
       endDate: new Date(s.endDate).toISOString().split("T")[0],
       academicYearId: s.academicYearId,
-      targetAudience: s.targetAudience || "PHHS", campusId: s.campusId || ""
+      targetAudience: s.targetAudience || "PHHS"
     })
     setModalType("edit")
     setErrorMsg("")
@@ -171,7 +171,6 @@ export function AdminSurveysClient({ initialSurveys, years, campuses, createActi
                         </div>
                         <div>
                           <p className="font-bold text-slate-800 group-hover:text-[#BE1E2E] transition-colors line-clamp-1">{s.name}</p>
-                          <p className="text-[10px] text-slate-400 font-medium">{s.code} {s.campus ? `- ${s.campus.campusName}` : ""}</p>
                         </div>
                       </div>
                     </td>
@@ -285,13 +284,6 @@ export function AdminSurveysClient({ initialSurveys, years, campuses, createActi
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-2 block">Năm học</label>
                           <select value={form.academicYearId} onChange={e => setForm({...form, academicYearId: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
                              {years.map((y: any) => <option key={y.id} value={y.id}>{y.name}</option>)}
-                          </select>
-                       </div>
-                       <div>
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-2 block">Cơ sở (Nếu có)</label>
-                          <select value={form.campusId} onChange={e => setForm({...form, campusId: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-sm outline-none">
-                             <option value="">Tất cả cơ sở</option>
-                             {campuses.map((c: any) => <option key={c.id} value={c.id}>{c.campusName}</option>)}
                           </select>
                        </div>
                        <div>

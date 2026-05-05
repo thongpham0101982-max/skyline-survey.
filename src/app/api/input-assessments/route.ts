@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 
@@ -16,9 +16,8 @@ export async function GET(req) {
     }
     
     const periods = await (prisma as any).inputAssessmentPeriod.findMany({
-      where: { academicYearId, ...(isGDCS ? { campusId: { in: allowedCampusIds } } : {}) },
+      where: { academicYearId },
       include: {
-        campus: true,
         InputAssessmentTeacherAssignment: { select: { id: true, unlockRequestStatus: true, unlockReason: true, user: { select: { fullName: true, id: true } } } },
         assignedUser: { select: { fullName: true } },
         batches: {
@@ -47,7 +46,6 @@ export async function POST(req) {
            name: data.name,
            academicYearId: data.academicYearId,
            description: data.description,
-           campusId: data.campusId || null,
            assignedUserId: data.assignedUserId || null,
            startDate: data.startDate ? new Date(data.startDate) : null,
            endDate: data.endDate ? new Date(data.endDate) : null,
@@ -61,7 +59,6 @@ export async function POST(req) {
         data: {
            periodId: data.periodId,
            batchNumber: parseInt(data.batchNumber),
-             campusId: data.campusId || null,
            name: data.name,
            startDate: new Date(data.startDate),
            endDate: new Date(data.endDate),
@@ -89,7 +86,6 @@ export async function PUT(req) {
         data: {
            name: data.name,
            description: data.description,
-           campusId: data.campusId || null,
            assignedUserId: data.assignedUserId || null,
            startDate: data.startDate ? new Date(data.startDate) : null,
            endDate: data.endDate ? new Date(data.endDate) : null,
@@ -106,7 +102,6 @@ export async function PUT(req) {
            startDate: new Date(data.startDate),
            endDate: new Date(data.endDate),
            status: data.status,
-             campusId: data.campusId || null
         }
       });
       return NextResponse.json(result);
