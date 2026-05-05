@@ -4,25 +4,36 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const session = await auth()
+  let session: any = null;
+  try {
+    session = await auth()
+  } catch (e) {
+    console.error("Auth fail in AdminLayout:", e);
+  }
+  
   const roleCode = (session?.user as any)?.role || "ADMIN"
   
   let readableModules: string[] = []
   let taskCount = 0
 
   try {
-    const permissions = await prisma.permission.findMany({ where: { roleCode } })
-    readableModules = permissions.filter(p => p.canRead).map(p => p.module)
+    const pAny = prisma as any;
+    if (pAny && pAny.permission) {
+      const permissions = await pAny.permission.findMany({ where: { roleCode } }).catch(() => [])
+      readableModules = permissions.filter((p: any) => p.canRead).map((p: any) => p.module)
+    }
 
-    const currentUserId = (session?.user as any)?.id || ""
-    taskCount = await prisma.workTask.count({
-      where: {
-        OR: [
-          { assignedToUserId: currentUserId, progress: { in: ["PENDING", "IN_PROGRESS"] } },
-          { assignedToRole: roleCode, assignedToUserId: null, progress: { in: ["PENDING", "IN_PROGRESS"] } }
-        ]
-      }
-    })
+    if (pAny && pAny.workTask) {
+      const currentUserId = (session?.user as any)?.id || ""
+      taskCount = await pAny.workTask.count({
+        where: {
+          OR: [
+            { assignedToUserId: currentUserId, progress: { in: ["PENDING", "IN_PROGRESS"] } },
+            { assignedToRole: roleCode, assignedToUserId: null, progress: { in: ["PENDING", "IN_PROGRESS"] } }
+          ]
+        }
+      }).catch(() => 0)
+    }
   } catch (error) {
     console.error("Admin layout DB error:", error)
   }

@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db"
+﻿import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { InputAssessmentsClient } from "./client"
 
@@ -6,10 +6,17 @@ export const metadata = { title: "Quản lý KSNL đầu vào | Admin" }
 export const dynamic = "force-dynamic";
 
 export default async function InputAssessmentsPage() {
-  const session = await auth();
+  let session: any = null;
+  try {
+    session = await auth();
+  } catch (e) {
+    console.error("Auth error:", e);
+  }
+  
   const user = session?.user as any;
   const isGDCS = user?.role === 'GDCS';
   const allowedCampusIds = user?.campusIds || [];
+  
   let academicYears: any[] = [];
   let campuses: any[] = [];
   let examBoardUsers: any[] = [];
@@ -21,63 +28,85 @@ export default async function InputAssessmentsPage() {
   let departments: any[] = [];
   
   try {
-    console.log("InputAssessmentsPage: Starting data fetch");
     const pAny = prisma as any;
+    if (pAny) {
+      if (pAny.academicYear) {
+        academicYears = await pAny.academicYear.findMany({ orderBy: { startDate: "desc" } }).catch(() => []);
+      }
+      if (pAny.campus) {
+        campuses = await pAny.campus.findMany({ 
+          where: isGDCS ? { id: { in: allowedCampusIds } } : { status: "ACTIVE" }, 
+          orderBy: { campusName: "asc" } 
+        }).catch(() => []);
+      }
+      if (pAny.user) {
+        examBoardUsers = await pAny.user.findMany({ 
+          where: { role: { in: ["ADMIN", "KT_DBCL"] }, status: "ACTIVE" }, 
+          select: { id: true, fullName: true } 
+        }).catch(() => []);
+      }
+      if (pAny.assessmentSubject) {
+        subjects = await pAny.assessmentSubject.findMany({ 
+          where: { status: "ACTIVE" }, orderBy: { sortOrder: "asc" } 
+        }).catch(() => []);
+      }
+      if (pAny.assessmentConfig) {
+        configs = await pAny.assessmentConfig.findMany({ 
+          orderBy: [{ categoryType: "asc" }, { sortOrder: "asc" }] 
+        }).catch(() => []);
+      }
+      if (pAny.department) {
+        departments = await pAny.department.findMany({ 
+          where: { status: "ACTIVE" }, orderBy: { name: "asc" } 
+        }).catch(() => []);
+      }
+      if (pAny.teacher) {
+        teachers = await pAny.teacher.findMany({
+          where: { status: "ACTIVE" },
+          select: { userId: true, teacherName: true, departmentId: true },
+          orderBy: { teacherName: "asc" }
+        }).catch(() => []);
+      }
+      if (pAny.academicYear) {
+        const activeYear = await pAny.academicYear.findFirst({
+          where: { status: "ACTIVE" },
+          include: { educationSystems: true }
+        }).catch(() => null);
 
-    academicYears = await prisma.academicYear.findMany({ orderBy: { startDate: "desc" } }).catch(e => { console.error("AY fetch", e); return []; });
-    campuses = await prisma.campus.findMany({ where: isGDCS ? { id: { in: allowedCampusIds } } : { status: "ACTIVE" }, orderBy: { campusName: "asc" } }).catch(() => []);
-    examBoardUsers = await prisma.user.findMany({ 
-      where: { role: { in: ["ADMIN", "KT_DBCL"] }, status: "ACTIVE" }, 
-      select: { id: true, fullName: true } 
-    }).catch(() => []);
-    
-    if (typeof pAny.assessmentSubject?.findMany === "function") {
-      subjects = await pAny.assessmentSubject.findMany({ 
-        where: { status: "ACTIVE" }, orderBy: { sortOrder: "asc" } 
-      }).catch(() => []);
-    } else {
-      console.warn("assessmentSubject model not found on prisma client");
-    }
-
-    if (typeof pAny.assessmentConfig?.findMany === "function") {
-      configs = await pAny.assessmentConfig.findMany({ 
-        orderBy: [{ categoryType: "asc" }, { sortOrder: "asc" }] 
-      }).catch(() => []);
-    } else {
-      console.warn("assessmentConfig model not found on prisma client");
-    }
-    
-    departments = await prisma.department.findMany({ 
-      where: { status: "ACTIVE" }, orderBy: { name: "asc" } 
-    }).catch(() => []);
-    
-    teachers = await prisma.teacher.findMany({
-      where: { status: "ACTIVE" },
-      select: { userId: true, teacherName: true, departmentId: true },
-      orderBy: { teacherName: "asc" }
-    }).catch(() => []);
-
-    const activeYear = await prisma.academicYear.findFirst({
-      where: { status: "ACTIVE" },
-      include: { educationSystems: true }
-    }).catch(() => null);
-
-    if (activeYear) {
-      eduSystems = activeYear.educationSystems || [];
-      const uniqueGrades = await prisma.class.findMany({
-        where: { academicYearId: activeYear.id },
-        select: { grade: true },
-        distinct: ["grade"],
-        orderBy: { grade: "asc" }
-      }).catch(() => []);
-      
-      const dbGrades = uniqueGrades.map((g: any) => g.grade).filter(Boolean);
-      if (dbGrades.length > 0) {
-        grades = dbGrades.sort((a: string, b: string) => parseInt(a) - parseInt(b));
+        if (activeYear) {
+          eduSystems = activeYear.educationSystems || [];
+          if (pAny.class) {
+            const uniqueGrades = await pAny.class.findMany({
+              where: { academicYearId: activeYear.id },
+              select: { grade: true },
+              distinct: ["grade"],
+              orderBy: { grade: "asc" }
+            }).catch(() => []);
+            
+            const dbGrades = uniqueGrades.map((g: any) => g.grade).filter(Boolean);
+            if (dbGrades.length > 0) {
+              grades = dbGrades.sort((a: string, b: string) => {
+                const na = parseInt(a);
+                const nb = parseInt(b);
+                if (isNaN(na) || isNaN(nb)) return a.localeCompare(b);
+                return na - nb;
+              });
+            }
+          }
+        }
       }
     }
   } catch (error) {
-    console.error("Critical InputAssessmentsPage error:", error);
+    console.error("Critical InputAssessmentsPage fetch error:", error);
+  }
+
+  const safeJson = (data: any) => {
+    try {
+      if (!data) return [];
+      return JSON.parse(JSON.stringify(data));
+    } catch (e) {
+      return [];
+    }
   }
 
   return (
@@ -89,15 +118,15 @@ export default async function InputAssessmentsPage() {
         </div>
       </div>
       <InputAssessmentsClient
-        academicYears={JSON.parse(JSON.stringify(academicYears))}
-        campuses={JSON.parse(JSON.stringify(campuses))}
-        examBoardUsers={JSON.parse(JSON.stringify(examBoardUsers))}
-        subjects={JSON.parse(JSON.stringify(subjects))}
-        eduSystems={JSON.parse(JSON.stringify(eduSystems))}
-        grades={JSON.parse(JSON.stringify(grades))}
-        configs={JSON.parse(JSON.stringify(configs))}
-        teachers={JSON.parse(JSON.stringify(teachers))}
-        departments={JSON.parse(JSON.stringify(departments))}
+        academicYears={safeJson(academicYears)}
+        campuses={safeJson(campuses)}
+        examBoardUsers={safeJson(examBoardUsers)}
+        subjects={safeJson(subjects)}
+        eduSystems={safeJson(eduSystems)}
+        grades={safeJson(grades)}
+        configs={safeJson(configs)}
+        teachers={safeJson(teachers)}
+        departments={safeJson(departments)}
       />
     </div>
   )

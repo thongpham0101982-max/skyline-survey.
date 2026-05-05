@@ -211,7 +211,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   const [isColumnConfigOpen, setIsColumnConfigOpen] = useState(false);
   const [columnConfigForm, setColumnConfigForm] = useState({ subjectId: "", name: "", scoreNames: [], commentNames: [], showScoreInReport: [], showCommentInReport: [], scoreColumns: 1, commentColumns: 1 });
   const [editingSubjectId, setEditingSubjectId] = useState<string|null>(null);
-  const [subjectForm, setSubjectForm] = useState({ code:"", name:"", subjectType:"", scoreColumns: 1, commentColumns: 1, status: "ACTIVE" });
+  const [subjectForm, setSubjectForm] = useState({ code:"", name:"", subjectType:"", scoreColumns: 1, commentColumns: 1, status: "ACTIVE", exemptCriteria: [] as string[] });
   const [selGrades, setSelGrades] = useState<string[]>((grades && grades.length) ? [grades[0]]:[]);
   const [selEdus, setSelEdus] = useState<string[]>((eduSystems && eduSystems.length) ? [eduSystems[0].code]:[]);
   const [mappings, setMappings] = useState<any[]>([]);
@@ -1147,7 +1147,7 @@ return {
                           <td className="p-5 text-center"><span className="w-7 h-7 rounded-full bg-emerald-50 text-emerald-700 font-black text-xs inline-flex items-center justify-center">{sub.commentColumns ?? 0}</span></td>
                           <td className="p-5 text-center"><Badge s={sub.status || "ACTIVE"}/></td>
                           <td className="p-5 text-center">
-                            {(() => { try { const arr = JSON.parse(sub.exemptCriteria || "[]"); return arr.length > 0 ? <div className="flex flex-wrap gap-1 justify-center">{arr.map((c: string) => <span key={c} className="text-[10px] font-bold text-violet-700 bg-violet-50 border border-violet-200 px-2 py-0.5 rounded-full">{c}</span>)}</div> : <span className="text-slate-300 text-xs">—</span>; } catch { return <span className="text-slate-300 text-xs">—</span>; } })()}
+                            {(() => { try { const arr = JSON.parse(sub.exemptCriteria || "[]"); return (Array.isArray(arr) && arr.length > 0) ? <div className="flex flex-wrap gap-1 justify-center">{arr.map((c: string) => <span key={c} className="text-[10px] font-bold text-violet-700 bg-violet-50 border border-violet-200 px-2 py-0.5 rounded-full">{c}</span>)}</div> : <span className="text-slate-300 text-xs">—</span>; } catch { return <span className="text-slate-300 text-xs">—</span>; } })()}
                           </td>
                           <td className="p-5 text-right">
                             <div className="flex items-center justify-end gap-1">
