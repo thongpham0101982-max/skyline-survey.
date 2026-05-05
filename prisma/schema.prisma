@@ -582,6 +582,7 @@ model AssessmentSubject {
   status                           String                             @default("ACTIVE")
   createdAt                        DateTime                           @default(now())
   columnNames                      String?
+  exemptCriteria                   String?
   gradeMappings                    GradeSubjectMapping[]
   InputAssessmentTeacherAssignment InputAssessmentTeacherAssignment[]
   studentScores                    StudentAssessmentScore[]
