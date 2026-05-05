@@ -1263,72 +1263,92 @@ return {
                   <thead className="bg-slate-50/50 border-b">
                     <tr>
                       <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest w-16">STT</th>
-                      <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">Khối</th>
-                      <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">Hệ học</th>
-                      <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">Các Môn Khảo Sát</th>
+                      <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">Môn Khảo Sát</th>
+                      <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">Khối Áp Dụng</th>
+                      <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">Hệ Áp Dụng</th>
                       <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest text-center w-24">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {(() => {
-                      // Group mappings by grade + eduSystem
+                      // Group mappings by subject
                       const groups = new Map();
                       allMappings.forEach(m => {
-                        const key = `${m.grade}_${m.educationSystem}`;
+                        const key = m.subjectId;
                         if (!groups.has(key)) {
-                          groups.set(key, { grade: m.grade, edu: m.educationSystem, subjects: [], ids: [] });
+                          groups.set(key, { subject: m.subject, grades: new Set(), edus: new Set(), ids: [] });
                         }
-                        groups.get(key).subjects.push(m.subject);
-                        groups.get(key).ids.push(m.id);
+                        const g = groups.get(key);
+                        g.grades.add(m.grade);
+                        g.edus.add(m.educationSystem);
+                        g.ids.push(m.id);
                       });
                       
-                      return Array.from(groups.values()).sort((a:any,b:any) => parseInt(a.grade) - parseInt(b.grade)).map((g:any, i) => (
-                        <tr key={`${g.grade}_${g.edu}`} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="px-6 py-4 font-medium text-slate-400">{i+1}</td>
-                          <td className="px-6 py-4"><span className="font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded-md">Khối {g.grade}</span></td>
-                          <td className="px-6 py-4"><span className="font-bold text-purple-700 bg-purple-50 border border-purple-100 px-2.5 py-1 rounded-md">{g.edu}</span></td>
-                          <td className="px-6 py-4">
-                            <div className="flex flex-wrap gap-1.5">
-                              {g.subjects.filter(Boolean).map((sub:any) => (
-                                <span key={sub.id} className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
-                                  {sub.name}
-                                  <button onClick={async () => {
-                                    if(confirm(`Xóa môn ${sub.name} khỏi Khối ${g.grade} - Hệ ${g.edu}?`)) {
-                                      const mappingId = allMappings.find((m:any) => m.grade === g.grade && m.educationSystem === g.edu && m.subjectId === sub.id)?.id;
-                                      if (mappingId) {
-                                        await fetch("/api/grade-subject-mappings?id=" + mappingId, { method: "DELETE" });
-                                        fetchAllMappings();
-                                      }
+                      return Array.from(groups.values()).map((g:any, i) => {
+                        const allGrades = grades.length > 0 && g.grades.size === grades.length;
+                        const allEdus = eduSystems.length > 0 && g.edus.size === eduSystems.length;
+                        
+                        return (
+                          <tr key={g.subject?.id} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="px-6 py-4 font-medium text-slate-400">{i+1}</td>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-slate-800 text-base">{g.subject?.name}</span>
+                                {g.subject?.code && <span className="text-xs font-mono text-slate-400">{g.subject.code}</span>}
+                                {g.subject?.subjectType && (
+                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-bold uppercase">
+                                    {g.subject.subjectType === "VIET_NAM" ? "GV VN" : "GV NN"}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              {allGrades ? (
+                                <span className="font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-md text-xs">Tất cả Khối</span>
+                              ) : (
+                                <div className="flex flex-wrap gap-1.5">
+                                  {Array.from(g.grades).sort((a:any, b:any) => parseInt(a) - parseInt(b)).map((grade:any) => (
+                                    <span key={grade} className="font-bold text-slate-700 bg-slate-100 border border-slate-200 px-2 py-1 rounded-md text-xs">K{grade}</span>
+                                  ))}
+                                </div>
+                              )}
+                            </td>
+                            <td className="px-6 py-4">
+                              {allEdus ? (
+                                <span className="font-bold text-purple-700 bg-purple-50 border border-purple-100 px-2.5 py-1 rounded-md text-xs">Tất cả Hệ học</span>
+                              ) : (
+                                <div className="flex flex-wrap gap-1.5">
+                                  {Array.from(g.edus).sort().map((edu:any) => (
+                                    <span key={edu} className="font-bold text-purple-700 bg-purple-50 border border-purple-100 px-2 py-1 rounded-md text-xs">{edu}</span>
+                                  ))}
+                                </div>
+                              )}
+                            </td>
+                            <td className="px-6 py-4 text-center">
+                              <div className="flex justify-center gap-1">
+                                <button onClick={() => {
+                                  setSelGrades(Array.from(g.grades) as string[]);
+                                  setSelEdus(Array.from(g.edus) as string[]);
+                                  setAssignSelSubjects([g.subject?.id]);
+                                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                                }} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all" title="Chỉnh sửa (Sẽ nạp lên form phía trên)">
+                                  <Pencil className="w-4 h-4"/>
+                                </button>
+                                <button onClick={async () => {
+                                  if(confirm(`Xóa toàn bộ cấu hình của môn ${g.subject?.name}?`)) {
+                                    for (const id of g.ids) {
+                                      await fetch("/api/grade-subject-mappings?id=" + id, { method: "DELETE" });
                                     }
-                                  }} className="ml-1 text-emerald-400 hover:text-red-500 hover:bg-red-50 rounded-full p-0.5"><X className="w-3 h-3"/></button>
-                                </span>
-                              ))}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 text-center">
-                            <div className="flex justify-center gap-1">
-                              <button onClick={() => {
-                                setSelGrades([g.grade]);
-                                setSelEdus([g.edu]);
-                                setAssignSelSubjects(g.subjects.map((s:any)=>s.id));
-                                window.scrollTo({ top: 0, behavior: 'smooth' });
-                              }} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all" title="Chỉnh sửa (Sẽ nạp lên form phía trên)">
-                                <Pencil className="w-4 h-4"/>
-                              </button>
-                              <button onClick={async () => {
-                                if(confirm(`Xóa toàn bộ cấu hình môn của Khối ${g.grade} - Hệ ${g.edu}?`)) {
-                                  for (const id of g.ids) {
-                                    await fetch("/api/grade-subject-mappings?id=" + id, { method: "DELETE" });
+                                    fetchAllMappings();
                                   }
-                                  fetchAllMappings();
-                                }
-                              }} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Xóa toàn bộ">
-                                <Trash2 className="w-4 h-4"/>
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ));
+                                }} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Xóa toàn bộ môn này">
+                                  <Trash2 className="w-4 h-4"/>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      });
                     })()}
                   </tbody>
                 </table>
