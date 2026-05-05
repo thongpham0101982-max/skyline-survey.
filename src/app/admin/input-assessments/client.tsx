@@ -215,6 +215,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   const [selEdus, setSelEdus] = useState<string[]>((eduSystems && eduSystems.length) ? [eduSystems[0].code]:[]);
   const [mappings, setMappings] = useState<any[]>([]);
   const [mappingLoading, setMappingLoading] = useState(false);
+  const [assignSelSubjects, setAssignSelSubjects] = useState<string[]>([]);
   const [allMappings, setAllMappings] = useState<any[]>([]);
   const [allMappingsLoading, setAllMappingsLoading] = useState(false);
   const fetchAllMappings = async () => {
