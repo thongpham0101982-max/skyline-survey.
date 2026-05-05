@@ -1087,9 +1087,71 @@ return {
         </div>
       )}
 
+      {/* ===== TAB: SUBJECTS (MON KHAO SAT) ===== */}
+      {tab === "subjects" && (
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-black text-slate-600 uppercase tracking-widest flex items-center gap-2"><BookOpen className="w-4 h-4"/> Danh sach Mon Khao sat</h2>
+            <button
+              onClick={() => { setEditingSubjectId(null); setSubjectForm({ code:"", name:"", subjectType:"", scoreColumns:1, commentColumns:1, status:"ACTIVE" }); setIsSubjectOpen(true) }}
+              className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white text-[13px] font-black rounded-xl hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100"
+            >
+              <Plus className="w-4 h-4"/> Them Mon moi
+            </button>
+          </div>
+
+          {subjectsList.length === 0 ? (
+            <Empty icon={BookOpen} text="Chua co Mon khao sat nao" sub="Bam them de bat dau"/>
+          ) : (
+            <div className="bg-white border border-slate-200 rounded-[2rem] shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left whitespace-nowrap">
+                  <thead className="bg-slate-50 border-b border-slate-100">
+                    <tr>
+                      <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Ma mon</th>
+                      <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Ten Mon</th>
+                      <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Loai</th>
+                      <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Cot Diem</th>
+                      <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Cot NX</th>
+                      <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Trang thai</th>
+                      <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Thao tac</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {subjectsList.map((sub) => {
+                      let parsedCols = { scores: [], comments: [], showScoreInReport: [], showCommentInReport: [] };
+                      try { if (sub.columnNames) parsedCols = JSON.parse(sub.columnNames); } catch {}
+                      return (
+                        <tr key={sub.id} className="group hover:bg-slate-50/70 transition-colors">
+                          <td className="p-5"><span className="font-mono text-xs font-black text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg">{sub.code}</span></td>
+                          <td className="p-5"><span className="text-sm font-black text-slate-700">{sub.name}</span></td>
+                          <td className="p-5 text-center">
+                            {sub.subjectType ? (<span className="px-2.5 py-1 bg-sky-50 text-sky-700 border border-sky-100 rounded-lg text-[10px] font-black uppercase tracking-wider">{sub.subjectType === "VIET_NAM" ? "GV VN" : "GV NN"}</span>) : (<span className="text-slate-300 text-xs">-</span>)}
+                          </td>
+                          <td className="p-5 text-center"><span className="w-7 h-7 rounded-full bg-indigo-50 text-indigo-700 font-black text-xs inline-flex items-center justify-center">{sub.scoreColumns ?? 0}</span></td>
+                          <td className="p-5 text-center"><span className="w-7 h-7 rounded-full bg-emerald-50 text-emerald-700 font-black text-xs inline-flex items-center justify-center">{sub.commentColumns ?? 0}</span></td>
+                          <td className="p-5 text-center"><Badge s={sub.status || "ACTIVE"}/></td>
+                          <td className="p-5 text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <button title="Cau hinh ten cot" onClick={() => { setColumnConfigForm({ subjectId: sub.id, name: sub.name, scoreColumns: sub.scoreColumns ?? 1, commentColumns: sub.commentColumns ?? 1, scoreNames: parsedCols.scores || [], commentNames: parsedCols.comments || [], showScoreInReport: parsedCols.showScoreInReport || [], showCommentInReport: parsedCols.showCommentInReport || [] }); setIsColumnConfigOpen(true); }} className="p-2.5 text-slate-300 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all"><PenLine className="w-4 h-4"/></button>
+                              <button onClick={() => { setEditingSubjectId(sub.id); setSubjectForm({ code: sub.code, name: sub.name, subjectType: sub.subjectType || "", scoreColumns: sub.scoreColumns ?? 1, commentColumns: sub.commentColumns ?? 1, status: sub.status || "ACTIVE" }); setIsSubjectOpen(true); }} className="p-2.5 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"><Edit2 className="w-4 h-4"/></button>
+                              <button onClick={() => setConfirm({ msg: `Xoa mon ${sub.name}?`, fn: () => deleteSubject(sub.id) })} className="p-2.5 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"><Trash2 className="w-4 h-4"/></button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ===== OTHER TABS PLACEHOLDERS ===== */}
-      {["mapping", "subjects", "reports"].includes(tab) && (
-        <Empty icon={GraduationCap} text="Đang xây dựng" sub="Phần này sẽ sớm được hoàn thiện"/>
+      {["mapping", "reports"].includes(tab) && (
+        <Empty icon={GraduationCap} text="Dang xay dung" sub="Phan nay se som duoc hoan thien"/>
       )}
 
       {/* ============= MODALS ============= */}
