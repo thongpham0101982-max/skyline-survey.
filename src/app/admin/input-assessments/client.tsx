@@ -215,6 +215,17 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   const [selEdus, setSelEdus] = useState<string[]>((eduSystems && eduSystems.length) ? [eduSystems[0].code]:[]);
   const [mappings, setMappings] = useState<any[]>([]);
   const [mappingLoading, setMappingLoading] = useState(false);
+  const [allMappings, setAllMappings] = useState<any[]>([]);
+  const [allMappingsLoading, setAllMappingsLoading] = useState(false);
+  const fetchAllMappings = async () => {
+    setAllMappingsLoading(true);
+    try {
+      const r = await fetch("/api/grade-subject-mappings");
+      if (r.ok) setAllMappings(await r.json());
+    } catch (e) {}
+    setAllMappingsLoading(false);
+  };
+  useEffect(() => { if (tab === "mapping") fetchAllMappings(); }, [tab]);
 
   // ───────── CONFIGS STATE ─────────
   const [configs, setConfigs] = useState<AssessmentConfig[]>(initialConfigs)
@@ -1149,120 +1160,184 @@ return {
         </div>
       )}      {/* ===== TAB: MAPPING (CAU HINH KHOI) ===== */}
       {tab === "mapping" && (
-        <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-500">
-          <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-            <h3 className="font-bold text-slate-800 mb-3 flex items-center gap-2">
-              <Settings className="w-5 h-5 text-indigo-500"/> Cấu hình Môn KS theo Khối và Hệ học
-            </h3>
-            <p className="text-sm text-slate-500 mb-4">Chọn nhiều Khối và Hệ học để gán Môn KS đồng loạt.</p>
-            <div className="flex gap-8 items-start flex-wrap">
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          {/* TOP PANEL: Form ThemMoi / Sua */}
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <div className="flex items-center gap-3 mb-5 border-b pb-4">
+              <div className="bg-indigo-100 p-2 rounded-xl text-indigo-600"><Settings className="w-5 h-5"/></div>
               <div>
-                <span className="block font-semibold text-slate-700 text-sm mb-2">Khối:</span>
-                <div className="flex flex-wrap gap-2">
-                  <button onClick={() => setSelGrades(selGrades.length === grades.length ? [] : [...grades])} className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors ${selGrades.length === grades.length ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-indigo-600 border-indigo-300 hover:bg-indigo-50'}`}>Tất cả</button>
-                  {grades.map((g: string) => (
-                    <button key={g} onClick={() => toggleGrade(g)} className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors ${selGrades.includes(g) ? 'bg-indigo-100 text-indigo-700 border-indigo-300' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300'}`}>
-                      {selGrades.includes(g) && <Check className="w-3 h-3 inline mr-1"/>} K{g}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <span className="block font-semibold text-slate-700 text-sm mb-2">Hệ học:</span>
-                <div className="flex flex-wrap gap-2">
-                  <button onClick={() => setSelEdus(selEdus.length === eduSystems.length ? [] : eduSystems.map((e: any) => e.code))} className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors ${selEdus.length === eduSystems.length ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-purple-600 border-purple-300 hover:bg-purple-50'}`}>Tất cả</button>
-                  {eduSystems.map((es: any) => (
-                    <button key={es.code} onClick={() => toggleEdu(es.code)} className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors ${selEdus.includes(es.code) ? 'bg-purple-100 text-purple-700 border-purple-300' : 'bg-white text-slate-600 border-slate-200 hover:border-purple-300'}`}>
-                      {selEdus.includes(es.code) && <Check className="w-3 h-3 inline mr-1"/>} {es.code} - {es.name}
-                    </button>
-                  ))}
-                </div>
+                <h3 className="font-bold text-slate-800 text-lg">Gán Môn Khảo Sát</h3>
+                <p className="text-xs font-medium text-slate-500 mt-0.5">Chọn Khối, Hệ học và các Môn để cấu hình đồng loạt</p>
               </div>
             </div>
-            {selGrades.length > 0 && selEdus.length > 0 && (
-              <div className="mt-4 p-3 bg-indigo-50 rounded-lg text-sm text-indigo-700">
-                <strong>Đang chọn:</strong> {selGrades.map(g => "K" + g).join(", ")} x {selEdus.join(", ")} = <strong>{selGrades.length * selEdus.length}</strong> tổ hợp
-              </div>
-            )}
-          </div>
-
-          {selGrades.length > 0 && selEdus.length > 0 && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-              <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200">
-                <div className="px-5 py-4 border-b bg-indigo-50/50">
-                  <h4 className="font-bold text-indigo-800 flex items-center gap-2">
-                    <BookOpen className="w-4 h-4"/> Môn đã gán ({uniqueAssigned.length})
-                  </h4>
-                  <p className="text-xs text-indigo-500 mt-1">Bỏ sẽ xóa khỏi tất cả tổ hợp đang chọn</p>
-                </div>
-                {mappingLoading ? (
-                  <div className="p-8 text-center text-slate-400">Đang tải...</div>
-                ) : uniqueAssigned.length === 0 ? (
-                  <div className="p-8 text-center text-slate-400">Chưa có môn nào được gán. Hãy thêm từ danh sách bên phải.</div>
-                ) : (
-                  <div className="p-4 space-y-2">
-                    {uniqueAssigned.map((m: any, i: number) => (
-                      <div key={m.subjectId} className="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-4 py-3 hover:border-indigo-300 group">
-                        <div className="flex items-center gap-3">
-                          <span className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold">{i + 1}</span>
-                          <div>
-                            <span className="font-bold text-slate-800">{m.subject?.name}</span>
-                            <span className="ml-2 text-xs font-mono text-slate-400">{m.subject?.code}</span>
-                            {m.subject?.subjectType && (
-                              <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
-                                {m.subject.subjectType === "VIET_NAM" ? "GV VN" : "GV NN"}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <button onClick={() => removeMapping(m.subjectId)} className="p-1.5 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 rounded-lg hover:bg-red-50 transition-all">
-                          <Trash2 className="w-4 h-4"/>
-                        </button>
-                      </div>
-                    ))}
+            
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              {/* Left: Grade & Edu */}
+              <div className="lg:col-span-5 space-y-6 bg-slate-50/50 p-5 rounded-xl border border-slate-100">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="block font-bold text-slate-700 text-xs uppercase tracking-wider">Khối:</span>
+                    <button onClick={() => setSelGrades(selGrades.length === grades.length ? [] : [...grades])} className="text-[10px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-md transition-colors">Chọn tất cả</button>
                   </div>
-                )}
-              </div>
-
-              <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200">
-                <div className="px-5 py-4 border-b bg-emerald-50/50">
-                  <h4 className="font-bold text-emerald-800 flex items-center gap-2">
-                    <Plus className="w-4 h-4"/> Môn chưa gán ({availableSubjects.length})
-                  </h4>
-                  <p className="text-xs text-emerald-500 mt-1">Sẽ gán vào {selGrades.length * selEdus.length} tổ hợp đang chọn</p>
-                </div>
-                {availableSubjects.length === 0 ? (
-                  <div className="p-8 text-center text-slate-400">Đã gán tất cả các môn.</div>
-                ) : (
-                  <div className="p-4 space-y-2">
-                    {availableSubjects.map((s: any) => (
-                      <button key={s.id} onClick={() => addMapping(s.id)} className="w-full flex items-center justify-between bg-white border border-dashed border-slate-300 rounded-lg px-4 py-3 hover:border-emerald-400 hover:bg-emerald-50 text-left transition-all">
-                        <div className="flex items-center gap-3">
-                          <span className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
-                            <Plus className="w-3.5 h-3.5"/>
-                          </span>
-                          <div>
-                            <span className="font-bold text-slate-800">{s.name}</span>
-                            <span className="ml-2 text-xs font-mono text-slate-400">{s.code}</span>
-                            {s.subjectType && (
-                              <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
-                                {s.subjectType === "VIET_NAM" ? "GV VN" : "GV NN"}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <span className="text-xs text-emerald-600 font-bold">+ Gán</span>
+                  <div className="flex flex-wrap gap-2">
+                    {grades.map((g: string) => (
+                      <button key={g} onClick={() => toggleGrade(g)} className={`text-xs px-3 py-1.5 rounded-lg font-bold transition-all ${selGrades.includes(g) ? 'bg-indigo-500 text-white shadow-md shadow-indigo-200' : 'bg-white text-slate-600 border border-slate-200 hover:border-indigo-300'}`}>
+                        {selGrades.includes(g) && <Check className="w-3 h-3 inline mr-1"/>} K{g}
                       </button>
                     ))}
                   </div>
-                )}
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="block font-bold text-slate-700 text-xs uppercase tracking-wider">Hệ học:</span>
+                    <button onClick={() => setSelEdus(selEdus.length === eduSystems.length ? [] : eduSystems.map((e: any) => e.code))} className="text-[10px] font-bold text-purple-600 bg-purple-50 hover:bg-purple-100 px-2.5 py-1 rounded-md transition-colors">Chọn tất cả</button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {eduSystems.map((es: any) => (
+                      <button key={es.code} onClick={() => toggleEdu(es.code)} className={`text-xs px-3 py-1.5 rounded-lg font-bold transition-all ${selEdus.includes(es.code) ? 'bg-purple-500 text-white shadow-md shadow-purple-200' : 'bg-white text-slate-600 border border-slate-200 hover:border-purple-300'}`}>
+                        {selEdus.includes(es.code) && <Check className="w-3 h-3 inline mr-1"/>} {es.code}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: Subjects to Assign */}
+              <div className="lg:col-span-7 bg-slate-50/50 p-5 rounded-xl border border-slate-100 flex flex-col">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="block font-bold text-slate-700 text-xs uppercase tracking-wider">Chọn Môn Khảo Sát:</span>
+                  <button onClick={() => setAssignSelSubjects(assignSelSubjects.length === subjectsList.length ? [] : subjectsList.map((s:any)=>s.id))} className="text-[10px] font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-md transition-colors">Chọn tất cả</button>
+                </div>
+                <div className="flex flex-wrap gap-2 mb-4 max-h-[150px] overflow-y-auto pr-1">
+                  {subjectsList.map((s:any) => (
+                    <button key={s.id} onClick={() => setAssignSelSubjects(p => p.includes(s.id) ? p.filter(x => x !== s.id) : [...p, s.id])} className={`text-xs px-3 py-2 rounded-xl font-bold transition-all border ${assignSelSubjects.includes(s.id) ? 'bg-emerald-500 text-white border-emerald-500 shadow-md shadow-emerald-200' : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-300'}`}>
+                      {s.name}
+                    </button>
+                  ))}
+                </div>
+                
+                <div className="mt-auto pt-4 border-t border-slate-200/60">
+                  <button 
+                    onClick={async () => {
+                      if(!selGrades.length || !selEdus.length || !assignSelSubjects.length) {
+                        alert("Vui lòng chọn đủ Khối, Hệ học và ít nhất 1 Môn KS!"); return;
+                      }
+                      setMappingLoading(true);
+                      for(const sid of assignSelSubjects) {
+                        await fetch("/api/grade-subject-mappings", {
+                          method: "POST", headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ grades: selGrades, eduSystems: selEdus, subjectId: sid })
+                        });
+                      }
+                      setMappingLoading(false);
+                      fetchAllMappings();
+                      setSelGrades([]); setSelEdus([]); setAssignSelSubjects([]);
+                      alert("Lưu cấu hình thành công!");
+                    }}
+                    disabled={mappingLoading || (!selGrades.length || !selEdus.length || !assignSelSubjects.length)}
+                    className="w-full py-3.5 bg-indigo-600 text-white rounded-xl font-black text-sm uppercase tracking-widest shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:shadow-none flex justify-center items-center gap-2"
+                  >
+                    {mappingLoading ? <FileSpreadsheet className="w-4 h-4 animate-spin"/> : <Check className="w-4 h-4"/>}
+                    Lưu Cấu Hình
+                  </button>
+                </div>
               </div>
             </div>
-          )}
+          </div>
+
+          {/* BOTTOM PANEL: Table of existing configurations */}
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="px-6 py-4 border-b bg-slate-50/80 flex justify-between items-center">
+              <h4 className="font-bold text-slate-800 flex items-center gap-2"><Layers className="w-4 h-4 text-indigo-500"/> Danh sách Cấu hình đã lưu</h4>
+              <button onClick={fetchAllMappings} className="text-xs text-indigo-600 hover:underline font-medium">Làm mới</button>
+            </div>
+            
+            {allMappingsLoading ? (
+              <div className="p-8 text-center text-slate-400">Đang tải danh sách...</div>
+            ) : allMappings.length === 0 ? (
+              <div className="p-12 text-center text-slate-400">Chưa có cấu hình môn khảo sát nào.</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-slate-50/50 border-b">
+                    <tr>
+                      <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest w-16">STT</th>
+                      <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">Khối</th>
+                      <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">Hệ học</th>
+                      <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">Các Môn Khảo Sát</th>
+                      <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest text-center w-24">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {(() => {
+                      // Group mappings by grade + eduSystem
+                      const groups = new Map();
+                      allMappings.forEach(m => {
+                        const key = `${m.grade}_${m.educationSystem}`;
+                        if (!groups.has(key)) {
+                          groups.set(key, { grade: m.grade, edu: m.educationSystem, subjects: [], ids: [] });
+                        }
+                        groups.get(key).subjects.push(m.subject);
+                        groups.get(key).ids.push(m.id);
+                      });
+                      
+                      return Array.from(groups.values()).sort((a:any,b:any) => parseInt(a.grade) - parseInt(b.grade)).map((g:any, i) => (
+                        <tr key={`${g.grade}_${g.edu}`} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="px-6 py-4 font-medium text-slate-400">{i+1}</td>
+                          <td className="px-6 py-4"><span className="font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded-md">Khối {g.grade}</span></td>
+                          <td className="px-6 py-4"><span className="font-bold text-purple-700 bg-purple-50 border border-purple-100 px-2.5 py-1 rounded-md">{g.edu}</span></td>
+                          <td className="px-6 py-4">
+                            <div className="flex flex-wrap gap-1.5">
+                              {g.subjects.filter(Boolean).map((sub:any) => (
+                                <span key={sub.id} className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                  {sub.name}
+                                  <button onClick={async () => {
+                                    if(confirm(`Xóa môn ${sub.name} khỏi Khối ${g.grade} - Hệ ${g.edu}?`)) {
+                                      const mappingId = allMappings.find((m:any) => m.grade === g.grade && m.educationSystem === g.edu && m.subjectId === sub.id)?.id;
+                                      if (mappingId) {
+                                        await fetch("/api/grade-subject-mappings?id=" + mappingId, { method: "DELETE" });
+                                        fetchAllMappings();
+                                      }
+                                    }
+                                  }} className="ml-1 text-emerald-400 hover:text-red-500 hover:bg-red-50 rounded-full p-0.5"><X className="w-3 h-3"/></button>
+                                </span>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <div className="flex justify-center gap-1">
+                              <button onClick={() => {
+                                setSelGrades([g.grade]);
+                                setSelEdus([g.edu]);
+                                setAssignSelSubjects(g.subjects.map((s:any)=>s.id));
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                              }} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all" title="Chỉnh sửa (Sẽ nạp lên form phía trên)">
+                                <Pencil className="w-4 h-4"/>
+                              </button>
+                              <button onClick={async () => {
+                                if(confirm(`Xóa toàn bộ cấu hình môn của Khối ${g.grade} - Hệ ${g.edu}?`)) {
+                                  for (const id of g.ids) {
+                                    await fetch("/api/grade-subject-mappings?id=" + id, { method: "DELETE" });
+                                  }
+                                  fetchAllMappings();
+                                }
+                              }} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Xóa toàn bộ">
+                                <Trash2 className="w-4 h-4"/>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ));
+                    })()}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       )}
-
-      {/* ===== OTHER TABS PLACEHOLDERS ===== */}
+{/* ===== OTHER TABS PLACEHOLDERS ===== */}
       {["reports"].includes(tab) && (
         <Empty icon={GraduationCap} text="Dang xay dung" sub="Phan nay se som duoc hoan thien"/>
       )}
