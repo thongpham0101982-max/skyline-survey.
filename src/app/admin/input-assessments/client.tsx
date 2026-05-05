@@ -223,7 +223,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   const fetchAllMappings = async () => {
     setAllMappingsLoading(true);
     try {
-      const r = await fetch("/api/grade-subject-mappings");
+      const r = await fetch("/api/grade-subject-mappings?_t=" + Date.now(), { cache: "no-store" });
       if (r.ok) setAllMappings(await r.json());
     } catch (e) {}
     setAllMappingsLoading(false);
@@ -1244,10 +1244,11 @@ return {
                           body: JSON.stringify({ grades: selGrades, eduSystems: selEdus, subjectId: sid })
                         });
                       }
+                      const wasEditing = !!editingMappingSubjectId;
                       setMappingLoading(false);
-                      fetchAllMappings();
+                      await fetchAllMappings();
                       setSelGrades([]); setSelEdus([]); setAssignSelSubjects([]); setEditingMappingSubjectId(null);
-                      alert(editingMappingSubjectId ? "Cập nhật cấu hình thành công!" : "Lưu cấu hình thành công!");
+                      alert(wasEditing ? "Cập nhật cấu hình thành công!" : "Lưu cấu hình thành công!");
                     }}
                     disabled={mappingLoading || (!selGrades.length || !selEdus.length || !assignSelSubjects.length)}
                     className="w-full py-3.5 bg-indigo-600 text-white rounded-xl font-black text-sm uppercase tracking-widest shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:shadow-none flex justify-center items-center gap-2"
