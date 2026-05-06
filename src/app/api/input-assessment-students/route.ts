@@ -9,6 +9,17 @@ export async function GET(req) {
   const allowedCampusIds = user?.campusIds || [];
   try {
     const { searchParams } = new URL(req.url);
+    if (searchParams.get("get_max_code") === "true") {
+      const allStudents = await (prisma as any).inputAssessmentStudent.findMany({
+        select: { studentCode: true }
+      });
+      const nums = allStudents.map((s: any) => {
+        const match = String(s.studentCode || "").match(/\d+$/);
+        return match ? parseInt(match[0], 10) : 0;
+      }).filter((n: number) => !isNaN(n));
+      const maxNum = nums.length > 0 ? Math.max(...nums) : 0;
+      return NextResponse.json({ nextCode: "HS" + (maxNum + 1).toString().padStart(3, "0") });
+    }
     const periodId = searchParams.get("periodId");
     const batchId = searchParams.get("batchId");
     

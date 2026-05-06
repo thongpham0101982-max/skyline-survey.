@@ -403,25 +403,30 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   }
   const doDeleteBatch = async (id:string) => { const r = await fetch(`/api/input-assessments?type=batch&id=${id}`,{method:"DELETE"}); if (r.ok) { fetchPeriods(); notify("Đã xóa đợt") } }
 
-    const generateStudentCodeForBatch = (batchId: string) => {
-    let nextNum = 1;
-    if (students && students.length > 0) {
-      const filtered = batchId ? students.filter(s => s.batchId === batchId) : students;
-      const nums = filtered.map((s) => {
-        const match = String(s.studentCode || "").match(/\d+$/);
-        return match ? parseInt(match[0], 10) : 0;
-      }).filter(n => !isNaN(n) && n > 0);
-      if (nums.length > 0) {
-        nextNum = Math.max(...nums) + 1;
-      }
-    }
-    return "HS" + nextNum.toString().padStart(3, "0");
-  }
-
-  const openAddStudent = () => {
+    const openAddStudent = async () => {
     setEditS(null);
     const initialBatchId = sBatchId || (selPeriod?.batches?.[0]?.id || "");
-    const genCode = generateStudentCodeForBatch(initialBatchId);
+    
+    let genCode = "HS001";
+    try {
+      const r = await fetch("/api/input-assessment-students?get_max_code=true");
+      if (r.ok) {
+        const res = await r.json();
+        if (res.nextCode) genCode = res.nextCode;
+      }
+    } catch (e) {
+      let nextNum = 1;
+      if (students && students.length > 0) {
+        const nums = students.map((s) => {
+          const match = String(s.studentCode || "").match(/\d+$/);
+          return match ? parseInt(match[0], 10) : 0;
+        }).filter(n => !isNaN(n) && n > 0);
+        if (nums.length > 0) {
+          nextNum = Math.max(...nums) + 1;
+        }
+      }
+      genCode = "HS" + nextNum.toString().padStart(3, "0");
+    }
 
     setSForm({ studentCode: genCode, fullName: "", dateOfBirth: "", grade: "", admissionCriteria: "", className: "", hocKy: "", kqgdTieuHoc: "", kqHocTap: "", kqRenLuyen: "", targetType: "", surveySystem: "", hoSoCtQuocTe: "", surveyFormType: "", gender: "", batchId: initialBatchId });
     setSModal(true);
