@@ -43,6 +43,7 @@ interface Props {
   academicYears: AcademicYear[]; campuses: Campus[]; examBoardUsers: User[];
   subjects: AssessmentSubject[]; eduSystems: EduSystem[]; grades: string[];
   configs: AssessmentConfig[]; teachers: Teacher[]; departments: Department[];
+  giaoVuCSUsers?: User[];
 }
 
 // ========= CONSTANTS =========
@@ -143,7 +144,7 @@ function Empty({ icon:Icon, text, sub }: { icon:any; text:string; sub?:string })
 }
 
 // ========= MAIN =========
-export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers, subjects: initialSubjects, eduSystems, configs: initialConfigs, grades, teachers, departments }: Props) {
+export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers, subjects: initialSubjects, eduSystems, configs: initialConfigs, grades, teachers, departments, giaoVuCSUsers = [] }: Props) {
   const [tab, setTab] = useState("periods")
   const [yearId, setYearId] = useState(academicYears[0]?.id || "")
   const [toast, setToast] = useState<{msg:string;type:"ok"|"err"}|null>(null)
@@ -1476,7 +1477,7 @@ return {
              <Field label="Người phụ trách">
                <select value={bForm.assignedUserId} onChange={e=>setBForm(f=>({...f,assignedUserId:e.target.value}))} className={inp}>
                  <option value="">-- Chưa gán --</option>
-                 {examBoardUsers.map(u => (
+                 {giaoVuCSUsers.map(u => (
                    <option key={u.id} value={u.id}>{u.fullName}</option>
                  ))}
                </select>
