@@ -87,7 +87,7 @@ export function CampusManagerClient({ initialCampuses, gdcsUsers = [] }: any) {
             <div className="space-y-2">
               <label className="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Địa chỉ</label>
               <input type="text" value={form.address} onChange={e => setForm({...form, address: e.target.value})}
-                placeholder="Số 123, đường..." className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all" />
+                placeholder="Tên đầy đủ" className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all" />
             </div>
             <div className="space-y-2">
               <label className="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Người phụ trách</label>
