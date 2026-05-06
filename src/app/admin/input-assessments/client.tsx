@@ -217,17 +217,6 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     directorNote: ""
   });
 
-  useEffect(() => {
-    if (selectedReportStudent) {
-      setReportForm({
-        admissionResult: selectedReportStudent.admissionResult || "",
-        admissionCampus: selectedReportStudent.admissionCampus || "",
-        signatureName: selectedReportStudent.signatureName || "",
-        directorNote: selectedReportStudent.directorNote || ""
-      });
-    }
-  }, [selectedReportStudent]);
-
   const [saveReportLoading, setSaveReportLoading] = useState(false);
   const handleSaveReportResult = async () => {
     if (!selectedReportStudent) return;
@@ -299,6 +288,17 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     if (!Array.isArray(reportStudents)) return undefined;
     return reportStudents.find(s => s.id === reportStudentId);
   }, [reportStudents, reportStudentId]);
+
+  useEffect(() => {
+    if (selectedReportStudent) {
+      setReportForm({
+        admissionResult: selectedReportStudent.admissionResult || "",
+        admissionCampus: selectedReportStudent.admissionCampus || "",
+        signatureName: selectedReportStudent.signatureName || "",
+        directorNote: selectedReportStudent.directorNote || ""
+      });
+    }
+  }, [selectedReportStudent]);
 
   useEffect(() => {
     if (filteredReportStudents.length > 0) {
