@@ -1775,7 +1775,7 @@ return {
                   className="w-full bg-white border border-slate-200 rounded-2xl pl-5 pr-10 py-3.5 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
                 >
                   {filteredReportStudents.map(s => (
-                    <option key={s.id} value={s.id}>{s.studentCode} - {s.fullName} {s.className ? `(${s.className})` : ""}</option>
+                    <option key={s.id} value={s.id}>{s.studentCode} - {s.fullName} {s.className ? `(${s.className})` : ""} {s.admissionResult ? `[✓ Đã duyệt: ${s.admissionResult}]` : "[⏳ Chưa duyệt]"}</option>
                   ))}
                   {filteredReportStudents.length === 0 && <option value="">Không có học sinh nào</option>}
                 </select>
@@ -1837,12 +1837,40 @@ return {
                       <span className="text-slate-400 font-bold uppercase text-[10px] tracking-wider">Diện Khảo sát</span>
                       <span className="font-semibold text-slate-700">{selectedReportStudent.admissionCriteria || "—"}</span>
                     </div>
+                    <div className="flex items-center justify-between text-sm border-t border-slate-100 pt-3 mt-1">
+                      <span className="text-slate-400 font-bold uppercase text-[10px] tracking-wider">Xét duyệt</span>
+                      {selectedReportStudent.admissionResult ? (
+                        <span className="font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-100 text-xs flex items-center gap-1 shadow-sm animate-fade-in">
+                          <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
+                          Đã duyệt ({selectedReportStudent.admissionResult})
+                        </span>
+                      ) : (
+                        <span className="font-bold text-slate-500 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-200 text-xs">
+                          Chưa duyệt
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
                 {/* ADMISSION DECISION FORM */}
                 <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4">
-                  <h4 className="font-black text-slate-800 text-sm flex items-center gap-2 border-b pb-3 mb-2"><CheckCircle2 className="w-4 h-4 text-emerald-500"/> Xét duyệt Tuyển sinh</h4>
+                  <h4 className="font-black text-slate-800 text-sm flex items-center justify-between border-b pb-3 mb-2">
+                    <span className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500"/>
+                      Xét duyệt Tuyển sinh
+                    </span>
+                    {selectedReportStudent.admissionResult ? (
+                      <span className="px-2.5 py-1 text-[10px] font-black bg-emerald-100 text-emerald-700 rounded-full border border-emerald-200 uppercase tracking-wider flex items-center gap-1 shadow-sm">
+                        <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+                        Đã duyệt ({selectedReportStudent.admissionResult})
+                      </span>
+                    ) : (
+                      <span className="px-2.5 py-1 text-[10px] font-black bg-slate-100 text-slate-500 rounded-full border border-slate-200 uppercase tracking-wider">
+                        Chưa duyệt
+                      </span>
+                    )}
+                  </h4>
                   
                   {!canApprove && (
                     <div className="bg-rose-50 text-rose-600 p-3.5 rounded-2xl text-xs font-semibold border border-rose-100 flex items-center gap-2 animate-pulse mb-2">
