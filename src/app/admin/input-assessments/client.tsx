@@ -185,26 +185,24 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     if (["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(currentUser.role)) {
       const allowedIds = currentUser.campusIds || [];
       return periods.map(p => {
-        const isPeriodAllowed = p.campusId ? allowedIds.includes(p.campusId) : false;
-        
         const allowedBatches = (p.batches || []).filter(b => {
-          if (b.campusId) return allowedIds.includes(b.campusId);
-          const matchesFallback = allowedIds.some(id => {
-            const campus = campuses.find(c => c.id === id);
-            if (!campus) return false;
-            return b.name.includes(campus.campusCode) || b.name.includes(campus.campusName);
-          });
-          return matchesFallback;
+          if (!b.campusId) {
+            // Smart Fallback: Check if batch name contains any allowed campus code/name
+            const matchesFallback = allowedIds.some(id => {
+              const campus = campuses.find(c => c.id === id);
+              if (!campus) return false;
+              return b.name.includes(campus.campusCode) || b.name.includes(campus.campusName);
+            });
+            return matchesFallback;
+          }
+          return allowedIds.includes(b.campusId);
         });
         
-        if (isPeriodAllowed || allowedBatches.length > 0) {
-          return {
-            ...p,
-            batches: allowedBatches
-          };
-        }
-        return null;
-      }).filter(Boolean) as Period[];
+        return {
+          ...p,
+          batches: allowedBatches
+        };
+      });
     }
     
     return periods;
