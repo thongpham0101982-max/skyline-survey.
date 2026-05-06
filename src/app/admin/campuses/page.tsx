@@ -14,7 +14,7 @@ export default async function CampusPage() {
 
   const gdcsUsers = await prisma.user.findMany({
     where: {
-      role: { in: ["GDCS", "GIAO_VU_CS"] }
+      role: { in: ["GĐ_CS", "GIAO_VU", "GDCS", "GIAO_VU_CS"] }
     },
     select: { id: true, fullName: true, email: true },
     orderBy: { fullName: "asc" }
