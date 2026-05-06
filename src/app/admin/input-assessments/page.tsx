@@ -34,6 +34,7 @@ export default async function InputAssessmentsPage() {
   let campuses: any[] = [];
   let examBoardUsers: any[] = [];
   let giaoVuCSUsers: any[] = [];
+  let gdcsUsers: any[] = [];
   let subjects: any[] = [];
   let eduSystems: any[] = [];
   let grades: string[] = ["1","2","3","4","5","6","7","8","9","10","11","12"];
@@ -62,6 +63,11 @@ export default async function InputAssessmentsPage() {
         giaoVuCSUsers = await pAny.user.findMany({ 
           where: { role: { in: ["GĐ_CS", "GIAO_VU", "GDCS", "GIAO_VU_CS"] } }, 
           select: { id: true, fullName: true } 
+        }).catch(() => []);
+
+        gdcsUsers = await pAny.user.findMany({ 
+          where: { role: { in: ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "gdcs", "gđcs", "gđ_cs", "gd_cs"] } }, 
+          select: { id: true, fullName: true, email: true } 
         }).catch(() => []);
       }
       if (pAny.assessmentSubject) {
@@ -145,6 +151,7 @@ export default async function InputAssessmentsPage() {
         campuses={safeJson(campuses)}
         examBoardUsers={safeJson(examBoardUsers)}
         giaoVuCSUsers={safeJson(giaoVuCSUsers)}
+        gdcsUsers={safeJson(gdcsUsers)}
         subjects={safeJson(subjects)}
         eduSystems={safeJson(eduSystems)}
         grades={safeJson(grades)}

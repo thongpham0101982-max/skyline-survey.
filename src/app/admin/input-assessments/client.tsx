@@ -44,6 +44,7 @@ interface Props {
   subjects: AssessmentSubject[]; eduSystems: EduSystem[]; grades: string[];
   configs: AssessmentConfig[]; teachers: Teacher[]; departments: Department[];
   giaoVuCSUsers?: User[];
+  gdcsUsers?: any[];
   currentUser?: { id: string; role: string; campusIds: string[] } | null;
 }
 
@@ -145,7 +146,7 @@ function Empty({ icon:Icon, text, sub }: { icon:any; text:string; sub?:string })
 }
 
 // ========= MAIN =========
-export function InputAssessmentsClient({ academicYears = [], campuses = [], examBoardUsers = [], subjects: initialSubjects = [], eduSystems = [], configs: initialConfigs = [], grades = [], teachers = [], departments = [], giaoVuCSUsers = [], currentUser = null }: Props) {
+export function InputAssessmentsClient({ academicYears = [], campuses = [], examBoardUsers = [], subjects: initialSubjects = [], eduSystems = [], configs: initialConfigs = [], grades = [], teachers = [], departments = [], giaoVuCSUsers = [], gdcsUsers = [], currentUser = null }: Props) {
   const [tab, setTab] = useState("periods")
   const [yearId, setYearId] = useState(academicYears[0]?.id || "")
   const [toast, setToast] = useState<{msg:string;type:"ok"|"err"}|null>(null)
@@ -1894,14 +1895,17 @@ return {
                   </Field>
 
                   <Field label="Người duyệt / Phê duyệt">
-                    <input 
-                      type="text"
+                    <select 
                       value={reportForm.signatureName}
                       onChange={e => setReportForm(f => ({ ...f, signatureName: e.target.value }))}
                       className={inp}
-                      placeholder="Họ tên người phê duyệt"
                       disabled={!canApprove}
-                    />
+                    >
+                      <option value="">-- Chọn người phê duyệt --</option>
+                      {gdcsUsers.map(u => (
+                        <option key={u.id} value={u.fullName || u.email}>{u.fullName || u.email}</option>
+                      ))}
+                    </select>
                   </Field>
 
                   <Field label="Ý kiến / Ghi chú Hội đồng">
