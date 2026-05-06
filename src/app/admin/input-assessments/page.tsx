@@ -89,14 +89,18 @@ export default async function InputAssessmentsPage() {
               orderBy: { grade: "asc" }
             }).catch(() => []);
             
-            const dbGrades = uniqueGrades.map((g: any) => g.grade).filter(Boolean);
-            if (dbGrades.length > 0) {
-              grades = dbGrades.sort((a: string, b: string) => {
-                const na = parseInt(a);
-                const nb = parseInt(b);
-                if (isNaN(na) || isNaN(nb)) return a.localeCompare(b);
-                return na - nb;
-              });
+            try {
+              const dbGrades = uniqueGrades.map((g: any) => g.grade).filter(Boolean);
+              if (dbGrades.length > 0) {
+                grades = dbGrades.sort((a: any, b: any) => {
+                  const na = parseInt(a);
+                  const nb = parseInt(b);
+                  if (isNaN(na) || isNaN(nb)) return String(a).localeCompare(String(b));
+                  return na - nb;
+                });
+              }
+            } catch (sortError) {
+              console.error("Sorting grades error handled:", sortError);
             }
           }
         }
