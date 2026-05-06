@@ -403,23 +403,29 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   }
   const doDeleteBatch = async (id:string) => { const r = await fetch(`/api/input-assessments?type=batch&id=${id}`,{method:"DELETE"}); if (r.ok) { fetchPeriods(); notify("Đã xóa đợt") } }
 
-  const openAddStudent = () => {
-    setEditS(null);
+    const generateStudentCodeForBatch = (batchId: string) => {
     let nextNum = 1;
     if (students && students.length > 0) {
-        const nums = students.map((s) => {
-            const match = String(s.studentCode || "").match(/\d+$/);
-            return match ? parseInt(match[0], 10) : 0;
-        }).filter(n => !isNaN(n));
-        if (nums.length > 0) {
-            nextNum = Math.max(...nums) + 1;
-        }
+      const filtered = batchId ? students.filter(s => s.batchId === batchId) : students;
+      const nums = filtered.map((s) => {
+        const match = String(s.studentCode || "").match(/\d+$/);
+        return match ? parseInt(match[0], 10) : 0;
+      }).filter(n => !isNaN(n) && n > 0);
+      if (nums.length > 0) {
+        nextNum = Math.max(...nums) + 1;
+      }
     }
-    const genCode = "HS" + nextNum.toString().padStart(3, "0");
+    return "HS" + nextNum.toString().padStart(3, "0");
+  }
 
-    setSForm({ studentCode: genCode, fullName: "", dateOfBirth: "", grade: "", admissionCriteria: "", className: "", hocKy: "", kqgdTieuHoc: "", kqHocTap: "", kqRenLuyen: "", targetType: "", surveySystem: "", hoSoCtQuocTe: "", surveyFormType: "", gender: "", batchId: sBatchId || "" });
+  const openAddStudent = () => {
+    setEditS(null);
+    const initialBatchId = sBatchId || (selPeriod?.batches?.[0]?.id || "");
+    const genCode = generateStudentCodeForBatch(initialBatchId);
+
+    setSForm({ studentCode: genCode, fullName: "", dateOfBirth: "", grade: "", admissionCriteria: "", className: "", hocKy: "", kqgdTieuHoc: "", kqHocTap: "", kqRenLuyen: "", targetType: "", surveySystem: "", hoSoCtQuocTe: "", surveyFormType: "", gender: "", batchId: initialBatchId });
     setSModal(true);
-}
+  }
   const openEditStudent = (s:Student) => { setEditS(s); setSForm({ studentCode:s.studentCode, fullName:s.fullName, dateOfBirth:s.dateOfBirth?.slice(0,10)||"", grade:s.grade||"", admissionCriteria:s.admissionCriteria||"", className:s.className||"", hocKy:s.hocKy||"", kqgdTieuHoc:s.kqgdTieuHoc||"", kqHocTap:s.kqHocTap||"", kqRenLuyen:s.kqRenLuyen||"", targetType:s.targetType||"", surveySystem:s.surveySystem||"", hoSoCtQuocTe:s.hoSoCtQuocTe||"", surveyFormType:s.surveyFormType||"" , gender:s.gender||"", batchId:s.batchId||"" }); setSModal(true) }
   const saveStudent = async () => {
     if (!sForm.studentCode.trim()||!sForm.fullName.trim()) return notify("Cần nhập Mã HS và Họ tên","err")
