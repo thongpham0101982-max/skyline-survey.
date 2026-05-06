@@ -191,16 +191,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   const [targetPeriodId, setTargetPeriodId] = useState("")
   const [bForm, setBForm] = useState({ batchNumber:"1", name:"", startDate:"", endDate:"", status:"ACTIVE", campusId: "", assignedUserId: "" })
 
-  useEffect(() => {
-    if (!bModal || editB) return;
-    const selectedCampus = campuses.find(c => c.id === bForm.campusId);
-    const campusName = selectedCampus ? selectedCampus.campusName : "";
-    const dateStr = bForm.startDate ? bForm.startDate.split('-').reverse().join('/') : "";
-    let autoName = `Đợt ${bForm.batchNumber || "1"}`;
-    if (campusName) autoName += ` - ${campusName}`;
-    if (dateStr) autoName += ` (${dateStr})`;
-    setBForm(f => ({ ...f, name: autoName }));
-  }, [bForm.batchNumber, bForm.campusId, bForm.startDate, bModal, editB, campuses]);
+
 
   // ───────── STUDENTS STATE ─────────
   const [students, setStudents] = useState<Student[]>([])
@@ -374,10 +365,39 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
     setBForm({ batchNumber: String(nextBatchNum), name:"", startDate:"", endDate:"", status:"ACTIVE", campusId: "", assignedUserId: "" }); 
     setBModal(true); 
   }
-  const openEditBatch = (b:Batch) => { setTargetPeriodId(b.periodId); setEditB(b); setBForm({ batchNumber:String(b.batchNumber), name:b.name, startDate:b.startDate?.slice(0,10)||"", endDate:b.endDate?.slice(0,10)||"", status:b.status, campusId: b.campusId||"", assignedUserId: b.assignedUserId||"" }); setBModal(true) }
+  const openEditBatch = (b:Batch) => { 
+    setTargetPeriodId(b.periodId); 
+    setEditB(b); 
+    let baseName = b.name;
+    const match = b.name.match(/Đợt \d+ - (.*?) \|/);
+    if (match) {
+      baseName = match[1];
+    } else {
+      const match2 = b.name.match(/Đợt \d+ - (.*)/);
+      if (match2) baseName = match2[1];
+    }
+    setBForm({ batchNumber:String(b.batchNumber), name:baseName, startDate:b.startDate?.slice(0,10)||"", endDate:b.endDate?.slice(0,10)||"", status:b.status, campusId: b.campusId||"", assignedUserId: b.assignedUserId||"" }); 
+    setBModal(true) 
+  }
   const saveBatch = async () => {
     if (!bForm.name.trim()||!bForm.startDate||!bForm.endDate) return notify("Cần nhập đủ Tên, Ngày bắt/kết thúc","err")
-    const r = await fetch("/api/input-assessments", { method: editB?"PUT":"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action: editB?"UPDATE_BATCH":"CREATE_BATCH", id:editB?.id, data:{...bForm, periodId:targetPeriodId, batchNumber:parseInt(bForm.batchNumber)||1} }) })
+    
+    const selectedCampus = campuses.find(c => c.id === bForm.campusId);
+    const campusName = selectedCampus ? selectedCampus.campusName : "Tất cả";
+    const startStr = bForm.startDate ? bForm.startDate.split('-').reverse().join('/') : "";
+    const endStr = bForm.endDate ? bForm.endDate.split('-').reverse().join('/') : "";
+    
+    const fullScientificName = `Đợt ${bForm.batchNumber || "1"} - ${bForm.name} | ${campusName} (${startStr} ~ ${endStr})`;
+    
+    const r = await fetch("/api/input-assessments", { 
+      method: editB?"PUT":"POST", 
+      headers:{"Content-Type":"application/json"}, 
+      body: JSON.stringify({ 
+        action: editB?"UPDATE_BATCH":"CREATE_BATCH", 
+        id:editB?.id, 
+        data:{...bForm, name: fullScientificName, periodId:targetPeriodId, batchNumber:parseInt(bForm.batchNumber)||1} 
+      }) 
+    })
     if (r.ok) { setBModal(false); fetchPeriods(); notify(editB?"Đã cập nhật đợt":"Đã tạo đợt mới") }
     else notify("Lỗi","err")
   }
@@ -1475,7 +1495,15 @@ return {
       <Modal open={bModal} onClose={()=>setBModal(false)} title="Thông tin Đợt khảo sát" size="md" footer={<><button onClick={()=>setBModal(false)} className="flex-1 py-3 text-xs font-black uppercase text-slate-400">Hủy</button> <button onClick={saveBatch} className="flex-1 py-4 bg-emerald-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-emerald-50">Hoàn tất</button></>}>
         <div className="space-y-4">
            <div className="grid grid-cols-2 gap-3"><Field label="Số đợt"><input type="number" value={bForm.batchNumber} onChange={e=>setBForm(f=>({...f,batchNumber:e.target.value}))} className={inp}/></Field><Field label="Trạng thái"><select value={bForm.status} onChange={e=>setBForm(f=>({...f,status:e.target.value}))} className={inp}>{STATUS_OPTS.map(o=><option key={o} value={o}>{STATUS_MAP[o].label}</option>)}</select></Field></div>
-           <Field label="Tên đợt" required><input value={bForm.name} onChange={e=>setBForm(f=>({...f,name:e.target.value}))} className={inp}/></Field>
+           <Field label="Tên đợt" required>
+             <input value={bForm.name} onChange={e=>setBForm(f=>({...f,name:e.target.value}))} placeholder="Vd: Khảo sát lẻ, Đánh giá Năng lực" className={inp}/>
+             <div className="mt-1.5 p-3 bg-indigo-50/50 border border-indigo-100 rounded-xl">
+               <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Hiển thị khoa học & Xét duyệt:</p>
+               <p className="text-xs font-bold text-indigo-600 truncate">
+                 {`Đợt ${bForm.batchNumber || "1"} - ${bForm.name || "Khảo sát đầu vào"} | ${campuses.find(c => c.id === bForm.campusId)?.campusName || "Chưa chọn cơ sở"} (${bForm.startDate ? bForm.startDate.split('-').reverse().join('/') : "__/__/____"} ~ ${bForm.endDate ? bForm.endDate.split('-').reverse().join('/') : "__/__/____"})`}
+               </p>
+             </div>
+           </Field>
            <div className="grid grid-cols-2 gap-3">
              <Field label="Cơ sở">
                <select value={bForm.campusId} onChange={e=>setBForm(f=>({...f,campusId:e.target.value}))} className={inp}>
