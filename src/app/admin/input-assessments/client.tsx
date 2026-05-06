@@ -45,7 +45,7 @@ interface Props {
   configs: AssessmentConfig[]; teachers: Teacher[]; departments: Department[];
   giaoVuCSUsers?: User[];
   gdcsUsers?: any[];
-  currentUser?: { id: string; role: string; campusIds: string[] } | null;
+  currentUser?: { id: string; role: string; campusIds: string[]; fullName?: string } | null;
 }
 
 // ========= CONSTANTS =========
@@ -258,6 +258,20 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     if (!selectedReportStudent) return;
     setSaveReportLoading(true);
     try {
+      const userRole = (currentUser?.role || "").toUpperCase();
+      const isGDCSUser = ["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole);
+      
+      let finalCampus = reportForm.admissionCampus;
+      let finalSignature = reportForm.signatureName;
+      
+      if (isGDCSUser && currentUser) {
+        finalSignature = currentUser.fullName || reportForm.signatureName || "";
+        const userCampus = campuses.find(c => currentUser.campusIds.includes(c.id));
+        if (userCampus) {
+          finalCampus = userCampus.campusName;
+        }
+      }
+
       let finalNote = reportForm.directorNote;
       if (reportForm.admissionResult === "Đạt cam kết" && reportForm.committedSubjects.length > 0) {
         finalNote = `Môn cam kết: [${reportForm.committedSubjects.join(", ")}]
@@ -272,8 +286,8 @@ ${reportForm.directorNote}`;
           data: {
             ...selectedReportStudent,
             admissionResult: reportForm.admissionResult,
-            admissionCampus: reportForm.admissionCampus,
-            signatureName: reportForm.signatureName,
+            admissionCampus: finalCampus,
+            signatureName: finalSignature,
             directorNote: finalNote
           }
         })
@@ -283,8 +297,8 @@ ${reportForm.directorNote}`;
         setReportStudents(prev => prev.map(s => s.id === selectedReportStudent.id ? { 
           ...s, 
           admissionResult: reportForm.admissionResult,
-          admissionCampus: reportForm.admissionCampus,
-          signatureName: reportForm.signatureName,
+          admissionCampus: finalCampus,
+          signatureName: finalSignature,
           directorNote: finalNote
         } : s));
       } else {
@@ -1880,33 +1894,37 @@ return {
                     </Field>
                   )}
 
-                  <Field label="Cơ sở nhập học">
-                    <select 
-                      value={reportForm.admissionCampus} 
-                      onChange={e => setReportForm(f => ({ ...f, admissionCampus: e.target.value }))}
-                      className={inp}
-                      disabled={!canApprove}
-                    >
-                      <option value="">-- Chọn cơ sở --</option>
-                      {campuses.map(c => (
-                        <option key={c.id} value={c.campusName}>{c.campusName}</option>
-                      ))}
-                    </select>
-                  </Field>
+                  {!(["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes((currentUser?.role || "").toUpperCase())) && (
+                    <>
+                      <Field label="Cơ sở nhập học">
+                        <select 
+                          value={reportForm.admissionCampus} 
+                          onChange={e => setReportForm(f => ({ ...f, admissionCampus: e.target.value }))}
+                          className={inp}
+                          disabled={!canApprove}
+                        >
+                          <option value="">-- Chọn cơ sở --</option>
+                          {campuses.map(c => (
+                            <option key={c.id} value={c.campusName}>{c.campusName}</option>
+                          ))}
+                        </select>
+                      </Field>
 
-                  <Field label="Người duyệt / Phê duyệt">
-                    <select 
-                      value={reportForm.signatureName}
-                      onChange={e => setReportForm(f => ({ ...f, signatureName: e.target.value }))}
-                      className={inp}
-                      disabled={!canApprove}
-                    >
-                      <option value="">-- Chọn người phê duyệt --</option>
-                      {gdcsUsers.map(u => (
-                        <option key={u.id} value={u.fullName || u.email}>{u.fullName || u.email}</option>
-                      ))}
-                    </select>
-                  </Field>
+                      <Field label="Người duyệt / Phê duyệt">
+                        <select 
+                          value={reportForm.signatureName}
+                          onChange={e => setReportForm(f => ({ ...f, signatureName: e.target.value }))}
+                          className={inp}
+                          disabled={!canApprove}
+                        >
+                          <option value="">-- Chọn người phê duyệt --</option>
+                          {gdcsUsers.map(u => (
+                            <option key={u.id} value={u.fullName || u.email}>{u.fullName || u.email}</option>
+                          ))}
+                        </select>
+                      </Field>
+                    </>
+                  )}
 
                   <Field label="Ý kiến / Ghi chú Hội đồng">
                     <textarea 
