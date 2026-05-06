@@ -177,6 +177,52 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
 
   // ───────── COMMON STATES ─────────
   const [periods, setPeriods] = useState<Period[]>([])
+
+  const visiblePeriods = useMemo(() => {
+    if (!currentUser) return [];
+    if (currentUser.role === "ADMIN" || currentUser.role === "KT_DBCL") return periods;
+    
+    if (["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(currentUser.role)) {
+      const allowedIds = currentUser.campusIds || [];
+      return visiblePeriods.map(p => {
+        const isPeriodAllowed = p.campusId ? allowedIds.includes(p.campusId) : false;
+        
+        const allowedBatches = (p.batches || []).filter(b => {
+          if (b.campusId) return allowedIds.includes(b.campusId);
+          const matchesFallback = allowedIds.some(id => {
+            const campus = campuses.find(c => c.id === id);
+            if (!campus) return false;
+            return b.name.includes(campus.campusCode) || b.name.includes(campus.campusName);
+          });
+          return matchesFallback;
+        });
+        
+        if (isPeriodAllowed || allowedBatches.length > 0) {
+          return {
+            ...p,
+            batches: allowedBatches
+          };
+        }
+        return null;
+      }).filter(Boolean) as Period[];
+    }
+    
+    return periods;
+  }, [periods, currentUser, campuses]);
+
+  useEffect(() => {
+    if (visiblePeriods.length > 0) {
+      if (!sPeriodId || !visiblePeriods.some(p => p.id === sPeriodId)) {
+        setSPeriodId(visiblePeriods[0].id);
+      }
+      if (!asPeriodId || !visiblePeriods.some(p => p.id === asPeriodId)) {
+        setAsPeriodId(visiblePeriods[0].id);
+      }
+    } else {
+      setSPeriodId("");
+      setAsPeriodId("");
+    }
+  }, [visiblePeriods, sPeriodId, asPeriodId]);
   const [pLoading, setPLoading] = useState(false)
   const [expandedId, setExpandedId] = useState<string|null>(null)
   const [confirm, setConfirm] = useState<{msg:string; fn:()=>void}|null>(null)
@@ -288,12 +334,12 @@ ${reportForm.directorNote}`;
 
   // Set default reportPeriodId when periods are loaded
   useEffect(() => {
-    if (periods.length > 0 && !reportPeriodId) {
-      setReportPeriodId(periods[0].id);
+    if (visiblePeriods.length > 0 && !reportPeriodId) {
+      setReportPeriodId(visiblePeriods[0].id);
     }
-  }, [periods, reportPeriodId]);
+  }, [visiblePeriods, reportPeriodId]);
 
-  const reportSelPeriod = useMemo(() => periods.find(p => p.id === reportPeriodId), [periods, reportPeriodId]);
+  const reportSelPeriod = useMemo(() => visiblePeriods.find(p => p.id === reportPeriodId), [periods, reportPeriodId]);
   const reportBatches = useMemo(() => reportSelPeriod?.batches || [], [reportSelPeriod]);
 
   const filteredReportStudents = useMemo(() => {
@@ -518,7 +564,7 @@ ${reportForm.directorNote}`;
   const openAddBatch = (pid:string) => { 
     setTargetPeriodId(pid); 
     setEditB(null); 
-    const period = periods.find(p => p.id === pid);
+    const period = visiblePeriods.find(p => p.id === pid);
     let nextBatchNum = 1;
     if (period && period.batches && period.batches.length > 0) {
         nextBatchNum = Math.max(...period.batches.map(b => b.batchNumber)) + 1;
@@ -833,8 +879,8 @@ return {
   }
 
   // ====================== UI HELPERS ======================
-  const selPeriod = periods.find(p => p.id === sPeriodId)
-  const asSelPeriod = periods.find(p => p.id === asPeriodId)
+  const selPeriod = visiblePeriods.find(p => p.id === sPeriodId)
+  const asSelPeriod = visiblePeriods.find(p => p.id === asPeriodId)
   const filtStu = students.filter(s => !sSearch || s.studentCode.toLowerCase().includes(sSearch.toLowerCase()) || s.fullName.toLowerCase().includes(sSearch.toLowerCase()))
 
   // ====================== RENDER ======================
@@ -908,14 +954,14 @@ return {
                     <Field label="Kỳ khảo sát" required>
                       <select value={asPeriodId} onChange={e=>{setAsPeriodId(e.target.value); setAsBatchId("")}} className={inp}>
                         <option value="">-- Chọn Kỳ --</option>
-                        {periods.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+                        {visiblePeriods.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
                       </select>
                     </Field>
 
                     <Field label="Đợt khảo sát (Không bắt buộc)">
                       <select value={asBatchId} onChange={e=>setAsBatchId(e.target.value)} className={inp} disabled={!asPeriodId}>
                          <option value="">-- Tất cả đợt --</option>
-                         {periods.find(p=>p.id===asPeriodId)?.batches?.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
+                         {visiblePeriods.find(p=>p.id===asPeriodId)?.batches?.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
                       </select>
                     </Field>
 
@@ -1123,7 +1169,7 @@ return {
 
           {pLoading ? <Spin/> : periods.length === 0 ? <Empty icon={Calendar} text="Chưa có Kỳ khảo sát nào" sub="Bấm Tạo Kỳ mới để bắt đầu" /> : (
             <div className="space-y-3">
-              {periods.map(p => (
+              {visiblePeriods.map(p => (
                 <div key={p.id} className="bg-white rounded-[1.5rem] border border-slate-200 shadow-sm overflow-hidden group/p hover:border-indigo-200 transition-all">
                   <div className="px-6 py-5 flex flex-wrap items-center justify-between gap-4 cursor-pointer" onClick={()=>setExpandedId(expandedId===p.id?null:p.id)}>
                     <div className="flex items-center gap-4">
@@ -1256,7 +1302,7 @@ return {
                        <Field label="Kỳ khảo sát" required>
                           <select value={sPeriodId} onChange={e=>{setSPeriodId(e.target.value); setSBatchId("")}} className={inp}>
                              <option value="">-- Chọn Kỳ --</option>
-                             {periods.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+                             {visiblePeriods.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
                           </select>
                        </Field>
                        <Field label="Đợt khảo sát">
@@ -1666,7 +1712,7 @@ return {
                   }}
                   className="w-full bg-white border border-slate-200 rounded-2xl pl-5 pr-10 py-3.5 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
                 >
-                  {periods.map(p => (
+                  {visiblePeriods.map(p => (
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
                   {periods.length === 0 && <option value="">Không có kỳ KS nào</option>}
