@@ -148,6 +148,73 @@ function Empty({ icon:Icon, text, sub }: { icon:any; text:string; sub?:string })
 // ========= MAIN =========
 export function InputAssessmentsClient({ academicYears = [], campuses = [], examBoardUsers = [], subjects: initialSubjects = [], eduSystems = [], configs: initialConfigs = [], grades = [], teachers = [], departments = [], giaoVuCSUsers = [], gdcsUsers = [], currentUser = null }: Props) {
   const [tab, setTab] = useState("periods")
+  const [rcCampusId, setRcCampusId] = useState("")
+  const [rcTitle, setRcTitle] = useState("BÁO CÁO KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO")
+  const [rcLogo, setRcLogo] = useState("")
+  const [rcSignature, setRcSignature] = useState("")
+  const [rcDirectorName, setRcDirectorName] = useState("")
+
+  useEffect(() => {
+    if (campuses && campuses.length > 0 && !rcCampusId) {
+      setRcCampusId(campuses[0].id)
+    }
+  }, [campuses, rcCampusId])
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && rcCampusId) {
+      const saved = localStorage.getItem('report_config_' + rcCampusId)
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved)
+          setRcTitle(parsed.title || "BÁO CÁO KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO")
+          setRcLogo(parsed.logo || "")
+          setRcSignature(parsed.signature || "")
+          setRcDirectorName(parsed.directorName || "")
+        } catch (e) {
+          console.error(e)
+        }
+      } else {
+        setRcTitle("BÁO CÁO KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO")
+        setRcLogo("")
+        setRcSignature("")
+        setRcDirectorName("")
+      }
+    }
+  }, [rcCampusId])
+
+  const handleLogoUpload = (e) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setRcLogo(reader.result)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleSignatureUpload = (e) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setRcSignature(reader.result)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const saveReportConfig = () => {
+    if (!rcCampusId) return notify("Vui lòng chọn Cơ sở", "err")
+    const data = {
+      title: rcTitle,
+      logo: rcLogo,
+      signature: rcSignature,
+      directorName: rcDirectorName
+    }
+    localStorage.setItem('report_config_' + rcCampusId, JSON.stringify(data))
+    notify("Đã lưu cấu hình báo cáo thành công!")
+  }
   const [yearId, setYearId] = useState(academicYears[0]?.id || "")
   const [toast, setToast] = useState<{msg:string;type:"ok"|"err"}|null>(null)
   const notify = (msg:string, type:"ok"|"err"="ok") => { setToast({msg,type}); setTimeout(()=>setToast(null),3200) }
@@ -1025,6 +1092,7 @@ return {
           { id:"students",   label:"DS HS khảo sát",     icon:Users },
           { id:"assignments",label:"Phân công GV",        icon:UserCheck },
           { id:"reports",    label:"Kết quả Tổng hợp",   icon:BarChart3 },
+          { id:"report_config", label:"Cấu hình Báo cáo", icon: PenLine },
         ].map(t=>(
           <button key={t.id} onClick={()=>setTab(t.id)} className={`flex items-center gap-2.5 px-5 py-3 rounded-xl text-[13px] font-black tracking-tight transition-all duration-300 whitespace-nowrap ${tab===t.id?"bg-indigo-600 text-white shadow-xl shadow-indigo-100 scale-[1.03]":"text-slate-400 hover:bg-slate-50 hover:text-slate-600"}`}>
             <t.icon className={`w-4 h-4 ${tab===t.id?"text-white":"opacity-70"}`}/>
@@ -1799,7 +1867,143 @@ return {
           </div>
         </div>
       )}
-{/* ===== OTHER TABS PLACEHOLDERS ===== */}
+      {/* ===== TAB: REPORT CONFIG ===== */}
+      {tab === "report_config" && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          {/* Left: Settings Panel */}
+          <div className="lg:col-span-5 bg-white border border-slate-200 shadow-sm rounded-3xl p-8 space-y-6">
+            <div className="flex items-center gap-3 border-b pb-4 mb-2">
+              <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
+                <Settings className="w-5 h-5"/>
+              </div>
+              <div>
+                <h3 className="text-base font-black text-slate-800">Cấu hình Báo cáo</h3>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-0.5">Thiết lập Logo và chữ ký Giám đốc Cơ sở</p>
+              </div>
+            </div>
+
+            <Field label="Chọn cơ sở áp dụng" required>
+              <select value={rcCampusId} onChange={e => setRcCampusId(e.target.value)} className={inp}>
+                <option value="">-- Chọn Cơ sở --</option>
+                {campuses.map(c => (
+                  <option key={c.id} value={c.id}>{c.campusName}</option>
+                ))}
+              </select>
+            </Field>
+
+            <Field label="Tiêu đề Báo cáo" required>
+              <input value={rcTitle} onChange={e => setRcTitle(e.target.value)} placeholder="Nhập tiêu đề báo cáo..." className={inp} />
+            </Field>
+
+            <Field label="Họ tên Giám đốc Cơ sở" required>
+              <input value={rcDirectorName} onChange={e => setRcDirectorName(e.target.value)} placeholder="Nhập họ tên GĐCS..." className={inp} />
+            </Field>
+
+            <div className="space-y-4 pt-2">
+              {/* Logo Upload */}
+              <div className="space-y-2">
+                <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Upload Logo Trường</label>
+                <div className="flex items-center gap-4">
+                  {rcLogo ? (
+                    <div className="relative w-16 h-16 rounded-xl border border-slate-200 bg-white p-1 flex items-center justify-center group">
+                      <img src={rcLogo} alt="Logo" className="max-w-full max-h-full object-contain rounded-lg" />
+                      <button onClick={() => setRcLogo("")} className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-rose-600 text-white rounded-full flex items-center justify-center shadow-md hover:bg-rose-700 transition-colors">
+                        <X className="w-3 h-3"/>
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="w-16 h-16 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 cursor-pointer hover:border-indigo-400 hover:text-indigo-600 transition-all">
+                      <Upload className="w-5 h-5"/>
+                      <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+                    </label>
+                  )}
+                  <div className="text-xs">
+                    <p className="font-bold text-slate-600">Logo chính của trường</p>
+                    <p className="text-slate-400">Định dạng JPG, PNG, WEBP. Tối đa 2MB.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Signature Upload */}
+              <div className="space-y-2">
+                <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Upload Chữ ký Giám đốc Cơ sở</label>
+                <div className="flex items-center gap-4">
+                  {rcSignature ? (
+                    <div className="relative w-16 h-16 rounded-xl border border-slate-200 bg-white p-1 flex items-center justify-center group">
+                      <img src={rcSignature} alt="Chữ ký" className="max-w-full max-h-full object-contain rounded-lg" />
+                      <button onClick={() => setRcSignature("")} className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-rose-600 text-white rounded-full flex items-center justify-center shadow-md hover:bg-rose-700 transition-colors">
+                        <X className="w-3 h-3"/>
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="w-16 h-16 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 cursor-pointer hover:border-indigo-400 hover:text-indigo-600 transition-all">
+                      <Upload className="w-5 h-5"/>
+                      <input type="file" accept="image/*" className="hidden" onChange={handleSignatureUpload} />
+                    </label>
+                  )}
+                  <div className="text-xs">
+                    <p className="font-bold text-slate-600">Chữ ký cá nhân (nền trong suốt)</p>
+                    <p className="text-slate-400">Định dạng PNG khuyên dùng để có độ hiển thị cao.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button onClick={saveReportConfig} className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-lg shadow-indigo-100 transition-all flex items-center justify-center gap-2">
+              <Check className="w-4 h-4" /> Lưu cấu hình
+            </button>
+          </div>
+
+          {/* Right: Live Preview Panel */}
+          <div className="lg:col-span-7 bg-slate-50 border border-slate-200 shadow-inner rounded-3xl p-8 flex flex-col justify-between min-h-[450px]">
+            <div>
+              <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest block mb-4">Xem trước tiêu đề báo cáo</span>
+              <div className="bg-white rounded-2xl border border-slate-150 p-8 shadow-sm space-y-8 flex flex-col justify-between min-h-[300px]">
+                {/* Report Header */}
+                <div className="flex items-start gap-6 border-b border-slate-100 pb-6">
+                  <div className="w-20 h-20 border border-slate-100 bg-slate-50 rounded-xl p-2 flex items-center justify-center">
+                    {rcLogo ? (
+                      <img src={rcLogo} alt="Logo Preview" className="max-w-full max-h-full object-contain" />
+                    ) : (
+                      <span className="text-[10px] font-bold text-slate-400 text-center uppercase tracking-wider">Logo trường</span>
+                    )}
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest">HỆ THỐNG GIÁO DỤC SKYLINE</p>
+                    <p className="text-sm font-black text-slate-700 uppercase tracking-tight">CƠ SỞ: {campuses.find(c => c.id === rcCampusId)?.campusName || "CHƯA CHỌN"}</p>
+                    <h2 className="text-base font-extrabold text-indigo-900 leading-tight uppercase pt-2">{rcTitle}</h2>
+                  </div>
+                </div>
+
+                {/* Report Body Placeholder */}
+                <div className="space-y-3 py-2 flex-1">
+                  <div className="h-3 bg-slate-100 rounded-full w-2/3"/>
+                  <div className="h-3 bg-slate-50 rounded-full w-1/2"/>
+                  <div className="h-3 bg-slate-50 rounded-full w-3/4"/>
+                </div>
+
+                {/* Signature Footer */}
+                <div className="flex justify-end pt-4">
+                  <div className="text-center space-y-1.5 min-w-[200px]">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">GIÁM ĐỐC CƠ SỞ</p>
+                    <div className="h-16 flex items-center justify-center">
+                      {rcSignature ? (
+                        <img src={rcSignature} alt="Chữ ký Preview" className="max-h-full object-contain" />
+                      ) : (
+                        <div className="text-[10px] font-semibold text-slate-300 italic">Chưa upload chữ ký</div>
+                      )}
+                    </div>
+                    <p className="text-sm font-black text-slate-700">{rcDirectorName || "-- Họ tên --"}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="text-center text-[11px] font-bold text-slate-400 uppercase tracking-widest pt-4">Bản xem trước tự động cập nhật thời gian thực</div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== OTHER TABS PLACEHOLDERS ===== */}
       {tab === "reports" && (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
           
