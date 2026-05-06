@@ -178,6 +178,9 @@ export async function PUT(req) {
          literatureScore: data.literatureScore ? parseFloat(data.literatureScore) : null,
          batchId: data.batchId || null,
          ...(data.admissionResult !== undefined && { admissionResult: data.admissionResult }),
+         ...(data.directorNote !== undefined && { directorNote: data.directorNote }),
+         ...(data.admissionCampus !== undefined && { admissionCampus: data.admissionCampus }),
+         ...(data.signatureName !== undefined && { signatureName: data.signatureName }),
       }
     });
     return NextResponse.json(result);

@@ -210,6 +210,51 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   const [reportStudentId, setReportStudentId] = useState("");
   const [reportStudents, setReportStudents] = useState<any[]>([]);
   const [reportLoading, setReportLoading] = useState(false);
+  const [reportForm, setReportForm] = useState({
+    admissionResult: "",
+    admissionCampus: "",
+    signatureName: "",
+    directorNote: ""
+  });
+
+  useEffect(() => {
+    if (selectedReportStudent) {
+      setReportForm({
+        admissionResult: selectedReportStudent.admissionResult || "",
+        admissionCampus: selectedReportStudent.admissionCampus || "",
+        signatureName: selectedReportStudent.signatureName || "",
+        directorNote: selectedReportStudent.directorNote || ""
+      });
+    }
+  }, [selectedReportStudent]);
+
+  const [saveReportLoading, setSaveReportLoading] = useState(false);
+  const handleSaveReportResult = async () => {
+    if (!selectedReportStudent) return;
+    setSaveReportLoading(true);
+    try {
+      const r = await fetch("/api/input-assessment-students", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: selectedReportStudent.id,
+          data: {
+            ...selectedReportStudent,
+            ...reportForm
+          }
+        })
+      });
+      if (r.ok) {
+        notify("Đã lưu kết quả tổng hợp thành công!");
+        setReportStudents(prev => prev.map(s => s.id === selectedReportStudent.id ? { ...s, ...reportForm } : s));
+      } else {
+        notify("Lỗi khi lưu kết quả tổng hợp", "err");
+      }
+    } catch(e) {
+      notify("Lỗi hệ thống", "err");
+    }
+    setSaveReportLoading(false);
+  };
 
   const fetchReportData = useCallback(async (pId: string) => {
     if (!pId) return;
@@ -1674,6 +1719,65 @@ return {
                       <span className="font-semibold text-slate-700">{selectedReportStudent.admissionCriteria || "—"}</span>
                     </div>
                   </div>
+                </div>
+
+                {/* ADMISSION DECISION FORM */}
+                <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4">
+                  <h4 className="font-black text-slate-800 text-sm flex items-center gap-2 border-b pb-3 mb-2"><CheckCircle2 className="w-4 h-4 text-emerald-500"/> Xét duyệt Tuyển sinh</h4>
+                  
+                  <Field label="Kết quả Xét tuyển">
+                    <select 
+                      value={reportForm.admissionResult} 
+                      onChange={e => setReportForm(f => ({ ...f, admissionResult: e.target.value }))}
+                      className={inp}
+                    >
+                      <option value="">-- Chưa xét duyệt --</option>
+                      <option value="Trúng tuyển">Trúng tuyển</option>
+                      <option value="Dự khuyết">Dự khuyết</option>
+                      <option value="Không trúng tuyển">Không trúng tuyển</option>
+                    </select>
+                  </Field>
+
+                  <Field label="Cơ sở nhập học">
+                    <select 
+                      value={reportForm.admissionCampus} 
+                      onChange={e => setReportForm(f => ({ ...f, admissionCampus: e.target.value }))}
+                      className={inp}
+                    >
+                      <option value="">-- Chọn cơ sở --</option>
+                      {campuses.map(c => (
+                        <option key={c.id} value={c.campusName}>{c.campusName}</option>
+                      ))}
+                    </select>
+                  </Field>
+
+                  <Field label="Người duyệt / Phê duyệt">
+                    <input 
+                      type="text"
+                      value={reportForm.signatureName}
+                      onChange={e => setReportForm(f => ({ ...f, signatureName: e.target.value }))}
+                      className={inp}
+                      placeholder="Họ tên người phê duyệt"
+                    />
+                  </Field>
+
+                  <Field label="Ý kiến / Ghi chú Hội đồng">
+                    <textarea 
+                      value={reportForm.directorNote}
+                      onChange={e => setReportForm(f => ({ ...f, directorNote: e.target.value }))}
+                      className={`${inp} h-24 resize-none`}
+                      placeholder="Nhập ý kiến hoặc lý do..."
+                    />
+                  </Field>
+
+                  <button
+                    onClick={handleSaveReportResult}
+                    disabled={saveReportLoading}
+                    className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg shadow-indigo-100 disabled:opacity-50 transition-all flex justify-center items-center gap-2"
+                  >
+                    {saveReportLoading ? <Loader2 className="w-4 h-4 animate-spin"/> : <Save className="w-4 h-4"/>}
+                    Lưu kết quả tổng hợp
+                  </button>
                 </div>
               </div>
 
