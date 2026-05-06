@@ -85,7 +85,7 @@ export function CampusManagerClient({ initialCampuses, gdcsUsers = [] }: any) {
                 placeholder="VD: Skyline Central" className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all" />
             </div>
             <div className="space-y-2">
-              <label className="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Địa chỉ</label>
+              <label className="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Tên đầy đủ</label>
               <input type="text" value={form.address} onChange={e => setForm({...form, address: e.target.value})}
                 placeholder="Tên đầy đủ" className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all" />
             </div>
@@ -116,7 +116,7 @@ export function CampusManagerClient({ initialCampuses, gdcsUsers = [] }: any) {
               <tr className="bg-slate-50/50 border-b border-slate-100">
                 <th className="px-8 py-5 text-[11px] font-black text-slate-400 uppercase tracking-widest">Mã Cơ sở</th>
                 <th className="px-8 py-5 text-[11px] font-black text-slate-400 uppercase tracking-widest">Tên Cơ sở</th>
-                <th className="px-8 py-5 text-[11px] font-black text-slate-400 uppercase tracking-widest">Địa chỉ</th>
+                <th className="px-8 py-5 text-[11px] font-black text-slate-400 uppercase tracking-widest">Tên đầy đủ</th>
                 <th className="px-8 py-5 text-[11px] font-black text-slate-400 uppercase tracking-widest">Người phụ trách</th>
                 <th className="px-8 py-5 text-[11px] font-black text-slate-400 uppercase tracking-widest">Trạng thái</th>
                 <th className="px-8 py-5 text-[11px] font-black text-slate-400 uppercase tracking-widest text-right">Hành động</th>
