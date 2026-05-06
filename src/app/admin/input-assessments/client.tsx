@@ -291,11 +291,12 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   const reportBatches = useMemo(() => reportSelPeriod?.batches || [], [reportSelPeriod]);
 
   const filteredReportStudents = useMemo(() => {
-    if (!reportStudents) return [];
+    if (!Array.isArray(reportStudents)) return [];
     return reportStudents.filter(s => reportBatchId === "all" || s.batchId === reportBatchId);
   }, [reportStudents, reportBatchId]);
 
   const selectedReportStudent = useMemo(() => {
+    if (!Array.isArray(reportStudents)) return undefined;
     return reportStudents.find(s => s.id === reportStudentId);
   }, [reportStudents, reportStudentId]);
 
@@ -1805,11 +1806,11 @@ return {
 
                       let scoreVals = [];
                       let commentVals = [];
-                      try { if (sc.scores) scoreVals = JSON.parse(sc.scores); } catch {}
-                      try { if (sc.comments) commentVals = JSON.parse(sc.comments); } catch {}
+                      try { if (sc.scores) { const parsed = JSON.parse(sc.scores); scoreVals = Array.isArray(parsed) ? parsed : [parsed]; } } catch { scoreVals = [sc.scores]; }
+                      try { if (sc.comments) { const parsed = JSON.parse(sc.comments); commentVals = Array.isArray(parsed) ? parsed : [parsed]; } } catch { commentVals = [sc.comments]; }
 
                       let parsedCols = { scores: [], comments: [] };
-                      try { if (subject.columnNames) parsedCols = JSON.parse(subject.columnNames); } catch {}
+                      try { if (subject.columnNames) { const parsed = JSON.parse(subject.columnNames); parsedCols = { scores: Array.isArray(parsed.scores) ? parsed.scores : [], comments: Array.isArray(parsed.comments) ? parsed.comments : [] }; } } catch {}
 
                       return (
                         <div key={sc.id} className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-sm hover:shadow-md transition-shadow">
@@ -1870,15 +1871,15 @@ return {
                               <div className="grid grid-cols-3 gap-3">
                                 <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 text-center">
                                   <div className="text-xs font-black uppercase tracking-wider text-emerald-600">Đạt</div>
-                                  <div className="text-xl font-black text-emerald-700 mt-1">{scoreVals.filter(v => v === "3").length}</div>
+                                  <div className="text-xl font-black text-emerald-700 mt-1">{(Array.isArray(scoreVals) ? scoreVals : []).filter(v => v === "3").length}</div>
                                 </div>
                                 <div className="bg-rose-50 border border-rose-100 rounded-xl p-3 text-center">
                                   <div className="text-xs font-black uppercase tracking-wider text-rose-600">Không đạt</div>
-                                  <div className="text-xl font-black text-rose-700 mt-1">{scoreVals.filter(v => v === "2").length}</div>
+                                  <div className="text-xl font-black text-rose-700 mt-1">{(Array.isArray(scoreVals) ? scoreVals : []).filter(v => v === "2").length}</div>
                                 </div>
                                 <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 text-center">
                                   <div className="text-xs font-black uppercase tracking-wider text-slate-500">Không làm</div>
-                                  <div className="text-xl font-black text-slate-600 mt-1">{scoreVals.filter(v => v === "1").length}</div>
+                                  <div className="text-xl font-black text-slate-600 mt-1">{(Array.isArray(scoreVals) ? scoreVals : []).filter(v => v === "1").length}</div>
                                 </div>
                               </div>
                               {commentVals[0] && (
