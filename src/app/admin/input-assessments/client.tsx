@@ -981,23 +981,90 @@ return {
                   </div>
                   {expandedId===p.id && (
                     <div className="border-t border-slate-100 p-6 bg-slate-50/30">
-                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {p.batches?.map(b => (
-                            <div key={b.id} className="bg-white p-4 rounded-2xl border border-slate-200 flex items-start justify-between group hover:border-indigo-400 transition-all shadow-sm">
-                               <div className="flex items-start gap-3">
-                                  <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-[10px] font-black text-white">#{b.batchNumber}</div>
-                                  <div>
-                                    <p className="text-xs font-black text-slate-700">{b.name}</p>
-                                    <p className="text-[10px] font-bold text-slate-400 mt-0.5">{b.startDate?.slice(0,10)} - {b.endDate?.slice(0,10)}</p>
-                                  </div>
-                               </div>
-                               <div className="flex items-center gap-0.5 ">
-                                  <button onClick={()=>openEditBatch(b)} className="p-1.5 text-slate-300 hover:text-indigo-600"><Edit2 className="w-3.5 h-3.5"/></button>
-                                  <button onClick={()=>setConfirm({msg:`Xóa đợt "${b.name}"?`,fn:()=>doDeleteBatch(b.id)})} className="p-1.5 text-slate-300 hover:text-rose-600"><Trash2 className="w-3.5 h-3.5"/></button>
-                               </div>
-                            </div>
-                          ))}
-                       </div>
+                       {(!p.batches || p.batches.length === 0) ? (
+                         <div className="text-center py-8 text-slate-400 font-bold text-xs uppercase tracking-wider bg-white rounded-2xl border-2 border-dashed border-slate-200">Chưa có Đợt khảo sát nào ghi nhận</div>
+                       ) : (
+                         <div className="overflow-x-auto bg-white border border-slate-200 rounded-2xl shadow-sm">
+                           <table className="w-full text-left border-collapse">
+                             <thead>
+                               <tr className="bg-slate-50/70 border-b border-slate-100">
+                                 <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest pl-6">Mã Đợt</th>
+                                 <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Nội dung khảo sát</th>
+                                 <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Cơ sở</th>
+                                 <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Thời gian</th>
+                                 <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Trạng thái</th>
+                                 <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Người phụ trách</th>
+                                 <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right pr-6">Thao tác</th>
+                               </tr>
+                             </thead>
+                             <tbody className="divide-y divide-slate-100">
+                               {p.batches?.map(b => {
+                                 const selectedCampus = campuses.find(c => c.id === b.campusId);
+                                 const campusName = selectedCampus ? selectedCampus.campusName : "Tất cả";
+                                 const assignee = giaoVuCSUsers.find(u => u.id === b.assignedUserId);
+                                 const assigneeName = assignee ? assignee.fullName : "-- Chưa gán --";
+                                 
+                                 let baseName = b.name;
+                                 const match = b.name.match(/Đợt \\d+ - (.*?) \\|/);
+                                 if (match) {
+                                   baseName = match[1];
+                                 } else {
+                                   const match2 = b.name.match(/Đợt \\d+ - (.*)/);
+                                   if (match2) baseName = match2[1];
+                                 }
+
+                                 return (
+                                   <tr key={b.id} className="group hover:bg-slate-50/50 transition-colors">
+                                     <td className="p-4 pl-6">
+                                       <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-50 font-black text-indigo-600 text-xs">
+                                         #{b.batchNumber}
+                                       </span>
+                                     </td>
+                                     <td className="p-4">
+                                       <p className="text-sm font-black text-slate-700">{baseName}</p>
+                                       <p className="text-[10px] font-bold text-slate-400 truncate max-w-xs">{b.name}</p>
+                                     </td>
+                                     <td className="p-4">
+                                       <span className="px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-black text-slate-600">
+                                         {campusName}
+                                       </span>
+                                     </td>
+                                     <td className="p-4">
+                                       <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500">
+                                         <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                                         <span>{b.startDate?.slice(0, 10).split('-').reverse().join('/')}</span>
+                                         <span className="text-slate-300">→</span>
+                                         <span>{b.endDate?.slice(0, 10).split('-').reverse().join('/')}</span>
+                                       </div>
+                                     </td>
+                                     <td className="p-4">
+                                       <Badge s={b.status} />
+                                     </td>
+                                     <td className="p-4">
+                                       <div className="flex items-center gap-2">
+                                         <div className="w-6 h-6 bg-emerald-50 rounded-full flex items-center justify-center text-[10px] font-black text-emerald-600 border border-emerald-100">
+                                           {assigneeName.charAt(0)}
+                                         </div>
+                                         <span className="text-xs font-bold text-slate-600">{assigneeName}</span>
+                                       </div>
+                                     </td>
+                                     <td className="p-4 text-right pr-6">
+                                       <div className="flex items-center justify-end gap-1">
+                                         <button onClick={() => openEditBatch(b)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all" title="Chỉnh sửa">
+                                           <Edit2 className="w-3.5 h-3.5" />
+                                         </button>
+                                         <button onClick={() => setConfirm({ msg: `Xóa đợt "` + b.name + `"?`, fn: () => doDeleteBatch(b.id) })} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all" title="Xóa">
+                                           <Trash2 className="w-3.5 h-3.5" />
+                                         </button>
+                                       </div>
+                                     </td>
+                                   </tr>
+                                 );
+                               })}
+                             </tbody>
+                           </table>
+                         </div>
+                       )}
                     </div>
                   )}
                 </div>
