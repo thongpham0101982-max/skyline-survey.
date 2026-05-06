@@ -342,8 +342,9 @@ ${reportForm.directorNote}`;
 
   const canApprove = useMemo(() => {
     if (!currentUser) return false;
-    if (currentUser.role === "ADMIN" || currentUser.role === "KT_DBCL") return true;
-    if (["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(currentUser.role)) {
+    const userRole = (currentUser.role || "").toUpperCase();
+    if (userRole === "ADMIN" || userRole === "KT_DBCL") return true;
+    if (["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole)) {
       const periodCampusId = reportSelPeriod?.campusId;
       const activeBatch = reportBatches.find(b => b.id === reportBatchId);
       const batchCampusId = activeBatch?.campusId;
@@ -365,7 +366,7 @@ ${reportForm.directorNote}`;
       }
       
       if (!targetCampusId) return true; // Default to allow if no campus can be identified
-      return currentUser.campusIds.includes(targetCampusId);
+      return currentUser.campusIds.length === 0 || currentUser.campusIds.includes(targetCampusId);
     }
     return false;
   }, [currentUser, reportSelPeriod, reportBatches, reportBatchId, campuses]);

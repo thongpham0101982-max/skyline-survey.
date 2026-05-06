@@ -16,6 +16,19 @@ export default async function InputAssessmentsPage() {
   const user = session?.user as any;
   const isGDCS = user?.role === 'GDCS';
   const allowedCampusIds = user?.campusIds || [];
+  let liveCampusIds = [...allowedCampusIds];
+  try {
+    if (user?.id) {
+      const dbAssignments = await prisma.userCampusAssignment.findMany({
+        where: { userId: user.id }
+      });
+      if (dbAssignments.length > 0) {
+        liveCampusIds = dbAssignments.map(a => a.campusId);
+      }
+    }
+  } catch (liveError) {
+    console.error("Live campusIds fetch error handled:", liveError);
+  }
   
   let academicYears: any[] = [];
   let campuses: any[] = [];
@@ -138,7 +151,7 @@ export default async function InputAssessmentsPage() {
         configs={safeJson(configs)}
         teachers={safeJson(teachers)}
         departments={safeJson(departments)}
-        currentUser={session?.user ? { id: session.user.id, role: (session.user as any).role, campusIds: (session.user as any).campusIds || [] } : null}
+        currentUser={session?.user ? { id: session.user.id, role: (session.user as any).role, campusIds: liveCampusIds } : null}
       />
     </div>
   )
