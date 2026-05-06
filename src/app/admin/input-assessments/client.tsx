@@ -423,6 +423,69 @@ ${reportForm.directorNote}`;
     return reportStudents.find(s => s.id === reportStudentId);
   }, [reportStudents, reportStudentId]);
 
+  const studentCampusConfig = useMemo(() => {
+    if (typeof window === "undefined" || !selectedReportStudent) return null;
+    
+    // Find campus matching student's admissionCampus
+    let targetCampus = campuses.find(c => 
+      c.campusName === selectedReportStudent.admissionCampus ||
+      selectedReportStudent.admissionCampus?.includes(c.campusCode) ||
+      selectedReportStudent.admissionCampus?.includes(c.campusName)
+    );
+    
+    // Fallback: Find campus by student's batch/period
+    if (!targetCampus && selectedReportStudent.batchId) {
+      const batchObj = reportBatches.find(b => b.id === selectedReportStudent.batchId);
+      if (batchObj?.campusId) {
+        targetCampus = campuses.find(c => c.id === batchObj.campusId);
+      }
+    }
+    
+    if (!targetCampus && campuses.length > 0) {
+      targetCampus = campuses[0];
+    }
+    
+    if (targetCampus) {
+      const saved = localStorage.getItem('report_config_' + targetCampus.id);
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {}
+      }
+    }
+    return null;
+  }, [selectedReportStudent, campuses, reportBatches]);
+
+  const campusNameSuffix = useMemo(() => {
+    if (!selectedReportStudent) return "GLOBAL";
+    
+    let campus = campuses.find(c => 
+      c.campusName === selectedReportStudent.admissionCampus ||
+      selectedReportStudent.admissionCampus?.includes(c.campusCode) ||
+      selectedReportStudent.admissionCampus?.includes(c.campusName)
+    );
+    
+    if (!campus && selectedReportStudent.batchId) {
+      const batchObj = reportBatches.find(b => b.id === selectedReportStudent.batchId);
+      if (batchObj?.campusId) {
+        campus = campuses.find(c => c.id === batchObj.campusId);
+      }
+    }
+    
+    if (campus) {
+      return campus.campusCode ? campus.campusCode.toUpperCase() : campus.campusName.toUpperCase();
+    }
+    return "GLOBAL";
+  }, [selectedReportStudent, campuses, reportBatches]);
+
+  const formattedLetterDate = useMemo(() => {
+    const d = new Date();
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    return `Đà Nẵng, ngày ${day} tháng ${month} năm ${year}`;
+  }, []);
+
   const campusStats = useMemo(() => {
     if (!Array.isArray(reportStudents)) return [];
     
@@ -2778,7 +2841,7 @@ return {
                 height: 297mm !important;
                 box-shadow: none !important;
                 border: none !important;
-                padding: 2cm !important;
+                padding: 2.5cm !important;
                 margin: 0 !important;
               }
               .no-print {
@@ -2789,6 +2852,21 @@ return {
                 backdrop-filter: none !important;
                 padding: 0 !important;
               }
+            }
+            #print-letter-area::before {
+              content: "";
+              position: absolute;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%) rotate(-15deg);
+              width: 70%;
+              height: 50%;
+              opacity: 0.05;
+              background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="%23007A87"><path d="M10,80 Q50,40 90,20 Q60,50 10,80 Z"/><path d="M30,80 Q60,55 90,35 Q65,60 30,80 Z"/></svg>');
+              background-repeat: no-repeat;
+              background-position: center;
+              background-size: contain;
+              pointer-events: none;
             }
           `}</style>
           
@@ -2824,29 +2902,37 @@ return {
               >
                 {/* Top Logo and Header */}
                 <div>
-                  <div className="flex items-start justify-between border-b pb-4 mb-8">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl font-black tracking-tight text-teal-600" style={{ fontFamily: "Arial, sans-serif" }}>SKY-LINE</span>
-                      <span className="text-teal-500 font-bold text-xl">✓</span>
+                  <div className="flex flex-col gap-2 border-b pb-4 mb-6">
+                    <div className="flex items-center justify-between">
+                      {studentCampusConfig?.logo ? (
+                        <img src={studentCampusConfig.logo} alt="Logo" className="h-12 object-contain" />
+                      ) : (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-2xl font-black tracking-tight text-teal-600" style={{ fontFamily: "Arial, sans-serif" }}>SKY-LINE</span>
+                          <svg className="w-6 h-6 text-teal-500" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                          </svg>
+                        </div>
+                      )}
                     </div>
-                    <div className="text-right">
-                      <h4 className="font-bold text-xs uppercase tracking-wider text-slate-600" style={{ fontFamily: "Arial, sans-serif" }}>TRƯỜNG TH, THCS, THPT SKY-LINE</h4>
+                    <div className="text-left">
+                      <h4 className="font-extrabold text-sm uppercase tracking-wider text-slate-800" style={{ fontFamily: "Arial, sans-serif" }}>TRƯỜNG TH, THCS, THPT SKY-LINE</h4>
                     </div>
                   </div>
 
                   {/* Letter Title */}
-                  <div className="text-center my-12">
-                    <h2 className="text-3xl font-black tracking-widest text-indigo-950 uppercase mb-4" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+                  <div className="text-center my-8">
+                    <h2 className="text-2xl font-black tracking-widest text-indigo-950 uppercase mb-2" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
                       {isInvitation ? "THƯ MỜI" : "THƯ CHÚC MỪNG"}
                     </h2>
                   </div>
 
                   {/* Greeting */}
-                  <p className="text-base italic mb-6">
+                  <p className="text-[17px] italic mb-6 text-slate-800">
                     {isInvitation ? (
-                      <>Kính gửi Quý Phụ huynh và em <strong className="font-bold not-italic">{selectedReportStudent.fullName}</strong>,</>
+                      <>Kính gửi Quý Phụ huynh và em <strong className="font-black not-italic text-slate-900">{selectedReportStudent.fullName}</strong>,</>
                     ) : (
-                      <>Thân gửi em <strong className="font-bold not-italic">{selectedReportStudent.fullName}</strong>,</>
+                      <>Thân gửi em <strong className="font-black not-italic text-slate-900">{selectedReportStudent.fullName}</strong>,</>
                     )}
                   </p>
 
@@ -2876,9 +2962,9 @@ return {
                       </p>
                     </div>
                   ) : (
-                    <div className="space-y-6 text-justify text-[15px] leading-relaxed">
+                    <div className="space-y-6 text-justify text-[16px] leading-relaxed text-slate-800">
                       <p className="indent-8" style={{ textIndent: "2rem" }}>
-                        Chúc mừng em đã vượt qua kỳ khảo sát đầu vào lớp <strong className="font-bold">{selectedReportStudent.grade || "—"}</strong> học kì <strong className="font-bold">{selectedReportStudent.hocKy || "1"}</strong> hệ <strong className="font-bold">{selectedReportStudent.surveyFormType || "Hội nhập Global"}</strong> năm học <strong className="font-bold">2026-2027</strong>. Em đã chính thức đặt bước chân đầu tiên trên con đường trở thành học sinh của Trường TH, THCS, THPT Sky-Line – một cột mốc quan trọng trong hành trình học tập của em.
+                        Chúc mừng em đã vượt qua kỳ khảo sát đầu vào lớp <strong className="font-bold">{selectedReportStudent.grade || "1"}</strong> học kì <strong className="font-bold">{selectedReportStudent.hocKy || "1"}</strong> hệ <strong className="font-bold">{selectedReportStudent.surveyFormType || "Hội nhập S"}</strong> năm học <strong className="font-bold">2026-2027</strong>. Em đã chính thức đặt bước chân đầu tiên trên con đường trở thành học sinh của Trường TH, THCS, THPT Sky-Line – một cột mốc quan trọng trong hành trình học tập của em.
                       </p>
                       
                       <p className="indent-8" style={{ textIndent: "2rem" }}>
@@ -2897,47 +2983,68 @@ return {
                 </div>
 
                 {/* Bottom Right Signature */}
-                <div className="flex flex-col items-end text-right mt-12 pr-4">
-                  <p className="italic text-slate-500 mb-1">Đà Nẵng, ngày 06 tháng 05 năm 2026</p>
+                <div className="flex flex-col items-end text-right mt-8 pr-4">
+                  <p className="italic text-slate-500 mb-1">{formattedLetterDate}</p>
                   <p className="font-bold uppercase text-indigo-950 text-xs tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
                   {isInvitation ? (
-                    <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-8">TRƯỞNG BAN TUYỂN SINH SKY-LINE</p>
+                    <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-6">TRƯỞNG BAN TUYỂN SINH SKY-LINE</p>
                   ) : (
-                    <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-8">GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE GLOBAL</p>
+                    <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-6">GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusNameSuffix}</p>
                   )}
                   
                   <div className="h-16 flex items-center justify-center pr-12">
-                    <span className="font-serif italic text-2xl text-slate-400 font-light tracking-widest opacity-60" style={{ fontFamily: "'Brush Script MT', cursive, sans-serif" }}>
-                      {isInvitation ? "Ban Tuyển sinh" : (selectedReportStudent.signatureName || "Trần Thị Thanh")}
-                    </span>
+                    {isInvitation ? (
+                      <span className="font-serif italic text-xl text-slate-400 font-light tracking-widest opacity-60" style={{ fontFamily: "'Brush Script MT', cursive, sans-serif" }}>
+                        Ban Tuyển sinh
+                      </span>
+                    ) : studentCampusConfig?.signature ? (
+                      <img src={studentCampusConfig.signature} alt="Signature" className="max-h-full object-contain" />
+                    ) : (
+                      <span className="font-serif italic text-xl text-slate-400 font-light tracking-widest opacity-60" style={{ fontFamily: "'Brush Script MT', cursive, sans-serif" }}>
+                        {studentCampusConfig?.directorName || selectedReportStudent.signatureName || "Đỗ Quang Trung"}
+                      </span>
+                    )}
                   </div>
                   
-                  <p className="font-bold text-slate-700 mt-2">{isInvitation ? "Ban Tuyển sinh" : (selectedReportStudent.signatureName || "Trần Thị Thanh")}</p>
+                  <p className="font-bold text-slate-700 mt-2 text-sm">
+                    {isInvitation ? "Ban Tuyển sinh" : (studentCampusConfig?.directorName || selectedReportStudent.signatureName || "Đỗ Quang Trung")}
+                  </p>
                 </div>
 
                 {/* Footer Contact */}
-                <div className="border-t-2 border-teal-500/30 pt-4 mt-8 text-[9px] text-slate-400" style={{ fontFamily: "Arial, sans-serif" }}>
+                <div className="border-t border-teal-500/30 pt-3 mt-6 text-[8px] text-slate-400 font-sans leading-normal relative z-10" style={{ fontFamily: "Arial, sans-serif" }}>
                   <div className="grid grid-cols-3 gap-4">
                     <div className="text-left">
-                      <p className="font-bold text-teal-600 uppercase text-[9px]">Hệ thống Giáo dục Sky-Line</p>
-                      <p className="mt-1"><strong>SKY-LINE Riverside:</strong> Lô A2.4 Trần Đăng Ninh, Q. Hải Châu, TP. Đà Nẵng</p>
-                      <p><strong>SKY-LINE Central:</strong> Số 48 Nguyễn Du, Q. Hải Châu, TP. Đà Nẵng</p>
-                      <p><strong>SKY-LINE Global:</strong> Lô A2.4 Trần Đăng Ninh, Q. Hải Châu, TP. Đà Nẵng</p>
+                      <p className="font-bold text-teal-600 uppercase text-[8px] tracking-wider">SKY-LINE Riverside</p>
+                      <p className="text-[7px] text-slate-500">Lô A2.4 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>
+                      <p className="font-bold text-teal-600 uppercase text-[8px] tracking-wider mt-1">SKY-LINE Central</p>
+                      <p className="text-[7px] text-slate-500">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
+                      <p className="font-bold text-teal-600 uppercase text-[8px] tracking-wider mt-1">SKY-LINE Global</p>
+                      <p className="text-[7px] text-slate-500">Lô A2.4 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>
                     </div>
                     <div className="text-left">
-                      <p className="font-bold text-teal-600 uppercase text-[9px]">&nbsp;</p>
-                      <p className="mt-1"><strong>SKY-LINE Beach:</strong> Số 199 Trần Anh Tông, Q. Liên Chiểu, TP. Đà Nẵng</p>
-                      <p><strong>SKY-LINE Hill:</strong> Khối Hà My Đông A, P. Điện Dương, Điện Bàn, Quảng Nam</p>
-                      <p><strong>Trung tâm SLS:</strong> Số 48 Nguyễn Du, Q. Hải Châu, TP. Đà Nẵng</p>
+                      <p className="font-bold text-teal-600 uppercase text-[8px] tracking-wider">SKY-LINE Beach</p>
+                      <p className="text-[7px] text-slate-500">Số 199 Trần Anh Tông, P. Thanh Khê, TP. Đà Nẵng</p>
+                      <p className="font-bold text-teal-600 uppercase text-[8px] tracking-wider mt-1">SKY-LINE Hill</p>
+                      <p className="text-[7px] text-slate-500">Khối Hà My Đông A, P. Điện Dương, Điện Bàn, Quảng Nam</p>
+                      <p className="font-bold text-teal-600 uppercase text-[8px] tracking-wider mt-1">Trung tâm sống thành công - SLS</p>
+                      <p className="text-[7px] text-slate-500">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
                     </div>
                     <div className="text-right flex flex-col justify-between">
-                      <p className="font-bold text-teal-600 uppercase text-[9px]">www.skylineschool.edu.vn</p>
-                      <div className="mt-2 space-y-0.5">
-                        <p><strong>Riverside:</strong> (+84.236) 378 7777</p>
-                        <p><strong>Beach:</strong> (+84.236) 356 8777</p>
-                        <p><strong>Central:</strong> (+84.236) 378 7779</p>
+                      <p className="font-bold text-teal-600 uppercase text-[9px] tracking-wide">www.skylineschool.edu.vn</p>
+                      <div className="mt-1 text-[7px] text-slate-500 space-y-0.5">
+                        <p><strong>Hotline:</strong> (+84.236) 378 7777</p>
+                        <p><strong>Hotline:</strong> (+84.236) 356 8777</p>
+                        <p><strong>Hotline:</strong> (+84.236) 378 7779</p>
+                        <p><strong>Hotline:</strong> (+84.236) 375 1777</p>
                       </div>
                     </div>
+                  </div>
+                  {/* Subtle right corner bird wing vector decoration */}
+                  <div className="absolute right-0 bottom-0 w-12 h-12 opacity-15 pointer-events-none">
+                    <svg viewBox="0 0 100 100" fill="%23007A87">
+                      <path d="M10,80 Q50,40 90,20 Q60,50 10,80 Z"/>
+                    </svg>
                   </div>
                 </div>
               </div>
