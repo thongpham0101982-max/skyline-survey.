@@ -743,7 +743,7 @@ return {
                     <Field label="Đợt khảo sát (Không bắt buộc)">
                       <select value={asBatchId} onChange={e=>setAsBatchId(e.target.value)} className={inp} disabled={!asPeriodId}>
                          <option value="">-- Tất cả đợt --</option>
-                         {periods.find(p=>p.id===asPeriodId)?.batches?.map(b=><option key={b.id} value={b.id}>Đợt {b.batchNumber}: {b.name}</option>)}
+                         {periods.find(p=>p.id===asPeriodId)?.batches?.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
                       </select>
                     </Field>
 
@@ -1090,7 +1090,7 @@ return {
                        <Field label="Đợt khảo sát">
                           <select value={sBatchId} onChange={e=>setSBatchId(e.target.value)} className={inp} disabled={!sPeriodId}>
                              <option value="">-- Tất cả đợt --</option>
-                             {selPeriod?.batches?.map(b=><option key={b.id} value={b.id}>Đợt {b.batchNumber}: {b.name}</option>)}
+                             {selPeriod?.batches?.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
                           </select>
                        </Field>
                     </div>
@@ -1600,29 +1600,32 @@ return {
               <Field label="Ngày sinh"><input type="date" value={sForm.dateOfBirth} onChange={e=>setSForm(f=>({...f,dateOfBirth:e.target.value}))} className={inp}/></Field>
            </div>
            <Field label="Họ và Tên" required><input value={sForm.fullName} onChange={e=>setSForm(f=>({...f,fullName:e.target.value}))} className={inp}/></Field>
-           
-           <div className="grid grid-cols-3 gap-4">
-              <Field label="Giới tính"><select value={sForm.gender} onChange={e=>setSForm(f=>({...f,gender:e.target.value}))} className={inp}><option value="">--</option><option value="Nam">Nam</option><option value="Nữ">Nữ</option></select></Field>
-                <Field label="Khối"><select value={sForm.grade} onChange={e=>setSForm(f=>({...f,grade:e.target.value}))} className={inp}><option value="">--</option>{grades.map(g=><option key={g} value={g}>{g}</option>)}</select></Field>
-                <Field label="Học kỳ / Năm TS">
-                  <select value={sForm.hocKy} onChange={e=>setSForm(f=>({...f,hocKy:e.target.value}))} className={inp}>
-                    <option value="">--</option>
-                    {configs.filter(c => c.categoryType === "HOC_KY").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                  </select>
-                </Field>
-                <Field label="Hồ sơ/Bảng điểm">
-                  <select value={sForm.hoSoCtQuocTe} onChange={e=>setSForm(f=>({...f,hoSoCtQuocTe:e.target.value}))} className={inp}>
-                    <option value="">--</option>
-                    {configs.filter(c => c.categoryType === "HS_HT_HOC_SINH").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                  </select>
-                </Field>
-                <Field label="Đợt khảo sát">
-                  <select value={sForm.batchId} onChange={e=>setSForm(f=>({...f,batchId:e.target.value}))} className={inp}>
-                    <option value="">-- Không có / Mặc định --</option>
-                    {selPeriod?.batches?.map(b=><option key={b.id} value={b.id}>Đợt {b.batchNumber}: {b.name}</option>)}
-                  </select>
-                </Field>
-           </div>
+            
+            <div className="grid grid-cols-3 gap-4">
+               <Field label="Giới tính"><select value={sForm.gender} onChange={e=>setSForm(f=>({...f,gender:e.target.value}))} className={inp}><option value="">--</option><option value="Nam">Nam</option><option value="Nữ">Nữ</option></select></Field>
+               <Field label="Khối"><select value={sForm.grade} onChange={e=>setSForm(f=>({...f,grade:e.target.value}))} className={inp}><option value="">--</option>{grades.map(g=><option key={g} value={g}>{g}</option>)}</select></Field>
+               <Field label="Học kỳ / Năm TS">
+                 <select value={sForm.hocKy} onChange={e=>setSForm(f=>({...f,hocKy:e.target.value}))} className={inp}>
+                   <option value="">--</option>
+                   {configs.filter(c => c.categoryType === "HOC_KY").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                 </select>
+               </Field>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+               <Field label="Hồ sơ/Bảng điểm">
+                 <select value={sForm.hoSoCtQuocTe} onChange={e=>setSForm(f=>({...f,hoSoCtQuocTe:e.target.value}))} className={inp}>
+                   <option value="">--</option>
+                   {configs.filter(c => c.categoryType === "HS_HT_HOC_SINH").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                 </select>
+               </Field>
+               <Field label="Đợt khảo sát">
+                 <select value={sForm.batchId} onChange={e=>setSForm(f=>({...f,batchId:e.target.value}))} className={inp}>
+                   <option value="">-- Không có / Mặc định --</option>
+                   {selPeriod?.batches?.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
+                 </select>
+               </Field>
+            </div>
 
            <div className="grid grid-cols-2 gap-4"><Field label="Diện Khảo sát">
                 <select value={sForm.admissionCriteria} onChange={e=>setSForm(f=>({...f,admissionCriteria:e.target.value}))} className={inp}>
