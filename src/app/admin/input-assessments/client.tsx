@@ -203,6 +203,66 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   const [sModal, setSModal] = useState(false)
   const [editS, setEditS] = useState<Student|null>(null)
   const [sSelected, setSSelected] = useState<string[]>([])
+
+  // ───────── REPORTS STATE ─────────
+  const [reportPeriodId, setReportPeriodId] = useState("");
+  const [reportBatchId, setReportBatchId] = useState("all");
+  const [reportStudentId, setReportStudentId] = useState("");
+  const [reportStudents, setReportStudents] = useState<any[]>([]);
+  const [reportLoading, setReportLoading] = useState(false);
+
+  const fetchReportData = useCallback(async (pId: string) => {
+    if (!pId) return;
+    setReportLoading(true);
+    try {
+      const r = await fetch(`/api/teacher-assessments?action=getReport&periodId=${pId}`);
+      if (r.ok) {
+        const data = await r.json();
+        setReportStudents(data);
+        if (data.length > 0) {
+          setReportStudentId(data[0].id);
+        } else {
+          setReportStudentId("");
+        }
+      }
+    } catch(e) {}
+    setReportLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (tab === "reports" && reportPeriodId) {
+      fetchReportData(reportPeriodId);
+    }
+  }, [tab, reportPeriodId, fetchReportData]);
+
+  // Set default reportPeriodId when periods are loaded
+  useEffect(() => {
+    if (periods.length > 0 && !reportPeriodId) {
+      setReportPeriodId(periods[0].id);
+    }
+  }, [periods, reportPeriodId]);
+
+  const reportSelPeriod = useMemo(() => periods.find(p => p.id === reportPeriodId), [periods, reportPeriodId]);
+  const reportBatches = useMemo(() => reportSelPeriod?.batches || [], [reportSelPeriod]);
+
+  const filteredReportStudents = useMemo(() => {
+    if (!reportStudents) return [];
+    return reportStudents.filter(s => reportBatchId === "all" || s.batchId === reportBatchId);
+  }, [reportStudents, reportBatchId]);
+
+  const selectedReportStudent = useMemo(() => {
+    return reportStudents.find(s => s.id === reportStudentId);
+  }, [reportStudents, reportStudentId]);
+
+  useEffect(() => {
+    if (filteredReportStudents.length > 0) {
+      if (!filteredReportStudents.some(s => s.id === reportStudentId)) {
+        setReportStudentId(filteredReportStudents[0].id);
+      }
+    } else {
+      setReportStudentId("");
+    }
+  }, [filteredReportStudents, reportStudentId]);
   const [sForm, setSForm] = useState({ studentCode:"", fullName:"", dateOfBirth:"", gender:"", grade:"", admissionCriteria:"", className:"", hocKy:"", kqgdTieuHoc:"", kqHocTap:"", kqRenLuyen:"", targetType:"", surveySystem:"", hoSoCtQuocTe:"", surveyFormType:"", batchId:"" })
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -1486,8 +1546,327 @@ return {
         </div>
       )}
 {/* ===== OTHER TABS PLACEHOLDERS ===== */}
-      {["reports"].includes(tab) && (
-        <Empty icon={GraduationCap} text="Dang xay dung" sub="Phan nay se som duoc hoan thien"/>
+      {tab === "reports" && (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          
+          {/* TOP SELECTORS BAR */}
+          <div className="bg-white/80 backdrop-blur-md p-6 rounded-3xl shadow-sm border border-slate-200/60 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="group">
+              <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-indigo-900/70 flex items-center gap-2 ml-1">
+                <CalendarDays className="w-3.5 h-3.5 text-indigo-500"/> Kỳ Khảo sát
+              </label>
+              <div className="relative">
+                <select 
+                  value={reportPeriodId} 
+                  onChange={e => {
+                    setReportPeriodId(e.target.value);
+                    setReportBatchId("all");
+                    setReportStudentId("");
+                  }}
+                  className="w-full bg-white border border-slate-200 rounded-2xl pl-5 pr-10 py-3.5 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
+                >
+                  {periods.map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                  {periods.length === 0 && <option value="">Không có kỳ KS nào</option>}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-indigo-500 transition-colors">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+              </div>
+            </div>
+
+            <div className="group">
+              <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-indigo-900/70 flex items-center gap-2 ml-1">
+                <Layers className="w-3.5 h-3.5 text-indigo-500"/> Đợt khảo sát
+              </label>
+              <div className="relative">
+                <select 
+                  value={reportBatchId} 
+                  onChange={e => {
+                    setReportBatchId(e.target.value);
+                    setReportStudentId("");
+                  }}
+                  className="w-full bg-white border border-slate-200 rounded-2xl pl-5 pr-10 py-3.5 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
+                >
+                  <option value="all">Tất cả các đợt</option>
+                  {reportBatches.map(b => (
+                    <option key={b.id} value={b.id}>{b.name}</option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-indigo-500 transition-colors">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+              </div>
+            </div>
+
+            <div className="group">
+              <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-indigo-900/70 flex items-center gap-2 ml-1">
+                <Users className="w-3.5 h-3.5 text-indigo-500"/> Chọn Học sinh ({filteredReportStudents.length})
+              </label>
+              <div className="relative">
+                <select 
+                  value={reportStudentId} 
+                  onChange={e => setReportStudentId(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-2xl pl-5 pr-10 py-3.5 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
+                >
+                  {filteredReportStudents.map(s => (
+                    <option key={s.id} value={s.id}>{s.studentCode} - {s.fullName} {s.className ? `(${s.className})` : ""}</option>
+                  ))}
+                  {filteredReportStudents.length === 0 && <option value="">Không có học sinh nào</option>}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-indigo-500 transition-colors">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* MAIN CONTAINER */}
+          {reportLoading ? (
+            <div className="p-20 text-center">
+              <Loader2 className="w-10 h-10 text-indigo-500 animate-spin mx-auto mb-4 opacity-50"/>
+              <p className="font-bold text-slate-400">Đang tải kết quả...</p>
+            </div>
+          ) : !selectedReportStudent ? (
+            <div className="bg-white border border-slate-200 rounded-[2rem] p-12 text-center text-slate-400">
+              Chưa có dữ liệu học sinh trong kỳ/đợt khảo sát đã chọn.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              
+              {/* STUDENT BRIEF DETAIL CARD */}
+              <div className="lg:col-span-4 space-y-6">
+                <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full -mt-10 -mr-10 mix-blend-multiply filter blur-2xl opacity-70"></div>
+                  
+                  <div className="flex flex-col items-center text-center pb-6 border-b border-slate-100">
+                    <div className="w-20 h-20 bg-gradient-to-tr from-indigo-600 to-violet-500 rounded-3xl flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-indigo-100 mb-4">
+                      {selectedReportStudent.fullName?.charAt(0)}
+                    </div>
+                    <h3 className="font-black text-slate-800 text-lg leading-snug">{selectedReportStudent.fullName}</h3>
+                    <span className="font-mono font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full text-xs mt-2 border border-indigo-100/50">{selectedReportStudent.studentCode}</span>
+                  </div>
+
+                  <div className="py-6 space-y-4">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-slate-400 font-bold uppercase text-[10px] tracking-wider">Ngày sinh</span>
+                      <span className="font-semibold text-slate-700">{selectedReportStudent.dateOfBirth ? new Date(selectedReportStudent.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-slate-400 font-bold uppercase text-[10px] tracking-wider">Giới tính</span>
+                      <span className="font-semibold text-slate-700">{selectedReportStudent.gender === "M" || selectedReportStudent.gender === "Nam" ? "Nam" : selectedReportStudent.gender === "F" || selectedReportStudent.gender === "Nữ" ? "Nữ" : selectedReportStudent.gender || "—"}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-slate-400 font-bold uppercase text-[10px] tracking-wider">Lớp</span>
+                      <span className="font-semibold text-slate-700">{selectedReportStudent.className || "—"}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-slate-400 font-bold uppercase text-[10px] tracking-wider">Khối học</span>
+                      <span className="font-semibold text-slate-700">K{selectedReportStudent.grade || "—"}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-slate-400 font-bold uppercase text-[10px] tracking-wider">Hệ Khảo sát</span>
+                      <span className="font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-100 text-xs">{selectedReportStudent.surveyFormType || "—"}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-slate-400 font-bold uppercase text-[10px] tracking-wider">Diện Khảo sát</span>
+                      <span className="font-semibold text-slate-700">{selectedReportStudent.admissionCriteria || "—"}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* SUBJECTS RESULTS DISPLAY */}
+              <div className="lg:col-span-8 space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-black text-slate-800 text-base flex items-center gap-2"><BookOpen className="w-5 h-5 text-indigo-500"/> Kết quả khảo sát các môn</h3>
+                  <span className="text-xs bg-slate-100 text-slate-600 px-3 py-1 rounded-full font-bold">{(selectedReportStudent.scores || []).length} Môn đã chấm</span>
+                </div>
+
+                {(!selectedReportStudent.scores || selectedReportStudent.scores.length === 0) ? (
+                  <div className="bg-slate-50 border-2 border-dashed rounded-3xl p-12 text-center text-slate-400">
+                    Học sinh này chưa có kết quả đánh giá môn học nào.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {selectedReportStudent.scores.map((sc: any) => {
+                      const subject = sc.subject || {};
+                      const subName = (subject.name || "").toLowerCase();
+                      const subCode = (subject.code || "").toLowerCase();
+                      const subNameNormalized = subName.normalize("NFC");
+                      const isPsych = subName.includes("tâm lý") || subCode.includes("tly");
+                      const isChildDev = subNameNormalized.includes("chuẩn phát triển") || subNameNormalized.includes("bộ chuẩn phát triển") || subCode.includes("cpt") || subCode.includes("tci");
+                      const isThinkingSkills = subNameNormalized.includes("năng lực tư duy") || subCode.includes("nltd");
+
+                      let scoreVals = [];
+                      let commentVals = [];
+                      try { if (sc.scores) scoreVals = JSON.parse(sc.scores); } catch {}
+                      try { if (sc.comments) commentVals = JSON.parse(sc.comments); } catch {}
+
+                      let parsedCols = { scores: [], comments: [] };
+                      try { if (subject.columnNames) parsedCols = JSON.parse(subject.columnNames); } catch {}
+
+                      return (
+                        <div key={sc.id} className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-sm hover:shadow-md transition-shadow">
+                          
+                          {/* Card Header */}
+                          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4 mb-4">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-black text-slate-800 text-lg">{subject.name}</h4>
+                                {subject.code && <span className="font-mono text-xs font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded">{subject.code}</span>}
+                                {subject.subjectType && (
+                                  <span className="text-[9px] font-black uppercase tracking-wider bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full border border-indigo-100/50">
+                                    {subject.subjectType === "VIET_NAM" ? "GV VN" : "GV NN"}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-slate-400 font-semibold mt-1">Giáo viên chấm: <span className="text-slate-600 font-bold">{sc.teacherName || "—"}</span> | Cập nhật: {new Date(sc.updatedAt).toLocaleDateString("vi-VN")}</p>
+                            </div>
+                          </div>
+
+                          {/* Card Content depending on Subject Type */}
+                          {isPsych ? (
+                            <div className="space-y-4">
+                              <div className="flex items-center justify-between bg-indigo-50/50 border border-indigo-100 rounded-2xl p-4">
+                                <div>
+                                  <span className="text-xs font-black uppercase tracking-widest text-indigo-500">Tổng điểm đánh giá</span>
+                                  <div className="text-2xl font-black text-indigo-700 mt-1">{scoreVals[6] || scoreVals[20] || "0"} Điểm</div>
+                                </div>
+                                {(() => {
+                                  const score = parseFloat(scoreVals[6] || scoreVals[20] || "0");
+                                  let level = "Bình thường"; let color = "text-emerald-700 bg-emerald-50 border-emerald-200";
+                                  if (score > 15 && score <= 31) { level = "Dấu hiệu nhẹ"; color = "text-blue-700 bg-blue-50 border-blue-200"; }
+                                  else if (score > 31 && score <= 47) { level = "Dấu hiệu vừa"; color = "text-amber-700 bg-amber-50 border-amber-200"; }
+                                  else if (score > 47 && score <= 63) { level = "Nguy cơ cao"; color = "text-orange-700 bg-orange-50 border-orange-200"; }
+                                  else if (score > 63) { level = "Nguy cơ rất cao"; color = "text-red-700 bg-red-50 border-red-200"; }
+                                  return (
+                                    <div className={`px-4 py-2 rounded-xl border font-black text-xs uppercase tracking-wider shadow-sm ${color}`}>
+                                      {level}
+                                    </div>
+                                  );
+                                })()}
+                              </div>
+                              {commentVals[0] && (
+                                <div className="space-y-1 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Kết luận sơ bộ</span>
+                                  <p className="text-sm font-medium text-slate-700 leading-relaxed whitespace-pre-wrap">{commentVals[0]}</p>
+                                </div>
+                              )}
+                              {commentVals[1] && (
+                                <div className="space-y-1 bg-amber-50/30 p-4 rounded-2xl border border-amber-100/50">
+                                  <span className="text-[10px] font-black uppercase tracking-widest text-amber-600">Khuyến nghị dành cho phụ huynh</span>
+                                  <p className="text-sm font-medium text-amber-800 leading-relaxed whitespace-pre-wrap">{commentVals[1]}</p>
+                                </div>
+                              )}
+                            </div>
+                          ) : isChildDev ? (
+                            <div className="space-y-4">
+                              <div className="grid grid-cols-3 gap-3">
+                                <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 text-center">
+                                  <div className="text-xs font-black uppercase tracking-wider text-emerald-600">Đạt</div>
+                                  <div className="text-xl font-black text-emerald-700 mt-1">{scoreVals.filter(v => v === "3").length}</div>
+                                </div>
+                                <div className="bg-rose-50 border border-rose-100 rounded-xl p-3 text-center">
+                                  <div className="text-xs font-black uppercase tracking-wider text-rose-600">Không đạt</div>
+                                  <div className="text-xl font-black text-rose-700 mt-1">{scoreVals.filter(v => v === "2").length}</div>
+                                </div>
+                                <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 text-center">
+                                  <div className="text-xs font-black uppercase tracking-wider text-slate-500">Không làm</div>
+                                  <div className="text-xl font-black text-slate-600 mt-1">{scoreVals.filter(v => v === "1").length}</div>
+                                </div>
+                              </div>
+                              {commentVals[0] && (
+                                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 italic">
+                                  <span className="block text-[10px] font-black uppercase tracking-widest text-slate-400 not-italic mb-1">Nhận xét chung</span>
+                                  "${commentVals[0]}"
+                                </div>
+                              )}
+                            </div>
+                          ) : isThinkingSkills ? (
+                            <div className="space-y-4">
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                <div className="bg-slate-50 border rounded-xl p-3 text-center">
+                                  <div className="text-[10px] font-black uppercase text-slate-400">Logic</div>
+                                  <div className="text-base font-black text-slate-700 mt-1">{scoreVals[0] || "—"}</div>
+                                </div>
+                                <div className="bg-slate-50 border rounded-xl p-3 text-center">
+                                  <div className="text-[10px] font-black uppercase text-slate-400">Lập tưởng</div>
+                                  <div className="text-base font-black text-slate-700 mt-1">{scoreVals[1] || "—"}</div>
+                                </div>
+                                <div className="bg-slate-50 border rounded-xl p-3 text-center">
+                                  <div className="text-[10px] font-black uppercase text-slate-400">Phản biện</div>
+                                  <div className="text-base font-black text-slate-700 mt-1">{scoreVals[2] || "—"}</div>
+                                </div>
+                                <div className="bg-slate-50 border rounded-xl p-3 text-center">
+                                  <div className="text-[10px] font-black uppercase text-slate-400">GQ Vấn đề</div>
+                                  <div className="text-base font-black text-slate-700 mt-1">{scoreVals[3] || "—"}</div>
+                                </div>
+                              </div>
+                              <div className="bg-sky-50 border border-sky-100 rounded-xl p-3 text-center font-bold text-sky-700 text-xs">
+                                Hoàn thành Thử thách: {scoreVals[4] || "0"}%
+                              </div>
+                              {commentVals[0] && (
+                                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 italic">
+                                  <span className="block text-[10px] font-black uppercase tracking-widest text-slate-400 not-italic mb-1">Nhận xét chung</span>
+                                  "${commentVals[0]}"
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="space-y-4">
+                              {/* Display standard scores columns */}
+                              <div className="flex flex-wrap gap-4">
+                                {Array.from({length: (subject.scoreColumns ?? 1)}).map((_, colIdx) => {
+                                  let colName = "Điểm " + (colIdx + 1);
+                                  if (parsedCols.scores && parsedCols.scores[colIdx]) colName = parsedCols.scores[colIdx];
+                                  const isTotal = colName.toLowerCase().includes("tổng");
+                                  const val = scoreVals[colIdx];
+                                  
+                                  return (
+                                    <div key={colIdx} className="bg-slate-50 border border-slate-200/60 rounded-2xl px-4 py-3 flex-1 min-w-[100px] text-center shadow-sm">
+                                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">{colName}</span>
+                                      <div className={`text-lg font-black mt-1 ${isTotal ? "text-indigo-600" : "text-slate-700"}`}>
+                                        {val !== undefined && val !== "" ? val : "—"}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+
+                              {/* Display standard comments columns */}
+                              {commentVals.length > 0 && commentVals.some(v => v) && (
+                                <div className="space-y-2">
+                                  {Array.from({length: (subject.commentColumns ?? 1)}).map((_, colIdx) => {
+                                    let colName = "Nhận xét " + (colIdx + 1);
+                                    if (parsedCols.comments && parsedCols.comments[colIdx]) colName = parsedCols.comments[colIdx];
+                                    const val = commentVals[colIdx];
+                                    if (!val) return null;
+
+                                    return (
+                                      <div key={colIdx} className="bg-slate-50 p-4 rounded-2xl border border-slate-100 italic">
+                                        <span className="block text-[10px] font-black uppercase tracking-widest text-slate-400 not-italic mb-1">{colName}</span>
+                                        "${val}"
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+            </div>
+          )}
+
+        </div>
       )}
 
       {/* ============= MODALS ============= */}
