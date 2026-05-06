@@ -1598,7 +1598,7 @@ return {
           <div className="bg-white/80 backdrop-blur-md p-6 rounded-3xl shadow-sm border border-slate-200/60 grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="group">
               <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-indigo-900/70 flex items-center gap-2 ml-1">
-                <CalendarDays className="w-3.5 h-3.5 text-indigo-500"/> Kỳ Khảo sát
+                <Calendar className="w-3.5 h-3.5 text-indigo-500"/> Kỳ Khảo sát
               </label>
               <div className="relative">
                 <select 
@@ -1775,7 +1775,7 @@ return {
                     disabled={saveReportLoading}
                     className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg shadow-indigo-100 disabled:opacity-50 transition-all flex justify-center items-center gap-2"
                   >
-                    {saveReportLoading ? <Loader2 className="w-4 h-4 animate-spin"/> : <Save className="w-4 h-4"/>}
+                    {saveReportLoading ? <Loader2 className="w-4 h-4 animate-spin"/> : <Check className="w-4 h-4"/>}
                     Lưu kết quả tổng hợp
                   </button>
                 </div>
