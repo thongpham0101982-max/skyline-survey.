@@ -179,7 +179,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
   const [periods, setPeriods] = useState<Period[]>([])
 
   const visiblePeriods = useMemo(() => {
-    if (!currentUser) return [];
+    if (!currentUser || !currentUser.role) return periods; // Safe Fallback: Show all periods if session is not loaded yet or null
     if (currentUser.role === "ADMIN" || currentUser.role === "KT_DBCL") return periods;
     
     if (["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(currentUser.role)) {
