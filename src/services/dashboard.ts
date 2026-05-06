@@ -12,22 +12,17 @@ export async function getAdminMetrics(allowedCampusIds: string[] = []) {
     prisma.student.count({ where: studentWhere }),
     prisma.class.count({ where: classWhere }),
     prisma.studentTransfer.count({
-      where: isFullAccess ? {} : {
-        OR: [
-          { fromCampusId: { in: allowedCampusIds } },
-          { toCampusId: { in: allowedCampusIds } }
-        ]
-      }
+      where: isFullAccess ? {} : { student: { campusId: { in: allowedCampusIds } } }
     }),
     prisma.inputAssessmentStudent.groupBy({
       by: ["grade"],
       _count: true,
-      where: isFullAccess ? {} : { campusId: { in: allowedCampusIds } }
+      where: isFullAccess ? {} : { batch: { campusId: { in: allowedCampusIds } } }
     }),
     prisma.inputAssessmentStudent.groupBy({
       by: ["admissionResult"],
       _count: true,
-      where: isFullAccess ? {} : { campusId: { in: allowedCampusIds } }
+      where: isFullAccess ? {} : { batch: { campusId: { in: allowedCampusIds } } }
     }),
     prisma.summaryByClass.findMany({ where: summaryWhere })
   ])
