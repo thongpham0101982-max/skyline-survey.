@@ -4,7 +4,20 @@ import { Building2 } from "lucide-react"
 
 export default async function CampusPage() {
   const campuses = await prisma.campus.findMany({
+    include: {
+      manager: {
+        select: { id: true, fullName: true, email: true }
+      }
+    },
     orderBy: { campusCode: "asc" }
+  })
+
+  const gdcsUsers = await prisma.user.findMany({
+    where: {
+      role: { in: ["GDCS", "GIAO_VU_CS"] }
+    },
+    select: { id: true, fullName: true, email: true },
+    orderBy: { fullName: "asc" }
   })
 
   return (
@@ -19,7 +32,7 @@ export default async function CampusPage() {
         </div>
       </div>
 
-      <CampusManagerClient initialCampuses={campuses} />
+      <CampusManagerClient initialCampuses={campuses} gdcsUsers={gdcsUsers} />
     </div>
   )
 }

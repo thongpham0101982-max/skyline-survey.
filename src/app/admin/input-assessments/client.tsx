@@ -188,7 +188,7 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   const [bModal, setBModal] = useState(false)
   const [editB, setEditB] = useState<Batch|null>(null)
   const [targetPeriodId, setTargetPeriodId] = useState("")
-  const [bForm, setBForm] = useState({ batchNumber:"1", name:"", startDate:"", endDate:"", status:"ACTIVE" })
+  const [bForm, setBForm] = useState({ batchNumber:"1", name:"", startDate:"", endDate:"", status:"ACTIVE", campusId: "", assignedUserId: "" })
 
   // ───────── STUDENTS STATE ─────────
   const [students, setStudents] = useState<Student[]>([])
@@ -359,10 +359,10 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
     if (period && period.batches && period.batches.length > 0) {
         nextBatchNum = Math.max(...period.batches.map(b => b.batchNumber)) + 1;
     }
-    setBForm({ batchNumber: String(nextBatchNum), name:"", startDate:"", endDate:"", status:"ACTIVE" }); 
+    setBForm({ batchNumber: String(nextBatchNum), name:"", startDate:"", endDate:"", status:"ACTIVE", campusId: "", assignedUserId: "" }); 
     setBModal(true); 
   }
-  const openEditBatch = (b:Batch) => { setTargetPeriodId(b.periodId); setEditB(b); setBForm({ batchNumber:String(b.batchNumber), name:b.name, startDate:b.startDate?.slice(0,10)||"", endDate:b.endDate?.slice(0,10)||"", status:b.status }); setBModal(true) }
+  const openEditBatch = (b:Batch) => { setTargetPeriodId(b.periodId); setEditB(b); setBForm({ batchNumber:String(b.batchNumber), name:b.name, startDate:b.startDate?.slice(0,10)||"", endDate:b.endDate?.slice(0,10)||"", status:b.status, campusId: b.campusId||"", assignedUserId: b.assignedUserId||"" }); setBModal(true) }
   const saveBatch = async () => {
     if (!bForm.name.trim()||!bForm.startDate||!bForm.endDate) return notify("Cần nhập đủ Tên, Ngày bắt/kết thúc","err")
     const r = await fetch("/api/input-assessments", { method: editB?"PUT":"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action: editB?"UPDATE_BATCH":"CREATE_BATCH", id:editB?.id, data:{...bForm, periodId:targetPeriodId, batchNumber:parseInt(bForm.batchNumber)||1} }) })
@@ -1460,10 +1460,28 @@ return {
          </div>
       </Modal>
 
-      <Modal open={bModal} onClose={()=>setBModal(false)} title="Thông tin Đợt khảo sát" size="sm" footer={<><button onClick={()=>setBModal(false)} className="flex-1 py-3 text-xs font-black uppercase text-slate-400">Hủy</button> <button onClick={saveBatch} className="flex-1 py-4 bg-emerald-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-emerald-50">Hoàn tất</button></>}>
+      <Modal open={bModal} onClose={()=>setBModal(false)} title="Thông tin Đợt khảo sát" size="md" footer={<><button onClick={()=>setBModal(false)} className="flex-1 py-3 text-xs font-black uppercase text-slate-400">Hủy</button> <button onClick={saveBatch} className="flex-1 py-4 bg-emerald-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-emerald-50">Hoàn tất</button></>}>
         <div className="space-y-4">
            <div className="grid grid-cols-2 gap-3"><Field label="Số đợt"><input type="number" value={bForm.batchNumber} onChange={e=>setBForm(f=>({...f,batchNumber:e.target.value}))} className={inp}/></Field><Field label="Trạng thái"><select value={bForm.status} onChange={e=>setBForm(f=>({...f,status:e.target.value}))} className={inp}>{STATUS_OPTS.map(o=><option key={o} value={o}>{STATUS_MAP[o].label}</option>)}</select></Field></div>
            <Field label="Tên đợt" required><input value={bForm.name} onChange={e=>setBForm(f=>({...f,name:e.target.value}))} className={inp}/></Field>
+           <div className="grid grid-cols-2 gap-3">
+             <Field label="Cơ sở">
+               <select value={bForm.campusId} onChange={e=>setBForm(f=>({...f,campusId:e.target.value}))} className={inp}>
+                 <option value="">-- Chọn Cơ sở --</option>
+                 {campuses.map(c => (
+                   <option key={c.id} value={c.id}>{c.campusName}</option>
+                 ))}
+               </select>
+             </Field>
+             <Field label="Người phụ trách">
+               <select value={bForm.assignedUserId} onChange={e=>setBForm(f=>({...f,assignedUserId:e.target.value}))} className={inp}>
+                 <option value="">-- Chưa gán --</option>
+                 {examBoardUsers.map(u => (
+                   <option key={u.id} value={u.id}>{u.fullName}</option>
+                 ))}
+               </select>
+             </Field>
+           </div>
            <div className="grid grid-cols-2 gap-3"><Field label="Từ ngày"><input type="date" value={bForm.startDate} onChange={e=>setBForm(f=>({...f,startDate:e.target.value}))} className={inp}/></Field><Field label="Đến ngày"><input type="date" value={bForm.endDate} onChange={e=>setBForm(f=>({...f,endDate:e.target.value}))} className={inp}/></Field></div>
         </div>
       </Modal>

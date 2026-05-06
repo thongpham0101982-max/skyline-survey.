@@ -31,6 +31,7 @@ model User {
   campusAssignments                UserCampusAssignment[]
   inputAssessmentBatches           InputAssessmentBatch[]             @relation("BatchAssignee")
   studentTransfers StudentTransfer[]
+  managedCampuses                  Campus[]                           @relation("CampusManager")
 }
 
 model Parent {
@@ -74,6 +75,8 @@ model Campus {
   campusName             String
   address                String?
   status                 String                  @default("ACTIVE")
+  managerId              String?
+  manager                User?                   @relation("CampusManager", fields: [managerId], references: [id], onDelete: SetNull)
   classes                Class[]
   inputAssessmentPeriods InputAssessmentPeriod[]
   students               Student[]

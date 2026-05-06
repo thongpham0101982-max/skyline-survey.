@@ -41,7 +41,7 @@ export default async function InputAssessmentsPage() {
       }
       if (pAny.user) {
         examBoardUsers = await pAny.user.findMany({ 
-          where: { role: { in: ["ADMIN", "KT_DBCL", "GIAO_VU"] }, status: "ACTIVE" }, 
+          where: { role: { in: ["GDCS", "GIAO_VU_CS"] }, status: "ACTIVE" }, 
           select: { id: true, fullName: true } 
         }).catch(() => []);
       }

@@ -2,14 +2,15 @@
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 
-export async function createCampus(code: string, name: string, address?: string) {
+export async function createCampus(code: string, name: string, address?: string, managerId?: string) {
   try {
     await prisma.campus.create({
       data: {
         campusCode: code,
         campusName: name,
         address: address,
-        status: "ACTIVE"
+        status: "ACTIVE",
+        managerId: managerId || null
       }
     });
     revalidatePath("/admin/campuses");
@@ -19,7 +20,7 @@ export async function createCampus(code: string, name: string, address?: string)
   }
 }
 
-export async function updateCampus(id: string, code: string, name: string, address?: string, status?: string) {
+export async function updateCampus(id: string, code: string, name: string, address?: string, status?: string, managerId?: string) {
   try {
     await prisma.campus.update({
       where: { id },
@@ -27,7 +28,8 @@ export async function updateCampus(id: string, code: string, name: string, addre
         campusCode: code,
         campusName: name,
         address: address,
-        status: status || "ACTIVE"
+        status: status || "ACTIVE",
+        managerId: managerId || null
       }
     });
     revalidatePath("/admin/campuses");
