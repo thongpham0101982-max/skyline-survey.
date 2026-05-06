@@ -6,11 +6,29 @@ export async function getAdminMetrics(allowedCampusIds: string[] = []) {
 
   const studentWhere = isFullAccess ? {} : { campusId: { in: allowedCampusIds } }
   const summaryWhere = isFullAccess ? {} : { campusId: { in: allowedCampusIds } }
+  const classWhere = isFullAccess ? {} : { campusId: { in: allowedCampusIds } }
 
-  // Note: summarySystem usually stores global data, so for restricted users we should use summaryByClass
-  // But let's check if summaryByClass has campusId
-  const [totalStudents, classSummaries] = await Promise.all([
+  const [totalStudents, totalClasses, transferCount, assessmentGroup, admissionGroup, classSummaries] = await Promise.all([
     prisma.student.count({ where: studentWhere }),
+    prisma.class.count({ where: classWhere }),
+    prisma.studentTransfer.count({
+      where: isFullAccess ? {} : {
+        OR: [
+          { fromCampusId: { in: allowedCampusIds } },
+          { toCampusId: { in: allowedCampusIds } }
+        ]
+      }
+    }),
+    prisma.inputAssessmentStudent.groupBy({
+      by: ["grade"],
+      _count: true,
+      where: isFullAccess ? {} : { campusId: { in: allowedCampusIds } }
+    }),
+    prisma.inputAssessmentStudent.groupBy({
+      by: ["admissionResult"],
+      _count: true,
+      where: isFullAccess ? {} : { campusId: { in: allowedCampusIds } }
+    }),
     prisma.summaryByClass.findMany({ where: summaryWhere })
   ])
 
@@ -41,6 +59,10 @@ export async function getAdminMetrics(allowedCampusIds: string[] = []) {
 
   return {
     totalStudents,
+    totalClasses,
+    transferCount,
+    assessmentGroup,
+    admissionGroup,
     surveyedStudents: surveyed,
     notSurveyedStudents: notSurveyed,
     completionRate,
