@@ -184,7 +184,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     
     if (["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(currentUser.role)) {
       const allowedIds = currentUser.campusIds || [];
-      return visiblePeriods.map(p => {
+      return periods.map(p => {
         const isPeriodAllowed = p.campusId ? allowedIds.includes(p.campusId) : false;
         
         const allowedBatches = (p.batches || []).filter(b => {
@@ -210,19 +210,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     return periods;
   }, [periods, currentUser, campuses]);
 
-  useEffect(() => {
-    if (visiblePeriods.length > 0) {
-      if (!sPeriodId || !visiblePeriods.some(p => p.id === sPeriodId)) {
-        setSPeriodId(visiblePeriods[0].id);
-      }
-      if (!asPeriodId || !visiblePeriods.some(p => p.id === asPeriodId)) {
-        setAsPeriodId(visiblePeriods[0].id);
-      }
-    } else {
-      setSPeriodId("");
-      setAsPeriodId("");
-    }
-  }, [visiblePeriods, sPeriodId, asPeriodId]);
+
   const [pLoading, setPLoading] = useState(false)
   const [expandedId, setExpandedId] = useState<string|null>(null)
   const [confirm, setConfirm] = useState<{msg:string; fn:()=>void}|null>(null)
@@ -457,6 +445,20 @@ ${reportForm.directorNote}`;
   const [asSelGrades, setAsSelGrades] = useState<string[]>([])
   const [asSelSystems, setAsSelSystems] = useState<string[]>([])
   const [asSubmitting, setAsSubmitting] = useState(false)
+
+  useEffect(() => {
+    if (visiblePeriods.length > 0) {
+      if (!sPeriodId || !visiblePeriods.some(p => p.id === sPeriodId)) {
+        setSPeriodId(visiblePeriods[0].id);
+      }
+      if (!asPeriodId || !visiblePeriods.some(p => p.id === asPeriodId)) {
+        setAsPeriodId(visiblePeriods[0].id);
+      }
+    } else {
+      setSPeriodId("");
+      setAsPeriodId("");
+    }
+  }, [visiblePeriods, sPeriodId, asPeriodId]);
 
   // ───────── FETCHERS ─────────
   const fetchPeriods = useCallback(async () => {
