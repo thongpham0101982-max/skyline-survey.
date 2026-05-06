@@ -138,6 +138,7 @@ export default async function InputAssessmentsPage() {
         configs={safeJson(configs)}
         teachers={safeJson(teachers)}
         departments={safeJson(departments)}
+        currentUser={session?.user ? { id: session.user.id, role: (session.user as any).role, campusIds: (session.user as any).campusIds || [] } : null}
       />
     </div>
   )

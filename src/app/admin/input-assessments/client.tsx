@@ -44,6 +44,7 @@ interface Props {
   subjects: AssessmentSubject[]; eduSystems: EduSystem[]; grades: string[];
   configs: AssessmentConfig[]; teachers: Teacher[]; departments: Department[];
   giaoVuCSUsers?: User[];
+  currentUser?: { id: string; role: string; campusIds: string[] } | null;
 }
 
 // ========= CONSTANTS =========
@@ -144,7 +145,7 @@ function Empty({ icon:Icon, text, sub }: { icon:any; text:string; sub?:string })
 }
 
 // ========= MAIN =========
-export function InputAssessmentsClient({ academicYears = [], campuses = [], examBoardUsers = [], subjects: initialSubjects = [], eduSystems = [], configs: initialConfigs = [], grades = [], teachers = [], departments = [], giaoVuCSUsers = [] }: Props) {
+export function InputAssessmentsClient({ academicYears = [], campuses = [], examBoardUsers = [], subjects: initialSubjects = [], eduSystems = [], configs: initialConfigs = [], grades = [], teachers = [], departments = [], giaoVuCSUsers = [], currentUser = null }: Props) {
   const [tab, setTab] = useState("periods")
   const [yearId, setYearId] = useState(academicYears[0]?.id || "")
   const [toast, setToast] = useState<{msg:string;type:"ok"|"err"}|null>(null)
@@ -214,7 +215,8 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     admissionResult: "",
     admissionCampus: "",
     signatureName: "",
-    directorNote: ""
+    directorNote: "",
+    committedSubjects: [] as string[]
   });
 
   const [saveReportLoading, setSaveReportLoading] = useState(false);
@@ -222,6 +224,12 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     if (!selectedReportStudent) return;
     setSaveReportLoading(true);
     try {
+      let finalNote = reportForm.directorNote;
+      if (reportForm.admissionResult === "Đạt cam kết" && reportForm.committedSubjects.length > 0) {
+        finalNote = `Môn cam kết: [${reportForm.committedSubjects.join(", ")}]
+
+${reportForm.directorNote}`;
+      }
       const r = await fetch("/api/input-assessment-students", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -229,13 +237,22 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
           id: selectedReportStudent.id,
           data: {
             ...selectedReportStudent,
-            ...reportForm
+            admissionResult: reportForm.admissionResult,
+            admissionCampus: reportForm.admissionCampus,
+            signatureName: reportForm.signatureName,
+            directorNote: finalNote
           }
         })
       });
       if (r.ok) {
         notify("Đã lưu kết quả tổng hợp thành công!");
-        setReportStudents(prev => prev.map(s => s.id === selectedReportStudent.id ? { ...s, ...reportForm } : s));
+        setReportStudents(prev => prev.map(s => s.id === selectedReportStudent.id ? { 
+          ...s, 
+          admissionResult: reportForm.admissionResult,
+          admissionCampus: reportForm.admissionCampus,
+          signatureName: reportForm.signatureName,
+          directorNote: finalNote
+        } : s));
       } else {
         notify("Lỗi khi lưu kết quả tổng hợp", "err");
       }
@@ -289,13 +306,35 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     return reportStudents.find(s => s.id === reportStudentId);
   }, [reportStudents, reportStudentId]);
 
+  const canApprove = useMemo(() => {
+    if (!currentUser) return false;
+    if (currentUser.role === "ADMIN" || currentUser.role === "KT_DBCL") return true;
+    if (["GDCS", "GĐ_CS", "GIAO_VU_CS"].includes(currentUser.role)) {
+      const periodCampusId = reportSelPeriod?.campusId;
+      const activeBatch = reportBatches.find(b => b.id === reportBatchId);
+      const batchCampusId = activeBatch?.campusId;
+      const targetCampusId = batchCampusId || periodCampusId;
+      if (!targetCampusId) return true;
+      return currentUser.campusIds.includes(targetCampusId);
+    }
+    return false;
+  }, [currentUser, reportSelPeriod, reportBatches, reportBatchId]);
+
   useEffect(() => {
     if (selectedReportStudent) {
+      let commSubs: string[] = [];
+      let cleanNote = selectedReportStudent.directorNote || "";
+      const match = cleanNote.match(/^Môn cam kết: \[(.*?)\](?:\r?\n\r?\n)?/);
+      if (match) {
+        commSubs = match[1] ? match[1].split(", ") : [];
+        cleanNote = cleanNote.replace(/^Môn cam kết: \[(.*?)\](?:\r?\n\r?\n)?/, "");
+      }
       setReportForm({
         admissionResult: selectedReportStudent.admissionResult || "",
         admissionCampus: selectedReportStudent.admissionCampus || "",
         signatureName: selectedReportStudent.signatureName || "",
-        directorNote: selectedReportStudent.directorNote || ""
+        directorNote: cleanNote,
+        committedSubjects: commSubs
       });
     }
   }, [selectedReportStudent]);
@@ -1726,24 +1765,62 @@ return {
                 <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4">
                   <h4 className="font-black text-slate-800 text-sm flex items-center gap-2 border-b pb-3 mb-2"><CheckCircle2 className="w-4 h-4 text-emerald-500"/> Xét duyệt Tuyển sinh</h4>
                   
+                  {!canApprove && (
+                    <div className="bg-rose-50 text-rose-600 p-3.5 rounded-2xl text-xs font-semibold border border-rose-100 flex items-center gap-2 animate-pulse mb-2">
+                      <AlertCircle className="w-4 h-4 flex-shrink-0"/>
+                      Bạn không có quyền xét duyệt kết quả cho cơ sở này.
+                    </div>
+                  )}
+
                   <Field label="Kết quả Xét tuyển">
                     <select 
                       value={reportForm.admissionResult} 
                       onChange={e => setReportForm(f => ({ ...f, admissionResult: e.target.value }))}
                       className={inp}
+                      disabled={!canApprove}
                     >
                       <option value="">-- Chưa xét duyệt --</option>
-                      <option value="Trúng tuyển">Trúng tuyển</option>
-                      <option value="Dự khuyết">Dự khuyết</option>
-                      <option value="Không trúng tuyển">Không trúng tuyển</option>
+                      <option value="Đạt">Đạt</option>
+                      <option value="Không đạt">Không đạt</option>
+                      <option value="Đạt cam kết">Đạt cam kết</option>
                     </select>
                   </Field>
+
+                  {reportForm.admissionResult === "Đạt cam kết" && (
+                    <Field label="Môn Cam Kết">
+                      <div className="grid grid-cols-2 gap-2 bg-slate-50 p-4 rounded-2xl border border-slate-200 max-h-48 overflow-y-auto">
+                        {initialSubjects.map(sub => {
+                          const isChecked = reportForm.committedSubjects.includes(sub.name);
+                          return (
+                            <label key={sub.id} className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer hover:text-indigo-600 transition-colors">
+                              <input 
+                                type="checkbox"
+                                checked={isChecked}
+                                disabled={!canApprove}
+                                onChange={() => {
+                                  setReportForm(f => {
+                                    const next = isChecked 
+                                      ? f.committedSubjects.filter(name => name !== sub.name)
+                                      : [...f.committedSubjects, sub.name];
+                                    return { ...f, committedSubjects: next };
+                                  });
+                                }}
+                                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                              />
+                              {sub.name}
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </Field>
+                  )}
 
                   <Field label="Cơ sở nhập học">
                     <select 
                       value={reportForm.admissionCampus} 
                       onChange={e => setReportForm(f => ({ ...f, admissionCampus: e.target.value }))}
                       className={inp}
+                      disabled={!canApprove}
                     >
                       <option value="">-- Chọn cơ sở --</option>
                       {campuses.map(c => (
@@ -1759,6 +1836,7 @@ return {
                       onChange={e => setReportForm(f => ({ ...f, signatureName: e.target.value }))}
                       className={inp}
                       placeholder="Họ tên người phê duyệt"
+                      disabled={!canApprove}
                     />
                   </Field>
 
@@ -1768,12 +1846,13 @@ return {
                       onChange={e => setReportForm(f => ({ ...f, directorNote: e.target.value }))}
                       className={`${inp} h-24 resize-none`}
                       placeholder="Nhập ý kiến hoặc lý do..."
+                      disabled={!canApprove}
                     />
                   </Field>
 
                   <button
                     onClick={handleSaveReportResult}
-                    disabled={saveReportLoading}
+                    disabled={saveReportLoading || !canApprove}
                     className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg shadow-indigo-100 disabled:opacity-50 transition-all flex justify-center items-center gap-2"
                   >
                     {saveReportLoading ? <Loader2 className="w-4 h-4 animate-spin"/> : <Check className="w-4 h-4"/>}
