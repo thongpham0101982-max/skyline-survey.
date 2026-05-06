@@ -309,16 +309,32 @@ ${reportForm.directorNote}`;
   const canApprove = useMemo(() => {
     if (!currentUser) return false;
     if (currentUser.role === "ADMIN" || currentUser.role === "KT_DBCL") return true;
-    if (["GDCS", "GĐ_CS", "GIAO_VU_CS"].includes(currentUser.role)) {
+    if (["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(currentUser.role)) {
       const periodCampusId = reportSelPeriod?.campusId;
       const activeBatch = reportBatches.find(b => b.id === reportBatchId);
       const batchCampusId = activeBatch?.campusId;
-      const targetCampusId = batchCampusId || periodCampusId;
-      if (!targetCampusId) return true;
+      let targetCampusId = batchCampusId || periodCampusId;
+      
+      // Smart Fallback: Parse campus from batch name or period name if campusId is null/missing
+      if (!targetCampusId) {
+        const fullNameStr = `${activeBatch?.name || ""} ${reportSelPeriod?.name || ""}`;
+        const matchedCampus = campuses.find(c => 
+          fullNameStr.includes(c.campusCode) || 
+          fullNameStr.includes(c.campusName) ||
+          (c.campusCode === "CS3" && fullNameStr.includes("CS3")) ||
+          (c.campusCode === "CS1" && fullNameStr.includes("CS1")) ||
+          (c.campusCode === "CS2" && fullNameStr.includes("CS2"))
+        );
+        if (matchedCampus) {
+          targetCampusId = matchedCampus.id;
+        }
+      }
+      
+      if (!targetCampusId) return true; // Default to allow if no campus can be identified
       return currentUser.campusIds.includes(targetCampusId);
     }
     return false;
-  }, [currentUser, reportSelPeriod, reportBatches, reportBatchId]);
+  }, [currentUser, reportSelPeriod, reportBatches, reportBatchId, campuses]);
 
   useEffect(() => {
     if (selectedReportStudent) {
