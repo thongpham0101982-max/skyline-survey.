@@ -180,12 +180,14 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
 
   const visiblePeriods = useMemo(() => {
     if (!currentUser || !currentUser.role) return periods; // Safe Fallback: Show all periods if session is not loaded yet or null
-    if (currentUser.role === "ADMIN" || currentUser.role === "KT_DBCL") return periods;
+    const userRole = (currentUser.role || "").toUpperCase();
+    if (userRole === "ADMIN" || userRole === "KT_DBCL") return periods;
     
-    if (["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(currentUser.role)) {
+    if (["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole)) {
       const allowedIds = currentUser.campusIds || [];
       return periods.map(p => {
         const allowedBatches = (p.batches || []).filter(b => {
+          if (allowedIds.length === 0) return true; // Safe Fallback: Show all batches if no specific campus is assigned in session yet
           if (!b.campusId) {
             // Smart Fallback: Check if batch name contains any allowed campus code/name
             const matchesFallback = allowedIds.some(id => {
