@@ -144,7 +144,7 @@ function Empty({ icon:Icon, text, sub }: { icon:any; text:string; sub?:string })
 }
 
 // ========= MAIN =========
-export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers, subjects: initialSubjects, eduSystems, configs: initialConfigs, grades, teachers, departments, giaoVuCSUsers = [] }: Props) {
+export function InputAssessmentsClient({ academicYears = [], campuses = [], examBoardUsers = [], subjects: initialSubjects = [], eduSystems = [], configs: initialConfigs = [], grades = [], teachers = [], departments = [], giaoVuCSUsers = [] }: Props) {
   const [tab, setTab] = useState("periods")
   const [yearId, setYearId] = useState(academicYears[0]?.id || "")
   const [toast, setToast] = useState<{msg:string;type:"ok"|"err"}|null>(null)
@@ -320,8 +320,8 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   const [columnConfigForm, setColumnConfigForm] = useState({ subjectId: "", name: "", scoreNames: [], commentNames: [], showScoreInReport: [], showCommentInReport: [], scoreColumns: 1, commentColumns: 1 });
   const [editingSubjectId, setEditingSubjectId] = useState<string|null>(null);
   const [subjectForm, setSubjectForm] = useState({ code:"", name:"", subjectType:"", scoreColumns: 1, commentColumns: 1, status: "ACTIVE", exemptCriteria: [] as string[] });
-  const [selGrades, setSelGrades] = useState<string[]>((grades && grades.length) ? [grades[0]]:[]);
-  const [selEdus, setSelEdus] = useState<string[]>((eduSystems && eduSystems.length) ? [eduSystems[0].code]:[]);
+  const [selGrades, setSelGrades] = useState<string[]>((Array.isArray(grades) && grades[0]) ? [grades[0]] : []);
+  const [selEdus, setSelEdus] = useState<string[]>((Array.isArray(eduSystems) && eduSystems[0]?.code) ? [eduSystems[0].code] : []);
   const [mappings, setMappings] = useState<any[]>([]);
   const [mappingLoading, setMappingLoading] = useState(false);
   const [assignSelSubjects, setAssignSelSubjects] = useState<string[]>([]);
