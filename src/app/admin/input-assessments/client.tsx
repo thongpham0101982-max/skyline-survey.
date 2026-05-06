@@ -191,6 +191,17 @@ export function InputAssessmentsClient({ academicYears, campuses, examBoardUsers
   const [targetPeriodId, setTargetPeriodId] = useState("")
   const [bForm, setBForm] = useState({ batchNumber:"1", name:"", startDate:"", endDate:"", status:"ACTIVE", campusId: "", assignedUserId: "" })
 
+  useEffect(() => {
+    if (!bModal || editB) return;
+    const selectedCampus = campuses.find(c => c.id === bForm.campusId);
+    const campusName = selectedCampus ? selectedCampus.campusName : "";
+    const dateStr = bForm.startDate ? bForm.startDate.split('-').reverse().join('/') : "";
+    let autoName = `Đợt ${bForm.batchNumber || "1"}`;
+    if (campusName) autoName += ` - ${campusName}`;
+    if (dateStr) autoName += ` (${dateStr})`;
+    setBForm(f => ({ ...f, name: autoName }));
+  }, [bForm.batchNumber, bForm.campusId, bForm.startDate, bModal, editB, campuses]);
+
   // ───────── STUDENTS STATE ─────────
   const [students, setStudents] = useState<Student[]>([])
   const [sLoading, setSLoading] = useState(false)
