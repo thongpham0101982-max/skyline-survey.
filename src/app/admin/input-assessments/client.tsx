@@ -2036,24 +2036,15 @@ return {
                         <span className="font-semibold text-slate-700">{selectedReportStudent.admissionCampus}</span>
                       </div>
                     )}
-                    <div className="grid grid-cols-1 gap-2 mt-4">
+                    {(selectedReportStudent.admissionResult === "Đạt" || selectedReportStudent.admissionResult === "Đạt cam kết") && (
                       <button
-                        onClick={() => { setIsInvitation(true); setIsPrintModalOpen(true); }}
-                        className="w-full py-2.5 bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-md shadow-indigo-100 transition-all flex justify-center items-center gap-2 animate-fade-in"
+                        onClick={() => { setIsInvitation(false); setIsPrintModalOpen(true); }}
+                        className="w-full mt-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-md shadow-emerald-100 transition-all flex justify-center items-center gap-2 animate-fade-in"
                       >
-                        <Mail className="w-4 h-4"/>
-                        Xuất Thư mời
+                        <GraduationCap className="w-4 h-4"/>
+                        Xuất Thư Chúc mừng
                       </button>
-                      {(selectedReportStudent.admissionResult === "Đạt" || selectedReportStudent.admissionResult === "Đạt cam kết") && (
-                        <button
-                          onClick={() => { setIsInvitation(false); setIsPrintModalOpen(true); }}
-                          className="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-md shadow-emerald-100 transition-all flex justify-center items-center gap-2 animate-fade-in"
-                        >
-                          <GraduationCap className="w-4 h-4"/>
-                          Xuất Thư Chúc mừng
-                        </button>
-                      )}
-                    </div>
+                    )}
                   </div>
                 </div>
 
