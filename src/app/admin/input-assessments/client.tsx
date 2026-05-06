@@ -187,7 +187,6 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
       const allowedIds = currentUser.campusIds || [];
       return periods.map(p => {
         const allowedBatches = (p.batches || []).filter(b => {
-          if (allowedIds.length === 0) return true; // Safe Fallback: Show all batches if no specific campus is assigned in session yet
           if (!b.campusId) {
             // Smart Fallback: Check if batch name contains any allowed campus code/name
             const matchesFallback = allowedIds.some(id => {
