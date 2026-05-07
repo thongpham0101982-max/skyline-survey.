@@ -149,6 +149,7 @@ function Empty({ icon:Icon, text, sub }: { icon:any; text:string; sub?:string })
 export function InputAssessmentsClient({ academicYears = [], campuses = [], examBoardUsers = [], subjects: initialSubjects = [], eduSystems = [], configs: initialConfigs = [], grades = [], teachers = [], departments = [], giaoVuCSUsers = [], gdcsUsers = [], currentUser = null }: Props) {
   const [tab, setTab] = useState("periods")
   const [rcCampusId, setRcCampusId] = useState("")
+  const [rcReportType, setRcReportType] = useState("thu_chuc_mung")
   const [rcTitle, setRcTitle] = useState("BÁO CÁO KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO")
   const [rcLogo, setRcLogo] = useState("")
   const [rcSignature, setRcSignature] = useState("")
@@ -161,12 +162,12 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
   }, [campuses, rcCampusId])
 
   useEffect(() => {
-    if (typeof window !== "undefined" && rcCampusId) {
-      const saved = localStorage.getItem('report_config_' + rcCampusId)
+    if (typeof window !== "undefined" && rcCampusId && rcReportType) {
+      const saved = localStorage.getItem('report_config_' + rcCampusId + '_' + rcReportType)
       if (saved) {
         try {
           const parsed = JSON.parse(saved)
-          setRcTitle(parsed.title || "BÁO CÁO KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO")
+          setRcTitle(parsed.title || (rcReportType === "thu_chuc_mung" ? "BÁO CÁO KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO" : "BẢN CAM KẾT HỌC TẬP"))
           setRcLogo(parsed.logo || "")
           setRcSignature(parsed.signature || "")
           setRcDirectorName(parsed.directorName || "")
@@ -174,13 +175,29 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
           console.error(e)
         }
       } else {
-        setRcTitle("BÁO CÁO KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO")
-        setRcLogo("")
-        setRcSignature("")
-        setRcDirectorName("")
+        let oldSaved = null;
+        if (rcReportType === "thu_chuc_mung") {
+          oldSaved = localStorage.getItem('report_config_' + rcCampusId);
+        }
+        if (oldSaved) {
+          try {
+            const parsed = JSON.parse(oldSaved);
+            setRcTitle(parsed.title || "BÁO CÁO KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO");
+            setRcLogo(parsed.logo || "");
+            setRcSignature(parsed.signature || "");
+            setRcDirectorName(parsed.directorName || "");
+          } catch (e) {
+            console.error(e);
+          }
+        } else {
+          setRcTitle(rcReportType === "thu_chuc_mung" ? "BÁO CÁO KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO" : "BẢN CAM KẾT HỌC TẬP")
+          setRcLogo("")
+          setRcSignature("")
+          setRcDirectorName("")
+        }
       }
     }
-  }, [rcCampusId])
+  }, [rcCampusId, rcReportType])
 
   const handleLogoUpload = (e) => {
     const file = e.target.files?.[0]
@@ -206,13 +223,14 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
 
   const saveReportConfig = () => {
     if (!rcCampusId) return notify("Vui lòng chọn Cơ sở", "err")
+    if (!rcReportType) return notify("Vui lòng chọn Loại báo cáo", "err")
     const data = {
       title: rcTitle,
       logo: rcLogo,
       signature: rcSignature,
       directorName: rcDirectorName
     }
-    localStorage.setItem('report_config_' + rcCampusId, JSON.stringify(data))
+    localStorage.setItem('report_config_' + rcCampusId + '_' + rcReportType, JSON.stringify(data))
     notify("Đã lưu cấu hình báo cáo thành công!")
   }
   const [yearId, setYearId] = useState(academicYears[0]?.id || "")
@@ -323,6 +341,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
   const [saveReportLoading, setSaveReportLoading] = useState(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [isInvitation, setIsInvitation] = useState(false);
+  const [isCommitment, setIsCommitment] = useState(false);
   const handleSaveReportResult = async () => {
     if (!selectedReportStudent) return;
     setSaveReportLoading(true);
@@ -446,15 +465,24 @@ ${reportForm.directorNote}`;
     }
     
     if (targetCampus) {
-      const saved = localStorage.getItem('report_config_' + targetCampus.id);
+      const typeKey = isCommitment ? 'cam_ket_hoc_tap' : 'thu_chuc_mung';
+      const saved = localStorage.getItem('report_config_' + targetCampus.id + '_' + typeKey);
       if (saved) {
         try {
           return JSON.parse(saved);
         } catch (e) {}
       }
+      if (!isCommitment) {
+        const oldSaved = localStorage.getItem('report_config_' + targetCampus.id);
+        if (oldSaved) {
+          try {
+            return JSON.parse(oldSaved);
+          } catch (e) {}
+        }
+      }
     }
     return null;
-  }, [selectedReportStudent, campuses, reportBatches]);
+  }, [selectedReportStudent, campuses, reportBatches, isCommitment]);
 
   const campusNameSuffix = useMemo(() => {
     if (!selectedReportStudent) return "GLOBAL";
@@ -1954,6 +1982,13 @@ return {
               </select>
             </Field>
 
+            <Field label="Loại báo cáo" required>
+              <select value={rcReportType} onChange={e => setRcReportType(e.target.value)} className={inp}>
+                <option value="thu_chuc_mung">Thư chúc mừng</option>
+                <option value="cam_ket_hoc_tap">Cam kết học tập</option>
+              </select>
+            </Field>
+
             <Field label="Tiêu đề Báo cáo" required>
               <input value={rcTitle} onChange={e => setRcTitle(e.target.value)} placeholder="Nhập tiêu đề báo cáo..." className={inp} />
             </Field>
@@ -2039,11 +2074,20 @@ return {
                 </div>
 
                 {/* Report Body Placeholder */}
-                <div className="space-y-3 py-2 flex-1">
-                  <div className="h-3 bg-slate-100 rounded-full w-2/3"/>
-                  <div className="h-3 bg-slate-50 rounded-full w-1/2"/>
-                  <div className="h-3 bg-slate-50 rounded-full w-3/4"/>
-                </div>
+                {rcReportType === "cam_ket_hoc_tap" ? (
+                  <div className="space-y-2 py-1 flex-1 text-[11px] font-semibold text-slate-500">
+                    <p className="font-bold text-indigo-600 mb-1">CÁC NỘI DUNG CAM KẾT:</p>
+                    <p className="flex items-start gap-1"><span>•</span> <span>Học sinh nỗ lực hoàn thành tốt nhiệm vụ học tập.</span></p>
+                    <p className="flex items-start gap-1"><span>•</span> <span>Phối hợp chặt chẽ giữa Gia đình và Nhà trường.</span></p>
+                    <p className="flex items-start gap-1"><span>•</span> <span>Chấp hành nghiêm chỉnh điều lệ và nội quy học sinh.</span></p>
+                  </div>
+                ) : (
+                  <div className="space-y-3 py-2 flex-1">
+                    <div className="h-3 bg-slate-100 rounded-full w-2/3"/>
+                    <div className="h-3 bg-slate-50 rounded-full w-1/2"/>
+                    <div className="h-3 bg-slate-50 rounded-full w-3/4"/>
+                  </div>
+                )}
 
                 {/* Signature Footer */}
                 <div className="flex justify-end pt-4">
@@ -2304,13 +2348,24 @@ return {
                       </div>
                     )}
                     {(selectedReportStudent.admissionResult === "Đạt" || selectedReportStudent.admissionResult === "Đạt cam kết") && (
-                      <button
-                        onClick={() => { setIsInvitation(false); setIsPrintModalOpen(true); }}
-                        className="w-full mt-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-md shadow-emerald-100 transition-all flex justify-center items-center gap-2 animate-fade-in"
-                      >
-                        <GraduationCap className="w-4 h-4"/>
-                        Xuất Thư Chúc mừng
-                      </button>
+                      <div className="space-y-2 mt-4 animate-fade-in">
+                        <button
+                          onClick={() => { setIsInvitation(false); setIsCommitment(false); setIsPrintModalOpen(true); }}
+                          className="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-md shadow-emerald-100 transition-all flex justify-center items-center gap-2"
+                        >
+                          <GraduationCap className="w-4 h-4"/>
+                          Xuất Thư Chúc mừng
+                        </button>
+                        {selectedReportStudent.admissionResult === "Đạt cam kết" && (
+                          <button
+                            onClick={() => { setIsInvitation(false); setIsCommitment(true); setIsPrintModalOpen(true); }}
+                            className="w-full py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-md shadow-amber-100 transition-all flex justify-center items-center gap-2"
+                          >
+                            <PenLine className="w-4 h-4"/>
+                            Xuất Cam kết học tập
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -2875,7 +2930,7 @@ return {
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
               <div className="flex items-center gap-2">
                 {isInvitation ? <Mail className="w-5 h-5 text-indigo-600"/> : <GraduationCap className="w-5 h-5 text-indigo-600"/>}
-                <h3 className="text-base font-black text-slate-800">{isInvitation ? "Mẫu Thư mời khảo sát" : "Mẫu Thư Chúc mừng"}</h3>
+                <h3 className="text-base font-black text-slate-800">{isInvitation ? "Mẫu Thư mời khảo sát" : isCommitment ? "Bản Cam kết học tập" : "Mẫu Thư Chúc mừng"}</h3>
               </div>
               <div className="flex gap-2">
                 <button 
@@ -2923,7 +2978,7 @@ return {
                   {/* Letter Title */}
                   <div className="text-center my-8">
                     <h2 className="text-2xl font-black tracking-widest text-indigo-950 uppercase mb-2" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
-                      {isInvitation ? "THƯ MỜI" : "THƯ CHÚC MỪNG"}
+                      {isInvitation ? "THƯ MỜI" : isCommitment ? (studentCampusConfig?.title || "BẢN CAM KẾT HỌC TẬP") : (studentCampusConfig?.title || "THƯ CHÚC MỪNG")}
                     </h2>
                   </div>
 
@@ -2961,6 +3016,21 @@ return {
                         Trân trọng kính mời Quý phụ huynh và các em học sinh!
                       </p>
                     </div>
+                  ) : isCommitment ? (
+                    <div className="space-y-4 text-justify text-[15px] leading-relaxed text-slate-800 font-serif">
+                      <p className="indent-8" style={{ textIndent: "2rem" }}>
+                        Hệ thống Giáo dục Sky-Line chúc mừng em đã vượt qua kỳ khảo sát đầu vào lớp <strong className="font-black">{selectedReportStudent.grade || "1"}</strong> học kì <strong className="font-black">{selectedReportStudent.hocKy || "1"}</strong> hệ <strong className="font-black">{selectedReportStudent.surveyFormType || "Hội nhập S"}</strong> năm học <strong className="font-black">2026-2027</strong>. Để tạo điều kiện tốt nhất cho hành trình phát triển toàn diện của học sinh tại trường, Nhà trường và Gia đình cùng thống nhất ký kết Bản Cam kết học tập này.
+                      </p>
+                      <p className="font-bold">Gia đình và học sinh cam kết thực hiện đầy đủ các nội dung sau:</p>
+                      <div className="space-y-2 pl-4">
+                        <p><strong>1.</strong> Học sinh nỗ lực rèn luyện, hoàn thành tốt các mục tiêu học tập và rèn luyện theo định hướng giáo dục của nhà trường.</p>
+                        <p><strong>2.</strong> Gia đình phối hợp chặt chẽ với Nhà trường trong việc theo dõi, hỗ trợ học sinh học tập tại nhà và tham gia đầy đủ các hoạt động giáo dục.</p>
+                        <p><strong>3.</strong> Thực hiện nghiêm túc nội quy học sinh, tôn trọng thầy cô, bạn bè và giữ gìn hình ảnh học sinh văn minh Sky-Line.</p>
+                      </div>
+                      <p className="indent-8 italic text-slate-600" style={{ textIndent: "2rem" }}>
+                        Bản cam kết được thực hiện dưới sự đồng thuận của cả hai bên và có giá trị kể từ ngày ký.
+                      </p>
+                    </div>
                   ) : (
                     <div className="space-y-6 text-justify text-[16px] leading-relaxed text-slate-800">
                       <p className="indent-8" style={{ textIndent: "2rem" }}>
@@ -2982,34 +3052,66 @@ return {
                   )}
                 </div>
 
-                {/* Bottom Right Signature */}
-                <div className="flex flex-col items-end text-right mt-8 pr-4">
-                  <p className="italic text-slate-500 mb-1">{formattedLetterDate}</p>
-                  <p className="font-bold uppercase text-indigo-950 text-xs tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
-                  {isInvitation ? (
-                    <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-6">TRƯỞNG BAN TUYỂN SINH SKY-LINE</p>
-                  ) : (
-                    <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-6">GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusNameSuffix}</p>
-                  )}
-                  
-                  <div className="h-16 flex items-center justify-center pr-12">
-                    {isInvitation ? (
-                      <span className="font-serif italic text-xl text-slate-400 font-light tracking-widest opacity-60" style={{ fontFamily: "'Brush Script MT', cursive, sans-serif" }}>
-                        Ban Tuyển sinh
-                      </span>
-                    ) : studentCampusConfig?.signature ? (
-                      <img src={studentCampusConfig.signature} alt="Signature" className="max-h-full object-contain" />
-                    ) : (
-                      <span className="font-serif italic text-xl text-slate-400 font-light tracking-widest opacity-60" style={{ fontFamily: "'Brush Script MT', cursive, sans-serif" }}>
+                {/* Bottom Signature Area */}
+                {isCommitment ? (
+                  <div className="grid grid-cols-2 gap-8 mt-6 text-center">
+                    <div className="flex flex-col items-center">
+                      <p className="font-bold uppercase text-slate-700 text-xs tracking-wider">ĐẠI DIỆN GIA ĐÌNH</p>
+                      <p className="italic text-[10px] text-slate-400 mt-1">(Ký và ghi rõ họ tên)</p>
+                      <div className="h-16 flex items-end justify-center">
+                        <span className="text-slate-300 italic text-xs">Ký tên</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-col items-center">
+                      <p className="italic text-slate-500 mb-1 text-xs">{formattedLetterDate}</p>
+                      <p className="font-bold uppercase text-indigo-950 text-xs tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
+                      <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-4">GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusNameSuffix}</p>
+                      
+                      <div className="h-16 flex items-center justify-center">
+                        {studentCampusConfig?.signature ? (
+                          <img src={studentCampusConfig.signature} alt="Signature" className="max-h-full object-contain" />
+                        ) : (
+                          <span className="font-serif italic text-xl text-slate-400 font-light tracking-widest opacity-60" style={{ fontFamily: "'Brush Script MT', cursive, sans-serif" }}>
+                            {studentCampusConfig?.directorName || selectedReportStudent.signatureName || "Đỗ Quang Trung"}
+                          </span>
+                        )}
+                      </div>
+                      
+                      <p className="font-bold text-slate-700 mt-2 text-sm">
                         {studentCampusConfig?.directorName || selectedReportStudent.signatureName || "Đỗ Quang Trung"}
-                      </span>
-                    )}
+                      </p>
+                    </div>
                   </div>
-                  
-                  <p className="font-bold text-slate-700 mt-2 text-sm">
-                    {isInvitation ? "Ban Tuyển sinh" : (studentCampusConfig?.directorName || selectedReportStudent.signatureName || "Đỗ Quang Trung")}
-                  </p>
-                </div>
+                ) : (
+                  <div className="flex flex-col items-end text-right mt-8 pr-4">
+                    <p className="italic text-slate-500 mb-1">{formattedLetterDate}</p>
+                    <p className="font-bold uppercase text-indigo-950 text-xs tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
+                    {isInvitation ? (
+                      <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-6">TRƯỞNG BAN TUYỂN SINH SKY-LINE</p>
+                    ) : (
+                      <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-6">GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusNameSuffix}</p>
+                    )}
+                    
+                    <div className="h-16 flex items-center justify-center pr-12">
+                      {isInvitation ? (
+                        <span className="font-serif italic text-xl text-slate-400 font-light tracking-widest opacity-60" style={{ fontFamily: "'Brush Script MT', cursive, sans-serif" }}>
+                          Ban Tuyển sinh
+                        </span>
+                      ) : studentCampusConfig?.signature ? (
+                        <img src={studentCampusConfig.signature} alt="Signature" className="max-h-full object-contain" />
+                      ) : (
+                        <span className="font-serif italic text-xl text-slate-400 font-light tracking-widest opacity-60" style={{ fontFamily: "'Brush Script MT', cursive, sans-serif" }}>
+                          {studentCampusConfig?.directorName || selectedReportStudent.signatureName || "Đỗ Quang Trung"}
+                        </span>
+                      )}
+                    </div>
+                    
+                    <p className="font-bold text-slate-700 mt-2 text-sm">
+                      {isInvitation ? "Ban Tuyển sinh" : (studentCampusConfig?.directorName || selectedReportStudent.signatureName || "Đỗ Quang Trung")}
+                    </p>
+                  </div>
+                )}
 
                 {/* Footer Contact */}
                 <div className="border-t border-teal-500/30 pt-3 mt-6 text-[8px] text-slate-400 font-sans leading-normal relative z-10" style={{ fontFamily: "Arial, sans-serif" }}>
