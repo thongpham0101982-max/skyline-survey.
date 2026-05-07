@@ -525,6 +525,17 @@ ${reportForm.directorNote}`;
     return "TRƯỜNG TH, THCS, THPT SKY-LINE";
   }, [rcCampusId, campuses]);
 
+  const previewTitleSuffix = useMemo(() => {
+    const campus = campuses.find(c => c.id === rcCampusId);
+    const code = campus ? (campus.campusCode || "").toUpperCase() : "";
+    if (code.includes("CS1") || code.includes("RIVERSIDE")) return "RIVERSIDE";
+    if (code.includes("CS2") || code.includes("CENTRAL")) return "CENTRAL";
+    if (code.includes("CS3") || code.includes("GLOBAL")) return "GLOBAL";
+    if (code.includes("CS4") || code.includes("HILL")) return "HILL";
+    if (code.includes("CS5") || code.includes("BEACH")) return "BEACH";
+    return code || "CƠ SỞ";
+  }, [rcCampusId, campuses]);
+
   const studentSchoolName = useMemo(() => {
     const code = campusNameSuffix ? campusNameSuffix.toUpperCase() : "";
     if (code.includes("CS4") || code.includes("HILL")) {
@@ -2118,7 +2129,7 @@ return {
                 {/* Signature Footer */}
                 <div className="flex justify-end pt-4">
                   <div className="text-center space-y-1.5 min-w-[200px]">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">GIÁM ĐỐC CƠ SỞ</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {previewTitleSuffix}</p>
                     <div className="h-16 flex items-center justify-center">
                       {rcSignature ? (
                         <img src={rcSignature} alt="Chữ ký Preview" className="max-h-full object-contain" />
