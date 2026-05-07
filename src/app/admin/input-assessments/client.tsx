@@ -3023,7 +3023,7 @@ return {
                 width: 70%;
                 height: 50%;
               `}
-            `}
+            }
             #print-letter-area {
               overflow: hidden;
             }
