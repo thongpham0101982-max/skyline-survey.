@@ -3272,6 +3272,7 @@ return {
             {/* Modal Body / Paper Container */}
             <div className="overflow-y-auto p-8 bg-slate-100 flex justify-center max-h-[80vh]">
               <div id="print-main-container" className="flex flex-col gap-8 items-center">
+                {!includeChecklistSheet && (
                 <div 
                   id="print-letter-area" 
                   className="bg-white w-[210mm] h-[297mm] p-[1.8cm] shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed print-page"
@@ -3472,6 +3473,7 @@ return {
                   </div>
                 )}
               </div>
+            )}
 
               {includeChecklistSheet && (
                 <div 
