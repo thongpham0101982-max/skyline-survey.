@@ -2250,19 +2250,25 @@ return {
                     transform: rcBackground ? 'none' : 'translate(-50%, -50%) rotate(-15deg)'
                   }}
                 />
-                {/* Report Header */}
-                <div className="flex items-start gap-6 border-b border-slate-100 pb-6">
-                  <div className="w-20 h-20 border border-slate-100 bg-slate-50 rounded-xl p-2 flex items-center justify-center">
+                {/* Report Header (Matching Print Layout exactly) */}
+                <div className="border-b border-slate-200 pb-2 mb-2 relative z-10">
+                  <div className="flex justify-between items-center mb-1">
                     {rcLogo ? (
-                      <img src={rcLogo} alt="Logo Preview" className="max-w-full max-h-full object-contain" />
+                      <img src={rcLogo} alt="Logo" className="h-8 object-contain" />
                     ) : (
-                      <span className="text-[10px] font-bold text-slate-400 text-center uppercase tracking-wider">Logo trường</span>
+                      <span className="text-[10px] font-black tracking-tight text-teal-600 uppercase" style={{ fontFamily: "Arial, sans-serif" }}>SKY-LINE</span>
                     )}
                   </div>
-                  <div className="flex-1 space-y-1">
-                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest">{previewSchoolName}</p>
-                    <h2 className="text-base font-extrabold text-indigo-900 leading-tight uppercase pt-2">{rcTitle}</h2>
+                  <div className="text-left">
+                    <h4 className="font-extrabold text-[9px] uppercase tracking-wider text-slate-800" style={{ fontFamily: "Arial, sans-serif" }}>{previewSchoolName}</h4>
                   </div>
+                </div>
+
+                {/* Centered Title */}
+                <div className="text-center my-2 relative z-10">
+                  <h2 className="text-xs font-black tracking-widest text-indigo-950 uppercase" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+                    {rcTitle}
+                  </h2>
                 </div>
 
                 {/* Live Preview Dynamic Body */}
@@ -2273,17 +2279,35 @@ return {
                 </div>
 
                 {/* Signature Footer */}
-                <div className="flex justify-end pt-4">
-                  <div className="text-center space-y-1.5 min-w-[200px]">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {previewTitleSuffix}</p>
-                    <div className="h-16 flex items-center justify-center">
+                <div className="flex justify-end pt-2 relative z-10">
+                  <div className="text-center space-y-1 min-w-[160px]">
+                    <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {previewTitleSuffix}</p>
+                    <div className="h-12 flex items-center justify-center">
                       {rcSignature ? (
                         <img src={rcSignature} alt="Chữ ký Preview" className="max-h-full object-contain" />
                       ) : (
-                        <div className="text-[10px] font-semibold text-slate-300 italic">Chưa upload chữ ký</div>
+                        <div className="text-[8px] font-semibold text-slate-300 italic">Chưa upload chữ ký</div>
                       )}
                     </div>
-                    <p className="text-sm font-black text-slate-700">{rcDirectorName || "-- Họ tên --"}</p>
+                    <p className="text-[11px] font-black text-slate-700">{rcDirectorName || "-- Họ tên --"}</p>
+                  </div>
+                </div>
+
+                {/* Live Preview Footer Contact */}
+                <div className="border-t border-teal-500/30 pt-2 mt-2 text-[6px] text-slate-400 font-sans leading-normal relative z-10" style={{ fontFamily: "Arial, sans-serif" }}>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="text-left">
+                      <p className="font-bold text-teal-600 uppercase text-[5px] tracking-wider">SKY-LINE Riverside / Central</p>
+                      <p className="text-[4px] text-slate-400 leading-none mt-0.5">Trần Đăng Ninh / 48 Nguyễn Du, Đà Nẵng</p>
+                    </div>
+                    <div className="text-left">
+                      <p className="font-bold text-teal-600 uppercase text-[5px] tracking-wider">SKY-LINE Beach / Hill</p>
+                      <p className="text-[4px] text-slate-400 leading-none mt-0.5">Trần Anh Tông / Điện Dương, Quảng Nam</p>
+                    </div>
+                    <div className="text-right flex flex-col justify-between">
+                      <p className="font-bold text-teal-600 uppercase text-[5px] tracking-wide">www.skylineschool.edu.vn</p>
+                      <p className="text-[4px] text-slate-400 leading-none mt-0.5">Hotline: (+84.236) 378 7777</p>
+                    </div>
                   </div>
                 </div>
               </div>
