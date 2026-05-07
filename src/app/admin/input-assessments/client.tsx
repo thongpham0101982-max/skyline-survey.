@@ -506,6 +506,23 @@ ${reportForm.directorNote}`;
     return "GLOBAL";
   }, [selectedReportStudent, campuses, reportBatches]);
 
+  const previewSchoolName = useMemo(() => {
+    const campus = campuses.find(c => c.id === rcCampusId);
+    const code = campus ? (campus.campusCode || "").toUpperCase() : "";
+    if (code.includes("CS4") || code.includes("HILL")) {
+      return "TRƯỜNG TH, THCS, THPT SKY-LINE HILL";
+    }
+    return "TRƯỜNG TH, THCS, THPT SKY-LINE";
+  }, [rcCampusId, campuses]);
+
+  const studentSchoolName = useMemo(() => {
+    const code = campusNameSuffix ? campusNameSuffix.toUpperCase() : "";
+    if (code.includes("CS4") || code.includes("HILL")) {
+      return "TRƯỜNG TH, THCS, THPT SKY-LINE HILL";
+    }
+    return "TRƯỜNG TH, THCS, THPT SKY-LINE";
+  }, [campusNameSuffix]);
+
   const formattedLetterDate = useMemo(() => {
     const d = new Date();
     const day = String(d.getDate()).padStart(2, "0");
@@ -2067,7 +2084,7 @@ return {
                     )}
                   </div>
                   <div className="flex-1 space-y-1">
-                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest">HỆ THỐNG GIÁO DỤC SKYLINE</p>
+                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest">{previewSchoolName}</p>
                     <p className="text-sm font-black text-slate-700 uppercase tracking-tight">CƠ SỞ: {campuses.find(c => c.id === rcCampusId)?.campusName || "CHƯA CHỌN"}</p>
                     <h2 className="text-base font-extrabold text-indigo-900 leading-tight uppercase pt-2">{rcTitle}</h2>
                   </div>
@@ -2971,7 +2988,7 @@ return {
                       )}
                     </div>
                     <div className="text-left">
-                      <h4 className="font-extrabold text-sm uppercase tracking-wider text-slate-800" style={{ fontFamily: "Arial, sans-serif" }}>TRƯỜNG TH, THCS, THPT SKY-LINE</h4>
+                      <h4 className="font-extrabold text-sm uppercase tracking-wider text-slate-800" style={{ fontFamily: "Arial, sans-serif" }}>{studentSchoolName}</h4>
                     </div>
                   </div>
 
