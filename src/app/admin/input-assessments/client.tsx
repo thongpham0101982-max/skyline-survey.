@@ -2321,6 +2321,46 @@ return {
                   ))}
                 </div>
 
+                {/* Live Preview Phụ lục Hồ sơ đi kèm */}
+                {selectedReportStudent && (
+                  <div className="mt-2 mb-2 p-2 bg-slate-50 border border-slate-150 rounded-xl text-left relative z-10 font-sans text-[8px] leading-normal">
+                    <p className="font-bold text-teal-800 uppercase tracking-wider mb-1 flex items-center gap-1 text-[8px]">
+                      Phụ lục Hồ sơ đi kèm
+                    </p>
+                    {String(selectedReportStudent.grade) === "1" ? (
+                      <ul className="list-none space-y-0.5 text-slate-600 pl-0.5">
+                        <li className="flex items-start gap-1">
+                          <span className="text-teal-600 font-bold">•</span>
+                          <span>Giấy khai sinh (có dấu đỏ) của học sinh.</span>
+                        </li>
+                        <li className="flex items-start gap-1">
+                          <span className="text-teal-600 font-bold">•</span>
+                          <span>Đơn xin nhập học Tiểu học (Áp dụng cho HS Khối 1 nhập học đầu năm học).</span>
+                        </li>
+                      </ul>
+                    ) : (
+                      <ul className="list-none space-y-0.5 text-slate-600 pl-0.5">
+                        <li className="flex items-start gap-1">
+                          <span className="text-teal-600 font-bold">1.</span>
+                          <span>Giấy giới thiệu chuyển trường nơi đi.</span>
+                        </li>
+                        <li className="flex items-start gap-1">
+                          <span className="text-teal-600 font-bold">2.</span>
+                          <span>Đơn xin xác nhận đồng ý tiếp nhận HS.</span>
+                        </li>
+                        <li className="flex items-start gap-1">
+                          <span className="text-teal-600 font-bold">3.</span>
+                          <span>Kết quả học tập / Học bạ kèm theo.</span>
+                        </li>
+                        <li className="flex items-start gap-1">
+                          <span className="text-teal-600 font-bold">4.</span>
+                          <span>Đơn xin chuyển trường.</span>
+                        </li>
+                      </ul>
+                    )}
+                  </div>
+                )}
+
                 {/* Signature Footer */}
                 <div className="flex justify-end pt-2 relative z-10">
                   <div className="text-center space-y-1 min-w-[160px]">
