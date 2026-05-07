@@ -3307,6 +3307,49 @@ return {
                       ))}
                     </div>
                   )}
+
+                  {/* Phụ lục Hồ sơ đi kèm */}
+                  {selectedReportStudent && !isInvitation && (
+                    <div className="mt-4 mb-2 p-4 bg-slate-50/60 border border-slate-200 rounded-2xl text-left relative z-10 font-sans text-xs shadow-inner">
+                      <p className="font-bold text-teal-800 uppercase tracking-wider mb-2 flex items-center gap-2 text-sm">
+                        <svg className="w-4 h-4 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Phụ lục Hồ sơ đi kèm
+                      </p>
+                      {String(selectedReportStudent.grade) === "1" ? (
+                        <ul className="list-none space-y-1.5 text-slate-700 text-xs leading-relaxed pl-1">
+                          <li className="flex items-start gap-2">
+                            <span className="text-teal-600 font-bold">•</span>
+                            <span>Giấy khai sinh (có dấu đỏ) của học sinh.</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="text-teal-600 font-bold">•</span>
+                            <span>Đơn xin nhập học Tiểu học (Áp dụng cho HS Khối 1 nhập học đầu năm học).</span>
+                          </li>
+                        </ul>
+                      ) : (
+                        <ul className="list-none space-y-1.5 text-slate-700 text-xs leading-relaxed pl-1">
+                          <li className="flex items-start gap-2">
+                            <span className="text-teal-600 font-bold">1.</span>
+                            <span>Giấy giới thiệu chuyển trường nơi đi.</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="text-teal-600 font-bold">2.</span>
+                            <span>Đơn xin xác nhận về việc đồng ý tiếp nhận Học sinh.</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="text-teal-600 font-bold">3.</span>
+                            <span>Kết quả học tập / Học bạ kèm theo.</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="text-teal-600 font-bold">4.</span>
+                            <span>Đơn xin chuyển trường.</span>
+                          </li>
+                        </ul>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Bottom Signature Area */}
