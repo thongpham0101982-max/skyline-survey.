@@ -51,6 +51,7 @@ export default async function InputAssessmentsPage() {
       if (pAny.campus) {
         campuses = await pAny.campus.findMany({ 
           where: isGDCS ? { id: { in: allowedCampusIds } } : { status: "ACTIVE" }, 
+          include: { manager: true },
           orderBy: { campusName: "asc" } 
         }).catch(() => []);
       }

@@ -13,7 +13,7 @@ import * as XLSX from "xlsx"
 
 // ========= TYPES =========
 interface AcademicYear { id: string; name: string; status: string }
-interface Campus { id: string; campusName: string; campusCode: string }
+interface Campus { id: string; campusName: string; campusCode: string; manager?: { fullName: string } }
 interface User { id: string; fullName: string }
 interface AssessmentSubject { id: string; name: string; code: string; status: string; sortOrder: number }
 interface EduSystem { id: string; name: string; code: string }
@@ -164,13 +164,15 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
   useEffect(() => {
     if (typeof window !== "undefined" && rcCampusId && rcReportType) {
       const saved = localStorage.getItem('report_config_' + rcCampusId + '_' + rcReportType)
+      const selectedCampus = campuses.find(c => c.id === rcCampusId);
+      const defaultManagerName = selectedCampus?.manager?.fullName || "";
       if (saved) {
         try {
           const parsed = JSON.parse(saved)
           setRcTitle(parsed.title || (rcReportType === "thu_chuc_mung" ? "BÁO CÁO KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO" : "BẢN CAM KẾT HỌC TẬP"))
           setRcLogo(parsed.logo || "")
           setRcSignature(parsed.signature || "")
-          setRcDirectorName(parsed.directorName || "")
+          setRcDirectorName(parsed.directorName || defaultManagerName)
         } catch (e) {
           console.error(e)
         }
@@ -185,7 +187,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
             setRcTitle(parsed.title || "BÁO CÁO KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO");
             setRcLogo(parsed.logo || "");
             setRcSignature(parsed.signature || "");
-            setRcDirectorName(parsed.directorName || "");
+            setRcDirectorName(parsed.directorName || defaultManagerName);
           } catch (e) {
             console.error(e);
           }
@@ -193,11 +195,11 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
           setRcTitle(rcReportType === "thu_chuc_mung" ? "BÁO CÁO KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO" : "BẢN CAM KẾT HỌC TẬP")
           setRcLogo("")
           setRcSignature("")
-          setRcDirectorName("")
+          setRcDirectorName(defaultManagerName)
         }
       }
     }
-  }, [rcCampusId, rcReportType])
+  }, [rcCampusId, rcReportType, campuses])
 
   const handleLogoUpload = (e) => {
     const file = e.target.files?.[0]
