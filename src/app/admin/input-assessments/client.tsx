@@ -153,6 +153,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
   const [rcTitle, setRcTitle] = useState("BÁO CÁO KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO")
   const [rcLogo, setRcLogo] = useState("")
   const [rcSignature, setRcSignature] = useState("")
+  const [rcBackground, setRcBackground] = useState("")
   const [rcDirectorName, setRcDirectorName] = useState("")
 
   useEffect(() => {
@@ -172,6 +173,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
           setRcTitle(parsed.title || (rcReportType === "thu_chuc_mung" ? "BÁO CÁO KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO" : "BẢN CAM KẾT HỌC TẬP"))
           setRcLogo(parsed.logo || "")
           setRcSignature(parsed.signature || "")
+          setRcBackground(parsed.background || "")
           setRcDirectorName(parsed.directorName || defaultManagerName)
         } catch (e) {
           console.error(e)
@@ -187,6 +189,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
             setRcTitle(parsed.title || "BÁO CÁO KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO");
             setRcLogo(parsed.logo || "");
             setRcSignature(parsed.signature || "");
+            setRcBackground(parsed.background || "");
             setRcDirectorName(parsed.directorName || defaultManagerName);
           } catch (e) {
             console.error(e);
@@ -195,6 +198,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
           setRcTitle(rcReportType === "thu_chuc_mung" ? "BÁO CÁO KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO" : "BẢN CAM KẾT HỌC TẬP")
           setRcLogo("")
           setRcSignature("")
+          setRcBackground("")
           setRcDirectorName(defaultManagerName)
         }
       }
@@ -223,6 +227,17 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     }
   }
 
+  const handleBackgroundUpload = (e) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setRcBackground(reader.result)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
   const saveReportConfig = () => {
     if (!rcCampusId) return notify("Vui lòng chọn Cơ sở", "err")
     if (!rcReportType) return notify("Vui lòng chọn Loại báo cáo", "err")
@@ -230,6 +245,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
       title: rcTitle,
       logo: rcLogo,
       signature: rcSignature,
+      background: rcBackground,
       directorName: rcDirectorName
     }
     localStorage.setItem('report_config_' + rcCampusId + '_' + rcReportType, JSON.stringify(data))
@@ -2085,6 +2101,30 @@ return {
                   </div>
                 </div>
               </div>
+
+              {/* Background Upload */}
+              <div className="space-y-2">
+                <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Upload Hình nền Văn bản</label>
+                <div className="flex items-center gap-4">
+                  {rcBackground ? (
+                    <div className="relative w-16 h-16 rounded-xl border border-slate-200 bg-white p-1 flex items-center justify-center group">
+                      <img src={rcBackground} alt="Hình nền" className="max-w-full max-h-full object-contain rounded-lg" />
+                      <button onClick={() => setRcBackground("")} className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-rose-600 text-white rounded-full flex items-center justify-center shadow-md hover:bg-rose-700 transition-colors">
+                        <X className="w-3 h-3"/>
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="w-16 h-16 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 cursor-pointer hover:border-indigo-400 hover:text-indigo-600 transition-all">
+                      <Upload className="w-5 h-5"/>
+                      <input type="file" accept="image/*" className="hidden" onChange={handleBackgroundUpload} />
+                    </label>
+                  )}
+                  <div className="text-xs">
+                    <p className="font-bold text-slate-600">Hình nền / Watermark cho văn bản</p>
+                    <p className="text-slate-400">Định dạng JPG, PNG, WEBP. Tự động hiển thị mờ làm nền.</p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <button onClick={saveReportConfig} className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-lg shadow-indigo-100 transition-all flex items-center justify-center gap-2">
@@ -2096,7 +2136,23 @@ return {
           <div className="lg:col-span-7 bg-slate-50 border border-slate-200 shadow-inner rounded-3xl p-8 flex flex-col justify-between min-h-[450px]">
             <div>
               <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest block mb-4">Xem trước tiêu đề báo cáo</span>
-              <div className="bg-white rounded-2xl border border-slate-150 p-8 shadow-sm space-y-8 flex flex-col justify-between min-h-[300px]">
+              <div className="bg-white rounded-2xl border border-slate-150 p-8 shadow-sm space-y-8 flex flex-col justify-between min-h-[300px] relative overflow-hidden">
+                {/* Background Watermark for Preview */}
+                <div 
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    backgroundImage: `url(${rcBackground || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="%23007A87"><path d="M10,80 Q50,40 90,20 Q60,50 10,80 Z"/><path d="M30,80 Q60,55 90,35 Q65,60 30,80 Z"/></svg>'})`,
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'center',
+                    backgroundSize: rcBackground ? 'cover' : 'contain',
+                    width: rcBackground ? '100%' : '70%',
+                    height: rcBackground ? '100%' : '50%',
+                    top: '50%',
+                    left: '50%',
+                    transform: `translate(-50%, -50%) ${rcBackground ? '' : 'rotate(-15deg)'}`,
+                    opacity: rcBackground ? 0.07 : 0.05
+                  }}
+                />
                 {/* Report Header */}
                 <div className="flex items-start gap-6 border-b border-slate-100 pb-6">
                   <div className="w-20 h-20 border border-slate-100 bg-slate-50 rounded-xl p-2 flex items-center justify-center">
@@ -2952,14 +3008,14 @@ return {
               position: absolute;
               top: 50%;
               left: 50%;
-              transform: translate(-50%, -50%) rotate(-15deg);
-              width: 70%;
-              height: 50%;
-              opacity: 0.05;
-              background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="%23007A87"><path d="M10,80 Q50,40 90,20 Q60,50 10,80 Z"/><path d="M30,80 Q60,55 90,35 Q65,60 30,80 Z"/></svg>');
+              transform: translate(-50%, -50%) ${studentCampusConfig?.background ? '' : 'rotate(-15deg)'};
+              width: ${studentCampusConfig?.background ? '100%' : '70%'};
+              height: ${studentCampusConfig?.background ? '100%' : '50%'};
+              opacity: ${studentCampusConfig?.background ? '0.07' : '0.05'};
+              background-image: url('${studentCampusConfig?.background || "data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\" fill=\"%23007A87\"><path d=\"M10,80 Q50,40 90,20 Q60,50 10,80 Z\"/><path d=\"M30,80 Q60,55 90,35 Q65,60 30,80 Z\"/></svg>"}');
               background-repeat: no-repeat;
               background-position: center;
-              background-size: contain;
+              background-size: ${studentCampusConfig?.background ? 'cover' : 'contain'};
               pointer-events: none;
             }
           `}</style>
