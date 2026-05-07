@@ -2331,30 +2331,73 @@ return {
                       <ul className="list-none space-y-0.5 text-slate-600 pl-0.5">
                         <li className="flex items-start gap-1">
                           <span className="text-teal-600 font-bold">•</span>
-                          <span>Giấy khai sinh (có dấu đỏ) của học sinh.</span>
+                          <span>Giấy khai sinh (bản sao có dấu đỏ hoặc trích lục hợp lệ).</span>
                         </li>
                         <li className="flex items-start gap-1">
                           <span className="text-teal-600 font-bold">•</span>
-                          <span>Đơn xin nhập học Tiểu học (Áp dụng cho HS Khối 1 nhập học đầu năm học).</span>
+                          <span>Đơn xin nhập học Tiểu học (theo mẫu Trường Sky-Line).</span>
+                        </li>
+                        <li className="flex items-start gap-1">
+                          <span className="text-teal-600 font-bold">•</span>
+                          <span>Thông báo số định danh cá nhân của học sinh.</span>
+                        </li>
+                        <li className="flex items-start gap-1">
+                          <span className="text-teal-600 font-bold">•</span>
+                          <span>Ảnh thẻ 3x4 của học sinh (02 ảnh mới nhất).</span>
+                        </li>
+                      </ul>
+                    ) : String((selectedReportStudent || { grade: "1" }).grade) === "6" ? (
+                      <ul className="list-none space-y-0.5 text-slate-600 pl-0.5">
+                        <li className="flex items-start gap-1">
+                          <span className="text-teal-600 font-bold">•</span>
+                          <span>Học bạ cấp Tiểu học bản chính (có xác nhận hoàn thành chương trình).</span>
+                        </li>
+                        <li className="flex items-start gap-1">
+                          <span className="text-teal-600 font-bold">•</span>
+                          <span>Giấy chứng nhận hoàn thành chương trình Tiểu học (bản chính).</span>
+                        </li>
+                        <li className="flex items-start gap-1">
+                          <span className="text-teal-600 font-bold">•</span>
+                          <span>Giấy khai sinh (bản sao có dấu đỏ hoặc trích lục hợp lệ).</span>
+                        </li>
+                        <li className="flex items-start gap-1">
+                          <span className="text-teal-600 font-bold">•</span>
+                          <span>Đơn xin nhập học Trung học cơ sở (theo mẫu Trường Sky-Line).</span>
+                        </li>
+                        <li className="flex items-start gap-1">
+                          <span className="text-teal-600 font-bold">•</span>
+                          <span>Thông báo số định danh cá nhân của học sinh.</span>
+                        </li>
+                        <li className="flex items-start gap-1">
+                          <span className="text-teal-600 font-bold">•</span>
+                          <span>Ảnh thẻ 3x4 của học sinh (02 ảnh mới nhất).</span>
                         </li>
                       </ul>
                     ) : (
                       <ul className="list-none space-y-0.5 text-slate-600 pl-0.5">
                         <li className="flex items-start gap-1">
                           <span className="text-teal-600 font-bold">1.</span>
-                          <span>Giấy giới thiệu chuyển trường nơi đi.</span>
+                          <span>Học bạ Tiểu học bản chính (đã hoàn thành chương trình lớp dưới).</span>
                         </li>
                         <li className="flex items-start gap-1">
                           <span className="text-teal-600 font-bold">2.</span>
-                          <span>Đơn xin xác nhận đồng ý tiếp nhận HS.</span>
+                          <span>Giấy giới thiệu chuyển trường nơi đi (Hiệu trưởng cấp).</span>
                         </li>
                         <li className="flex items-start gap-1">
                           <span className="text-teal-600 font-bold">3.</span>
-                          <span>Kết quả học tập / Học bạ kèm theo.</span>
+                          <span>Đơn xin chuyển trường Tiểu học (do cha mẹ ký).</span>
                         </li>
                         <li className="flex items-start gap-1">
                           <span className="text-teal-600 font-bold">4.</span>
-                          <span>Đơn xin chuyển trường.</span>
+                          <span>Giấy khai sinh (bản sao có dấu đỏ hoặc trích lục hợp lệ).</span>
+                        </li>
+                        <li className="flex items-start gap-1">
+                          <span className="text-teal-600 font-bold">5.</span>
+                          <span>Thông báo số định danh cá nhân của học sinh.</span>
+                        </li>
+                        <li className="flex items-start gap-1">
+                          <span className="text-teal-600 font-bold">6.</span>
+                          <span>Ảnh thẻ 3x4 của học sinh (02 ảnh mới nhất).</span>
                         </li>
                       </ul>
                     )}
@@ -3178,6 +3221,14 @@ return {
         <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto no-print-backdrop">
           <style>{`
             @media print {
+              html, body {
+                height: 297mm !important;
+                overflow: hidden !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+              }
               body * {
                 visibility: hidden !important;
               }
@@ -3185,15 +3236,46 @@ return {
                 visibility: visible !important;
               }
               #print-letter-area {
-                position: absolute !important;
+                position: fixed !important;
                 left: 0 !important;
                 top: 0 !important;
                 width: 210mm !important;
                 height: 297mm !important;
+                max-height: 297mm !important;
                 box-shadow: none !important;
                 border: none !important;
-                padding: 1.8cm 1.5cm !important;
+                padding: 1.2cm 1.2cm !important;
                 margin: 0 !important;
+                overflow: hidden !important;
+                box-sizing: border-box !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+              }
+              /* Enforce 1-page scaling dynamically for all elements */
+              #print-letter-area img[alt="Logo"] {
+                max-height: 32px !important;
+              }
+              #print-letter-area h2 {
+                font-size: 18px !important;
+                margin-top: 6px !important;
+                margin-bottom: 6px !important;
+              }
+              #print-letter-area p {
+                font-size: 13px !important;
+                line-height: 1.45 !important;
+              }
+              #print-letter-area .space-y-2\.5 > * + * {
+                margin-top: 5px !important;
+              }
+              #print-letter-area .space-y-2 > * + * {
+                margin-top: 4px !important;
+              }
+              #print-letter-area img[alt="Signature"] {
+                max-height: 48px !important;
+              }
+              #print-letter-area img[alt="Footer Print"] {
+                max-height: 45px !important;
+                object-fit: contain !important;
               }
               .no-print {
                 display: none !important;
@@ -3361,30 +3443,73 @@ return {
                         <ul className="list-none space-y-0.5 text-slate-700 text-[11px] leading-relaxed pl-1">
                           <li className="flex items-start gap-2">
                             <span className="text-teal-600 font-bold">•</span>
-                            <span>Giấy khai sinh (có dấu đỏ) của học sinh.</span>
+                            <span>Giấy khai sinh (bản sao có dấu đỏ hoặc trích lục hợp lệ).</span>
                           </li>
                           <li className="flex items-start gap-2">
                             <span className="text-teal-600 font-bold">•</span>
-                            <span>Đơn xin nhập học Tiểu học (Áp dụng cho HS Khối 1 nhập học đầu năm học).</span>
+                            <span>Đơn xin nhập học Tiểu học (theo mẫu Trường Sky-Line).</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="text-teal-600 font-bold">•</span>
+                            <span>Thông báo số định danh cá nhân của học sinh.</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="text-teal-600 font-bold">•</span>
+                            <span>Ảnh thẻ 3x4 của học sinh (02 ảnh mới nhất).</span>
+                          </li>
+                        </ul>
+                      ) : String(selectedReportStudent.grade) === "6" ? (
+                        <ul className="list-none space-y-0.5 text-slate-700 text-[11px] leading-relaxed pl-1">
+                          <li className="flex items-start gap-2">
+                            <span className="text-teal-600 font-bold">•</span>
+                            <span>Học bạ cấp Tiểu học bản chính (có xác nhận hoàn thành chương trình).</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="text-teal-600 font-bold">•</span>
+                            <span>Giấy chứng nhận hoàn thành chương trình Tiểu học (bản chính).</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="text-teal-600 font-bold">•</span>
+                            <span>Giấy khai sinh (bản sao có dấu đỏ hoặc trích lục hợp lệ).</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="text-teal-600 font-bold">•</span>
+                            <span>Đơn xin nhập học Trung học cơ sở (theo mẫu Trường Sky-Line).</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="text-teal-600 font-bold">•</span>
+                            <span>Thông báo số định danh cá nhân của học sinh.</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="text-teal-600 font-bold">•</span>
+                            <span>Ảnh thẻ 3x4 của học sinh (02 ảnh mới nhất).</span>
                           </li>
                         </ul>
                       ) : (
                         <ul className="list-none space-y-0.5 text-slate-700 text-[11px] leading-relaxed pl-1">
                           <li className="flex items-start gap-2">
                             <span className="text-teal-600 font-bold">1.</span>
-                            <span>Giấy giới thiệu chuyển trường nơi đi.</span>
+                            <span>Học bạ Tiểu học bản chính (đã hoàn thành chương trình lớp dưới).</span>
                           </li>
                           <li className="flex items-start gap-2">
                             <span className="text-teal-600 font-bold">2.</span>
-                            <span>Đơn xin xác nhận về việc đồng ý tiếp nhận Học sinh.</span>
+                            <span>Giấy giới thiệu chuyển trường nơi đi (Hiệu trưởng cấp).</span>
                           </li>
                           <li className="flex items-start gap-2">
                             <span className="text-teal-600 font-bold">3.</span>
-                            <span>Kết quả học tập / Học bạ kèm theo.</span>
+                            <span>Đơn xin chuyển trường Tiểu học (do cha mẹ ký).</span>
                           </li>
                           <li className="flex items-start gap-2">
                             <span className="text-teal-600 font-bold">4.</span>
-                            <span>Đơn xin chuyển trường.</span>
+                            <span>Giấy khai sinh (bản sao có dấu đỏ hoặc trích lục hợp lệ).</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="text-teal-600 font-bold">5.</span>
+                            <span>Thông báo số định danh cá nhân của học sinh.</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="text-teal-600 font-bold">6.</span>
+                            <span>Ảnh thẻ 3x4 của học sinh (02 ảnh mới nhất).</span>
                           </li>
                         </ul>
                       )}
