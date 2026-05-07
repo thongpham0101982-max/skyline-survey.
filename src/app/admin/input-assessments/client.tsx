@@ -2338,8 +2338,8 @@ return {
 
                 {/* Live Preview Footer Contact */}
                 {rcFooter ? (
-                  <div className="pt-2 mt-2 border-t border-slate-100 relative z-10 flex justify-center">
-                    <img src={rcFooter} alt="Footer Preview" className="max-h-12 w-full object-contain" />
+                  <div className="pt-2 mt-2 border-t border-slate-100 relative z-10 w-full">
+                    <img src={rcFooter} alt="Footer Preview" className="w-full h-auto" />
                   </div>
                 ) : (
                   <div className="border-t border-teal-500/30 pt-2 mt-2 text-[6px] text-slate-400 font-sans leading-normal relative z-10" style={{ fontFamily: "Arial, sans-serif" }}>
@@ -3372,8 +3372,8 @@ return {
 
                 {/* Footer Contact */}
                 {studentCampusConfig?.footer ? (
-                  <div className="border-t border-slate-200 pt-3 mt-6 relative z-10 flex justify-center w-full">
-                    <img src={studentCampusConfig.footer} alt="Footer" className="max-h-20 w-full object-contain" />
+                  <div className="border-t border-slate-200 pt-3 mt-6 relative z-10 w-full">
+                    <img src={studentCampusConfig.footer} alt="Footer" className="w-full h-auto" />
                   </div>
                 ) : (
                   <div className="border-t border-teal-500/30 pt-3 mt-6 text-[8px] text-slate-400 font-sans leading-normal relative z-10" style={{ fontFamily: "Arial, sans-serif" }}>
