@@ -3192,7 +3192,7 @@ return {
                 height: 297mm !important;
                 box-shadow: none !important;
                 border: none !important;
-                padding: 2.5cm !important;
+                padding: 1.8cm 1.5cm !important;
                 margin: 0 !important;
               }
               .no-print {
@@ -3257,12 +3257,12 @@ return {
             <div className="overflow-y-auto p-8 bg-slate-100 flex justify-center">
               <div 
                 id="print-letter-area" 
-                className="bg-white w-[210mm] h-[297mm] p-[2cm] shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed"
+                className="bg-white w-[210mm] h-[297mm] p-[1.8cm] shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed"
                 style={{ fontFamily: "'Times New Roman', Times, serif" }}
               >
                 {/* Top Logo and Header */}
                 <div>
-                  <div className="flex flex-col gap-2 border-b pb-4 mb-6">
+                  <div className="flex flex-col gap-1 border-b pb-2 mb-3">
                     <div className="flex items-center justify-between">
                       {studentCampusConfig?.logo ? (
                         <img src={studentCampusConfig.logo} alt="Logo" className="h-12 object-contain" />
@@ -3281,14 +3281,14 @@ return {
                   </div>
 
                   {/* Letter Title */}
-                  <div className="text-center my-8">
+                  <div className="text-center my-4">
                     <h2 className="text-2xl font-black tracking-widest text-indigo-950 uppercase mb-2" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
                       {isInvitation ? "THƯ MỜI" : isCommitment ? (studentCampusConfig?.title || "BẢN CAM KẾT HỌC TẬP") : (studentCampusConfig?.title || "THƯ CHÚC MỪNG")}
                     </h2>
                   </div>
 
                   {/* Greeting */}
-                  <p className="text-[17px] italic mb-6 text-slate-800">
+                  <p className="text-[16px] italic mb-3 text-slate-800">
                     {isInvitation ? (
                       <>Kính gửi Quý Phụ huynh và em <strong className="font-black not-italic text-slate-900">{selectedReportStudent.fullName}</strong>,</>
                     ) : (
@@ -3322,7 +3322,7 @@ return {
                       </p>
                     </div>
                   ) : isCommitment ? (
-                    <div className="space-y-4 text-justify text-[15px] leading-relaxed text-slate-800 font-serif">
+                    <div className="space-y-2 text-justify text-[13px] leading-relaxed text-slate-800 font-serif">
                       {renderTemplate(
                         studentCampusConfig?.content || getDefaultContent("cam_ket_hoc_tap"),
                         selectedReportStudent
@@ -3336,7 +3336,7 @@ return {
                       })}
                     </div>
                   ) : (
-                    <div className="space-y-6 text-justify text-[16px] leading-relaxed text-slate-800 font-serif" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+                    <div className="space-y-2.5 text-justify text-[14px] leading-relaxed text-slate-800 font-serif" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
                       {renderTemplate(
                         studentCampusConfig?.content || getDefaultContent("thu_chuc_mung"),
                         selectedReportStudent
@@ -3350,7 +3350,7 @@ return {
 
                   {/* Phụ lục Hồ sơ đi kèm */}
                   {selectedReportStudent && !isInvitation && (
-                    <div className="mt-4 mb-2 p-4 bg-slate-50/60 border border-slate-200 rounded-2xl text-left relative z-10 font-sans text-xs shadow-inner">
+                    <div className="mt-2 mb-1 p-3 bg-slate-50/50 border border-slate-200 rounded-xl text-left relative z-10 font-sans text-[11px] shadow-sm">
                       <p className="font-bold text-teal-800 uppercase tracking-wider mb-2 flex items-center gap-2 text-sm">
                         <svg className="w-4 h-4 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -3358,7 +3358,7 @@ return {
                         Phụ lục Hồ sơ đi kèm
                       </p>
                       {String(selectedReportStudent.grade) === "1" ? (
-                        <ul className="list-none space-y-1.5 text-slate-700 text-xs leading-relaxed pl-1">
+                        <ul className="list-none space-y-0.5 text-slate-700 text-[11px] leading-relaxed pl-1">
                           <li className="flex items-start gap-2">
                             <span className="text-teal-600 font-bold">•</span>
                             <span>Giấy khai sinh (có dấu đỏ) của học sinh.</span>
@@ -3369,7 +3369,7 @@ return {
                           </li>
                         </ul>
                       ) : (
-                        <ul className="list-none space-y-1.5 text-slate-700 text-xs leading-relaxed pl-1">
+                        <ul className="list-none space-y-0.5 text-slate-700 text-[11px] leading-relaxed pl-1">
                           <li className="flex items-start gap-2">
                             <span className="text-teal-600 font-bold">1.</span>
                             <span>Giấy giới thiệu chuyển trường nơi đi.</span>
