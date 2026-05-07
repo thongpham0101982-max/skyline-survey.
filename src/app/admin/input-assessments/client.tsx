@@ -440,6 +440,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [isInvitation, setIsInvitation] = useState(false);
   const [isCommitment, setIsCommitment] = useState(false);
+  const [includeChecklistSheet, setIncludeChecklistSheet] = useState(false);
   const handleSaveReportResult = async () => {
     if (!selectedReportStudent) return;
     setSaveReportLoading(true);
@@ -3222,8 +3223,8 @@ return {
           <style>{`
             @media print {
               html, body {
-                height: 297mm !important;
-                overflow: hidden !important;
+                height: auto !important;
+                overflow: visible !important;
                 margin: 0 !important;
                 padding: 0 !important;
                 -webkit-print-color-adjust: exact !important;
@@ -3232,13 +3233,18 @@ return {
               body * {
                 visibility: hidden !important;
               }
-              #print-letter-area, #print-letter-area * {
+              #print-main-container, #print-main-container * {
                 visibility: visible !important;
               }
-              #print-letter-area {
-                position: fixed !important;
+              #print-main-container {
+                position: absolute !important;
                 left: 0 !important;
                 top: 0 !important;
+                width: 210mm !important;
+                margin: 0 !important;
+                padding: 0 !important;
+              }
+              .print-page {
                 width: 210mm !important;
                 height: 297mm !important;
                 max-height: 297mm !important;
@@ -3250,30 +3256,28 @@ return {
                 box-sizing: border-box !important;
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
+                page-break-after: always !important;
+                break-after: page !important;
+                position: relative !important;
+                background: white !important;
               }
-              /* Enforce 1-page scaling dynamically for all elements */
-              #print-letter-area img[alt="Logo"] {
+              /* Enforce scaling dynamically for all elements */
+              .print-page img[alt="Logo"] {
                 max-height: 32px !important;
               }
-              #print-letter-area h2 {
+              .print-page h2 {
                 font-size: 18px !important;
                 margin-top: 6px !important;
                 margin-bottom: 6px !important;
               }
-              #print-letter-area p {
+              .print-page p {
                 font-size: 13px !important;
                 line-height: 1.45 !important;
               }
-              #print-letter-area .space-y-2\.5 > * + * {
-                margin-top: 5px !important;
-              }
-              #print-letter-area .space-y-2 > * + * {
-                margin-top: 4px !important;
-              }
-              #print-letter-area img[alt="Signature"] {
+              .print-page img[alt="Signature"] {
                 max-height: 48px !important;
               }
-              #print-letter-area img[alt="Footer Print"] {
+              .print-page img[alt="Footer Print"] {
                 max-height: 45px !important;
                 object-fit: contain !important;
               }
@@ -3319,7 +3323,18 @@ return {
                 {isInvitation ? <Mail className="w-5 h-5 text-indigo-600"/> : <GraduationCap className="w-5 h-5 text-indigo-600"/>}
                 <h3 className="text-base font-black text-slate-800">{isInvitation ? "Mẫu Thư mời khảo sát" : isCommitment ? "Bản Cam kết học tập" : "Mẫu Thư Chúc mừng"}</h3>
               </div>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-4">
+                {!isInvitation && (
+                  <label className="flex items-center gap-2 text-xs font-black text-slate-600 cursor-pointer hover:text-slate-800 transition-colors">
+                    <input 
+                      type="checkbox" 
+                      checked={includeChecklistSheet} 
+                      onChange={e => setIncludeChecklistSheet(e.target.checked)}
+                      className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer"
+                    />
+                    <span>Kèm Phiếu danh mục hồ sơ riêng</span>
+                  </label>
+                )}
                 <button 
                   onClick={() => window.print()}
                   className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md shadow-indigo-100 flex items-center gap-2 transition-all"
@@ -3336,11 +3351,12 @@ return {
             </div>
             
             {/* Modal Body / Paper Container */}
-            <div className="overflow-y-auto p-8 bg-slate-100 flex justify-center">
-              <div 
-                id="print-letter-area" 
-                className="bg-white w-[210mm] h-[297mm] p-[1.8cm] shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed"
-                style={{ fontFamily: "'Times New Roman', Times, serif" }}
+            <div className="overflow-y-auto p-8 bg-slate-100 flex justify-center max-h-[80vh]">
+              <div id="print-main-container" className="flex flex-col gap-8 items-center">
+                <div 
+                  id="print-letter-area" 
+                  className="bg-white w-[210mm] h-[297mm] p-[1.8cm] shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed print-page"
+                  style={{ fontFamily: "'Times New Roman', Times, serif" }}
               >
                 {/* Top Logo and Header */}
                 <div>
@@ -3621,7 +3637,245 @@ return {
                   </div>
                 )}
               </div>
+
+              {includeChecklistSheet && (
+                <div 
+                  id="print-checklist-area" 
+                  className="bg-white w-[210mm] h-[297mm] p-[1.8cm] shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed print-page mt-6"
+                  style={{ fontFamily: "'Times New Roman', Times, serif" }}
+                >
+                  {/* Top Logo and Header */}
+                  <div>
+                    <div className="flex flex-col gap-1 border-b pb-2 mb-4">
+                      <div className="flex items-center justify-between">
+                        {studentCampusConfig?.logo ? (
+                          <img src={studentCampusConfig.logo} alt="Logo" className="h-12 object-contain" />
+                        ) : (
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-2xl font-black tracking-tight text-teal-600" style={{ fontFamily: "Arial, sans-serif" }}>SKY-LINE</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-left">
+                        <h4 className="font-extrabold text-sm uppercase tracking-wider text-slate-800" style={{ fontFamily: "Arial, sans-serif" }}>{studentSchoolName}</h4>
+                      </div>
+                    </div>
+
+                    {/* Title */}
+                    <div className="text-center my-6">
+                      <h2 className="text-xl font-black tracking-wide text-indigo-950 uppercase mb-1" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+                        PHIẾU THU THẬP & KIỂM TRA HỒ SƠ NHẬP HỌC
+                      </h2>
+                      <p className="text-xs italic text-slate-500">Áp dụng cho học sinh nhập học năm học 2026-2027</p>
+                    </div>
+
+                    {/* Student Info table */}
+                    <div className="grid grid-cols-2 gap-y-2.5 gap-x-6 text-[13px] bg-slate-50/50 border border-slate-150 rounded-2xl p-4 mb-6 leading-relaxed font-sans">
+                      <p><strong>Họ và tên học sinh:</strong> <span className="text-indigo-950 font-black uppercase text-sm">{selectedReportStudent.studentName}</span></p>
+                      <p><strong>Mã học sinh:</strong> <span className="font-bold text-slate-700">{selectedReportStudent.studentCode}</span></p>
+                      <p><strong>Ngày sinh:</strong> {selectedReportStudent.dateOfBirth ? new Date(selectedReportStudent.dateOfBirth).toLocaleDateString('vi-VN') : "__/__/____"}</p>
+                      <p><strong>Lớp đăng ký nhập học:</strong> Khối <span className="font-bold">{selectedReportStudent.grade || "1"}</span></p>
+                      <p className="col-span-2"><strong>Hệ đào tạo:</strong> <span className="font-bold text-teal-800">{selectedReportStudent.surveyFormType || "Hội nhập S"}</span></p>
+                    </div>
+
+                    {/* Checklist Table */}
+                    <div className="mb-6">
+                      <p className="font-bold text-teal-800 uppercase text-[12px] tracking-wider mb-2 font-sans flex items-center gap-2">
+                        📋 DANH MỤC HỒ SƠ CẦN THU THẬP
+                      </p>
+                      <table className="w-full border-collapse border border-slate-300 font-sans text-xs">
+                        <thead>
+                          <tr className="bg-slate-100/80 text-slate-700 font-bold">
+                            <th className="border border-slate-300 p-2 text-center w-10">STT</th>
+                            <th className="border border-slate-300 p-2 text-left">Tên loại hồ sơ / giấy tờ</th>
+                            <th className="border border-slate-300 p-2 text-center w-20">Đã nộp</th>
+                            <th className="border border-slate-300 p-2 text-center w-20">Chưa nộp</th>
+                            <th className="border border-slate-300 p-2 text-left w-36">Ghi chú</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {String(selectedReportStudent.grade) === "1" ? (
+                            <>
+                              <tr>
+                                <td className="border border-slate-300 p-2 text-center font-bold">1</td>
+                                <td className="border border-slate-300 p-2">Giấy khai sinh (bản sao có dấu đỏ hoặc trích lục hợp lệ)</td>
+                                <td className="border border-slate-300 p-2 text-center"><div className="w-4 h-4 border border-slate-400 mx-auto rounded"></div></td>
+                                <td className="border border-slate-300 p-2 text-center"><div className="w-4 h-4 border border-slate-400 mx-auto rounded"></div></td>
+                                <td className="border border-slate-300 p-2 text-slate-400 italic">Bắt buộc</td>
+                              </tr>
+                              <tr>
+                                <td className="border border-slate-300 p-2 text-center font-bold">2</td>
+                                <td className="border border-slate-300 p-2">Đơn xin nhập học Tiểu học (theo mẫu Trường Sky-Line)</td>
+                                <td className="border border-slate-300 p-2 text-center"><div className="w-4 h-4 border border-slate-400 mx-auto rounded"></div></td>
+                                <td className="border border-slate-300 p-2 text-center"><div className="w-4 h-4 border border-slate-400 mx-auto rounded"></div></td>
+                                <td className="border border-slate-300 p-2 text-slate-400 italic">Bắt buộc</td>
+                              </tr>
+                              <tr>
+                                <td className="border border-slate-300 p-2 text-center font-bold">3</td>
+                                <td className="border border-slate-300 p-2">Thông báo số định danh cá nhân của học sinh</td>
+                                <td className="border border-slate-300 p-2 text-center"><div className="w-4 h-4 border border-slate-400 mx-auto rounded"></div></td>
+                                <td className="border border-slate-300 p-2 text-center"><div className="w-4 h-4 border border-slate-400 mx-auto rounded"></div></td>
+                                <td className="border border-slate-300 p-2 text-slate-400 italic">Bắt buộc</td>
+                              </tr>
+                              <tr>
+                                <td className="border border-slate-300 p-2 text-center font-bold">4</td>
+                                <td className="border border-slate-300 p-2">Ảnh thẻ 3x4 của học sinh (02 ảnh mới nhất)</td>
+                                <td className="border border-slate-300 p-2 text-center"><div className="w-4 h-4 border border-slate-400 mx-auto rounded"></div></td>
+                                <td className="border border-slate-300 p-2 text-center"><div className="w-4 h-4 border border-slate-400 mx-auto rounded"></div></td>
+                                <td className="border border-slate-300 p-2 text-slate-400 italic">Bắt buộc</td>
+                              </tr>
+                            </>
+                          ) : String(selectedReportStudent.grade) === "6" ? (
+                            <>
+                              <tr>
+                                <td className="border border-slate-300 p-2 text-center font-bold">1</td>
+                                <td className="border border-slate-300 p-2">Học bạ cấp Tiểu học bản chính (có xác nhận hoàn thành chương trình)</td>
+                                <td className="border border-slate-300 p-2 text-center"><div className="w-4 h-4 border border-slate-400 mx-auto rounded"></div></td>
+                                <td className="border border-slate-300 p-2 text-center"><div className="w-4 h-4 border border-slate-400 mx-auto rounded"></div></td>
+                                <td className="border border-slate-300 p-2 text-slate-400 italic">Bắt buộc</td>
+                              </tr>
+                              <tr>
+                                <td className="border border-slate-300 p-2 text-center font-bold">2</td>
+                                <td className="border border-slate-300 p-2">Giấy chứng nhận hoàn thành chương trình Tiểu học (bản chính)</td>
+                                <td className="border border-slate-300 p-2 text-center"><div className="w-4 h-4 border border-slate-400 mx-auto rounded"></div></td>
+                                <td className="border border-slate-300 p-2 text-center"><div className="w-4 h-4 border border-slate-400 mx-auto rounded"></div></td>
+                                <td className="border border-slate-300 p-2 text-slate-400 italic">Bắt buộc</td>
+                              </tr>
+                              <tr>
+                                <td className="border border-slate-300 p-2 text-center font-bold">3</td>
+                                <td className="border border-slate-300 p-2">Giấy khai sinh (bản sao có dấu đỏ hoặc trích lục hợp lệ)</td>
+                                <td className="border border-slate-300 p-2 text-center"><div className="w-4 h-4 border border-slate-400 mx-auto rounded"></div></td>
+                                <td className="border border-slate-300 p-2 text-center"><div className="w-4 h-4 border border-slate-400 mx-auto rounded"></div></td>
+                                <td className="border border-slate-300 p-2 text-slate-400 italic">Bắt buộc</td>
+                              </tr>
+                              <tr>
+                                <td className="border border-slate-300 p-2 text-center font-bold">4</td>
+                                <td className="border border-slate-300 p-2">Đơn xin nhập học Trung học cơ sở (theo mẫu Trường Sky-Line)</td>
+                                <td className="border border-slate-300 p-2 text-center"><div className="w-4 h-4 border border-slate-400 mx-auto rounded"></div></td>
+                                <td className="border border-slate-300 p-2 text-center"><div className="w-4 h-4 border border-slate-400 mx-auto rounded"></div></td>
+                                <td className="border border-slate-300 p-2 text-slate-400 italic">Bắt buộc</td>
+                              </tr>
+                              <tr>
+                                <td className="border border-slate-300 p-2 text-center font-bold">5</td>
+                                <td className="border border-slate-300 p-2">Thông báo số định danh cá nhân của học sinh</td>
+                                <td className="border border-slate-300 p-2 text-center"><div className="w-4 h-4 border border-slate-400 mx-auto rounded"></div></td>
+                                <td className="border border-slate-300 p-2 text-center"><div className="w-4 h-4 border border-slate-400 mx-auto rounded"></div></td>
+                                <td className="border border-slate-300 p-2 text-slate-400 italic">Bắt buộc</td>
+                              </tr>
+                              <tr>
+                                <td className="border border-slate-300 p-2 text-center font-bold">6</td>
+                                <td className="border border-slate-300 p-2">Ảnh thẻ 3x4 của học sinh (02 ảnh mới nhất)</td>
+                                <td className="border border-slate-300 p-2 text-center"><div className="w-4 h-4 border border-slate-400 mx-auto rounded"></div></td>
+                                <td className="border border-slate-300 p-2 text-center"><div className="w-4 h-4 border border-slate-400 mx-auto rounded"></div></td>
+                                <td className="border border-slate-300 p-2 text-slate-400 italic">Bắt buộc</td>
+                              </tr>
+                            </>
+                          ) : (
+                            <>
+                              <tr>
+                                <td className="border border-slate-300 p-2 text-center font-bold">1</td>
+                                <td className="border border-slate-300 p-2">Học bạ Tiểu học bản chính (đã hoàn thành chương trình lớp dưới)</td>
+                                <td className="border border-slate-300 p-2 text-center"><div className="w-4 h-4 border border-slate-400 mx-auto rounded"></div></td>
+                                <td className="border border-slate-300 p-2 text-center"><div className="w-4 h-4 border border-slate-400 mx-auto rounded"></div></td>
+                                <td className="border border-slate-300 p-2 text-slate-400 italic">Bắt buộc</td>
+                              </tr>
+                              <tr>
+                                <td className="border border-slate-300 p-2 text-center font-bold">2</td>
+                                <td className="border border-slate-300 p-2">Giấy giới thiệu chuyển trường nơi đi (Hiệu trưởng cấp)</td>
+                                <td className="border border-slate-300 p-2 text-center"><div className="w-4 h-4 border border-slate-400 mx-auto rounded"></div></td>
+                                <td className="border border-slate-300 p-2 text-center"><div className="w-4 h-4 border border-slate-400 mx-auto rounded"></div></td>
+                                <td className="border border-slate-300 p-2 text-slate-400 italic">Bắt buộc</td>
+                              </tr>
+                              <tr>
+                                <td className="border border-slate-300 p-2 text-center font-bold">3</td>
+                                <td className="border border-slate-300 p-2">Đơn xin chuyển trường Tiểu học (do cha mẹ ký)</td>
+                                <td className="border border-slate-300 p-2 text-center"><div className="w-4 h-4 border border-slate-400 mx-auto rounded"></div></td>
+                                <td className="border border-slate-300 p-2 text-center"><div className="w-4 h-4 border border-slate-400 mx-auto rounded"></div></td>
+                                <td className="border border-slate-300 p-2 text-slate-400 italic">Bắt buộc</td>
+                              </tr>
+                              <tr>
+                                <td className="border border-slate-300 p-2 text-center font-bold">4</td>
+                                <td className="border border-slate-300 p-2">Giấy khai sinh (bản sao có dấu đỏ hoặc trích lục hợp lệ)</td>
+                                <td className="border border-slate-300 p-2 text-center"><div className="w-4 h-4 border border-slate-400 mx-auto rounded"></div></td>
+                                <td className="border border-slate-300 p-2 text-center"><div className="w-4 h-4 border border-slate-400 mx-auto rounded"></div></td>
+                                <td className="border border-slate-300 p-2 text-slate-400 italic">Bắt buộc</td>
+                              </tr>
+                              <tr>
+                                <td className="border border-slate-300 p-2 text-center font-bold">5</td>
+                                <td className="border border-slate-300 p-2">Thông báo số định danh cá nhân của học sinh</td>
+                                <td className="border border-slate-300 p-2 text-center"><div className="w-4 h-4 border border-slate-400 mx-auto rounded"></div></td>
+                                <td className="border border-slate-300 p-2 text-center"><div className="w-4 h-4 border border-slate-400 mx-auto rounded"></div></td>
+                                <td className="border border-slate-300 p-2 text-slate-400 italic">Bắt buộc</td>
+                              </tr>
+                              <tr>
+                                <td className="border border-slate-300 p-2 text-center font-bold">6</td>
+                                <td className="border border-slate-300 p-2">Ảnh thẻ 3x4 của học sinh (02 ảnh mới nhất)</td>
+                                <td className="border border-slate-300 p-2 text-center"><div className="w-4 h-4 border border-slate-400 mx-auto rounded"></div></td>
+                                <td className="border border-slate-300 p-2 text-center"><div className="w-4 h-4 border border-slate-400 mx-auto rounded"></div></td>
+                                <td className="border border-slate-300 p-2 text-slate-400 italic">Bắt buộc</td>
+                              </tr>
+                            </>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Note block */}
+                    <div className="bg-amber-50/50 border border-amber-200 rounded-2xl p-4 text-xs text-slate-600 space-y-1 font-sans">
+                      <p className="font-bold text-amber-800">⚠️ Lưu ý dành cho Phụ huynh:</p>
+                      <p className="pl-3">• Phụ huynh vui lòng chuẩn bị đầy đủ các giấy tờ nêu trên trước ngày tựu trường.</p>
+                      <p className="pl-3">• Các hồ sơ chưa nộp (nếu có) phải bổ sung muộn nhất trong vòng 15 ngày kể từ ngày nhập học.</p>
+                    </div>
+                  </div>
+
+                  {/* Footer Signature area */}
+                  <div className="grid grid-cols-2 gap-8 mt-8 text-center font-sans text-xs">
+                    <div className="flex flex-col items-center">
+                      <p className="font-bold uppercase text-slate-700 tracking-wider">Ý KIẾN / XÁC NHẬN PHỤ HUYNH</p>
+                      <p className="italic text-[10px] text-slate-400 mt-1">(Ký và ghi rõ họ tên)</p>
+                      <div className="h-16 flex items-end justify-center">
+                        <span className="text-slate-300 italic">Ký tên</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-col items-center">
+                      <p className="italic text-slate-500 mb-1">{formattedLetterDate}</p>
+                      <p className="font-bold uppercase text-teal-800 tracking-wider">NGƯỜI TIẾP NHẬN HỒ SƠ</p>
+                      <p className="italic text-[10px] text-slate-400 mt-1">(Ký, ghi rõ họ tên & Đóng dấu)</p>
+                      <div className="h-16 flex items-end justify-center">
+                        <span className="text-slate-300 italic">Ký tên</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Footer Address banner */}
+                  {studentCampusConfig?.footer ? (
+                    <div className="border-t border-slate-200 pt-3 mt-6 relative z-10 w-full">
+                      <img src={studentCampusConfig.footer} alt="Footer" className="w-full h-auto" />
+                    </div>
+                  ) : (
+                    <div className="border-t border-teal-500/30 pt-3 mt-6 text-[8px] text-slate-400 font-sans leading-normal relative z-10" style={{ fontFamily: "Arial, sans-serif" }}>
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="text-left">
+                          <p className="font-bold text-teal-600 uppercase text-[8px] tracking-wider">SKY-LINE Riverside</p>
+                          <p className="text-[7px] text-slate-500">Lô A2.4 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>
+                        </div>
+                        <div className="text-left">
+                          <p className="font-bold text-teal-600 uppercase text-[8px] tracking-wider">SKY-LINE Central</p>
+                          <p className="text-[7px] text-slate-500">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
+                        </div>
+                        <div className="text-right flex flex-col justify-between">
+                          <p className="font-bold text-teal-600 uppercase text-[9px] tracking-wide">www.skylineschool.edu.vn</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
+          </div>
+        </div>
+      </div>
           </div>
         </div>
       )}
