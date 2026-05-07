@@ -2141,11 +2141,11 @@ return {
                 <div 
                   className="absolute pointer-events-none"
                   style={{
-                    backgroundImage: `url(${rcBackground || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="%23007A87"><path d="M10,80 Q50,40 90,20 Q60,50 10,80 Z"/><path d="M30,80 Q60,55 90,35 Q65,60 30,80 Z"/></svg>'})`,
+                    backgroundImage: `url('${rcBackground || "data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\" fill=\"%23007A87\"><path d=\"M10,80 Q50,40 90,20 Q60,50 10,80 Z\"/><path d=\"M30,80 Q60,55 90,35 Q65,60 30,80 Z\"/></svg>"}')`,
                     backgroundRepeat: 'no-repeat',
                     backgroundPosition: 'center',
                     backgroundSize: rcBackground ? 'cover' : 'contain',
-                    opacity: rcBackground ? 0.08 : 0.05,
+                    opacity: rcBackground ? 0.15 : 0.05,
                     top: rcBackground ? '0' : '50%',
                     left: rcBackground ? '0' : '50%',
                     width: rcBackground ? '100%' : '70%',
@@ -3010,7 +3010,7 @@ return {
               left: 0;
               width: 100%;
               height: 100%;
-              opacity: ${studentCampusConfig?.background ? '0.08' : '0.05'};
+              opacity: ${studentCampusConfig?.background ? '0.15' : '0.05'};
               background-image: url('${studentCampusConfig?.background || "data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\" fill=\"%23007A87\"><path d=\"M10,80 Q50,40 90,20 Q60,50 10,80 Z\"/><path d=\"M30,80 Q60,55 90,35 Q65,60 30,80 Z\"/></svg>"}');
               background-repeat: no-repeat;
               background-position: center;
