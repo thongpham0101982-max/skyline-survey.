@@ -2085,7 +2085,6 @@ return {
                   </div>
                   <div className="flex-1 space-y-1">
                     <p className="text-xs font-black text-slate-400 uppercase tracking-widest">{previewSchoolName}</p>
-                    <p className="text-sm font-black text-slate-700 uppercase tracking-tight">CƠ SỞ: {campuses.find(c => c.id === rcCampusId)?.campusName || "CHƯA CHỌN"}</p>
                     <h2 className="text-base font-extrabold text-indigo-900 leading-tight uppercase pt-2">{rcTitle}</h2>
                   </div>
                 </div>
