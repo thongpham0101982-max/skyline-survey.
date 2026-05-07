@@ -195,22 +195,34 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
 
   useEffect(() => {
     if (typeof window !== "undefined" && rcCampusId && rcReportType) {
-      const saved = localStorage.getItem('report_config_' + rcCampusId + '_' + rcReportType)
       const selectedCampus = campuses.find(c => c.id === rcCampusId);
       const defaultManagerName = selectedCampus?.manager?.fullName || "";
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved)
-          setRcTitle(parsed.title || (rcReportType === "thu_chuc_mung" ? "BÁO CÁO KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO" : "BẢN CAM KẾT HỌC TẬP"))
-          setRcLogo(parsed.logo || "")
-          setRcSignature(parsed.signature || "")
-          setRcBackground(parsed.background || "")
-          setRcDirectorName(parsed.directorName || defaultManagerName)
-          setRcContent(parsed.content || getDefaultContent(rcReportType))
-        } catch (e) {
-          console.error(e)
-        }
-      } else {
+      
+      const savedCampus = localStorage.getItem('report_config_' + rcCampusId + '_' + rcReportType);
+      const savedGlobal = localStorage.getItem('report_config_global_' + rcReportType);
+      
+      let campusData = {};
+      let globalData = {};
+      
+      if (savedCampus) {
+        try { campusData = JSON.parse(savedCampus); } catch (e) {}
+      }
+      if (savedGlobal) {
+        try { globalData = JSON.parse(savedGlobal); } catch (e) {}
+      }
+      
+      // Fallback: If no global data yet, check if there's old campus data we can copy to populate global
+      if (Object.keys(globalData).length === 0 && Object.keys(campusData).length > 0) {
+        globalData = {
+          title: campusData.title,
+          logo: campusData.logo,
+          background: campusData.background,
+          content: campusData.content
+        };
+      }
+      
+      // Fallback for old saved campus config without ReportType
+      if (Object.keys(campusData).length === 0 && Object.keys(globalData).length === 0) {
         let oldSaved = null;
         if (rcReportType === "thu_chuc_mung") {
           oldSaved = localStorage.getItem('report_config_' + rcCampusId);
@@ -218,24 +230,27 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
         if (oldSaved) {
           try {
             const parsed = JSON.parse(oldSaved);
-            setRcTitle(parsed.title || "BÁO CÁO KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO");
-            setRcLogo(parsed.logo || "");
-            setRcSignature(parsed.signature || "");
-            setRcBackground(parsed.background || "");
-            setRcDirectorName(parsed.directorName || defaultManagerName);
-            setRcContent(parsed.content || getDefaultContent(rcReportType));
-          } catch (e) {
-            console.error(e);
-          }
-        } else {
-          setRcTitle(rcReportType === "thu_chuc_mung" ? "BÁO CÁO KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO" : "BẢN CAM KẾT HỌC TẬP")
-          setRcLogo("")
-          setRcSignature("")
-          setRcBackground("")
-          setRcDirectorName(defaultManagerName)
-          setRcContent(getDefaultContent(rcReportType))
+            campusData = {
+              signature: parsed.signature,
+              directorName: parsed.directorName
+            };
+            globalData = {
+              title: parsed.title,
+              logo: parsed.logo,
+              background: parsed.background,
+              content: parsed.content
+            };
+          } catch (e) {}
         }
       }
+      
+      setRcTitle(globalData.title || (rcReportType === "thu_chuc_mung" ? "BÁO CÁO KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO" : "BẢN CAM KẾT HỌC TẬP"));
+      setRcLogo(globalData.logo || "");
+      setRcBackground(globalData.background || "");
+      setRcContent(globalData.content || getDefaultContent(rcReportType));
+      
+      setRcSignature(campusData.signature || "");
+      setRcDirectorName(campusData.directorName || defaultManagerName);
     }
   }, [rcCampusId, rcReportType, campuses])
 
@@ -275,15 +290,28 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
   const saveReportConfig = () => {
     if (!rcCampusId) return notify("Vui lòng chọn Cơ sở", "err")
     if (!rcReportType) return notify("Vui lòng chọn Loại báo cáo", "err")
-    const data = {
+    
+    // Save Global parts (applies to all campuses)
+    const globalData = {
       title: rcTitle,
       logo: rcLogo,
-      signature: rcSignature,
       background: rcBackground,
-      directorName: rcDirectorName,
       content: rcContent
     }
-    localStorage.setItem('report_config_' + rcCampusId + '_' + rcReportType, JSON.stringify(data))
+    localStorage.setItem('report_config_global_' + rcReportType, JSON.stringify(globalData))
+    
+    // Save Campus-specific parts (applies only to current campus)
+    const campusData = {
+      signature: rcSignature,
+      directorName: rcDirectorName,
+      // Keep other fields for backward compatibility
+      title: rcTitle,
+      logo: rcLogo,
+      background: rcBackground,
+      content: rcContent
+    }
+    localStorage.setItem('report_config_' + rcCampusId + '_' + rcReportType, JSON.stringify(campusData))
+    
     notify("Đã lưu cấu hình báo cáo thành công!")
   }
   const [yearId, setYearId] = useState(academicYears[0]?.id || "")
@@ -519,20 +547,41 @@ ${reportForm.directorNote}`;
     
     if (targetCampus) {
       const typeKey = isCommitment ? 'cam_ket_hoc_tap' : 'thu_chuc_mung';
-      const saved = localStorage.getItem('report_config_' + targetCampus.id + '_' + typeKey);
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch (e) {}
+      const savedCampus = localStorage.getItem('report_config_' + targetCampus.id + '_' + typeKey);
+      const savedGlobal = localStorage.getItem('report_config_global_' + typeKey);
+      
+      let campusData = {};
+      let globalData = {};
+      
+      if (savedCampus) {
+        try { campusData = JSON.parse(savedCampus); } catch (e) {}
       }
-      if (!isCommitment) {
+      if (savedGlobal) {
+        try { globalData = JSON.parse(savedGlobal); } catch (e) {}
+      }
+      
+      // Fallback for old saved campus config
+      if (!isCommitment && Object.keys(campusData).length === 0) {
         const oldSaved = localStorage.getItem('report_config_' + targetCampus.id);
         if (oldSaved) {
-          try {
-            return JSON.parse(oldSaved);
-          } catch (e) {}
+          try { campusData = JSON.parse(oldSaved); } catch (e) {}
         }
       }
+      
+      // If global is not yet saved, use campus data as fallback for global fields
+      const mergedTitle = globalData.title || campusData.title || (typeKey === "thu_chuc_mung" ? "BÁO CÁO KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO" : "BẢN CAM KẾT HỌC TẬP");
+      const mergedLogo = globalData.logo || campusData.logo || "";
+      const mergedBackground = globalData.background || campusData.background || "";
+      const mergedContent = globalData.content || campusData.content || "";
+      
+      return {
+        title: mergedTitle,
+        logo: mergedLogo,
+        background: mergedBackground,
+        content: mergedContent,
+        signature: campusData.signature || "",
+        directorName: campusData.directorName || targetCampus.manager?.fullName || ""
+      };
     }
     return null;
   }, [selectedReportStudent, campuses, reportBatches, isCommitment]);
