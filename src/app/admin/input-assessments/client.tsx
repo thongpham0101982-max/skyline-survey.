@@ -2139,18 +2139,18 @@ return {
               <div className="bg-white rounded-2xl border border-slate-150 p-8 shadow-sm space-y-8 flex flex-col justify-between min-h-[300px] relative overflow-hidden">
                 {/* Background Watermark for Preview */}
                 <div 
-                  className="absolute inset-0 pointer-events-none"
+                  className="absolute pointer-events-none"
                   style={{
                     backgroundImage: `url(${rcBackground || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="%23007A87"><path d="M10,80 Q50,40 90,20 Q60,50 10,80 Z"/><path d="M30,80 Q60,55 90,35 Q65,60 30,80 Z"/></svg>'})`,
                     backgroundRepeat: 'no-repeat',
                     backgroundPosition: 'center',
                     backgroundSize: rcBackground ? 'cover' : 'contain',
+                    opacity: rcBackground ? 0.08 : 0.05,
+                    top: rcBackground ? '0' : '50%',
+                    left: rcBackground ? '0' : '50%',
                     width: rcBackground ? '100%' : '70%',
                     height: rcBackground ? '100%' : '50%',
-                    top: '50%',
-                    left: '50%',
-                    transform: `translate(-50%, -50%) ${rcBackground ? '' : 'rotate(-15deg)'}`,
-                    opacity: rcBackground ? 0.07 : 0.05
+                    transform: rcBackground ? 'none' : 'translate(-50%, -50%) rotate(-15deg)'
                   }}
                 />
                 {/* Report Header */}
@@ -3006,17 +3006,26 @@ return {
             #print-letter-area::before {
               content: "";
               position: absolute;
-              top: 50%;
-              left: 50%;
-              transform: translate(-50%, -50%) ${studentCampusConfig?.background ? '' : 'rotate(-15deg)'};
-              width: ${studentCampusConfig?.background ? '100%' : '70%'};
-              height: ${studentCampusConfig?.background ? '100%' : '50%'};
-              opacity: ${studentCampusConfig?.background ? '0.07' : '0.05'};
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 100%;
+              opacity: ${studentCampusConfig?.background ? '0.08' : '0.05'};
               background-image: url('${studentCampusConfig?.background || "data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\" fill=\"%23007A87\"><path d=\"M10,80 Q50,40 90,20 Q60,50 10,80 Z\"/><path d=\"M30,80 Q60,55 90,35 Q65,60 30,80 Z\"/></svg>"}');
               background-repeat: no-repeat;
               background-position: center;
               background-size: ${studentCampusConfig?.background ? 'cover' : 'contain'};
               pointer-events: none;
+              ${studentCampusConfig?.background ? '' : `
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%) rotate(-15deg);
+                width: 70%;
+                height: 50%;
+              `}
+            `}
+            #print-letter-area {
+              overflow: hidden;
             }
           `}</style>
           
