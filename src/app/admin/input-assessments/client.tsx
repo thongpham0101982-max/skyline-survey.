@@ -145,6 +145,36 @@ function Empty({ icon:Icon, text, sub }: { icon:any; text:string; sub?:string })
   )
 }
 
+const defaultThuChucMung = `Chúc mừng em đã vượt qua kỳ khảo sát đầu vào lớp {{grade}} học kì {{hocKy}} hệ {{surveyFormType}} năm học 2026-2027. Em đã chính thức đặt bước chân đầu tiên trên con đường trở thành học sinh của Trường TH, THCS, THPT Sky-Line – một cột mốc quan trọng trong hành trình học tập của em.
+
+Thầy cô tại Sky-Line vui mừng chào đón em đến với ngôi trường hạnh phúc, nơi không chỉ giúp em trau dồi kiến thức mà còn phát triển toàn diện cả về năng lực và nhân cách. Chúng tôi tin rằng, với sự nỗ lực và quyết tâm, em sẽ tiếp tục gặt hái nhiều thành công trong những năm học sắp tới.
+
+Nhà trường hy vọng rằng, với tinh thần ham học hỏi, em sẽ là một mảnh ghép sắc màu góp phần làm phong phú thêm bức tranh học đường tại Sky-Line. Nơi đây, em và các bạn không chỉ học tập để phát triển bản thân, mà còn giúp đỡ nhau tiến bộ và đóng góp tích cực cho cộng đồng.
+
+Chúc em có những năm tháng học tập đầy ý nghĩa và trải nghiệm thú vị tại Sky-Line. Hãy luôn giữ vững niềm đam mê học hỏi và khát khao khám phá tri thức em nhé!`;
+
+const defaultCamKet = `Hệ thống Giáo dục Sky-Line chúc mừng em đã vượt qua kỳ khảo sát đầu vào lớp {{grade}} học kì {{hocKy}} hệ {{surveyFormType}} năm học 2026-2027. Để tạo điều kiện tốt nhất cho hành trình phát triển toàn diện của học sinh tại trường, Nhà trường và Gia đình cùng thống nhất ký kết Bản Cam kết học tập này.
+
+Gia đình và học sinh cam kết thực hiện đầy đủ các nội dung sau:
+1. Học sinh nỗ lực rèn luyện, hoàn thành tốt các mục tiêu học tập và rèn luyện theo định hướng giáo dục của nhà trường.
+2. Gia đình phối hợp chặt chẽ với Nhà trường trong việc theo dõi, hỗ trợ học sinh học tập tại nhà và tham gia đầy đủ các hoạt động giáo dục.
+3. Thực hiện nghiêm túc nội quy học sinh, tôn trọng thầy cô, bạn bè và giữ gìn hình ảnh học sinh văn minh Sky-Line.
+
+Bản cam kết được thực hiện dưới sự đồng thuận của cả hai bên và có giá trị kể từ ngày ký.`;
+
+const getDefaultContent = (type) => {
+  return type === "cam_ket_hoc_tap" ? defaultCamKet : defaultThuChucMung;
+};
+
+const renderTemplate = (template, student) => {
+  if (!template) return "";
+  return template
+    .replace(/\{\{fullName\}\}/g, student?.fullName || "Lê Trà My")
+    .replace(/\{\{grade\}\}/g, student?.grade || "1")
+    .replace(/\{\{hocKy\}\}/g, student?.hocKy || "1")
+    .replace(/\{\{surveyFormType\}\}/g, student?.surveyFormType || "Hội nhập S");
+};
+
 // ========= MAIN =========
 export function InputAssessmentsClient({ academicYears = [], campuses = [], examBoardUsers = [], subjects: initialSubjects = [], eduSystems = [], configs: initialConfigs = [], grades = [], teachers = [], departments = [], giaoVuCSUsers = [], gdcsUsers = [], currentUser = null }: Props) {
   const [tab, setTab] = useState("periods")
@@ -155,6 +185,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
   const [rcSignature, setRcSignature] = useState("")
   const [rcBackground, setRcBackground] = useState("")
   const [rcDirectorName, setRcDirectorName] = useState("")
+  const [rcContent, setRcContent] = useState("")
 
   useEffect(() => {
     if (campuses && campuses.length > 0 && !rcCampusId) {
@@ -175,6 +206,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
           setRcSignature(parsed.signature || "")
           setRcBackground(parsed.background || "")
           setRcDirectorName(parsed.directorName || defaultManagerName)
+          setRcContent(parsed.content || getDefaultContent(rcReportType))
         } catch (e) {
           console.error(e)
         }
@@ -191,6 +223,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
             setRcSignature(parsed.signature || "");
             setRcBackground(parsed.background || "");
             setRcDirectorName(parsed.directorName || defaultManagerName);
+            setRcContent(parsed.content || getDefaultContent(rcReportType));
           } catch (e) {
             console.error(e);
           }
@@ -200,6 +233,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
           setRcSignature("")
           setRcBackground("")
           setRcDirectorName(defaultManagerName)
+          setRcContent(getDefaultContent(rcReportType))
         }
       }
     }
@@ -246,7 +280,8 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
       logo: rcLogo,
       signature: rcSignature,
       background: rcBackground,
-      directorName: rcDirectorName
+      directorName: rcDirectorName,
+      content: rcContent
     }
     localStorage.setItem('report_config_' + rcCampusId + '_' + rcReportType, JSON.stringify(data))
     notify("Đã lưu cấu hình báo cáo thành công!")
@@ -2049,6 +2084,19 @@ return {
               <input value={rcTitle} onChange={e => setRcTitle(e.target.value)} placeholder="Nhập tiêu đề báo cáo..." className={inp} />
             </Field>
 
+            <Field label="Nội dung văn bản (Mẫu)" required>
+              <textarea 
+                value={rcContent} 
+                onChange={e => setRcContent(e.target.value)} 
+                rows={8} 
+                placeholder="Nhập nội dung mẫu..." 
+                className={`${inp} py-3 font-normal resize-none text-xs leading-relaxed font-sans`}
+              />
+              <p className="text-[10px] text-slate-400 mt-1 font-semibold leading-normal">
+                Các từ khóa tự điền: <span className="text-indigo-600 font-bold">{"{{fullName}}"}</span>, <span className="text-indigo-600 font-bold">{"{{grade}}"}</span>, <span className="text-indigo-600 font-bold">{"{{hocKy}}"}</span>, <span className="text-indigo-600 font-bold">{"{{surveyFormType}}"}</span>
+              </p>
+            </Field>
+
             <Field label="Họ tên Giám đốc Cơ sở" required>
               <input value={rcDirectorName} onChange={e => setRcDirectorName(e.target.value)} placeholder="Nhập họ tên GĐCS..." className={inp} />
             </Field>
@@ -2168,21 +2216,12 @@ return {
                   </div>
                 </div>
 
-                {/* Report Body Placeholder */}
-                {rcReportType === "cam_ket_hoc_tap" ? (
-                  <div className="space-y-2 py-1 flex-1 text-[11px] font-semibold text-slate-500">
-                    <p className="font-bold text-indigo-600 mb-1">CÁC NỘI DUNG CAM KẾT:</p>
-                    <p className="flex items-start gap-1"><span>•</span> <span>Học sinh nỗ lực hoàn thành tốt nhiệm vụ học tập.</span></p>
-                    <p className="flex items-start gap-1"><span>•</span> <span>Phối hợp chặt chẽ giữa Gia đình và Nhà trường.</span></p>
-                    <p className="flex items-start gap-1"><span>•</span> <span>Chấp hành nghiêm chỉnh điều lệ và nội quy học sinh.</span></p>
-                  </div>
-                ) : (
-                  <div className="space-y-3 py-2 flex-1">
-                    <div className="h-3 bg-slate-100 rounded-full w-2/3"/>
-                    <div className="h-3 bg-slate-50 rounded-full w-1/2"/>
-                    <div className="h-3 bg-slate-50 rounded-full w-3/4"/>
-                  </div>
-                )}
+                {/* Live Preview Dynamic Body */}
+                <div className="space-y-3 py-2 flex-1 text-[10px] leading-relaxed text-slate-600 text-justify overflow-y-auto max-h-[140px] pr-1 scrollbar-thin">
+                  {renderTemplate(rcContent, selectedReportStudent || { fullName: "Lê Trà My", grade: "1", hocKy: "1", surveyFormType: "Hội nhập S" }).split('\n').filter(Boolean).map((para, idx) => (
+                    <p key={idx} className="indent-4" style={{ textIndent: "1rem" }}>{para}</p>
+                  ))}
+                </div>
 
                 {/* Signature Footer */}
                 <div className="flex justify-end pt-4">
@@ -3122,36 +3161,28 @@ return {
                     </div>
                   ) : isCommitment ? (
                     <div className="space-y-4 text-justify text-[15px] leading-relaxed text-slate-800 font-serif">
-                      <p className="indent-8" style={{ textIndent: "2rem" }}>
-                        Hệ thống Giáo dục Sky-Line chúc mừng em đã vượt qua kỳ khảo sát đầu vào lớp <strong className="font-black">{selectedReportStudent.grade || "1"}</strong> học kì <strong className="font-black">{selectedReportStudent.hocKy || "1"}</strong> hệ <strong className="font-black">{selectedReportStudent.surveyFormType || "Hội nhập S"}</strong> năm học <strong className="font-black">2026-2027</strong>. Để tạo điều kiện tốt nhất cho hành trình phát triển toàn diện của học sinh tại trường, Nhà trường và Gia đình cùng thống nhất ký kết Bản Cam kết học tập này.
-                      </p>
-                      <p className="font-bold">Gia đình và học sinh cam kết thực hiện đầy đủ các nội dung sau:</p>
-                      <div className="space-y-2 pl-4">
-                        <p><strong>1.</strong> Học sinh nỗ lực rèn luyện, hoàn thành tốt các mục tiêu học tập và rèn luyện theo định hướng giáo dục của nhà trường.</p>
-                        <p><strong>2.</strong> Gia đình phối hợp chặt chẽ với Nhà trường trong việc theo dõi, hỗ trợ học sinh học tập tại nhà và tham gia đầy đủ các hoạt động giáo dục.</p>
-                        <p><strong>3.</strong> Thực hiện nghiêm túc nội quy học sinh, tôn trọng thầy cô, bạn bè và giữ gìn hình ảnh học sinh văn minh Sky-Line.</p>
-                      </div>
-                      <p className="indent-8 italic text-slate-600" style={{ textIndent: "2rem" }}>
-                        Bản cam kết được thực hiện dưới sự đồng thuận của cả hai bên và có giá trị kể từ ngày ký.
-                      </p>
+                      {renderTemplate(
+                        studentCampusConfig?.content || getDefaultContent("cam_ket_hoc_tap"),
+                        selectedReportStudent
+                      ).split('\n').filter(Boolean).map((para, idx) => {
+                        const isList = /^[\d•\-*]+/.test(para.trim());
+                        return (
+                          <p key={idx} className={isList ? "pl-4" : "indent-8"} style={isList ? {} : { textIndent: "2rem" }}>
+                            {para}
+                          </p>
+                        );
+                      })}
                     </div>
                   ) : (
-                    <div className="space-y-6 text-justify text-[16px] leading-relaxed text-slate-800">
-                      <p className="indent-8" style={{ textIndent: "2rem" }}>
-                        Chúc mừng em đã vượt qua kỳ khảo sát đầu vào lớp <strong className="font-bold">{selectedReportStudent.grade || "1"}</strong> học kì <strong className="font-bold">{selectedReportStudent.hocKy || "1"}</strong> hệ <strong className="font-bold">{selectedReportStudent.surveyFormType || "Hội nhập S"}</strong> năm học <strong className="font-bold">2026-2027</strong>. Em đã chính thức đặt bước chân đầu tiên trên con đường trở thành học sinh của Trường TH, THCS, THPT Sky-Line – một cột mốc quan trọng trong hành trình học tập của em.
-                      </p>
-                      
-                      <p className="indent-8" style={{ textIndent: "2rem" }}>
-                        Thầy cô tại Sky-Line vui mừng chào đón em đến với ngôi trường hạnh phúc, nơi không chỉ giúp em trau dồi kiến thức mà còn phát triển toàn diện cả về năng lực và nhân cách. Chúng tôi tin rằng, với sự nỗ lực và quyết tâm, em sẽ tiếp tục gặt hái nhiều thành công trong những năm học sắp tới.
-                      </p>
-                      
-                      <p className="indent-8" style={{ textIndent: "2rem" }}>
-                        Nhà trường hy vọng rằng, với tinh thần ham học hỏi, em sẽ là một mảnh ghép sắc màu góp phần làm phong phú thêm bức tranh học đường tại Sky-Line. Nơi đây, em và các bạn không chỉ học tập để phát triển bản thân, mà còn giúp đỡ nhau tiến bộ và đóng góp tích cực cho cộng đồng.
-                      </p>
-                      
-                      <p className="indent-8" style={{ textIndent: "2rem" }}>
-                        Chúc em có những năm tháng học tập đầy ý nghĩa và trải nghiệm thú vị tại Sky-Line. Hãy luôn giữ vững niềm đam mê học hỏi và khát khao khám phá tri thức em nhé!
-                      </p>
+                    <div className="space-y-6 text-justify text-[16px] leading-relaxed text-slate-800 font-serif" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+                      {renderTemplate(
+                        studentCampusConfig?.content || getDefaultContent("thu_chuc_mung"),
+                        selectedReportStudent
+                      ).split('\n').filter(Boolean).map((para, idx) => (
+                        <p key={idx} className="indent-8" style={{ textIndent: "2rem" }}>
+                          {para}
+                        </p>
+                      ))}
                     </div>
                   )}
                 </div>
