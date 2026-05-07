@@ -186,6 +186,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
   const [rcBackground, setRcBackground] = useState("")
   const [rcDirectorName, setRcDirectorName] = useState("")
   const [rcContent, setRcContent] = useState("")
+  const [rcFooter, setRcFooter] = useState("")
 
   useEffect(() => {
     if (campuses && campuses.length > 0 && !rcCampusId) {
@@ -217,7 +218,8 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
           title: campusData.title,
           logo: campusData.logo,
           background: campusData.background,
-          content: campusData.content
+          content: campusData.content,
+          footer: campusData.footer
         };
       }
       
@@ -238,7 +240,8 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
               title: parsed.title,
               logo: parsed.logo,
               background: parsed.background,
-              content: parsed.content
+              content: parsed.content,
+              footer: parsed.footer
             };
           } catch (e) {}
         }
@@ -248,6 +251,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
       setRcLogo(globalData.logo || "");
       setRcBackground(globalData.background || "");
       setRcContent(globalData.content || getDefaultContent(rcReportType));
+      setRcFooter(globalData.footer || "");
       
       setRcSignature(campusData.signature || "");
       setRcDirectorName(campusData.directorName || defaultManagerName);
@@ -287,6 +291,17 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     }
   }
 
+  const handleFooterUpload = (e) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setRcFooter(reader.result)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
   const saveReportConfig = () => {
     if (!rcCampusId) return notify("Vui lòng chọn Cơ sở", "err")
     if (!rcReportType) return notify("Vui lòng chọn Loại báo cáo", "err")
@@ -296,7 +311,8 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
       title: rcTitle,
       logo: rcLogo,
       background: rcBackground,
-      content: rcContent
+      content: rcContent,
+      footer: rcFooter
     }
     localStorage.setItem('report_config_global_' + rcReportType, JSON.stringify(globalData))
     
@@ -308,7 +324,8 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
       title: rcTitle,
       logo: rcLogo,
       background: rcBackground,
-      content: rcContent
+      content: rcContent,
+      footer: rcFooter
     }
     localStorage.setItem('report_config_' + rcCampusId + '_' + rcReportType, JSON.stringify(campusData))
     
@@ -573,12 +590,14 @@ ${reportForm.directorNote}`;
       const mergedLogo = globalData.logo || campusData.logo || "";
       const mergedBackground = globalData.background || campusData.background || "";
       const mergedContent = globalData.content || campusData.content || "";
+      const mergedFooter = globalData.footer || campusData.footer || "";
       
       return {
         title: mergedTitle,
         logo: mergedLogo,
         background: mergedBackground,
         content: mergedContent,
+        footer: mergedFooter,
         signature: campusData.signature || "",
         directorName: campusData.directorName || targetCampus.manager?.fullName || ""
       };
@@ -2222,6 +2241,30 @@ return {
                   </div>
                 </div>
               </div>
+
+              {/* Footer Upload */}
+              <div className="space-y-2">
+                <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Upload Hình Footer Văn bản</label>
+                <div className="flex items-center gap-4">
+                  {rcFooter ? (
+                    <div className="relative w-16 h-16 rounded-xl border border-slate-200 bg-white p-1 flex items-center justify-center group">
+                      <img src={rcFooter} alt="Hình Footer" className="max-w-full max-h-full object-contain rounded-lg" />
+                      <button onClick={() => setRcFooter("")} className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-rose-600 text-white rounded-full flex items-center justify-center shadow-md hover:bg-rose-700 transition-colors">
+                        <X className="w-3 h-3"/>
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="w-16 h-16 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 cursor-pointer hover:border-indigo-400 hover:text-indigo-600 transition-all">
+                      <Upload className="w-5 h-5"/>
+                      <input type="file" accept="image/*" className="hidden" onChange={handleFooterUpload} />
+                    </label>
+                  )}
+                  <div className="text-xs">
+                    <p className="font-bold text-slate-600">Hình Footer cho văn bản (Banner địa chỉ)</p>
+                    <p className="text-slate-400">Định dạng JPG, PNG, WEBP. Thay thế dải địa chỉ chữ mặc định.</p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <button onClick={saveReportConfig} className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-lg shadow-indigo-100 transition-all flex items-center justify-center gap-2">
@@ -2294,22 +2337,28 @@ return {
                 </div>
 
                 {/* Live Preview Footer Contact */}
-                <div className="border-t border-teal-500/30 pt-2 mt-2 text-[6px] text-slate-400 font-sans leading-normal relative z-10" style={{ fontFamily: "Arial, sans-serif" }}>
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="text-left">
-                      <p className="font-bold text-teal-600 uppercase text-[5px] tracking-wider">SKY-LINE Riverside / Central</p>
-                      <p className="text-[4px] text-slate-400 leading-none mt-0.5">Trần Đăng Ninh / 48 Nguyễn Du, Đà Nẵng</p>
-                    </div>
-                    <div className="text-left">
-                      <p className="font-bold text-teal-600 uppercase text-[5px] tracking-wider">SKY-LINE Beach / Hill</p>
-                      <p className="text-[4px] text-slate-400 leading-none mt-0.5">Trần Anh Tông / Điện Dương, Quảng Nam</p>
-                    </div>
-                    <div className="text-right flex flex-col justify-between">
-                      <p className="font-bold text-teal-600 uppercase text-[5px] tracking-wide">www.skylineschool.edu.vn</p>
-                      <p className="text-[4px] text-slate-400 leading-none mt-0.5">Hotline: (+84.236) 378 7777</p>
+                {rcFooter ? (
+                  <div className="pt-2 mt-2 border-t border-slate-100 relative z-10 flex justify-center">
+                    <img src={rcFooter} alt="Footer Preview" className="max-h-12 w-full object-contain" />
+                  </div>
+                ) : (
+                  <div className="border-t border-teal-500/30 pt-2 mt-2 text-[6px] text-slate-400 font-sans leading-normal relative z-10" style={{ fontFamily: "Arial, sans-serif" }}>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="text-left">
+                        <p className="font-bold text-teal-600 uppercase text-[5px] tracking-wider">SKY-LINE Riverside / Central</p>
+                        <p className="text-[4px] text-slate-400 leading-none mt-0.5">Trần Đăng Ninh / 48 Nguyễn Du, Đà Nẵng</p>
+                      </div>
+                      <div className="text-left">
+                        <p className="font-bold text-teal-600 uppercase text-[5px] tracking-wider">SKY-LINE Beach / Hill</p>
+                        <p className="text-[4px] text-slate-400 leading-none mt-0.5">Trần Anh Tông / Điện Dương, Quảng Nam</p>
+                      </div>
+                      <div className="text-right flex flex-col justify-between">
+                        <p className="font-bold text-teal-600 uppercase text-[5px] tracking-wide">www.skylineschool.edu.vn</p>
+                        <p className="text-[4px] text-slate-400 leading-none mt-0.5">Hotline: (+84.236) 378 7777</p>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
             <div className="text-center text-[11px] font-bold text-slate-400 uppercase tracking-widest pt-4">Bản xem trước tự động cập nhật thời gian thực</div>
@@ -3322,41 +3371,47 @@ return {
                 )}
 
                 {/* Footer Contact */}
-                <div className="border-t border-teal-500/30 pt-3 mt-6 text-[8px] text-slate-400 font-sans leading-normal relative z-10" style={{ fontFamily: "Arial, sans-serif" }}>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="text-left">
-                      <p className="font-bold text-teal-600 uppercase text-[8px] tracking-wider">SKY-LINE Riverside</p>
-                      <p className="text-[7px] text-slate-500">Lô A2.4 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>
-                      <p className="font-bold text-teal-600 uppercase text-[8px] tracking-wider mt-1">SKY-LINE Central</p>
-                      <p className="text-[7px] text-slate-500">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
-                      <p className="font-bold text-teal-600 uppercase text-[8px] tracking-wider mt-1">SKY-LINE Global</p>
-                      <p className="text-[7px] text-slate-500">Lô A2.4 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>
-                    </div>
-                    <div className="text-left">
-                      <p className="font-bold text-teal-600 uppercase text-[8px] tracking-wider">SKY-LINE Beach</p>
-                      <p className="text-[7px] text-slate-500">Số 199 Trần Anh Tông, P. Thanh Khê, TP. Đà Nẵng</p>
-                      <p className="font-bold text-teal-600 uppercase text-[8px] tracking-wider mt-1">SKY-LINE Hill</p>
-                      <p className="text-[7px] text-slate-500">Khối Hà My Đông A, P. Điện Dương, Điện Bàn, Quảng Nam</p>
-                      <p className="font-bold text-teal-600 uppercase text-[8px] tracking-wider mt-1">Trung tâm sống thành công - SLS</p>
-                      <p className="text-[7px] text-slate-500">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
-                    </div>
-                    <div className="text-right flex flex-col justify-between">
-                      <p className="font-bold text-teal-600 uppercase text-[9px] tracking-wide">www.skylineschool.edu.vn</p>
-                      <div className="mt-1 text-[7px] text-slate-500 space-y-0.5">
-                        <p><strong>Hotline:</strong> (+84.236) 378 7777</p>
-                        <p><strong>Hotline:</strong> (+84.236) 356 8777</p>
-                        <p><strong>Hotline:</strong> (+84.236) 378 7779</p>
-                        <p><strong>Hotline:</strong> (+84.236) 375 1777</p>
+                {studentCampusConfig?.footer ? (
+                  <div className="border-t border-slate-200 pt-3 mt-6 relative z-10 flex justify-center w-full">
+                    <img src={studentCampusConfig.footer} alt="Footer" className="max-h-20 w-full object-contain" />
+                  </div>
+                ) : (
+                  <div className="border-t border-teal-500/30 pt-3 mt-6 text-[8px] text-slate-400 font-sans leading-normal relative z-10" style={{ fontFamily: "Arial, sans-serif" }}>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="text-left">
+                        <p className="font-bold text-teal-600 uppercase text-[8px] tracking-wider">SKY-LINE Riverside</p>
+                        <p className="text-[7px] text-slate-500">Lô A2.4 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>
+                        <p className="font-bold text-teal-600 uppercase text-[8px] tracking-wider mt-1">SKY-LINE Central</p>
+                        <p className="text-[7px] text-slate-500">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
+                        <p className="font-bold text-teal-600 uppercase text-[8px] tracking-wider mt-1">SKY-LINE Global</p>
+                        <p className="text-[7px] text-slate-500">Lô A2.4 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>
+                      </div>
+                      <div className="text-left">
+                        <p className="font-bold text-teal-600 uppercase text-[8px] tracking-wider">SKY-LINE Beach</p>
+                        <p className="text-[7px] text-slate-500">Số 199 Trần Anh Tông, P. Thanh Khê, TP. Đà Nẵng</p>
+                        <p className="font-bold text-teal-600 uppercase text-[8px] tracking-wider mt-1">SKY-LINE Hill</p>
+                        <p className="text-[7px] text-slate-500">Khối Hà My Đông A, P. Điện Dương, Điện Bàn, Quảng Nam</p>
+                        <p className="font-bold text-teal-600 uppercase text-[8px] tracking-wider mt-1">Trung tâm sống thành công - SLS</p>
+                        <p className="text-[7px] text-slate-500">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
+                      </div>
+                      <div className="text-right flex flex-col justify-between">
+                        <p className="font-bold text-teal-600 uppercase text-[9px] tracking-wide">www.skylineschool.edu.vn</p>
+                        <div className="mt-1 text-[7px] text-slate-500 space-y-0.5">
+                          <p><strong>Hotline:</strong> (+84.236) 378 7777</p>
+                          <p><strong>Hotline:</strong> (+84.236) 356 8777</p>
+                          <p><strong>Hotline:</strong> (+84.236) 378 7779</p>
+                          <p><strong>Hotline:</strong> (+84.236) 375 1777</p>
+                        </div>
                       </div>
                     </div>
+                    {/* Subtle right corner bird wing vector decoration */}
+                    <div className="absolute right-0 bottom-0 w-12 h-12 opacity-15 pointer-events-none">
+                      <svg viewBox="0 0 100 100" fill="%23007A87">
+                        <path d="M10,80 Q50,40 90,20 Q60,50 10,80 Z"/>
+                      </svg>
+                    </div>
                   </div>
-                  {/* Subtle right corner bird wing vector decoration */}
-                  <div className="absolute right-0 bottom-0 w-12 h-12 opacity-15 pointer-events-none">
-                    <svg viewBox="0 0 100 100" fill="%23007A87">
-                      <path d="M10,80 Q50,40 90,20 Q60,50 10,80 Z"/>
-                    </svg>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
           </div>
