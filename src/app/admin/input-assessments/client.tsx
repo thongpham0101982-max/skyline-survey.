@@ -3518,6 +3518,7 @@ return {
                     </div>
                   </div>
                 )}
+              </div>
 
                 {(() => {
                   const getNumericGrade = (g) => {
@@ -3642,7 +3643,6 @@ return {
             </div>
           </div>
         </div>
-      </div>
     )}
   </div>
   )
