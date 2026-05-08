@@ -4128,14 +4128,7 @@ return {
                 )}
               </div>
 
-                {(() => {
-                  const getNumericGrade = (g) => {
-                    if (!g) return null;
-                    const match = g.toString().match(/\d+/);
-                    return match ? parseInt(match[0], 10) : null;
-                  };
-                  return getNumericGrade(selectedReportStudent?.grade) === 1;
-                })() && (
+                {modalDocList && modalDocList.length > 0 && (
                   <div 
                     className="bg-white w-[210mm] h-[297mm] p-[1.8cm] shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed print-page mt-8"
                     style={{ fontFamily: "'Times New Roman', Times, serif" }}
