@@ -2518,10 +2518,13 @@ return {
             <div className="flex items-center gap-3">
               <button 
                 onClick={() => {
-                  if (confirm("Bạn có chắc chắn muốn khôi phục danh sách hồ sơ mẫu cho đối tượng này không?")) {
-                    setDocList(defaultDocumentsGrade1);
-                    localStorage.setItem('admission_docs_' + selectedDocGroup, JSON.stringify(defaultDocumentsGrade1));
-                  }
+                  setConfirm({
+                    msg: "Bạn có chắc chắn muốn khôi phục danh sách hồ sơ mẫu cho đối tượng này không?",
+                    fn: () => {
+                      setDocList(defaultDocumentsGrade1);
+                      localStorage.setItem('admission_docs_' + selectedDocGroup, JSON.stringify(defaultDocumentsGrade1));
+                    }
+                  });
                 }}
                 className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-black transition-all flex items-center gap-2"
               >
@@ -2609,11 +2612,14 @@ return {
                             </button>
                             <button 
                               onClick={() => {
-                                if (confirm("Bạn có chắc chắn muốn xóa hồ sơ này không?")) {
-                                  const updated = docList.filter(d => d.id !== item.id);
-                                  setDocList(updated);
-                                  localStorage.setItem('admission_docs_' + selectedDocGroup, JSON.stringify(updated));
-                                }
+                                setConfirm({
+                                  msg: "Bạn có chắc chắn muốn xóa hồ sơ này không?",
+                                  fn: () => {
+                                    const updated = docList.filter(d => d.id !== item.id);
+                                    setDocList(updated);
+                                    localStorage.setItem('admission_docs_' + selectedDocGroup, JSON.stringify(updated));
+                                  }
+                                });
                               }}
                               className="w-8 h-8 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 flex items-center justify-center transition-colors"
                               title="Xóa hồ sơ"
