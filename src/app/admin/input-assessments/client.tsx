@@ -3291,6 +3291,12 @@ return {
             #print-letter-area {
               overflow: hidden;
             }
+            .print-page {
+              width: 210mm !important;
+              height: 297mm !important;
+              max-height: 297mm !important;
+              flex-shrink: 0 !important;
+            }
           `}</style>
           
           <div className="relative bg-white rounded-3xl shadow-2xl flex flex-col max-w-4xl w-full max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 no-print">
