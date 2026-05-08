@@ -205,24 +205,6 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     }
   }, [defaultDocGroups]);
 
-  const docGroups = useMemo(() => {
-    const allGroups = [...customDocGroups];
-    
-    // Add any database configs with categoryType === "DOI_TUONG_TS" that are not already present
-    const dbTsGroups = configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => ({
-      id: "db_" + c.id,
-      label: c.name
-    }));
-    
-    dbTsGroups.forEach(dbG => {
-      if (!allGroups.some(g => g.label.toLowerCase() === dbG.label.toLowerCase() || g.id === dbG.id)) {
-        allGroups.push(dbG);
-      }
-    });
-    
-    return allGroups;
-  }, [customDocGroups, configs]);
-
   const [selectedDocGroup, setSelectedDocGroup] = useState("khoi_1");
   const [docList, setDocList] = useState([]);
   const [isDocModalOpen, setIsDocModalOpen] = useState(false);
@@ -1020,6 +1002,24 @@ ${reportForm.directorNote}`;
   const [cModal, setCModal] = useState(false)
   const [editC, setEditC] = useState<AssessmentConfig|null>(null)
   const [cForm, setCForm] = useState({ categoryType:"DIEN_KS", code:"", name:"" })
+
+  const docGroups = useMemo(() => {
+    const allGroups = [...customDocGroups];
+    
+    // Add any database configs with categoryType === "DOI_TUONG_TS" that are not already present
+    const dbTsGroups = configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => ({
+      id: "db_" + c.id,
+      label: c.name
+    }));
+    
+    dbTsGroups.forEach(dbG => {
+      if (!allGroups.some(g => g.label.toLowerCase() === dbG.label.toLowerCase() || g.id === dbG.id)) {
+        allGroups.push(dbG);
+      }
+    });
+    
+    return allGroups;
+  }, [customDocGroups, configs]);
 
   // ───────── ASSIGNMENT STATE ─────────
   const [assignments, setAssignments] = useState<Assignment[]>([])
