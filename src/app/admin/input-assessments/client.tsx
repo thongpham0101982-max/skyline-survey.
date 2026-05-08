@@ -2296,18 +2296,14 @@ return {
               </select>
             </Field>
 
-            <Field label="Áp dụng cho Đối tượng / Khối" required>
-              <select value={rcTargetGroup} onChange={e => setRcTargetGroup(e.target.value)} className={inp}>
-                <option value="all">Tất cả các khối (Mặc định)</option>
-                <option value="khoi_1">Khối 1</option>
-                <option value="khoi_2_5">Khối 2 đến 5</option>
-                <option value="khoi_6">Khối 6</option>
-                <option value="khoi_7_9">Khối 7 đến 9</option>
-                <option value="khoi_10">Khối 10</option>
-                <option value="khoi_11_12">Khối 11 đến 12</option>
-                <option value="doi_tuong_tuyen_sinh">Đối tượng Tuyển sinh</option>
-              </select>
-            </Field>
+             <Field label="Áp dụng cho Đối tượng / Khối" required>
+               <select value={rcTargetGroup} onChange={e => setRcTargetGroup(e.target.value)} className={inp}>
+                 <option value="all">Tất cả các khối (Mặc định)</option>
+                 {docGroups.map(g => (
+                   <option key={g.id} value={g.id}>{g.label}</option>
+                 ))}
+               </select>
+             </Field>
 
             <Field label="Tiêu đề Báo cáo" required>
               <input value={rcTitle} onChange={e => setRcTitle(e.target.value)} placeholder="Nhập tiêu đề báo cáo..." className={inp} />
