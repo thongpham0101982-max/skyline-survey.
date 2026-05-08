@@ -217,46 +217,6 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     }
   }, [selectedDocGroup, defaultDocumentsGrade1]);
 
-  const modalDocList = useMemo(() => {
-    if (typeof window === "undefined" || !selectedReportStudent) return [];
-    
-    let studentGroup = "khoi_1";
-    if (selectedReportStudent.targetType) {
-      studentGroup = "doi_tuong_tuyen_sinh";
-    } else {
-      const getNumericGrade = (g) => {
-        if (!g) return null;
-        const match = g.toString().match(/d+/);
-        return match ? parseInt(match[0], 10) : null;
-      };
-      const gradeNum = getNumericGrade(selectedReportStudent.grade);
-      if (gradeNum === 1) {
-        studentGroup = "khoi_1";
-      } else if (gradeNum >= 2 && gradeNum <= 5) {
-        studentGroup = "khoi_2_5";
-      } else if (gradeNum === 6) {
-        studentGroup = "khoi_6";
-      } else if (gradeNum >= 7 && gradeNum <= 9) {
-        studentGroup = "khoi_7_9";
-      } else if (gradeNum === 10) {
-        studentGroup = "khoi_10";
-      } else if (gradeNum >= 11 && gradeNum <= 12) {
-        studentGroup = "khoi_11_12";
-      }
-    }
-    
-    const saved = localStorage.getItem('admission_docs_' + studentGroup);
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {}
-    }
-    
-    if (studentGroup === "khoi_1") {
-      return defaultDocumentsGrade1;
-    }
-    return [];
-  }, [selectedReportStudent, defaultDocumentsGrade1]);
   const [rcCampusId, setRcCampusId] = useState("")
   const [rcReportType, setRcReportType] = useState("thu_chuc_mung")
   const [rcTargetGroup, setRcTargetGroup] = useState("all")
@@ -624,6 +584,47 @@ ${reportForm.directorNote}`;
     if (!Array.isArray(reportStudents)) return undefined;
     return reportStudents.find(s => s.id === reportStudentId);
   }, [reportStudents, reportStudentId]);
+
+  const modalDocList = useMemo(() => {
+    if (typeof window === "undefined" || !selectedReportStudent) return [];
+    
+    let studentGroup = "khoi_1";
+    if (selectedReportStudent.targetType) {
+      studentGroup = "doi_tuong_tuyen_sinh";
+    } else {
+      const getNumericGrade = (g) => {
+        if (!g) return null;
+        const match = g.toString().match(/d+/);
+        return match ? parseInt(match[0], 10) : null;
+      };
+      const gradeNum = getNumericGrade(selectedReportStudent.grade);
+      if (gradeNum === 1) {
+        studentGroup = "khoi_1";
+      } else if (gradeNum >= 2 && gradeNum <= 5) {
+        studentGroup = "khoi_2_5";
+      } else if (gradeNum === 6) {
+        studentGroup = "khoi_6";
+      } else if (gradeNum >= 7 && gradeNum <= 9) {
+        studentGroup = "khoi_7_9";
+      } else if (gradeNum === 10) {
+        studentGroup = "khoi_10";
+      } else if (gradeNum >= 11 && gradeNum <= 12) {
+        studentGroup = "khoi_11_12";
+      }
+    }
+    
+    const saved = localStorage.getItem('admission_docs_' + studentGroup);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {}
+    }
+    
+    if (studentGroup === "khoi_1") {
+      return defaultDocumentsGrade1;
+    }
+    return [];
+  }, [selectedReportStudent, defaultDocumentsGrade1]);
 
   const studentCampusConfig = useMemo(() => {
     if (typeof window === "undefined" || !selectedReportStudent) return null;
