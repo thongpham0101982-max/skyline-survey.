@@ -575,7 +575,12 @@ ${reportForm.directorNote}`;
       if (selectedReportStudent.targetType) {
         candidateKeys.push(baseKey + '_doi_tuong_tuyen_sinh');
       }
-      const gradeNum = parseInt(selectedReportStudent.grade);
+      const getNumericGrade = (g) => {
+        if (!g) return null;
+        const match = g.toString().match(/\d+/);
+        return match ? parseInt(match[0], 10) : null;
+      };
+      const gradeNum = getNumericGrade(selectedReportStudent.grade);
       if (gradeNum === 1) {
         candidateKeys.push(baseKey + '_khoi_1');
       } else if (gradeNum >= 2 && gradeNum <= 5) {
@@ -3514,7 +3519,14 @@ return {
                   </div>
                 )}
 
-                {parseInt(selectedReportStudent?.grade) === 1 && (
+                {(() => {
+                  const getNumericGrade = (g) => {
+                    if (!g) return null;
+                    const match = g.toString().match(/\d+/);
+                    return match ? parseInt(match[0], 10) : null;
+                  };
+                  return getNumericGrade(selectedReportStudent?.grade) === 1;
+                })() && (
                   <div 
                     className="bg-white w-[210mm] h-[297mm] p-[1.8cm] shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed print-page mt-8"
                     style={{ fontFamily: "'Times New Roman', Times, serif" }}
