@@ -180,6 +180,29 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
   const [tab, setTab] = useState("periods")
 
   // Admission Documents State
+  const defaultDocGroups = useMemo(() => [
+    { id: "khoi_1", label: "Khối 1" },
+    { id: "khoi_2_5", label: "Khối 2 đến 5" },
+    { id: "khoi_6", label: "Khối 6" },
+    { id: "khoi_7_9", label: "Khối 7 đến 9" },
+    { id: "khoi_10", label: "Khối 10" },
+    { id: "khoi_11_12", label: "Khối 11 đến 12" },
+    { id: "doi_tuong_tuyen_sinh", label: "Đối tượng Hồ sơ" },
+  ], []);
+
+  const [docGroups, setDocGroups] = useState(defaultDocGroups);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedGroups = localStorage.getItem('admission_doc_groups');
+      if (savedGroups) {
+        try {
+          setDocGroups(JSON.parse(savedGroups));
+        } catch (e) {}
+      }
+    }
+  }, []);
+
   const [selectedDocGroup, setSelectedDocGroup] = useState("khoi_1");
   const [docList, setDocList] = useState([]);
   const [isDocModalOpen, setIsDocModalOpen] = useState(false);
@@ -590,7 +613,12 @@ ${reportForm.directorNote}`;
     
     let studentGroup = "khoi_1";
     if (selectedReportStudent.targetType) {
-      studentGroup = "doi_tuong_tuyen_sinh";
+      const match = docGroups.find(g => g.label.toLowerCase() === selectedReportStudent.targetType.toLowerCase() || g.id === selectedReportStudent.targetType);
+      if (match) {
+        studentGroup = match.id;
+      } else {
+        studentGroup = "doi_tuong_tuyen_sinh";
+      }
     } else {
       const getNumericGrade = (g) => {
         if (!g) return null;
@@ -624,7 +652,7 @@ ${reportForm.directorNote}`;
       return defaultDocumentsGrade1;
     }
     return [];
-  }, [selectedReportStudent, defaultDocumentsGrade1]);
+  }, [selectedReportStudent, defaultDocumentsGrade1, docGroups]);
 
   const studentCampusConfig = useMemo(() => {
     if (typeof window === "undefined" || !selectedReportStudent) return null;
@@ -2548,23 +2576,78 @@ return {
           </div>
 
           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-6">
-            <div className="max-w-xs group">
-              <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-indigo-900/70 ml-1">Chọn Đối tượng Tuyển sinh</label>
-              <div className="relative">
-                <select 
-                  value={selectedDocGroup} 
-                  onChange={(e) => setSelectedDocGroup(e.target.value)} 
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-sm font-black text-slate-700 outline-none appearance-none cursor-pointer hover:bg-slate-100/50 focus:border-indigo-500 focus:bg-white transition-all duration-300"
+            <div className="group space-y-2">
+              <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-indigo-900/70 ml-1">Chọn Đối tượng Hồ sơ</label>
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="relative w-64">
+                  <select 
+                    value={selectedDocGroup} 
+                    onChange={(e) => setSelectedDocGroup(e.target.value)} 
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 pr-10 text-sm font-black text-slate-700 outline-none appearance-none cursor-pointer hover:bg-slate-100/50 focus:border-indigo-500 focus:bg-white transition-all duration-300"
+                  >
+                    {docGroups.map(g => (
+                      <option key={g.id} value={g.id}>{g.label}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-4 h-4 text-slate-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-slate-600 transition-colors" />
+                </div>
+
+                <button 
+                  onClick={() => {
+                    const newName = prompt("Nhập tên Đối tượng Hồ sơ mới:");
+                    if (newName && newName.trim()) {
+                      const newId = "custom_" + Date.now();
+                      const updated = [...docGroups, { id: newId, label: newName.trim() }];
+                      setDocGroups(updated);
+                      localStorage.setItem('admission_doc_groups', JSON.stringify(updated));
+                      setSelectedDocGroup(newId);
+                    }
+                  }}
+                  className="px-4 py-3.5 rounded-2xl bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center gap-2 text-xs font-black transition-all border border-indigo-100 shadow-sm"
+                  title="Thêm đối tượng mới"
                 >
-                  <option value="khoi_1">Khối 1</option>
-                  <option value="khoi_2_5">Khối 2 đến 5</option>
-                  <option value="khoi_6">Khối 6</option>
-                  <option value="khoi_7_9">Khối 7 đến 9</option>
-                  <option value="khoi_10">Khối 10</option>
-                  <option value="khoi_11_12">Khối 11 đến 12</option>
-                  <option value="doi_tuong_tuyen_sinh">Đối tượng Tuyển sinh</option>
-                </select>
-                <ChevronDown className="w-4 h-4 text-slate-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-slate-600 transition-colors" />
+                  <Plus className="w-4 h-4" />
+                  Thêm đối tượng
+                </button>
+
+                {selectedDocGroup.startsWith("custom_") && (
+                  <>
+                    <button 
+                      onClick={() => {
+                        const current = docGroups.find(g => g.id === selectedDocGroup);
+                        const newName = prompt("Sửa tên Đối tượng Hồ sơ:", current?.label);
+                        if (newName && newName.trim()) {
+                          const updated = docGroups.map(g => g.id === selectedDocGroup ? { ...g, label: newName.trim() } : g);
+                          setDocGroups(updated);
+                          localStorage.setItem('admission_doc_groups', JSON.stringify(updated));
+                        }
+                      }}
+                      className="w-10 h-10 rounded-2xl bg-amber-50 hover:bg-amber-100 text-amber-600 flex items-center justify-center transition-all border border-amber-100 shadow-sm"
+                      title="Sửa tên đối tượng"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={() => {
+                        const current = docGroups.find(g => g.id === selectedDocGroup);
+                        setConfirm({
+                          msg: `Bạn có chắc chắn muốn xóa Đối tượng "${current?.label}" và toàn bộ hồ sơ đi kèm?`,
+                          fn: () => {
+                            const updated = docGroups.filter(g => g.id !== selectedDocGroup);
+                            setDocGroups(updated);
+                            localStorage.setItem('admission_doc_groups', JSON.stringify(updated));
+                            localStorage.removeItem('admission_docs_' + selectedDocGroup);
+                            setSelectedDocGroup("khoi_1");
+                          }
+                        });
+                      }}
+                      className="w-10 h-10 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-600 flex items-center justify-center transition-all border border-rose-100 shadow-sm"
+                      title="Xóa đối tượng"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 
