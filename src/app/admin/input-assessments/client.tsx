@@ -2610,7 +2610,7 @@ return {
                   Thêm đối tượng
                 </button>
 
-                {selectedDocGroup.startsWith("custom_") && (
+                {selectedDocGroup && (
                   <>
                     <button 
                       onClick={() => {
