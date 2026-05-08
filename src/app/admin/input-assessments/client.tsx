@@ -216,6 +216,19 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     return customDocGroups;
   }, [customDocGroups]);
 
+  const [docGroupTargets, setDocGroupTargets] = useState<Record<string, string[]>>({});
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedTargets = localStorage.getItem('admission_doc_targets');
+      if (savedTargets) {
+        try {
+          setDocGroupTargets(JSON.parse(savedTargets));
+        } catch (e) {}
+      }
+    }
+  }, []);
+
   const [selectedDocGroup, setSelectedDocGroup] = useState("khoi_1");
   const [docList, setDocList] = useState([]);
   const [isDocModalOpen, setIsDocModalOpen] = useState(false);
@@ -626,11 +639,20 @@ ${reportForm.directorNote}`;
     
     let studentGroup = "khoi_1";
     if (selectedReportStudent.targetType) {
-      const match = docGroups.find(g => g.label.toLowerCase() === selectedReportStudent.targetType.toLowerCase() || g.id === selectedReportStudent.targetType);
-      if (match) {
-        studentGroup = match.id;
+      const associationMatch = docGroups.find(g => {
+        const mappedTs = docGroupTargets[g.id] || [];
+        return mappedTs.some(ts => ts.toLowerCase() === selectedReportStudent.targetType.toLowerCase());
+      });
+      
+      if (associationMatch) {
+        studentGroup = associationMatch.id;
       } else {
-        studentGroup = "doi_tuong_tuyen_sinh";
+        const match = docGroups.find(g => g.label.toLowerCase() === selectedReportStudent.targetType.toLowerCase() || g.id === selectedReportStudent.targetType);
+        if (match) {
+          studentGroup = match.id;
+        } else {
+          studentGroup = "doi_tuong_tuyen_sinh";
+        }
       }
     } else {
       const getNumericGrade = (g) => {
@@ -665,7 +687,7 @@ ${reportForm.directorNote}`;
       return defaultDocumentsGrade1;
     }
     return [];
-  }, [selectedReportStudent, defaultDocumentsGrade1, docGroups]);
+  }, [selectedReportStudent, defaultDocumentsGrade1, docGroups, docGroupTargets]);
 
   const studentCampusConfig = useMemo(() => {
     if (typeof window === "undefined" || !selectedReportStudent) return null;
@@ -2649,6 +2671,43 @@ return {
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </>
+                )}
+              </div>
+            </div>
+
+            {/* Association checkboxes */}
+            <div className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100 space-y-3">
+              <span className="block text-[10px] font-bold tracking-wider uppercase text-slate-400 ml-1">
+                Áp dụng cho Đối tượng Tuyển sinh (từ Danh mục):
+              </span>
+              <div className="flex flex-wrap gap-3">
+                {configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => {
+                  const isChecked = (docGroupTargets[selectedDocGroup] || []).includes(c.name);
+                  return (
+                    <label key={c.id} className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-slate-200/60 shadow-sm cursor-pointer hover:bg-indigo-50/20 hover:border-indigo-200 transition-all select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={isChecked}
+                        onChange={(e) => {
+                          const currentTargets = docGroupTargets[selectedDocGroup] || [];
+                          let updated;
+                          if (e.target.checked) {
+                            updated = [...currentTargets, c.name];
+                          } else {
+                            updated = currentTargets.filter(name => name !== c.name);
+                          }
+                          const updatedMappings = { ...docGroupTargets, [selectedDocGroup]: updated };
+                          setDocGroupTargets(updatedMappings);
+                          localStorage.setItem('admission_doc_targets', JSON.stringify(updatedMappings));
+                        }}
+                        className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 transition-all cursor-pointer"
+                      />
+                      <span className="text-xs font-bold text-slate-600">{c.name}</span>
+                    </label>
+                  );
+                })}
+                {configs.filter(c => c.categoryType === "DOI_TUONG_TS").length === 0 && (
+                  <span className="text-xs text-slate-400 italic ml-1">Chưa có Đối tượng Tuyển sinh nào trong Danh mục</span>
                 )}
               </div>
             </div>
