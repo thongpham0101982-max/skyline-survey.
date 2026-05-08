@@ -3556,31 +3556,34 @@ return {
                       </div>
 
                       {/* Checklist Table */}
-                      <div className="mt-8 overflow-hidden rounded-2xl border border-slate-300">
-                        <table className="w-full border-collapse text-left text-sm text-slate-700">
+                      <div className="mt-4 overflow-hidden rounded-2xl border border-slate-300 shadow-sm">
+                        <table className="w-full border-collapse text-left text-[13px] text-slate-700">
                           <thead>
                             <tr className="bg-slate-50 border-b border-slate-300">
-                              <th className="px-6 py-4 font-bold text-slate-900 border-r border-slate-300 text-center w-16">TT</th>
-                              <th className="px-6 py-4 font-bold text-slate-900 border-r border-slate-300 text-left">Hồ sơ yêu cầu</th>
-                              <th className="px-6 py-4 font-bold text-slate-900 text-center w-32">Số lượng</th>
+                              <th className="px-5 py-3 font-bold text-slate-900 border-r border-slate-300 text-center w-12">TT</th>
+                              <th className="px-5 py-3 font-bold text-slate-900 border-r border-slate-300 text-left">Hồ sơ yêu cầu</th>
+                              <th className="px-5 py-3 font-bold text-slate-900 border-r border-slate-300 text-center w-28">Số lượng</th>
+                              <th className="px-5 py-3 font-bold text-slate-900 text-center w-28">Ghi chú</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-300">
-                            <tr className="border-b border-slate-300">
-                              <td className="px-6 py-4 border-r border-slate-300 text-center font-bold">1</td>
-                              <td className="px-6 py-4 border-r border-slate-300 font-semibold text-slate-800">Giấy khai sinh (có dấu đỏ)</td>
-                              <td className="px-6 py-4 text-center text-slate-600 font-semibold">1</td>
-                            </tr>
-                            <tr className="border-b border-slate-300">
-                              <td className="px-6 py-4 border-r border-slate-300 text-center font-bold">2</td>
-                              <td className="px-6 py-4 border-r border-slate-300 font-semibold text-slate-800">Đơn xin nhập học lớp 1</td>
-                              <td className="px-6 py-4 text-center text-slate-600 font-semibold">1</td>
-                            </tr>
-                            <tr>
-                              <td className="px-6 py-4 border-r border-slate-300 text-center font-bold">3</td>
-                              <td className="px-6 py-4 border-r border-slate-300 font-semibold text-slate-800">Bản cam kết (nếu có)</td>
-                              <td className="px-6 py-4 text-center text-slate-600 font-semibold">1</td>
-                            </tr>
+                            {[
+                              { id: 1, name: "Đơn đăng ký nhập học (theo mẫu của Hệ thống)", qty: "01 bản chính", note: "" },
+                              { id: 2, name: "Bản sao Giấy khai sinh (hợp lệ)", qty: "01 bản", note: "" },
+                              { id: 3, name: "Giấy khám sức khỏe học sinh (trong vòng 6 tháng)", qty: "01 bản chính", note: "" },
+                              { id: 4, name: "Ảnh thẻ 3x4 (nền trắng, mới nhất)", qty: "04 ảnh", note: "" },
+                              { id: 5, name: "Bản sao Sổ hộ khẩu hoặc Giấy xác nhận cư trú (CT07)", qty: "01 bản", note: "" },
+                              { id: 6, name: "Giấy chứng nhận hoàn thành chương trình Mầm non", qty: "01 bản sao", note: "Nếu có" },
+                              { id: 7, name: "Bản sao Sổ tiêm chủng của học sinh", qty: "01 bản", note: "" },
+                              { id: 8, name: "Hồ sơ ưu đãi/giảm phí (nếu thuộc diện ưu tiên)", qty: "01 bộ", note: "Bản sao" },
+                            ].map((item) => (
+                              <tr key={item.id} className="border-b border-slate-300">
+                                <td className="px-5 py-2.5 border-r border-slate-300 text-center font-bold text-slate-500">{item.id}</td>
+                                <td className="px-5 py-2.5 border-r border-slate-300 font-semibold text-slate-800">{item.name}</td>
+                                <td className="px-5 py-2.5 border-r border-slate-300 text-center text-slate-600 font-medium">{item.qty}</td>
+                                <td className="px-5 py-2.5 text-center text-[11px] italic text-slate-400">{item.note}</td>
+                              </tr>
+                            ))}
                           </tbody>
                         </table>
                       </div>
