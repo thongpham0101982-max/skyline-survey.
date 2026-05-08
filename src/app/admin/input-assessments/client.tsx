@@ -2676,10 +2676,22 @@ return {
             </div>
 
             {/* Association checkboxes */}
-            <div className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100 space-y-3">
-              <span className="block text-[10px] font-bold tracking-wider uppercase text-slate-400 ml-1">
-                Áp dụng cho Đối tượng Tuyển sinh (từ Danh mục):
-              </span>
+            <div className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100 space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <span className="block text-[10px] font-bold tracking-wider uppercase text-slate-400 ml-1">
+                  Áp dụng cho Đối tượng Tuyển sinh (từ Danh mục):
+                </span>
+                <button
+                  onClick={() => {
+                    localStorage.setItem('admission_doc_targets', JSON.stringify(docGroupTargets));
+                    alert("Đã lưu cấu hình áp dụng đối tượng tuyển sinh thành công!");
+                  }}
+                  className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow-md shadow-emerald-100"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  Lưu cấu hình áp dụng
+                </button>
+              </div>
               <div className="flex flex-wrap gap-3">
                 {configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => {
                   const isChecked = (docGroupTargets[selectedDocGroup] || []).includes(c.name);
