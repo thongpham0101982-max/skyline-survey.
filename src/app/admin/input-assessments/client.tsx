@@ -657,7 +657,7 @@ ${reportForm.directorNote}`;
     } else {
       const getNumericGrade = (g) => {
         if (!g) return null;
-        const match = g.toString().match(/d+/);
+        const match = g.toString().match(/\d+/);
         return match ? parseInt(match[0], 10) : null;
       };
       const gradeNum = getNumericGrade(selectedReportStudent.grade);
