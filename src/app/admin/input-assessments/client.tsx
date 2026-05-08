@@ -3513,6 +3513,115 @@ return {
                     </div>
                   </div>
                 )}
+
+                {parseInt(selectedReportStudent?.grade) === 1 && (
+                  <div 
+                    className="bg-white w-[210mm] h-[297mm] p-[1.8cm] shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed print-page mt-8"
+                    style={{ fontFamily: "'Times New Roman', Times, serif" }}
+                  >
+                    <div>
+                      {/* Top Logo and Header */}
+                      <div className="flex flex-col gap-1 border-b pb-2 mb-6">
+                        <div className="flex items-center justify-between">
+                          {studentCampusConfig?.logo ? (
+                            <img src={studentCampusConfig.logo} alt="Logo" className="h-12 object-contain" />
+                          ) : (
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-2xl font-black tracking-tight text-teal-600" style={{ fontFamily: "Arial, sans-serif" }}>SKY-LINE</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-left">
+                          <h4 className="font-extrabold text-sm uppercase tracking-wider text-slate-800" style={{ fontFamily: "Arial, sans-serif" }}>{studentSchoolName}</h4>
+                        </div>
+                      </div>
+
+                      {/* Page Title */}
+                      <div className="text-center my-6">
+                        <h2 className="text-xl font-bold tracking-wide text-indigo-950 uppercase mb-4">
+                          DANH MỤC HỒ SƠ NHẬP HỌC KHỐI 1
+                        </h2>
+                      </div>
+
+                      {/* Checklist Table */}
+                      <div className="mt-8 overflow-hidden rounded-2xl border border-slate-300">
+                        <table className="w-full border-collapse text-left text-sm text-slate-700">
+                          <thead>
+                            <tr className="bg-slate-50 border-b border-slate-300">
+                              <th className="px-6 py-4 font-bold text-slate-900 border-r border-slate-300 text-center w-16">TT</th>
+                              <th className="px-6 py-4 font-bold text-slate-900 border-r border-slate-300 text-left">Hồ sơ yêu cầu</th>
+                              <th className="px-6 py-4 font-bold text-slate-900 text-center w-32">Số lượng</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-300">
+                            <tr className="border-b border-slate-300">
+                              <td className="px-6 py-4 border-r border-slate-300 text-center font-bold">1</td>
+                              <td className="px-6 py-4 border-r border-slate-300 font-semibold text-slate-800">Giấy khai sinh (có dấu đỏ)</td>
+                              <td className="px-6 py-4 text-center text-slate-600 font-semibold">1</td>
+                            </tr>
+                            <tr className="border-b border-slate-300">
+                              <td className="px-6 py-4 border-r border-slate-300 text-center font-bold">2</td>
+                              <td className="px-6 py-4 border-r border-slate-300 font-semibold text-slate-800">Đơn xin nhập học lớp 1</td>
+                              <td className="px-6 py-4 text-center text-slate-600 font-semibold">1</td>
+                            </tr>
+                            <tr>
+                              <td className="px-6 py-4 border-r border-slate-300 text-center font-bold">3</td>
+                              <td className="px-6 py-4 border-r border-slate-300 font-semibold text-slate-800">Bản cam kết (nếu có)</td>
+                              <td className="px-6 py-4 text-center text-slate-600 font-semibold">1</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+
+                      <p className="mt-6 text-xs text-slate-500 italic text-justify leading-relaxed">
+                        * Quý Phụ huynh vui lòng chuẩn bị đầy đủ hồ sơ theo danh mục nêu trên và nộp lại cho Ban Tuyển sinh vào ngày làm thủ tục nhập học chính thức của học sinh. Xin trân trọng cảm ơn!
+                      </p>
+                    </div>
+
+                    {/* Footer Contact */}
+                    {studentCampusConfig?.footer ? (
+                      <div className="border-t border-slate-200 pt-3 mt-6 relative z-10 w-full">
+                        <img src={studentCampusConfig.footer} alt="Footer" className="w-full h-auto" />
+                      </div>
+                    ) : (
+                      <div className="border-t border-teal-500/30 pt-3 mt-6 text-[8px] text-slate-400 font-sans leading-normal relative z-10" style={{ fontFamily: "Arial, sans-serif" }}>
+                        <div className="grid grid-cols-3 gap-4">
+                          <div className="text-left">
+                            <p className="font-bold text-teal-600 uppercase text-[8px] tracking-wider">SKY-LINE Riverside</p>
+                            <p className="text-[7px] text-slate-500">Lô A2.4 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>
+                            <p className="font-bold text-teal-600 uppercase text-[8px] tracking-wider mt-1">SKY-LINE Central</p>
+                            <p className="text-[7px] text-slate-500">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
+                            <p className="font-bold text-teal-600 uppercase text-[8px] tracking-wider mt-1">SKY-LINE Global</p>
+                            <p className="text-[7px] text-slate-500">Lô A2.4 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>
+                          </div>
+                          <div className="text-left">
+                            <p className="font-bold text-teal-600 uppercase text-[8px] tracking-wider">SKY-LINE Beach</p>
+                            <p className="text-[7px] text-slate-500">Số 199 Trần Anh Tông, P. Thanh Khê, TP. Đà Nẵng</p>
+                            <p className="font-bold text-teal-600 uppercase text-[8px] tracking-wider mt-1">SKY-LINE Hill</p>
+                            <p className="text-[7px] text-slate-500">Khối Hà My Đông A, P. Điện Dương, Điện Bàn, Quảng Nam</p>
+                            <p className="font-bold text-teal-600 uppercase text-[8px] tracking-wider mt-1">Trung tâm sống thành công - SLS</p>
+                            <p className="text-[7px] text-slate-500">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
+                          </div>
+                          <div className="text-right flex flex-col justify-between">
+                            <p className="font-bold text-teal-600 uppercase text-[9px] tracking-wide">www.skylineschool.edu.vn</p>
+                            <div className="mt-1 text-[7px] text-slate-500 space-y-0.5">
+                              <p><strong>Hotline:</strong> (+84.236) 378 7777</p>
+                              <p><strong>Hotline:</strong> (+84.236) 356 8777</p>
+                              <p><strong>Hotline:</strong> (+84.236) 378 7779</p>
+                              <p><strong>Hotline:</strong> (+84.236) 375 1777</p>
+                            </div>
+                          </div>
+                        </div>
+                        {/* Subtle right corner decoration */}
+                        <div className="absolute right-0 bottom-0 w-12 h-12 opacity-15 pointer-events-none">
+                          <svg viewBox="0 0 100 100" fill="%23007A87">
+                            <path d="M10,80 Q50,40 90,20 Q60,50 10,80 Z"/>
+                          </svg>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
             </div>
