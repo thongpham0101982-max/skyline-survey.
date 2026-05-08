@@ -3910,6 +3910,18 @@ return {
               </div>
               <div className="flex items-center gap-4">
                 <button 
+                  onClick={() => {
+                    const confirmSave = confirm("Mẹo: Để xuất file PDF có chất lượng tốt nhất, vui lòng chọn máy in là 'Lưu dưới dạng PDF' (Save as PDF) trong hộp thoại tiếp theo.\n\nBấm OK để mở hộp thoại xuất!");
+                    if (confirmSave) {
+                      window.print();
+                    }
+                  }}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md shadow-emerald-100 flex items-center gap-2 transition-all"
+                >
+                  <Download className="w-4 h-4" />
+                  Xuất PDF
+                </button>
+                <button 
                   onClick={() => window.print()}
                   className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md shadow-indigo-100 flex items-center gap-2 transition-all"
                 >
