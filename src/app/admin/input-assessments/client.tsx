@@ -179,6 +179,13 @@ const renderTemplate = (template, student) => {
 export function InputAssessmentsClient({ academicYears = [], campuses = [], examBoardUsers = [], subjects: initialSubjects = [], eduSystems = [], configs: initialConfigs = [], grades = [], teachers = [], departments = [], giaoVuCSUsers = [], gdcsUsers = [], currentUser = null }: Props) {
   const [tab, setTab] = useState("periods")
 
+  // ───────── CONFIGS STATE (MOVED TO TOP TO PREVENT TDZ REFERENCE ERROR) ─────────
+  const [configs, setConfigs] = useState<AssessmentConfig[]>(initialConfigs)
+  const [cLoading, setCLoading] = useState(false)
+  const [cModal, setCModal] = useState(false)
+  const [editC, setEditC] = useState<AssessmentConfig|null>(null)
+  const [cForm, setCForm] = useState({ categoryType:"DIEN_KS", code:"", name:"" })
+
   // Admission Documents State
   const defaultDocGroups = useMemo(() => [
     { id: "khoi_1", label: "Khối 1" },
@@ -204,6 +211,24 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
       }
     }
   }, [defaultDocGroups]);
+
+  const docGroups = useMemo(() => {
+    const allGroups = [...customDocGroups];
+    
+    // Add any database configs with categoryType === "DOI_TUONG_TS" that are not already present
+    const dbTsGroups = configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => ({
+      id: "db_" + c.id,
+      label: c.name
+    }));
+    
+    dbTsGroups.forEach(dbG => {
+      if (!allGroups.some(g => g.label.toLowerCase() === dbG.label.toLowerCase() || g.id === dbG.id)) {
+        allGroups.push(dbG);
+      }
+    });
+    
+    return allGroups;
+  }, [customDocGroups, configs]);
 
   const [selectedDocGroup, setSelectedDocGroup] = useState("khoi_1");
   const [docList, setDocList] = useState([]);
@@ -995,31 +1020,6 @@ ${reportForm.directorNote}`;
     setAllMappingsLoading(false);
   };
   useEffect(() => { if (tab === "mapping") fetchAllMappings(); }, [tab]);
-
-  // ───────── CONFIGS STATE ─────────
-  const [configs, setConfigs] = useState<AssessmentConfig[]>(initialConfigs)
-  const [cLoading, setCLoading] = useState(false)
-  const [cModal, setCModal] = useState(false)
-  const [editC, setEditC] = useState<AssessmentConfig|null>(null)
-  const [cForm, setCForm] = useState({ categoryType:"DIEN_KS", code:"", name:"" })
-
-  const docGroups = useMemo(() => {
-    const allGroups = [...customDocGroups];
-    
-    // Add any database configs with categoryType === "DOI_TUONG_TS" that are not already present
-    const dbTsGroups = configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => ({
-      id: "db_" + c.id,
-      label: c.name
-    }));
-    
-    dbTsGroups.forEach(dbG => {
-      if (!allGroups.some(g => g.label.toLowerCase() === dbG.label.toLowerCase() || g.id === dbG.id)) {
-        allGroups.push(dbG);
-      }
-    });
-    
-    return allGroups;
-  }, [customDocGroups, configs]);
 
   // ───────── ASSIGNMENT STATE ─────────
   const [assignments, setAssignments] = useState<Assignment[]>([])
