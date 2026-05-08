@@ -564,7 +564,34 @@ ${reportForm.directorNote}`;
     }
     
     if (targetCampus) {
-      const typeKey = isCommitment ? 'cam_ket_hoc_tap' : 'thu_chuc_mung';
+      let typeKey = isCommitment ? 'cam_ket_hoc_tap' : 'thu_chuc_mung';
+      if (!isCommitment) {
+        let candidateKeys = [];
+        if (selectedReportStudent.targetType) {
+          candidateKeys.push('doi_tuong_tuyen_sinh');
+        }
+        const gradeNum = parseInt(selectedReportStudent.grade);
+        if (gradeNum === 1) {
+          candidateKeys.push('khoi_1');
+        } else if (gradeNum >= 2 && gradeNum <= 5) {
+          candidateKeys.push('khoi_2_5');
+        } else if (gradeNum === 6) {
+          candidateKeys.push('khoi_6');
+        } else if (gradeNum >= 7 && gradeNum <= 9) {
+          candidateKeys.push('khoi_7_9');
+        } else if (gradeNum === 10) {
+          candidateKeys.push('khoi_10');
+        } else if (gradeNum >= 11 && gradeNum <= 12) {
+          candidateKeys.push('khoi_11_12');
+        }
+        
+        const matchingKey = candidateKeys.find(k => {
+          return localStorage.getItem('report_config_' + targetCampus.id + '_' + k) || localStorage.getItem('report_config_global_' + k);
+        });
+        if (matchingKey) {
+          typeKey = matchingKey;
+        }
+      }
       const savedCampus = localStorage.getItem('report_config_' + targetCampus.id + '_' + typeKey);
       const savedGlobal = localStorage.getItem('report_config_global_' + typeKey);
       
@@ -2146,8 +2173,15 @@ return {
 
             <Field label="Loại báo cáo" required>
               <select value={rcReportType} onChange={e => setRcReportType(e.target.value)} className={inp}>
-                <option value="thu_chuc_mung">Thư chúc mừng</option>
+                <option value="thu_chuc_mung">Thư chúc mừng (Mặc định)</option>
                 <option value="cam_ket_hoc_tap">Cam kết học tập</option>
+                <option value="khoi_1">Khối 1</option>
+                <option value="khoi_2_5">Khối 2 đến 5</option>
+                <option value="khoi_6">Khối 6</option>
+                <option value="khoi_7_9">Khối 7 đến 9</option>
+                <option value="khoi_10">Khối 10</option>
+                <option value="khoi_11_12">Khối 11 đến 12</option>
+                <option value="doi_tuong_tuyen_sinh">Đối tượng Tuyển sinh</option>
               </select>
             </Field>
 
