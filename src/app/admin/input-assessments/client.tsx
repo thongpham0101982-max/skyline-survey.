@@ -3918,10 +3918,7 @@ return {
                     const pdfFileName = `${academicYearStr}_${monthStr}_TCM_${studentName}`;
                     
                     document.title = pdfFileName;
-                    const confirmSave = confirm("Mẹo: Để xuất file PDF có chất lượng tốt nhất, vui lòng chọn máy in là 'Lưu dưới dạng PDF' (Save as PDF) trong hộp thoại tiếp theo.\n\nBấm OK để mở hộp thoại xuất!");
-                    if (confirmSave) {
-                      window.print();
-                    }
+                    window.print();
                     setTimeout(() => {
                       document.title = originalTitle;
                     }, 1000);
