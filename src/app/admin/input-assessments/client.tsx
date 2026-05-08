@@ -3535,10 +3535,54 @@ return {
 
            <div className="grid grid-cols-3 gap-4">
                <Field label="Đối tượng Tuyển sinh">
-                 <select value={sForm.targetType} onChange={e=>setSForm(f=>({...f,targetType:e.target.value}))} className={inp}>
-                   <option value="">--</option>
-                   {configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                 </select>
+                 <div className="flex items-center gap-1.5">
+                   <select value={sForm.targetType} onChange={e=>setSForm(f=>({...f,targetType:e.target.value}))} className={inp + " flex-1 min-w-[120px]"}>
+                     <option value="">--</option>
+                     {configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                   </select>
+                   <button 
+                     type="button"
+                     onClick={() => openAddConfig("DOI_TUONG_TS")}
+                     className="w-10 h-10 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center transition-all border border-indigo-100 shadow-sm shrink-0"
+                     title="Thêm đối tượng mới"
+                   >
+                     <Plus className="w-4 h-4" />
+                   </button>
+                   {sForm.targetType && (
+                     <>
+                       <button 
+                         type="button"
+                         onClick={() => {
+                           const current = configs.find(c => c.categoryType === "DOI_TUONG_TS" && c.name === sForm.targetType);
+                           if (current) openEditConfig(current);
+                         }}
+                         className="w-10 h-10 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-600 flex items-center justify-center transition-all border border-amber-100 shadow-sm shrink-0"
+                         title="Sửa tên đối tượng"
+                       >
+                         <Pencil className="w-3.5 h-3.5" />
+                       </button>
+                       <button 
+                         type="button"
+                         onClick={() => {
+                           const current = configs.find(c => c.categoryType === "DOI_TUONG_TS" && c.name === sForm.targetType);
+                           if (current) {
+                             setConfirm({
+                               msg: `Bạn có chắc chắn muốn xóa Đối tượng Tuyển sinh "${current.name}"?`,
+                               fn: () => {
+                                 doDeleteConfig(current.id);
+                                 setSForm(f => ({ ...f, targetType: "" }));
+                               }
+                             });
+                           }
+                         }}
+                         className="w-10 h-10 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 flex items-center justify-center transition-all border border-rose-100 shadow-sm shrink-0"
+                         title="Xóa đối tượng"
+                       >
+                         <Trash2 className="w-3.5 h-3.5" />
+                       </button>
+                     </>
+                   )}
+                 </div>
                </Field>
                <Field label="Diện Khảo sát">
                 <select value={sForm.admissionCriteria} onChange={e=>setSForm(f=>({...f,admissionCriteria:e.target.value}))} className={inp}>
