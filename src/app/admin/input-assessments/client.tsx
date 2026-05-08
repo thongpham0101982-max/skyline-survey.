@@ -190,18 +190,38 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     { id: "doi_tuong_tuyen_sinh", label: "Đối tượng Hồ sơ" },
   ], []);
 
-  const [docGroups, setDocGroups] = useState(defaultDocGroups);
+  const [customDocGroups, setCustomDocGroups] = useState<any[]>([]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const savedGroups = localStorage.getItem('admission_doc_groups');
       if (savedGroups) {
         try {
-          setDocGroups(JSON.parse(savedGroups));
+          setCustomDocGroups(JSON.parse(savedGroups));
         } catch (e) {}
+      } else {
+        setCustomDocGroups(defaultDocGroups);
       }
     }
-  }, []);
+  }, [defaultDocGroups]);
+
+  const docGroups = useMemo(() => {
+    const allGroups = [...customDocGroups];
+    
+    // Add any database configs with categoryType === "DOI_TUONG_TS" that are not already present
+    const dbTsGroups = configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => ({
+      id: "db_" + c.id,
+      label: c.name
+    }));
+    
+    dbTsGroups.forEach(dbG => {
+      if (!allGroups.some(g => g.label.toLowerCase() === dbG.label.toLowerCase() || g.id === dbG.id)) {
+        allGroups.push(dbG);
+      }
+    });
+    
+    return allGroups;
+  }, [customDocGroups, configs]);
 
   const [selectedDocGroup, setSelectedDocGroup] = useState("khoi_1");
   const [docList, setDocList] = useState([]);
@@ -2593,8 +2613,8 @@ return {
                     const newName = prompt("Nhập tên Đối tượng Hồ sơ mới:");
                     if (newName && newName.trim()) {
                       const newId = "custom_" + Date.now();
-                      const updated = [...docGroups, { id: newId, label: newName.trim() }];
-                      setDocGroups(updated);
+                      const updated = [...customDocGroups, { id: newId, label: newName.trim() }];
+                      setCustomDocGroups(updated);
                       localStorage.setItem('admission_doc_groups', JSON.stringify(updated));
                       setSelectedDocGroup(newId);
                     }
@@ -2606,15 +2626,15 @@ return {
                   Thêm đối tượng
                 </button>
 
-                {selectedDocGroup && (
+                {selectedDocGroup && !selectedDocGroup.startsWith("db_") && (
                   <>
                     <button 
                       onClick={() => {
-                        const current = docGroups.find(g => g.id === selectedDocGroup);
+                        const current = customDocGroups.find(g => g.id === selectedDocGroup);
                         const newName = prompt("Sửa tên Đối tượng Hồ sơ:", current?.label);
                         if (newName && newName.trim()) {
-                          const updated = docGroups.map(g => g.id === selectedDocGroup ? { ...g, label: newName.trim() } : g);
-                          setDocGroups(updated);
+                          const updated = customDocGroups.map(g => g.id === selectedDocGroup ? { ...g, label: newName.trim() } : g);
+                          setCustomDocGroups(updated);
                           localStorage.setItem('admission_doc_groups', JSON.stringify(updated));
                         }
                       }}
@@ -2625,12 +2645,12 @@ return {
                     </button>
                     <button 
                       onClick={() => {
-                        const current = docGroups.find(g => g.id === selectedDocGroup);
+                        const current = customDocGroups.find(g => g.id === selectedDocGroup);
                         setConfirm({
                           msg: `Bạn có chắc chắn muốn xóa Đối tượng "${current?.label}" và toàn bộ hồ sơ đi kèm?`,
                           fn: () => {
-                            const updated = docGroups.filter(g => g.id !== selectedDocGroup);
-                            setDocGroups(updated);
+                            const updated = customDocGroups.filter(g => g.id !== selectedDocGroup);
+                            setCustomDocGroups(updated);
                             localStorage.setItem('admission_doc_groups', JSON.stringify(updated));
                             localStorage.removeItem('admission_docs_' + selectedDocGroup);
                             setSelectedDocGroup("khoi_1");
