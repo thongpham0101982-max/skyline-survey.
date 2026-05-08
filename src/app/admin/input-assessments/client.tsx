@@ -213,22 +213,8 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
   }, [defaultDocGroups]);
 
   const docGroups = useMemo(() => {
-    const allGroups = [...customDocGroups];
-    
-    // Add any database configs with categoryType === "DOI_TUONG_TS" that are not already present
-    const dbTsGroups = configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => ({
-      id: "db_" + c.id,
-      label: c.name
-    }));
-    
-    dbTsGroups.forEach(dbG => {
-      if (!allGroups.some(g => g.label.toLowerCase() === dbG.label.toLowerCase() || g.id === dbG.id)) {
-        allGroups.push(dbG);
-      }
-    });
-    
-    return allGroups;
-  }, [customDocGroups, configs]);
+    return customDocGroups;
+  }, [customDocGroups]);
 
   const [selectedDocGroup, setSelectedDocGroup] = useState("khoi_1");
   const [docList, setDocList] = useState([]);
@@ -2626,7 +2612,7 @@ return {
                   Thêm đối tượng
                 </button>
 
-                {selectedDocGroup && !selectedDocGroup.startsWith("db_") && (
+                {selectedDocGroup && (
                   <>
                     <button 
                       onClick={() => {
