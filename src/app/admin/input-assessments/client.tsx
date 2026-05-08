@@ -178,6 +178,85 @@ const renderTemplate = (template, student) => {
 // ========= MAIN =========
 export function InputAssessmentsClient({ academicYears = [], campuses = [], examBoardUsers = [], subjects: initialSubjects = [], eduSystems = [], configs: initialConfigs = [], grades = [], teachers = [], departments = [], giaoVuCSUsers = [], gdcsUsers = [], currentUser = null }: Props) {
   const [tab, setTab] = useState("periods")
+
+  // Admission Documents State
+  const [selectedDocGroup, setSelectedDocGroup] = useState("khoi_1");
+  const [docList, setDocList] = useState([]);
+  const [isDocModalOpen, setIsDocModalOpen] = useState(false);
+  const [editingDoc, setEditingDoc] = useState(null);
+  const [docFormName, setDocFormName] = useState("");
+  const [docFormQty, setDocFormQty] = useState("");
+  const [docFormNote, setDocFormNote] = useState("");
+
+  const defaultDocumentsGrade1 = useMemo(() => [
+    { id: 1, name: "Đơn đăng ký nhập học (theo mẫu của Hệ thống)", qty: "01 bản chính", note: "" },
+    { id: 2, name: "Bản sao Giấy khai sinh (hợp lệ)", qty: "01 bản", note: "" },
+    { id: 3, name: "Giấy khám sức khỏe học sinh (trong vòng 6 tháng)", qty: "01 bản chính", note: "" },
+    { id: 4, name: "Ảnh thẻ 3x4 (nền trắng, mới nhất)", qty: "04 ảnh", note: "" },
+    { id: 5, name: "Bản sao Sổ hộ khẩu hoặc Giấy xác nhận cư trú (CT07)", qty: "01 bản", note: "" },
+    { id: 6, name: "Giấy chứng nhận hoàn thành chương trình Mầm non", qty: "01 bản sao", note: "Nếu có" },
+    { id: 7, name: "Bản sao Sổ tiêm chủng của học sinh", qty: "01 bản", note: "" },
+    { id: 8, name: "Hồ sơ ưu đãi/giảm phí (nếu thuộc diện ưu tiên)", qty: "01 bộ", note: "Bản sao" },
+  ], []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedDocs = localStorage.getItem('admission_docs_' + selectedDocGroup);
+      if (savedDocs) {
+        try {
+          setDocList(JSON.parse(savedDocs));
+        } catch (e) {
+          setDocList([]);
+        }
+      } else if (selectedDocGroup === "khoi_1") {
+        setDocList(defaultDocumentsGrade1);
+        localStorage.setItem('admission_docs_khoi_1', JSON.stringify(defaultDocumentsGrade1));
+      } else {
+        setDocList([]);
+      }
+    }
+  }, [selectedDocGroup, defaultDocumentsGrade1]);
+
+  const modalDocList = useMemo(() => {
+    if (typeof window === "undefined" || !selectedReportStudent) return [];
+    
+    let studentGroup = "khoi_1";
+    if (selectedReportStudent.targetType) {
+      studentGroup = "doi_tuong_tuyen_sinh";
+    } else {
+      const getNumericGrade = (g) => {
+        if (!g) return null;
+        const match = g.toString().match(/d+/);
+        return match ? parseInt(match[0], 10) : null;
+      };
+      const gradeNum = getNumericGrade(selectedReportStudent.grade);
+      if (gradeNum === 1) {
+        studentGroup = "khoi_1";
+      } else if (gradeNum >= 2 && gradeNum <= 5) {
+        studentGroup = "khoi_2_5";
+      } else if (gradeNum === 6) {
+        studentGroup = "khoi_6";
+      } else if (gradeNum >= 7 && gradeNum <= 9) {
+        studentGroup = "khoi_7_9";
+      } else if (gradeNum === 10) {
+        studentGroup = "khoi_10";
+      } else if (gradeNum >= 11 && gradeNum <= 12) {
+        studentGroup = "khoi_11_12";
+      }
+    }
+    
+    const saved = localStorage.getItem('admission_docs_' + studentGroup);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {}
+    }
+    
+    if (studentGroup === "khoi_1") {
+      return defaultDocumentsGrade1;
+    }
+    return [];
+  }, [selectedReportStudent, defaultDocumentsGrade1]);
   const [rcCampusId, setRcCampusId] = useState("")
   const [rcReportType, setRcReportType] = useState("thu_chuc_mung")
   const [rcTargetGroup, setRcTargetGroup] = useState("all")
@@ -1380,6 +1459,7 @@ return {
           { id:"assignments",label:"Phân công GV",        icon:UserCheck },
           { id:"reports",    label:"Kết quả Tổng hợp",   icon:BarChart3 },
           { id:"report_config", label:"Cấu hình Báo cáo", icon: PenLine },
+          { id:"admission_documents", label:"Hồ sơ nhập học", icon: Tag },
         ].map(t=>(
           <button key={t.id} onClick={()=>setTab(t.id)} className={`flex items-center gap-2.5 px-5 py-3 rounded-xl text-[13px] font-black tracking-tight transition-all duration-300 whitespace-nowrap ${tab===t.id?"bg-indigo-600 text-white shadow-xl shadow-indigo-100 scale-[1.03]":"text-slate-400 hover:bg-slate-50 hover:text-slate-600"}`}>
             <t.icon className={`w-4 h-4 ${tab===t.id?"text-white":"opacity-70"}`}/>
@@ -2416,6 +2496,227 @@ return {
               </div>
             </div>
             <div className="text-center text-[11px] font-bold text-slate-400 uppercase tracking-widest pt-4">Bản xem trước tự động cập nhật thời gian thực</div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== TAB: ADMISSION DOCUMENTS (HỒ SƠ NHẬP HỌC) ===== */}
+      {tab === "admission_documents" && (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <div className="bg-white/80 backdrop-blur-md p-6 rounded-3xl shadow-sm border border-slate-200/60 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 shadow-inner">
+                <Tag className="w-6 h-6" />
+              </div>
+              <div>
+                <h2 className="text-lg font-black text-slate-800">Danh mục Hồ sơ nhập học</h2>
+                <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Cấu hình danh sách giấy tờ cần nộp theo từng đối tượng tuyển sinh</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => {
+                  if (confirm("Bạn có chắc chắn muốn khôi phục danh sách hồ sơ mẫu cho đối tượng này không?")) {
+                    setDocList(defaultDocumentsGrade1);
+                    localStorage.setItem('admission_docs_' + selectedDocGroup, JSON.stringify(defaultDocumentsGrade1));
+                  }
+                }}
+                className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-black transition-all flex items-center gap-2"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                Khôi phục mẫu
+              </button>
+              <button 
+                onClick={() => {
+                  setEditingDoc(null);
+                  setDocFormName("");
+                  setDocFormQty("");
+                  setDocFormNote("");
+                  setIsDocModalOpen(true);
+                }}
+                className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-2 shadow-lg shadow-indigo-100"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Thêm hồ sơ mới
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-6">
+            <div className="max-w-xs group">
+              <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-indigo-900/70 ml-1">Chọn Đối tượng Tuyển sinh</label>
+              <div className="relative">
+                <select 
+                  value={selectedDocGroup} 
+                  onChange={(e) => setSelectedDocGroup(e.target.value)} 
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-sm font-black text-slate-700 outline-none appearance-none cursor-pointer hover:bg-slate-100/50 focus:border-indigo-500 focus:bg-white transition-all duration-300"
+                >
+                  <option value="khoi_1">Khối 1</option>
+                  <option value="khoi_2_5">Khối 2 đến 5</option>
+                  <option value="khoi_6">Khối 6</option>
+                  <option value="khoi_7_9">Khối 7 đến 9</option>
+                  <option value="khoi_10">Khối 10</option>
+                  <option value="khoi_11_12">Khối 11 đến 12</option>
+                  <option value="doi_tuong_tuyen_sinh">Đối tượng Tuyển sinh</option>
+                </select>
+                <ChevronDown className="w-4 h-4 text-slate-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-slate-600 transition-colors" />
+              </div>
+            </div>
+
+            {docList.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center border-2 border-dashed border-slate-100 rounded-3xl">
+                <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-4 border border-slate-100">
+                  <Tag className="w-8 h-8 text-slate-300" />
+                </div>
+                <p className="font-bold text-slate-400">Chưa cấu hình hồ sơ nào cho đối tượng này</p>
+                <p className="text-xs text-slate-300 mt-1 max-w-xs leading-normal">Hãy nhấp vào "Thêm hồ sơ mới" ở góc trên bên phải để bắt đầu thiết lập danh sách hồ sơ nhập học.</p>
+              </div>
+            ) : (
+              <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-inner">
+                <table className="w-full border-collapse text-left text-sm text-slate-700">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200">
+                      <th className="px-6 py-4 font-black text-slate-900 text-center w-16">TT</th>
+                      <th className="px-6 py-4 font-black text-slate-900">Hồ sơ yêu cầu</th>
+                      <th className="px-6 py-4 font-black text-slate-900 text-center w-36">Số lượng</th>
+                      <th className="px-6 py-4 font-black text-slate-900 text-center w-48">Ghi chú</th>
+                      <th className="px-6 py-4 font-black text-slate-900 text-center w-32">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {docList.map((item, idx) => (
+                      <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="px-6 py-3.5 text-center font-bold text-slate-400">{idx + 1}</td>
+                        <td className="px-6 py-3.5 font-bold text-slate-800">{item.name}</td>
+                        <td className="px-6 py-3.5 text-center font-bold text-slate-600">{item.qty || "—"}</td>
+                        <td className="px-6 py-3.5 text-center text-xs italic text-slate-400 font-semibold">{item.note || "—"}</td>
+                        <td className="px-6 py-3.5 text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            <button 
+                              onClick={() => {
+                                setEditingDoc(item);
+                                setDocFormName(item.name);
+                                setDocFormQty(item.qty);
+                                setDocFormNote(item.note);
+                                setIsDocModalOpen(true);
+                              }}
+                              className="w-8 h-8 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center transition-colors"
+                              title="Sửa hồ sơ"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <button 
+                              onClick={() => {
+                                if (confirm("Bạn có chắc chắn muốn xóa hồ sơ này không?")) {
+                                  const updated = docList.filter(d => d.id !== item.id);
+                                  setDocList(updated);
+                                  localStorage.setItem('admission_docs_' + selectedDocGroup, JSON.stringify(updated));
+                                }
+                              }}
+                              className="w-8 h-8 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 flex items-center justify-center transition-colors"
+                              title="Xóa hồ sơ"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ===== DOCUMENT MODAL (FORM THÊM/SỬA HỒ SƠ) ===== */}
+      {isDocModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-100">
+            <div className="bg-slate-50 px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center">
+                  <Tag className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-800">{editingDoc ? "Cập nhật Hồ sơ" : "Thêm Hồ sơ Mới"}</h3>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Đối tượng: {selectedDocGroup === "khoi_1" ? "Khối 1" : selectedDocGroup === "khoi_2_5" ? "Khối 2 đến 5" : selectedDocGroup === "khoi_6" ? "Khối 6" : selectedDocGroup === "khoi_7_9" ? "Khối 7 đến 9" : selectedDocGroup === "khoi_10" ? "Khối 10" : selectedDocGroup === "khoi_11_12" ? "Khối 11 đến 12" : "Đối tượng Tuyển sinh"}</p>
+                </div>
+              </div>
+              <button onClick={() => setIsDocModalOpen(false)} className="w-8 h-8 rounded-lg bg-slate-200/50 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 ml-1">Tên Hồ sơ yêu cầu <span className="text-rose-500">*</span></label>
+                <input 
+                  type="text" 
+                  value={docFormName} 
+                  onChange={(e) => setDocFormName(e.target.value)} 
+                  placeholder="Ví dụ: Đơn đăng ký nhập học" 
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-sm font-bold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white transition-all animate-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 ml-1">Số lượng</label>
+                  <input 
+                    type="text" 
+                    value={docFormQty} 
+                    onChange={(e) => setDocFormQty(e.target.value)} 
+                    placeholder="Ví dụ: 01 bản" 
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-sm font-bold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white transition-all animate-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 ml-1">Ghi chú</label>
+                  <input 
+                    type="text" 
+                    value={docFormNote} 
+                    onChange={(e) => setDocFormNote(e.target.value)} 
+                    placeholder="Ví dụ: Bản sao y" 
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-sm font-bold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white transition-all animate-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 px-6 py-4 border-t border-slate-100 flex items-center justify-end gap-3">
+              <button 
+                onClick={() => setIsDocModalOpen(false)} 
+                className="px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-600 rounded-xl text-xs font-black transition-colors"
+              >
+                Hủy bỏ
+              </button>
+              <button 
+                onClick={() => {
+                  if (!docFormName.trim()) {
+                    alert("Vui lòng nhập tên hồ sơ!");
+                    return;
+                  }
+                  
+                  let updated = [];
+                  if (editingDoc) {
+                    updated = docList.map(d => d.id === editingDoc.id ? { ...d, name: docFormName, qty: docFormQty, note: docFormNote } : d);
+                  } else {
+                    const newId = docList.length > 0 ? Math.max(...docList.map(d => d.id)) + 1 : 1;
+                    updated = [...docList, { id: newId, name: docFormName, qty: docFormQty, note: docFormNote }];
+                  }
+                  
+                  setDocList(updated);
+                  localStorage.setItem('admission_docs_' + selectedDocGroup, JSON.stringify(updated));
+                  setIsDocModalOpen(false);
+                }} 
+                className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black transition-colors shadow-lg shadow-indigo-100"
+              >
+                Lưu hồ sơ
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -3558,7 +3859,7 @@ return {
                       {/* Page Title */}
                       <div className="text-center my-6">
                         <h2 className="text-xl font-bold tracking-wide text-indigo-950 uppercase mb-4">
-                          DANH MỤC HỒ SƠ NHẬP HỌC KHỐI 1
+                          DANH MỤC HỒ SƠ NHẬP HỌC {selectedReportStudent.targetType ? selectedReportStudent.targetType.toUpperCase() : `KHỐI ${selectedReportStudent.grade || "1"}`}
                         </h2>
                       </div>
 
@@ -3574,16 +3875,7 @@ return {
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-300">
-                            {[
-                              { id: 1, name: "Đơn đăng ký nhập học (theo mẫu của Hệ thống)", qty: "01 bản chính", note: "" },
-                              { id: 2, name: "Bản sao Giấy khai sinh (hợp lệ)", qty: "01 bản", note: "" },
-                              { id: 3, name: "Giấy khám sức khỏe học sinh (trong vòng 6 tháng)", qty: "01 bản chính", note: "" },
-                              { id: 4, name: "Ảnh thẻ 3x4 (nền trắng, mới nhất)", qty: "04 ảnh", note: "" },
-                              { id: 5, name: "Bản sao Sổ hộ khẩu hoặc Giấy xác nhận cư trú (CT07)", qty: "01 bản", note: "" },
-                              { id: 6, name: "Giấy chứng nhận hoàn thành chương trình Mầm non", qty: "01 bản sao", note: "Nếu có" },
-                              { id: 7, name: "Bản sao Sổ tiêm chủng của học sinh", qty: "01 bản", note: "" },
-                              { id: 8, name: "Hồ sơ ưu đãi/giảm phí (nếu thuộc diện ưu tiên)", qty: "01 bộ", note: "Bản sao" },
-                            ].map((item) => (
+                            {modalDocList.map((item) => (
                               <tr key={item.id} className="border-b border-slate-300">
                                 <td className="px-5 py-2.5 border-r border-slate-300 text-center font-bold text-slate-500">{item.id}</td>
                                 <td className="px-5 py-2.5 border-r border-slate-300 font-semibold text-slate-800">{item.name}</td>
