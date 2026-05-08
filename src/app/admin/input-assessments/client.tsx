@@ -3175,8 +3175,8 @@ return {
                       <span className="font-semibold text-slate-700">{selectedReportStudent.gender === "M" || selectedReportStudent.gender === "Nam" ? "Nam" : selectedReportStudent.gender === "F" || selectedReportStudent.gender === "Nữ" ? "Nữ" : selectedReportStudent.gender || "—"}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-slate-400 font-bold uppercase text-[10px] tracking-wider">Lớp</span>
-                      <span className="font-semibold text-slate-700">{selectedReportStudent.className || "—"}</span>
+                      <span className="text-slate-400 font-bold uppercase text-[10px] tracking-wider">Đối tượng tuyển sinh</span>
+                      <span className="font-semibold text-slate-700">{selectedReportStudent.targetType || "—"}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-slate-400 font-bold uppercase text-[10px] tracking-wider">Khối học</span>
