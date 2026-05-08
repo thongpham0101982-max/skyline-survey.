@@ -50,6 +50,7 @@ interface Props {
 
 // ========= CONSTANTS =========
 const CATEGORY_TYPES = [
+  { code: "DOI_TUONG_TS",  label: "Đối tượng Tuyển sinh", color: "from-pink-500 to-rose-500" },
   { code: "DIEN_KS",       label: "Diện Khảo sát",      color: "from-violet-500 to-indigo-500" },
   { code: "HINH_THUC_KS",  label: "Hình thức KS",        color: "from-blue-500 to-cyan-500" },
   { code: "HS_HT_HOC_SINH", label: "Hồ sơ/Bảng điểm",   color: "from-emerald-500 to-teal-500" },
@@ -57,7 +58,6 @@ const CATEGORY_TYPES = [
   { code: "KY_KS",          label: "Kỳ Khảo sát",         color: "from-orange-500 to-red-500" },
   { code: "KQ_HOC_TAP",    label: "Kết quả Học tập",     color: "from-sky-500 to-blue-500" },
   { code: "KQ_REN_LUYEN",  label: "Kết quả Rèn luyện",   color: "from-green-500 to-emerald-500" },
-  
 ]
 const STATUS_OPTS = ["ACTIVE", "DRAFT", "CLOSED"]
 const STATUS_MAP: Record<string,{label:string,cls:string}> = {
@@ -345,9 +345,9 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
           "Học kỳ / Năm TS": "HK1",
           "Hệ Khảo sát": "",
           "Hồ sơ / Bảng điểm": "",
+          "Đối tượng Tuyển sinh": "",
           "Diện khảo sát": "",
           "Hình thức KS": "",
-          
           "Kết quả Học tập": "",
           "Kết quả Rèn luyện": ""
         }
@@ -1150,7 +1150,7 @@ ${reportForm.directorNote}`;
         const hocKy = String(findVal(row, ["học kỳ", "hoc ky", "semester"]) || "").trim();
         const admissionCriteria = String(findVal(row, ["diện khảo sát", "dien khao sat", "criteria"]) || "").trim();
         const surveySystem = String(findVal(row, ["hình thức ks", "hinh thuc ks", "survey system"]) || "").trim();
-        const targetType = String(findVal(row, ["loại tuyển sinh", "loai tuyen sinh", "target type"]) || "").trim();
+        const targetType = String(findVal(row, ["đối tượng", "doi tuong", "loại tuyển sinh", "loai tuyen sinh", "target type"]) || "").trim();
         const surveyFormType = String(findVal(row, ["hệ khảo sát", "he khao sat", "h? kh?o st"]) || "").trim();
           const hoSoCtQuocTe = String(findVal(row, ["hồ sơ / bảng điểm", "hồ sơ", "ho so"]) || "").trim();
           const kqHocTap = String(findVal(row, ["kết quả học tập", "kq hoc tap", "k?t qu? h?c t?p"]) || "").trim();
@@ -1772,6 +1772,7 @@ return {
                               
                               <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Hồ sơ / Bảng điểm</th>
                               <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Học kỳ / Năm TS</th>
+                              <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Đối tượng TS</th>
                                 <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Diện khảo sát</th>
                                 <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Hình thức KS</th>
                                 
@@ -1792,6 +1793,7 @@ return {
                                
                                <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.hoSoCtQuocTe || "-"}</span></td>
                                <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.hocKy || "-"}</span></td>
+                               <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.targetType || "-"}</span></td>
                                  <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.admissionCriteria || "-"}</span></td>
                                  <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.surveySystem || "-"}</span></td>
                                  
@@ -3091,7 +3093,14 @@ return {
                </Field>
             </div>
 
-           <div className="grid grid-cols-2 gap-4"><Field label="Diện Khảo sát">
+           <div className="grid grid-cols-3 gap-4">
+               <Field label="Đối tượng Tuyển sinh">
+                 <select value={sForm.targetType} onChange={e=>setSForm(f=>({...f,targetType:e.target.value}))} className={inp}>
+                   <option value="">--</option>
+                   {configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                 </select>
+               </Field>
+               <Field label="Diện Khảo sát">
                 <select value={sForm.admissionCriteria} onChange={e=>setSForm(f=>({...f,admissionCriteria:e.target.value}))} className={inp}>
                   <option value="">--</option>
                   {configs.filter(c => c.categoryType === "DIEN_KS").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
