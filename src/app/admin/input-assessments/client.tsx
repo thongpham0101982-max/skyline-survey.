@@ -3911,10 +3911,20 @@ return {
               <div className="flex items-center gap-4">
                 <button 
                   onClick={() => {
+                    const originalTitle = document.title;
+                    const academicYearStr = selectedReportStudent?.academicYear?.substring(0, 4) || new Date().getFullYear().toString();
+                    const monthStr = "T" + String(new Date().getMonth() + 1).padStart(2, '0');
+                    const studentName = selectedReportStudent?.fullName || "";
+                    const pdfFileName = `${academicYearStr}_${monthStr}_TCM_${studentName}`;
+                    
+                    document.title = pdfFileName;
                     const confirmSave = confirm("Mẹo: Để xuất file PDF có chất lượng tốt nhất, vui lòng chọn máy in là 'Lưu dưới dạng PDF' (Save as PDF) trong hộp thoại tiếp theo.\n\nBấm OK để mở hộp thoại xuất!");
                     if (confirmSave) {
                       window.print();
                     }
+                    setTimeout(() => {
+                      document.title = originalTitle;
+                    }, 1000);
                   }}
                   className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md shadow-emerald-100 flex items-center gap-2 transition-all"
                 >
@@ -3922,7 +3932,19 @@ return {
                   Xuất PDF
                 </button>
                 <button 
-                  onClick={() => window.print()}
+                  onClick={() => {
+                    const originalTitle = document.title;
+                    const academicYearStr = selectedReportStudent?.academicYear?.substring(0, 4) || new Date().getFullYear().toString();
+                    const monthStr = "T" + String(new Date().getMonth() + 1).padStart(2, '0');
+                    const studentName = selectedReportStudent?.fullName || "";
+                    const pdfFileName = `${academicYearStr}_${monthStr}_TCM_${studentName}`;
+                    
+                    document.title = pdfFileName;
+                    window.print();
+                    setTimeout(() => {
+                      document.title = originalTitle;
+                    }, 1000);
+                  }}
                   className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md shadow-indigo-100 flex items-center gap-2 transition-all"
                 >
                   In thư (Print)
