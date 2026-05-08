@@ -180,6 +180,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
   const [tab, setTab] = useState("periods")
   const [rcCampusId, setRcCampusId] = useState("")
   const [rcReportType, setRcReportType] = useState("thu_chuc_mung")
+  const [rcTargetGroup, setRcTargetGroup] = useState("all")
   const [rcTitle, setRcTitle] = useState("BÁO CÁO KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO")
   const [rcLogo, setRcLogo] = useState("")
   const [rcSignature, setRcSignature] = useState("")
@@ -195,12 +196,13 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
   }, [campuses, rcCampusId])
 
   useEffect(() => {
-    if (typeof window !== "undefined" && rcCampusId && rcReportType) {
+    if (typeof window !== "undefined" && rcCampusId && rcReportType && rcTargetGroup) {
       const selectedCampus = campuses.find(c => c.id === rcCampusId);
       const defaultManagerName = selectedCampus?.manager?.fullName || "";
       
-      const savedCampus = localStorage.getItem('report_config_' + rcCampusId + '_' + rcReportType);
-      const savedGlobal = localStorage.getItem('report_config_global_' + rcReportType);
+      const typeKey = rcTargetGroup === "all" ? rcReportType : rcReportType + '_' + rcTargetGroup;
+      const savedCampus = localStorage.getItem('report_config_' + rcCampusId + '_' + typeKey);
+      const savedGlobal = localStorage.getItem('report_config_global_' + typeKey);
       
       let campusData = {};
       let globalData = {};
@@ -256,7 +258,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
       setRcSignature(campusData.signature || "");
       setRcDirectorName(campusData.directorName || defaultManagerName);
     }
-  }, [rcCampusId, rcReportType, campuses])
+  }, [rcCampusId, rcReportType, rcTargetGroup, campuses])
 
   const handleLogoUpload = (e) => {
     const file = e.target.files?.[0]
@@ -305,6 +307,9 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
   const saveReportConfig = () => {
     if (!rcCampusId) return notify("Vui lòng chọn Cơ sở", "err")
     if (!rcReportType) return notify("Vui lòng chọn Loại báo cáo", "err")
+    if (!rcTargetGroup) return notify("Vui lòng chọn Đối tượng áp dụng", "err")
+    
+    const typeKey = rcTargetGroup === "all" ? rcReportType : rcReportType + '_' + rcTargetGroup;
     
     // Save Global parts (applies to all campuses)
     const globalData = {
@@ -314,7 +319,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
       content: rcContent,
       footer: rcFooter
     }
-    localStorage.setItem('report_config_global_' + rcReportType, JSON.stringify(globalData))
+    localStorage.setItem('report_config_global_' + typeKey, JSON.stringify(globalData))
     
     // Save Campus-specific parts (applies only to current campus)
     const campusData = {
@@ -327,7 +332,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
       content: rcContent,
       footer: rcFooter
     }
-    localStorage.setItem('report_config_' + rcCampusId + '_' + rcReportType, JSON.stringify(campusData))
+    localStorage.setItem('report_config_' + rcCampusId + '_' + typeKey, JSON.stringify(campusData))
     
     notify("Đã lưu cấu hình báo cáo thành công!")
   }
@@ -565,32 +570,31 @@ ${reportForm.directorNote}`;
     
     if (targetCampus) {
       let typeKey = isCommitment ? 'cam_ket_hoc_tap' : 'thu_chuc_mung';
-      if (!isCommitment) {
-        let candidateKeys = [];
-        if (selectedReportStudent.targetType) {
-          candidateKeys.push('doi_tuong_tuyen_sinh');
-        }
-        const gradeNum = parseInt(selectedReportStudent.grade);
-        if (gradeNum === 1) {
-          candidateKeys.push('khoi_1');
-        } else if (gradeNum >= 2 && gradeNum <= 5) {
-          candidateKeys.push('khoi_2_5');
-        } else if (gradeNum === 6) {
-          candidateKeys.push('khoi_6');
-        } else if (gradeNum >= 7 && gradeNum <= 9) {
-          candidateKeys.push('khoi_7_9');
-        } else if (gradeNum === 10) {
-          candidateKeys.push('khoi_10');
-        } else if (gradeNum >= 11 && gradeNum <= 12) {
-          candidateKeys.push('khoi_11_12');
-        }
-        
-        const matchingKey = candidateKeys.find(k => {
-          return localStorage.getItem('report_config_' + targetCampus.id + '_' + k) || localStorage.getItem('report_config_global_' + k);
-        });
-        if (matchingKey) {
-          typeKey = matchingKey;
-        }
+      let candidateKeys = [];
+      const baseKey = isCommitment ? 'cam_ket_hoc_tap' : 'thu_chuc_mung';
+      if (selectedReportStudent.targetType) {
+        candidateKeys.push(baseKey + '_doi_tuong_tuyen_sinh');
+      }
+      const gradeNum = parseInt(selectedReportStudent.grade);
+      if (gradeNum === 1) {
+        candidateKeys.push(baseKey + '_khoi_1');
+      } else if (gradeNum >= 2 && gradeNum <= 5) {
+        candidateKeys.push(baseKey + '_khoi_2_5');
+      } else if (gradeNum === 6) {
+        candidateKeys.push(baseKey + '_khoi_6');
+      } else if (gradeNum >= 7 && gradeNum <= 9) {
+        candidateKeys.push(baseKey + '_khoi_7_9');
+      } else if (gradeNum === 10) {
+        candidateKeys.push(baseKey + '_khoi_10');
+      } else if (gradeNum >= 11 && gradeNum <= 12) {
+        candidateKeys.push(baseKey + '_khoi_11_12');
+      }
+      
+      const matchingKey = candidateKeys.find(k => {
+        return localStorage.getItem('report_config_' + targetCampus.id + '_' + k) || localStorage.getItem('report_config_global_' + k);
+      });
+      if (matchingKey) {
+        typeKey = matchingKey;
       }
       const savedCampus = localStorage.getItem('report_config_' + targetCampus.id + '_' + typeKey);
       const savedGlobal = localStorage.getItem('report_config_global_' + typeKey);
@@ -2173,8 +2177,14 @@ return {
 
             <Field label="Loại báo cáo" required>
               <select value={rcReportType} onChange={e => setRcReportType(e.target.value)} className={inp}>
-                <option value="thu_chuc_mung">Thư chúc mừng (Mặc định)</option>
+                <option value="thu_chuc_mung">Thư chúc mừng</option>
                 <option value="cam_ket_hoc_tap">Cam kết học tập</option>
+              </select>
+            </Field>
+
+            <Field label="Áp dụng cho Đối tượng / Khối" required>
+              <select value={rcTargetGroup} onChange={e => setRcTargetGroup(e.target.value)} className={inp}>
+                <option value="all">Tất cả các khối (Mặc định)</option>
                 <option value="khoi_1">Khối 1</option>
                 <option value="khoi_2_5">Khối 2 đến 5</option>
                 <option value="khoi_6">Khối 6</option>
