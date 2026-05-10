@@ -3264,7 +3264,7 @@ return {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
               
               {/* STUDENT BRIEF DETAIL CARD */}
-              <div className="lg:col-span-4 space-y-6">
+              <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-24 self-start transition-all duration-300">
                 <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full -mt-10 -mr-10 mix-blend-multiply filter blur-2xl opacity-70"></div>
                   
@@ -3276,56 +3276,64 @@ return {
                     <span className="font-mono font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full text-xs mt-2 border border-indigo-100/50">{selectedReportStudent.studentCode}</span>
                   </div>
 
-                  <div className="py-6 space-y-4">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-slate-400 font-bold uppercase text-[10px] tracking-wider">Ngày sinh</span>
-                      <span className="font-semibold text-slate-700">{selectedReportStudent.dateOfBirth ? new Date(selectedReportStudent.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</span>
+                  <div className="py-5 border-t border-slate-100 mt-4 grid grid-cols-2 gap-x-3 gap-y-4 text-sm">
+                    <div className="flex flex-col">
+                      <span className="text-slate-400 font-black uppercase text-[9px] tracking-widest mb-0.5">Ngày sinh</span>
+                      <span className="font-bold text-slate-800 text-[13px]">{selectedReportStudent.dateOfBirth ? new Date(selectedReportStudent.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</span>
                     </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-slate-400 font-bold uppercase text-[10px] tracking-wider">Giới tính</span>
-                      <span className="font-semibold text-slate-700">{selectedReportStudent.gender === "M" || selectedReportStudent.gender === "Nam" ? "Nam" : selectedReportStudent.gender === "F" || selectedReportStudent.gender === "Nữ" ? "Nữ" : selectedReportStudent.gender || "—"}</span>
+                    <div className="flex flex-col">
+                      <span className="text-slate-400 font-black uppercase text-[9px] tracking-widest mb-0.5">Giới tính</span>
+                      <span className="font-bold text-slate-800 text-[13px]">{selectedReportStudent.gender === "M" || selectedReportStudent.gender === "Nam" ? "Nam" : selectedReportStudent.gender === "F" || selectedReportStudent.gender === "Nữ" ? "Nữ" : selectedReportStudent.gender || "—"}</span>
                     </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-slate-400 font-bold uppercase text-[10px] tracking-wider">Đối tượng tuyển sinh</span>
-                      <span className="font-semibold text-slate-700">{selectedReportStudent.targetType || "—"}</span>
+                    <div className="flex flex-col">
+                      <span className="text-slate-400 font-black uppercase text-[9px] tracking-widest mb-0.5">Khối học</span>
+                      <span className="font-black text-slate-900 text-sm">K{selectedReportStudent.grade || "—"}</span>
                     </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-slate-400 font-bold uppercase text-[10px] tracking-wider">Khối học</span>
-                      <span className="font-semibold text-slate-700">K{selectedReportStudent.grade || "—"}</span>
+                    <div className="flex flex-col">
+                      <span className="text-slate-400 font-black uppercase text-[9px] tracking-widest mb-0.5">Đối tượng TS</span>
+                      <span className="font-bold text-slate-800 text-[13px] truncate" title={selectedReportStudent.targetType}>{selectedReportStudent.targetType || "—"}</span>
                     </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-slate-400 font-bold uppercase text-[10px] tracking-wider">Hệ Khảo sát</span>
-                      <span className="font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-100 text-xs">{selectedReportStudent.surveyFormType || "—"}</span>
+                    
+                    <div className="col-span-2 h-px bg-slate-100/50 my-0.5"></div>
+                    
+                    <div className="flex flex-col">
+                      <span className="text-slate-400 font-black uppercase text-[9px] tracking-widest mb-0.5">Hệ Khảo sát</span>
+                      <div>
+                        <span className="font-black text-amber-700 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-100/70 text-[11px] inline-block">{selectedReportStudent.surveyFormType || "—"}</span>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-slate-400 font-bold uppercase text-[10px] tracking-wider">Diện Khảo sát</span>
-                      <span className="font-semibold text-slate-700">{selectedReportStudent.admissionCriteria || "—"}</span>
+                    <div className="flex flex-col">
+                      <span className="text-slate-400 font-black uppercase text-[9px] tracking-widest mb-0.5">Diện Khảo sát</span>
+                      <span className="font-bold text-slate-700 text-[13px]">{selectedReportStudent.admissionCriteria || "—"}</span>
                     </div>
-                    <div className="flex items-center justify-between text-sm border-t border-slate-100 pt-3 mt-1">
-                      <span className="text-slate-400 font-bold uppercase text-[10px] tracking-wider">Xét duyệt</span>
-                      {selectedReportStudent.admissionResult ? (
-                        <span className="font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-100 text-xs flex items-center gap-1 shadow-sm animate-fade-in">
-                          <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
-                          Đã duyệt ({selectedReportStudent.admissionResult})
-                        </span>
-                      ) : (
-                        <span className="font-bold text-slate-500 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-200 text-xs">
-                          Chưa duyệt
-                        </span>
+
+                    <div className="col-span-2 bg-slate-50 border border-slate-100 rounded-2xl p-3 space-y-2 mt-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-500 font-black uppercase text-[9px] tracking-widest">Trạng thái duyệt</span>
+                        {selectedReportStudent.admissionResult ? (
+                          <span className="font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-lg border border-emerald-200 text-[10px] flex items-center gap-1 shadow-sm shadow-emerald-100/50 animate-fade-in">
+                            <span className="w-1 h-1 bg-emerald-500 rounded-full animate-pulse"></span>
+                            {selectedReportStudent.admissionResult}
+                          </span>
+                        ) : (
+                          <span className="font-black text-slate-500 bg-white px-2 py-0.5 rounded-lg border border-slate-200 text-[10px]">
+                            Chưa duyệt
+                          </span>
+                        )}
+                      </div>
+                      {selectedReportStudent.signatureName && (
+                        <div className="flex items-center justify-between border-t border-slate-200/50 pt-2 text-[12px]">
+                          <span className="text-slate-400 font-bold">Người ký:</span>
+                          <span className="font-bold text-slate-700">{selectedReportStudent.signatureName}</span>
+                        </div>
+                      )}
+                      {selectedReportStudent.admissionCampus && (
+                        <div className="flex items-center justify-between pt-0.5 text-[12px]">
+                          <span className="text-slate-400 font-bold">Cơ sở:</span>
+                          <span className="font-bold text-slate-700">{selectedReportStudent.admissionCampus}</span>
+                        </div>
                       )}
                     </div>
-                    {selectedReportStudent.signatureName && (
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-400 font-bold uppercase text-[10px] tracking-wider">Người duyệt</span>
-                        <span className="font-semibold text-slate-700">{selectedReportStudent.signatureName}</span>
-                      </div>
-                    )}
-                    {selectedReportStudent.admissionCampus && (
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-400 font-bold uppercase text-[10px] tracking-wider">Cơ sở duyệt</span>
-                        <span className="font-semibold text-slate-700">{selectedReportStudent.admissionCampus}</span>
-                      </div>
-                    )}
                     {(selectedReportStudent.admissionResult === "Đạt" || selectedReportStudent.admissionResult === "Đạt cam kết") && (
                       <div className="space-y-2 mt-4 animate-fade-in">
                         <button
@@ -3490,8 +3498,42 @@ return {
                     Học sinh này chưa có kết quả đánh giá môn học nào.
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {selectedReportStudent.scores.map((sc: any) => {
+                  <div className="space-y-6">
+                    {/* PREMIUM QUICK SCORE DASHBOARD MATRIX */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                      {(selectedReportStudent.scores || []).map((sc: any) => {
+                        const subject = sc.subject || {};
+                        const sName = subject.name || "Môn học";
+                        const sCode = (subject.code || "").toLowerCase();
+                        let val = "—";
+                        try {
+                          if (sc.scores) {
+                            const parsed = JSON.parse(sc.scores);
+                            const vArr = Array.isArray(parsed) ? parsed : [parsed];
+                            if (sCode.includes("tly")) val = vArr[6] || vArr[20] || "—";
+                            else if (sCode.includes("tci") || sCode.includes("cpt")) val = vArr.filter(x => x === "3").length + " Đ";
+                            else if (sCode.includes("nltd")) val = vArr[4] ? vArr[4] + "%" : "—";
+                            else val = vArr.find(x => x !== undefined && x !== "" && x !== null) || "—";
+                          }
+                        } catch { val = sc.scores || "—"; }
+
+                        return (
+                          <div key={sc.id} className="bg-gradient-to-br from-indigo-500 to-violet-600 rounded-2xl p-3 shadow-lg shadow-indigo-100 border border-white/10 relative overflow-hidden group hover:-translate-y-0.5 transition-all duration-300">
+                            <div className="absolute -right-2 -top-2 w-12 h-12 bg-white/10 rounded-full blur-xl group-hover:bg-white/20 transition-colors"></div>
+                            <div className="text-[8px] font-black text-white/70 uppercase tracking-widest truncate mb-1.5 flex items-center gap-1">
+                              <div className="w-1 h-1 bg-white rounded-full opacity-70"></div>
+                              {sName}
+                            </div>
+                            <div className="text-xl font-black text-white drop-shadow-sm flex items-baseline gap-1">
+                              {val}
+                              <span className="text-[8px] opacity-60 font-medium tracking-normal">đ</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <div className="space-y-4">                    {selectedReportStudent.scores.map((sc: any) => {
                       const subject = sc.subject || {};
                       const subName = (subject.name || "").toLowerCase();
                       const subCode = (subject.code || "").toLowerCase();
@@ -3661,6 +3703,7 @@ return {
                       );
                     })}
                   </div>
+                </div>
                 )}
               </div>
 
