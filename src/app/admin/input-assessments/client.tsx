@@ -1580,6 +1580,7 @@ return {
       {toast && <Toast msg={toast.msg} type={toast.type}/>}
       {confirm && <ConfirmDialog open={true} onClose={()=>setConfirm(null)} onConfirm={confirm.fn} message={confirm.msg}/>}
 
+      <div className="no-print flex flex-col gap-4 w-full">
       {/* HEADER BAR */}
       <div className="bg-white border border-slate-200 shadow-sm rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
@@ -3733,6 +3734,8 @@ return {
         </div>
       )}
 
+      </div>
+
       {/* ============= MODALS ============= */}
 
       <Modal open={isSubjectOpen} onClose={()=>setIsSubjectOpen(false)} title="Thông tin Môn Khảo sát" footer={<><button onClick={()=>setIsSubjectOpen(false)} className="flex-1 py-3 text-xs font-black uppercase text-slate-400">Hủy</button> <button onClick={handleSubjectSubmit} className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-100">Hoàn tất</button></>}>
@@ -4000,8 +4003,25 @@ return {
               body * {
                 visibility: hidden !important;
               }
-              /* 2. UNCLOG IMMEDIATE CONTAINER WRAPPERS TO RESTORE DOCUMENT FLOW */
-              .no-print-backdrop, 
+              /* 2. TELEPORT TO TOP TO ENSURE ZERO-OFFSET ANCHORING */
+              .no-print-backdrop {
+                visibility: visible !important;
+                opacity: 1 !important;
+                transform: none !important;
+                overflow: visible !important;
+                max-height: none !important;
+                max-width: none !important;
+                box-shadow: none !important;
+                border: none !important;
+                position: absolute !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100% !important;
+                display: block !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                z-index: 999999999 !important;
+              }
               .no-print-backdrop > div {
                 visibility: visible !important;
                 opacity: 1 !important;
@@ -4011,7 +4031,7 @@ return {
                 max-width: none !important;
                 box-shadow: none !important;
                 border: none !important;
-                position: static !important;
+                position: relative !important;
                 display: block !important;
                 margin: 0 !important;
                 padding: 0 !important;
