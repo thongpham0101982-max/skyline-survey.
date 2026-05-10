@@ -589,6 +589,14 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
         }
       }
 
+      // Auto-fill from derived campus object if manually empty
+      if (!finalCampus && resolvedStudentCampusObj?.campusName) {
+        finalCampus = resolvedStudentCampusObj.campusName;
+      }
+      if (!finalSignature && resolvedStudentCampusObj?.manager?.fullName) {
+        finalSignature = resolvedStudentCampusObj.manager.fullName;
+      }
+
       let finalNote = reportForm.directorNote;
       if (reportForm.admissionResult === "Đạt cam kết" && reportForm.committedSubjects.length > 0) {
         finalNote = `Môn cam kết: [${reportForm.committedSubjects.join(", ")}]
@@ -670,6 +678,21 @@ ${reportForm.directorNote}`;
     if (!Array.isArray(reportStudents)) return undefined;
     return reportStudents.find(s => s.id === reportStudentId);
   }, [reportStudents, reportStudentId]);
+  const resolvedStudentCampusObj = useMemo(() => {
+    if (!selectedReportStudent) return null;
+    let tc = campuses.find(c => 
+      c.campusName && (c.campusName === reportForm.admissionCampus || c.campusName === selectedReportStudent.admissionCampus)
+    );
+    if (!tc && selectedReportStudent.batchId) {
+      const b = reportBatches.find(bx => bx.id === selectedReportStudent.batchId);
+      if (b?.campusId) {
+        tc = campuses.find(c => c.id === b.campusId);
+      }
+    }
+    return tc || null;
+  }, [selectedReportStudent, reportForm.admissionCampus, campuses, reportBatches]);
+
+  const autoCampusDirectorName = useMemo(() => resolvedStudentCampusObj?.manager?.fullName || "", [resolvedStudentCampusObj]);
 
   const modalDocList = useMemo(() => {
     if (typeof window === "undefined" || !selectedReportStudent) return [];
@@ -3415,7 +3438,7 @@ return {
                         {selectedReportStudent.admissionResult ? (
                           <div className="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm font-black text-slate-700 flex items-center gap-2.5 shadow-sm select-none transition-all">
                             <UserCheck className="w-4 h-4 text-indigo-500" />
-                            {reportForm.signatureName || selectedReportStudent.signatureName || "Hệ thống ghi nhận"}
+                            {reportForm.signatureName || selectedReportStudent.signatureName || autoCampusDirectorName || "Hệ thống ghi nhận"}
                           </div>
                         ) : (
                           <select 
