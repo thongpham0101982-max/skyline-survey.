@@ -4000,8 +4000,9 @@ return {
               body * {
                 visibility: hidden !important;
               }
-              /* 2. FORCE ALL ANCESTORS IN THE MODAL ANCESTRY CHAIN TO UNCLOG */
-              .no-print-backdrop, .no-print-backdrop * {
+              /* 2. UNCLOG IMMEDIATE CONTAINER WRAPPERS TO RESTORE DOCUMENT FLOW */
+              .no-print-backdrop, 
+              .no-print-backdrop > div {
                 visibility: visible !important;
                 opacity: 1 !important;
                 transform: none !important;
@@ -4010,6 +4011,14 @@ return {
                 max-width: none !important;
                 box-shadow: none !important;
                 border: none !important;
+                position: static !important;
+                display: block !important;
+                margin: 0 !important;
+                padding: 0 !important;
+              }
+              /* Ensure descendants that ARE NOT manually excluded also become visible */
+              #print-main-container, #print-main-container * {
+                visibility: visible !important;
               }
               /* 3. Force background clean up so overlay transparent color doesnt ruin print */
               .no-print-backdrop, .no-print-backdrop div {
@@ -4020,14 +4029,14 @@ return {
                 display: none !important;
                 visibility: hidden !important;
               }
-              /* 5. SECURE THE PRINT CONTAINER AT VIEWPORT 0,0 */
+              /* 5. RESTORE SEQUENTIAL FLOW: STACK MULTIPLE PAGES VERTICALLY WITHOUT OVERLAP */
               #print-main-container {
-                position: fixed !important;
-                left: 0 !important;
-                top: 0 !important;
+                position: relative !important;
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
                 width: 210mm !important;
-                min-height: 297mm !important;
-                margin: 0 !important;
+                margin: 0 auto !important;
                 padding: 0 !important;
                 z-index: 999999999 !important;
                 background: white !important; /* Opaque background guaranteed */
