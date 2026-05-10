@@ -4050,6 +4050,33 @@ return {
                 display: none !important;
                 visibility: hidden !important;
               }
+              /* 4.5 UNCLOG WRAPPER ELEMENT HIERARCHIES */
+              #print-modal-inner-wrapper {
+                display: block !important;
+                width: 100% !important;
+                max-width: none !important;
+                height: auto !important;
+                max-height: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: visible !important;
+                transform: none !important;
+                animation: none !important;
+                box-shadow: none !important;
+                border: none !important;
+                background: transparent !important;
+              }
+              #print-body-scroll-wrapper {
+                display: block !important;
+                width: 100% !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                max-height: none !important;
+                height: auto !important;
+                overflow: visible !important;
+                background: transparent !important;
+                box-shadow: none !important;
+              }
               /* 5. RESTORE SEQUENTIAL FLOW: STACK MULTIPLE PAGES VERTICALLY WITHOUT OVERLAP */
               #print-main-container {
                 position: relative !important;
@@ -4143,7 +4170,7 @@ return {
             }
           `}</style>
           
-          <div className="relative bg-white rounded-3xl shadow-2xl flex flex-col max-w-4xl w-full max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200">
+          <div id="print-modal-inner-wrapper" className="relative bg-white rounded-3xl shadow-2xl flex flex-col max-w-4xl w-full max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50 no-print">
               <div className="flex items-center gap-2">
@@ -4198,7 +4225,7 @@ return {
             </div>
             
             {/* Modal Body / Paper Container */}
-            <div className="overflow-y-auto p-8 bg-slate-100 flex justify-center max-h-[80vh]">
+            <div id="print-body-scroll-wrapper" className="overflow-y-auto p-8 bg-slate-100 flex justify-center max-h-[80vh]">
               <div id="print-main-container" className="flex flex-col gap-8 items-center">
                 <div 
                   id="print-letter-area" 
