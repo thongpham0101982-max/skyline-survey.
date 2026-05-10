@@ -3506,11 +3506,21 @@ return {
                         const sName = subject.name || "Môn học";
                         const sCode = (subject.code || "").toLowerCase();
                         let val = "—";
+                        let rawScore = ""; // To hold psychology numeric score
                         try {
                           if (sc.scores) {
                             const parsed = JSON.parse(sc.scores);
                             const vArr = Array.isArray(parsed) ? parsed : [parsed];
-                            if (sCode.includes("tly")) val = vArr[6] || vArr[20] || "—";
+                            if (sCode.includes("tly")) {
+                               const scNum = parseFloat(vArr[6] || vArr[20] || "0");
+                               rawScore = scNum.toString();
+                               let lvl = "Bình thường";
+                               if (scNum > 15 && scNum <= 31) lvl = "Dấu hiệu nhẹ";
+                               else if (scNum > 31 && scNum <= 47) lvl = "Dấu hiệu vừa";
+                               else if (scNum > 47 && scNum <= 63) lvl = "Nguy cơ cao";
+                               else if (scNum > 63) lvl = "Nguy cơ rất cao";
+                               val = lvl; // Show derived conclusion directly
+                            }
                             else if (sCode.includes("tci") || sCode.includes("cpt")) val = vArr.filter(x => x === "3").length + " Đ";
                             else if (sCode.includes("nltd")) val = vArr[4] ? vArr[4] + "%" : "—";
                             else val = vArr.find(x => x !== undefined && x !== "" && x !== null) || "—";
@@ -3524,9 +3534,15 @@ return {
                               <div className="w-1 h-1 bg-white rounded-full opacity-70"></div>
                               {sName}
                             </div>
-                            <div className="text-xl font-black text-white drop-shadow-sm flex items-baseline gap-1">
+                            <div className={`drop-shadow-sm flex items-baseline gap-1.5 font-black text-white ${sCode.includes("tly") ? "text-[13px] mt-0.5 leading-tight tracking-tight" : "text-xl"}`}>
                               {val}
-                              <span className="text-[8px] opacity-60 font-medium tracking-normal">đ</span>
+                              {sCode.includes("tly") ? (
+                                 <span className="text-[9px] opacity-80 font-bold bg-black/20 backdrop-blur-sm px-1.5 py-0.5 rounded-lg shrink-0">
+                                   {rawScore}đ
+                                 </span>
+                              ) : (
+                                 <span className="text-[8px] opacity-60 font-medium tracking-normal">đ</span>
+                              )}
                             </div>
                           </div>
                         );
@@ -3591,12 +3607,15 @@ return {
                                   );
                                 })()}
                               </div>
-                              {commentVals[0] && (
-                                <div className="space-y-1 bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Kết luận sơ bộ</span>
-                                  <p className="text-sm font-medium text-slate-700 leading-relaxed whitespace-pre-wrap">{commentVals[0]}</p>
-                                </div>
-                              )}
+                              <div className="space-y-1 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
+                                  <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full"></span>
+                                  Kết luận sơ bộ
+                                </span>
+                                <p className={`text-sm font-medium leading-relaxed whitespace-pre-wrap ${commentVals[0] ? "text-slate-700" : "text-slate-400 italic"}`}>
+                                  {commentVals[0] || "Chưa cập nhật nội dung nhận định chi tiết."}
+                                </p>
+                              </div>
                               {commentVals[1] && (
                                 <div className="space-y-1 bg-amber-50/30 p-4 rounded-2xl border border-amber-100/50">
                                   <span className="text-[10px] font-black uppercase tracking-widest text-amber-600">Khuyến nghị dành cho phụ huynh</span>
