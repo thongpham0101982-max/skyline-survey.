@@ -3996,13 +3996,21 @@ return {
               #print-main-container, #print-main-container * {
                 visibility: visible !important;
               }
+              * {
+                animation: none !important;
+                transition: none !important;
+              }
               #print-main-container {
-                position: absolute !important;
+                position: fixed !important;
                 left: 0 !important;
                 top: 0 !important;
                 width: 210mm !important;
                 margin: 0 !important;
                 padding: 0 !important;
+                z-index: 99999999 !important;
+                background: white !important;
+                transform: none !important;
+                opacity: 1 !important;
               }
               .print-page {
                 width: 210mm !important;
