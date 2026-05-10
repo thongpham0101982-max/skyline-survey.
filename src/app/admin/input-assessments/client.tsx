@@ -259,8 +259,9 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     const activeTargets = docGroupTargets[selectedDocGroup] || [];
     const activeGrades = docGroupGrades[selectedDocGroup] || [];
     return docList.filter(d => {
-      const matchTarget = activeTargets.length === 0 || (!d.targets || d.targets.length === 0) || d.targets.some(t => activeTargets.includes(t));
-      const matchGrade = activeGrades.length === 0 || (!d.grades || d.grades.length === 0) || d.grades.some(g => activeGrades.includes(g));
+      // When checkboxes are explicitly checked on screen, ONLY include documents explicitly matching them.
+      const matchTarget = activeTargets.length === 0 || (d.targets && d.targets.some(t => activeTargets.includes(t)));
+      const matchGrade = activeGrades.length === 0 || (d.grades && d.grades.some(g => activeGrades.includes(g)));
       return matchTarget && matchGrade;
     });
   }, [docList, selectedDocGroup, docGroupTargets, docGroupGrades]);
