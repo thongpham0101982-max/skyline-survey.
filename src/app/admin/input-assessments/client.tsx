@@ -3990,44 +3990,67 @@ return {
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
               }
+              /* 1. DISABLE ALL ANIMATIONS THAT CAUSE RENDER-FREEZE GLITCHES */
+              *, *::before, *::after {
+                animation: none !important;
+                transition: none !important;
+                animation-duration: 0s !important;
+                transition-duration: 0s !important;
+              }
               body * {
                 visibility: hidden !important;
               }
-              #print-main-container, #print-main-container * {
+              /* 2. FORCE ALL ANCESTORS IN THE MODAL ANCESTRY CHAIN TO UNCLOG */
+              .no-print-backdrop, .no-print-backdrop * {
                 visibility: visible !important;
+                opacity: 1 !important;
+                transform: none !important;
+                overflow: visible !important;
+                max-height: none !important;
+                max-width: none !important;
+                box-shadow: none !important;
+                border: none !important;
               }
-              * {
-                animation: none !important;
-                transition: none !important;
+              /* 3. Force background clean up so overlay transparent color doesnt ruin print */
+              .no-print-backdrop, .no-print-backdrop div {
+                background: transparent !important;
               }
+              /* 4. HIDE THE HEADER CONTROLS MANUALLY */
+              .no-print-backdrop .no-print, .no-print-backdrop .no-print * {
+                display: none !important;
+                visibility: hidden !important;
+              }
+              /* 5. SECURE THE PRINT CONTAINER AT VIEWPORT 0,0 */
               #print-main-container {
                 position: fixed !important;
                 left: 0 !important;
                 top: 0 !important;
                 width: 210mm !important;
+                min-height: 297mm !important;
                 margin: 0 !important;
                 padding: 0 !important;
-                z-index: 99999999 !important;
-                background: white !important;
+                z-index: 999999999 !important;
+                background: white !important; /* Opaque background guaranteed */
                 transform: none !important;
-                opacity: 1 !important;
               }
-              .print-page {
+              /* 6. RELEASE ALL HEIGHT/OVERFLOW LOCKS FROM THE PAGE BODY */
+              .print-page, #print-letter-area {
                 width: 210mm !important;
-                height: 297mm !important;
-                max-height: 297mm !important;
+                height: auto !important;
+                min-height: 297mm !important;
+                max-height: none !important;
                 box-shadow: none !important;
                 border: none !important;
                 padding: 1.2cm 1.2cm !important;
                 margin: 0 !important;
-                overflow: hidden !important;
+                overflow: visible !important; /* PREVENT TEXT CLIPPING/CUTOFF */
                 box-sizing: border-box !important;
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
                 page-break-after: always !important;
                 break-after: page !important;
                 position: relative !important;
-                background: white !important;
+                background: white !important; /* Override transparent constraint */
               }
               /* Enforce scaling dynamically for all elements */
               .print-page img[alt="Logo"] {
