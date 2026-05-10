@@ -3412,17 +3412,24 @@ return {
                       </Field>
 
                       <Field label="Người duyệt / Phê duyệt">
-                        <select 
-                          value={reportForm.signatureName}
-                          onChange={e => setReportForm(f => ({ ...f, signatureName: e.target.value }))}
-                          className={inp}
-                          disabled={!canApprove}
-                        >
-                          <option value="">-- Chọn người phê duyệt --</option>
-                          {gdcsUsers.map(u => (
-                            <option key={u.id} value={u.fullName || u.email}>{u.fullName || u.email}</option>
-                          ))}
-                        </select>
+                        {selectedReportStudent.admissionResult ? (
+                          <div className="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm font-black text-slate-700 flex items-center gap-2.5 shadow-sm select-none transition-all">
+                            <UserCheck className="w-4 h-4 text-indigo-500" />
+                            {reportForm.signatureName || selectedReportStudent.signatureName || "Hệ thống ghi nhận"}
+                          </div>
+                        ) : (
+                          <select 
+                            value={reportForm.signatureName}
+                            onChange={e => setReportForm(f => ({ ...f, signatureName: e.target.value }))}
+                            className={inp}
+                            disabled={!canApprove}
+                          >
+                            <option value="">-- Chọn người phê duyệt --</option>
+                            {gdcsUsers.map(u => (
+                              <option key={u.id} value={u.fullName || u.email}>{u.fullName || u.email}</option>
+                            ))}
+                          </select>
+                        )}
                       </Field>
                     </>
                   )}
