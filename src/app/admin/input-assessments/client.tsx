@@ -250,12 +250,27 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
   }, []);
 
   const [selectedDocGroup, setSelectedDocGroup] = useState("khoi_1");
+  const getDocStorageKey = useCallback((group: string) => {
+    return 'admission_docs_' + group;
+  }, []);
+
   const [docList, setDocList] = useState([]);
+  const filteredDocList = useMemo(() => {
+    const activeTargets = docGroupTargets[selectedDocGroup] || [];
+    const activeGrades = docGroupGrades[selectedDocGroup] || [];
+    return docList.filter(d => {
+      const matchTarget = activeTargets.length === 0 || (!d.targets || d.targets.length === 0) || d.targets.some(t => activeTargets.includes(t));
+      const matchGrade = activeGrades.length === 0 || (!d.grades || d.grades.length === 0) || d.grades.some(g => activeGrades.includes(g));
+      return matchTarget && matchGrade;
+    });
+  }, [docList, selectedDocGroup, docGroupTargets, docGroupGrades]);
   const [isDocModalOpen, setIsDocModalOpen] = useState(false);
   const [editingDoc, setEditingDoc] = useState(null);
   const [docFormName, setDocFormName] = useState("");
   const [docFormQty, setDocFormQty] = useState("");
   const [docFormNote, setDocFormNote] = useState("");
+  const [docFormSelectedTargets, setDocFormSelectedTargets] = useState([]);
+  const [docFormSelectedGrades, setDocFormSelectedGrades] = useState([]);
 
   const defaultDocumentsGrade1 = useMemo(() => [
     { id: 1, name: "Đơn đăng ký nhập học (theo mẫu của Hệ thống)", qty: "01 bản chính", note: "" },
@@ -270,7 +285,8 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const savedDocs = localStorage.getItem('admission_docs_' + selectedDocGroup);
+      const storageKey = getDocStorageKey(selectedDocGroup);
+      const savedDocs = localStorage.getItem(storageKey);
       if (savedDocs) {
         try {
           setDocList(JSON.parse(savedDocs));
@@ -279,12 +295,12 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
         }
       } else if (selectedDocGroup === "khoi_1") {
         setDocList(defaultDocumentsGrade1);
-        localStorage.setItem('admission_docs_khoi_1', JSON.stringify(defaultDocumentsGrade1));
+        localStorage.setItem(storageKey, JSON.stringify(defaultDocumentsGrade1));
       } else {
         setDocList([]);
       }
     }
-  }, [selectedDocGroup, defaultDocumentsGrade1]);
+  }, [selectedDocGroup, defaultDocumentsGrade1, getDocStorageKey]);
 
   const [rcCampusId, setRcCampusId] = useState("")
   const [rcReportType, setRcReportType] = useState("thu_chuc_mung")
@@ -658,58 +674,78 @@ ${reportForm.directorNote}`;
     if (typeof window === "undefined" || !selectedReportStudent) return [];
     
     let studentGroup = "khoi_1";
+    const getNumericGrade = (g) => {
+      if (!g) return null;
+      const match = g.toString().match(/\d+/);
+      return match ? parseInt(match[0], 10) : null;
+    };
+    const sGradeNum = getNumericGrade(selectedReportStudent.grade);
+    
+    const gradeMatchedGroups = docGroups.filter(g => {
+      const mappedGrades = docGroupGrades[g.id] || [];
+      const hasGradeMatch = mappedGrades.some(gradeStr => {
+        if (!selectedReportStudent.grade) return false;
+        const sGrade = selectedReportStudent.grade.toString().toLowerCase();
+        const gStr = gradeStr.toLowerCase();
+        return sGrade === gStr || sGrade.includes(gStr) || gStr.includes(sGrade);
+      });
+      if (hasGradeMatch) return true;
+      
+      if (sGradeNum !== null) {
+        if (g.id === "khoi_1" && sGradeNum === 1) return true;
+        if (g.id === "khoi_2_5" && sGradeNum >= 2 && sGradeNum <= 5) return true;
+        if (g.id === "khoi_6" && sGradeNum === 6) return true;
+        if (g.id === "khoi_7_9" && sGradeNum >= 7 && sGradeNum <= 9) return true;
+        if (g.id === "khoi_10" && sGradeNum === 10) return true;
+        if (g.id === "khoi_11_12" && sGradeNum >= 11 && sGradeNum <= 12) return true;
+      }
+      return false;
+    });
+
     if (selectedReportStudent.targetType) {
-      const associationMatch = docGroups.find(g => {
+      const targetMatch = gradeMatchedGroups.find(g => {
         const mappedTs = docGroupTargets[g.id] || [];
         return mappedTs.some(ts => ts.toLowerCase() === selectedReportStudent.targetType.toLowerCase());
       });
       
-      if (associationMatch) {
-        studentGroup = associationMatch.id;
+      if (targetMatch) {
+        studentGroup = targetMatch.id;
       } else {
-        const match = docGroups.find(g => g.label.toLowerCase() === selectedReportStudent.targetType.toLowerCase() || g.id === selectedReportStudent.targetType);
-        if (match) {
-          studentGroup = match.id;
-        } else {
-          studentGroup = "doi_tuong_tuyen_sinh";
-        }
-      }
-    } else if (selectedReportStudent.grade) {
-      const gradeAssociationMatch = docGroups.find(g => {
-        const mappedGrades = docGroupGrades[g.id] || [];
-        return mappedGrades.some(gradeStr => {
-          const sGrade = selectedReportStudent.grade.toString().toLowerCase();
-          const gStr = gradeStr.toLowerCase();
-          return sGrade === gStr || sGrade.includes(gStr) || gStr.includes(sGrade);
+        const anyTargetMatch = docGroups.find(g => {
+          const mappedTs = docGroupTargets[g.id] || [];
+          return mappedTs.some(ts => ts.toLowerCase() === selectedReportStudent.targetType.toLowerCase());
         });
-      });
-      
-      if (gradeAssociationMatch) {
-        studentGroup = gradeAssociationMatch.id;
-      } else {
-        const getNumericGrade = (g) => {
-          if (!g) return null;
-          const match = g.toString().match(/\d+/);
-          return match ? parseInt(match[0], 10) : null;
-        };
-        const gradeNum = getNumericGrade(selectedReportStudent.grade);
-        if (gradeNum === 1) {
-          studentGroup = "khoi_1";
-        } else if (gradeNum >= 2 && gradeNum <= 5) {
-          studentGroup = "khoi_2_5";
-        } else if (gradeNum === 6) {
-          studentGroup = "khoi_6";
-        } else if (gradeNum >= 7 && gradeNum <= 9) {
-          studentGroup = "khoi_7_9";
-        } else if (gradeNum === 10) {
-          studentGroup = "khoi_10";
-        } else if (gradeNum >= 11 && gradeNum <= 12) {
-          studentGroup = "khoi_11_12";
+        if (anyTargetMatch) {
+          studentGroup = anyTargetMatch.id;
+        } else {
+          studentGroup = gradeMatchedGroups[0]?.id || "doi_tuong_tuyen_sinh";
         }
       }
+    } else {
+      studentGroup = gradeMatchedGroups[0]?.id || "khoi_1";
     }
     
     const saved = localStorage.getItem('admission_docs_' + studentGroup);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(d => {
+            let matchT = true;
+            if (selectedReportStudent.targetType && d.targets && d.targets.length > 0) {
+              matchT = d.targets.some(t => t.toLowerCase() === selectedReportStudent.targetType.toLowerCase());
+            }
+            let matchG = true;
+            if (selectedReportStudent.grade && d.grades && d.grades.length > 0) {
+              const sG = selectedReportStudent.grade.toString().toLowerCase();
+              matchG = d.grades.some(g => { const gr = g.toLowerCase(); return gr === sG || gr.includes(sG) || sG.includes(gr); });
+            }
+            return matchT && matchG;
+          });
+        }
+        return parsed;
+      } catch (e) {}
+    }
     if (saved) {
       try {
         return JSON.parse(saved);
@@ -1132,14 +1168,14 @@ ${reportForm.directorNote}`;
     if (r.ok) {
       setIsColumnConfigOpen(false);
       fetchSubjects();
-    } else alert((await r.json()).error);
+    } else notify((await r.json()).error, "err");
   };     
   
-  const handleSubjectSubmit=async(e:React.FormEvent)=>{e.preventDefault();const p=editingSubjectId?{type:"subject",id:editingSubjectId,data:{name:subjectForm.name,subjectType:subjectForm.subjectType||null, scoreColumns: subjectForm.scoreColumns, commentColumns: subjectForm.commentColumns, status: subjectForm.status, exemptCriteria: JSON.stringify(subjectForm.exemptCriteria)}}:{type:"subject",data:{code:subjectForm.code,name:subjectForm.name,subjectType:subjectForm.subjectType||null, scoreColumns: subjectForm.scoreColumns, commentColumns: subjectForm.commentColumns, status: subjectForm.status||"ACTIVE", exemptCriteria: JSON.stringify(subjectForm.exemptCriteria)}};const r=await fetch("/api/input-assessment-categories",{method:editingSubjectId?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});if(r.ok){setIsSubjectOpen(false);fetchSubjects()}else alert((await r.json()).error)};
+  const handleSubjectSubmit=async(e:React.FormEvent)=>{e.preventDefault();const p=editingSubjectId?{type:"subject",id:editingSubjectId,data:{name:subjectForm.name,subjectType:subjectForm.subjectType||null, scoreColumns: subjectForm.scoreColumns, commentColumns: subjectForm.commentColumns, status: subjectForm.status, exemptCriteria: JSON.stringify(subjectForm.exemptCriteria)}}:{type:"subject",data:{code:subjectForm.code,name:subjectForm.name,subjectType:subjectForm.subjectType||null, scoreColumns: subjectForm.scoreColumns, commentColumns: subjectForm.commentColumns, status: subjectForm.status||"ACTIVE", exemptCriteria: JSON.stringify(subjectForm.exemptCriteria)}};const r=await fetch("/api/input-assessment-categories",{method:editingSubjectId?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});if(r.ok){setIsSubjectOpen(false);fetchSubjects()}else notify((await r.json()).error, "err")};
   
   const deleteSubject=async(id:string)=>{if(!confirm("Xóa?"))return;await fetch("/api/input-assessment-categories?type=subject&id="+id,{method:"DELETE"});fetchSubjects()};
   
-  const addMapping=async(sid:string)=>{const r=await fetch("/api/grade-subject-mappings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({grades:selGrades,eduSystems:selEdus,subjectId:sid})});if(r.ok)fetchMappings();else alert((await r.json()).error)};
+  const addMapping=async(sid:string)=>{const r=await fetch("/api/grade-subject-mappings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({grades:selGrades,eduSystems:selEdus,subjectId:sid})});if(r.ok)fetchMappings();else notify((await r.json()).error, "err")};
   
   const removeMapping=async(sid:string)=>{await fetch("/api/grade-subject-mappings?subjectId="+sid+"&grades="+selGrades.join(",")+"&eduSystems="+selEdus.join(","),{method:"DELETE"});fetchMappings()};
   
@@ -2178,7 +2214,7 @@ return {
                   <button 
                     onClick={async () => {
                       if(!selGrades.length || !selEdus.length || !assignSelSubjects.length) {
-                        alert("Vui lòng chọn đủ Khối, Hệ học và ít nhất 1 Môn KS!"); return;
+                        notify("Vui lòng chọn đủ Khối, Hệ học và ít nhất 1 Môn KS!", "err"); return;
                       }
                       setMappingLoading(true);
                       // If editing, delete ALL old mappings for these subjects first
@@ -2201,7 +2237,7 @@ return {
                       setMappingLoading(false);
                       await fetchAllMappings();
                       setSelGrades([]); setSelEdus([]); setAssignSelSubjects([]); setEditingMappingSubjectId(null);
-                      alert(wasEditing ? "Cập nhật cấu hình thành công!" : "Lưu cấu hình thành công!");
+                      notify(wasEditing ? "Cập nhật cấu hình thành công!" : "Lưu cấu hình thành công!");
                     }}
                     disabled={mappingLoading || (!selGrades.length || !selEdus.length || !assignSelSubjects.length)}
                     className="w-full py-3.5 bg-indigo-600 text-white rounded-xl font-black text-sm uppercase tracking-widest shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:shadow-none flex justify-center items-center gap-2"
@@ -2607,7 +2643,7 @@ return {
                     msg: "Bạn có chắc chắn muốn khôi phục danh sách hồ sơ mẫu cho đối tượng này không?",
                     fn: () => {
                       setDocList(defaultDocumentsGrade1);
-                      localStorage.setItem('admission_docs_' + selectedDocGroup, JSON.stringify(defaultDocumentsGrade1));
+                      localStorage.setItem(getDocStorageKey(selectedDocGroup), JSON.stringify(defaultDocumentsGrade1));
                     }
                   });
                 }}
@@ -2622,6 +2658,8 @@ return {
                   setDocFormName("");
                   setDocFormQty("");
                   setDocFormNote("");
+                  setDocFormSelectedTargets(docGroupTargets[selectedDocGroup] || []);
+                  setDocFormSelectedGrades(docGroupGrades[selectedDocGroup] || []);
                   setIsDocModalOpen(true);
                 }}
                 className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-2 shadow-lg shadow-indigo-100"
@@ -2693,7 +2731,7 @@ return {
                             const updated = customDocGroups.filter(g => g.id !== selectedDocGroup);
                             setCustomDocGroups(updated);
                             localStorage.setItem('admission_doc_groups', JSON.stringify(updated));
-                            localStorage.removeItem('admission_docs_' + selectedDocGroup);
+                            localStorage.removeItem(getDocStorageKey(selectedDocGroup));
                             setSelectedDocGroup("khoi_1");
                           }
                         });
@@ -2717,7 +2755,7 @@ return {
                 <button
                   onClick={() => {
                     localStorage.setItem('admission_doc_targets', JSON.stringify(docGroupTargets));
-                    alert("Đã lưu cấu hình áp dụng đối tượng tuyển sinh thành công!");
+                    notify("Đã lưu cấu hình áp dụng đối tượng tuyển sinh thành công!");
                   }}
                   className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow-md shadow-emerald-100"
                 >
@@ -2779,7 +2817,7 @@ return {
                   <button
                     onClick={() => {
                       localStorage.setItem('admission_doc_grades_mapping', JSON.stringify(docGroupGrades));
-                      alert("Đã lưu cấu hình áp dụng khối lớp thành công!");
+                      notify("Đã lưu cấu hình áp dụng khối lớp thành công!");
                     }}
                     type="button"
                     className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow-md shadow-emerald-100"
@@ -2818,7 +2856,7 @@ return {
               </div>
             </div>
 
-            {docList.length === 0 ? (
+            {filteredDocList.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center border-2 border-dashed border-slate-100 rounded-3xl">
                 <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-4 border border-slate-100">
                   <Tag className="w-8 h-8 text-slate-300" />
@@ -2839,10 +2877,20 @@ return {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 bg-white">
-                    {docList.map((item, idx) => (
+                    {filteredDocList.map((item, idx) => (
                       <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
                         <td className="px-6 py-3.5 text-center font-bold text-slate-400">{idx + 1}</td>
-                        <td className="px-6 py-3.5 font-bold text-slate-800">{item.name}</td>
+                        <td className="px-6 py-3.5">
+                          <div className="font-bold text-slate-800">{item.name}</div>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {item.grades && item.grades.length > 0 && item.grades.map(g => (
+                              <span key={g} className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 rounded text-[9px] font-black border border-emerald-100">{g}</span>
+                            ))}
+                            {item.targets && item.targets.length > 0 && item.targets.map(t => (
+                              <span key={t} className="px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded text-[9px] font-black border border-indigo-100">{t}</span>
+                            ))}
+                          </div>
+                        </td>
                         <td className="px-6 py-3.5 text-center font-bold text-slate-600">{item.qty || "—"}</td>
                         <td className="px-6 py-3.5 text-center text-xs italic text-slate-400 font-semibold">{item.note || "—"}</td>
                         <td className="px-6 py-3.5 text-center">
@@ -2853,6 +2901,8 @@ return {
                                 setDocFormName(item.name);
                                 setDocFormQty(item.qty);
                                 setDocFormNote(item.note);
+                                setDocFormSelectedTargets(item.targets || []);
+                                setDocFormSelectedGrades(item.grades || []);
                                 setIsDocModalOpen(true);
                               }}
                               className="w-8 h-8 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center transition-colors"
@@ -2867,7 +2917,7 @@ return {
                                   fn: () => {
                                     const updated = docList.filter(d => d.id !== item.id);
                                     setDocList(updated);
-                                    localStorage.setItem('admission_docs_' + selectedDocGroup, JSON.stringify(updated));
+                                    localStorage.setItem(getDocStorageKey(selectedDocGroup), JSON.stringify(updated));
                                   }
                                 });
                               }}
@@ -2941,6 +2991,43 @@ return {
                   />
                 </div>
               </div>
+              <div className="pt-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 ml-1">Áp dụng cho Khối lớp học</label>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {["Khối 1", "Khối 2", "Khối 3", "Khối 4", "Khối 5", "Khối 6", "Khối 7", "Khối 8", "Khối 9", "Khối 10", "Khối 11", "Khối 12"].map(g => {
+                    const isChecked = docFormSelectedGrades.includes(g);
+                    return (
+                      <label key={g} className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-50 hover:bg-emerald-50/50 rounded-lg border border-slate-200 cursor-pointer select-none transition-colors">
+                        <input type="checkbox" checked={isChecked} onChange={(e) => { if(e.target.checked) setDocFormSelectedGrades(p=>[...p,g]); else setDocFormSelectedGrades(p=>p.filter(x=>x!==g)); }} className="w-3.5 h-3.5 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300" />
+                        <span className="text-[11px] font-bold text-slate-600">{g}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 ml-1">Áp dụng cho Đối tượng Tuyển sinh</label>
+                <div className="flex flex-wrap gap-2">
+                  {configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => {
+                    const isChecked = docFormSelectedTargets.includes(c.name);
+                    return (
+                      <label key={c.id} className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 hover:bg-indigo-50/50 rounded-xl border border-slate-200 cursor-pointer select-none transition-colors">
+                        <input 
+                          type="checkbox" 
+                          checked={isChecked}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setDocFormSelectedTargets(p => [...p, c.name]);
+                            } else {
+                              setDocFormSelectedTargets(p => p.filter(x => x !== c.name));
+                            }
+                          }}
+                          className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300"
+                        />
+                        <span className="text-xs font-bold text-slate-600">{c.name}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
 
             <div className="bg-slate-50 px-6 py-4 border-t border-slate-100 flex items-center justify-end gap-3">
@@ -2953,20 +3040,20 @@ return {
               <button 
                 onClick={() => {
                   if (!docFormName.trim()) {
-                    alert("Vui lòng nhập tên hồ sơ!");
+                    notify("Vui lòng nhập tên hồ sơ!", "err");
                     return;
                   }
                   
                   let updated = [];
                   if (editingDoc) {
-                    updated = docList.map(d => d.id === editingDoc.id ? { ...d, name: docFormName, qty: docFormQty, note: docFormNote } : d);
+                    updated = docList.map(d => d.id === editingDoc.id ? { ...d, name: docFormName, qty: docFormQty, note: docFormNote, targets: docFormSelectedTargets, grades: docFormSelectedGrades } : d);
                   } else {
                     const newId = docList.length > 0 ? Math.max(...docList.map(d => d.id)) + 1 : 1;
-                    updated = [...docList, { id: newId, name: docFormName, qty: docFormQty, note: docFormNote }];
+                    updated = [...docList, { id: newId, name: docFormName, qty: docFormQty, note: docFormNote, targets: docFormSelectedTargets, grades: docFormSelectedGrades }];
                   }
                   
                   setDocList(updated);
-                  localStorage.setItem('admission_docs_' + selectedDocGroup, JSON.stringify(updated));
+                  localStorage.setItem(getDocStorageKey(selectedDocGroup), JSON.stringify(updated));
                   setIsDocModalOpen(false);
                 }} 
                 className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black transition-colors shadow-lg shadow-indigo-100"
