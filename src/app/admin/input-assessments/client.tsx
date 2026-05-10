@@ -4082,9 +4082,9 @@ return {
             }
           `}</style>
           
-          <div className="relative bg-white rounded-3xl shadow-2xl flex flex-col max-w-4xl w-full max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 no-print">
+          <div className="relative bg-white rounded-3xl shadow-2xl flex flex-col max-w-4xl w-full max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50 no-print">
               <div className="flex items-center gap-2">
                 {isInvitation ? <Mail className="w-5 h-5 text-indigo-600"/> : <GraduationCap className="w-5 h-5 text-indigo-600"/>}
                 <h3 className="text-base font-black text-slate-800">{isInvitation ? "Mẫu Thư mời khảo sát" : isCommitment ? "Bản Cam kết học tập" : "Mẫu Thư Chúc mừng"}</h3>
