@@ -3985,6 +3985,7 @@ return {
         <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto no-print-backdrop">
           <style>{`
             @media print {
+              @page { margin: 0 !important; }
               html, body {
                 height: auto !important;
                 overflow: visible !important;
