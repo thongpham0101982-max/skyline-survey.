@@ -59,9 +59,10 @@ const CATEGORY_TYPES = [
   { code: "KQ_HOC_TAP",    label: "Kết quả Học tập",     color: "from-sky-500 to-blue-500" },
   { code: "KQ_REN_LUYEN",  label: "Kết quả Rèn luyện",   color: "from-green-500 to-emerald-500" },
 ]
-const STATUS_OPTS = ["ACTIVE", "DRAFT", "CLOSED"]
+const STATUS_OPTS = ["ACTIVE", "LOCKED", "DRAFT", "CLOSED"]
 const STATUS_MAP: Record<string,{label:string,cls:string}> = {
   ACTIVE:   { label:"Đang mở",   cls:"bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200" },
+  LOCKED:   { label:"Đã khóa",   cls:"bg-slate-200 text-slate-700 ring-1 ring-slate-300" },
   DRAFT:    { label:"Bản nháp",  cls:"bg-amber-100 text-amber-700 ring-1 ring-amber-200" },
   CLOSED:   { label:"Kết thúc", cls:"bg-red-100 text-red-700 ring-1 ring-red-200" },
   INACTIVE: { label:"Tắt",      cls:"bg-slate-100 text-slate-500 ring-1 ring-slate-200" },

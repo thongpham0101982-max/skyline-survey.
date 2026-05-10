@@ -130,6 +130,32 @@ export async function POST(req: any) {
     const body = await req.json();
     const { studentId, subjectId, scores, comments } = body;
 
+    // -- SECURITY HARDENING: Check if Period or Batch is Locked --
+    const student = await prisma.inputAssessmentStudent.findUnique({
+        where: { id: studentId },
+        include: { period: true, batch: true }
+    });
+    if (!student) return NextResponse.json({error: "Student not found"}, {status: 404});
+
+    const isPrtLocked = student.period?.status !== "ACTIVE";
+    const isBtcLocked = student.batch?.status === "LOCKED" || student.batch?.status === "CLOSED";
+    
+    if (isPrtLocked || isBtcLocked) {
+        // Check override for this specific teacher/subject
+        const activeUnlock = await prisma.inputAssessmentTeacherAssignment.findFirst({
+            where: {
+                userId: session.user.id,
+                periodId: student.periodId,
+                subjectId: subjectId,
+                unlockRequestStatus: "APPROVED"
+            }
+        });
+        if (!activeUnlock) {
+            return NextResponse.json({error: "Hạng mục khảo sát (Kỳ/Đợt) đã bị Khóa. Không thể sửa điểm!"}, {status: 403});
+        }
+    }
+    // ------------------------------------------------------------
+
     const record = await prisma.studentAssessmentScore.upsert({
         where: {
             studentId_subjectId: { studentId, subjectId }

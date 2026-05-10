@@ -256,7 +256,9 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
         alert("Đã gửi yêu cầu mở khóa thành công!");
     } else alert("Lỗi: " + (await r.json()).error);
   };
-  const isLocked = currentAssignment?.period?.status !== "ACTIVE" && currentAssignment?.unlockRequestStatus !== "APPROVED";
+  const isPeriodLocked = currentAssignment?.period?.status !== "ACTIVE";
+  const isBatchLocked = currentAssignment?.batch?.status === "LOCKED" || currentAssignment?.batch?.status === "CLOSED";
+  const isLocked = (isPeriodLocked || isBatchLocked) && currentAssignment?.unlockRequestStatus !== "APPROVED";
 
     return (
         <div className="p-3 md:p-6 max-w-[1400px] mx-auto space-y-4 md:space-y-6">
@@ -387,7 +389,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                 Thuộc kỳ khảo sát: <span className="font-semibold text-slate-700">{currentAssignment.period.name} {currentAssignment.batch?.name ? ` - ${currentAssignment.batch.name}` : ""}</span>
                             </p>
                         </div>
-                        {isLocked && <span className="text-sm font-bold bg-red-100 text-red-700 border border-red-200 px-4 py-1.5 rounded-full shadow-sm mr-2 flex items-center gap-1.5"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg> KỲ KHẢO SÁT ĐÃ KHÓA</span>}
+                        {isLocked && <span className="text-sm font-bold bg-red-100 text-red-700 border border-red-200 px-4 py-1.5 rounded-full shadow-sm mr-2 flex items-center gap-1.5"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg> KHẢO SÁT ĐÃ KHÓA</span>}
                         <span className={"text-sm font-medium border px-4 py-1.5 rounded-full shadow-sm " + (isLocked ? "bg-slate-100 text-slate-500 border-slate-200" : "bg-emerald-100/50 text-emerald-700 border-emerald-200")}>
                             {isPsychSubject ? (gradeVal ? `Mẫu chuyên biệt Tâm lý Khối ${gradeVal}` : `Đánh giá Tâm lý`) : isChildDevSubject ? "Cấu hình: 1 cột điểm, 1 cột nhận xét" : `Cấu hình: ${currentAssignment.subject.scoreColumns} cột điểm, ${currentAssignment.subject.commentColumns} cột nhận xét`}
                         </span>
@@ -399,9 +401,9 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                 <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                             </div>
                             <div>
-                                <h3 className="text-sm font-bold text-red-800 mb-1">Kỳ khảo sát đã bị khóa điểm</h3>
+                                <h3 className="text-sm font-bold text-red-800 mb-1">Hạng mục Khảo sát (Kỳ/Đợt) đã bị khóa điểm</h3>
                                 <p className="text-sm text-red-700 leading-relaxed">
-                                    Kỳ khảo sát này đã được thiết lập sang trạng thái <strong>KHÓA</strong> nên mọi thao tác nhập liệu đều bị cấm. <br/>
+                                    Hạng mục khảo sát (Kỳ hoặc Đợt) này đã được thiết lập sang trạng thái <strong>KHÓA / KẾT THÚC</strong> nên mọi thao tác nhập liệu đều bị cấm. <br/>
                                     Trường hợp các thầy cô cần điều chỉnh điểm số, xin vui lòng liên hệ Người phụ trách đợt khảo sát: <strong>{currentAssignment.period.assignedUser?.fullName || "Admin"}</strong>.
                                 </p>
                                 {currentAssignment.unlockRequestStatus === "REJECTED" && (
