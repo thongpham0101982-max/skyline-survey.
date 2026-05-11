@@ -3985,7 +3985,7 @@ return {
         <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto no-print-backdrop">
           <style>{`
             @media print {
-              @page { margin: 0 !important; }
+              @page { size: A4; margin: 0mm !important; }
               html, body {
                 height: auto !important;
                 overflow: visible !important;
@@ -4084,30 +4084,36 @@ return {
                 flex-direction: column !important;
                 align-items: center !important;
                 width: 210mm !important;
-                margin: 0 auto !important;
+                margin: 0 !important;
                 padding: 0 !important;
+                gap: 0 !important;
                 z-index: 999999999 !important;
-                background: white !important; /* Opaque background guaranteed */
+                background: white !important;
                 transform: none !important;
               }
               /* 6. RELEASE ALL HEIGHT/OVERFLOW LOCKS FROM THE PAGE BODY */
               .print-page, #print-letter-area {
                 width: 210mm !important;
-                height: auto !important;
+                height: 297mm !important;
                 min-height: 297mm !important;
-                max-height: none !important;
+                max-height: 297mm !important;
                 box-shadow: none !important;
                 border: none !important;
-                padding: 1.2cm 1.2cm !important;
+                padding: 1.8cm !important;
                 margin: 0 !important;
-                overflow: visible !important; /* PREVENT TEXT CLIPPING/CUTOFF */
+                margin-top: 0 !important;
+                overflow: hidden !important;
                 box-sizing: border-box !important;
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
                 page-break-after: always !important;
                 break-after: page !important;
                 position: relative !important;
-                background: white !important; /* Override transparent constraint */
+                background: white !important;
+              }
+              .print-page:last-child {
+                page-break-after: avoid !important;
+                break-after: auto !important;
               }
               /* Enforce scaling dynamically for all elements */
               .print-page img[alt="Logo"] {
@@ -4321,8 +4327,6 @@ return {
                   )}
 
 
-                </div>
-
                 {/* Bottom Signature Area */}
                 {isCommitment ? (
                   <div className="grid grid-cols-2 gap-8 mt-6 text-center">
@@ -4383,6 +4387,7 @@ return {
                     </p>
                   </div>
                 )}
+                </div>
 
                 {/* Footer Contact */}
                 {studentCampusConfig?.footer ? (
