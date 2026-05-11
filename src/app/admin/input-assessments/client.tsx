@@ -3985,7 +3985,7 @@ return {
         <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto no-print-backdrop">
           <style>{`
             @media print {
-              @page { size: A4; margin: 0mm !important; }
+              @page { size: A4 portrait; margin: 0 !important; }
               html, body {
                 height: auto !important;
                 overflow: visible !important;
@@ -4084,7 +4084,7 @@ return {
                 flex-direction: column !important;
                 align-items: center !important;
                 width: 210mm !important;
-                margin: 0 !important;
+                margin: 0 auto !important; /* Ensures exact centering on A4 sheet */
                 padding: 0 !important;
                 gap: 0 !important;
                 z-index: 999999999 !important;
