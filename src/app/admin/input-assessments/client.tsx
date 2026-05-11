@@ -4433,7 +4433,7 @@ return {
                 )}
               </div>
 
-                {modalDocList && modalDocList.length > 0 && (
+                {false && modalDocList && modalDocList.length > 0 && (
                   <div 
                     className="bg-white w-[210mm] h-[297mm] p-[1.8cm] shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed print-page mt-8"
                     style={{ fontFamily: "'Times New Roman', Times, serif" }}
