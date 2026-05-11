@@ -4099,7 +4099,7 @@ return {
                 max-height: 297mm !important;
                 box-shadow: none !important;
                 border: none !important;
-                padding: 1.8cm !important;
+                padding: 2cm !important;
                 margin: 0 !important;
                 margin-top: 0 !important;
                 overflow: hidden !important;
@@ -4235,7 +4235,7 @@ return {
               <div id="print-main-container" className="flex flex-col gap-8 items-center">
                 <div 
                   id="print-letter-area" 
-                  className="bg-white w-[210mm] h-[297mm] p-[1.8cm] shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed print-page"
+                  className="bg-white w-[210mm] h-[297mm] p-[2cm] shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed print-page"
                   style={{ fontFamily: "'Times New Roman', Times, serif" }}
               >
                 {/* Top Logo and Header */}
@@ -4435,7 +4435,7 @@ return {
 
                 {false && modalDocList && modalDocList.length > 0 && (
                   <div 
-                    className="bg-white w-[210mm] h-[297mm] p-[1.8cm] shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed print-page mt-8"
+                    className="bg-white w-[210mm] h-[297mm] p-[2cm] shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed print-page mt-8"
                     style={{ fontFamily: "'Times New Roman', Times, serif" }}
                   >
                     <div>
