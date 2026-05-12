@@ -2556,7 +2556,7 @@ return {
           <div className="lg:col-span-7 bg-slate-50 border border-slate-200 shadow-inner rounded-3xl p-8 flex flex-col justify-between min-h-[450px]">
             <div>
               <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest block mb-4">Xem trước tiêu đề báo cáo</span>
-              <div className="bg-white rounded-2xl border border-slate-150 p-8 shadow-sm space-y-8 flex flex-col justify-between min-h-[300px] relative overflow-hidden">
+              <div className="bg-white rounded-2xl border border-slate-150 p-8 shadow-sm space-y-6 flex flex-col justify-start min-h-[300px] relative overflow-hidden">
                 {/* Background Watermark for Preview */}
                 <div 
                   className="absolute pointer-events-none"
@@ -2595,7 +2595,7 @@ return {
                 </div>
 
                 {/* Live Preview Dynamic Body */}
-                <div className="space-y-3 py-2 flex-1 text-[10px] leading-relaxed text-slate-600 text-justify overflow-y-auto max-h-[140px] pr-1 scrollbar-thin">
+                <div className="space-y-3 py-2 text-[10px] leading-relaxed text-slate-600 text-justify overflow-y-auto max-h-[140px] pr-1 scrollbar-thin">
                   {renderTemplate(rcContent, selectedReportStudent || { fullName: "Lê Trà My", grade: "1", hocKy: "1", surveyFormType: "Hội nhập S" }).split('\n').filter(Boolean).map((para, idx) => (
                     <p key={idx} className="indent-4" style={{ textIndent: "1rem" }}>{para}</p>
                   ))}
