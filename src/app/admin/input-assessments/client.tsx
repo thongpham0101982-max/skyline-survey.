@@ -3993,11 +3993,12 @@ return {
             @media print {
               /* 0. AGGRESSIVE HTML/BODY RESET TO LOCK DIMENSIONS */
               html, body {
-                width: 100% !important;
+                width: 210mm !important;
                 height: auto !important;
                 min-height: 100% !important;
                 margin: 0 !important;
                 padding: 0 !important;
+                background: #fff !important;
                 overflow: visible !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
@@ -4110,7 +4111,7 @@ return {
                 max-height: none !important;
                 box-shadow: none !important;
                 border: none !important;
-                padding: 2cm !important;
+                padding: 15mm !important;
                 margin: 0 !important;
                 margin-top: 0 !important;
                 overflow: visible !important;
@@ -4242,7 +4243,7 @@ return {
               <div id="print-main-container" className="flex flex-col gap-8 items-center">
                 <div 
                   id="print-letter-area" 
-                  className="bg-white w-[210mm] min-h-[297mm] p-[2cm] shadow-lg border border-slate-200 relative flex flex-col justify-start text-slate-800 text-sm leading-relaxed print-page"
+                  className="bg-white w-[210mm] min-h-[297mm] p-[15mm] shadow-lg border border-slate-200 relative flex flex-col justify-start text-slate-800 text-sm leading-relaxed print-page"
                   style={{ fontFamily: "'Times New Roman', Times, serif" }}
               >
                 {/* Top Logo and Header */}
@@ -4442,7 +4443,7 @@ return {
 
                 {false && modalDocList && modalDocList.length > 0 && (
                   <div 
-                    className="bg-white w-[210mm] h-[297mm] p-[2cm] shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed print-page mt-8"
+                    className="bg-white w-[210mm] min-h-[297mm] p-[15mm] shadow-lg border border-slate-200 relative flex flex-col justify-start text-slate-800 text-sm leading-relaxed print-page mt-8"
                     style={{ fontFamily: "'Times New Roman', Times, serif" }}
                   >
                     <div>
