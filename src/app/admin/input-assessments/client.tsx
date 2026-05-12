@@ -3983,23 +3983,35 @@ return {
       {/* PRINT MODAL */}
       {isPrintModalOpen && selectedReportStudent && (
         <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto no-print-backdrop">
-          <style>{`
+<style>{`
+            /* FORCED PAGE RESET OUTSIDE MEDIA PRINT FOR HIGHEST PRECEDENCE */
+            @page { 
+              size: A4 portrait; 
+              margin: 0mm !important; 
+            }
+            
             @media print {
-              @page { size: A4 portrait; margin: 0 !important; }
+              /* 0. AGGRESSIVE HTML/BODY RESET TO LOCK DIMENSIONS */
               html, body {
+                width: 100% !important;
                 height: auto !important;
-                overflow: visible !important;
+                min-height: 100% !important;
                 margin: 0 !important;
                 padding: 0 !important;
+                overflow: visible !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
+                color-adjust: exact !important;
+                zoom: 1 !important;
               }
+              
               /* 1. DISABLE ALL ANIMATIONS THAT CAUSE RENDER-FREEZE GLITCHES */
               *, *::before, *::after {
                 animation: none !important;
                 transition: none !important;
                 animation-duration: 0s !important;
                 transition-duration: 0s !important;
+                box-sizing: border-box !important;
               }
               body * {
                 visibility: hidden !important;
@@ -4022,6 +4034,8 @@ return {
                 margin: 0 !important;
                 padding: 0 !important;
                 z-index: 999999999 !important;
+                background: transparent !important;
+                backdrop-filter: none !important;
               }
               .no-print-backdrop > div {
                 visibility: visible !important;
@@ -4036,14 +4050,11 @@ return {
                 display: block !important;
                 margin: 0 !important;
                 padding: 0 !important;
+                background: transparent !important;
               }
               /* Ensure descendants that ARE NOT manually excluded also become visible */
               #print-main-container, #print-main-container * {
                 visibility: visible !important;
-              }
-              /* 3. Force background clean up so overlay transparent color doesnt ruin print */
-              .no-print-backdrop, .no-print-backdrop div {
-                background: transparent !important;
               }
               /* 4. HIDE THE HEADER CONTROLS MANUALLY */
               .no-print-backdrop .no-print, .no-print-backdrop .no-print * {
@@ -4137,11 +4148,6 @@ return {
               }
               .no-print {
                 display: none !important;
-              }
-              .no-print-backdrop {
-                background: transparent !important;
-                backdrop-filter: none !important;
-                padding: 0 !important;
               }
             }
             #print-letter-area::before {
