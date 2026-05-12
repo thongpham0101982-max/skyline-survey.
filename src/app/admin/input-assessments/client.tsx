@@ -4105,15 +4105,15 @@ return {
               /* 6. RELEASE ALL HEIGHT/OVERFLOW LOCKS FROM THE PAGE BODY */
               .print-page, #print-letter-area {
                 width: 210mm !important;
-                height: 297mm !important;
-                min-height: 297mm !important;
-                max-height: 297mm !important;
+                height: auto !important;
+                min-height: initial !important;
+                max-height: none !important;
                 box-shadow: none !important;
                 border: none !important;
                 padding: 2cm !important;
                 margin: 0 !important;
                 margin-top: 0 !important;
-                overflow: hidden !important;
+                overflow: visible !important;
                 box-sizing: border-box !important;
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
@@ -4172,12 +4172,13 @@ return {
               `}
             }
             #print-letter-area {
-              overflow: hidden;
+              overflow: visible;
             }
             .print-page {
               width: 210mm !important;
-              height: 297mm !important;
-              max-height: 297mm !important;
+              height: auto !important;
+              min-height: 297mm;
+              max-height: none !important;
               flex-shrink: 0 !important;
             }
           `}</style>
@@ -4241,7 +4242,7 @@ return {
               <div id="print-main-container" className="flex flex-col gap-8 items-center">
                 <div 
                   id="print-letter-area" 
-                  className="bg-white w-[210mm] h-[297mm] p-[2cm] shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed print-page"
+                  className="bg-white w-[210mm] min-h-[297mm] p-[2cm] shadow-lg border border-slate-200 relative flex flex-col justify-start text-slate-800 text-sm leading-relaxed print-page"
                   style={{ fontFamily: "'Times New Roman', Times, serif" }}
               >
                 {/* Top Logo and Header */}
