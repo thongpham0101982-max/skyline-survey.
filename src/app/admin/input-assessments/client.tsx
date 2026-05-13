@@ -182,11 +182,24 @@ const getDefaultContent = (type) => {
 
 const renderTemplate = (template, student) => {
   if (!template) return "";
+  
+  const rawGrade = student?.grade || "1";
+  const gradeMatch = rawGrade.toString().match(/\d+/);
+  const numericGrade = gradeMatch ? gradeMatch[0] : rawGrade;
+  
+  const comSubs = Array.isArray(student?.committedSubjects) 
+    ? student.committedSubjects.join(", ") 
+    : (student?.committedSubjects || "");
+  
   return template
     .replace(/\{\{fullName\}\}/g, student?.fullName || "Lê Trà My")
-    .replace(/\{\{grade\}\}/g, student?.grade || "1")
+    .replace(/\{\{grade\}\}/g, numericGrade)
     .replace(/\{\{hocKy\}\}/g, student?.hocKy || "1")
-    .replace(/\{\{surveyFormType\}\}/g, student?.surveyFormType || "Hội nhập S");
+    .replace(/\{\{surveyFormType\}\}/g, student?.surveyFormType || "Hội nhập S")
+    .replace(/\{\{admissionCampus\}\}/g, student?.admissionCampus || "")
+    .replace(/\{\{directorNote\}\}/g, student?.directorNote || "")
+    .replace(/\{\{committedSubjects\}\}/g, comSubs)
+    .replace(/\{\{signatureName\}\}/g, student?.signatureName || "");
 };
 
 // ========= MAIN =========
@@ -908,10 +921,11 @@ ${reportForm.directorNote}`;
   const campusNameSuffix = useMemo(() => {
     if (!selectedReportStudent) return "GLOBAL";
     
+    const effCampus = reportForm.admissionCampus || selectedReportStudent.admissionCampus;
     let campus = campuses.find(c => 
-      c.campusName === selectedReportStudent.admissionCampus ||
-      selectedReportStudent.admissionCampus?.includes(c.campusCode) ||
-      selectedReportStudent.admissionCampus?.includes(c.campusName)
+      c.campusName === effCampus ||
+      effCampus?.includes(c.campusCode) ||
+      effCampus?.includes(c.campusName)
     );
     
     if (!campus && selectedReportStudent.batchId) {
@@ -925,7 +939,7 @@ ${reportForm.directorNote}`;
       return campus.campusCode ? campus.campusCode.toUpperCase() : campus.campusName.toUpperCase();
     }
     return "GLOBAL";
-  }, [selectedReportStudent, campuses, reportBatches]);
+  }, [selectedReportStudent, campuses, reportBatches, reportForm.admissionCampus]);
 
   const campusTitleSuffix = useMemo(() => {
     const code = campusNameSuffix ? campusNameSuffix.toUpperCase() : "GLOBAL";
@@ -1599,6 +1613,19 @@ return {
   const selPeriod = visiblePeriods.find(p => p.id === sPeriodId)
   const asSelPeriod = visiblePeriods.find(p => p.id === asPeriodId)
   const filtStu = students.filter(s => !sSearch || s.studentCode.toLowerCase().includes(sSearch.toLowerCase()) || s.fullName.toLowerCase().includes(sSearch.toLowerCase()))
+
+    // Merged Student object to ensure printed outputs reflect LIVE unsaved form updates
+  const mergedStudent = useMemo(() => {
+    if (!selectedReportStudent) return null;
+    return {
+      ...selectedReportStudent,
+      admissionResult: reportForm.admissionResult || selectedReportStudent.admissionResult,
+      admissionCampus: reportForm.admissionCampus || selectedReportStudent.admissionCampus,
+      signatureName: reportForm.signatureName || selectedReportStudent.signatureName,
+      directorNote: reportForm.directorNote || selectedReportStudent.directorNote,
+      committedSubjects: reportForm.committedSubjects
+    };
+  }, [selectedReportStudent, reportForm]);
 
   // ====================== RENDER ======================
   return (
@@ -2625,6 +2652,15 @@ return {
                   </div>
 
                   {/* Live Preview Dynamic Body */}
+                  
+                  {/* Live Preview Greeting Line */}
+                  <p className="text-[11px] italic mb-1 text-slate-700 font-black">
+                    {rcReportType === 'thu_moi' ? (
+                      <>Kính gửi Quý Phụ huynh và em <strong className="font-black not-italic">{(selectedReportStudent || {fullName:"Lê Trà My"}).fullName}</strong>,</>
+                    ) : (
+                      <>Thân gửi em <strong className="font-black not-italic">{(selectedReportStudent || {fullName:"Lê Trà My"}).fullName}</strong>,</>
+                    )}
+                  </p>
                   <div className="space-y-3 py-2 text-[10px] leading-relaxed text-slate-600 text-justify overflow-y-auto max-h-[360px] pr-1 scrollbar-thin">
                     {renderTemplate(rcContent, selectedReportStudent || { fullName: "Lê Trà My", grade: "1", hocKy: "1", surveyFormType: "Hội nhập S" }).split('\n').filter(Boolean).map((para, idx) => (
                       <p key={idx} className="indent-4" style={{ textIndent: "1rem" }}>{para}</p>
@@ -4457,7 +4493,7 @@ return {
                   {isInvitation ? (
                     studentCampusConfig?.content ? (
                       <div className="space-y-2.5 text-justify text-[14px] leading-relaxed text-slate-800 font-serif" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
-                        {renderTemplate(studentCampusConfig.content, selectedReportStudent).split('\n').filter(Boolean).map((para, idx) => (
+                        {renderTemplate(studentCampusConfig.content, mergedStudent || selectedReportStudent).split('\n').filter(Boolean).map((para, idx) => (
                           <p key={idx} className="indent-8" style={{ textIndent: "2rem" }}>{para}</p>
                         ))}
                       </div>
@@ -4535,13 +4571,13 @@ return {
                           <img src={studentCampusConfig.signature} alt="Signature" className="max-h-full object-contain" />
                         ) : (
                           <span className="font-serif italic text-xl text-slate-400 font-light tracking-widest opacity-60" style={{ fontFamily: "'Brush Script MT', cursive, sans-serif" }}>
-                            {studentCampusConfig?.directorName || selectedReportStudent.signatureName || "Đỗ Quang Trung"}
+                            {mergedStudent?.signatureName || studentCampusConfig?.directorName || "Đỗ Quang Trung"}
                           </span>
                         )}
                       </div>
                       
                       <p className="font-bold text-slate-700 mt-2 text-sm">
-                        {studentCampusConfig?.directorName || selectedReportStudent.signatureName || "Đỗ Quang Trung"}
+                        {mergedStudent?.signatureName || studentCampusConfig?.directorName || "Đỗ Quang Trung"}
                       </p>
                     </div>
                   </div>
@@ -4564,13 +4600,13 @@ return {
                         </span>
                       ) : (
                         <span className="font-serif italic text-xl text-slate-400 font-light tracking-widest opacity-60" style={{ fontFamily: "'Brush Script MT', cursive, sans-serif" }}>
-                          {studentCampusConfig?.directorName || selectedReportStudent.signatureName || "Đỗ Quang Trung"}
+                          {mergedStudent?.signatureName || studentCampusConfig?.directorName || "Đỗ Quang Trung"}
                         </span>
                       )}
                     </div>
                     
                     <p className="font-bold text-slate-700 mt-2 text-sm">
-                      {studentCampusConfig?.directorName || (isInvitation ? "Ban Tuyển sinh" : (selectedReportStudent.signatureName || "Đỗ Quang Trung"))}
+                      {mergedStudent?.signatureName || studentCampusConfig?.directorName || (isInvitation ? "Ban Tuyển sinh" : "Đỗ Quang Trung")}
                     </p>
                   </div>
                 )}
