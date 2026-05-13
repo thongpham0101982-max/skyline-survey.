@@ -163,8 +163,20 @@ Gia đình và học sinh cam kết thực hiện đầy đủ các nội dung s
 
 Bản cam kết được thực hiện dưới sự đồng thuận của cả hai bên và có giá trị kể từ ngày ký.`;
 
+const defaultThuMoi = `Hội đồng Tuyển sinh Hệ thống Giáo dục Sky-Line trân trọng gửi lời chào và lời chúc sức khỏe, an khang đến Quý phụ huynh cùng gia đình.
+
+Nhằm tạo điều kiện tốt nhất để nhà trường hiểu rõ hơn về năng lực tư duy, ngôn ngữ cũng như thiên hướng phát triển tự nhiên của học sinh, qua đó xây dựng lộ trình rèn luyện tối ưu nhất, chúng tôi trân trọng kính mời Quý phụ huynh cùng học sinh tham gia buổi Khảo sát Năng lực Đầu vào hệ {{surveyFormType}} năm học 2026-2027.
+
+* Quý Phụ huynh vui lòng chuẩn bị các hồ sơ cần thiết và theo dõi lịch hẹn khảo sát chi tiết được sắp xếp từ Ban Tuyển sinh.
+
+Sự hiện diện và đồng hành của Quý phụ huynh cùng học sinh là niềm hân hạnh lớn cho Sky-Line, giúp nhà trường có sự chuẩn bị chu đáo nhất đón chào các em gia nhập mái trường hạnh phúc của chúng ta.
+
+Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
+
 const getDefaultContent = (type) => {
-  return type === "cam_ket_hoc_tap" ? defaultCamKet : defaultThuChucMung;
+  if (type === "cam_ket_hoc_tap") return defaultCamKet;
+  if (type === "thu_moi") return defaultThuMoi;
+  return defaultThuChucMung;
 };
 
 const renderTemplate = (template, student) => {
@@ -375,7 +387,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
         }
       }
       
-      setRcTitle(globalData.title || (rcReportType === "thu_chuc_mung" ? "BÁO CÁO KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO" : "BẢN CAM KẾT HỌC TẬP"));
+      setRcTitle(globalData.title || (rcReportType === "thu_chuc_mung" ? "BÁO CÁO KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO" : rcReportType === "thu_moi" ? "THƯ MỜI" : "BẢN CAM KẾT HỌC TẬP"));
       setRcLogo(globalData.logo || "");
       setRcBackground(globalData.background || "");
       setRcContent(globalData.content || getDefaultContent(rcReportType));
@@ -807,9 +819,9 @@ ${reportForm.directorNote}`;
     }
     
     if (targetCampus) {
-      let typeKey = isCommitment ? 'cam_ket_hoc_tap' : 'thu_chuc_mung';
+      let typeKey = isInvitation ? 'thu_moi' : isCommitment ? 'cam_ket_hoc_tap' : 'thu_chuc_mung';
       let candidateKeys = [];
-      const baseKey = isCommitment ? 'cam_ket_hoc_tap' : 'thu_chuc_mung';
+      const baseKey = isInvitation ? 'thu_moi' : isCommitment ? 'cam_ket_hoc_tap' : 'thu_chuc_mung';
       if (selectedReportStudent.targetType) {
         candidateKeys.push(baseKey + '_doi_tuong_tuyen_sinh');
       }
@@ -861,7 +873,7 @@ ${reportForm.directorNote}`;
       }
       
       // If global is not yet saved, use campus data as fallback for global fields
-      const mergedTitle = globalData.title || campusData.title || (typeKey === "thu_chuc_mung" ? "BÁO CÁO KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO" : "BẢN CAM KẾT HỌC TẬP");
+      const mergedTitle = globalData.title || campusData.title || (typeKey === "thu_chuc_mung" ? "BÁO CÁO KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO" : typeKey === "thu_moi" ? "THƯ MỜI" : "BẢN CAM KẾT HỌC TẬP");
       const mergedLogo = globalData.logo || campusData.logo || "";
       const mergedBackground = globalData.background || campusData.background || "";
       const mergedContent = globalData.content || campusData.content || "";
@@ -2415,6 +2427,7 @@ return {
 
             <Field label="Loại báo cáo" required>
               <select value={rcReportType} onChange={e => setRcReportType(e.target.value)} className={inp}>
+                <option value="thu_moi">Thư mời</option>
                 <option value="thu_chuc_mung">Thư chúc mừng</option>
                 <option value="cam_ket_hoc_tap">Cam kết học tập</option>
               </select>
@@ -4285,7 +4298,7 @@ return {
                   {/* Letter Title */}
                   <div className="text-center my-4">
                     <h2 className="text-2xl font-black tracking-widest text-indigo-950 uppercase mb-2" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
-                      {isInvitation ? "THƯ MỜI" : isCommitment ? (studentCampusConfig?.title || "BẢN CAM KẾT HỌC TẬP") : (studentCampusConfig?.title || "THƯ CHÚC MỪNG")}
+                      {isInvitation ? (studentCampusConfig?.title || "THƯ MỜI") : isCommitment ? (studentCampusConfig?.title || "BẢN CAM KẾT HỌC TẬP") : (studentCampusConfig?.title || "THƯ CHÚC MỪNG")}
                     </h2>
                   </div>
 
@@ -4300,29 +4313,37 @@ return {
 
                   {/* Body Paragraphs */}
                   {isInvitation ? (
-                    <div className="space-y-6 text-justify text-[15px] leading-relaxed">
-                      <p className="indent-8" style={{ textIndent: "2rem" }}>
-                        Hội đồng Tuyển sinh Hệ thống Giáo dục Sky-Line trân trọng gửi lời chào và lời chúc sức khỏe, an khang đến Quý phụ huynh cùng gia đình.
-                      </p>
-                      
-                      <p className="indent-8" style={{ textIndent: "2rem" }}>
-                        Nhằm tạo điều kiện tốt nhất để nhà trường hiểu rõ hơn về năng lực tư duy, ngôn ngữ cũng như thiên hướng phát triển tự nhiên của học sinh, qua đó xây dựng lộ trình rèn luyện tối ưu nhất, chúng tôi trân trọng kính mời Quý phụ huynh cùng học sinh tham gia buổi <strong className="font-bold">Khảo sát Năng lực Đầu vào</strong> hệ <strong className="font-bold">{selectedReportStudent.surveyFormType || "Hội nhập Global"}</strong> năm học <strong className="font-bold">2026-2027</strong>.
-                      </p>
-                      
-                      <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-2 text-sm text-slate-700 ml-4 font-sans leading-relaxed shadow-inner">
-                        <p><strong>• Thời gian khảo sát:</strong> Theo lịch hẹn cụ thể được sắp xếp từ Ban Tuyển sinh.</p>
-                        <p><strong>• Địa điểm khảo sát:</strong> {selectedReportStudent.admissionCampus || "Hệ thống Giáo dục Sky-Line"}.</p>
-                        <p><strong>• Nội dung khảo sát:</strong> Đánh giá tư duy ngôn ngữ, tư duy logic tự nhiên và khả năng tương tác xã hội phù hợp theo độ tuổi.</p>
+                    studentCampusConfig?.content ? (
+                      <div className="space-y-2.5 text-justify text-[14px] leading-relaxed text-slate-800 font-serif" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+                        {renderTemplate(studentCampusConfig.content, selectedReportStudent).split('\n').filter(Boolean).map((para, idx) => (
+                          <p key={idx} className="indent-8" style={{ textIndent: "2rem" }}>{para}</p>
+                        ))}
                       </div>
-                      
-                      <p className="indent-8" style={{ textIndent: "2rem" }}>
-                        Sự hiện diện và đồng hành của Quý phụ huynh cùng học sinh là niềm hân hạnh lớn cho Sky-Line, giúp nhà trường có sự chuẩn bị chu đáo nhất đón chào các em gia nhập mái trường hạnh phúc của chúng ta.
-                      </p>
-                      
-                      <p className="indent-8 italic text-slate-600" style={{ textIndent: "2rem" }}>
-                        Trân trọng kính mời Quý phụ huynh và các em học sinh!
-                      </p>
-                    </div>
+                    ) : (
+                      <div className="space-y-6 text-justify text-[15px] leading-relaxed">
+                        <p className="indent-8" style={{ textIndent: "2rem" }}>
+                          Hội đồng Tuyển sinh Hệ thống Giáo dục Sky-Line trân trọng gửi lời chào và lời chúc sức khỏe, an khang đến Quý phụ huynh cùng gia đình.
+                        </p>
+                        
+                        <p className="indent-8" style={{ textIndent: "2rem" }}>
+                          Nhằm tạo điều kiện tốt nhất để nhà trường hiểu rõ hơn về năng lực tư duy, ngôn ngữ cũng như thiên hướng phát triển tự nhiên của học sinh, qua đó xây dựng lộ trình rèn luyện tối ưu nhất, chúng tôi trân trọng kính mời Quý phụ huynh cùng học sinh tham gia buổi <strong className="font-bold">Khảo sát Năng lực Đầu vào</strong> hệ <strong className="font-bold">{selectedReportStudent.surveyFormType || "Hội nhập Global"}</strong> năm học <strong className="font-bold">2026-2027</strong>.
+                        </p>
+                        
+                        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-2 text-sm text-slate-700 ml-4 font-sans leading-relaxed shadow-inner">
+                          <p><strong>• Thời gian khảo sát:</strong> Theo lịch hẹn cụ thể được sắp xếp từ Ban Tuyển sinh.</p>
+                          <p><strong>• Địa điểm khảo sát:</strong> {selectedReportStudent.admissionCampus || "Hệ thống Giáo dục Sky-Line"}.</p>
+                          <p><strong>• Nội dung khảo sát:</strong> Đánh giá tư duy ngôn ngữ, tư duy logic tự nhiên và khả năng tương tác xã hội phù hợp theo độ tuổi.</p>
+                        </div>
+                        
+                        <p className="indent-8" style={{ textIndent: "2rem" }}>
+                          Sự hiện diện và đồng hành của Quý phụ huynh cùng học sinh là niềm hân hạnh lớn cho Sky-Line, giúp nhà trường có sự chuẩn bị chu đáo nhất đón chào các em gia nhập mái trường hạnh phúc của chúng ta.
+                        </p>
+                        
+                        <p className="indent-8 italic text-slate-600" style={{ textIndent: "2rem" }}>
+                          Trân trọng kính mời Quý phụ huynh và các em học sinh!
+                        </p>
+                      </div>
+                    )
                   ) : isCommitment ? (
                     <div className="space-y-2 text-justify text-[13px] leading-relaxed text-slate-800 font-serif">
                       {renderTemplate(
@@ -4386,19 +4407,19 @@ return {
                   <div className="flex flex-col items-end text-right mt-8 pr-4">
                     <p className="italic text-slate-500 mb-1">{formattedLetterDate}</p>
                     <p className="font-bold uppercase text-indigo-950 text-xs tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
-                    {isInvitation ? (
+                    {isInvitation && !studentCampusConfig?.signature ? (
                       <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-6">TRƯỞNG BAN TUYỂN SINH SKY-LINE</p>
                     ) : (
                       <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-6">GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}</p>
                     )}
                     
                     <div className="h-16 flex items-center justify-center pr-12">
-                      {isInvitation ? (
+                      {studentCampusConfig?.signature ? (
+                        <img src={studentCampusConfig.signature} alt="Signature" className="max-h-full object-contain" />
+                      ) : isInvitation ? (
                         <span className="font-serif italic text-xl text-slate-400 font-light tracking-widest opacity-60" style={{ fontFamily: "'Brush Script MT', cursive, sans-serif" }}>
                           Ban Tuyển sinh
                         </span>
-                      ) : studentCampusConfig?.signature ? (
-                        <img src={studentCampusConfig.signature} alt="Signature" className="max-h-full object-contain" />
                       ) : (
                         <span className="font-serif italic text-xl text-slate-400 font-light tracking-widest opacity-60" style={{ fontFamily: "'Brush Script MT', cursive, sans-serif" }}>
                           {studentCampusConfig?.directorName || selectedReportStudent.signatureName || "Đỗ Quang Trung"}
@@ -4407,7 +4428,7 @@ return {
                     </div>
                     
                     <p className="font-bold text-slate-700 mt-2 text-sm">
-                      {isInvitation ? "Ban Tuyển sinh" : (studentCampusConfig?.directorName || selectedReportStudent.signatureName || "Đỗ Quang Trung")}
+                      {studentCampusConfig?.directorName || (isInvitation ? "Ban Tuyển sinh" : (selectedReportStudent.signatureName || "Đỗ Quang Trung"))}
                     </p>
                   </div>
                 )}
