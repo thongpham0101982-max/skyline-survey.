@@ -789,10 +789,8 @@ ${reportForm.directorNote}`;
       } catch (e) {}
     }
     
-    if (studentGroup === "khoi_1") {
-      return defaultDocumentsGrade1;
-    }
-    return [];
+    // USER MANDATE: Page 2 Checklist must always display for ALL grades as default fallback
+    return defaultDocumentsGrade1;
   }, [selectedReportStudent, defaultDocumentsGrade1, docGroups, docGroupTargets, docGroupGrades]);
 
   const studentCampusConfig = useMemo(() => {
@@ -4539,14 +4537,17 @@ return {
                     style={{ fontFamily: "'Times New Roman', Times, serif", flexShrink: 0 }}
                   >
                     <div className="flex flex-col relative z-10 w-full">
-                      {/* Top Logo and Header */}
-                      <div className="flex flex-col gap-1 border-b pb-2 mb-6">
+                      {/* Top Logo and Header (Synchronized perfectly with Page 1) */}
+                      <div className="flex flex-col gap-1 border-b pb-2 mb-3">
                         <div className="flex items-center justify-between">
                           {studentCampusConfig?.logo ? (
                             <img src={studentCampusConfig.logo} alt="Logo" className="h-12 object-contain" />
                           ) : (
                             <div className="flex items-center gap-1.5">
                               <span className="text-2xl font-black tracking-tight text-teal-600" style={{ fontFamily: "Arial, sans-serif" }}>SKY-LINE</span>
+                              <svg className="w-6 h-6 text-teal-500" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                              </svg>
                             </div>
                           )}
                         </div>
