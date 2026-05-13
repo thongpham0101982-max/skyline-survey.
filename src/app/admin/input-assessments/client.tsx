@@ -4005,18 +4005,17 @@ return {
       {isPrintModalOpen && selectedReportStudent && (
         <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto no-print-backdrop">
 <style>{`
-            /* FORCED PAGE RESET OUTSIDE MEDIA PRINT FOR HIGHEST PRECEDENCE */
+            /* OPTIMIZED A4 PDF PRINT DEFINITIONS */
             @page { 
-              size: A4 portrait; 
-              margin: 0mm !important; 
+              size: A4; 
+              margin: 12mm !important; 
             }
             
             @media print {
               /* 0. AGGRESSIVE HTML/BODY RESET TO LOCK DIMENSIONS */
               html, body {
-                width: 210mm !important;
-                height: auto !important;
-                min-height: 100% !important;
+                width: 100% !important;
+                height: 100% !important;
                 margin: 0 !important;
                 padding: 0 !important;
                 background: #fff !important;
@@ -4024,7 +4023,6 @@ return {
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
                 color-adjust: exact !important;
-                zoom: 1 !important;
               }
               
               /* 1. DISABLE ALL ANIMATIONS THAT CAUSE RENDER-FREEZE GLITCHES */
@@ -4118,9 +4116,10 @@ return {
                 position: relative !important;
                 display: flex !important;
                 flex-direction: column !important;
-                align-items: center !important;
-                width: 210mm !important;
-                margin: 0 auto !important; /* Ensures exact centering on A4 sheet */
+                align-items: stretch !important;
+                width: 100% !important;
+                height: 100% !important;
+                margin: 0 !important;
                 padding: 0 !important;
                 gap: 0 !important;
                 z-index: 999999999 !important;
@@ -4129,16 +4128,15 @@ return {
               }
               /* 6. RELEASE ALL HEIGHT/OVERFLOW LOCKS FROM THE PAGE BODY */
               .print-page, #print-letter-area {
-                width: 210mm !important;
-                height: 297mm !important;
-                min-height: 297mm !important;
-                max-height: 297mm !important;
+                width: 100% !important;
+                height: 100% !important;
+                min-height: 100% !important;
+                max-height: none !important;
                 box-shadow: none !important;
                 border: none !important;
-                padding: 15mm !important;
+                padding: 0 !important;
                 margin: 0 !important;
-                margin-top: 0 !important;
-                overflow: hidden !important;
+                overflow: visible !important;
                 box-sizing: border-box !important;
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
