@@ -4005,16 +4005,20 @@ return {
       {isPrintModalOpen && selectedReportStudent && (
         <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto no-print-backdrop">
 <style>{`
-            /* USER MANDATED A4 PDF PRINT CONFIGURATION */
+            /* FORCE EXPLICIT A4 PORTRAIT CONFIGURATION */
             @page { 
-              size: A4; 
+              size: A4 portrait !important; 
               margin: 12mm 15mm !important; 
             }
             
             @media print {
-              /* USER MANDATED HTML/BODY RESET WITH ZERO FIXED HEIGHTS */
+              @page {
+                size: A4 portrait !important;
+                margin: 12mm 15mm !important;
+              }
+              /* USER MANDATED HTML/BODY RESET WITH ZERO FIXED HEIGHTS & FIT TO PRINT BOUNDS */
               html, body {
-                width: 210mm !important;
+                width: 100% !important;
                 height: auto !important;
                 min-height: 0 !important;
                 margin: 0 !important;
