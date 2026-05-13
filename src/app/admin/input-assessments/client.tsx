@@ -2635,7 +2635,7 @@ return {
                         <p className="font-bold text-teal-600 uppercase text-[5px] tracking-wider">SKY-LINE Beach / Hill</p>
                         <p className="text-[4px] text-slate-400 leading-none mt-0.5">Trần Anh Tông / Điện Dương, Quảng Nam</p>
                       </div>
-                      <div className="text-right flex flex-col justify-between">
+                      <div className="text-right flex flex-col justify-start gap-2">
                         <p className="font-bold text-teal-600 uppercase text-[5px] tracking-wide">www.skylineschool.edu.vn</p>
                         <p className="text-[4px] text-slate-400 leading-none mt-0.5">Hotline: (+84.236) 378 7777</p>
                       </div>
@@ -4014,6 +4014,9 @@ return {
                 animation-duration: 0s !important;
                 transition-duration: 0s !important;
                 box-sizing: border-box !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
               }
               body * {
                 visibility: hidden !important;
@@ -4152,7 +4155,7 @@ return {
                 display: none !important;
               }
             }
-            #print-letter-area::before {
+            .print-page::before {
               content: "";
               position: absolute;
               top: 0;
@@ -4422,7 +4425,7 @@ return {
                         <p className="font-bold text-teal-600 uppercase text-[8px] tracking-wider mt-1">Trung tâm sống thành công - SLS</p>
                         <p className="text-[7px] text-slate-500">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
                       </div>
-                      <div className="text-right flex flex-col justify-between">
+                      <div className="text-right flex flex-col justify-start gap-2">
                         <p className="font-bold text-teal-600 uppercase text-[9px] tracking-wide">www.skylineschool.edu.vn</p>
                         <div className="mt-1 text-[7px] text-slate-500 space-y-0.5">
                           <p><strong>Hotline:</strong> (+84.236) 378 7777</p>
@@ -4524,7 +4527,7 @@ return {
                             <p className="font-bold text-teal-600 uppercase text-[8px] tracking-wider mt-1">Trung tâm sống thành công - SLS</p>
                             <p className="text-[7px] text-slate-500">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
                           </div>
-                          <div className="text-right flex flex-col justify-between">
+                          <div className="text-right flex flex-col justify-start gap-2">
                             <p className="font-bold text-teal-600 uppercase text-[9px] tracking-wide">www.skylineschool.edu.vn</p>
                             <div className="mt-1 text-[7px] text-slate-500 space-y-0.5">
                               <p><strong>Hotline:</strong> (+84.236) 378 7777</p>
