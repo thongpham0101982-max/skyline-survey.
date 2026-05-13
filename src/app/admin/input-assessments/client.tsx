@@ -4271,7 +4271,7 @@ return {
                 width: 180mm !important; /* 210mm - (15mm * 2) = 180mm content width */
                 margin: 0 auto !important;
                 height: auto !important;
-                min-height: 0 !important;
+                min-height: 272mm !important; /* 297mm (A4) - 24mm (vertical margins) - 1mm safety tolerance = 272mm content height! */
                 max-height: none !important;
                 box-shadow: none !important;
                 border: none !important;
@@ -4281,7 +4281,7 @@ return {
                 
                 display: flex !important;
                 flex-direction: column !important;
-                justify-content: flex-start !important;
+                justify-content: space-between !important; /* Push footer banner to bottom reliably! */
                 
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
@@ -4312,9 +4312,14 @@ return {
                 break-after: auto !important;
               }
               /* Guarantee Page 2 starts on a fresh physical sheet during print */
+              /* Guarantee Page 2 starts on a fresh sheet during print, but ensure Page 1 has NO leading blank page! */
               .print-page {
                 page-break-before: always !important;
                 break-before: page !important;
+              }
+              #print-letter-area {
+                page-break-before: avoid !important;
+                break-before: avoid !important;
               }
               /* Enforce scaling dynamically for all elements */
               .print-page img[alt="Logo"] {
@@ -4363,15 +4368,14 @@ return {
             }
             #print-letter-area, .print-page {
               width: 210mm !important;
-              height: auto !important; /* Follows content naturally on screen */
-              min-height: 200px !important;
+              min-height: 296mm !important; /* Enforce exact A4 physical height on screen! */
               max-height: none !important;
               margin: 0 auto !important;
               padding: 12mm 15mm !important; /* Simulates physical @page margins on screen! */
               flex-shrink: 0 !important;
               display: flex !important;
               flex-direction: column !important;
-              justify-content: flex-start !important;
+              justify-content: space-between !important; /* Keep footer at bottom on screen too! */
               overflow: visible !important;
               box-sizing: border-box !important;
               background: white !important;
@@ -4600,6 +4604,9 @@ return {
                 )}
                 </div>
 
+                {/* Spacer pushes footer down in vertical flex layouts */}
+                <div className="flex-grow h-0"></div>
+                
                 {/* Footer Contact */}
                 {studentCampusConfig?.footer ? (
                   <div className="border-t border-slate-200 pt-3 mt-6 relative z-10 w-full">
@@ -4729,6 +4736,9 @@ return {
                       </p>
                     </div>
 
+                    {/* Spacer pushes footer down in vertical flex layouts */}
+                    <div className="flex-grow h-0"></div>
+                    
                     {/* Footer Contact */}
                     {studentCampusConfig?.footer ? (
                       <div className="border-t border-slate-200 pt-3 mt-6 relative z-10 w-full">
