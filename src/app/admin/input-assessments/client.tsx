@@ -786,11 +786,12 @@ ${reportForm.directorNote}`;
   const studentCampusConfig = useMemo(() => {
     if (typeof window === "undefined" || !selectedReportStudent) return null;
     
-    // Find campus matching student's admissionCampus
+    // Find campus matching active selection in UI form or saved student record
+    const effCampus = reportForm.admissionCampus || selectedReportStudent.admissionCampus;
     let targetCampus = campuses.find(c => 
-      c.campusName === selectedReportStudent.admissionCampus ||
-      selectedReportStudent.admissionCampus?.includes(c.campusCode) ||
-      selectedReportStudent.admissionCampus?.includes(c.campusName)
+      c.campusName === effCampus ||
+      effCampus?.includes(c.campusCode) ||
+      effCampus?.includes(c.campusName)
     );
     
     // Fallback: Find campus by student's batch/period
@@ -877,7 +878,7 @@ ${reportForm.directorNote}`;
       };
     }
     return null;
-  }, [selectedReportStudent, campuses, reportBatches, isCommitment]);
+  }, [selectedReportStudent, campuses, reportBatches, isCommitment, reportForm.admissionCampus]);
 
   const campusNameSuffix = useMemo(() => {
     if (!selectedReportStudent) return "GLOBAL";
@@ -4441,7 +4442,7 @@ return {
                 )}
               </div>
 
-                {false && modalDocList && modalDocList.length > 0 && (
+                {modalDocList && modalDocList.length > 0 && (
                   <div 
                     className="bg-white w-[210mm] min-h-[297mm] p-[15mm] shadow-lg border border-slate-200 relative flex flex-col justify-start text-slate-800 text-sm leading-relaxed print-page mt-8"
                     style={{ fontFamily: "'Times New Roman', Times, serif" }}
