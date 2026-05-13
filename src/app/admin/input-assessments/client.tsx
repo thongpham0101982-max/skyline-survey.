@@ -4463,50 +4463,66 @@ return {
                     <img src={studentCampusConfig.footer} alt="Footer Print" className="w-full h-auto" />
                   </div>
                 ) : (
-                  <div className="border-t border-teal-500/30 pt-3 mt-6 text-[10.5px] text-slate-400 font-sans leading-normal relative z-10 w-full" style={{ fontFamily: "Arial, sans-serif" }}>
-                    <div className="grid grid-cols-3 gap-6">
-                      <div className="text-left flex flex-col gap-1">
+                  <div className="w-full pt-1 mt-4 relative z-10" style={{ fontFamily: "Arial, sans-serif" }}>
+                    {/* High-fidelity Header Title & Line */}
+                    <div className="flex items-center gap-2 mb-2.5 w-full">
+                      <span className="font-bold text-[#00A6A9] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
+                      <div className="flex-grow border-t border-[#00A6A9]/70 h-0 mt-0.5"></div>
+                      <span className="font-semibold text-[#00A6A9] whitespace-nowrap lowercase text-[11px] pr-2">www.skylineschool.edu.vn</span>
+                    </div>
+                    
+                    {/* Information Grid */}
+                    <div className="grid grid-cols-12 gap-2 w-full relative pr-8 text-[9px]">
+                      {/* Left Column (3 branches) */}
+                      <div className="col-span-4 flex flex-col gap-1.5 text-left">
                         <div>
-                          <p className="font-bold text-teal-600 uppercase text-[10.5px] tracking-wider">SKY-LINE Riverside</p>
-                          <p className="text-[8.5px] text-slate-500 leading-relaxed">Lô A2.4 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>
+                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">SKY-LINE Riverside</p>
+                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Lô A2.4 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>
                         </div>
-                        <div className="mt-0.5">
-                          <p className="font-bold text-teal-600 uppercase text-[10.5px] tracking-wider">SKY-LINE Central</p>
-                          <p className="text-[8.5px] text-slate-500 leading-relaxed">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
+                        <div>
+                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">SKY-LINE Central</p>
+                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
                         </div>
-                        <div className="mt-0.5">
-                          <p className="font-bold text-teal-600 uppercase text-[10.5px] tracking-wider">SKY-LINE Global</p>
-                          <p className="text-[8.5px] text-slate-500 leading-relaxed">Lô A2.4 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>
+                        <div>
+                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">SKY-LINE Global</p>
+                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Lô A2 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>
                         </div>
                       </div>
-                      <div className="text-left flex flex-col gap-1">
+
+                      {/* Middle Column (3 branches) */}
+                      <div className="col-span-5 flex flex-col gap-1.5 text-left pl-1">
                         <div>
-                          <p className="font-bold text-teal-600 uppercase text-[10.5px] tracking-wider">SKY-LINE Beach</p>
-                          <p className="text-[8.5px] text-slate-500 leading-relaxed">Số 199 Trần Anh Tông, P. Thanh Khê, TP. Đà Nẵng</p>
+                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">SKY-LINE Beach</p>
+                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 199 Trần Anh Tông, P. Thanh Khê, TP. Đà Nẵng</p>
                         </div>
-                        <div className="mt-0.5">
-                          <p className="font-bold text-teal-600 uppercase text-[10.5px] tracking-wider">SKY-LINE Hill</p>
-                          <p className="text-[8.5px] text-slate-500 leading-relaxed">Khối Hà My Đông A, P. Điện Dương, Điện Bàn, Quảng Nam</p>
+                        <div>
+                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">SKY-LINE Hill</p>
+                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Khối Hà My Đông A, P. Điện Bàn Đông, TP. Đà Nẵng</p>
                         </div>
-                        <div className="mt-0.5">
-                          <p className="font-bold text-teal-600 uppercase text-[10.5px] tracking-wider">SLS Center</p>
-                          <p className="text-[8.5px] text-slate-500 leading-relaxed">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
+                        <div>
+                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">Trung tâm sống thành công - SLS</p>
+                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
                         </div>
                       </div>
-                      <div className="text-right flex flex-col items-end justify-start pt-0.5">
-                        <p className="font-black text-teal-600 uppercase text-[10.5px] tracking-wider mb-2" style={{ lineHeight: "1.2" }}>www.skylineschool.edu.vn</p>
-                        <div className="flex flex-col gap-1 text-[9px] text-slate-500">
-                          <p style={{ lineHeight: "1.3" }}><strong>Hotline:</strong> (+84.236) 378 7777</p>
-                          <p style={{ lineHeight: "1.3" }}><strong>Hotline:</strong> (+84.236) 356 8777</p>
-                          <p style={{ lineHeight: "1.3" }}><strong>Hotline:</strong> (+84.236) 378 7779</p>
-                          <p style={{ lineHeight: "1.3" }}><strong>Hotline:</strong> (+84.236) 375 1777</p>
+
+                      {/* Right Column (Contacts) */}
+                      <div className="col-span-3 flex items-center justify-end gap-1.5 text-right pr-8 self-center">
+                        <div className="w-4.5 h-4.5 rounded-full border border-slate-800 flex items-center justify-center flex-shrink-0 p-[3.5px] scale-[0.85]">
+                          <Phone className="w-full h-full text-slate-800" fill="currentColor" />
+                        </div>
+                        <div className="flex flex-col text-[8.5px] font-semibold text-slate-800 tracking-tight leading-tight">
+                          <p>(+84.236) 378 7777</p>
+                          <p>(+84.236) 356 8777</p>
+                          <p>(+84.236) 378 7779</p>
+                          <p>(+84.235) 375 1777</p>
                         </div>
                       </div>
                     </div>
-                    {/* Subtle right corner bird wing vector decoration */}
-                    <div className="absolute right-0 bottom-0 w-12 h-12 opacity-15 pointer-events-none">
-                      <svg viewBox="0 0 100 100" fill="%23007A87">
-                        <path d="M10,80 Q50,40 90,20 Q60,50 10,80 Z"/>
+
+                    {/* The Large Elegant Teal Checkmark Vector positioned absolute over the right corner */}
+                    <div className="absolute right-[-5px] top-[2px] w-16 h-12 opacity-100 pointer-events-none flex items-center justify-center text-[#00A6A9]">
+                      <svg viewBox="0 0 120 60" className="w-full h-full fill-current" style={{ filter: "drop-shadow(0px 1px 1px rgba(0,166,169,0.1))" }}>
+                        <path d="M 8 26 C 24 32, 50 52, 62 60 C 78 36, 102 16, 118 3 C 95 16, 76 44, 62 62 C 48 46, 25 32, 8 26 Z" />
                       </svg>
                     </div>
                   </div>
@@ -4573,53 +4589,69 @@ return {
                         <img src={studentCampusConfig.footer} alt="Footer Print" className="w-full h-auto" />
                       </div>
                     ) : (
-                      <div className="border-t border-teal-500/30 pt-3 mt-6 text-[10.5px] text-slate-400 font-sans leading-normal relative z-10 w-full" style={{ fontFamily: "Arial, sans-serif" }}>
-                        <div className="grid grid-cols-3 gap-6">
-                          <div className="text-left flex flex-col gap-1">
-                            <div>
-                              <p className="font-bold text-teal-600 uppercase text-[10.5px] tracking-wider">SKY-LINE Riverside</p>
-                              <p className="text-[8.5px] text-slate-500 leading-relaxed">Lô A2.4 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>
-                            </div>
-                            <div className="mt-0.5">
-                              <p className="font-bold text-teal-600 uppercase text-[10.5px] tracking-wider">SKY-LINE Central</p>
-                              <p className="text-[8.5px] text-slate-500 leading-relaxed">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
-                            </div>
-                            <div className="mt-0.5">
-                              <p className="font-bold text-teal-600 uppercase text-[10.5px] tracking-wider">SKY-LINE Global</p>
-                              <p className="text-[8.5px] text-slate-500 leading-relaxed">Lô A2.4 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>
-                            </div>
-                          </div>
-                          <div className="text-left flex flex-col gap-1">
-                            <div>
-                              <p className="font-bold text-teal-600 uppercase text-[10.5px] tracking-wider">SKY-LINE Beach</p>
-                              <p className="text-[8.5px] text-slate-500 leading-relaxed">Số 199 Trần Anh Tông, P. Thanh Khê, TP. Đà Nẵng</p>
-                            </div>
-                            <div className="mt-0.5">
-                              <p className="font-bold text-teal-600 uppercase text-[10.5px] tracking-wider">SKY-LINE Hill</p>
-                              <p className="text-[8.5px] text-slate-500 leading-relaxed">Khối Hà My Đông A, P. Điện Dương, Điện Bàn, Quảng Nam</p>
-                            </div>
-                            <div className="mt-0.5">
-                              <p className="font-bold text-teal-600 uppercase text-[10.5px] tracking-wider">SLS Center</p>
-                              <p className="text-[8.5px] text-slate-500 leading-relaxed">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
-                            </div>
-                          </div>
-                          <div className="text-right flex flex-col items-end justify-start pt-0.5">
-                            <p className="font-black text-teal-600 uppercase text-[10.5px] tracking-wider mb-2" style={{ lineHeight: "1.2" }}>www.skylineschool.edu.vn</p>
-                            <div className="flex flex-col gap-1 text-[9px] text-slate-500">
-                              <p style={{ lineHeight: "1.3" }}><strong>Hotline:</strong> (+84.236) 378 7777</p>
-                              <p style={{ lineHeight: "1.3" }}><strong>Hotline:</strong> (+84.236) 356 8777</p>
-                              <p style={{ lineHeight: "1.3" }}><strong>Hotline:</strong> (+84.236) 378 7779</p>
-                              <p style={{ lineHeight: "1.3" }}><strong>Hotline:</strong> (+84.236) 375 1777</p>
-                            </div>
-                          </div>
+                      <div className="w-full pt-1 mt-4 relative z-10" style={{ fontFamily: "Arial, sans-serif" }}>
+                    {/* High-fidelity Header Title & Line */}
+                    <div className="flex items-center gap-2 mb-2.5 w-full">
+                      <span className="font-bold text-[#00A6A9] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
+                      <div className="flex-grow border-t border-[#00A6A9]/70 h-0 mt-0.5"></div>
+                      <span className="font-semibold text-[#00A6A9] whitespace-nowrap lowercase text-[11px] pr-2">www.skylineschool.edu.vn</span>
+                    </div>
+                    
+                    {/* Information Grid */}
+                    <div className="grid grid-cols-12 gap-2 w-full relative pr-8 text-[9px]">
+                      {/* Left Column (3 branches) */}
+                      <div className="col-span-4 flex flex-col gap-1.5 text-left">
+                        <div>
+                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">SKY-LINE Riverside</p>
+                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Lô A2.4 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>
                         </div>
-                        {/* Subtle right corner decoration */}
-                        <div className="absolute right-0 bottom-0 w-12 h-12 opacity-15 pointer-events-none">
-                          <svg viewBox="0 0 100 100" fill="%23007A87">
-                            <path d="M10,80 Q50,40 90,20 Q60,50 10,80 Z"/>
-                          </svg>
+                        <div>
+                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">SKY-LINE Central</p>
+                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
+                        </div>
+                        <div>
+                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">SKY-LINE Global</p>
+                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Lô A2 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>
                         </div>
                       </div>
+
+                      {/* Middle Column (3 branches) */}
+                      <div className="col-span-5 flex flex-col gap-1.5 text-left pl-1">
+                        <div>
+                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">SKY-LINE Beach</p>
+                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 199 Trần Anh Tông, P. Thanh Khê, TP. Đà Nẵng</p>
+                        </div>
+                        <div>
+                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">SKY-LINE Hill</p>
+                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Khối Hà My Đông A, P. Điện Bàn Đông, TP. Đà Nẵng</p>
+                        </div>
+                        <div>
+                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">Trung tâm sống thành công - SLS</p>
+                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
+                        </div>
+                      </div>
+
+                      {/* Right Column (Contacts) */}
+                      <div className="col-span-3 flex items-center justify-end gap-1.5 text-right pr-8 self-center">
+                        <div className="w-4.5 h-4.5 rounded-full border border-slate-800 flex items-center justify-center flex-shrink-0 p-[3.5px] scale-[0.85]">
+                          <Phone className="w-full h-full text-slate-800" fill="currentColor" />
+                        </div>
+                        <div className="flex flex-col text-[8.5px] font-semibold text-slate-800 tracking-tight leading-tight">
+                          <p>(+84.236) 378 7777</p>
+                          <p>(+84.236) 356 8777</p>
+                          <p>(+84.236) 378 7779</p>
+                          <p>(+84.235) 375 1777</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* The Large Elegant Teal Checkmark Vector positioned absolute over the right corner */}
+                    <div className="absolute right-[-5px] top-[2px] w-16 h-12 opacity-100 pointer-events-none flex items-center justify-center text-[#00A6A9]">
+                      <svg viewBox="0 0 120 60" className="w-full h-full fill-current" style={{ filter: "drop-shadow(0px 1px 1px rgba(0,166,169,0.1))" }}>
+                        <path d="M 8 26 C 24 32, 50 52, 62 60 C 78 36, 102 16, 118 3 C 95 16, 76 44, 62 62 C 48 46, 25 32, 8 26 Z" />
+                      </svg>
+                    </div>
+                  </div>
                     )}
                   </div>
                 )}
