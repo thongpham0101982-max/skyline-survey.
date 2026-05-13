@@ -4008,7 +4008,7 @@ return {
             /* OPTIMIZED A4 PDF PRINT DEFINITIONS */
             @page { 
               size: A4; 
-              margin: 12mm !important; 
+              margin: 0 !important; 
             }
             
             @media print {
@@ -4128,13 +4128,13 @@ return {
               }
               /* 6. RELEASE ALL HEIGHT/OVERFLOW LOCKS FROM THE PAGE BODY */
               .print-page, #print-letter-area {
-                width: 100% !important;
-                height: 100% !important;
-                min-height: 100% !important;
-                max-height: none !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                min-height: 100vh !important;
+                max-height: 100vh !important;
                 box-shadow: none !important;
                 border: none !important;
-                padding: 0 !important;
+                padding: 15mm !important; /* Beautifully restored internal 15mm spacing */
                 margin: 0 !important;
                 overflow: visible !important;
                 box-sizing: border-box !important;
@@ -4220,67 +4220,6 @@ return {
                 <h3 className="text-base font-black text-slate-800">{isInvitation ? "Mẫu Thư mời khảo sát" : isCommitment ? "Bản Cam kết học tập" : "Mẫu Thư Chúc mừng"}</h3>
               </div>
               <div className="flex items-center gap-4">
-                <button 
-                  onClick={() => {
-                    const content = document.getElementById('print-main-container');
-                    if (!content) return;
-                    
-                    const academicYearStr = selectedReportStudent?.academicYear?.substring(0, 4) || new Date().getFullYear().toString();
-                    const studentName = selectedReportStudent?.fullName || "Tai_Lieu";
-                    const typeStr = isInvitation ? "Thu_Moi" : isCommitment ? "Cam_Ket" : "Thu_Chuc_Mung";
-                    const docFileName = `${academicYearStr}_${typeStr}_${studentName.replace(/\s+/g, '_')}.doc`;
-
-                    const stylesheets = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
-                      .map(el => el.outerHTML)
-                      .join('\n');
-
-                    const htmlContent = `
-                      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-                      <head>
-                        <meta charset="utf-8">
-                        <title>${docFileName}</title>
-                        ${stylesheets}
-                        <style>
-                          @page {
-                            size: A4;
-                            margin: 1.5cm;
-                          }
-                          body {
-                            font-family: 'Times New Roman', Times, serif;
-                          }
-                          .print-page, #print-letter-area {
-                            width: 100% !important;
-                            height: auto !important;
-                            min-height: auto !important;
-                            box-shadow: none !important;
-                            border: none !important;
-                            margin-bottom: 25px !important;
-                            page-break-after: always !important;
-                            break-after: page !important;
-                          }
-                        </style>
-                      </head>
-                      <body style="font-family: 'Times New Roman', Times, serif; background: white;">
-                        ${content.innerHTML}
-                      </body>
-                      </html>
-                    `;
-
-                    const blob = new Blob(['\ufeff', htmlContent], { type: 'application/msword' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = docFileName;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                  }}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md shadow-blue-100 flex items-center gap-2 transition-all"
-                >
-                  <FileText className="w-4 h-4" />
-                  Lưu File (Word)
-                </button>
                 <button 
                   onClick={() => {
                     const originalTitle = document.title;
@@ -4574,37 +4513,33 @@ return {
 
                       {/* Page Title */}
                       <div className="text-center my-6">
-                        <h2 className="text-xl font-bold tracking-wide text-indigo-950 uppercase mb-4">
-                          DANH MỤC HỒ SƠ NHẬP HỌC {selectedReportStudent.targetType ? selectedReportStudent.targetType.toUpperCase() : `KHỐI ${selectedReportStudent.grade || "1"}`}
+                        <h2 className="text-xl font-bold tracking-widest text-indigo-950 uppercase mb-4" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+                          DANH MỤC HỒ SƠ NHẬP HỌC
                         </h2>
                       </div>
 
-                      {/* Checklist Table */}
-                      <div className="mt-4 overflow-hidden rounded-2xl border border-slate-300 shadow-sm">
-                        <table className="w-full border-collapse text-left text-[13px] text-slate-700">
+                      {/* Checklist Table (Redesigned 2-Column, Sharp Dark Borders) */}
+                      <div className="mt-4 overflow-hidden border border-slate-950">
+                        <table className="w-full border-collapse text-left text-[13px] text-slate-900" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
                           <thead>
-                            <tr className="bg-slate-50 border-b border-slate-300">
-                              <th className="px-5 py-3 font-bold text-slate-900 border-r border-slate-300 text-center w-12">TT</th>
-                              <th className="px-5 py-3 font-bold text-slate-900 border-r border-slate-300 text-left">Hồ sơ yêu cầu</th>
-                              <th className="px-5 py-3 font-bold text-slate-900 border-r border-slate-300 text-center w-28">Số lượng</th>
-                              <th className="px-5 py-3 font-bold text-slate-900 text-center w-28">Ghi chú</th>
+                            <tr className="bg-white border-b border-slate-950">
+                              <th className="px-5 py-2.5 font-bold border-r border-slate-950 text-center uppercase text-slate-950" style={{ borderRightWidth: '1px', borderColor: '#000' }}>Hồ sơ yêu cầu</th>
+                              <th className="px-5 py-2.5 font-bold text-center uppercase text-slate-950 w-32">Số lượng</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-300">
-                            {modalDocList.map((item) => (
-                              <tr key={item.id} className="border-b border-slate-300">
-                                <td className="px-5 py-2.5 border-r border-slate-300 text-center font-bold text-slate-500">{item.id}</td>
-                                <td className="px-5 py-2.5 border-r border-slate-300 font-semibold text-slate-800">{item.name}</td>
-                                <td className="px-5 py-2.5 border-r border-slate-300 text-center text-slate-600 font-medium">{item.qty}</td>
-                                <td className="px-5 py-2.5 text-center text-[11px] italic text-slate-400">{item.note}</td>
+                          <tbody>
+                            {modalDocList.map((item, idx) => (
+                              <tr key={item.id} className="border-b border-slate-950 last:border-b-0">
+                                <td className="px-5 py-2.5 border-r border-slate-950 font-medium text-slate-900" style={{ borderRightWidth: '1px', borderColor: '#000' }}>{idx + 1}. {item.name}</td>
+                                <td className="px-5 py-2.5 text-center text-slate-950 font-bold">{item.qty}</td>
                               </tr>
                             ))}
                           </tbody>
                         </table>
                       </div>
 
-                      <p className="mt-6 text-xs text-slate-500 italic text-justify leading-relaxed">
-                        * Quý Phụ huynh vui lòng chuẩn bị đầy đủ hồ sơ theo danh mục nêu trên và nộp lại cho Ban Tuyển sinh vào ngày làm thủ tục nhập học chính thức của học sinh. Xin trân trọng cảm ơn!
+                      <p className="mt-8 text-[13px] text-slate-950 font-bold text-left leading-relaxed" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+                        Quý phụ huynh vui lòng bổ sung hồ sơ thiếu (nếu có) trong vòng 10 ngày kể từ ngày nộp Hồ sơ.
                       </p>
                     </div>
 
