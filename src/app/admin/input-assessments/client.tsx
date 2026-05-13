@@ -2557,7 +2557,7 @@ return {
           <div className="lg:col-span-7 bg-slate-50 border border-slate-200 shadow-inner rounded-3xl p-8 flex flex-col justify-between min-h-[450px]">
             <div>
               <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest block mb-4">Xem trước tiêu đề báo cáo</span>
-              <div className="bg-white rounded-2xl border border-slate-150 p-8 shadow-sm space-y-6 flex flex-col justify-start min-h-[300px] relative overflow-hidden">
+              <div className="bg-white rounded-2xl border border-slate-200 p-10 shadow-lg flex flex-col justify-between w-full aspect-[210/297] relative overflow-hidden">
                 {/* Background Watermark for Preview */}
                 <div 
                   className="absolute pointer-events-none"
@@ -2574,70 +2574,77 @@ return {
                     transform: rcBackground ? 'none' : 'translate(-50%, -50%) rotate(-15deg)'
                   }}
                 />
-                {/* Report Header (Matching Print Layout exactly) */}
-                <div className="border-b border-slate-200 pb-2 mb-2 relative z-10">
-                  <div className="flex justify-between items-center mb-1">
-                    {rcLogo ? (
-                      <img src={rcLogo} alt="Logo" className="h-8 object-contain" />
-                    ) : (
-                      <span className="text-[10px] font-black tracking-tight text-teal-600 uppercase" style={{ fontFamily: "Arial, sans-serif" }}>SKY-LINE</span>
-                    )}
-                  </div>
-                  <div className="text-left">
-                    <h4 className="font-extrabold text-[9px] uppercase tracking-wider text-slate-800" style={{ fontFamily: "Arial, sans-serif" }}>{previewSchoolName}</h4>
-                  </div>
-                </div>
-
-                {/* Centered Title */}
-                <div className="text-center my-2 relative z-10">
-                  <h2 className="text-xs font-black tracking-widest text-indigo-950 uppercase" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
-                    {rcTitle}
-                  </h2>
-                </div>
-
-                {/* Live Preview Dynamic Body */}
-                <div className="space-y-3 py-2 text-[10px] leading-relaxed text-slate-600 text-justify overflow-y-auto max-h-[140px] pr-1 scrollbar-thin">
-                  {renderTemplate(rcContent, selectedReportStudent || { fullName: "Lê Trà My", grade: "1", hocKy: "1", surveyFormType: "Hội nhập S" }).split('\n').filter(Boolean).map((para, idx) => (
-                    <p key={idx} className="indent-4" style={{ textIndent: "1rem" }}>{para}</p>
-                  ))}
-                </div>
-
-
-
-                {/* Signature Footer */}
-                <div className="flex justify-end pt-2 relative z-10">
-                  <div className="text-center space-y-1 min-w-[160px]">
-                    <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {previewTitleSuffix}</p>
-                    <div className="h-12 flex items-center justify-center">
-                      {rcSignature ? (
-                        <img src={rcSignature} alt="Chữ ký Preview" className="max-h-full object-contain" />
+                
+                {/* Wrapped Content Group (aligns top) */}
+                <div className="space-y-5 flex flex-col relative z-10 w-full">
+                  {/* Report Header (Matching Print Layout exactly) */}
+                  <div className="border-b border-slate-200 pb-2">
+                    <div className="flex justify-between items-center mb-1">
+                      {rcLogo ? (
+                        <img src={rcLogo} alt="Logo" className="h-8 object-contain" />
                       ) : (
-                        <div className="text-[8px] font-semibold text-slate-300 italic">Chưa upload chữ ký</div>
+                        <span className="text-[10px] font-black tracking-tight text-teal-600 uppercase" style={{ fontFamily: "Arial, sans-serif" }}>SKY-LINE</span>
                       )}
                     </div>
-                    <p className="text-[11px] font-black text-slate-700">{rcDirectorName || "-- Họ tên --"}</p>
+                    <div className="text-left">
+                      <h4 className="font-extrabold text-[9px] uppercase tracking-wider text-slate-800" style={{ fontFamily: "Arial, sans-serif" }}>{previewSchoolName}</h4>
+                    </div>
+                  </div>
+
+                  {/* Centered Title */}
+                  <div className="text-center my-1">
+                    <h2 className="text-xs font-black tracking-widest text-indigo-950 uppercase" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+                      {rcTitle}
+                    </h2>
+                  </div>
+
+                  {/* Live Preview Dynamic Body */}
+                  <div className="space-y-3 py-2 text-[10px] leading-relaxed text-slate-600 text-justify overflow-y-auto max-h-[360px] pr-1 scrollbar-thin">
+                    {renderTemplate(rcContent, selectedReportStudent || { fullName: "Lê Trà My", grade: "1", hocKy: "1", surveyFormType: "Hội nhập S" }).split('\n').filter(Boolean).map((para, idx) => (
+                      <p key={idx} className="indent-4" style={{ textIndent: "1rem" }}>{para}</p>
+                    ))}
+                  </div>
+
+                  {/* Signature Footer */}
+                  <div className="flex justify-end pt-2">
+                    <div className="text-center space-y-1 min-w-[160px]">
+                      <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {previewTitleSuffix}</p>
+                      <div className="h-12 flex items-center justify-center">
+                        {rcSignature ? (
+                          <img src={rcSignature} alt="Chữ ký Preview" className="max-h-full object-contain" />
+                        ) : (
+                          <div className="text-[8px] font-semibold text-slate-300 italic">Chưa upload chữ ký</div>
+                        )}
+                      </div>
+                      <p className="text-[11px] font-black text-slate-700">{rcDirectorName || "-- Họ tên --"}</p>
+                    </div>
                   </div>
                 </div>
 
-                {/* Live Preview Footer Contact */}
+                {/* Live Preview Footer Contact (anchored to bottom via flex justify-between) */}
                 {rcFooter ? (
-                  <div className="pt-2 mt-2 border-t border-slate-100 relative z-10 w-full">
+                  <div className="pt-2 mt-4 border-t border-slate-200 relative z-10 w-full">
                     <img src={rcFooter} alt="Footer Preview" className="w-full h-auto" />
                   </div>
                 ) : (
-                  <div className="border-t border-teal-500/30 pt-2 mt-2 text-[6px] text-slate-400 font-sans leading-normal relative z-10" style={{ fontFamily: "Arial, sans-serif" }}>
-                    <div className="grid grid-cols-3 gap-2">
+                  <div className="border-t border-teal-500/30 pt-2 mt-4 text-[6px] text-slate-400 font-sans leading-normal relative z-10 w-full" style={{ fontFamily: "Arial, sans-serif" }}>
+                    <div className="grid grid-cols-3 gap-3">
                       <div className="text-left">
-                        <p className="font-bold text-teal-600 uppercase text-[5px] tracking-wider">SKY-LINE Riverside / Central</p>
-                        <p className="text-[4px] text-slate-400 leading-none mt-0.5">Trần Đăng Ninh / 48 Nguyễn Du, Đà Nẵng</p>
+                        <p className="font-bold text-teal-600 uppercase text-[5px] tracking-wider">SKY-LINE Riverside</p>
+                        <p className="text-[4px] text-slate-500 leading-tight">Lô A2.4 Trần Đăng Ninh, Hải Châu, Đà Nẵng</p>
+                        <p className="font-bold text-teal-600 uppercase text-[5px] tracking-wider mt-0.5">SKY-LINE Central</p>
+                        <p className="text-[4px] text-slate-500 leading-tight">Số 48 Nguyễn Du, Hải Châu, Đà Nẵng</p>
                       </div>
                       <div className="text-left">
-                        <p className="font-bold text-teal-600 uppercase text-[5px] tracking-wider">SKY-LINE Beach / Hill</p>
-                        <p className="text-[4px] text-slate-400 leading-none mt-0.5">Trần Anh Tông / Điện Dương, Quảng Nam</p>
+                        <p className="font-bold text-teal-600 uppercase text-[5px] tracking-wider">SKY-LINE Beach</p>
+                        <p className="text-[4px] text-slate-500 leading-tight">Số 199 Trần Anh Tông, Thanh Khê, Đà Nẵng</p>
+                        <p className="font-bold text-teal-600 uppercase text-[5px] tracking-wider mt-0.5">SKY-LINE Hill</p>
+                        <p className="text-[4px] text-slate-500 leading-tight">Khối Hà My Đông A, Điện Dương, Q.Nam</p>
                       </div>
-                      <div className="text-right flex flex-col justify-start gap-2">
+                      <div className="text-right flex flex-col justify-start">
                         <p className="font-bold text-teal-600 uppercase text-[5px] tracking-wide">www.skylineschool.edu.vn</p>
-                        <p className="text-[4px] text-slate-400 leading-none mt-0.5">Hotline: (+84.236) 378 7777</p>
+                        <p className="text-[4px] text-slate-500 leading-tight mt-0.5">Hotline: (+84.236) 378 7777</p>
+                        <p className="text-[4px] text-slate-500 leading-tight">Hotline: (+84.236) 356 8777</p>
                       </div>
                     </div>
                   </div>
