@@ -794,30 +794,13 @@ ${reportForm.directorNote}`;
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          return parsed.filter(d => {
-            let matchT = true;
-            if (selectedReportStudent.targetType && d.targets && d.targets.length > 0) {
-              matchT = d.targets.some(t => t.toLowerCase() === selectedReportStudent.targetType.toLowerCase());
-            }
-            let matchG = true;
-            if (selectedReportStudent.grade && d.grades && d.grades.length > 0) {
-              const sG = selectedReportStudent.grade.toString().toLowerCase();
-              matchG = d.grades.some(g => { const gr = g.toLowerCase(); return gr === sG || gr.includes(sG) || sG.includes(gr); });
-            }
-            return matchT && matchG;
-          });
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed; // Return full configured list without restrictive per-item filtering, ensuring 100% preview alignment!
         }
-        return parsed;
-      } catch (e) {}
-    }
-    if (saved) {
-      try {
-        return JSON.parse(saved);
       } catch (e) {}
     }
     
-    // USER MANDATE: Page 2 Checklist must always display for ALL grades as default fallback
+    // Fallback to default documents group, guaranteeing Page 2 is never empty!
     return defaultDocumentsGrade1;
   }, [selectedReportStudent, defaultDocumentsGrade1, docGroups, docGroupTargets, docGroupGrades]);
 
@@ -4327,6 +4310,11 @@ return {
               .print-page:last-child {
                 page-break-after: avoid !important;
                 break-after: auto !important;
+              }
+              /* Guarantee Page 2 starts on a fresh physical sheet during print */
+              .print-page {
+                page-break-before: always !important;
+                break-before: page !important;
               }
               /* Enforce scaling dynamically for all elements */
               .print-page img[alt="Logo"] {
