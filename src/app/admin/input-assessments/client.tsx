@@ -1,4 +1,5 @@
 "use client"
+const DEFAULT_WATERMARK_SVG = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='%23007A87'><path d='M10,80 Q50,40 90,20 Q60,50 10,80 Z'/><path d='M30,80 Q60,55 90,35 Q65,60 30,80 Z'/></svg>";
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import {
@@ -326,6 +327,20 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
   const [rcDirectorName, setRcDirectorName] = useState("")
   const [rcContent, setRcContent] = useState("")
   const [rcFooter, setRcFooter] = useState("")
+
+  // USER MANDATE: Fetch and memoize document checklist for Live Preview stacking
+  const previewDocList = useMemo(() => {
+    if (typeof window === "undefined") return defaultDocumentsGrade1;
+    const activeGroup = (rcTargetGroup && rcTargetGroup !== "all") ? rcTargetGroup : "khoi_1";
+    const saved = localStorage.getItem('admission_docs_' + activeGroup);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch(e) {}
+    }
+    return defaultDocumentsGrade1;
+  }, [rcTargetGroup, defaultDocumentsGrade1]);
 
   useEffect(() => {
     if (campuses && campuses.length > 0 && !rcCampusId) {
@@ -2573,7 +2588,7 @@ return {
                 <div 
                   className="absolute pointer-events-none"
                   style={{
-                    backgroundImage: `url('${rcBackground || "data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\" fill=\"%23007A87\"><path d=\"M10,80 Q50,40 90,20 Q60,50 10,80 Z\"/><path d=\"M30,80 Q60,55 90,35 Q65,60 30,80 Z\"/></svg>"}')`,
+                    backgroundImage: `url('${rcBackground || DEFAULT_WATERMARK_SVG}')`,
                     backgroundRepeat: 'no-repeat',
                     backgroundPosition: 'center',
                     backgroundSize: rcBackground ? 'cover' : 'contain',
@@ -2633,6 +2648,108 @@ return {
                 </div>
 
                 {/* Live Preview Footer Contact (anchored to bottom via flex justify-between) */}
+                {rcFooter ? (
+                  <div className="pt-2 mt-4 border-t border-slate-200 relative z-10 w-full">
+                    <img src={rcFooter} alt="Footer Preview" className="w-full h-auto" />
+                  </div>
+                ) : (
+                  <div className="border-t border-teal-500/30 pt-2 mt-4 text-[6px] text-slate-400 font-sans leading-normal relative z-10 w-full" style={{ fontFamily: "Arial, sans-serif" }}>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="text-left">
+                        <p className="font-bold text-teal-600 uppercase text-[5px] tracking-wider">SKY-LINE Riverside</p>
+                        <p className="text-[4px] text-slate-500 leading-tight">Lô A2.4 Trần Đăng Ninh, Hải Châu, Đà Nẵng</p>
+                        <p className="font-bold text-teal-600 uppercase text-[5px] tracking-wider mt-0.5">SKY-LINE Central</p>
+                        <p className="text-[4px] text-slate-500 leading-tight">Số 48 Nguyễn Du, Hải Châu, Đà Nẵng</p>
+                      </div>
+                      <div className="text-left">
+                        <p className="font-bold text-teal-600 uppercase text-[5px] tracking-wider">SKY-LINE Beach</p>
+                        <p className="text-[4px] text-slate-500 leading-tight">Số 199 Trần Anh Tông, Thanh Khê, Đà Nẵng</p>
+                        <p className="font-bold text-teal-600 uppercase text-[5px] tracking-wider mt-0.5">SKY-LINE Hill</p>
+                        <p className="text-[4px] text-slate-500 leading-tight">Khối Hà My Đông A, Điện Dương, Q.Nam</p>
+                      </div>
+                      <div className="text-right flex flex-col justify-start">
+                        <p className="font-bold text-teal-600 uppercase text-[5px] tracking-wide">www.skylineschool.edu.vn</p>
+                        <p className="text-[4px] text-slate-500 leading-tight mt-0.5">Hotline: (+84.236) 378 7777</p>
+                        <p className="text-[4px] text-slate-500 leading-tight">Hotline: (+84.236) 356 8777</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* SECOND PREVIEW CARD: ADMISSION DOCUMENTS (HỒ SƠ NHẬP HỌC) - USER MANDATED FOR LIVE PREVIEW STACKING */}
+              <div className="bg-white rounded-2xl border border-slate-200 p-10 shadow-lg flex flex-col justify-between w-full aspect-[210/297] relative overflow-hidden mt-8">
+                {/* Background Watermark */}
+                <div 
+                  className="absolute pointer-events-none"
+                  style={{
+                    backgroundImage: `url('${rcBackground || DEFAULT_WATERMARK_SVG}')`,
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'center',
+                    backgroundSize: rcBackground ? 'cover' : 'contain',
+                    opacity: rcBackground ? 0.15 : 0.05,
+                    top: rcBackground ? '0' : '50%',
+                    left: rcBackground ? '0' : '50%',
+                    width: rcBackground ? '100%' : '70%',
+                    height: rcBackground ? '100%' : '50%',
+                    transform: rcBackground ? 'none' : 'translate(-50%, -50%) rotate(-15deg)'
+                  }}
+                />
+                
+                {/* Wrapped Content Group */}
+                <div className="space-y-5 flex flex-col relative z-10 w-full">
+                  {/* Header (Synchronized perfectly) */}
+                  <div className="border-b border-slate-200 pb-2">
+                    <div className="flex justify-between items-center mb-1">
+                      {rcLogo ? (
+                        <img src={rcLogo} alt="Logo" className="h-8 object-contain" />
+                      ) : (
+                        <div className="flex items-center gap-1">
+                          <span className="text-[10px] font-black tracking-tight text-teal-600 uppercase" style={{ fontFamily: "Arial, sans-serif" }}>SKY-LINE</span>
+                          <svg className="w-3 h-3 text-teal-500" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-left">
+                      <h4 className="font-extrabold text-[9px] uppercase tracking-wider text-slate-800" style={{ fontFamily: "Arial, sans-serif" }}>{previewSchoolName}</h4>
+                    </div>
+                  </div>
+
+                  {/* Centered Title */}
+                  <div className="text-center my-2">
+                    <h2 className="text-xs font-black tracking-widest text-indigo-950 uppercase" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+                      DANH MỤC HỒ SƠ NHẬP HỌC
+                    </h2>
+                  </div>
+
+                  {/* Checklist Table (Preview Scale) */}
+                  <div className="mt-2 overflow-hidden border border-slate-950">
+                    <table className="w-full border-collapse text-left text-[9px] text-slate-900" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+                      <thead>
+                        <tr className="bg-white border-b border-slate-950">
+                          <th className="px-3 py-1.5 font-bold border-r border-slate-950 text-center uppercase text-slate-950" style={{ borderRightWidth: '1px', borderColor: '#000' }}>Hồ sơ yêu cầu</th>
+                          <th className="px-3 py-1.5 font-bold text-center uppercase text-slate-950 w-20">Số lượng</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {previewDocList.map((item, idx) => (
+                          <tr key={item.id} className="border-b border-slate-950 last:border-b-0">
+                            <td className="px-3 py-1.5 border-r border-slate-950 font-medium text-slate-900" style={{ borderRightWidth: '1px', borderColor: '#000' }}>{idx + 1}. {item.name}</td>
+                            <td className="px-3 py-1.5 text-center text-slate-950 font-bold">{item.qty}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  
+                  <p className="mt-4 text-[9px] text-slate-950 font-bold text-left leading-relaxed" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+                    Quý phụ huynh vui lòng bổ sung hồ sơ thiếu (nếu có) trong vòng 10 ngày kể từ ngày nộp Hồ sơ.
+                  </p>
+                </div>
+
+                {/* Footer Contact (Synchronized perfectly) */}
                 {rcFooter ? (
                   <div className="pt-2 mt-4 border-t border-slate-200 relative z-10 w-full">
                     <img src={rcFooter} alt="Footer Preview" className="w-full h-auto" />
