@@ -4425,14 +4425,12 @@ return {
                         <p className="font-bold text-teal-600 uppercase text-[8px] tracking-wider mt-1">Trung tâm sống thành công - SLS</p>
                         <p className="text-[7px] text-slate-500">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
                       </div>
-                      <div className="text-right flex flex-col justify-start gap-2">
-                        <p className="font-bold text-teal-600 uppercase text-[9px] tracking-wide">www.skylineschool.edu.vn</p>
-                        <div className="mt-1 text-[7px] text-slate-500 space-y-0.5">
-                          <p><strong>Hotline:</strong> (+84.236) 378 7777</p>
-                          <p><strong>Hotline:</strong> (+84.236) 356 8777</p>
-                          <p><strong>Hotline:</strong> (+84.236) 378 7779</p>
-                          <p><strong>Hotline:</strong> (+84.236) 375 1777</p>
-                        </div>
+                      <div className="text-right">
+                        <p className="font-extrabold text-teal-600 uppercase text-[8px] tracking-wider mb-1.5" style={{ lineHeight: "1.2" }}>www.skylineschool.edu.vn</p>
+                        <p className="text-[7.5px] text-slate-500 mb-1" style={{ lineHeight: "1.4" }}><strong>Hotline:</strong> (+84.236) 378 7777</p>
+                        <p className="text-[7.5px] text-slate-500 mb-1" style={{ lineHeight: "1.4" }}><strong>Hotline:</strong> (+84.236) 356 8777</p>
+                        <p className="text-[7.5px] text-slate-500 mb-1" style={{ lineHeight: "1.4" }}><strong>Hotline:</strong> (+84.236) 378 7779</p>
+                        <p className="text-[7.5px] text-slate-500" style={{ lineHeight: "1.4" }}><strong>Hotline:</strong> (+84.236) 375 1777</p>
                       </div>
                     </div>
                     {/* Subtle right corner bird wing vector decoration */}
@@ -4527,15 +4525,13 @@ return {
                             <p className="font-bold text-teal-600 uppercase text-[8px] tracking-wider mt-1">Trung tâm sống thành công - SLS</p>
                             <p className="text-[7px] text-slate-500">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
                           </div>
-                          <div className="text-right flex flex-col justify-start gap-2">
-                            <p className="font-bold text-teal-600 uppercase text-[9px] tracking-wide">www.skylineschool.edu.vn</p>
-                            <div className="mt-1 text-[7px] text-slate-500 space-y-0.5">
-                              <p><strong>Hotline:</strong> (+84.236) 378 7777</p>
-                              <p><strong>Hotline:</strong> (+84.236) 356 8777</p>
-                              <p><strong>Hotline:</strong> (+84.236) 378 7779</p>
-                              <p><strong>Hotline:</strong> (+84.236) 375 1777</p>
-                            </div>
-                          </div>
+                                                <div className="text-right">
+                        <p className="font-extrabold text-teal-600 uppercase text-[8px] tracking-wider mb-1.5" style={{ lineHeight: "1.2" }}>www.skylineschool.edu.vn</p>
+                        <p className="text-[7.5px] text-slate-500 mb-1" style={{ lineHeight: "1.4" }}><strong>Hotline:</strong> (+84.236) 378 7777</p>
+                        <p className="text-[7.5px] text-slate-500 mb-1" style={{ lineHeight: "1.4" }}><strong>Hotline:</strong> (+84.236) 356 8777</p>
+                        <p className="text-[7.5px] text-slate-500 mb-1" style={{ lineHeight: "1.4" }}><strong>Hotline:</strong> (+84.236) 378 7779</p>
+                        <p className="text-[7.5px] text-slate-500" style={{ lineHeight: "1.4" }}><strong>Hotline:</strong> (+84.236) 375 1777</p>
+                      </div>
                         </div>
                         {/* Subtle right corner decoration */}
                         <div className="absolute right-0 bottom-0 w-12 h-12 opacity-15 pointer-events-none">
