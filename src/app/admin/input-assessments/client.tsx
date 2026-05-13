@@ -4005,20 +4005,22 @@ return {
       {isPrintModalOpen && selectedReportStudent && (
         <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto no-print-backdrop">
 <style>{`
-            /* OPTIMIZED A4 PDF PRINT DEFINITIONS */
+            /* USER MANDATED A4 PDF PRINT CONFIGURATION */
             @page { 
               size: A4; 
-              margin: 0 !important; 
+              margin: 12mm 15mm !important; 
             }
             
             @media print {
-              /* 0. AGGRESSIVE HTML/BODY RESET TO LOCK DIMENSIONS */
+              /* USER MANDATED HTML/BODY RESET WITH ZERO FIXED HEIGHTS */
               html, body {
-                width: 100% !important;
-                height: 100% !important;
+                width: 210mm !important;
+                height: auto !important;
+                min-height: 0 !important;
                 margin: 0 !important;
                 padding: 0 !important;
-                background: #fff !important;
+                font-family: "Times New Roman", serif !important;
+                background: white !important;
                 overflow: visible !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
@@ -4118,7 +4120,7 @@ return {
                 flex-direction: column !important;
                 align-items: stretch !important;
                 width: 100% !important;
-                height: 100% !important;
+                height: auto !important;
                 margin: 0 !important;
                 padding: 0 !important;
                 gap: 0 !important;
@@ -4126,27 +4128,46 @@ return {
                 background: white !important;
                 transform: none !important;
               }
-              /* 6. RELEASE ALL HEIGHT/OVERFLOW LOCKS FROM THE PAGE BODY */
+              /* USER MANDATED FLEX CONTAINER WITHOUT ANY HEIGHTS */
               .print-page, #print-letter-area {
-                width: 100vw !important;
-                height: 100vh !important;
-                min-height: 100vh !important;
-                max-height: 100vh !important;
+                width: 180mm !important; /* 210mm - (15mm * 2) = 180mm content width */
+                margin: 0 auto !important;
+                height: auto !important;
+                min-height: 0 !important;
+                max-height: none !important;
                 box-shadow: none !important;
                 border: none !important;
-                padding: 15mm !important; /* Beautifully restored internal 15mm spacing */
-                margin: 0 !important;
+                padding: 0 !important; /* Handled by @page margins */
                 overflow: visible !important;
                 box-sizing: border-box !important;
-                page-break-inside: avoid !important;
-                break-inside: avoid !important;
-                page-break-after: always !important;
-                break-after: page !important;
-                position: relative !important;
-                background: white !important;
+                
                 display: flex !important;
                 flex-direction: column !important;
-                justify-content: space-between !important;
+                justify-content: flex-start !important;
+                
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                page-break-after: avoid !important; /* USER MANDATE: page-break-after: avoid */
+                break-after: avoid !important;
+                position: relative !important;
+                background: white !important;
+              }
+              /* USER MANDATED CONTENT TYPOGRAPHY RULES */
+              .print-page p, #print-letter-area p {
+                text-align: justify !important;
+                line-height: 1.7 !important;
+                font-size: 15px !important;
+                font-family: "Times New Roman", serif !important;
+              }
+              .print-page h2, #print-letter-area h2 {
+                text-align: center !important;
+                text-transform: uppercase !important;
+                color: #0f172a !important;
+                font-family: "Times New Roman", serif !important;
+                font-size: 20px !important;
+                font-weight: bold !important;
+                margin-top: 12px !important;
+                margin-bottom: 16px !important;
               }
               .print-page:last-child {
                 page-break-after: avoid !important;
@@ -4199,16 +4220,19 @@ return {
             }
             #print-letter-area, .print-page {
               width: 210mm !important;
-              height: 297mm !important;
-              min-height: 297mm !important;
-              max-height: 297mm !important;
-              aspect-ratio: 210 / 297 !important;
+              height: auto !important; /* Follows content naturally on screen */
+              min-height: 200px !important;
+              max-height: none !important;
+              margin: 0 auto !important;
+              padding: 12mm 15mm !important; /* Simulates physical @page margins on screen! */
               flex-shrink: 0 !important;
               display: flex !important;
               flex-direction: column !important;
-              justify-content: space-between !important;
-              overflow: hidden !important;
+              justify-content: flex-start !important;
+              overflow: visible !important;
               box-sizing: border-box !important;
+              background: white !important;
+              font-family: "Times New Roman", serif !important;
             }
           `}</style>
           
@@ -4271,8 +4295,8 @@ return {
               <div id="print-main-container" className="flex flex-col gap-8 items-center">
                 <div 
                   id="print-letter-area" 
-                  className="bg-white w-[210mm] h-[297mm] p-[15mm] shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed print-page overflow-hidden"
-                  style={{ fontFamily: "'Times New Roman', Times, serif", height: '297mm', minHeight: '297mm', flexShrink: 0 }}
+                  className="bg-white shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed print-page"
+                  style={{ fontFamily: "'Times New Roman', Times, serif", flexShrink: 0 }}
               >
                 {/* Top Logo and Header */}
                 <div className="flex flex-col relative z-10 w-full">
@@ -4491,8 +4515,8 @@ return {
 
                 {modalDocList && modalDocList.length > 0 && (
                   <div 
-                    className="bg-white w-[210mm] h-[297mm] p-[15mm] shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed print-page mt-8 overflow-hidden"
-                    style={{ fontFamily: "'Times New Roman', Times, serif", height: '297mm', minHeight: '297mm', flexShrink: 0 }}
+                    className="bg-white shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed print-page mt-8"
+                    style={{ fontFamily: "'Times New Roman', Times, serif", flexShrink: 0 }}
                   >
                     <div className="flex flex-col relative z-10 w-full">
                       {/* Top Logo and Header */}
