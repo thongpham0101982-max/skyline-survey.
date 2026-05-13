@@ -4260,11 +4260,11 @@ return {
               <div id="print-main-container" className="flex flex-col gap-8 items-center">
                 <div 
                   id="print-letter-area" 
-                  className="bg-white w-[210mm] h-[297mm] p-[15mm] shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed print-page"
+                  className="bg-white w-[210mm] h-[297mm] p-[15mm] shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed print-page overflow-hidden"
                   style={{ fontFamily: "'Times New Roman', Times, serif" }}
               >
                 {/* Top Logo and Header */}
-                <div>
+                <div className="flex flex-col relative z-10 w-full">
                   <div className="flex flex-col gap-1 border-b pb-2 mb-3">
                     <div className="flex items-center justify-between">
                       {studentCampusConfig?.logo ? (
@@ -4417,7 +4417,7 @@ return {
                 {/* Footer Contact */}
                 {studentCampusConfig?.footer ? (
                   <div className="border-t border-slate-200 pt-3 mt-6 relative z-10 w-full">
-                    <img src={studentCampusConfig.footer} alt="Footer" className="w-full h-auto" />
+                    <img src={studentCampusConfig.footer} alt="Footer Print" className="w-full h-auto" />
                   </div>
                 ) : (
                   <div className="border-t border-teal-500/30 pt-3 mt-6 text-[8px] text-slate-400 font-sans leading-normal relative z-10" style={{ fontFamily: "Arial, sans-serif" }}>
@@ -4458,10 +4458,10 @@ return {
 
                 {modalDocList && modalDocList.length > 0 && (
                   <div 
-                    className="bg-white w-[210mm] h-[297mm] p-[15mm] shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed print-page mt-8"
+                    className="bg-white w-[210mm] h-[297mm] p-[15mm] shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed print-page mt-8 overflow-hidden"
                     style={{ fontFamily: "'Times New Roman', Times, serif" }}
                   >
-                    <div>
+                    <div className="flex flex-col relative z-10 w-full">
                       {/* Top Logo and Header */}
                       <div className="flex flex-col gap-1 border-b pb-2 mb-6">
                         <div className="flex items-center justify-between">
@@ -4517,7 +4517,7 @@ return {
                     {/* Footer Contact */}
                     {studentCampusConfig?.footer ? (
                       <div className="border-t border-slate-200 pt-3 mt-6 relative z-10 w-full">
-                        <img src={studentCampusConfig.footer} alt="Footer" className="w-full h-auto" />
+                        <img src={studentCampusConfig.footer} alt="Footer Print" className="w-full h-auto" />
                       </div>
                     ) : (
                       <div className="border-t border-teal-500/30 pt-3 mt-6 text-[8px] text-slate-400 font-sans leading-normal relative z-10" style={{ fontFamily: "Arial, sans-serif" }}>
