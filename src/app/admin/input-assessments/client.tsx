@@ -7,7 +7,7 @@ import {
   ChevronDown, ChevronUp, Loader2, BookOpen, GraduationCap, RefreshCw,
   Tag, FolderOpen, Hash, MoreVertical, PenLine, CheckCircle2,
   Filter, ClipboardCheck, ArrowRight, UserPlus, Info,
-  FileSpreadsheet, Pencil, Mail
+  FileSpreadsheet, Pencil, Mail, FileText
 } from "lucide-react"
 import * as XLSX from "xlsx"
 
@@ -4220,6 +4220,67 @@ return {
                 <h3 className="text-base font-black text-slate-800">{isInvitation ? "Mẫu Thư mời khảo sát" : isCommitment ? "Bản Cam kết học tập" : "Mẫu Thư Chúc mừng"}</h3>
               </div>
               <div className="flex items-center gap-4">
+                <button 
+                  onClick={() => {
+                    const content = document.getElementById('print-main-container');
+                    if (!content) return;
+                    
+                    const academicYearStr = selectedReportStudent?.academicYear?.substring(0, 4) || new Date().getFullYear().toString();
+                    const studentName = selectedReportStudent?.fullName || "Tai_Lieu";
+                    const typeStr = isInvitation ? "Thu_Moi" : isCommitment ? "Cam_Ket" : "Thu_Chuc_Mung";
+                    const docFileName = `${academicYearStr}_${typeStr}_${studentName.replace(/\s+/g, '_')}.doc`;
+
+                    const stylesheets = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
+                      .map(el => el.outerHTML)
+                      .join('\n');
+
+                    const htmlContent = `
+                      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+                      <head>
+                        <meta charset="utf-8">
+                        <title>${docFileName}</title>
+                        ${stylesheets}
+                        <style>
+                          @page {
+                            size: A4;
+                            margin: 1.5cm;
+                          }
+                          body {
+                            font-family: 'Times New Roman', Times, serif;
+                          }
+                          .print-page, #print-letter-area {
+                            width: 100% !important;
+                            height: auto !important;
+                            min-height: auto !important;
+                            box-shadow: none !important;
+                            border: none !important;
+                            margin-bottom: 25px !important;
+                            page-break-after: always !important;
+                            break-after: page !important;
+                          }
+                        </style>
+                      </head>
+                      <body style="font-family: 'Times New Roman', Times, serif; background: white;">
+                        ${content.innerHTML}
+                      </body>
+                      </html>
+                    `;
+
+                    const blob = new Blob(['\ufeff', htmlContent], { type: 'application/msword' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = docFileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                  }}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md shadow-blue-100 flex items-center gap-2 transition-all"
+                >
+                  <FileText className="w-4 h-4" />
+                  Lưu File (Word)
+                </button>
                 <button 
                   onClick={() => {
                     const originalTitle = document.title;
