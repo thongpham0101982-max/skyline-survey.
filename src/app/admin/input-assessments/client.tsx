@@ -4204,6 +4204,7 @@ return {
               height: 297mm !important;
               min-height: 297mm !important;
               max-height: 297mm !important;
+              aspect-ratio: 210 / 297 !important;
               flex-shrink: 0 !important;
               display: flex !important;
               flex-direction: column !important;
@@ -4238,7 +4239,7 @@ return {
                   className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md shadow-emerald-100 flex items-center gap-2 transition-all"
                 >
                   <Download className="w-4 h-4" />
-                  Xuất PDF
+                  Lưu File (PDF)
                 </button>
                 <button 
                   onClick={() => {
@@ -4273,7 +4274,7 @@ return {
                 <div 
                   id="print-letter-area" 
                   className="bg-white w-[210mm] h-[297mm] p-[15mm] shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed print-page overflow-hidden"
-                  style={{ fontFamily: "'Times New Roman', Times, serif" }}
+                  style={{ fontFamily: "'Times New Roman', Times, serif", height: '297mm', minHeight: '297mm', flexShrink: 0 }}
               >
                 {/* Top Logo and Header */}
                 <div className="flex flex-col relative z-10 w-full">
@@ -4479,7 +4480,7 @@ return {
                 {modalDocList && modalDocList.length > 0 && (
                   <div 
                     className="bg-white w-[210mm] h-[297mm] p-[15mm] shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed print-page mt-8 overflow-hidden"
-                    style={{ fontFamily: "'Times New Roman', Times, serif" }}
+                    style={{ fontFamily: "'Times New Roman', Times, serif", height: '297mm', minHeight: '297mm', flexShrink: 0 }}
                   >
                     <div className="flex flex-col relative z-10 w-full">
                       {/* Top Logo and Header */}
