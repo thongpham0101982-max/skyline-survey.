@@ -4186,10 +4186,7 @@ return {
                 height: 50%;
               `}
             }
-            #print-letter-area {
-              overflow: visible;
-            }
-            .print-page {
+            #print-letter-area, .print-page {
               width: 210mm !important;
               height: 297mm !important;
               min-height: 297mm !important;
@@ -4198,6 +4195,8 @@ return {
               display: flex !important;
               flex-direction: column !important;
               justify-content: space-between !important;
+              overflow: hidden !important;
+              box-sizing: border-box !important;
             }
           `}</style>
           
