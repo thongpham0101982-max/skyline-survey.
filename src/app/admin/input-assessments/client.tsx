@@ -4110,15 +4110,15 @@ return {
               /* 6. RELEASE ALL HEIGHT/OVERFLOW LOCKS FROM THE PAGE BODY */
               .print-page, #print-letter-area {
                 width: 210mm !important;
-                height: auto !important;
-                min-height: initial !important;
-                max-height: none !important;
+                height: 297mm !important;
+                min-height: 297mm !important;
+                max-height: 297mm !important;
                 box-shadow: none !important;
                 border: none !important;
                 padding: 15mm !important;
                 margin: 0 !important;
                 margin-top: 0 !important;
-                overflow: visible !important;
+                overflow: hidden !important;
                 box-sizing: border-box !important;
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
@@ -4126,6 +4126,9 @@ return {
                 break-after: page !important;
                 position: relative !important;
                 background: white !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: space-between !important;
               }
               .print-page:last-child {
                 page-break-after: avoid !important;
@@ -4181,10 +4184,13 @@ return {
             }
             .print-page {
               width: 210mm !important;
-              height: auto !important;
-              min-height: 297mm;
-              max-height: none !important;
+              height: 297mm !important;
+              min-height: 297mm !important;
+              max-height: 297mm !important;
               flex-shrink: 0 !important;
+              display: flex !important;
+              flex-direction: column !important;
+              justify-content: space-between !important;
             }
           `}</style>
           
@@ -4247,7 +4253,7 @@ return {
               <div id="print-main-container" className="flex flex-col gap-8 items-center">
                 <div 
                   id="print-letter-area" 
-                  className="bg-white w-[210mm] min-h-[297mm] p-[15mm] shadow-lg border border-slate-200 relative flex flex-col justify-start text-slate-800 text-sm leading-relaxed print-page"
+                  className="bg-white w-[210mm] h-[297mm] p-[15mm] shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed print-page"
                   style={{ fontFamily: "'Times New Roman', Times, serif" }}
               >
                 {/* Top Logo and Header */}
@@ -4445,7 +4451,7 @@ return {
 
                 {modalDocList && modalDocList.length > 0 && (
                   <div 
-                    className="bg-white w-[210mm] min-h-[297mm] p-[15mm] shadow-lg border border-slate-200 relative flex flex-col justify-start text-slate-800 text-sm leading-relaxed print-page mt-8"
+                    className="bg-white w-[210mm] h-[297mm] p-[15mm] shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed print-page mt-8"
                     style={{ fontFamily: "'Times New Roman', Times, serif" }}
                   >
                     <div>
