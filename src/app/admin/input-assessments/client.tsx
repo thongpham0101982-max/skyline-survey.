@@ -8,7 +8,8 @@ import {
   ChevronDown, ChevronUp, Loader2, BookOpen, GraduationCap, RefreshCw,
   Tag, FolderOpen, Hash, MoreVertical, PenLine, CheckCircle2,
   Filter, ClipboardCheck, ArrowRight, UserPlus, Info,
-  FileSpreadsheet, Pencil, Mail, FileText
+  FileSpreadsheet, Pencil, Mail, FileText,
+  Phone, Printer
 } from "lucide-react"
 import * as XLSX from "xlsx"
 
@@ -502,6 +503,44 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     
     notify("Đã lưu cấu hình báo cáo thành công!")
   }
+
+  const exportConfigPdf = () => {
+    if (!rcCampusId) return notify("Vui lòng chọn Cơ sở", "err")
+    if (!rcReportType) return notify("Vui lòng chọn Loại báo cáo", "err")
+    if (!rcTargetGroup) return notify("Vui lòng chọn Đối tượng áp dụng", "err")
+    
+    // PREVIEW ONLY: Do not update the database/localStorage when clicking In thử
+    
+    const campusObj = campuses.find(c => c.id === rcCampusId);
+    const campusName = campusObj ? campusObj.campusName : "Skyline Global";
+    
+    let mockGrade = "1";
+    if (rcTargetGroup === "khoi_1") mockGrade = "1";
+    else if (rcTargetGroup === "khoi_2_5") mockGrade = "3";
+    else if (rcTargetGroup === "khoi_6") mockGrade = "6";
+    else if (rcTargetGroup === "khoi_7_9") mockGrade = "8";
+    else if (rcTargetGroup === "khoi_10") mockGrade = "10";
+    else if (rcTargetGroup === "khoi_11_12") mockGrade = "11";
+    
+    // Set high-fidelity structural preview data using a simulated mock student directly tied to the live config settings
+    setSelectedReportStudent({
+      id: "MOCK_PREVIEW_STUDENT",
+      fullName: "Nguyễn Lê An Chi (Bản In Thử)",
+      grade: mockGrade,
+      academicYear: "2026-2027",
+      admissionCampus: campusName,
+      surveyFormType: "Hội nhập Global",
+      admissionCriteria: "Diện Xét tuyển",
+      admissionResult: rcReportType === "cam_ket_hoc_tap" ? "Đạt cam kết" : "Đạt",
+      targetType: rcTargetGroup !== "all" ? rcTargetGroup : undefined
+    });
+    
+    // Automatically adjust functional UI state toggles
+    setIsInvitation(rcReportType === 'thu_moi');
+    setIsCommitment(rcReportType === 'cam_ket_hoc_tap');
+    setIsPrintModalOpen(true);
+  };
+
   const [yearId, setYearId] = useState(academicYears[0]?.id || "")
   const [toast, setToast] = useState<{msg:string;type:"ok"|"err"}|null>(null)
   const notify = (msg:string, type:"ok"|"err"="ok") => { setToast({msg,type}); setTimeout(()=>setToast(null),3200) }
@@ -806,6 +845,19 @@ ${reportForm.directorNote}`;
 
   const studentCampusConfig = useMemo(() => {
     if (typeof window === "undefined" || !selectedReportStudent) return null;
+
+    // CRITICAL PREVIEW MODE: Bypass local storage entirely if loading mock student to ensure no database updates
+    if (selectedReportStudent.id === "MOCK_PREVIEW_STUDENT") {
+      return {
+        title: rcTitle || (rcReportType === "thu_chuc_mung" ? "BÁO CÁO KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO" : rcReportType === "thu_moi" ? "THƯ MỜI" : "BẢN CAM KẾT HỌC TẬP"),
+        logo: rcLogo,
+        background: rcBackground,
+        content: rcContent,
+        footer: rcFooter,
+        signature: rcSignature,
+        directorName: rcDirectorName || (campuses.find(c => c.id === rcCampusId)?.manager?.fullName || "")
+      };
+    }
     
     // Find campus matching active selection in UI form or saved student record
     const effCampus = reportForm.admissionCampus || selectedReportStudent.admissionCampus;
@@ -899,7 +951,7 @@ ${reportForm.directorNote}`;
       };
     }
     return null;
-  }, [selectedReportStudent, campuses, reportBatches, isCommitment, isInvitation, reportForm.admissionCampus]);
+  }, [selectedReportStudent, campuses, reportBatches, isCommitment, isInvitation, reportForm.admissionCampus, rcTitle, rcLogo, rcBackground, rcContent, rcFooter, rcSignature, rcDirectorName, rcReportType, rcCampusId]);
 
   const campusNameSuffix = useMemo(() => {
     if (!selectedReportStudent) return "GLOBAL";
@@ -2584,15 +2636,30 @@ return {
               </div>
             </div>
 
-            <button onClick={saveReportConfig} className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-lg shadow-indigo-100 transition-all flex items-center justify-center gap-2">
-              <Check className="w-4 h-4" /> Lưu cấu hình
-            </button>
+            <div className="flex items-center gap-4 mt-2">
+              <button onClick={saveReportConfig} className="flex-1 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-lg shadow-indigo-100 transition-all flex items-center justify-center gap-2">
+                <Check className="w-4 h-4" /> Lưu cấu hình
+              </button>
+              <button onClick={exportConfigPdf} className="px-6 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-lg shadow-emerald-100 transition-all flex items-center justify-center gap-2" title="Xuất thư mừng trực tiếp ra PDF từ cấu hình">
+                <Printer className="w-4 h-4" /> In thử (PDF)
+              </button>
+            </div>
           </div>
 
           {/* Right: Live Preview Panel */}
           <div className="lg:col-span-7 bg-slate-50 border border-slate-200 shadow-inner rounded-3xl p-8 flex flex-col justify-between min-h-[450px]">
             <div>
-              <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest block mb-4">Xem trước tiêu đề báo cáo</span>
+              <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
+                <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Xem trước mẫu thiết kế thực tế</span>
+                <div className="flex items-center gap-2">
+                  <button onClick={saveReportConfig} className="px-4 py-2 bg-white hover:bg-indigo-50 text-indigo-600 border border-slate-200 rounded-xl shadow-sm hover:shadow transition-all flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider">
+                    <Check className="w-3.5 h-3.5" /> Lưu mẫu
+                  </button>
+                  <button onClick={exportConfigPdf} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-md shadow-emerald-100 hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider" title="In thử trực tiếp định dạng PDF không lưu">
+                    <Printer className="w-3.5 h-3.5" /> In thử (PDF)
+                  </button>
+                </div>
+              </div>
               <div className="bg-white rounded-2xl border border-slate-200 p-10 shadow-lg flex flex-col justify-between w-full aspect-[210/297] relative overflow-hidden">
                 {/* Background Watermark for Preview */}
                 <div 
@@ -4457,14 +4524,10 @@ return {
                 break-after: auto !important;
               }
               
-              /* Guarantee Page 2 starts on a fresh physical sheet during print */
-              .print-page {
+              /* Guarantee Page 2 starts on a fresh physical sheet during print, WITHOUT blank first page */
+              .print-page + .print-page {
                 page-break-before: always !important;
                 break-before: page !important;
-              }
-              #print-letter-area {
-                page-break-before: avoid !important;
-                break-before: avoid !important;
               }
               
               /* Enforce scaling and aesthetics dynamically for elements */
