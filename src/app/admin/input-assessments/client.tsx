@@ -4469,11 +4469,11 @@ return {
               
               /* USER MANDATED FLEX CONTAINER WITHOUT ANY HEIGHTS */
               .print-page, #print-letter-area {
-                width: 210mm !important; /* ISO 216 A4 Width */
-                height: 297mm !important; /* ISO 216 A4 Height */
+                width: 100% !important; /* FLUID FULL BLEED PAPER WIDTH - REMOVES SIDE GAPS */
+                height: 297mm !important; /* PRESERVE A4 TALL CONSTRICTOR */
                 min-height: 297mm !important;
                 max-height: 297mm !important;
-                margin: 0 auto !important;
+                margin: 0 !important;    /* STRICT 0 OFFSET BOUNDS */
                 box-shadow: none !important;
                 border: none !important;
                 /* PHYSICAL PADDING: Top: 12.7mm for Header, Right: 20mm, Bottom Safety: 48mm, Left: 30mm */
@@ -4496,14 +4496,15 @@ return {
               /* DEFINITIVE ABSOLUTE PRINT FOOTER PIN FOR 297mm A4 SHEETS */
               .print-page .print-footer, #print-letter-area .print-footer {
                 position: absolute !important;
-                bottom: 12.7mm !important; /* 1.27cm from bottom */
-                left: 0 !important;        /* FULL BLEED: Start at physical 0mm */
-                right: 0 !important;       /* FULL BLEED: End at physical 210mm */
-                height: 30mm !important;   /* 3cm Branding Height */
+                bottom: 0 !important;     /* ABSOLUTE GROUND ZERO - ZERO GAPS AT THE BOTTOM */
+                left: 0 !important;        /* ABSOLUTE LEFT BOUND */
+                right: 0 !important;       /* ABSOLUTE RIGHT BOUND */
+                height: 38mm !important;   /* Slightly taller bounds including buffer */
                 
                 /* Safety buffer for interior text elements while supporting full bleed checkmark */
                 padding-left: 12.7mm !important; 
                 padding-right: 12.7mm !important;
+                padding-bottom: 8mm !important; /* Internal physical buffer from absolute paper edge */
                 
                 margin-top: 0 !important;
                 margin-bottom: 0 !important;
@@ -4511,7 +4512,7 @@ return {
                 background: transparent !important;
                 display: flex !important;
                 flex-direction: column !important;
-                justify-content: center !important;
+                justify-content: flex-end !important; /* Push elements to bottom buffer */
                 z-index: 9999 !important;
               }
               
@@ -4598,10 +4599,15 @@ return {
                     const pdfFileName = `${academicYearStr}_${monthStr}_TCM_${studentName}`;
                     
                     document.title = pdfFileName;
-                    window.print();
+                    const savedScrollY = window.scrollY;
+                    window.scrollTo(0, 0);
                     setTimeout(() => {
-                      document.title = originalTitle;
-                    }, 1000);
+                      window.print();
+                      window.scrollTo(0, savedScrollY);
+                      setTimeout(() => {
+                        document.title = originalTitle;
+                      }, 1000);
+                    }, 100);
                   }}
                   className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md shadow-emerald-100 flex items-center gap-2 transition-all"
                 >
@@ -4617,10 +4623,15 @@ return {
                     const pdfFileName = `${academicYearStr}_${monthStr}_TCM_${studentName}`;
                     
                     document.title = pdfFileName;
-                    window.print();
+                    const savedScrollY = window.scrollY;
+                    window.scrollTo(0, 0);
                     setTimeout(() => {
-                      document.title = originalTitle;
-                    }, 1000);
+                      window.print();
+                      window.scrollTo(0, savedScrollY);
+                      setTimeout(() => {
+                        document.title = originalTitle;
+                      }, 1000);
+                    }, 100);
                   }}
                   className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md shadow-indigo-100 flex items-center gap-2 transition-all"
                 >
