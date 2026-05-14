@@ -4196,16 +4196,34 @@ return {
                 min-height: 297mm !important;
                 max-height: 297mm !important;
                 margin: 0 auto !important;
-                padding: 12mm 15mm 0mm 20mm !important; /* Exact Margins: Top 12mm, Right 15mm, Bottom 0mm, Left 20mm */
+                padding: 12mm 15mm 28mm 20mm !important; /* Reserved 28mm bottom zone for pinned absolute footer! */
                 flex-shrink: 0 !important;
                 display: flex !important;
                 flex-direction: column !important;
-                justify-content: space-between !important; /* Push footer to bottom on screen too! */
+                justify-content: flex-start !important; /* Flex content flows naturally to the reserved zone */
                 overflow: hidden !important;
                 box-sizing: border-box !important;
                 background: white !important;
                 font-family: "Times New Roman", Times, serif !important;
                 box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+                position: relative !important;
+              }
+              
+              /* DEFINITIVE ABSOLUTE FOOTER ANCHOR FOR SCREEN AND PRINT */
+              .print-footer {
+                position: absolute !important;
+                bottom: 0 !important;
+                left: 20mm !important;
+                right: 15mm !important;
+                height: 28mm !important;
+                margin-bottom: 0 !important;
+                margin-top: 0 !important;
+                box-sizing: border-box !important;
+                background: transparent !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+                z-index: 9999 !important;
               }
               
               /* Sync typographic rendering to match high-fidelity print view on screen */
@@ -4378,20 +4396,37 @@ return {
                 margin: 0 auto !important;
                 box-shadow: none !important;
                 border: none !important;
-                padding: 12mm 15mm 0mm 20mm !important; /* Exact Margins: Top 12mm, Right 15mm, Bottom 0mm (flush), Left 20mm (2cm) */
+                padding: 12mm 15mm 28mm 20mm !important; /* Reserved 28mm bottom zone for absolute footer anchoring */
                 overflow: hidden !important; /* Block extra sub-pixel overflow sheets */
                 box-sizing: border-box !important;
                 
                 display: flex !important;
                 flex-direction: column !important;
-                justify-content: space-between !important; /* Push footer banner to bottom reliably! */
+                justify-content: flex-start !important; /* Stop at the reserved footer zone */
                 
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
-                page-break-after: avoid !important; /* USER MANDATE: page-break-after: avoid */
+                page-break-after: avoid !important;
                 break-after: avoid !important;
                 position: relative !important;
                 background: white !important;
+              }
+              
+              /* DEFINITIVE ABSOLUTE PRINT FOOTER PIN FOR 297mm A4 SHEETS */
+              .print-page .print-footer, #print-letter-area .print-footer {
+                position: absolute !important;
+                bottom: 0 !important;
+                left: 20mm !important;
+                right: 15mm !important;
+                height: 28mm !important;
+                margin-top: 0 !important;
+                margin-bottom: 0 !important;
+                box-sizing: border-box !important;
+                background: transparent !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+                z-index: 9999 !important;
               }
               
               /* USER MANDATED CONTENT TYPOGRAPHY RULES */
@@ -4690,11 +4725,11 @@ return {
                 
                 {/* Footer Contact */}
                 {studentCampusConfig?.footer ? (
-                  <div className="border-t border-slate-200 pt-3 mt-6 relative z-10 w-full">
+                  <div className="border-t border-slate-200 pt-3 mt-6 relative z-10 w-full print-footer">
                     <img src={studentCampusConfig.footer} alt="Footer Print" className="w-full h-auto" />
                   </div>
                 ) : (
-                  <div className="w-full pt-1 mt-4 relative z-10" style={{ fontFamily: "Arial, sans-serif" }}>
+                  <div className="w-full pt-1 mt-4 relative z-10 print-footer" style={{ fontFamily: "Arial, sans-serif" }}>
                     {/* High-fidelity Header Title & Line */}
                     <div className="flex items-center gap-2 mb-2.5 w-full">
                       <span className="font-bold text-[#00A6A9] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
@@ -4822,11 +4857,11 @@ return {
                     
                     {/* Footer Contact */}
                     {studentCampusConfig?.footer ? (
-                      <div className="border-t border-slate-200 pt-3 mt-6 relative z-10 w-full">
+                      <div className="border-t border-slate-200 pt-3 mt-6 relative z-10 w-full print-footer">
                         <img src={studentCampusConfig.footer} alt="Footer Print" className="w-full h-auto" />
                       </div>
                     ) : (
-                      <div className="w-full pt-1 mt-4 relative z-10" style={{ fontFamily: "Arial, sans-serif" }}>
+                      <div className="w-full pt-1 mt-4 relative z-10 print-footer" style={{ fontFamily: "Arial, sans-serif" }}>
                     {/* High-fidelity Header Title & Line */}
                     <div className="flex items-center gap-2 mb-2.5 w-full">
                       <span className="font-bold text-[#00A6A9] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
