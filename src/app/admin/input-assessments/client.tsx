@@ -4695,16 +4695,16 @@ return {
                     studentCampusConfig?.content ? (
                       <div className="space-y-3 text-justify text-slate-800 font-serif" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: "13.5pt", lineHeight: "1.45", textAlign: "justify" }}>
                         {renderTemplate(studentCampusConfig.content, mergedStudent || selectedReportStudent).split('\n').filter(Boolean).map((para, idx) => (
-                          <p key={idx} className="indent-8" style={{ textIndent: "2rem" }}>{para}</p>
+                          <p key={idx} className="">{para}</p>
                         ))}
                       </div>
                     ) : (
                       <div className="space-y-6 text-justify text-[15px] leading-relaxed">
-                        <p className="indent-8" style={{ textIndent: "2rem" }}>
+                        <p className="">
                           Hội đồng Tuyển sinh Hệ thống Giáo dục Sky-Line trân trọng gửi lời chào và lời chúc sức khỏe, an khang đến Quý phụ huynh cùng gia đình.
                         </p>
                         
-                        <p className="indent-8" style={{ textIndent: "2rem" }}>
+                        <p className="">
                           Nhằm tạo điều kiện tốt nhất để nhà trường hiểu rõ hơn về năng lực tư duy, ngôn ngữ cũng như thiên hướng phát triển tự nhiên của học sinh, qua đó xây dựng lộ trình rèn luyện tối ưu nhất, chúng tôi trân trọng kính mời Quý phụ huynh cùng học sinh tham gia buổi <strong className="font-bold">Khảo sát Năng lực Đầu vào</strong> hệ <strong className="font-bold">{selectedReportStudent.surveyFormType || "Hội nhập Global"}</strong> năm học <strong className="font-bold">2026-2027</strong>.
                         </p>
                         
@@ -4714,11 +4714,11 @@ return {
                           <p><strong>• Nội dung khảo sát:</strong> Đánh giá tư duy ngôn ngữ, tư duy logic tự nhiên và khả năng tương tác xã hội phù hợp theo độ tuổi.</p>
                         </div>
                         
-                        <p className="indent-8" style={{ textIndent: "2rem" }}>
+                        <p className="">
                           Sự hiện diện và đồng hành của Quý phụ huynh cùng học sinh là niềm hân hạnh lớn cho Sky-Line, giúp nhà trường có sự chuẩn bị chu đáo nhất đón chào các em gia nhập mái trường hạnh phúc của chúng ta.
                         </p>
                         
-                        <p className="indent-8 italic text-slate-600" style={{ textIndent: "2rem" }}>
+                        <p className="italic text-slate-600">
                           Trân trọng kính mời Quý phụ huynh và các em học sinh!
                         </p>
                       </div>
@@ -4731,7 +4731,7 @@ return {
                       ).split('\n').filter(Boolean).map((para, idx) => {
                         const isList = /^[\d•\-*]+/.test(para.trim());
                         return (
-                          <p key={idx} className={isList ? "pl-4" : "indent-8"} style={isList ? {} : { textIndent: "2rem" }}>
+                          <p key={idx} className={isList ? "pl-4" : ""}>
                             {para}
                           </p>
                         );
@@ -4743,7 +4743,7 @@ return {
                         studentCampusConfig?.content || getDefaultContent("thu_chuc_mung"),
                         selectedReportStudent
                       ).split('\n').filter(Boolean).map((para, idx) => (
-                        <p key={idx} className="indent-8" style={{ textIndent: "2rem" }}>
+                        <p key={idx} className="">
                           {para}
                         </p>
                       ))}
