@@ -4142,7 +4142,7 @@ return {
             /* FORCE EXPLICIT A4 PORTRAIT CONFIGURATION */
             @page { 
               size: A4 portrait !important; 
-              margin: 12mm 15mm !important; 
+              margin: 0 !important; 
             }
             
             .print-page::before {
@@ -4190,7 +4190,7 @@ return {
             @media print {
               @page {
                 size: A4 portrait !important;
-                margin: 12mm 15mm !important;
+                margin: 0 !important;
               }
               /* USER MANDATED HTML/BODY RESET WITH ZERO FIXED HEIGHTS & FIT TO PRINT BOUNDS */
               html, body {
@@ -4310,15 +4310,15 @@ return {
               }
               /* USER MANDATED FLEX CONTAINER WITHOUT ANY HEIGHTS */
               .print-page, #print-letter-area {
-                width: 180mm !important; /* 210mm - (15mm * 2) = 180mm content width */
+                width: 210mm !important; /* Exact physical A4 width */
+                height: 297mm !important; /* Exact physical A4 height */
+                min-height: 297mm !important;
+                max-height: 297mm !important;
                 margin: 0 auto !important;
-                height: auto !important;
-                min-height: 272mm !important; /* 297mm (A4) - 24mm (vertical margins) - 1mm safety tolerance = 272mm content height! */
-                max-height: none !important;
                 box-shadow: none !important;
                 border: none !important;
-                padding: 0 !important; /* Handled by @page margins */
-                overflow: visible !important;
+                padding: 12mm 15mm !important; /* Add real margins inside container */
+                overflow: hidden !important; /* Block extra sub-pixel overflow sheets */
                 box-sizing: border-box !important;
                 
                 display: flex !important;
