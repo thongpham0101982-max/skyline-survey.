@@ -523,7 +523,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     else if (rcTargetGroup === "khoi_11_12") mockGrade = "11";
     
     // Set high-fidelity structural preview data using a simulated mock student directly tied to the live config settings
-    setSelectedReportStudent({
+    setMockPreviewStudent({
       id: "MOCK_PREVIEW_STUDENT",
       fullName: "Nguyễn Lê An Chi (Bản In Thử)",
       grade: mockGrade,
@@ -651,6 +651,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
   const [isInvitation, setIsInvitation] = useState(false);
   const [isCommitment, setIsCommitment] = useState(false);
   const [includeChecklistSheet, setIncludeChecklistSheet] = useState(false);
+  const [mockPreviewStudent, setMockPreviewStudent] = useState<any>(null);
   const handleSaveReportResult = async () => {
     if (!selectedReportStudent) return;
     setSaveReportLoading(true);
@@ -755,9 +756,10 @@ ${reportForm.directorNote}`;
   }, [reportStudents, reportBatchId]);
 
   const selectedReportStudent = useMemo(() => {
+    if (mockPreviewStudent) return mockPreviewStudent;
     if (!Array.isArray(reportStudents)) return undefined;
     return reportStudents.find(s => s.id === reportStudentId);
-  }, [reportStudents, reportStudentId]);
+  }, [reportStudents, reportStudentId, mockPreviewStudent]);
   const resolvedStudentCampusObj = useMemo(() => {
     if (!selectedReportStudent) return null;
     let tc = campuses.find(c => 
@@ -4608,7 +4610,7 @@ return {
                   In thư (Print)
                 </button>
                 <button 
-                  onClick={() => setIsPrintModalOpen(false)}
+                  onClick={() => { setIsPrintModalOpen(false); setMockPreviewStudent(null); }}
                   className="w-8 h-8 flex items-center justify-center rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 shadow-sm transition-colors"
                 >
                   <X className="w-4 h-4"/>
