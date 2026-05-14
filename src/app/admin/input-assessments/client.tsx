@@ -525,10 +525,10 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     // Set high-fidelity structural preview data using a simulated mock student directly tied to the live config settings
     setMockPreviewStudent({
       id: "MOCK_PREVIEW_STUDENT",
-      fullName: "Nguyễn Lê An Chi (Bản In Thử)",
+      fullName: "Nguyễn Minh Phong",
       grade: mockGrade,
       academicYear: "2026-2027",
-      admissionCampus: campusName,
+      admissionCampus: campusName.includes("Hill") ? campusName : "Skyline Hill",
       surveyFormType: "Hội nhập Global",
       admissionCriteria: "Diện Xét tuyển",
       admissionResult: rcReportType === "cam_ket_hoc_tap" ? "Đạt cam kết" : "Đạt",
@@ -2817,15 +2817,17 @@ return {
                     <table className="w-full border-collapse text-left text-[9px] text-slate-900" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
                       <thead>
                         <tr className="bg-white border-b border-slate-950">
-                          <th className="px-3 py-1.5 font-bold border-r border-slate-950 text-center uppercase text-slate-950" style={{ borderRightWidth: '1px', borderColor: '#000' }}>Hồ sơ yêu cầu</th>
-                          <th className="px-3 py-1.5 font-bold text-center uppercase text-slate-950 w-20">Số lượng</th>
+                          <th className="px-1.5 py-1 font-bold border-r border-slate-950 text-center uppercase text-slate-950 w-8" style={{ borderRightWidth: '1px', borderColor: '#000' }}>STT</th>
+                          <th className="px-3 py-1 font-bold border-r border-slate-950 text-center uppercase text-slate-950" style={{ borderRightWidth: '1px', borderColor: '#000' }}>Tên hồ sơ</th>
+                          <th className="px-3 py-1 font-bold text-center uppercase text-slate-950 w-16">Số lượng</th>
                         </tr>
                       </thead>
                       <tbody>
                         {previewDocList.map((item, idx) => (
                           <tr key={item.id} className="border-b border-slate-950 last:border-b-0">
-                            <td className="px-3 py-1.5 border-r border-slate-950 font-medium text-slate-900" style={{ borderRightWidth: '1px', borderColor: '#000' }}>{idx + 1}. {item.name}</td>
-                            <td className="px-3 py-1.5 text-center text-slate-950 font-bold">{item.qty}</td>
+                            <td className="px-1.5 py-1 border-r border-slate-950 text-center text-slate-900" style={{ borderRightWidth: '1px', borderColor: '#000' }}>{idx + 1}</td>
+                            <td className="px-3 py-1 border-r border-slate-950 font-medium text-slate-900" style={{ borderRightWidth: '1px', borderColor: '#000' }}>{item.name}</td>
+                            <td className="px-3 py-1 text-center text-slate-950 font-bold">{item.qty}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -4282,8 +4284,8 @@ return {
               .print-footer {
                 position: absolute !important;
                 bottom: 0 !important;
-                left: 20mm !important;
-                right: 15mm !important;
+                left: 30mm !important;
+                right: 20mm !important;
                 height: 28mm !important;
                 margin-bottom: 0 !important;
                 margin-top: 0 !important;
@@ -4465,7 +4467,7 @@ return {
                 margin: 0 auto !important;
                 box-shadow: none !important;
                 border: none !important;
-                padding: 12mm 15mm 28mm 20mm !important; /* Reserved 28mm bottom zone for absolute footer anchoring */
+                padding: 20mm 20mm 28mm 30mm !important; /* Admin Standards: Top: 20mm, Right: 20mm, Bottom Reserved: 28mm, Left: 30mm */
                 overflow: hidden !important; /* Block extra sub-pixel overflow sheets */
                 box-sizing: border-box !important;
                 
@@ -4665,7 +4667,7 @@ return {
                   {/* Body Paragraphs */}
                   {isInvitation ? (
                     studentCampusConfig?.content ? (
-                      <div className="space-y-2.5 text-justify text-[14px] leading-relaxed text-slate-800 font-serif" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+                      <div className="space-y-3 text-justify text-slate-800 font-serif" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: "13.5pt", lineHeight: "1.45", textAlign: "justify" }}>
                         {renderTemplate(studentCampusConfig.content, mergedStudent || selectedReportStudent).split('\n').filter(Boolean).map((para, idx) => (
                           <p key={idx} className="indent-8" style={{ textIndent: "2rem" }}>{para}</p>
                         ))}
@@ -4696,7 +4698,7 @@ return {
                       </div>
                     )
                   ) : isCommitment ? (
-                    <div className="space-y-2 text-justify text-[13px] leading-relaxed text-slate-800 font-serif">
+                    <div className="space-y-3 text-justify text-slate-800 font-serif" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: "13.5pt", lineHeight: "1.45", textAlign: "justify" }}>
                       {renderTemplate(
                         studentCampusConfig?.content || getDefaultContent("cam_ket_hoc_tap"),
                         selectedReportStudent
@@ -4710,7 +4712,7 @@ return {
                       })}
                     </div>
                   ) : (
-                    <div className="space-y-2.5 text-justify text-[14px] leading-relaxed text-slate-800 font-serif" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+                    <div className="space-y-3 text-justify text-slate-800 font-serif" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: "13.5pt", lineHeight: "1.45", textAlign: "justify" }}>
                       {renderTemplate(
                         studentCampusConfig?.content || getDefaultContent("thu_chuc_mung"),
                         selectedReportStudent
@@ -4897,14 +4899,16 @@ return {
                         <table className="w-full border-collapse text-left text-[13px] text-slate-900" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
                           <thead>
                             <tr className="bg-white border-b border-slate-950">
-                              <th className="px-5 py-2.5 font-bold border-r border-slate-950 text-center uppercase text-slate-950" style={{ borderRightWidth: '1px', borderColor: '#000' }}>Hồ sơ yêu cầu</th>
+                              <th className="px-3 py-2.5 font-bold border-r border-slate-950 text-center uppercase text-slate-950 w-16" style={{ borderRightWidth: '1px', borderColor: '#000' }}>STT</th>
+                              <th className="px-5 py-2.5 font-bold border-r border-slate-950 text-center uppercase text-slate-950" style={{ borderRightWidth: '1px', borderColor: '#000' }}>Tên hồ sơ</th>
                               <th className="px-5 py-2.5 font-bold text-center uppercase text-slate-950 w-32">Số lượng</th>
                             </tr>
                           </thead>
                           <tbody>
                             {modalDocList.map((item, idx) => (
                               <tr key={item.id} className="border-b border-slate-950 last:border-b-0">
-                                <td className="px-5 py-2.5 border-r border-slate-950 font-medium text-slate-900" style={{ borderRightWidth: '1px', borderColor: '#000' }}>{idx + 1}. {item.name}</td>
+                                <td className="px-3 py-2.5 border-r border-slate-950 text-center text-slate-900" style={{ borderRightWidth: '1px', borderColor: '#000' }}>{idx + 1}</td>
+                                <td className="px-5 py-2.5 border-r border-slate-950 font-medium text-slate-900" style={{ borderRightWidth: '1px', borderColor: '#000' }}>{item.name}</td>
                                 <td className="px-5 py-2.5 text-center text-slate-950 font-bold">{item.qty}</td>
                               </tr>
                             ))}
