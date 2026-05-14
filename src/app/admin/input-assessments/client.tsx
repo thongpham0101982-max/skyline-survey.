@@ -4296,16 +4296,13 @@ return {
               /* 5. RESTORE SEQUENTIAL FLOW: STACK MULTIPLE PAGES VERTICALLY WITHOUT OVERLAP */
               #print-main-container {
                 position: relative !important;
-                display: flex !important;
-                flex-direction: column !important;
-                align-items: stretch !important;
+                display: block !important;
                 width: 100% !important;
                 height: auto !important;
                 margin: 0 !important;
                 padding: 0 !important;
-                gap: 0 !important;
                 z-index: 999999999 !important;
-                background: white !important;
+                background: transparent !important;
                 transform: none !important;
               }
               /* USER MANDATED FLEX CONTAINER WITHOUT ANY HEIGHTS */
@@ -4317,7 +4314,7 @@ return {
                 margin: 0 auto !important;
                 box-shadow: none !important;
                 border: none !important;
-                padding: 12mm 15mm !important; /* Add real margins inside container */
+                padding: 12mm 15mm 0mm 20mm !important; /* Exact Margins: Top 12mm, Right 15mm, Bottom 0mm (flush), Left 20mm (2cm) */
                 overflow: hidden !important; /* Block extra sub-pixel overflow sheets */
                 box-sizing: border-box !important;
                 
