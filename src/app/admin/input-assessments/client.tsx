@@ -4222,7 +4222,7 @@ return {
             /* FORCE EXPLICIT A4 PORTRAIT CONFIGURATION */
             @page { 
               size: A4 portrait; 
-              margin: 0; 
+              margin: 0mm; 
             }
             
             .print-page::before {
@@ -4344,7 +4344,7 @@ return {
             @media print {
               @page {
                 size: A4 portrait;
-                margin: 0;
+                margin: 0mm;
               }
               /* USER MANDATED HTML/BODY RESET WITH ZERO FIXED HEIGHTS & FIT TO PRINT BOUNDS */
               html, body {
@@ -4476,8 +4476,8 @@ return {
                 margin: 0 !important;    /* STRICT 0 OFFSET BOUNDS */
                 box-shadow: none !important;
                 border: none !important;
-                /* PHYSICAL PADDING: Top: 12.7mm for Header, Right: 20mm, Bottom Safety: 48mm, Left: 20mm */
-                padding: 12.7mm 20mm 48mm 20mm !important; 
+                /* PHYSICAL PADDING: Top: 12.7mm for Header, Right: 15mm, Bottom Safety: 48mm, Left: 15mm */
+                padding: 12.7mm 15mm 48mm 15mm !important; 
                 overflow: hidden !important;
                 box-sizing: border-box !important;
                 
@@ -4502,8 +4502,8 @@ return {
                 height: 38mm !important;   /* Slightly taller bounds including buffer */
                 
                 /* Safety buffer for interior text elements while supporting full bleed checkmark */
-                padding-left: 12.7mm !important; 
-                padding-right: 12.7mm !important;
+                padding-left: 15mm !important; 
+                padding-right: 15mm !important;
                 padding-bottom: 8mm !important; /* Internal physical buffer from absolute paper edge */
                 
                 margin-top: 0 !important;
