@@ -899,7 +899,7 @@ ${reportForm.directorNote}`;
       };
     }
     return null;
-  }, [selectedReportStudent, campuses, reportBatches, isCommitment, reportForm.admissionCampus]);
+  }, [selectedReportStudent, campuses, reportBatches, isCommitment, isInvitation, reportForm.admissionCampus]);
 
   const campusNameSuffix = useMemo(() => {
     if (!selectedReportStudent) return "GLOBAL";
