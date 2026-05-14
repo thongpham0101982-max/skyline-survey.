@@ -958,6 +958,15 @@ ${reportForm.directorNote}`;
   const campusNameSuffix = useMemo(() => {
     if (!selectedReportStudent) return "GLOBAL";
     
+    if (selectedReportStudent.id === "MOCK_PREVIEW_STUDENT") {
+      const clean = (selectedReportStudent.admissionCampus || "").toUpperCase();
+      if (clean.includes("HILL")) return "HILL";
+      if (clean.includes("RIVERSIDE")) return "RIVERSIDE";
+      if (clean.includes("CENTRAL")) return "CENTRAL";
+      if (clean.includes("BEACH")) return "BEACH";
+      return "GLOBAL";
+    }
+    
     const effCampus = reportForm.admissionCampus || selectedReportStudent.admissionCampus;
     let campus = campuses.find(c => 
       c.campusName === effCampus ||
