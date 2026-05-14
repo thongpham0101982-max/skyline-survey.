@@ -4169,20 +4169,76 @@ return {
 
             /* SCREEN SIMULATION ONLY */
             @media screen {
+              /* Anchor scrolling at the top to prevent Chrome Flexbox negative overflow cutoff */
+              #print-body-scroll-wrapper {
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                justify-content: flex-start !important;
+              }
+              
+              /* Zoom out the simulated pages so they fit completely on screen without scrolling */
+              #print-main-container {
+                zoom: 0.65;
+                -moz-transform: scale(0.65);
+                -moz-transform-origin: top center;
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                gap: 32px !important;
+                width: 100% !important;
+                margin: 0 auto !important;
+              }
+              
               #print-letter-area, .print-page {
                 width: 210mm !important;
-                min-height: 296mm !important; /* Enforce exact A4 physical height on screen! */
-                max-height: none !important;
+                height: 297mm !important; /* Locked exact physical A4 height on screen! */
+                min-height: 297mm !important;
+                max-height: 297mm !important;
                 margin: 0 auto !important;
-                padding: 12mm 15mm !important; /* Simulates physical @page margins on screen! */
+                padding: 12mm 15mm 0mm 20mm !important; /* Exact Margins: Top 12mm, Right 15mm, Bottom 0mm, Left 20mm */
                 flex-shrink: 0 !important;
                 display: flex !important;
                 flex-direction: column !important;
-                justify-content: space-between !important; /* Keep footer at bottom on screen too! */
-                overflow: visible !important;
+                justify-content: space-between !important; /* Push footer to bottom on screen too! */
+                overflow: hidden !important;
                 box-sizing: border-box !important;
                 background: white !important;
-                font-family: "Times New Roman", serif !important;
+                font-family: "Times New Roman", Times, serif !important;
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+              }
+              
+              /* Sync typographic rendering to match high-fidelity print view on screen */
+              .print-page p, #print-letter-area p {
+                font-size: 15px !important;
+                line-height: 1.85 !important;
+                text-align: justify !important;
+                text-justify: inter-word !important;
+              }
+              .print-page h2, #print-letter-area h2 {
+                font-size: 22px !important;
+                text-align: center !important;
+                margin-top: 16px !important;
+                margin-bottom: 16px !important;
+              }
+              .print-page img[alt="Logo"] {
+                max-height: 40px !important;
+                object-fit: contain !important;
+              }
+              .print-page img[alt="Signature"] {
+                max-height: 64px !important;
+                object-fit: contain !important;
+              }
+              .print-page img[alt="Footer Print"] {
+                width: 100% !important;
+                max-height: 100px !important;
+                object-fit: contain !important;
+              }
+              .print-page .grid-cols-12 p, .print-page .grid p {
+                font-size: 10px !important;
+              }
+              .print-page .grid-cols-12 .font-bold {
+                font-size: 10.5px !important;
               }
             }
 
