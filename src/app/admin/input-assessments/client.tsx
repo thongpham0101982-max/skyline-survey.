@@ -4816,11 +4816,11 @@ return {
                     <div className="flex items-center gap-2 mb-2.5 w-full">
                       <span className="font-bold text-[#00A6A9] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
                       <div className="flex-grow border-t border-[#00A6A9]/70 h-0 mt-0.5"></div>
-                      <span className="font-semibold text-[#00A6A9] whitespace-nowrap lowercase text-[11px] pr-2">www.skylineschool.edu.vn</span>
+                      <span className="font-semibold text-[#00A6A9] whitespace-nowrap lowercase text-[11px]">www.skylineschool.edu.vn</span>
                     </div>
                     
                     {/* Information Grid */}
-                    <div className="grid grid-cols-12 gap-2 w-full relative pr-8 text-[9px]">
+                    <div className="grid grid-cols-12 gap-4 w-full relative text-[9px]">
                       {/* Left Column (3 branches) */}
                       <div className="col-span-4 flex flex-col gap-1.5 text-left">
                         <div>
@@ -4838,7 +4838,7 @@ return {
                       </div>
 
                       {/* Middle Column (3 branches) */}
-                      <div className="col-span-5 flex flex-col gap-1.5 text-left pl-1">
+                      <div className="col-span-4 flex flex-col gap-1.5 text-left">
                         <div>
                           <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">SKY-LINE Beach</p>
                           <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 199 Trần Anh Tông, P. Thanh Khê, TP. Đà Nẵng</p>
@@ -4854,7 +4854,7 @@ return {
                       </div>
 
                       {/* Right Column (Contacts) */}
-                      <div className="col-span-3 flex items-center justify-end gap-1.5 text-right pr-8 self-center">
+                      <div className="col-span-4 flex items-center justify-end gap-2 text-right self-center">
                         <div className="w-4.5 h-4.5 rounded-full border border-slate-800 flex items-center justify-center flex-shrink-0 p-[3.5px] scale-[0.85]">
                           <Phone className="w-full h-full text-slate-800" fill="currentColor" />
                         </div>
@@ -4950,11 +4950,11 @@ return {
                     <div className="flex items-center gap-2 mb-2.5 w-full">
                       <span className="font-bold text-[#00A6A9] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
                       <div className="flex-grow border-t border-[#00A6A9]/70 h-0 mt-0.5"></div>
-                      <span className="font-semibold text-[#00A6A9] whitespace-nowrap lowercase text-[11px] pr-2">www.skylineschool.edu.vn</span>
+                      <span className="font-semibold text-[#00A6A9] whitespace-nowrap lowercase text-[11px]">www.skylineschool.edu.vn</span>
                     </div>
                     
                     {/* Information Grid */}
-                    <div className="grid grid-cols-12 gap-2 w-full relative pr-8 text-[9px]">
+                    <div className="grid grid-cols-12 gap-4 w-full relative text-[9px]">
                       {/* Left Column (3 branches) */}
                       <div className="col-span-4 flex flex-col gap-1.5 text-left">
                         <div>
@@ -4972,7 +4972,7 @@ return {
                       </div>
 
                       {/* Middle Column (3 branches) */}
-                      <div className="col-span-5 flex flex-col gap-1.5 text-left pl-1">
+                      <div className="col-span-4 flex flex-col gap-1.5 text-left">
                         <div>
                           <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">SKY-LINE Beach</p>
                           <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 199 Trần Anh Tông, P. Thanh Khê, TP. Đà Nẵng</p>
@@ -4988,7 +4988,7 @@ return {
                       </div>
 
                       {/* Right Column (Contacts) */}
-                      <div className="col-span-3 flex items-center justify-end gap-1.5 text-right pr-8 self-center">
+                      <div className="col-span-4 flex items-center justify-end gap-2 text-right self-center">
                         <div className="w-4.5 h-4.5 rounded-full border border-slate-800 flex items-center justify-center flex-shrink-0 p-[3.5px] scale-[0.85]">
                           <Phone className="w-full h-full text-slate-800" fill="currentColor" />
                         </div>
