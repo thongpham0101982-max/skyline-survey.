@@ -4476,8 +4476,8 @@ return {
                 margin: 0 !important;    /* STRICT 0 OFFSET BOUNDS */
                 box-shadow: none !important;
                 border: none !important;
-                /* PHYSICAL PADDING: Top: 12.7mm for Header, Right: 20mm, Bottom Safety: 48mm, Left: 30mm */
-                padding: 12.7mm 20mm 48mm 30mm !important; 
+                /* PHYSICAL PADDING: Top: 12.7mm for Header, Right: 20mm, Bottom Safety: 48mm, Left: 20mm */
+                padding: 12.7mm 20mm 48mm 20mm !important; 
                 overflow: hidden !important;
                 box-sizing: border-box !important;
                 
