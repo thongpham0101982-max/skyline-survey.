@@ -4210,8 +4210,8 @@ return {
 <style>{`
             /* FORCE EXPLICIT A4 PORTRAIT CONFIGURATION */
             @page { 
-              size: A4 portrait !important; 
-              margin: 0 !important; 
+              size: A4 portrait; 
+              margin: 0; 
             }
             
             .print-page::before {
@@ -4332,8 +4332,8 @@ return {
             /* PRINT OUTPUT CONSTRAINTS */
             @media print {
               @page {
-                size: A4 portrait !important;
-                margin: 0 !important;
+                size: A4 portrait;
+                margin: 0;
               }
               /* USER MANDATED HTML/BODY RESET WITH ZERO FIXED HEIGHTS & FIT TO PRINT BOUNDS */
               html, body {
