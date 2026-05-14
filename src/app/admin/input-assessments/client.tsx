@@ -4469,20 +4469,21 @@ return {
               
               /* USER MANDATED FLEX CONTAINER WITHOUT ANY HEIGHTS */
               .print-page, #print-letter-area {
-                width: 210mm !important; /* Exact physical A4 width */
-                height: 297mm !important; /* Exact physical A4 height */
+                width: 210mm !important; /* ISO 216 A4 Width */
+                height: 297mm !important; /* ISO 216 A4 Height */
                 min-height: 297mm !important;
                 max-height: 297mm !important;
                 margin: 0 auto !important;
                 box-shadow: none !important;
                 border: none !important;
-                padding: 20mm 20mm 28mm 30mm !important; /* Admin Standards: Top: 20mm, Right: 20mm, Bottom Reserved: 28mm, Left: 30mm */
-                overflow: hidden !important; /* Block extra sub-pixel overflow sheets */
+                /* PHYSICAL PADDING: Top: 12.7mm for Header, Right: 20mm, Bottom Safety: 48mm, Left: 30mm */
+                padding: 12.7mm 20mm 48mm 30mm !important; 
+                overflow: hidden !important;
                 box-sizing: border-box !important;
                 
                 display: flex !important;
                 flex-direction: column !important;
-                justify-content: flex-start !important; /* Stop at the reserved footer zone */
+                justify-content: flex-start !important;
                 
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
@@ -4495,10 +4496,10 @@ return {
               /* DEFINITIVE ABSOLUTE PRINT FOOTER PIN FOR 297mm A4 SHEETS */
               .print-page .print-footer, #print-letter-area .print-footer {
                 position: absolute !important;
-                bottom: 0 !important;
-                left: 20mm !important;
-                right: 15mm !important;
-                height: 28mm !important;
+                bottom: 12.7mm !important; /* EXACTLY 1.27cm from bottom */
+                left: 30mm !important;   /* EXACTLY 3cm from left */
+                right: 20mm !important;  /* EXACTLY 2cm from right */
+                height: 30mm !important; /* EXACTLY 3cm Branding Height */
                 margin-top: 0 !important;
                 margin-bottom: 0 !important;
                 box-sizing: border-box !important;
@@ -4510,11 +4511,11 @@ return {
               }
               
               /* USER MANDATED CONTENT TYPOGRAPHY RULES */
-              .print-page p, #print-letter-area p, .print-page .space-y-2\.5 p, .print-page .space-y-6 p {
+              .print-page p, #print-letter-area p, .print-page .space-y-2\.5 p, .print-page .space-y-3 p, .print-page .space-y-6 p {
                 text-align: justify !important;
                 text-justify: inter-word !important;
-                line-height: 1.85 !important; /* Optimized line-height 1.8–1.9 */
-                font-size: 15px !important; /* Unified highly readable font size */
+                line-height: 1.45 !important; /* Admin Standards: 1.45 */
+                font-size: 13.5pt !important; /* Admin Standards: 13.5pt */
                 font-family: "Times New Roman", Times, serif !important;
                 word-wrap: break-word !important;
                 overflow-wrap: break-word !important;
