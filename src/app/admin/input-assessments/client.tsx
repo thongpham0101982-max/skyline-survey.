@@ -4145,6 +4145,48 @@ return {
               margin: 12mm 15mm !important; 
             }
             
+            .print-page::before {
+              content: "";
+              position: absolute;
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 100%;
+              opacity: ${studentCampusConfig?.background ? '0.15' : '0.05'};
+              background-image: url('${studentCampusConfig?.background || "data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\" fill=\"%23007A87\"><path d=\"M10,80 Q50,40 90,20 Q60,50 10,80 Z\"/><path d=\"M30,80 Q60,55 90,35 Q65,60 30,80 Z\"/></svg>"}');
+              background-repeat: no-repeat;
+              background-position: center;
+              background-size: ${studentCampusConfig?.background ? 'cover' : 'contain'};
+              pointer-events: none;
+              ${studentCampusConfig?.background ? '' : `
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%) rotate(-15deg);
+                width: 70%;
+                height: 50%;
+              `}
+            }
+
+            /* SCREEN SIMULATION ONLY */
+            @media screen {
+              #print-letter-area, .print-page {
+                width: 210mm !important;
+                min-height: 296mm !important; /* Enforce exact A4 physical height on screen! */
+                max-height: none !important;
+                margin: 0 auto !important;
+                padding: 12mm 15mm !important; /* Simulates physical @page margins on screen! */
+                flex-shrink: 0 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: space-between !important; /* Keep footer at bottom on screen too! */
+                overflow: visible !important;
+                box-sizing: border-box !important;
+                background: white !important;
+                font-family: "Times New Roman", serif !important;
+              }
+            }
+
+            /* PRINT OUTPUT CONSTRAINTS */
             @media print {
               @page {
                 size: A4 portrait !important;
@@ -4344,42 +4386,6 @@ return {
               .no-print {
                 display: none !important;
               }
-            }
-            .print-page::before {
-              content: "";
-              position: absolute;
-              top: 0;
-              left: 0;
-              width: 100%;
-              height: 100%;
-              opacity: ${studentCampusConfig?.background ? '0.15' : '0.05'};
-              background-image: url('${studentCampusConfig?.background || "data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\" fill=\"%23007A87\"><path d=\"M10,80 Q50,40 90,20 Q60,50 10,80 Z\"/><path d=\"M30,80 Q60,55 90,35 Q65,60 30,80 Z\"/></svg>"}');
-              background-repeat: no-repeat;
-              background-position: center;
-              background-size: ${studentCampusConfig?.background ? 'cover' : 'contain'};
-              pointer-events: none;
-              ${studentCampusConfig?.background ? '' : `
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%) rotate(-15deg);
-                width: 70%;
-                height: 50%;
-              `}
-            }
-            #print-letter-area, .print-page {
-              width: 210mm !important;
-              min-height: 296mm !important; /* Enforce exact A4 physical height on screen! */
-              max-height: none !important;
-              margin: 0 auto !important;
-              padding: 12mm 15mm !important; /* Simulates physical @page margins on screen! */
-              flex-shrink: 0 !important;
-              display: flex !important;
-              flex-direction: column !important;
-              justify-content: space-between !important; /* Keep footer at bottom on screen too! */
-              overflow: visible !important;
-              box-sizing: border-box !important;
-              background: white !important;
-              font-family: "Times New Roman", serif !important;
             }
           `}</style>
           
