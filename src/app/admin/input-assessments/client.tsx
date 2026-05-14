@@ -4496,10 +4496,15 @@ return {
               /* DEFINITIVE ABSOLUTE PRINT FOOTER PIN FOR 297mm A4 SHEETS */
               .print-page .print-footer, #print-letter-area .print-footer {
                 position: absolute !important;
-                bottom: 12.7mm !important; /* EXACTLY 1.27cm from bottom */
-                left: 30mm !important;   /* EXACTLY 3cm from left */
-                right: 20mm !important;  /* EXACTLY 2cm from right */
-                height: 30mm !important; /* EXACTLY 3cm Branding Height */
+                bottom: 12.7mm !important; /* 1.27cm from bottom */
+                left: 0 !important;        /* FULL BLEED: Start at physical 0mm */
+                right: 0 !important;       /* FULL BLEED: End at physical 210mm */
+                height: 30mm !important;   /* 3cm Branding Height */
+                
+                /* Safety buffer for interior text elements while supporting full bleed checkmark */
+                padding-left: 12.7mm !important; 
+                padding-right: 12.7mm !important;
+                
                 margin-top: 0 !important;
                 margin-bottom: 0 !important;
                 box-sizing: border-box !important;
