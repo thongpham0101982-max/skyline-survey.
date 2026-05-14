@@ -4199,7 +4199,7 @@ return {
                 min-height: 0 !important;
                 margin: 0 !important;
                 padding: 0 !important;
-                font-family: "Times New Roman", serif !important;
+                font-family: "Times New Roman", Times, serif !important;
                 background: white !important;
                 overflow: visible !important;
                 -webkit-print-color-adjust: exact !important;
@@ -4207,7 +4207,7 @@ return {
                 color-adjust: exact !important;
               }
               
-              /* 1. DISABLE ALL ANIMATIONS THAT CAUSE RENDER-FREEZE GLITCHES */
+              /* 1. DISABLE ALL ANIMATIONS AND UNIFY FONT TYPE */
               *, *::before, *::after {
                 animation: none !important;
                 transition: none !important;
@@ -4217,10 +4217,13 @@ return {
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
                 color-adjust: exact !important;
+                font-family: "Times New Roman", Times, serif !important;
               }
+              
               body * {
                 visibility: hidden !important;
               }
+              
               /* 2. TELEPORT TO TOP TO ENSURE ZERO-OFFSET ANCHORING */
               .no-print-backdrop {
                 visibility: visible !important;
@@ -4257,15 +4260,18 @@ return {
                 padding: 0 !important;
                 background: transparent !important;
               }
+              
               /* Ensure descendants that ARE NOT manually excluded also become visible */
               #print-main-container, #print-main-container * {
                 visibility: visible !important;
               }
+              
               /* 4. HIDE THE HEADER CONTROLS MANUALLY */
               .no-print-backdrop .no-print, .no-print-backdrop .no-print * {
                 display: none !important;
                 visibility: hidden !important;
               }
+              
               /* 4.5 UNCLOG WRAPPER ELEMENT HIERARCHIES */
               #print-modal-inner-wrapper {
                 display: block !important;
@@ -4293,6 +4299,7 @@ return {
                 background: transparent !important;
                 box-shadow: none !important;
               }
+              
               /* 5. RESTORE SEQUENTIAL FLOW: STACK MULTIPLE PAGES VERTICALLY WITHOUT OVERLAP */
               #print-main-container {
                 position: relative !important;
@@ -4305,6 +4312,7 @@ return {
                 background: transparent !important;
                 transform: none !important;
               }
+              
               /* USER MANDATED FLEX CONTAINER WITHOUT ANY HEIGHTS */
               .print-page, #print-letter-area {
                 width: 210mm !important; /* Exact physical A4 width */
@@ -4329,29 +4337,36 @@ return {
                 position: relative !important;
                 background: white !important;
               }
+              
               /* USER MANDATED CONTENT TYPOGRAPHY RULES */
-              .print-page p, #print-letter-area p {
+              .print-page p, #print-letter-area p, .print-page .space-y-2\.5 p, .print-page .space-y-6 p {
                 text-align: justify !important;
-                line-height: 1.7 !important;
-                font-size: 15px !important;
-                font-family: "Times New Roman", serif !important;
+                text-justify: inter-word !important;
+                line-height: 1.85 !important; /* Optimized line-height 1.8–1.9 */
+                font-size: 15px !important; /* Unified highly readable font size */
+                font-family: "Times New Roman", Times, serif !important;
+                word-wrap: break-word !important;
+                overflow-wrap: break-word !important;
               }
+              
               .print-page h2, #print-letter-area h2 {
                 text-align: center !important;
                 text-transform: uppercase !important;
                 color: #0f172a !important;
-                font-family: "Times New Roman", serif !important;
-                font-size: 20px !important;
+                font-family: "Times New Roman", Times, serif !important;
+                font-size: 22px !important; /* Stand-out centered title size */
                 font-weight: bold !important;
-                margin-top: 12px !important;
+                margin-top: 16px !important;
                 margin-bottom: 16px !important;
+                letter-spacing: 0.5px !important;
               }
+              
               .print-page:last-child {
                 page-break-after: avoid !important;
                 break-after: auto !important;
               }
+              
               /* Guarantee Page 2 starts on a fresh physical sheet during print */
-              /* Guarantee Page 2 starts on a fresh sheet during print, but ensure Page 1 has NO leading blank page! */
               .print-page {
                 page-break-before: always !important;
                 break-before: page !important;
@@ -4360,26 +4375,33 @@ return {
                 page-break-before: avoid !important;
                 break-before: avoid !important;
               }
-              /* Enforce scaling dynamically for all elements */
+              
+              /* Enforce scaling and aesthetics dynamically for elements */
               .print-page img[alt="Logo"] {
-                max-height: 32px !important;
-              }
-              .print-page h2 {
-                font-size: 18px !important;
-                margin-top: 6px !important;
-                margin-bottom: 6px !important;
-              }
-              .print-page p {
-                font-size: 13px !important;
-                line-height: 1.45 !important;
-              }
-              .print-page img[alt="Signature"] {
-                max-height: 48px !important;
-              }
-              .print-page img[alt="Footer Print"] {
-                max-height: 80px !important;
+                max-height: 40px !important; /* Increased for high clarity */
                 object-fit: contain !important;
               }
+              
+              .print-page img[alt="Signature"] {
+                max-height: 64px !important; /* Large balanced signature */
+                object-fit: contain !important;
+              }
+              
+              .print-page img[alt="Footer Print"] {
+                width: 100% !important;
+                max-height: 100px !important; /* Highly legible footer image */
+                object-fit: contain !important;
+              }
+              
+              /* Custom styling for nested manual footer text content to make it highly readable */
+              .print-page .grid-cols-12 p, .print-page .grid p {
+                font-size: 10px !important;
+                line-height: 1.4 !important;
+              }
+              .print-page .grid-cols-12 .font-bold {
+                font-size: 10.5px !important;
+              }
+              
               .no-print {
                 display: none !important;
               }
