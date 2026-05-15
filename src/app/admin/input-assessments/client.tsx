@@ -4678,15 +4678,35 @@ return {
                     const prefix = isInvitation ? "Thu_Moi_Khao_Sat" : isCommitment ? "Ban_Cam_Ket" : "Thu_Chuc_Mung";
                     const pdfFileName = prefix + "_" + studentName + ".pdf";
                     
-                    const btn = document.getElementById('export-pdf-btn');
+                    const btn = document.getElementById('export-pdf-btn') as HTMLButtonElement | null;
                     if(btn) {
                       btn.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Đang tạo PDF...';
                       btn.disabled = true;
                     }
 
-                    try {
-                      const html2pdfModule = await import('html2pdf.js');
-                      const html2pdf = html2pdfModule.default || html2pdfModule;
+                                        try {
+                      // BULLETPROOF: Load html2pdf from CDN to avoid Next.js/Webpack bundling issues!
+                      let html2pdf = (window as any).html2pdf;
+                      if (!html2pdf) {
+                        const scriptId = 'html2pdf-cdn-script';
+                        if (!document.getElementById(scriptId)) {
+                          await new Promise((resolve, reject) => {
+                            const script = document.createElement('script');
+                            script.id = scriptId;
+                            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+                            script.crossOrigin = 'anonymous';
+                            script.onload = resolve;
+                            script.onerror = () => reject(new Error('Không thể tải thư viện PDF từ CDN'));
+                            document.head.appendChild(script);
+                          });
+                        }
+                        html2pdf = (window as any).html2pdf;
+                      }
+
+                      if (!html2pdf) {
+                        throw new Error('Không tìm thấy thư viện html2pdf trên window');
+                      }
+
                       
                       const clone = printArea.cloneNode(true);
                       clone.id = "html2pdf-clone-container";
@@ -4723,7 +4743,7 @@ return {
 
                       await html2pdf().set(opt).from(clone).save();
                       document.body.removeChild(clone);
-                    } catch (err) {
+                    } catch (err: any) {
                       alert('Lỗi: ' + (err.message || err) + '\nĐang chuyển sang chế độ in mặc định của trình duyệt!');
                       console.error(err);
                       
