@@ -4719,29 +4719,7 @@ return {
                   <Download className="w-4 h-4" />
                   Lưu File (PDF)
                 </button>
-                <button 
-                  onClick={() => {
-                    const originalTitle = document.title;
-                    const academicYearStr = selectedReportStudent?.academicYear?.substring(0, 4) || new Date().getFullYear().toString();
-                    const monthStr = "T" + String(new Date().getMonth() + 1).padStart(2, '0');
-                    const studentName = selectedReportStudent?.fullName || "";
-                    const pdfFileName = `${academicYearStr}_${monthStr}_TCM_${studentName}`;
-                    
-                    document.title = pdfFileName;
-                    const savedScrollY = window.scrollY;
-                    window.scrollTo(0, 0);
-                    setTimeout(() => {
-                      window.print();
-                      window.scrollTo(0, savedScrollY);
-                      setTimeout(() => {
-                        document.title = originalTitle;
-                      }, 1000);
-                    }, 100);
-                  }}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md shadow-indigo-100 flex items-center gap-2 transition-all"
-                >
-                  In thư (Print)
-                </button>
+                
                 <button 
                   onClick={() => { setIsPrintModalOpen(false); setMockPreviewStudent(null); }}
                   className="w-8 h-8 flex items-center justify-center rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 shadow-sm transition-colors"
