@@ -4685,143 +4685,27 @@ return {
                     }
 
                                         try {
-                      // BULLETPROOF: Load html2pdf from CDN to avoid Next.js/Webpack bundling issues!
-                      let html2pdf = (window as any).html2pdf;
-                      if (!html2pdf) {
-                        const scriptId = 'html2pdf-cdn-script';
-                        if (!document.getElementById(scriptId)) {
-                          await new Promise((resolve, reject) => {
-                            const script = document.createElement('script');
-                            script.id = scriptId;
-                            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-                            script.crossOrigin = 'anonymous';
-                            script.onload = resolve;
-                            script.onerror = () => reject(new Error('Không thể tải thư viện PDF từ CDN'));
-                            document.head.appendChild(script);
-                          });
-                        }
-                        html2pdf = (window as any).html2pdf;
-                      }
-
-                      if (!html2pdf) {
-                        throw new Error('Không tìm thấy thư viện html2pdf trên window');
-                      }
-
-                      
-                      const clone = printArea.cloneNode(true);
-                      clone.id = "html2pdf-clone-container";
-                      
-                      clone.style.zoom = "1";
-                      clone.style.transform = "none";
-                      clone.style.position = "absolute";
-                      clone.style.left = "-9999px";
-                      clone.style.top = "0";
-                      clone.style.width = "210mm";
-                      clone.style.backgroundColor = "white";
-                      
-                      const pages = clone.querySelectorAll('.print-page');
-                      pages.forEach(p => {
-                        p.style.boxShadow = "none";
-                        p.style.border = "none";
-                        p.style.width = "210mm";
-                        p.style.height = "297mm";
-                        p.style.margin = "0";
-                      });
-
-                      const noPrintItems = clone.querySelectorAll('.no-print');
-                      noPrintItems.forEach(el => el.remove());
-
-                      document.body.appendChild(clone);
-
-                      // SANITIZE CSS TO PREVENT HTML2CANVAS CRASH (e.g. modern colors like lab(), oklch())
-                      const modifiedSheets: any[] = [];
-                      try {
-                        const styleSheets = Array.from(document.styleSheets);
-                        for (const sheet of styleSheets) {
-                          try {
-                            const rules = sheet.cssRules || sheet.rules;
-                            if (!rules) continue;
-                            
-                            const deletedRules: any[] = [];
-                            // Scan backwards so indices don't shift when deleting
-                            for (let i = rules.length - 1; i >= 0; i--) {
-                              const cssText = rules[i].cssText || "";
-                              if (
-                                cssText.includes('lab(') || 
-                                cssText.includes('oklch(') || 
-                                cssText.includes('lch(') || 
-                                cssText.includes('color-mix(') ||
-                                cssText.includes('oklab(')
-                              ) {
-                                deletedRules.push({ index: i, text: cssText });
-                                sheet.deleteRule(i);
-                              }
-                            }
-                            if (deletedRules.length > 0) {
-                              modifiedSheets.push({ sheet, rules: deletedRules });
-                            }
-                          } catch (e) {
-                            // Skip CORS-restricted stylesheets (html2canvas skips these anyway)
-                          }
-                        }
-                      } catch (err) {
-                        console.warn("Style pre-scan failed", err);
-                      }
-
-
-                      const opt = {
-                        margin:       0,
-                        filename:     pdfFileName,
-                        image:        { type: 'jpeg', quality: 1.0 },
-                        html2canvas:  { scale: 2, useCORS: true, letterRendering: true, windowWidth: 794 },
-                        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-                      };
-
-                      await html2pdf().set(opt).from(clone).save();
-                      document.body.removeChild(clone);
-
-                      // RESTORE SANITIZED CSS RULES
-                      for (const item of modifiedSheets) {
-                        try {
-                          // Sort ascending to insert them back at correct positions
-                          const sorted = item.rules.sort((a: any, b: any) => a.index - b.index);
-                          for (const rule of sorted) {
-                            item.sheet.insertRule(rule.text, rule.index);
-                          }
-                        } catch (e) {
-                          console.error("Failed to restore CSS rule:", e);
-                        }
-                      }
-
-                    } catch (err: any) {
-                                            // RESTORE SANITIZED CSS RULES
-                      for (const item of modifiedSheets) {
-                        try {
-                          // Sort ascending to insert them back at correct positions
-                          const sorted = item.rules.sort((a: any, b: any) => a.index - b.index);
-                          for (const rule of sorted) {
-                            item.sheet.insertRule(rule.text, rule.index);
-                          }
-                        } catch (e) {
-                          console.error("Failed to restore CSS rule:", e);
-                        }
-                      }
-
-alert('Lỗi: ' + (err.message || err) + '\nĐang chuyển sang chế độ in mặc định của trình duyệt!');
-                      console.error(err);
-                      
-                      // Fallback to Native Print
+                      // THE ULTIMATE ROBUST SOLUTION: Native Chrome Print with our pixel-perfect A4 CSS Overrides!
+                      // This completely avoids html2pdf.js memory leaks, crashes on modern colors (lab/oklch), CORS issues, and page deformation!
                       const originalTitle = document.title;
-                      document.title = pdfFileName;
+                      // Clean up filename for PDF naming
+                      document.title = pdfFileName.replace(/\.pdf$/, '');
+                      
                       const savedScrollY = window.scrollY;
                       window.scrollTo(0, 0);
+                      
+                      // Allow a microtask for rendering before print
                       setTimeout(() => {
                         window.print();
                         window.scrollTo(0, savedScrollY);
+                        // Restore original title shortly after
                         setTimeout(() => {
                           document.title = originalTitle;
                         }, 1000);
                       }, 100);
+                    } catch (err: any) {
+                      alert('Lỗi khi gọi lệnh in: ' + (err.message || err));
+                      console.error(err);
                     } finally {
                       if(btn) {
                         btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download w-4 h-4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Lưu File (PDF)';
