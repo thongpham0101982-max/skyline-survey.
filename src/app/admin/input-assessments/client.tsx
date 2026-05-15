@@ -4464,7 +4464,7 @@ return {
                 max-width: none !important;
                 box-shadow: none !important;
                 border: none !important;
-                position: absolute !important;
+                position: fixed !important;
                 top: 0 !important;
                 left: 0 !important;
                 width: 100% !important;
