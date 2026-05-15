@@ -356,6 +356,54 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     return defaultDocumentsGrade1;
   }, [rcTargetGroup, defaultDocumentsGrade1]);
 
+
+  // One-time migration and load for Master Branding Assets (Logo, BG, Footer)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const mLogo = localStorage.getItem('report_config_master_logo');
+      const mBg = localStorage.getItem('report_config_master_background');
+      const mFooter = localStorage.getItem('report_config_master_footer');
+      
+      let finalLogo = mLogo;
+      let finalBg = mBg;
+      let finalFooter = mFooter;
+      
+      // One-time migration from any existing configurations
+      if (finalLogo === null || finalBg === null || finalFooter === null) {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.startsWith('report_config_global_') || key.startsWith('report_config_'))) {
+            try {
+              const data = JSON.parse(localStorage.getItem(key) || "{}");
+              if (finalLogo === null && data.logo) {
+                finalLogo = data.logo;
+                localStorage.setItem('report_config_master_logo', data.logo);
+              }
+              if (finalBg === null && data.background) {
+                finalBg = data.background;
+                localStorage.setItem('report_config_master_background', data.background);
+              }
+              if (finalFooter === null && data.footer) {
+                finalFooter = data.footer;
+                localStorage.setItem('report_config_master_footer', data.footer);
+              }
+            } catch(e) {}
+          }
+          if (finalLogo !== null && finalBg !== null && finalFooter !== null) break;
+        }
+      }
+      
+      // Secure master keys exist
+      if (finalLogo === null) { finalLogo = ""; localStorage.setItem('report_config_master_logo', ""); }
+      if (finalBg === null) { finalBg = ""; localStorage.setItem('report_config_master_background', ""); }
+      if (finalFooter === null) { finalFooter = ""; localStorage.setItem('report_config_master_footer', ""); }
+
+      if (finalLogo) setRcLogo(finalLogo);
+      if (finalBg) setRcBackground(finalBg);
+      if (finalFooter) setRcFooter(finalFooter);
+    }
+  }, []);
+
   useEffect(() => {
     if (campuses && campuses.length > 0 && !rcCampusId) {
       setRcCampusId(campuses[0].id)
@@ -417,10 +465,8 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
       }
       
       setRcTitle(globalData.title || (rcReportType === "thu_chuc_mung" ? "BÁO CÁO KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO" : rcReportType === "thu_moi" ? "THƯ MỜI" : "BẢN CAM KẾT HỌC TẬP"));
-      setRcLogo(globalData.logo || "");
-      setRcBackground(globalData.background || "");
+      // Decoupled: Master branding assets (Logo, Background, Footer) persist across selections.
       setRcContent(globalData.content || getDefaultContent(rcReportType));
-      setRcFooter(globalData.footer || "");
       
       setRcSignature(campusData.signature || "");
       setRcDirectorName(campusData.directorName || defaultManagerName);
@@ -487,6 +533,11 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
       footer: rcFooter
     }
     localStorage.setItem('report_config_global_' + typeKey, JSON.stringify(globalData))
+    
+    // Save Master Branding parts (Truly Global, one upload for all campuses and reports)
+    localStorage.setItem('report_config_master_logo', rcLogo || "")
+    localStorage.setItem('report_config_master_background', rcBackground || "")
+    localStorage.setItem('report_config_master_footer', rcFooter || "")
     
     // Save Campus-specific parts (applies only to current campus)
     const campusData = {
@@ -937,10 +988,16 @@ ${reportForm.directorNote}`;
       
       // If global is not yet saved, use campus data as fallback for global fields
       const mergedTitle = globalData.title || campusData.title || (typeKey === "thu_chuc_mung" ? "BÁO CÁO KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO" : typeKey === "thu_moi" ? "THƯ MỜI" : "BẢN CAM KẾT HỌC TẬP");
-      const mergedLogo = globalData.logo || campusData.logo || "";
-      const mergedBackground = globalData.background || campusData.background || "";
+      
+      // Fetch Master Branding overrides
+      const mLogo = localStorage.getItem('report_config_master_logo');
+      const mBg = localStorage.getItem('report_config_master_background');
+      const mFooter = localStorage.getItem('report_config_master_footer');
+
+      const mergedLogo = mLogo !== null ? mLogo : (globalData.logo || campusData.logo || "");
+      const mergedBackground = mBg !== null ? mBg : (globalData.background || campusData.background || "");
       const mergedContent = globalData.content || campusData.content || "";
-      const mergedFooter = globalData.footer || campusData.footer || "";
+      const mergedFooter = mFooter !== null ? mFooter : (globalData.footer || campusData.footer || "");
       
       return {
         title: mergedTitle,
@@ -2680,7 +2737,7 @@ return {
                     backgroundRepeat: 'no-repeat',
                     backgroundPosition: 'center',
                     backgroundSize: rcBackground ? 'cover' : 'contain',
-                    opacity: rcBackground ? 0.15 : 0.05,
+                    opacity: rcBackground ? 0.35 : 0.15,
                     top: rcBackground ? '0' : '50%',
                     left: rcBackground ? '0' : '50%',
                     width: rcBackground ? '100%' : '70%',
@@ -4269,7 +4326,7 @@ return {
               left: 0;
               width: 100%;
               height: 100%;
-              opacity: ${studentCampusConfig?.background ? '0.15' : '0.05'};
+              opacity: ${studentCampusConfig?.background ? '0.35' : '0.15'};
               background-image: url('${studentCampusConfig?.background || "data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\" fill=\"%23007A87\"><path d=\"M10,80 Q50,40 90,20 Q60,50 10,80 Z\"/><path d=\"M30,80 Q60,55 90,35 Q65,60 30,80 Z\"/></svg>"}');
               background-repeat: no-repeat;
               background-position: center;
