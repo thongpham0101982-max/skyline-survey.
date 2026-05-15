@@ -4733,6 +4733,42 @@ return {
 
                       document.body.appendChild(clone);
 
+                      // SANITIZE CSS TO PREVENT HTML2CANVAS CRASH (e.g. modern colors like lab(), oklch())
+                      const modifiedSheets: any[] = [];
+                      try {
+                        const styleSheets = Array.from(document.styleSheets);
+                        for (const sheet of styleSheets) {
+                          try {
+                            const rules = sheet.cssRules || sheet.rules;
+                            if (!rules) continue;
+                            
+                            const deletedRules: any[] = [];
+                            // Scan backwards so indices don't shift when deleting
+                            for (let i = rules.length - 1; i >= 0; i--) {
+                              const cssText = rules[i].cssText || "";
+                              if (
+                                cssText.includes('lab(') || 
+                                cssText.includes('oklch(') || 
+                                cssText.includes('lch(') || 
+                                cssText.includes('color-mix(') ||
+                                cssText.includes('oklab(')
+                              ) {
+                                deletedRules.push({ index: i, text: cssText });
+                                sheet.deleteRule(i);
+                              }
+                            }
+                            if (deletedRules.length > 0) {
+                              modifiedSheets.push({ sheet, rules: deletedRules });
+                            }
+                          } catch (e) {
+                            // Skip CORS-restricted stylesheets (html2canvas skips these anyway)
+                          }
+                        }
+                      } catch (err) {
+                        console.warn("Style pre-scan failed", err);
+                      }
+
+
                       const opt = {
                         margin:       0,
                         filename:     pdfFileName,
@@ -4743,8 +4779,35 @@ return {
 
                       await html2pdf().set(opt).from(clone).save();
                       document.body.removeChild(clone);
+
+                      // RESTORE SANITIZED CSS RULES
+                      for (const item of modifiedSheets) {
+                        try {
+                          // Sort ascending to insert them back at correct positions
+                          const sorted = item.rules.sort((a: any, b: any) => a.index - b.index);
+                          for (const rule of sorted) {
+                            item.sheet.insertRule(rule.text, rule.index);
+                          }
+                        } catch (e) {
+                          console.error("Failed to restore CSS rule:", e);
+                        }
+                      }
+
                     } catch (err: any) {
-                      alert('Lỗi: ' + (err.message || err) + '\nĐang chuyển sang chế độ in mặc định của trình duyệt!');
+                                            // RESTORE SANITIZED CSS RULES
+                      for (const item of modifiedSheets) {
+                        try {
+                          // Sort ascending to insert them back at correct positions
+                          const sorted = item.rules.sort((a: any, b: any) => a.index - b.index);
+                          for (const rule of sorted) {
+                            item.sheet.insertRule(rule.text, rule.index);
+                          }
+                        } catch (e) {
+                          console.error("Failed to restore CSS rule:", e);
+                        }
+                      }
+
+alert('Lỗi: ' + (err.message || err) + '\nĐang chuyển sang chế độ in mặc định của trình duyệt!');
                       console.error(err);
                       
                       // Fallback to Native Print
