@@ -4305,7 +4305,7 @@ return {
                 min-height: 297mm !important;
                 max-height: 297mm !important;
                 margin: 0 auto !important;
-                padding: 12mm 15mm 28mm 20mm !important; /* Reserved 28mm bottom zone for pinned absolute footer! */
+                padding: 12.7mm 15mm 48mm 15mm !important; /* Reserved 28mm bottom zone for pinned absolute footer! */
                 flex-shrink: 0 !important;
                 display: flex !important;
                 flex-direction: column !important;
@@ -4322,8 +4322,11 @@ return {
               .print-footer {
                 position: absolute !important;
                 bottom: 0 !important;
-                left: 30mm !important;
-                right: 20mm !important;
+                left: 0 !important;
+                right: 0 !important;
+                padding-left: 15mm !important;
+                padding-right: 15mm !important;
+                box-sizing: border-box !important;
                 height: 28mm !important;
                 margin-bottom: 0 !important;
                 margin-top: 0 !important;
@@ -4403,9 +4406,12 @@ return {
               .print-footer {
                 position: absolute !important;
                 bottom: 8mm !important;
-                left: 20mm !important;
-                right: 15mm !important;
-                width: calc(210mm - 35mm) !important;
+                left: 0 !important;
+                right: 0 !important;
+                width: 100% !important;
+                padding-left: 15mm !important;
+                padding-right: 15mm !important;
+                box-sizing: border-box !important;
               }
               
               /* Watermark */
@@ -4734,7 +4740,7 @@ return {
                 <div 
                   id="print-letter-area" 
                   className="bg-white shadow-lg border border-slate-200 relative text-slate-800 text-sm leading-relaxed print-page"
-                  style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "297mm", padding: "15mm 15mm 30mm 20mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "block", overflow: "hidden" }}
+                  style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "297mm", padding: "12.7mm 15mm 48mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "block", overflow: "hidden" }}
               >
                 {/* Print Watermark */}
                 <img crossOrigin="anonymous"  className="print-watermark" src={rcBackground || DEFAULT_WATERMARK_SVG} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "80%", height: "auto", opacity: 0.08, zIndex: 0, pointerEvents: "none" }} />
@@ -4901,11 +4907,11 @@ return {
                 
                 {/* Footer Contact */}
                 {studentCampusConfig?.footer ? (
-                  <div className="border-t border-slate-200 pt-3 absolute z-10 w-full print-footer" style={{ bottom: "8mm", left: "20mm", right: "15mm", width: "calc(210mm - 35mm)" }}>
+                  <div className="border-t border-slate-200 pt-3 absolute z-10 w-full print-footer" style={{ bottom: "8mm", left: "0", right: "0", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box" }}>
                     <img crossOrigin="anonymous"  src={studentCampusConfig.footer} alt="Footer Print" className="w-full" style={{ maxHeight: "100px", objectFit: "contain" }} />
                   </div>
                 ) : (
-                  <div className="w-full pt-1 mt-4 absolute z-10 print-footer" style={{ bottom: "8mm", left: "20mm", right: "15mm", width: "calc(210mm - 35mm)", fontFamily: "Arial, sans-serif" }}>
+                  <div className="w-full pt-1 mt-4 absolute z-10 print-footer" style={{ bottom: "8mm", left: "0", right: "0", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}>
                     {/* High-fidelity Header Title & Line */}
                     <div className="flex items-center gap-2 mb-2.5 w-full">
                       <span className="font-bold text-[#00A6A9] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
@@ -4974,7 +4980,7 @@ return {
                 {modalDocList && modalDocList.length > 0 && (
                   <div 
                     className="bg-white shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed print-page mt-8"
-                    style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "297mm", padding: "15mm 15mm 30mm 20mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "block", overflow: "hidden" }}
+                    style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "297mm", padding: "12.7mm 15mm 48mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "block", overflow: "hidden" }}
                   >
                     <div className="flex flex-col relative z-10 w-full">
                 {/* Print Watermark */}
@@ -5036,11 +5042,11 @@ return {
                     
                     {/* Footer Contact */}
                     {studentCampusConfig?.footer ? (
-                      <div className="border-t border-slate-200 pt-3 absolute z-10 w-full print-footer" style={{ bottom: "8mm", left: "20mm", right: "15mm", width: "calc(210mm - 35mm)" }}>
+                      <div className="border-t border-slate-200 pt-3 absolute z-10 w-full print-footer" style={{ bottom: "8mm", left: "0", right: "0", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box" }}>
                         <img crossOrigin="anonymous"  src={studentCampusConfig.footer} alt="Footer Print" className="w-full" style={{ maxHeight: "100px", objectFit: "contain" }} />
                       </div>
                     ) : (
-                      <div className="w-full pt-1 mt-4 absolute z-10 print-footer" style={{ bottom: "8mm", left: "20mm", right: "15mm", width: "calc(210mm - 35mm)", fontFamily: "Arial, sans-serif" }}>
+                      <div className="w-full pt-1 mt-4 absolute z-10 print-footer" style={{ bottom: "8mm", left: "0", right: "0", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}>
                     {/* High-fidelity Header Title & Line */}
                     <div className="flex items-center gap-2 mb-2.5 w-full">
                       <span className="font-bold text-[#00A6A9] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
