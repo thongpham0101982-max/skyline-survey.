@@ -4440,6 +4440,7 @@ return {
               html, body {
                 width: 100% !important;
                 height: auto !important;
+                 overflow: visible !important;
                 min-height: 0 !important;
                 margin: 0 !important;
                 padding: 0 !important;
@@ -4468,6 +4469,20 @@ return {
                 visibility: hidden !important;
               }
               
+              /* 2. NEUTRALIZE LAYOUT ANCESTORS TO UNBLOCK MULTI-PAGE FLOW & ENFORCE (0,0) ANCHORING */
+              html, body, body *:has(.no-print-backdrop) {
+                position: static !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: auto !important;
+                transform: none !important;
+                overflow: visible !important;
+                height: auto !important;
+                max-height: none !important;
+              }
+              
               /* 2. TELEPORT TO TOP TO ENSURE ZERO-OFFSET ANCHORING */
               .no-print-backdrop {
                 visibility: visible !important;
@@ -4478,7 +4493,7 @@ return {
                 max-width: none !important;
                 box-shadow: none !important;
                 border: none !important;
-                position: fixed !important;
+                position: absolute !important;
                 top: 0 !important;
                 left: 0 !important;
                 width: 100% !important;
