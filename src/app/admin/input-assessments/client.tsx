@@ -4494,6 +4494,8 @@ return {
                 box-shadow: none !important;
                 border: none !important;
                 position: absolute !important;
+                height: auto !important;
+                bottom: auto !important;
                 top: 0 !important;
                 left: 0 !important;
                 width: 100% !important;
@@ -4510,6 +4512,7 @@ return {
                 transform: none !important;
                 overflow: visible !important;
                 max-height: none !important;
+                height: auto !important;
                 max-width: none !important;
                 box-shadow: none !important;
                 border: none !important;
