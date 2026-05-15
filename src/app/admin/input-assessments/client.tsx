@@ -4342,6 +4342,64 @@ return {
 
             /* PRINT OUTPUT CONSTRAINTS */
             @media print {
+              /* ----------------- NATIVE PRINT FIXES ----------------- */
+              #print-main-container {
+                zoom: 1 !important;
+                -moz-transform: none !important;
+                transform: none !important;
+                display: block !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                position: relative !important;
+              }
+              
+              .print-page {
+                width: 210mm !important;
+                height: 297mm !important;
+                min-height: 297mm !important;
+                max-height: 297mm !important;
+                margin: 0 !important; /* MUST BE 0 to avoid Chrome auto-centering */
+                padding: 15mm 15mm 30mm 20mm !important;
+                box-shadow: none !important;
+                border: none !important;
+                display: block !important;
+                position: relative !important;
+                page-break-after: always !important;
+                break-after: page !important;
+                background: white !important;
+              }
+              
+              /* Force all footers to anchor to the very bottom of the page */
+              .print-footer {
+                position: absolute !important;
+                bottom: 8mm !important;
+                left: 20mm !important;
+                right: 15mm !important;
+                width: calc(210mm - 35mm) !important;
+              }
+              
+              /* Watermark */
+              
+              .print-watermark {
+                    display: block !important;
+                    position: absolute !important;
+                    top: 50% !important;
+                    left: 50% !important;
+                    transform: translate(-50%, -50%) !important;
+                    width: 80% !important;
+                    height: auto !important;
+                    opacity: 0.08 !important;
+                    z-index: 0 !important;
+                    pointer-events: none !important;
+              }
+              
+              .print-page:last-child {
+                page-break-after: auto !important;
+                break-after: auto !important;
+              }
+
+
               @page {
                 size: A4 portrait;
                 margin: 0mm;
@@ -4582,7 +4640,7 @@ return {
             }
           `}</style>
           
-          <div id="print-modal-inner-wrapper" className="relative bg-white rounded-3xl shadow-2xl flex flex-col max-w-4xl w-full max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200">
+          <div id="print-modal-inner-wrapper" className="relative bg-white rounded-3xl shadow-2xl flex flex-col w-[210mm] shrink-0 max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50 no-print">
               <div className="flex items-center gap-2">
@@ -4591,23 +4649,70 @@ return {
               </div>
               <div className="flex items-center gap-4">
                 <button 
-                  onClick={() => {
-                    const originalTitle = document.title;
+                  id="export-pdf-btn"
+                  onClick={async () => {
+                    const printArea = document.getElementById('print-main-container');
+                    if (!printArea) return;
+                    
                     const academicYearStr = selectedReportStudent?.academicYear?.substring(0, 4) || new Date().getFullYear().toString();
                     const monthStr = "T" + String(new Date().getMonth() + 1).padStart(2, '0');
-                    const studentName = selectedReportStudent?.fullName || "";
-                    const pdfFileName = `${academicYearStr}_${monthStr}_TCM_${studentName}`;
+                    const studentName = (selectedReportStudent?.fullName || "").replace(/\s+/g, '_');
+                    const prefix = isInvitation ? "Thu_Moi_Khao_Sat" : isCommitment ? "Ban_Cam_Ket" : "Thu_Chuc_Mung";
+                    const pdfFileName = prefix + "_" + studentName + ".pdf";
                     
-                    document.title = pdfFileName;
-                    const savedScrollY = window.scrollY;
-                    window.scrollTo(0, 0);
-                    setTimeout(() => {
-                      window.print();
-                      window.scrollTo(0, savedScrollY);
-                      setTimeout(() => {
-                        document.title = originalTitle;
-                      }, 1000);
-                    }, 100);
+                    const btn = document.getElementById('export-pdf-btn');
+                    if(btn) {
+                      btn.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Đang tạo PDF...';
+                      btn.disabled = true;
+                    }
+
+                    try {
+                      const html2pdf = (await import('html2pdf.js')).default;
+                      
+                      const clone = printArea.cloneNode(true);
+                      clone.id = "html2pdf-clone-container";
+                      
+                      clone.style.zoom = "1";
+                      clone.style.transform = "none";
+                      clone.style.position = "absolute";
+                      clone.style.left = "-9999px";
+                      clone.style.top = "0";
+                      clone.style.width = "210mm";
+                      clone.style.backgroundColor = "white";
+                      
+                      const pages = clone.querySelectorAll('.print-page');
+                      pages.forEach(p => {
+                        p.style.boxShadow = "none";
+                        p.style.border = "none";
+                        p.style.width = "210mm";
+                        p.style.height = "297mm";
+                        p.style.margin = "0";
+                      });
+
+                      const noPrintItems = clone.querySelectorAll('.no-print');
+                      noPrintItems.forEach(el => el.remove());
+
+                      document.body.appendChild(clone);
+
+                      const opt = {
+                        margin:       0,
+                        filename:     pdfFileName,
+                        image:        { type: 'jpeg', quality: 1.0 },
+                        html2canvas:  { scale: 2, useCORS: true, letterRendering: true, windowWidth: 794 },
+                        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                      };
+
+                      await html2pdf().set(opt).from(clone).save();
+                      document.body.removeChild(clone);
+                    } catch (err) {
+                      alert('Có lỗi xảy ra khi xuất PDF!');
+                      console.error(err);
+                    } finally {
+                      if(btn) {
+                        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download w-4 h-4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Lưu File (PDF)';
+                        btn.disabled = false;
+                      }
+                    }
                   }}
                   className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md shadow-emerald-100 flex items-center gap-2 transition-all"
                 >
@@ -4647,13 +4752,15 @@ return {
             </div>
             
             {/* Modal Body / Paper Container */}
-            <div id="print-body-scroll-wrapper" className="overflow-y-auto p-8 bg-slate-100 flex justify-center max-h-[80vh]">
-              <div id="print-main-container" className="flex flex-col gap-8 items-center">
+            <div id="print-body-scroll-wrapper" className="overflow-y-auto p-4 bg-slate-100 flex justify-center max-h-[80vh]">
+              <div id="print-main-container" className="block relative bg-slate-200">
                 <div 
                   id="print-letter-area" 
-                  className="bg-white shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed print-page"
-                  style={{ fontFamily: "'Times New Roman', Times, serif", flexShrink: 0 }}
+                  className="bg-white shadow-lg border border-slate-200 relative text-slate-800 text-sm leading-relaxed print-page"
+                  style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "297mm", padding: "15mm 15mm 30mm 20mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "block", overflow: "hidden" }}
               >
+                {/* Print Watermark */}
+                <img className="print-watermark" src={rcBackground || DEFAULT_WATERMARK_SVG} alt="Watermark" />
                 {/* Top Logo and Header */}
                 <div className="flex flex-col relative z-10 w-full">
                   <div className="flex flex-col gap-1 border-b pb-2 mb-3">
@@ -4813,16 +4920,15 @@ return {
                 )}
                 </div>
 
-                {/* Spacer pushes footer down in vertical flex layouts */}
-                <div className="flex-grow h-0"></div>
+                
                 
                 {/* Footer Contact */}
                 {studentCampusConfig?.footer ? (
-                  <div className="border-t border-slate-200 pt-3 mt-6 relative z-10 w-full print-footer">
-                    <img src={studentCampusConfig.footer} alt="Footer Print" className="w-full h-auto" />
+                  <div className="border-t border-slate-200 pt-3 absolute z-10 w-full print-footer" style={{ bottom: "8mm", left: "20mm", right: "15mm", width: "calc(210mm - 35mm)" }}>
+                    <img src={studentCampusConfig.footer} alt="Footer Print" className="w-full" style={{ maxHeight: "100px", objectFit: "contain" }} />
                   </div>
                 ) : (
-                  <div className="w-full pt-1 mt-4 relative z-10 print-footer" style={{ fontFamily: "Arial, sans-serif" }}>
+                  <div className="w-full pt-1 mt-4 absolute z-10 print-footer" style={{ bottom: "8mm", left: "20mm", right: "15mm", width: "calc(210mm - 35mm)" }} style={{ fontFamily: "Arial, sans-serif" }}>
                     {/* High-fidelity Header Title & Line */}
                     <div className="flex items-center gap-2 mb-2.5 w-full">
                       <span className="font-bold text-[#00A6A9] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
@@ -4891,10 +4997,12 @@ return {
                 {modalDocList && modalDocList.length > 0 && (
                   <div 
                     className="bg-white shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed print-page mt-8"
-                    style={{ fontFamily: "'Times New Roman', Times, serif", flexShrink: 0 }}
+                    style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "297mm", padding: "15mm 15mm 30mm 20mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "block", overflow: "hidden" }}
                   >
                     <div className="flex flex-col relative z-10 w-full">
-                      {/* Top Logo and Header (Synchronized perfectly with Page 1) */}
+                {/* Print Watermark */}
+                <img className="print-watermark" src={rcBackground || DEFAULT_WATERMARK_SVG} alt="Watermark" />
+                {/* Top Logo and Header (Synchronized perfectly with Page 1) */}
                       <div className="flex flex-col gap-1 border-b pb-2 mb-3">
                         <div className="flex items-center justify-between">
                           {studentCampusConfig?.logo ? (
@@ -4947,16 +5055,15 @@ return {
                       </p>
                     </div>
 
-                    {/* Spacer pushes footer down in vertical flex layouts */}
-                    <div className="flex-grow h-0"></div>
+                    
                     
                     {/* Footer Contact */}
                     {studentCampusConfig?.footer ? (
-                      <div className="border-t border-slate-200 pt-3 mt-6 relative z-10 w-full print-footer">
-                        <img src={studentCampusConfig.footer} alt="Footer Print" className="w-full h-auto" />
+                      <div className="border-t border-slate-200 pt-3 absolute z-10 w-full print-footer" style={{ bottom: "8mm", left: "20mm", right: "15mm", width: "calc(210mm - 35mm)" }}>
+                        <img src={studentCampusConfig.footer} alt="Footer Print" className="w-full" style={{ maxHeight: "100px", objectFit: "contain" }} />
                       </div>
                     ) : (
-                      <div className="w-full pt-1 mt-4 relative z-10 print-footer" style={{ fontFamily: "Arial, sans-serif" }}>
+                      <div className="w-full pt-1 mt-4 absolute z-10 print-footer" style={{ bottom: "8mm", left: "20mm", right: "15mm", width: "calc(210mm - 35mm)" }} style={{ fontFamily: "Arial, sans-serif" }}>
                     {/* High-fidelity Header Title & Line */}
                     <div className="flex items-center gap-2 mb-2.5 w-full">
                       <span className="font-bold text-[#00A6A9] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
