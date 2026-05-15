@@ -4592,8 +4592,8 @@ return {
                 
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
-                page-break-after: always !important;
-                 break-after: page !important;
+                page-break-after: avoid !important;
+                break-after: avoid !important;
                 position: relative !important;
                 background: white !important;
               }
