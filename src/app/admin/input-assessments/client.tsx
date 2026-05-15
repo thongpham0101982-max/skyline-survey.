@@ -4438,12 +4438,6 @@ return {
               }
               /* USER MANDATED HTML/BODY RESET WITH ZERO FIXED HEIGHTS & FIT TO PRINT BOUNDS */
               html, body {
-                display: block !important;
-                position: static !important;
-                float: none !important;
-                display: block !important;
-                position: static !important;
-                float: none !important;
                 width: 100% !important;
                 height: auto !important;
                  overflow: visible !important;
