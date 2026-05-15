@@ -4217,7 +4217,15 @@ return {
 
       {/* PRINT MODAL */}
       {isPrintModalOpen && selectedReportStudent && (
-        <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto no-print-backdrop">
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setIsPrintModalOpen(false);
+              setMockPreviewStudent(null);
+            }
+          }}
+          className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto no-print-backdrop cursor-pointer"
+        >
 <style>{`
 
               /* html2canvas grid/flex gap polyfill */
@@ -4664,7 +4672,11 @@ return {
             }
           `}</style>
           
-          <div id="print-modal-inner-wrapper" className="relative bg-white rounded-3xl shadow-2xl flex flex-col w-[210mm] shrink-0 max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200">
+          <div 
+            id="print-modal-inner-wrapper" 
+            onClick={(e) => e.stopPropagation()}
+            className="relative bg-white rounded-3xl shadow-2xl flex flex-col w-[210mm] shrink-0 max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 cursor-default"
+          >
             {/* Modal Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50 no-print">
               <div className="flex items-center gap-2">
@@ -4725,11 +4737,11 @@ return {
                   Lưu File (PDF)
                 </button>
                 
-                <button 
+                <button type="button"
                   onClick={() => { setIsPrintModalOpen(false); setMockPreviewStudent(null); }}
-                  className="w-8 h-8 flex items-center justify-center rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 shadow-sm transition-colors"
+                  className="w-8 h-8 flex items-center justify-center rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 shadow-sm transition-all cursor-pointer"
                 >
-                  <X className="w-4 h-4"/>
+                  <X className="w-4 h-4 pointer-events-none"/>
                 </button>
               </div>
             </div>
@@ -4975,7 +4987,7 @@ return {
                     </div>
                   </div>
                 )}
-              </div>
+              
 
                 {modalDocList && modalDocList.length > 0 && (
                   <div 
