@@ -4469,18 +4469,12 @@ return {
                 visibility: hidden !important;
               }
               
-              /* 2. NEUTRALIZE LAYOUT ANCESTORS TO UNBLOCK MULTI-PAGE FLOW & ENFORCE (0,0) ANCHORING */
-              html, body, body *:has(.no-print-backdrop) {
-                position: static !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                left: 0 !important;
-                top: 0 !important;
-                width: auto !important;
-                transform: none !important;
-                overflow: visible !important;
-                height: auto !important;
-                max-height: none !important;
+              /* 2. TELEPORT DIRECT CHILD RENDERER FOR ABSOLUTE ZERO OFFSETS & BREAKING FLOW */
+              body.printing-active-mode > *:not(.no-print-backdrop) {
+                display: none !important;
+                visibility: hidden !important;
+                height: 0 !important;
+                overflow: hidden !important;
               }
               
               /* 2. TELEPORT TO TOP TO ENSURE ZERO-OFFSET ANCHORING */
@@ -4717,9 +4711,20 @@ return {
                       btn.disabled = true;
                     }
 
-                                        try {
+                                                            // CAPTURE CURRENT DOM TREE REFS FOR BLOCK-FREE TELEPORTATION
+                    const modalEl = document.querySelector('.no-print-backdrop') as HTMLElement | null;
+                    const originalParent = modalEl ? modalEl.parentElement : null;
+                    const nextSibling = modalEl ? modalEl.nextSibling : null;
+
+                    try {
                       // THE ULTIMATE ROBUST SOLUTION: Native Chrome Print with our pixel-perfect A4 CSS Overrides!
-                      // This completely avoids html2pdf.js memory leaks, crashes on modern colors (lab/oklch), CORS issues, and page deformation!
+                      
+                      // 1. Shift modal directly to document.body root for clean ancestor-free canvas!
+                      if (modalEl) {
+                        document.body.classList.add('printing-active-mode');
+                        document.body.appendChild(modalEl);
+                      }
+
                       const originalTitle = document.title;
                       // Clean up filename for PDF naming
                       document.title = pdfFileName.replace(/\.pdf$/, '');
@@ -4731,6 +4736,18 @@ return {
                       setTimeout(() => {
                         window.print();
                         window.scrollTo(0, savedScrollY);
+                        
+                        // 2. IMMEDIATELY RESTORE MODAL TO ITS EXACT ORIGINAL PLACE IN THE REACT TREE!
+                        // This happens blocking/synchronously right after print finishes, React never notices!
+                        document.body.classList.remove('printing-active-mode');
+                        if (modalEl && originalParent) {
+                          if (nextSibling) {
+                            originalParent.insertBefore(modalEl, nextSibling);
+                          } else {
+                            originalParent.appendChild(modalEl);
+                          }
+                        }
+
                         // Restore original title shortly after
                         setTimeout(() => {
                           document.title = originalTitle;
