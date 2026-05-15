@@ -4493,11 +4493,8 @@ return {
                 max-width: none !important;
                 box-shadow: none !important;
                 border: none !important;
-                position: absolute !important;
+                position: static !important; /* COMPATIBILITY KING: REMOVES ALL ABSOLUTE VIEWPORT & BOTTOM INSET LOCKS */
                 height: auto !important;
-                bottom: auto !important;
-                top: 0 !important;
-                left: 0 !important;
                 width: 100% !important;
                 display: block !important;
                 margin: 0 !important;
@@ -4688,7 +4685,13 @@ return {
                 display: none !important;
               }
             }
-          `}</style>
+          
+              /* 1CM INDENTATION FOR BODY CONTENT PARAGRAPHS (SCREEN & PRINT) */
+              .print-page .space-y-3 p:not(.pl-4), .print-page .space-y-6 p:not(.pl-4),
+              #print-letter-area .space-y-3 p:not(.pl-4), #print-letter-area .space-y-6 p:not(.pl-4) {
+                text-indent: 10mm !important;
+              }
+            `}</style>
           
           <div 
             id="print-modal-inner-wrapper" 
@@ -4926,32 +4929,37 @@ return {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-end text-right mt-8 pr-4">
-                    <p className="italic text-slate-500 mb-1">{formattedLetterDate}</p>
-                    <p className="font-bold uppercase text-indigo-950 text-xs tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
-                    {isInvitation && !studentCampusConfig?.signature ? (
-                      <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-6">TRƯỞNG BAN TUYỂN SINH SKY-LINE</p>
-                    ) : (
-                      <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-6">GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}</p>
-                    )}
+                                    <div className="flex flex-col items-end mt-8 pr-4">
+                    <p className="italic text-slate-500 mb-1 text-right w-full">{formattedLetterDate}</p>
                     
-                    <div className="h-16 flex items-center justify-center pr-12">
-                      {studentCampusConfig?.signature ? (
-                        <img crossOrigin="anonymous"  src={studentCampusConfig.signature} alt="Signature" className="max-h-full object-contain" />
-                      ) : isInvitation ? (
-                        <span className="font-serif italic text-xl text-slate-400 font-light tracking-widest opacity-60" style={{ fontFamily: "'Brush Script MT', cursive, sans-serif" }}>
-                          Ban Tuyển sinh
-                        </span>
+                    {/* Group of signature elements: CENTERED inside this specific box, aligned to the page RIGHT */}
+                    <div className="flex flex-col items-center text-center" style={{ minWidth: "280px" }}>
+                      <p className="font-bold uppercase text-indigo-950 text-xs tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
+                      {isInvitation && !studentCampusConfig?.signature ? (
+                        <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-6">TRƯỞNG BAN TUYỂN SINH SKY-LINE</p>
                       ) : (
-                        <span className="font-serif italic text-xl text-slate-400 font-light tracking-widest opacity-60" style={{ fontFamily: "'Brush Script MT', cursive, sans-serif" }}>
-                          {mergedStudent?.signatureName || studentCampusConfig?.directorName || "Đỗ Quang Trung"}
-                        </span>
+                        <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-6">GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}</p>
                       )}
+                      
+                      {/* Pr-12 removed to ensure 100% pure centering */}
+                      <div className="h-16 flex items-center justify-center">
+                        {studentCampusConfig?.signature ? (
+                          <img crossOrigin="anonymous" src={studentCampusConfig.signature} alt="Signature" className="max-h-full object-contain" />
+                        ) : isInvitation ? (
+                          <span className="font-serif italic text-xl text-slate-400 font-light tracking-widest opacity-60" style={{ fontFamily: "'Brush Script MT', cursive, sans-serif" }}>
+                            Ban Tuyển sinh
+                          </span>
+                        ) : (
+                          <span className="font-serif italic text-xl text-slate-400 font-light tracking-widest opacity-60" style={{ fontFamily: "'Brush Script MT', cursive, sans-serif" }}>
+                            {mergedStudent?.signatureName || studentCampusConfig?.directorName || "Đỗ Quang Trung"}
+                          </span>
+                        )}
+                      </div>
+                      
+                      <p className="font-bold text-slate-700 mt-2 text-sm">
+                        {mergedStudent?.signatureName || studentCampusConfig?.directorName || (isInvitation ? "Ban Tuyển sinh" : "Đỗ Quang Trung")}
+                      </p>
                     </div>
-                    
-                    <p className="font-bold text-slate-700 mt-2 text-sm">
-                      {mergedStudent?.signatureName || studentCampusConfig?.directorName || (isInvitation ? "Ban Tuyển sinh" : "Đỗ Quang Trung")}
-                    </p>
                   </div>
                 )}
                 </div>
