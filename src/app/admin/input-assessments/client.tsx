@@ -4219,6 +4219,20 @@ return {
       {isPrintModalOpen && selectedReportStudent && (
         <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto no-print-backdrop">
 <style>{`
+
+              .print-watermark {
+                    display: block !important;
+                    position: absolute !important;
+                    top: 50% !important;
+                    left: 50% !important;
+                    transform: translate(-50%, -50%) !important;
+                    width: 80% !important;
+                    height: auto !important;
+                    opacity: 0.08 !important;
+                    z-index: 0 !important;
+                    pointer-events: none !important;
+              }
+
             /* FORCE EXPLICIT A4 PORTRAIT CONFIGURATION */
             @page { 
               size: A4 portrait; 
@@ -4381,18 +4395,7 @@ return {
               
               /* Watermark */
               
-              .print-watermark {
-                    display: block !important;
-                    position: absolute !important;
-                    top: 50% !important;
-                    left: 50% !important;
-                    transform: translate(-50%, -50%) !important;
-                    width: 80% !important;
-                    height: auto !important;
-                    opacity: 0.08 !important;
-                    z-index: 0 !important;
-                    pointer-events: none !important;
-              }
+              
               
               .print-page:last-child {
                 page-break-after: auto !important;
@@ -4738,7 +4741,7 @@ return {
                   style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "297mm", padding: "15mm 15mm 30mm 20mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "block", overflow: "hidden" }}
               >
                 {/* Print Watermark */}
-                <img className="print-watermark" src={rcBackground || DEFAULT_WATERMARK_SVG} alt="Watermark" />
+                <img className="print-watermark" src={rcBackground || DEFAULT_WATERMARK_SVG} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "80%", height: "auto", opacity: 0.08, zIndex: 0, pointerEvents: "none" }} />
                 {/* Top Logo and Header */}
                 <div className="flex flex-col relative z-10 w-full">
                   <div className="flex flex-col gap-1 border-b pb-2 mb-3">
@@ -4906,7 +4909,7 @@ return {
                     <img src={studentCampusConfig.footer} alt="Footer Print" className="w-full" style={{ maxHeight: "100px", objectFit: "contain" }} />
                   </div>
                 ) : (
-                  <div className="w-full pt-1 mt-4 absolute z-10 print-footer" style={{ bottom: "8mm", left: "20mm", right: "15mm", width: "calc(210mm - 35mm)" }} style={{ fontFamily: "Arial, sans-serif" }}>
+                  <div className="w-full pt-1 mt-4 absolute z-10 print-footer" style={{ bottom: "8mm", left: "20mm", right: "15mm", width: "calc(210mm - 35mm)", fontFamily: "Arial, sans-serif" }}>
                     {/* High-fidelity Header Title & Line */}
                     <div className="flex items-center gap-2 mb-2.5 w-full">
                       <span className="font-bold text-[#00A6A9] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
@@ -4979,7 +4982,7 @@ return {
                   >
                     <div className="flex flex-col relative z-10 w-full">
                 {/* Print Watermark */}
-                <img className="print-watermark" src={rcBackground || DEFAULT_WATERMARK_SVG} alt="Watermark" />
+                <img className="print-watermark" src={rcBackground || DEFAULT_WATERMARK_SVG} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "80%", height: "auto", opacity: 0.08, zIndex: 0, pointerEvents: "none" }} />
                 {/* Top Logo and Header (Synchronized perfectly with Page 1) */}
                       <div className="flex flex-col gap-1 border-b pb-2 mb-3">
                         <div className="flex items-center justify-between">
@@ -5041,7 +5044,7 @@ return {
                         <img src={studentCampusConfig.footer} alt="Footer Print" className="w-full" style={{ maxHeight: "100px", objectFit: "contain" }} />
                       </div>
                     ) : (
-                      <div className="w-full pt-1 mt-4 absolute z-10 print-footer" style={{ bottom: "8mm", left: "20mm", right: "15mm", width: "calc(210mm - 35mm)" }} style={{ fontFamily: "Arial, sans-serif" }}>
+                      <div className="w-full pt-1 mt-4 absolute z-10 print-footer" style={{ bottom: "8mm", left: "20mm", right: "15mm", width: "calc(210mm - 35mm)", fontFamily: "Arial, sans-serif" }}>
                     {/* High-fidelity Header Title & Line */}
                     <div className="flex items-center gap-2 mb-2.5 w-full">
                       <span className="font-bold text-[#00A6A9] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
