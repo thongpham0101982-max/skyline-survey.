@@ -2740,8 +2740,8 @@ return {
                     opacity: rcBackground ? 0.45 : 0.2,
                     top: '50%',
                     left: '50%',
-                    width: '65%',
-                    height: '65%',
+                    width: '50%',
+                    height: '50%',
                     transform: rcBackground ? 'translate(-50%, -50%)' : 'translate(-50%, -50%) rotate(-15deg)'
                   }}
                 />
@@ -2844,8 +2844,8 @@ return {
                     opacity: rcBackground ? 0.45 : 0.2,
                     top: '50%',
                     left: '50%',
-                    width: '65%',
-                    height: '65%',
+                    width: '50%',
+                    height: '50%',
                     transform: rcBackground ? 'translate(-50%, -50%)' : 'translate(-50%, -50%) rotate(-15deg)'
                   }}
                 />
@@ -4330,8 +4330,8 @@ return {
               opacity: ${studentCampusConfig?.background ? '0.45' : '0.2'};
               top: 50%;
               left: 50%;
-              width: 65%;
-              height: 65%;
+              width: 50%;
+              height: 50%;
               transform: translate(-50%, -50%) ${studentCampusConfig?.background ? '' : 'rotate(-15deg)'};
             }
 
