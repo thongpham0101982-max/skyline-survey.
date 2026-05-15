@@ -2736,13 +2736,13 @@ return {
                     backgroundImage: `url('${rcBackground || DEFAULT_WATERMARK_SVG}')`,
                     backgroundRepeat: 'no-repeat',
                     backgroundPosition: 'center',
-                    backgroundSize: rcBackground ? 'cover' : 'contain',
-                    opacity: rcBackground ? 0.35 : 0.15,
-                    top: rcBackground ? '0' : '50%',
-                    left: rcBackground ? '0' : '50%',
-                    width: rcBackground ? '100%' : '70%',
-                    height: rcBackground ? '100%' : '50%',
-                    transform: rcBackground ? 'none' : 'translate(-50%, -50%) rotate(-15deg)'
+                    backgroundSize: 'contain',
+                    opacity: rcBackground ? 0.45 : 0.2,
+                    top: '50%',
+                    left: '50%',
+                    width: '65%',
+                    height: '65%',
+                    transform: rcBackground ? 'translate(-50%, -50%)' : 'translate(-50%, -50%) rotate(-15deg)'
                   }}
                 />
                 
@@ -2840,13 +2840,13 @@ return {
                     backgroundImage: `url('${rcBackground || DEFAULT_WATERMARK_SVG}')`,
                     backgroundRepeat: 'no-repeat',
                     backgroundPosition: 'center',
-                    backgroundSize: rcBackground ? 'cover' : 'contain',
-                    opacity: rcBackground ? 0.15 : 0.05,
-                    top: rcBackground ? '0' : '50%',
-                    left: rcBackground ? '0' : '50%',
-                    width: rcBackground ? '100%' : '70%',
-                    height: rcBackground ? '100%' : '50%',
-                    transform: rcBackground ? 'none' : 'translate(-50%, -50%) rotate(-15deg)'
+                    backgroundSize: 'contain',
+                    opacity: rcBackground ? 0.45 : 0.2,
+                    top: '50%',
+                    left: '50%',
+                    width: '65%',
+                    height: '65%',
+                    transform: rcBackground ? 'translate(-50%, -50%)' : 'translate(-50%, -50%) rotate(-15deg)'
                   }}
                 />
                 
@@ -4322,23 +4322,17 @@ return {
             .print-page::before {
               content: "";
               position: absolute;
-              top: 0;
-              left: 0;
-              width: 100%;
-              height: 100%;
-              opacity: ${studentCampusConfig?.background ? '0.35' : '0.15'};
+              pointer-events: none;
               background-image: url('${studentCampusConfig?.background || "data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\" fill=\"%23007A87\"><path d=\"M10,80 Q50,40 90,20 Q60,50 10,80 Z\"/><path d=\"M30,80 Q60,55 90,35 Q65,60 30,80 Z\"/></svg>"}');
               background-repeat: no-repeat;
               background-position: center;
-              background-size: ${studentCampusConfig?.background ? 'cover' : 'contain'};
-              pointer-events: none;
-              ${studentCampusConfig?.background ? '' : `
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%) rotate(-15deg);
-                width: 70%;
-                height: 50%;
-              `}
+              background-size: contain;
+              opacity: ${studentCampusConfig?.background ? '0.45' : '0.2'};
+              top: 50%;
+              left: 50%;
+              width: 65%;
+              height: 65%;
+              transform: translate(-50%, -50%) ${studentCampusConfig?.background ? '' : 'rotate(-15deg)'};
             }
 
             /* SCREEN SIMULATION ONLY */
