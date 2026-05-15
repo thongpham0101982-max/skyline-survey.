@@ -2724,7 +2724,7 @@ return {
                   </p>
                   <div className="space-y-3 py-2 text-[10px] leading-relaxed text-slate-600 text-justify overflow-y-auto max-h-[360px] pr-1 scrollbar-thin">
                     {renderTemplate(rcContent, selectedReportStudent || { fullName: "Lê Trà My", grade: "1", hocKy: "1", surveyFormType: "Hội nhập S" }).split('\n').filter(Boolean).map((para, idx) => (
-                      <p key={idx} className="indent-4" style={{ textIndent: "1rem" }}>{para}</p>
+                      <p key={idx} className="indent-4" style={{ textIndent: "1cm" }}>{para}</p>
                     ))}
                   </div>
 
@@ -4812,16 +4812,16 @@ return {
                     studentCampusConfig?.content ? (
                       <div className="space-y-3 text-justify text-slate-800 font-serif" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: "13.5pt", lineHeight: "1.45", textAlign: "justify" }}>
                         {renderTemplate(studentCampusConfig.content, mergedStudent || selectedReportStudent).split('\n').filter(Boolean).map((para, idx) => (
-                          <p key={idx} className="">{para}</p>
+                          <p key={idx} className="" style={{ textIndent: "1cm" }}>{para}</p>
                         ))}
                       </div>
                     ) : (
                       <div className="space-y-6 text-justify text-[15px] leading-relaxed">
-                        <p className="">
+                        <p className="" style={{ textIndent: "1cm" }}>
                           Hội đồng Tuyển sinh Hệ thống Giáo dục Sky-Line trân trọng gửi lời chào và lời chúc sức khỏe, an khang đến Quý phụ huynh cùng gia đình.
                         </p>
                         
-                        <p className="">
+                        <p className="" style={{ textIndent: "1cm" }}>
                           Nhằm tạo điều kiện tốt nhất để nhà trường hiểu rõ hơn về năng lực tư duy, ngôn ngữ cũng như thiên hướng phát triển tự nhiên của học sinh, qua đó xây dựng lộ trình rèn luyện tối ưu nhất, chúng tôi trân trọng kính mời Quý phụ huynh cùng học sinh tham gia buổi <strong className="font-bold">Khảo sát Năng lực Đầu vào</strong> hệ <strong className="font-bold">{selectedReportStudent.surveyFormType || "Hội nhập Global"}</strong> năm học <strong className="font-bold">2026-2027</strong>.
                         </p>
                         
@@ -4831,7 +4831,7 @@ return {
                           <p><strong>• Nội dung khảo sát:</strong> Đánh giá tư duy ngôn ngữ, tư duy logic tự nhiên và khả năng tương tác xã hội phù hợp theo độ tuổi.</p>
                         </div>
                         
-                        <p className="">
+                        <p className="" style={{ textIndent: "1cm" }}>
                           Sự hiện diện và đồng hành của Quý phụ huynh cùng học sinh là niềm hân hạnh lớn cho Sky-Line, giúp nhà trường có sự chuẩn bị chu đáo nhất đón chào các em gia nhập mái trường hạnh phúc của chúng ta.
                         </p>
                         
@@ -4848,7 +4848,7 @@ return {
                       ).split('\n').filter(Boolean).map((para, idx) => {
                         const isList = /^[\d•\-*]+/.test(para.trim());
                         return (
-                          <p key={idx} className={isList ? "pl-4" : ""}>
+                          <p key={idx} className={isList ? "pl-4" : ""} style={isList ? {} : { textIndent: "1cm" }}>
                             {para}
                           </p>
                         );
@@ -4860,7 +4860,7 @@ return {
                         studentCampusConfig?.content || getDefaultContent("thu_chuc_mung"),
                         selectedReportStudent
                       ).split('\n').filter(Boolean).map((para, idx) => (
-                        <p key={idx} className="">
+                        <p key={idx} className="" style={{ textIndent: "1cm" }}>
                           {para}
                         </p>
                       ))}
@@ -4900,32 +4900,34 @@ return {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-end text-right mt-8 pr-4">
-                    <p className="italic text-slate-500 mb-1">{formattedLetterDate}</p>
-                    <p className="font-bold uppercase text-indigo-950 text-xs tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
-                    {isInvitation && !studentCampusConfig?.signature ? (
-                      <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-6">TRƯỞNG BAN TUYỂN SINH SKY-LINE</p>
-                    ) : (
-                      <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-6">GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}</p>
-                    )}
-                    
-                    <div className="h-16 flex items-center justify-center pr-12">
-                      {studentCampusConfig?.signature ? (
-                        <img crossOrigin="anonymous"  src={studentCampusConfig.signature} alt="Signature" className="max-h-full object-contain" />
-                      ) : isInvitation ? (
-                        <span className="font-serif italic text-xl text-slate-400 font-light tracking-widest opacity-60" style={{ fontFamily: "'Brush Script MT', cursive, sans-serif" }}>
-                          Ban Tuyển sinh
-                        </span>
+                  <div className="flex flex-col items-end mt-8 pr-4">
+                    <div className="flex flex-col items-center text-center" style={{ minWidth: "240px" }}>
+                      <p className="italic text-slate-500 mb-1">{formattedLetterDate}</p>
+                      <p className="font-bold uppercase text-indigo-950 text-xs tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
+                      {isInvitation && !studentCampusConfig?.signature ? (
+                        <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-6">TRƯỞNG BAN TUYỂN SINH SKY-LINE</p>
                       ) : (
-                        <span className="font-serif italic text-xl text-slate-400 font-light tracking-widest opacity-60" style={{ fontFamily: "'Brush Script MT', cursive, sans-serif" }}>
-                          {mergedStudent?.signatureName || studentCampusConfig?.directorName || "Đỗ Quang Trung"}
-                        </span>
+                        <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-6">GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}</p>
                       )}
+                      
+                      <div className="h-16 flex items-center justify-center">
+                        {studentCampusConfig?.signature ? (
+                          <img crossOrigin="anonymous"  src={studentCampusConfig.signature} alt="Signature" className="max-h-full object-contain" />
+                        ) : isInvitation ? (
+                          <span className="font-serif italic text-xl text-slate-400 font-light tracking-widest opacity-60" style={{ fontFamily: "'Brush Script MT', cursive, sans-serif" }}>
+                            Ban Tuyển sinh
+                          </span>
+                        ) : (
+                          <span className="font-serif italic text-xl text-slate-400 font-light tracking-widest opacity-60" style={{ fontFamily: "'Brush Script MT', cursive, sans-serif" }}>
+                            {mergedStudent?.signatureName || studentCampusConfig?.directorName || "Đỗ Quang Trung"}
+                          </span>
+                        )}
+                      </div>
+                      
+                      <p className="font-bold text-slate-700 mt-2 text-sm">
+                        {mergedStudent?.signatureName || studentCampusConfig?.directorName || (isInvitation ? "Ban Tuyển sinh" : "Đỗ Quang Trung")}
+                      </p>
                     </div>
-                    
-                    <p className="font-bold text-slate-700 mt-2 text-sm">
-                      {mergedStudent?.signatureName || studentCampusConfig?.directorName || (isInvitation ? "Ban Tuyển sinh" : "Đỗ Quang Trung")}
-                    </p>
                   </div>
                 )}
                 </div>
@@ -5137,16 +5139,14 @@ return {
                       </svg>
                     </div>
                   </div>
-                    )}
-                  </div>
                 )}
               </div>
-
+            )}
             </div>
           </div>
         </div>
+      </div>
     )}
-
+  </div>
   )
 }
-
