@@ -796,7 +796,7 @@ function TransferInModal({ onClose, onSaved, initialData }: { onClose: () => voi
             {/* Input Assessment Data selection */}
             {!initialData && (
               <div>
-                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 pb-2 border-b">Căn cứ dữ liệu Khảo sát đầu vào</h3>
+                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 pb-2 border-b">CĂN CỨ DỮ LIỆU KHẢO SÁT (BẢN MỚI 16/05)</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100 mb-4">
                   <div>
                     <label className="block text-xs font-bold text-emerald-600 uppercase tracking-wider mb-2">1. Chọn Kỳ khảo sát</label>
