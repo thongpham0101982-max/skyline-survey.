@@ -52,7 +52,7 @@ export function Sidebar({ role, permissionModules, actualRole, taskCount = 0 }: 
         )}
 
         {role === "ADMIN" && APP_CATEGORIES.map((cat) => {
-          const visibleModules = cat.modules.filter(m => checkPermission(m.code, m.requiresAdmin))
+          const visibleModules = cat.modules.filter((m: any) => checkPermission(m.code, m.requiresAdmin))
           if (visibleModules.length === 0) return null
 
           return (

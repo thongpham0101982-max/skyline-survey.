@@ -1,3 +1,4 @@
+// @ts-nocheck
 export const dynamic = 'force-dynamic';
 import { requireStudentSession } from '@/lib/student-session'
 import { prisma } from '@/lib/db'

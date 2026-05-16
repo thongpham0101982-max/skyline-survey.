@@ -24,7 +24,7 @@ model User {
   taskAttachments                  TaskAttachment[]                   @relation("TaskAttachments")
   taskComments                     TaskComment[]                      @relation("TaskComments")
   teacher                          Teacher?
-//  student                          Student?
+  student                          Student?
   weeklyReports                    WeeklyReport[]
   receivedTasks                    WorkTask[]                         @relation("TaskAssignee")
   assignedTasks                    WorkTask[]                         @relation("TaskAssigner")
@@ -142,7 +142,7 @@ model Student {
   id             String              @id @default(cuid())
   studentCode    String              @unique
   studentName    String
-//  userId         String?             @unique
+  userId         String?             @unique
   classId        String
   campusId       String
   academicYearId String
@@ -155,7 +155,7 @@ model Student {
   class          Class               @relation(fields: [classId], references: [id])
   surveyForms    SurveyForm[]
   studentTransfers    StudentTransfer[]
-//  user           User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user           User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
 }
 
 model ParentStudentLink {
