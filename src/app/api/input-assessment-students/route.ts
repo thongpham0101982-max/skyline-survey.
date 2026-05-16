@@ -23,11 +23,11 @@ export async function GET(req) {
     const periodId = searchParams.get("periodId");
     const batchId = searchParams.get("batchId");
     
-    if (!periodId) {
+    if (!periodId && searchParams.get("all") !== "true") {
        return NextResponse.json({ error: "Missing periodId" }, { status: 400 });
     }
     
-    const where: any = { periodId };
+    const where: any = periodId ? { periodId } : {};
     if (batchId) where.batchId = batchId;
     
     const students = await (prisma as any).inputAssessmentStudent.findMany({
