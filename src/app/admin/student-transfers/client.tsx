@@ -799,7 +799,7 @@ function TransferInModal({ onClose, onSaved, initialData }: { onClose: () => voi
                 <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 pb-2 border-b">CĂN CỨ DỮ LIỆU KHẢO SÁT (BẢN MỚI 16/05)</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100 mb-4">
                   <div>
-                    <label className="block text-xs font-bold text-emerald-600 uppercase tracking-wider mb-2">1. Chọn Kỳ khảo sát</label>
+                    <label className="block text-xs font-bold text-emerald-600 uppercase tracking-wider mb-2">1. Chọn Kỳ khảo sát ({periods.length})</label>
                     <select className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 font-medium outline-none focus:border-emerald-500 transition-colors" value={selectedPeriod} onChange={e => setSelectedPeriod(e.target.value)}>
                       <option value="">Chọn kỳ...</option>
                       {periods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
