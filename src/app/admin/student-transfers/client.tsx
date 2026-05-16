@@ -1,13 +1,14 @@
 "use client"
 import { useState, useEffect } from "react"
 import { ArrowRightLeft, ArrowRightToLine, ArrowLeftToLine, Search, Plus, X, Loader2 } from "lucide-react"
-import { getTransferFormOptionsAction, getClassesByCampusAndYearAction, getStudentsByClassAction, createTransferOutAction, getTransfersAction, createChangeClassAction } from "./actions"
+import { getTransferFormOptionsAction, getClassesByCampusAndYearAction, getStudentsByClassAction, createTransferOutAction, getTransfersAction, createChangeClassAction, updateTransferInAction, getInputAssessmentStudentsAction } from "./actions"
 
 export function StudentTransfersClient() {
   const [activeTab, setActiveTab] = useState<"OUT" | "IN" | "CHANGE_CLASS">("OUT")
   const [showOutModal, setShowOutModal] = useState(false)
   const [showChangeModal, setShowChangeModal] = useState(false)
   const [showInModal, setShowInModal] = useState(false)
+  const [editingTransfer, setEditingTransfer] = useState<any>(null)
   
   const [transfers, setTransfers] = useState<any[]>([])
   const [loadingList, setLoadingList] = useState(true)
@@ -109,7 +110,7 @@ export function StudentTransfersClient() {
                 <tbody className="divide-y divide-slate-100">
                   {outTransfers.map(t => (
                     <tr key={t.id} className="hover:bg-slate-50">
-                      <td className="p-4 font-medium text-slate-700">{new Date(t.transferDate).toLocaleDateString('vi-VN')} <br/><span className="text-xs text-slate-400">{t.semester === 'HK1' ? 'Học kỳ 1' : t.semester === 'HK2' ? 'Học kỳ 2' : t.semester === 'SUMMER' ? 'Trong hè' : ''}</span></td>
+                      <td className="p-4 font-medium text-slate-700">{new Date(t.transferDate).toLocaleDateString('vi-VN')}} <br/><span className="text-xs text-slate-400">{t.semester === 'HK1' ? 'Học kỳ 1' : t.semester === 'HK2' ? 'Học kỳ 2' : t.semester === 'SUMMER' ? 'Trong hè' : ''}</span></td>
                       <td className="p-4 font-bold text-slate-900">{t.student?.studentName} <br/><span className="text-xs font-medium text-slate-400">{t.student?.studentCode}</span></td>
                       <td className="p-4"><span className="px-2 py-1 bg-slate-100 rounded-md font-bold text-slate-600">{t.student?.class?.className}</span> <br/><span className="text-xs text-slate-500">{t.student?.class?.campus?.campusName}</span></td>
                       <td className="p-4 font-medium text-rose-600">{t.transferCategory === "DOMESTIC" ? "Chuyển trường VN" : t.transferCategory === "ABROAD" ? "Du học" : "Bảo lưu"}</td>
@@ -141,7 +142,7 @@ export function StudentTransfersClient() {
                     <th className="p-4">Ngày chuyển</th>
                     <th className="p-4">Học sinh</th>
                     <th className="p-4">Lớp chuyển đến</th>
-                    <th className="p-4">Lý do</th>
+                    <th className="p-4">Lý do</th><th className="p-4 text-right">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -178,7 +179,7 @@ export function StudentTransfersClient() {
                     <th className="p-4">Ngày nhập học</th>
                     <th className="p-4">Học sinh</th>
                     <th className="p-4">Lớp chuyển đến</th>
-                    <th className="p-4">Lý do</th>
+                    <th className="p-4">Lý do</th><th className="p-4 text-right">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -188,6 +189,17 @@ export function StudentTransfersClient() {
                       <td className="p-4 font-bold text-slate-900">{t.student?.studentName} <br/><span className="text-xs font-medium text-slate-400">{t.student?.studentCode}</span></td>
                       <td className="p-4 font-medium text-emerald-600">{t.destinationSchool}</td>
                       <td className="p-4 text-slate-600">{t.reason}</td>
+                      <td className="p-4 text-right">
+                        <button 
+                          onClick={() => {
+                            setEditingTransfer(t);
+                            setShowInModal(true);
+                          }}
+                          className="text-indigo-600 font-bold hover:text-indigo-800 transition-colors"
+                        >
+                          Sửa
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -207,7 +219,7 @@ export function StudentTransfersClient() {
 
 {showOutModal && <TransferOutModal onClose={() => setShowOutModal(false)} onSaved={loadTransfers} />}
       {showChangeModal && <ChangeClassModal onClose={() => setShowChangeModal(false)} onSaved={loadTransfers} />}
-      {showInModal && <TransferInModal onClose={() => setShowInModal(false)} onSaved={loadTransfers} />}
+      {showInModal && <TransferInModal initialData={editingTransfer} onClose={() => { setShowInModal(false); setEditingTransfer(null); }} onSaved={loadTransfers} />}
     </div>
   )
 }
@@ -634,7 +646,7 @@ function ChangeClassModal({ onClose, onSaved }: { onClose: () => void, onSaved: 
     </div>
   )
 }
-function TransferInModal({ onClose, onSaved }: { onClose: () => void, onSaved: () => void }) {
+function TransferInModal({ onClose, onSaved, initialData }: { onClose: () => void, onSaved: () => void, initialData?: any }) {
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   
@@ -648,8 +660,10 @@ function TransferInModal({ onClose, onSaved }: { onClose: () => void, onSaved: (
     campusId: "",
     classId: "",
     assessmentStudentId: "",
-    transferDate: "",
-    semester: "",
+    studentCode: "",
+    studentName: "",
+    transferDate: new Date().toISOString().split('T')[0],
+    semester: "HK1",
     reason: ""
   })
 
@@ -663,10 +677,29 @@ function TransferInModal({ onClose, onSaved }: { onClose: () => void, onSaved: (
       const ops = await getTransferFormOptionsAction()
       if (ops && ops.years) {
         setOptions(ops)
-        if (ops.years.length > 0) setForm(f => ({ ...f, academicYearId: ops.years[0].id }))
+        if (!initialData && ops.years.length > 0) setForm(f => ({ ...f, academicYearId: ops.years[0].id }))
       }
       const students = await getInputAssessmentStudentsAction()
       setAssessmentStudents(students)
+
+      if (initialData) {
+        setForm({
+          academicYearId: initialData.student?.academicYearId || "",
+          campusId: initialData.student?.campusId || "",
+          classId: initialData.student?.classId || "",
+          assessmentStudentId: "EXISTING",
+          studentCode: initialData.student?.studentCode || "",
+          studentName: initialData.student?.studentName || "",
+          transferDate: new Date(initialData.transferDate).toISOString().split('T')[0],
+          semester: initialData.semester || "HK1",
+          reason: initialData.reason || ""
+        });
+        setSelectedAssessmentStudent({
+          fullName: initialData.student?.studentName,
+          studentCode: initialData.student?.studentCode,
+          dateOfBirth: initialData.student?.dateOfBirth
+        });
+      }
     } catch(e: any) {}
     setLoading(false)
   }
@@ -675,28 +708,42 @@ function TransferInModal({ onClose, onSaved }: { onClose: () => void, onSaved: (
     if (form.campusId && form.academicYearId) {
       getClassesByCampusAndYearAction(form.campusId, form.academicYearId).then(data => {
         setClasses(data)
-        setForm(f => ({ ...f, classId: "" }))
       })
     }
   }, [form.campusId, form.academicYearId])
 
   function handleSelectStudent(id: string) {
-    setForm(f => ({ ...f, assessmentStudentId: id }))
-    setSelectedAssessmentStudent(assessmentStudents.find(s => s.id === id) || null)
+    const s = assessmentStudents.find(x => x.id === id);
+    if (s) {
+      setForm(f => ({ 
+        ...f, 
+        assessmentStudentId: id,
+        studentCode: s.studentCode || "",
+        studentName: s.fullName || ""
+      }))
+      setSelectedAssessmentStudent(s)
+    }
   }
 
-  async function handleSubmit(e: any) {
-    e.preventDefault()
+  async function handleSubmit(e: any, notifyGVCN = false) {
+    if (e) e.preventDefault()
     setSaving(true)
-    const res = await createTransferInAction(form)
-    setSaving(false)
-    if (res.success) {
-      alert("Đã tiếp nhận học sinh và thông báo đến GVCN thành công!")
-      onSaved()
-      onClose()
-    } else {
-      alert("Lỗi: " + res.error)
+    try {
+      const res = initialData 
+        ? await updateTransferInAction(initialData.id, form)
+        : await createTransferInAction(form);
+      
+      if (res.success) {
+        alert(initialData ? "Đã cập nhật thông tin thành công!" : (notifyGVCN ? "Đã tiếp nhận và thông báo đến GVCN thành công!" : "Đã lưu thông tin học sinh!"));
+        onSaved()
+        onClose()
+      } else {
+        alert("Lỗi: " + res.error)
+      }
+    } catch (err: any) {
+      alert("Lỗi hệ thống: " + err.message)
     }
+    setSaving(false)
   }
 
   return (
@@ -705,7 +752,7 @@ function TransferInModal({ onClose, onSaved }: { onClose: () => void, onSaved: (
         <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50/50">
           <h2 className="text-xl font-bold text-slate-900 flex items-center">
             <ArrowLeftToLine className="w-5 h-5 mr-3 text-emerald-500" /> 
-            Tạo phiếu học sinh chuyển đến
+            {initialData ? "Chỉnh sửa phiếu học sinh chuyển đến" : "Tạo phiếu học sinh chuyển đến"}
           </h2>
           <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-500">
             <X className="w-5 h-5" />
@@ -715,43 +762,56 @@ function TransferInModal({ onClose, onSaved }: { onClose: () => void, onSaved: (
         {loading ? (
            <div className="p-20 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-slate-400" /></div>
         ) : (
-          <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-8 custom-scrollbar">
+          <form className="p-6 overflow-y-auto space-y-8 custom-scrollbar">
             
             {/* Input Assessment Data */}
-            <div>
-              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 pb-2 border-b">Căn cứ dữ liệu Khảo sát đầu vào</h3>
-              <div className="grid grid-cols-1 gap-4 bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100 mb-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Học sinh KSĐV (Tìm theo tên hoặc mã)</label>
-                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-emerald-500 transition-colors" value={form.assessmentStudentId} onChange={e => handleSelectStudent(e.target.value)}>
-                    <option value="">Chọn học sinh khảo sát đầu vào...</option>
-                    {assessmentStudents.map(s => <option key={s.id} value={s.id}>{s.fullName} - MS: {s.studentCode}</option>)}
-                  </select>
+            {!initialData && (
+              <div>
+                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 pb-2 border-b">Căn cứ dữ liệu Khảo sát đầu vào</h3>
+                <div className="grid grid-cols-1 gap-4 bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100 mb-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Học sinh KSĐV (Tìm theo tên hoặc mã)</label>
+                    <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-emerald-500 transition-colors" value={form.assessmentStudentId} onChange={e => handleSelectStudent(e.target.value)}>
+                      <option value="">Chọn học sinh khảo sát đầu vào...</option>
+                      {assessmentStudents.map(s => <option key={s.id} value={s.id}>{s.fullName} - MS: {s.studentCode}</option>)}
+                    </select>
+                  </div>
+                  
+                  {selectedAssessmentStudent && (
+                     <div className="grid grid-cols-3 gap-4 pt-4 border-t border-emerald-100">
+                        <div>
+                          <label className="block text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">Họ và tên</label>
+                          <p className="font-bold text-slate-800">{selectedAssessmentStudent.fullName}</p>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">Mã HS KS</label>
+                          <p className="font-bold text-slate-800">{selectedAssessmentStudent.studentCode}</p>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">Ngày sinh</label>
+                          <p className="font-bold text-slate-800">{selectedAssessmentStudent.dateOfBirth ? new Date(selectedAssessmentStudent.dateOfBirth).toLocaleDateString('vi-VN') : "Chưa có"}</p>
+                        </div>
+                     </div>
+                  )}
                 </div>
-                
-                {selectedAssessmentStudent && (
-                   <div className="grid grid-cols-3 gap-4 pt-4 border-t border-emerald-100">
-                      <div>
-                        <label className="block text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">Họ và tên</label>
-                        <p className="font-bold text-slate-800">{selectedAssessmentStudent.fullName}</p>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">Mã HS KS</label>
-                        <p className="font-bold text-slate-800">{selectedAssessmentStudent.studentCode}</p>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">Ngày sinh</label>
-                        <p className="font-bold text-slate-800">{selectedAssessmentStudent.dateOfBirth ? new Date(selectedAssessmentStudent.dateOfBirth).toLocaleDateString('vi-VN') : "Chưa có"}</p>
-                      </div>
-                   </div>
-                )}
               </div>
-            </div>
+            )}
 
             {/* Destination Info */}
             <div>
               <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 pb-2 border-b">Thông tin tiếp nhận</h3>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="col-span-2">
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Họ và tên học sinh</label>
+                  <input required type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-emerald-500 transition-colors" value={form.studentName} onChange={e => setForm({...form, studentName: e.target.value})} placeholder="Nhập họ và tên..." />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Mã HS</label>
+                  <input required type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-emerald-500 transition-colors" value={form.studentCode} onChange={e => setForm({...form, studentCode: e.target.value})} placeholder="Nhập mã HS..." />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Năm học</label>
                   <select required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-emerald-500 transition-colors" value={form.academicYearId} onChange={e => setForm({...form, academicYearId: e.target.value})}>
@@ -762,7 +822,6 @@ function TransferInModal({ onClose, onSaved }: { onClose: () => void, onSaved: (
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Kỳ học</label>
                   <select required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-emerald-500 transition-colors" value={form.semester} onChange={e => setForm({...form, semester: e.target.value})}>
-                    <option value="">Chọn kỳ</option>
                     <option value="HK1">Học kỳ 1</option>
                     <option value="HK2">Học kỳ 2</option>
                     <option value="SUMMER">Trong hè</option>
@@ -797,11 +856,27 @@ function TransferInModal({ onClose, onSaved }: { onClose: () => void, onSaved: (
               </div>
             </div>
 
-            <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
+            <div className="pt-4 border-t border-slate-100 flex flex-wrap justify-end gap-3">
               <button type="button" onClick={onClose} className="px-6 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-colors">
                 Hủy
               </button>
-              <button disabled={saving} type="submit" className="px-6 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-100 flex items-center">
+              
+              <button 
+                type="button"
+                onClick={() => handleSubmit(null)}
+                disabled={saving}
+                className="px-6 py-3 bg-white border-2 border-emerald-500 text-emerald-600 font-bold rounded-xl hover:bg-emerald-50 transition-colors flex items-center"
+              >
+                {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                {initialData ? "Lưu thay đổi" : "Lưu phiếu"}
+              </button>
+
+              <button 
+                type="button"
+                onClick={() => handleSubmit(null, true)}
+                disabled={saving}
+                className="px-6 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-100 flex items-center"
+              >
                 {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Thông báo đến GVCN
               </button>

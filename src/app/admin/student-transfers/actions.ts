@@ -193,8 +193,8 @@ export async function createTransferInAction(data: any) {
       // Create new student
       const newStudent = await tx.student.create({
         data: {
-          studentCode: assessmentStudent.studentCode,
-          studentName: assessmentStudent.fullName,
+          studentCode: data.studentCode || assessmentStudent.studentCode,
+          studentName: data.studentName || assessmentStudent.fullName,
           dateOfBirth: assessmentStudent.dateOfBirth,
           classId: data.classId,
           campusId: data.campusId,
@@ -224,6 +224,51 @@ export async function createTransferInAction(data: any) {
     })
   } catch (error: any) {
     console.error("Error creating transfer in:", error)
+    return { success: false, error: error.message }
+  }
+}
+
+export async function updateTransferInAction(id: string, data: any) {
+  try {
+    const session = await auth()
+    if (!session) return { success: false, error: "Unauthorized" }
+
+    await prisma.$transaction(async (tx) => {
+      const transfer = await tx.studentTransfer.findUnique({
+        where: { id },
+        include: { student: true }
+      })
+      if (!transfer) throw new Error("Không tìm thấy phiếu")
+
+      // Update transfer record
+      await tx.studentTransfer.update({
+        where: { id },
+        data: {
+          transferDate: new Date(data.transferDate),
+          semester: data.semester || null,
+          reason: data.reason || null,
+        }
+      })
+
+      // Update student record
+      if (transfer.student) {
+        await tx.student.update({
+          where: { id: transfer.studentId },
+          data: {
+            studentCode: data.studentCode,
+            studentName: data.studentName,
+            classId: data.classId,
+            campusId: data.campusId,
+            academicYearId: data.academicYearId,
+          }
+        })
+      }
+    })
+
+    revalidatePath("/admin/student-transfers")
+    return { success: true }
+  } catch (error: any) {
+    console.error("Error updating transfer in:", error)
     return { success: false, error: error.message }
   }
 }
