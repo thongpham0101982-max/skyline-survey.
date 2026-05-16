@@ -7,20 +7,10 @@ export async function GET() {
   try {
     const students = await prisma.inputAssessmentStudent.findMany({
       orderBy: { fullName: "asc" },
-      take: 1000,
-      select: {
-        id: true,
-        studentCode: true,
-        fullName: true,
-        dateOfBirth: true,
-        admissionResult: true,
-        admissionCampus: true
-      }
+      take: 1000
     });
-    
     return NextResponse.json(students);
   } catch (error) {
-    console.error("Error in API /api/student-transfers/assessment-students:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
