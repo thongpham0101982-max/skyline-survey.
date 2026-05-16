@@ -3621,12 +3621,7 @@ return {
                           <span className="font-bold text-slate-700">{selectedReportStudent.signatureName}</span>
                         </div>
                       )}
-                      {selectedReportStudent.admissionCampus && (
-                        <div className="flex items-center justify-between pt-0.5 text-[12px]">
-                          <span className="text-slate-400 font-bold">Cơ sở:</span>
-                          <span className="font-bold text-slate-700">{selectedReportStudent.admissionCampus}</span>
-                        </div>
-                      )}
+                      
                     </div>
                     {(selectedReportStudent.admissionResult === "Đạt" || selectedReportStudent.admissionResult === "Đạt cam kết") && (
                       <div className="space-y-2 mt-4 animate-fade-in">
@@ -3722,19 +3717,7 @@ return {
 
                   {!(["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes((currentUser?.role || "").toUpperCase())) && (
                     <>
-                      <Field label="Cơ sở nhập học">
-                        <select 
-                          value={reportForm.admissionCampus} 
-                          onChange={e => setReportForm(f => ({ ...f, admissionCampus: e.target.value }))}
-                          className={inp}
-                          disabled={!canApprove}
-                        >
-                          <option value="">-- Chọn cơ sở --</option>
-                          {campuses.map(c => (
-                            <option key={c.id} value={c.campusName}>{c.campusName}</option>
-                          ))}
-                        </select>
-                      </Field>
+                      
 
                       <Field label="Người duyệt / Phê duyệt">
                         {selectedReportStudent.admissionResult ? (
@@ -4942,7 +4925,7 @@ return {
                         
                         <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-2 text-sm text-slate-700 ml-4 font-sans leading-relaxed shadow-inner">
                           <p><strong>• Thời gian khảo sát:</strong> Theo lịch hẹn cụ thể được sắp xếp từ Ban Tuyển sinh.</p>
-                          <p><strong>• Địa điểm khảo sát:</strong> {selectedReportStudent.admissionCampus || "Hệ thống Giáo dục Sky-Line"}.</p>
+                          
                           <p><strong>• Nội dung khảo sát:</strong> Đánh giá tư duy ngôn ngữ, tư duy logic tự nhiên và khả năng tương tác xã hội phù hợp theo độ tuổi.</p>
                         </div>
                         
