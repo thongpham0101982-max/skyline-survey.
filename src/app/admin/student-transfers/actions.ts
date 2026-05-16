@@ -154,16 +154,17 @@ export async function createChangeClassAction(data: any) {
 }
 export async function getInputAssessmentStudentsAction() {
   try {
-    const session = await auth();
-    if (!session) return [];
-
-    // Fetch all assessment students who have passed
-    // We can also allow those already in system but maybe mark them or just let the user decide
-    // For now, let's just fetch all to see if they appear
     const students = await prisma.inputAssessmentStudent.findMany({
-      where: {
-        // You might want to filter by admissionResult: "DAT" or "PASS" here
-        // admissionResult: { in: ["DAT", "ĐẠT", "Pass", "PASS"] }
+      orderBy: { fullName: "asc" },
+      take: 200
+    });
+    return JSON.parse(JSON.stringify(students));
+  } catch (error) {
+    console.error("Action error:", error);
+    return [];
+  }
+}
+
       },
       orderBy: { fullName: 'asc' },
       take: 200 // Limit to avoid performance issues
