@@ -491,7 +491,9 @@ function ChangeClassModal({ onClose, onSaved }: { onClose: () => void, onSaved: 
         setOptions(data)
         if (data.years.length > 0) setForm(f => ({ ...f, academicYearId: data.years[0].id }))
       }
-    } catch(e: any) {}
+    } catch(e: any) {
+        console.error("Error loading transfer data:", e)
+    }
     setLoading(false)
   }
 
@@ -679,8 +681,13 @@ function TransferInModal({ onClose, onSaved, initialData }: { onClose: () => voi
         setOptions(ops)
         if (!initialData && ops.years.length > 0) setForm(f => ({ ...f, academicYearId: ops.years[0].id }))
       }
-      const students = await getInputAssessmentStudentsAction()
-      setAssessmentStudents(students)
+      const res = await fetch("/api/student-transfers/assessment-students")
+      const students = await res.json()
+      if (Array.isArray(students)) {
+        setAssessmentStudents(students)
+      } else {
+        console.error("Failed to fetch assessment students:", students)
+      }
 
       if (initialData) {
         setForm({
