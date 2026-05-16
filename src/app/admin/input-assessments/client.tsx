@@ -3943,7 +3943,24 @@ return {
                                       {scoreVals.map((v, idx) => v === "2" ? (
                                         <div key={idx} className="flex items-start gap-2 text-xs font-bold text-rose-700 leading-tight">
                                           <span className="mt-1 w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0"></span>
-                                          {parsedCols.scores[idx] || `Tiêu chí ${idx + 1}`}
+                                          {parsedCols.scores[idx] || (isChildDev ? [
+    "Chỉ số 65. Có thói quen chào hỏi, cảm ơn, xin phép và xưng hô lễ phép với người lớn",
+    "Chỉ số 74. Tập trung chú ý thực hiện nhiệm vụ và hoạt động.",
+    "Chỉ số 16. Nhận biết về tên gọi, đặc điểm bên ngoài, giới tính, sở thích, điểm mạnh, điểm yếu của bản thân.",
+    "Chỉ số 14. Nhận ra tình huống nguy hiểm và biết cách xử lý phù hợp.",
+    "Chỉ số 33. Sử dụng lời nói, hành vi lịch sự trong giao tiếp.",
+    "Chỉ số 31. Nghe và phản hồi thông tin đơn giản.",
+    "Chỉ số 48. Gọi tên các ngày trong tuần theo thứ tự.",
+    "Chỉ số 47. Xác định được vị trí (trong, ngoài, trên, dưới, sau, phải, trái) của một vật so với một vật khác.",
+    "Chỉ số 51. Phân loại một số sự vật thành nhóm theo đặc điểm chung và gọi tên nhóm.",
+    "Chỉ số 45. Xác định một số hình phẳng và hình khối đơn giản trong cuộc sống xung quanh.",
+    "Chỉ số 42,43. Tách, gộp số lượng trong phạm vi 10; so sánh, thêm bớt số lượng trong phạm vi 10.",
+    "Chỉ số 38. Nhận biết và gọi tên chữ cái trong bảng chữ cái Tiếng Việt.",
+    "Chỉ số 41. Bắt chước hành vi “viết”",
+    "Chỉ số 9. Thực hiện các việc tự phục vụ không cần sự giúp đỡ.",
+    "Chỉ số 60. Thể hiện ý tưởng, cảm xúc của bản thân thông qua hát, vận động theo nhạc.",
+    "Chỉ số 61. Tô màu kín, không chờm ra ngoài đường viền các hình có chi tiết nhỏ."
+][idx] : `Tiêu chí ${idx + 1}`)}
                                         </div>
                                       ) : null)}
                                     </div>
@@ -3956,7 +3973,24 @@ return {
                                       {scoreVals.map((v, idx) => v === "1" ? (
                                         <div key={idx} className="flex items-start gap-2 text-xs font-bold text-slate-600 leading-tight">
                                           <span className="mt-1 w-1.5 h-1.5 rounded-full bg-slate-300 shrink-0"></span>
-                                          {parsedCols.scores[idx] || `Tiêu chí ${idx + 1}`}
+                                          {parsedCols.scores[idx] || (isChildDev ? [
+    "Chỉ số 65. Có thói quen chào hỏi, cảm ơn, xin phép và xưng hô lễ phép với người lớn",
+    "Chỉ số 74. Tập trung chú ý thực hiện nhiệm vụ và hoạt động.",
+    "Chỉ số 16. Nhận biết về tên gọi, đặc điểm bên ngoài, giới tính, sở thích, điểm mạnh, điểm yếu của bản thân.",
+    "Chỉ số 14. Nhận ra tình huống nguy hiểm và biết cách xử lý phù hợp.",
+    "Chỉ số 33. Sử dụng lời nói, hành vi lịch sự trong giao tiếp.",
+    "Chỉ số 31. Nghe và phản hồi thông tin đơn giản.",
+    "Chỉ số 48. Gọi tên các ngày trong tuần theo thứ tự.",
+    "Chỉ số 47. Xác định được vị trí (trong, ngoài, trên, dưới, sau, phải, trái) của một vật so với một vật khác.",
+    "Chỉ số 51. Phân loại một số sự vật thành nhóm theo đặc điểm chung và gọi tên nhóm.",
+    "Chỉ số 45. Xác định một số hình phẳng và hình khối đơn giản trong cuộc sống xung quanh.",
+    "Chỉ số 42,43. Tách, gộp số lượng trong phạm vi 10; so sánh, thêm bớt số lượng trong phạm vi 10.",
+    "Chỉ số 38. Nhận biết và gọi tên chữ cái trong bảng chữ cái Tiếng Việt.",
+    "Chỉ số 41. Bắt chước hành vi “viết”",
+    "Chỉ số 9. Thực hiện các việc tự phục vụ không cần sự giúp đỡ.",
+    "Chỉ số 60. Thể hiện ý tưởng, cảm xúc của bản thân thông qua hát, vận động theo nhạc.",
+    "Chỉ số 61. Tô màu kín, không chờm ra ngoài đường viền các hình có chi tiết nhỏ."
+][idx] : `Tiêu chí ${idx + 1}`)}
                                         </div>
                                       ) : null)}
                                     </div>
@@ -5237,8 +5271,42 @@ return {
                   let parsedCols = { scores: [] };
                   try { if (subject.columnNames) { const parsed = JSON.parse(subject.columnNames); parsedCols = { scores: Array.isArray(parsed.scores) ? parsed.scores : [] }; } } catch {}
 
-                  const failedCriteria = scoreVals.map((v, idx) => v === "2" ? (parsedCols.scores[idx] || ("Tiêu chí " + (idx + 1))) : null).filter(Boolean);
-                  const skippedCriteria = scoreVals.map((v, idx) => v === "1" ? (parsedCols.scores[idx] || ("Tiêu chí " + (idx + 1))) : null).filter(Boolean);
+                  const failedCriteria = scoreVals.map((v, idx) => v === "2" ? (parsedCols.scores[idx] || (isChildDev ? [
+    "Chỉ số 65. Có thói quen chào hỏi, cảm ơn, xin phép và xưng hô lễ phép với người lớn",
+    "Chỉ số 74. Tập trung chú ý thực hiện nhiệm vụ và hoạt động.",
+    "Chỉ số 16. Nhận biết về tên gọi, đặc điểm bên ngoài, giới tính, sở thích, điểm mạnh, điểm yếu của bản thân.",
+    "Chỉ số 14. Nhận ra tình huống nguy hiểm và biết cách xử lý phù hợp.",
+    "Chỉ số 33. Sử dụng lời nói, hành vi lịch sự trong giao tiếp.",
+    "Chỉ số 31. Nghe và phản hồi thông tin đơn giản.",
+    "Chỉ số 48. Gọi tên các ngày trong tuần theo thứ tự.",
+    "Chỉ số 47. Xác định được vị trí (trong, ngoài, trên, dưới, sau, phải, trái) của một vật so với một vật khác.",
+    "Chỉ số 51. Phân loại một số sự vật thành nhóm theo đặc điểm chung và gọi tên nhóm.",
+    "Chỉ số 45. Xác định một số hình phẳng và hình khối đơn giản trong cuộc sống xung quanh.",
+    "Chỉ số 42,43. Tách, gộp số lượng trong phạm vi 10; so sánh, thêm bớt số lượng trong phạm vi 10.",
+    "Chỉ số 38. Nhận biết và gọi tên chữ cái trong bảng chữ cái Tiếng Việt.",
+    "Chỉ số 41. Bắt chước hành vi “viết”",
+    "Chỉ số 9. Thực hiện các việc tự phục vụ không cần sự giúp đỡ.",
+    "Chỉ số 60. Thể hiện ý tưởng, cảm xúc của bản thân thông qua hát, vận động theo nhạc.",
+    "Chỉ số 61. Tô màu kín, không chờm ra ngoài đường viền các hình có chi tiết nhỏ."
+][idx] : ("Tiêu chí " + (idx + 1)))) : null).filter(Boolean);
+                  const skippedCriteria = scoreVals.map((v, idx) => v === "1" ? (parsedCols.scores[idx] || (isChildDev ? [
+    "Chỉ số 65. Có thói quen chào hỏi, cảm ơn, xin phép và xưng hô lễ phép với người lớn",
+    "Chỉ số 74. Tập trung chú ý thực hiện nhiệm vụ và hoạt động.",
+    "Chỉ số 16. Nhận biết về tên gọi, đặc điểm bên ngoài, giới tính, sở thích, điểm mạnh, điểm yếu của bản thân.",
+    "Chỉ số 14. Nhận ra tình huống nguy hiểm và biết cách xử lý phù hợp.",
+    "Chỉ số 33. Sử dụng lời nói, hành vi lịch sự trong giao tiếp.",
+    "Chỉ số 31. Nghe và phản hồi thông tin đơn giản.",
+    "Chỉ số 48. Gọi tên các ngày trong tuần theo thứ tự.",
+    "Chỉ số 47. Xác định được vị trí (trong, ngoài, trên, dưới, sau, phải, trái) của một vật so với một vật khác.",
+    "Chỉ số 51. Phân loại một số sự vật thành nhóm theo đặc điểm chung và gọi tên nhóm.",
+    "Chỉ số 45. Xác định một số hình phẳng và hình khối đơn giản trong cuộc sống xung quanh.",
+    "Chỉ số 42,43. Tách, gộp số lượng trong phạm vi 10; so sánh, thêm bớt số lượng trong phạm vi 10.",
+    "Chỉ số 38. Nhận biết và gọi tên chữ cái trong bảng chữ cái Tiếng Việt.",
+    "Chỉ số 41. Bắt chước hành vi “viết”",
+    "Chỉ số 9. Thực hiện các việc tự phục vụ không cần sự giúp đỡ.",
+    "Chỉ số 60. Thể hiện ý tưởng, cảm xúc của bản thân thông qua hát, vận động theo nhạc.",
+    "Chỉ số 61. Tô màu kín, không chờm ra ngoài đường viền các hình có chi tiết nhỏ."
+][idx] : ("Tiêu chí " + (idx + 1)))) : null).filter(Boolean);
 
                   if (failedCriteria.length === 0 && skippedCriteria.length === 0) return null;
 
