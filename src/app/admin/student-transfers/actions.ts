@@ -165,30 +165,46 @@ export async function getInputAssessmentStudentsAction() {
   }
 }
 
-      },
-      orderBy: { fullName: 'asc' },
-      take: 200 // Limit to avoid performance issues
+export async function getInputAssessmentPeriodsAction() {
+  try {
+    const periods = await prisma.inputAssessmentPeriod.findMany({
+      orderBy: { createdAt: "desc" },
+      select: { id: true, name: true, academicYearId: true }
     });
-    
-    return students;
+    return periods;
   } catch (error) {
-    console.error("Error fetching assessment students:", error);
+    console.error("Error fetching periods:", error);
     return [];
   }
 }
- })).map(s => s.studentCode);
+
+export async function getInputAssessmentBatchesAction(periodId: string) {
+  try {
+    const batches = await prisma.inputAssessmentBatch.findMany({
+      where: { periodId },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true }
+    });
+    return batches;
+  } catch (error) {
+    console.error("Error fetching batches:", error);
+    return [];
+  }
+}
+
+export async function getInputAssessmentStudentsByPeriodAction(periodId: string, batchId?: string) {
+  try {
+    const where = { periodId };
+    if (batchId && batchId !== "all") where.batchId = batchId;
     
     const students = await prisma.inputAssessmentStudent.findMany({
-      where: {
-        studentCode: {
-          notIn: existingStudentCodes
-        }
-      },
-      orderBy: { createdAt: 'desc' }
+      where,
+      orderBy: { fullName: "asc" },
+      select: { id: true, studentCode: true, fullName: true, dateOfBirth: true }
     });
-    return students;
+    return JSON.parse(JSON.stringify(students));
   } catch (error) {
-    console.error("Error fetching assessment students:", error);
+    console.error("Error fetching students by period:", error);
     return [];
   }
 }
@@ -307,7 +323,7 @@ export async function getInputAssessmentPeriodsAction() {
   }
 }
 
-export async function getInputAssessmentBatchesAction(periodId) {
+export async function getInputAssessmentBatchesAction(periodId: string) {
   try {
     const batches = await prisma.inputAssessmentBatch.findMany({
       where: { periodId },
@@ -321,7 +337,7 @@ export async function getInputAssessmentBatchesAction(periodId) {
   }
 }
 
-export async function getInputAssessmentStudentsByPeriodAction(periodId, batchId) {
+export async function getInputAssessmentStudentsByPeriodAction(periodId: string, batchId?: string) {
   try {
     const where = { periodId };
     if (batchId && batchId !== "all") where.batchId = batchId;
