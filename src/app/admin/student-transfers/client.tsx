@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect } from "react"
 import { ArrowRightLeft, ArrowRightToLine, ArrowLeftToLine, Search, Plus, X, Loader2 } from "lucide-react"
-import { getTransferFormOptionsAction, getClassesByCampusAndYearAction, getStudentsByClassAction, createTransferOutAction, getTransfersAction, createChangeClassAction, updateTransferInAction, getInputAssessmentStudentsAction } from "./actions"
+import { getTransferFormOptionsAction, getClassesByCampusAndYearAction, getStudentsByClassAction, createTransferOutAction, getTransfersAction, createChangeClassAction, updateTransferInAction, getInputAssessmentStudentsAction, getInputAssessmentPeriodsAction, getInputAssessmentBatchesAction, getInputAssessmentStudentsByPeriodAction } from "./actions"
 
 export function StudentTransfersClient() {
   const [activeTab, setActiveTab] = useState<"OUT" | "IN" | "CHANGE_CLASS">("OUT")
@@ -654,7 +654,13 @@ function TransferInModal({ onClose, onSaved, initialData }: { onClose: () => voi
   
   const [options, setOptions] = useState({ years: [] as any[], campuses: [] as any[] })
   const [classes, setClasses] = useState<any[]>([])
+  
+  const [periods, setPeriods] = useState<any[]>([])
+  const [batches, setBatches] = useState<any[]>([])
   const [assessmentStudents, setAssessmentStudents] = useState<any[]>([])
+  
+  const [selectedPeriod, setSelectedPeriod] = useState("")
+  const [selectedBatch, setSelectedBatch] = useState("")
   const [selectedAssessmentStudent, setSelectedAssessmentStudent] = useState<any>(null)
   
   const [form, setForm] = useState({
@@ -664,7 +670,7 @@ function TransferInModal({ onClose, onSaved, initialData }: { onClose: () => voi
     assessmentStudentId: "",
     studentCode: "",
     studentName: "",
-    transferDate: new Date().toISOString().split('T')[0],
+    transferDate: new Date().toISOString().split("T")[0],
     semester: "HK1",
     reason: ""
   })
@@ -681,13 +687,9 @@ function TransferInModal({ onClose, onSaved, initialData }: { onClose: () => voi
         setOptions(ops)
         if (!initialData && ops.years.length > 0) setForm(f => ({ ...f, academicYearId: ops.years[0].id }))
       }
-      const res = await fetch("/api/debug-students-list")
-      const students = await res.json()
-      if (Array.isArray(students)) {
-        setAssessmentStudents(students)
-      } else {
-        console.error("Failed to fetch assessment students:", students)
-      }
+      
+      const pds = await getInputAssessmentPeriodsAction()
+      setPeriods(pds)
 
       if (initialData) {
         setForm({
@@ -697,7 +699,7 @@ function TransferInModal({ onClose, onSaved, initialData }: { onClose: () => voi
           assessmentStudentId: "EXISTING",
           studentCode: initialData.student?.studentCode || "",
           studentName: initialData.student?.studentName || "",
-          transferDate: new Date(initialData.transferDate).toISOString().split('T')[0],
+          transferDate: new Date(initialData.transferDate).toISOString().split("T")[0],
           semester: initialData.semester || "HK1",
           reason: initialData.reason || ""
         });
@@ -707,15 +709,35 @@ function TransferInModal({ onClose, onSaved, initialData }: { onClose: () => voi
           dateOfBirth: initialData.student?.dateOfBirth
         });
       }
-    } catch(e: any) {}
+    } catch(e: any) {
+        console.error("Error loading transfer data:", e)
+    }
     setLoading(false)
   }
 
   useEffect(() => {
+    if (selectedPeriod) {
+      getInputAssessmentBatchesAction(selectedPeriod).then(setBatches)
+      setAssessmentStudents([])
+      setSelectedBatch("")
+      loadStudents(selectedPeriod, "")
+    }
+  }, [selectedPeriod])
+
+  useEffect(() => {
+    if (selectedPeriod) {
+      loadStudents(selectedPeriod, selectedBatch)
+    }
+  }, [selectedBatch])
+
+  async function loadStudents(pId: string, bId: string) {
+    const data = await getInputAssessmentStudentsByPeriodAction(pId, bId)
+    setAssessmentStudents(data)
+  }
+
+  useEffect(() => {
     if (form.campusId && form.academicYearId) {
-      getClassesByCampusAndYearAction(form.campusId, form.academicYearId).then(data => {
-        setClasses(data)
-      })
+      getClassesByCampusAndYearAction(form.campusId, form.academicYearId).then(setClasses)
     }
   }, [form.campusId, form.academicYearId])
 
@@ -771,35 +793,32 @@ function TransferInModal({ onClose, onSaved, initialData }: { onClose: () => voi
         ) : (
           <form className="p-6 overflow-y-auto space-y-8 custom-scrollbar">
             
-            {/* Input Assessment Data */}
+            {/* Input Assessment Data selection */}
             {!initialData && (
               <div>
                 <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 pb-2 border-b">Căn cứ dữ liệu Khảo sát đầu vào</h3>
-                <div className="grid grid-cols-1 gap-4 bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100 mb-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100 mb-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Học sinh KSĐV (Tìm theo tên hoặc mã)</label>
-                    <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-emerald-500 transition-colors" value={form.assessmentStudentId} onChange={e => handleSelectStudent(e.target.value)}>
-                      <option value="">Chọn học sinh khảo sát đầu vào...</option>
+                    <label className="block text-xs font-bold text-emerald-600 uppercase tracking-wider mb-2">1. Chọn Kỳ khảo sát</label>
+                    <select className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 font-medium outline-none focus:border-emerald-500 transition-colors" value={selectedPeriod} onChange={e => setSelectedPeriod(e.target.value)}>
+                      <option value="">Chọn kỳ...</option>
+                      {periods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-emerald-600 uppercase tracking-wider mb-2">2. Chọn Đợt khảo sát</label>
+                    <select className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 font-medium outline-none focus:border-emerald-500 transition-colors" value={selectedBatch} onChange={e => setSelectedBatch(e.target.value)}>
+                      <option value="">Tất cả các đợt</option>
+                      {batches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-emerald-600 uppercase tracking-wider mb-2">3. Chọn Học sinh</label>
+                    <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 font-medium outline-none focus:border-emerald-500 transition-colors" value={form.assessmentStudentId} onChange={e => handleSelectStudent(e.target.value)}>
+                      <option value="">Chọn học sinh...</option>
                       {assessmentStudents.map(s => <option key={s.id} value={s.id}>{s.fullName} - MS: {s.studentCode}</option>)}
                     </select>
                   </div>
-                  
-                  {selectedAssessmentStudent && (
-                     <div className="grid grid-cols-3 gap-4 pt-4 border-t border-emerald-100">
-                        <div>
-                          <label className="block text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">Họ và tên</label>
-                          <p className="font-bold text-slate-800">{selectedAssessmentStudent.fullName}</p>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">Mã HS KS</label>
-                          <p className="font-bold text-slate-800">{selectedAssessmentStudent.studentCode}</p>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">Ngày sinh</label>
-                          <p className="font-bold text-slate-800">{selectedAssessmentStudent.dateOfBirth ? new Date(selectedAssessmentStudent.dateOfBirth).toLocaleDateString('vi-VN') : "Chưa có"}</p>
-                        </div>
-                     </div>
-                  )}
                 </div>
               </div>
             )}
