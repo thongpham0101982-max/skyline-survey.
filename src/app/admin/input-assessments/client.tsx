@@ -3933,6 +3933,36 @@ return {
                                   <div className="text-xl font-black text-slate-600 mt-1">{(Array.isArray(scoreVals) ? scoreVals : []).filter(v => v === "1").length}</div>
                                 </div>
                               </div>
+
+                              {/* Chi tiết tiêu chí không đạt hoặc không làm */}
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {scoreVals.some(v => v === "2") && (
+                                  <div className="bg-rose-50/30 border border-rose-100 rounded-2xl p-4">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-rose-600 mb-2 block">Chi tiết tiêu chí Không đạt</span>
+                                    <div className="space-y-1.5">
+                                      {scoreVals.map((v, idx) => v === "2" ? (
+                                        <div key={idx} className="flex items-start gap-2 text-xs font-bold text-rose-700 leading-tight">
+                                          <span className="mt-1 w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0"></span>
+                                          {parsedCols.scores[idx] || `Tiêu chí ${idx + 1}`}
+                                        </div>
+                                      ) : null)}
+                                    </div>
+                                  </div>
+                                )}
+                                {scoreVals.some(v => v === "1") && (
+                                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 block">Chi tiết tiêu chí Không làm</span>
+                                    <div className="space-y-1.5">
+                                      {scoreVals.map((v, idx) => v === "1" ? (
+                                        <div key={idx} className="flex items-start gap-2 text-xs font-bold text-slate-600 leading-tight">
+                                          <span className="mt-1 w-1.5 h-1.5 rounded-full bg-slate-300 shrink-0"></span>
+                                          {parsedCols.scores[idx] || `Tiêu chí ${idx + 1}`}
+                                        </div>
+                                      ) : null)}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
                               {commentVals[0] && (
                                 <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 italic">
                                   <span className="block text-[10px] font-black uppercase tracking-widest text-slate-400 not-italic mb-1">Nhận xét chung</span>
@@ -5191,6 +5221,108 @@ return {
                     </div>
                   </div>
                 )}
+
+                {/* PAGE 3+: ASSESSMENT DETAILS (Specific for Child Development Standard) */}
+                {selectedReportStudent.scores && selectedReportStudent.scores.map((sc) => {
+                  const subject = sc.subject || {};
+                  const subName = (subject.name || "").toLowerCase().normalize("NFC");
+                  const subCode = (subject.code || "").toLowerCase();
+                  const isChildDev = subName.includes("chuẩn phát triển") || subCode.includes("cpt") || subCode.includes("tci");
+                  
+                  if (!isChildDev) return null;
+
+                  let scoreVals = [];
+                  try { if (sc.scores) { const parsed = JSON.parse(sc.scores); scoreVals = Array.isArray(parsed) ? parsed : [parsed]; } } catch { scoreVals = [sc.scores]; }
+                  
+                  let parsedCols = { scores: [] };
+                  try { if (subject.columnNames) { const parsed = JSON.parse(subject.columnNames); parsedCols = { scores: Array.isArray(parsed.scores) ? parsed.scores : [] }; } } catch {}
+
+                  const failedCriteria = scoreVals.map((v, idx) => v === "2" ? (parsedCols.scores[idx] || ("Tiêu chí " + (idx + 1))) : null).filter(Boolean);
+                  const skippedCriteria = scoreVals.map((v, idx) => v === "1" ? (parsedCols.scores[idx] || ("Tiêu chí " + (idx + 1))) : null).filter(Boolean);
+
+                  if (failedCriteria.length === 0 && skippedCriteria.length === 0) return null;
+
+                  return (
+                    <div 
+                      key={"assessment_page_" + sc.id}
+                      className="bg-white shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed print-page mt-8"
+                      style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "297mm", padding: "12.7mm 15mm 48mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "block", overflow: "hidden" }}
+                    >
+                      <div className="flex flex-col relative z-10 w-full">
+                        {/* Print Watermark */}
+                        <img crossOrigin="anonymous" className="print-watermark" src={rcBackground || DEFAULT_WATERMARK_SVG} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "80%", height: "auto", opacity: 0.08, zIndex: 0, pointerEvents: "none" }} />
+                        
+                        {/* Top Logo and Header */}
+                        <div className="flex flex-col gap-1 border-b pb-2 mb-3">
+                          <div className="flex items-center justify-between">
+                            {studentCampusConfig?.logo ? (
+                              <img crossOrigin="anonymous" src={studentCampusConfig.logo} alt="Logo" className="h-12 object-contain" />
+                            ) : (
+                              <span className="text-2xl font-black tracking-tight text-teal-600" style={{ fontFamily: "Arial, sans-serif" }}>SKY-LINE</span>
+                            )}
+                          </div>
+                          <div className="text-left">
+                            <h4 className="font-extrabold text-sm uppercase tracking-wider text-slate-800" style={{ fontFamily: "Arial, sans-serif" }}>{studentSchoolName}</h4>
+                          </div>
+                        </div>
+
+                        <div className="text-center my-6">
+                          <h2 className="text-xl font-bold tracking-widest text-indigo-950 uppercase mb-2">CHI TIẾT ĐÁNH GIÁ</h2>
+                          <h3 className="text-lg font-bold text-slate-700 uppercase">{subject.name}</h3>
+                        </div>
+
+                        <div className="space-y-8 mt-4">
+                          {failedCriteria.length > 0 && (
+                            <div className="space-y-3">
+                              <h4 className="text-base font-bold text-rose-700 border-b border-rose-200 pb-1 uppercase tracking-wide">Các tiêu chí chưa đạt</h4>
+                              <ul className="space-y-2 list-none">
+                                {failedCriteria.map((name, i) => (
+                                  <li key={i} className="flex items-start gap-3 text-[14px]">
+                                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0"></span>
+                                    {name}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+
+                          {skippedCriteria.length > 0 && (
+                            <div className="space-y-3">
+                              <h4 className="text-base font-bold text-slate-600 border-b border-slate-200 pb-1 uppercase tracking-wide">Các tiêu chí chưa thực hiện</h4>
+                              <ul className="space-y-2 list-none">
+                                {skippedCriteria.map((name, i) => (
+                                  <li key={i} className="flex items-start gap-3 text-[14px]">
+                                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0"></span>
+                                    {name}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Footer Contact */}
+                      {studentCampusConfig?.footer ? (
+                        <div className="border-t border-slate-200 pt-3 absolute z-10 w-full print-footer" style={{ bottom: "8mm", left: "0", right: "0", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box" }}>
+                          <img crossOrigin="anonymous" src={studentCampusConfig.footer} alt="Footer Print" className="w-full" style={{ maxHeight: "100px", objectFit: "contain" }} />
+                        </div>
+                      ) : (
+                        <div className="w-full pt-1 mt-4 absolute z-10 print-footer" style={{ bottom: "8mm", left: "0", right: "0", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}>
+                          <div className="flex items-center gap-2 mb-2.5 w-full">
+                            <span className="font-bold text-[#00A6A9] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
+                            <div className="flex-grow border-t border-[#00A6A9]/70 h-0 mt-0.5"></div>
+                          </div>
+                          <div className="flex flex-row justify-between w-full relative text-[9px]">
+                            <div className="w-full text-center">
+                              <p className="text-[#555555] text-[8.5px]">www.skylineschool.edu.vn | Hotline: (+84.236) 378 7777</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
             </div>
