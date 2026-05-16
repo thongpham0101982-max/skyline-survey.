@@ -23,7 +23,7 @@ export async function GET(req) {
     const periodId = searchParams.get("periodId");
     const batchId = searchParams.get("batchId");
     
-    if (!periodId && searchParams.get("all") !== "true") {
+    if (!periodId && searchParams.get("fetch_all") !== "true") {
        return NextResponse.json({ error: "Missing periodId" }, { status: 400 });
     }
     
@@ -36,7 +36,7 @@ export async function GET(req) {
       orderBy: { createdAt: 'desc' }
     });
     
-    return NextResponse.json(students);
+    return NextResponse.json(students, { headers: { "X-API-Version": "20260516.1" } });
   } catch (error) {
     return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }

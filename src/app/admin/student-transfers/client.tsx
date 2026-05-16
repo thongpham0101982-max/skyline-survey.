@@ -681,7 +681,7 @@ function TransferInModal({ onClose, onSaved, initialData }: { onClose: () => voi
         setOptions(ops)
         if (!initialData && ops.years.length > 0) setForm(f => ({ ...f, academicYearId: ops.years[0].id }))
       }
-      const res = await fetch("/api/input-assessment-students?all=true")
+      const res = await fetch("/api/input-assessment-students?fetch_all=true")
       const students = await res.json()
       if (Array.isArray(students)) {
         setAssessmentStudents(students)
