@@ -168,7 +168,7 @@ export function LoginClient() {
         {/* Top Header Placeholder to balance */}
         <div className="w-full py-6 px-8 flex justify-between items-center relative z-10">
           <div className="flex items-center gap-2">
-            <img src="/logo-skyline.png" alt="Sky-Line" className="h-8 w-auto object-contain" />
+            <img src="/logo.png" alt="Sky-Line" className="h-8 w-auto object-contain" />
           </div>
           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-3 py-1 rounded-full border border-slate-200/50">SQMS Portal v2.5</span>
         </div>
@@ -178,7 +178,7 @@ export function LoginClient() {
           <div className="bg-white rounded-[2.5rem] p-8 sm:p-10 shadow-[0_20px_50px_rgba(19,94,91,0.04)] border border-slate-100/80">
             {/* School Logo */}
             <div className="text-center mb-8">
-              <img src="/logo-skyline.png" alt="Sky-Line School" className="h-16 w-auto object-contain mx-auto mb-5" />
+              <img src="/logo.png" alt="Sky-Line School" className="h-16 w-auto object-contain mx-auto mb-5" />
               <h2 className="text-lg font-black text-[#0D3E3B] uppercase tracking-wider">Hệ thống Quản trị Chất lượng</h2>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[2px] mt-0.5">School Quality Management System</p>
             </div>

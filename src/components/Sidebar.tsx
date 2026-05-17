@@ -32,7 +32,7 @@ export function Sidebar({ role, permissionModules, actualRole, taskCount = 0 }: 
   return (
     <aside className="w-64 bg-slate-900 text-white min-h-screen p-6 flex flex-col shadow-xl sticky top-0 h-screen">
       <div className="flex items-center gap-3 mb-8 px-2">
-        <img src="/logo-skyline.png" alt="Sky-Line Logo" className="h-8 w-auto object-contain brightness-0 invert opacity-90" />
+        <img src="/logo.png" alt="Sky-Line Logo" className="h-8 w-auto object-contain brightness-0 invert opacity-90" />
         <div className="font-bold text-xl tracking-tight leading-none">{title}</div>
       </div>
 
