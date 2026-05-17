@@ -829,6 +829,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
   const [reportPeriodId, setReportPeriodId] = useState("");
   const [reportBatchId, setReportBatchId] = useState("all");
   const [reportStudentId, setReportStudentId] = useState("");
+  const [reportsSubTab, setReportsSubTab] = useState("stats"); // stats or results
   const [reportStudents, setReportStudents] = useState<any[]>([]);
   const [reportLoading, setReportLoading] = useState(false);
   const [reportForm, setReportForm] = useState({
@@ -3544,8 +3545,28 @@ return {
       {tab === "reports" && (
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
           
+          {/* Sub-tab Navigation - Segmented Control */}
+          <div className="flex justify-center mb-2">
+            <div className="bg-slate-100 p-1 rounded-2xl border border-slate-200/60 flex gap-1 shadow-inner">
+              <button
+                onClick={() => setReportsSubTab("stats")}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black tracking-tight transition-all duration-300 ${reportsSubTab === "stats" ? "bg-white text-indigo-600 shadow-sm scale-[1.02]" : "text-slate-500 hover:text-slate-800"}`}
+              >
+                <BarChart3 className="w-3.5 h-3.5 text-indigo-500"/>
+                Thống kê tổng quan
+              </button>
+              <button
+                onClick={() => setReportsSubTab("results")}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black tracking-tight transition-all duration-300 ${reportsSubTab === "results" ? "bg-white text-indigo-600 shadow-sm scale-[1.02]" : "text-slate-500 hover:text-slate-800"}`}
+              >
+                <Users className="w-3.5 h-3.5 text-indigo-500"/>
+                Kết quả chi tiết môn học
+              </button>
+            </div>
+          </div>
+
           {/* TOP SELECTORS BAR */}
-          <div className="bg-white/80 backdrop-blur-md p-6 rounded-3xl shadow-sm border border-slate-200/60 grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className={`bg-white/80 backdrop-blur-md p-6 rounded-3xl shadow-sm border border-slate-200/60 grid grid-cols-1 ${reportsSubTab === "stats" ? "md:grid-cols-2" : "md:grid-cols-3"} gap-6`}>
             <div className="group">
               <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-indigo-900/70 flex items-center gap-2 ml-1">
                 <Calendar className="w-3.5 h-3.5 text-indigo-500"/> Kỳ Khảo sát
@@ -3595,28 +3616,33 @@ return {
               </div>
             </div>
 
-            <div className="group">
-              <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-indigo-900/70 flex items-center gap-2 ml-1">
-                <Users className="w-3.5 h-3.5 text-indigo-500"/> Chọn Học sinh ({filteredReportStudents.length})
-              </label>
-              <div className="relative">
-                <select 
-                  value={reportStudentId} 
-                  onChange={e => setReportStudentId(e.target.value)}
-                  className="w-full bg-white border border-slate-200 rounded-2xl pl-5 pr-10 py-3.5 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
-                >
-                  {filteredReportStudents.map(s => (
-                    <option key={s.id} value={s.id}>{s.studentCode} - {s.fullName} {s.className ? `(${s.className})` : ""} {s.admissionResult ? `[✓ Đã duyệt: ${s.admissionResult}]` : "[⏳ Chưa duyệt]"}</option>
-                  ))}
-                  {filteredReportStudents.length === 0 && <option value="">Không có học sinh nào</option>}
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-indigo-500 transition-colors">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
+            {reportsSubTab === "results" && (
+              <div className="group">
+                <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-indigo-900/70 flex items-center gap-2 ml-1">
+                  <Users className="w-3.5 h-3.5 text-indigo-500"/> Chọn Học sinh ({filteredReportStudents.length})
+                </label>
+                <div className="relative">
+                  <select 
+                    value={reportStudentId} 
+                    onChange={e => setReportStudentId(e.target.value)}
+                    className="w-full bg-white border border-slate-200 rounded-2xl pl-5 pr-10 py-3.5 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
+                  >
+                    {filteredReportStudents.map(s => (
+                      <option key={s.id} value={s.id}>{s.studentCode} - {s.fullName} {s.className ? `(${s.className})` : ""} {s.admissionResult ? `[✓ Đã duyệt: ${s.admissionResult}]` : "[⏳ Chưa duyệt]"}</option>
+                    ))}
+                    {filteredReportStudents.length === 0 && <option value="">Không có học sinh nào</option>}
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-indigo-500 transition-colors">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
 
+          {/* VIEW RENDERED CONDITIONALLY */}
+          {reportsSubTab === "stats" ? (
+            <div className="space-y-4 animate-in fade-in duration-300">
           {/* STATS DASHBOARD BAR */}
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
             {/* KPI Cards Grid */}
@@ -3700,7 +3726,9 @@ return {
               </div>
             </div>
           </div>
-
+            </div>
+          ) : (
+            <div className="space-y-4 animate-in fade-in duration-300">
           {/* MAIN CONTAINER */}
           {reportLoading ? (
             <div className="p-20 text-center">
@@ -4227,6 +4255,9 @@ return {
             </div>
           )}
 
+
+            </div>
+          )}
         </div>
       )}
 
