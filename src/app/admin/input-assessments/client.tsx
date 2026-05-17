@@ -249,11 +249,17 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
   useEffect(() => {
     if (typeof window !== "undefined") {
       const savedTargets = localStorage.getItem('admission_doc_targets');
+      let parsed = {};
       if (savedTargets) {
         try {
-          setDocGroupTargets(JSON.parse(savedTargets));
+          parsed = JSON.parse(savedTargets);
         } catch (e) {}
       }
+      if (!parsed["khoi_2_5"]) {
+        parsed["khoi_2_5"] = ["Nội tỉnh", "Ngoại tỉnh"];
+        localStorage.setItem('admission_doc_targets', JSON.stringify(parsed));
+      }
+      setDocGroupTargets(parsed);
     }
   }, []);
 
@@ -312,6 +318,15 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     { id: 8, name: "Hồ sơ ưu đãi/giảm phí (nếu thuộc diện ưu tiên)", qty: "01 bộ", note: "Bản sao" },
   ], []);
 
+  const defaultDocumentsGrade2_5 = useMemo(() => [
+    { id: 1, name: "Giấy khai sinh (có dấu đỏ)", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 2", "Khối 3", "Khối 4", "Khối 5"] },
+    { id: 2, name: "Học bạ Tiểu học (bản gốc)", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 2", "Khối 3", "Khối 4", "Khối 5"] },
+    { id: 3, name: "Giấy giới thiệu chuyển của trường nơi đi", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 2", "Khối 3", "Khối 4", "Khối 5"] },
+    { id: 4, name: "Đơn xin xác nhận về việc đồng ý tiếp nhận học sinh", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 2", "Khối 3", "Khối 4", "Khối 5"] },
+    { id: 5, name: "Đơn xin chuyển trường", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 2", "Khối 3", "Khối 4", "Khối 5"] },
+    { id: 6, name: "Bản cam kết (nếu có)", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 2", "Khối 3", "Khối 4", "Khối 5"] },
+  ], []);
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       const storageKey = getDocStorageKey(selectedDocGroup);
@@ -325,11 +340,14 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
       } else if (selectedDocGroup === "khoi_1") {
         setDocList(defaultDocumentsGrade1);
         localStorage.setItem(storageKey, JSON.stringify(defaultDocumentsGrade1));
+      } else if (selectedDocGroup === "khoi_2_5") {
+        setDocList(defaultDocumentsGrade2_5);
+        localStorage.setItem(storageKey, JSON.stringify(defaultDocumentsGrade2_5));
       } else {
         setDocList([]);
       }
     }
-  }, [selectedDocGroup, defaultDocumentsGrade1, getDocStorageKey]);
+  }, [selectedDocGroup, defaultDocumentsGrade1, defaultDocumentsGrade2_5, getDocStorageKey]);
 
   const [rcCampusId, setRcCampusId] = useState("")
   const [rcReportType, setRcReportType] = useState("thu_chuc_mung")
@@ -353,8 +371,8 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       } catch(e) {}
     }
-    return defaultDocumentsGrade1;
-  }, [rcTargetGroup, defaultDocumentsGrade1]);
+    return activeGroup === "khoi_2_5" ? defaultDocumentsGrade2_5 : defaultDocumentsGrade1;
+  }, [rcTargetGroup, defaultDocumentsGrade1, defaultDocumentsGrade2_5]);
 
 
   // One-time migration and load for Master Branding Assets (Logo, BG, Footer)
@@ -885,7 +903,7 @@ ${reportForm.directorNote}`;
       studentGroup = gradeMatchedGroups[0]?.id || "khoi_1";
     }
     
-    const saved = etItem('admission_docs_' + studentGroup);
+    const saved = localStorage.getItem('admission_docs_' + studentGroup);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -896,8 +914,8 @@ ${reportForm.directorNote}`;
     }
     
     // Fallback to default documents group, guaranteeing Page 2 is never empty!
-    return defaultDocumentsGrade1;
-  }, [selectedReportStudent, defaultDocumentsGrade1, docGroups, docGroupTargets, docGroupGrades]);
+    return studentGroup === "khoi_2_5" ? defaultDocumentsGrade2_5 : defaultDocumentsGrade1;
+  }, [selectedReportStudent, defaultDocumentsGrade1, defaultDocumentsGrade2_5, docGroups, docGroupTargets, docGroupGrades]);
 
   const studentCampusConfig = useMemo(() => {
     if (typeof window === "undefined" || !selectedReportStudent) return null;
