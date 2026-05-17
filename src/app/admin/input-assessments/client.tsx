@@ -3,7 +3,7 @@ const DEFAULT_WATERMARK_SVG = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import {
-  Plus, Search, Edit2, Trash2, Users, Settings, Clock, BarChart3,
+  Plus, Search, Edit2, Trash2, Users, Settings, Clock, BarChart3, Mail,
   Upload, Download, Layers, Database, UserCheck, Calendar, X, Check, AlertCircle,
   ChevronDown, ChevronUp, Loader2, BookOpen, GraduationCap, RefreshCw,
   Tag, FolderOpen, Hash, MoreVertical, PenLine, CheckCircle2,
@@ -831,6 +831,67 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
   const [reportStudentId, setReportStudentId] = useState("");
   const [reportsSubTab, setReportsSubTab] = useState("stats"); // stats or results
   const [reportStudents, setReportStudents] = useState<any[]>([]);
+
+  // Email States
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [recipientEmail, setRecipientEmail] = useState("");
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailStudents, setEmailStudents] = useState<any[]>([]);
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailResult, setEmailResult] = useState<any>(null);
+
+  const handleOpenEmailModal = () => {
+    const targetStudents = reportStudents.filter(s => 
+      (reportBatchId === "all" || s.batchId === reportBatchId) && 
+      s.admissionResult && s.admissionResult.trim() !== ""
+    );
+    const activeBatchName = reportBatchId === "all" ? "Tất cả các đợt" : reportBatches.find(b => b.id === reportBatchId)?.name || "Đợt khảo sát";
+    const activePeriodName = reportSelPeriod?.name || "Kỳ khảo sát";
+    
+    setRecipientEmail(currentUser?.email || "bankhaothi@skylineschool.edu.vn");
+    setEmailSubject(`[Báo cáo nhanh] Kết quả Khảo sát đầu vào - Kỳ: ${activePeriodName} - Đợt: ${activeBatchName}`);
+    setEmailStudents(targetStudents);
+    setEmailResult(null);
+    setIsEmailModalOpen(true);
+  };
+
+  const handleSendQuickEmailSubmit = async () => {
+    if (!recipientEmail.trim()) {
+      alert("Vui lòng nhập email người nhận!");
+      return;
+    }
+    setEmailSending(true);
+    setEmailResult(null);
+    try {
+      const activeBatchName = reportBatchId === "all" ? "Tất cả các đợt" : reportBatches.find(b => b.id === reportBatchId)?.name || "Đợt khảo sát";
+      const activePeriodName = reportSelPeriod?.name || "Kỳ khảo sát";
+
+      const res = await fetch("/api/admin/send-quick-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: recipientEmail,
+          subject: emailSubject,
+          periodName: activePeriodName,
+          batchName: activeBatchName,
+          students: emailStudents
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setEmailResult({ sent: data.sent, error: data.error, html: data.html });
+        if (data.sent) {
+          alert("Đã gửi email báo cáo nhanh thành công!");
+        }
+      } else {
+        alert("Có lỗi xảy ra: " + (data.error || "Không rõ nguyên nhân"));
+      }
+    } catch (err) {
+      alert("Lỗi kết nối: " + err.message);
+    } finally {
+      setEmailSending(false);
+    }
+  };
   const [reportLoading, setReportLoading] = useState(false);
   const [reportForm, setReportForm] = useState({
     admissionResult: "",
@@ -3552,8 +3613,9 @@ return {
       {tab === "reports" && (
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
           
-          {/* Sub-tab Navigation - Segmented Control */}
-          <div className="flex justify-center mb-2">
+          {/* Sub-tab Navigation & Actions Bar */}
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-4 bg-slate-50/50 p-3.5 rounded-3xl border border-slate-100 shadow-sm">
+            <div className="hidden md:block flex-1"></div>
             <div className="bg-slate-100 p-1 rounded-2xl border border-slate-200/60 flex gap-1 shadow-inner">
               <button
                 onClick={() => setReportsSubTab("stats")}
@@ -3568,6 +3630,14 @@ return {
               >
                 <Users className="w-3.5 h-3.5 text-indigo-500"/>
                 Kết quả chi tiết môn học
+              </button>
+            </div>
+            <div className="flex-1 flex justify-end w-full md:w-auto">
+              <button
+                onClick={handleOpenEmailModal}
+                className="w-full md:w-auto bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-bold text-xs px-5 py-3 rounded-2xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
+              >
+                <Mail className="w-4 h-4"/> Gửi Mail nhanh
               </button>
             </div>
           </div>
@@ -5574,6 +5644,205 @@ return {
         </div>
       </div>
     )}
+      {/* Email Modal Overlay */}
+      {isEmailModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex justify-center items-center z-[150] p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-slate-200 animate-in fade-in zoom-in-95 duration-300">
+            {/* Header */}
+            <div className="bg-gradient-to-br from-indigo-900 via-slate-800 to-indigo-900 p-6 text-white shrink-0 relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-8 opacity-10">
+                <Mail className="w-32 h-32" />
+              </div>
+              <div className="relative z-10 flex justify-between items-center">
+                <div>
+                  <h2 className="text-xl font-black tracking-tight flex items-center gap-2">
+                    <Mail className="w-6 h-6 text-indigo-400" />
+                    Gửi Báo cáo nhanh qua Email
+                  </h2>
+                  <p className="text-indigo-100 text-xs mt-1">Gửi trực tiếp danh sách kết quả khảo sát qua hệ thống email</p>
+                </div>
+                <button 
+                  onClick={() => setIsEmailModalOpen(false)} 
+                  className="p-2 hover:bg-white/10 rounded-full transition-colors text-white/80 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 custom-scrollbar bg-slate-50">
+              
+              {/* Form Config */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Người nhận (Email)</label>
+                  <input
+                    type="text"
+                    value={recipientEmail}
+                    onChange={e => setRecipientEmail(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100 transition-all text-slate-700 placeholder-slate-400"
+                    placeholder="Nhập địa chỉ email người nhận..."
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1.5 ml-1">Có thể nhập nhiều email, phân cách bằng dấu phẩy ( , )</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Tiêu đề Thư</label>
+                  <input
+                    type="text"
+                    value={emailSubject}
+                    onChange={e => setEmailSubject(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100 transition-all text-slate-700"
+                  />
+                </div>
+              </div>
+
+              {/* Email Content Preview */}
+              <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden flex flex-col">
+                <div className="px-5 py-4 border-b bg-slate-50 flex justify-between items-center">
+                  <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Danh sách học sinh gửi đi ({emailStudents.length} học sinh)</span>
+                  <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md">Bản xem trước</span>
+                </div>
+                
+                {/* Table Preview */}
+                <div className="overflow-x-auto max-h-[300px] custom-scrollbar">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead className="bg-slate-50/80 sticky top-0 border-b z-10">
+                      <tr>
+                        <th className="p-3 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50">STT</th>
+                        <th className="p-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50">Họ và Tên</th>
+                        <th className="p-3 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50">Khối</th>
+                        <th className="p-3 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50">Phái</th>
+                        <th className="p-3 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50">Ngày sinh</th>
+                        <th className="p-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50">Hệ Khảo sát</th>
+                        <th className="p-3 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50">Kết quả</th>
+                        <th className="p-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50">Cơ sở nhận</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {emailStudents.map((s, idx) => (
+                        <tr key={s.id} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="p-3 text-center text-slate-400 font-semibold">{idx + 1}</td>
+                          <td className="p-3 font-bold text-slate-700">{s.fullName}</td>
+                          <td className="p-3 text-center font-bold text-slate-500">K{s.grade}</td>
+                          <td className="p-3 text-center font-medium text-slate-500">{s.gender === "M" || s.gender === "Nam" ? "Nam" : s.gender === "F" || s.gender === "Nữ" ? "Nữ" : s.gender || "—"}</td>
+                          <td className="p-3 text-center text-slate-500">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
+                          <td className="p-3 text-slate-600 font-medium">{s.surveyFormType || "—"}</td>
+                          <td className="p-3 text-center">
+                            <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black ${
+                              s.admissionResult === "Đạt" ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
+                              s.admissionResult === "Đạt cam kết" ? "bg-amber-50 text-amber-600 border border-amber-100" :
+                              s.admissionResult === "Không đạt" ? "bg-rose-50 text-rose-600 border border-rose-100" :
+                              "bg-slate-50 text-slate-500"
+                            }`}>
+                              {s.admissionResult || "Chưa duyệt"}
+                            </span>
+                          </td>
+                          <td className="p-3 font-semibold text-indigo-600">{s.admissionCampus || "—"}</td>
+                        </tr>
+                      ))}
+                      {emailStudents.length === 0 && (
+                        <tr>
+                          <td colSpan={8} className="p-8 text-center text-slate-400 font-bold bg-slate-50/30">Không có học sinh nào có kết quả xét duyệt dưới đợt/kỳ này.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Fallback & Custom Display Preview Block */}
+              {emailResult && (
+                <div className={`p-5 rounded-2xl border animate-in fade-in slide-in-from-top-4 duration-300 ${
+                  emailResult.sent 
+                    ? "bg-emerald-50 border-emerald-100 text-emerald-800" 
+                    : "bg-amber-50 border-amber-100 text-amber-900"
+                }`}>
+                  <div className="flex items-start gap-3">
+                    <div className="pt-0.5">
+                      {emailResult.sent ? (
+                        <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                      ) : (
+                        <AlertCircle className="w-5 h-5 text-amber-600" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-bold text-sm mb-1">
+                        {emailResult.sent ? "Gửi Email Thành công!" : "Hệ thống SMTP không phản hồi (Bản xem trước sẵn sàng)"}
+                      </h4>
+                      <p className="text-xs leading-relaxed opacity-90">
+                        {emailResult.sent 
+                          ? `Báo cáo nhanh đã được gửi trực tiếp tới hòm thư ${recipientEmail}. Hệ thống SMTP hoạt động hoàn hảo.`
+                          : `Máy chủ SMTP không thể gửi thư do chính sách bảo mật (Lỗi: ${emailResult.error || "Timeout"}). Tuy nhiên, Skyline đã tạo sẵn mã HTML email chuyên nghiệp phía dưới cho thầy cô.`}
+                      </p>
+                      
+                      {/* Live Iframe Preview if SMTP failed */}
+                      {!emailResult.sent && emailResult.html && (
+                        <div className="mt-4 space-y-3">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 bg-white/60 px-2 py-1 rounded border">Xem trước Thư & Sao chép:</span>
+                          <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-inner">
+                            <iframe 
+                              srcDoc={emailResult.html}
+                              className="w-full h-80 border-0"
+                              title="Email Live Preview"
+                            />
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(emailResult.html || "");
+                                alert("Đã sao chép nội dung HTML! Bạn có thể dán trực tiếp vào Outlook/Gmail để gửi.");
+                              }}
+                              className="bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-bold text-xs px-4 py-2 rounded-xl transition-all"
+                            >
+                              📋 Sao chép HTML Email
+                            </button>
+                            <a
+                              href={`mailto:${recipientEmail}?subject=${encodeURIComponent(emailSubject)}&body=Xin mời xem bảng HTML báo cáo khảo sát đính kèm.`}
+                              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all"
+                            >
+                              📧 Mở Hòm thư Outlook/Gmail
+                            </a>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 bg-white border-t border-slate-100 flex justify-end gap-3 shrink-0">
+              <button 
+                onClick={() => setIsEmailModalOpen(false)} 
+                className="px-5 py-2.5 rounded-xl hover:bg-slate-100 font-bold text-slate-600 text-xs transition-colors"
+              >
+                Đóng lại
+              </button>
+              <button
+                onClick={handleSendQuickEmailSubmit}
+                disabled={emailSending || emailStudents.length === 0}
+                className="bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              >
+                {emailSending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Đang gửi...
+                  </>
+                ) : (
+                  <>
+                    <Mail className="w-4 h-4" />
+                    Xác nhận & Gửi Email
+                  </>
+                )}
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
   </div>
   )
 }
