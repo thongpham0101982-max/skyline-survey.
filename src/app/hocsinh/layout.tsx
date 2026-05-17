@@ -13,9 +13,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
           <div className="flex justify-between h-16 items-center">
             <div className="flex items-center gap-8">
               <Link href="/hocsinh/hs-khaosat/danh-sach" className="flex items-center gap-3">
-                <div className="p-2 rounded-xl" style={{ background: "#135E5B" }}>
-                  <GraduationCap className="w-6 h-6 text-white" />
-                </div>
+                <img src="/logo-skyline.png" alt="Sky-Line Logo" className="h-8 w-auto object-contain" />
                 <div className="hidden sm:block">
                   <span className="text-xl font-black text-slate-900 tracking-tight">Sky-Line</span>
                   <span className="ml-2 px-2 py-0.5 bg-slate-100 text-[10px] font-bold text-slate-500 rounded uppercase">Học Sinh</span>
