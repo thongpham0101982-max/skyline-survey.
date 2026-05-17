@@ -31,5 +31,5 @@ export default auth((req) => {
 
 // REMOVED 'hocsinh' FROM MATCHER - Middleware will not even trigger for student pages
 export const config = {
-  matcher: ['/((?!api|hocsinh|_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!api|hocsinh|_next/static|_next/image|favicon.ico|logo.png|logo-skyline.png|vercel.svg|next.svg).*)'],
 }
