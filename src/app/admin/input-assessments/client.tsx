@@ -275,6 +275,33 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     }
   }, []);
 
+  // One-time automatic migration for new default checklists
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const isMigrated = localStorage.getItem('admission_docs_migrated_v2');
+      if (!isMigrated) {
+        localStorage.removeItem('admission_docs_khoi_1');
+        localStorage.removeItem('admission_docs_khoi_2_5');
+        localStorage.removeItem('admission_docs_khoi_6');
+        localStorage.setItem('admission_doc_targets', JSON.stringify({
+          "khoi_1": ["Nội tỉnh", "Ngoại tỉnh"],
+          "khoi_2_5": ["Nội tỉnh", "Ngoại tỉnh"],
+          "khoi_6": ["Nội tỉnh", "Ngoại tỉnh"]
+        }));
+        localStorage.setItem('admission_docs_migrated_v2', 'true');
+        // Force reload the list for the currently selected group
+        const storageKey = getDocStorageKey(selectedDocGroup);
+        if (selectedDocGroup === "khoi_1") {
+          setDocList(defaultDocumentsGrade1);
+        } else if (selectedDocGroup === "khoi_2_5") {
+          setDocList(defaultDocumentsGrade2_5);
+        } else if (selectedDocGroup === "khoi_6") {
+          setDocList(defaultDocumentsGrade6);
+        }
+      }
+    }
+  }, [selectedDocGroup, defaultDocumentsGrade1, defaultDocumentsGrade2_5, defaultDocumentsGrade6, getDocStorageKey]);
+
   const [docGroupGrades, setDocGroupGrades] = useState<Record<string, string[]>>({
     "khoi_1": ["Khối 1"],
     "khoi_2_5": ["Khối 2", "Khối 3", "Khối 4", "Khối 5"],
@@ -306,8 +333,8 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     const activeGrades = docGroupGrades[selectedDocGroup] || [];
     return docList.filter(d => {
       // When checkboxes are explicitly checked on screen, ONLY include documents explicitly matching them.
-      const matchTarget = activeTargets.length === 0 || (d.targets && d.targets.some(t => activeTargets.includes(t)));
-      const matchGrade = activeGrades.length === 0 || (d.grades && d.grades.some(g => activeGrades.includes(g)));
+      const matchTarget = activeTargets.length === 0 || !d.targets || d.targets.length === 0 || d.targets.some(t => activeTargets.includes(t));
+      const matchGrade = activeGrades.length === 0 || !d.grades || d.grades.length === 0 || d.grades.some(g => activeGrades.includes(g));
       return matchTarget && matchGrade;
     });
   }, [docList, selectedDocGroup, docGroupTargets, docGroupGrades]);
@@ -3015,8 +3042,9 @@ return {
                   setConfirm({
                     msg: "Bạn có chắc chắn muốn khôi phục danh sách hồ sơ mẫu cho đối tượng này không?",
                     fn: () => {
-                      setDocList(defaultDocumentsGrade1);
-                      localStorage.setItem(getDocStorageKey(selectedDocGroup), JSON.stringify(defaultDocumentsGrade1));
+                      const defaultDocs = selectedDocGroup === "khoi_2_5" ? defaultDocumentsGrade2_5 : selectedDocGroup === "khoi_6" ? defaultDocumentsGrade6 : defaultDocumentsGrade1;
+                      setDocList(defaultDocs);
+                      localStorage.setItem(getDocStorageKey(selectedDocGroup), JSON.stringify(defaultDocs));
                     }
                   });
                 }}
