@@ -118,8 +118,8 @@ export function LoginClient() {
     <>
       {loading && loadingSteps.length > 0 && (
         <div className="fixed inset-0 z-50 flex items-center justify-center animate-fade-in"
-             style={{ background: 'rgba(9, 30, 29, 0.8)', backdropFilter: 'blur(8px)' }}>
-          <div className="bg-white rounded-[2.5rem] p-10 shadow-2xl max-w-sm w-full mx-6 border border-slate-100"
+             style={{ background: 'rgba(5, 20, 19, 0.85)', backdropFilter: 'blur(8px)' }}>
+          <div className="bg-white rounded-[2.5rem] p-10 shadow-2xl max-w-sm w-full mx-6 border-2 border-[#1E8B87]/30"
                style={{ animation: 'fadeInScale 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }}>
             <div className="flex justify-center mb-6">
               <div className="relative w-16 h-16">
@@ -159,39 +159,47 @@ export function LoginClient() {
         }
       `}</style>
 
-      <div className="min-h-screen flex flex-col justify-between bg-slate-50 relative overflow-hidden font-sans">
-        {/* Soft elegant glowing ambient circles (Standard International UI style) */}
-        <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-[#135E5B]/5 blur-[120px] pointer-events-none" />
-        <div className="absolute top-[30%] -left-60 w-[500px] h-[500px] rounded-full bg-[#1E8B87]/5 blur-[150px] pointer-events-none" />
-        <div className="absolute -bottom-40 right-20 w-96 h-96 rounded-full bg-[#135E5B]/5 blur-[100px] pointer-events-none" />
+      {/* Main Container with highly friendly and professional deep blue-teal radial gradient */}
+      <div className="min-h-screen flex flex-col justify-between relative overflow-hidden font-sans"
+           style={{ background: 'radial-gradient(circle at 50% 50%, #1E8B87 0%, #135E5B 45%, #0A3230 100%)' }}>
+        
+        {/* Soft elegant glowing ambient circles overlay */}
+        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] rounded-full bg-emerald-400/10 blur-[130px] pointer-events-none" />
+        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] rounded-full bg-sky-400/10 blur-[120px] pointer-events-none" />
 
-        {/* Top Header Placeholder to balance */}
-        <div className="w-full py-6 px-8 flex justify-between items-center relative z-10">
+        {/* Top Header */}
+        <div className="w-full py-5 px-8 flex justify-between items-center relative z-10">
           <div className="flex items-center gap-2">
-            <img src="/logo.png" alt="Sky-Line" className="h-8 w-auto object-contain" />
+            <img src="/logo.png" alt="Sky-Line" className="h-10 w-auto object-contain brightness-0 invert opacity-95" />
           </div>
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-3 py-1 rounded-full border border-slate-200/50">SQMS Portal v2.5</span>
+          <span className="text-[10px] font-black text-teal-100 uppercase tracking-widest bg-white/10 px-4 py-1.5 rounded-full border border-white/15 backdrop-blur-sm">SQMS Portal v2.5</span>
         </div>
 
         {/* Center Card Container */}
-        <div className="w-full max-w-[460px] mx-auto px-6 py-12 relative z-10 flex flex-col justify-center">
-          <div className="bg-white rounded-[2.5rem] p-8 sm:p-10 shadow-[0_20px_50px_rgba(19,94,91,0.04)] border border-slate-100/80">
-            {/* School Logo */}
+        <div className="w-full max-w-[460px] mx-auto px-6 py-8 relative z-10 flex flex-col justify-center">
+          
+          {/* Card with double border & top accent border (border nhấn nhấn cực kỳ chuyên nghiệp) */}
+          <div className="bg-white rounded-[2.5rem] p-8 sm:p-10 shadow-[0_25px_60px_-15px_rgba(8,47,45,0.45)] border-2 border-[#1E8B87]/30 border-t-8 border-t-[#1E8B87] relative overflow-hidden">
+            
+            {/* Card inner gloss effect */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+
+            {/* School Logo & Title */}
             <div className="text-center mb-8">
-              <img src="/logo.png" alt="Sky-Line School" className="h-16 w-auto object-contain mx-auto mb-5" />
+              <img src="/logo.png" alt="Sky-Line School" className="h-16 w-auto object-contain mx-auto mb-4" />
               <h2 className="text-lg font-black text-[#0D3E3B] uppercase tracking-wider">Hệ thống Quản trị Chất lượng</h2>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[2px] mt-0.5">School Quality Management System</p>
             </div>
 
             {/* Premium Role Switcher */}
-            <div className="bg-slate-100 p-1.5 rounded-[1.8rem] mb-6 flex gap-1 border border-slate-200/30">
+            <div className="bg-slate-50 p-1.5 rounded-[1.8rem] mb-6 flex gap-1 border border-slate-200/60">
               {['STAFF', 'PARENT', 'STUDENT'].map((r) => {
                 const labels = { STAFF: 'Cán bộ', PARENT: 'Phụ huynh', STUDENT: 'Học sinh' };
                 const icons = { STAFF: ShieldCheck, PARENT: Users, STUDENT: GraduationCap };
                 const Icon = icons[r];
                 return (
                   <button key={r} onClick={() => {setRole(r); setError(''); setLoadingSteps([]);}}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all ${role === r ? 'bg-[#135E5B] text-white shadow-md shadow-[#135E5B]/10' : 'text-slate-500 hover:text-[#135E5B] hover:bg-white/50'}`}>
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all ${role === r ? 'bg-[#135E5B] text-white shadow-md shadow-[#135E5B]/20 border border-[#1E8B87]/30' : 'text-slate-500 hover:text-[#135E5B] hover:bg-white/50 border border-transparent'}`}>
                     <Icon className="w-3.5 h-3.5" /> <span>{labels[r]}</span>
                   </button>
                 )
@@ -199,7 +207,7 @@ export function LoginClient() {
             </div>
 
             {error && (
-              <div className="mb-6 p-4 rounded-2xl flex items-center gap-3 bg-rose-50 text-rose-700 border border-rose-100/50 animate-in fade-in zoom-in">
+              <div className="mb-6 p-4 rounded-2xl flex items-center gap-3 bg-rose-50 text-rose-700 border-2 border-rose-100 animate-in fade-in zoom-in">
                 <AlertCircle className="w-5 h-5 shrink-0 text-rose-500" />
                 <p className="text-xs font-bold leading-relaxed">{error}</p>
               </div>
@@ -210,24 +218,24 @@ export function LoginClient() {
               <div>
                 <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2.5 ml-1">Tài khoản</label>
                 <div className="relative group">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center text-slate-400 group-focus-within:text-[#135E5B] transition-colors">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center text-slate-400 group-focus-within:text-[#1E8B87] transition-colors">
                     <User className="w-4 h-4" />
                   </div>
                   <input type="text" required value={identifier} onChange={e => setIdentifier(e.target.value)} 
                     placeholder={role === 'STAFF' ? 'admin@skyline.edu' : 'Nhập mã số của bạn'}
-                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-800 placeholder-slate-400 focus:bg-white focus:border-[#135E5B] focus:ring-1 focus:ring-[#135E5B] outline-none transition-all" />
+                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50/50 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-800 placeholder-slate-400 hover:border-[#1E8B87]/40 focus:bg-white focus:border-[#1E8B87] focus:ring-2 focus:ring-[#1E8B87]/15 outline-none transition-all" />
                 </div>
               </div>
 
               <div>
                 <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2.5 ml-1">Mật khẩu</label>
                 <div className="relative group">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center text-slate-400 group-focus-within:text-[#135E5B] transition-colors">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center text-slate-400 group-focus-within:text-[#1E8B87] transition-colors">
                     <Lock className="w-4 h-4" />
                   </div>
                   <input type={showPassword ? 'text' : 'password'} required={role !== 'STUDENT'} value={password} onChange={e => setPassword(e.target.value)}
                     placeholder="••••••••••"
-                    className="w-full pl-12 pr-12 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-800 placeholder-slate-400 focus:bg-white focus:border-[#135E5B] focus:ring-1 focus:ring-[#135E5B] outline-none transition-all" />
+                    className="w-full pl-12 pr-12 py-3.5 bg-slate-50/50 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-800 placeholder-slate-400 hover:border-[#1E8B87]/40 focus:bg-white focus:border-[#1E8B87] focus:ring-2 focus:ring-[#1E8B87]/15 outline-none transition-all" />
                   <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-slate-600 transition-colors">
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -236,7 +244,7 @@ export function LoginClient() {
               </div>
 
               <button type="button" onClick={handleSubmit} disabled={loading}
-                className="w-full py-4 bg-[#135E5B] text-white rounded-2xl text-sm font-black shadow-lg shadow-[#135E5B]/10 hover:shadow-xl hover:shadow-[#135E5B]/20 flex items-center justify-center gap-2 hover:-translate-y-0.5 hover:bg-[#0E4E4B] transition-all disabled:opacity-60 overflow-hidden relative group cursor-pointer">
+                className="w-full py-4 bg-[#135E5B] text-white rounded-2xl text-sm font-black shadow-lg shadow-[#135E5B]/25 hover:shadow-xl hover:shadow-[#1E8B87]/30 border border-[#1E8B87]/40 flex items-center justify-center gap-2 hover:-translate-y-0.5 hover:bg-[#1E8B87] transition-all disabled:opacity-60 overflow-hidden relative group cursor-pointer">
                 <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
                 {loading
                     ? <><Loader2 className="w-4 h-4 animate-spin" /><span>Đang xác thực...</span></>
@@ -247,7 +255,7 @@ export function LoginClient() {
         </div>
 
         {/* Bottom Footer */}
-        <div className="w-full py-6 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest relative z-10 border-t border-slate-200/30">
+        <div className="w-full py-6 text-center text-[10px] font-black text-teal-200/60 uppercase tracking-widest relative z-10 border-t border-white/10">
           © 2026 SQMS • Hệ thống Giáo dục Sky-Line
         </div>
       </div>
