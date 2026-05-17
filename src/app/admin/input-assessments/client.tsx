@@ -256,6 +256,10 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
         } catch (e) {}
       }
       let updated = false;
+      if (!parsed["khoi_1"]) {
+        parsed["khoi_1"] = ["Nội tỉnh", "Ngoại tỉnh"];
+        updated = true;
+      }
       if (!parsed["khoi_2_5"]) {
         parsed["khoi_2_5"] = ["Nội tỉnh", "Ngoại tỉnh"];
         updated = true;
@@ -316,14 +320,9 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
   const [docFormSelectedGrades, setDocFormSelectedGrades] = useState([]);
 
   const defaultDocumentsGrade1 = useMemo(() => [
-    { id: 1, name: "Đơn đăng ký nhập học (theo mẫu của Hệ thống)", qty: "01 bản chính", note: "" },
-    { id: 2, name: "Bản sao Giấy khai sinh (hợp lệ)", qty: "01 bản", note: "" },
-    { id: 3, name: "Giấy khám sức khỏe học sinh (trong vòng 6 tháng)", qty: "01 bản chính", note: "" },
-    { id: 4, name: "Ảnh thẻ 3x4 (nền trắng, mới nhất)", qty: "04 ảnh", note: "" },
-    { id: 5, name: "Bản sao Sổ hộ khẩu hoặc Giấy xác nhận cư trú (CT07)", qty: "01 bản", note: "" },
-    { id: 6, name: "Giấy chứng nhận hoàn thành chương trình Mầm non", qty: "01 bản sao", note: "Nếu có" },
-    { id: 7, name: "Bản sao Sổ tiêm chủng của học sinh", qty: "01 bản", note: "" },
-    { id: 8, name: "Hồ sơ ưu đãi/giảm phí (nếu thuộc diện ưu tiên)", qty: "01 bộ", note: "Bản sao" },
+    { id: 1, name: "Giấy khai sinh (có dấu đỏ)", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 1"] },
+    { id: 2, name: "Đơn xin nhập học lớp 1", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 1"] },
+    { id: 3, name: "Bản cam kết (nếu có)", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 1"] },
   ], []);
 
   const defaultDocumentsGrade2_5 = useMemo(() => [
