@@ -275,32 +275,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     }
   }, []);
 
-  // One-time automatic migration for new default checklists
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const isMigrated = localStorage.getItem('admission_docs_migrated_v2');
-      if (!isMigrated) {
-        localStorage.removeItem('admission_docs_khoi_1');
-        localStorage.removeItem('admission_docs_khoi_2_5');
-        localStorage.removeItem('admission_docs_khoi_6');
-        localStorage.setItem('admission_doc_targets', JSON.stringify({
-          "khoi_1": ["Nội tỉnh", "Ngoại tỉnh"],
-          "khoi_2_5": ["Nội tỉnh", "Ngoại tỉnh"],
-          "khoi_6": ["Nội tỉnh", "Ngoại tỉnh"]
-        }));
-        localStorage.setItem('admission_docs_migrated_v2', 'true');
-        // Force reload the list for the currently selected group
-        const storageKey = getDocStorageKey(selectedDocGroup);
-        if (selectedDocGroup === "khoi_1") {
-          setDocList(defaultDocumentsGrade1);
-        } else if (selectedDocGroup === "khoi_2_5") {
-          setDocList(defaultDocumentsGrade2_5);
-        } else if (selectedDocGroup === "khoi_6") {
-          setDocList(defaultDocumentsGrade6);
-        }
-      }
-    }
-  }, [selectedDocGroup, defaultDocumentsGrade1, defaultDocumentsGrade2_5, defaultDocumentsGrade6, getDocStorageKey]);
+
 
   const [docGroupGrades, setDocGroupGrades] = useState<Record<string, string[]>>({
     "khoi_1": ["Khối 1"],
@@ -398,6 +373,35 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
       }
     }
   }, [selectedDocGroup, defaultDocumentsGrade1, defaultDocumentsGrade2_5, defaultDocumentsGrade6, getDocStorageKey]);
+
+  // One-time automatic migration for new default checklists
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const isMigrated = localStorage.getItem('admission_docs_migrated_v2');
+      if (!isMigrated) {
+        localStorage.removeItem('admission_docs_khoi_1');
+        localStorage.removeItem('admission_docs_khoi_2_5');
+        localStorage.removeItem('admission_docs_khoi_6');
+        localStorage.setItem('admission_doc_targets', JSON.stringify({
+          "khoi_1": ["Nội tỉnh", "Ngoại tỉnh"],
+          "khoi_2_5": ["Nội tỉnh", "Ngoại tỉnh"],
+          "khoi_6": ["Nội tỉnh", "Ngoại tỉnh"]
+        }));
+        localStorage.setItem('admission_docs_migrated_v2', 'true');
+        // Force reload the list for the currently selected group
+        const storageKey = getDocStorageKey(selectedDocGroup);
+        if (selectedDocGroup === "khoi_1") {
+          setDocList(defaultDocumentsGrade1);
+        } else if (selectedDocGroup === "khoi_2_5") {
+          setDocList(defaultDocumentsGrade2_5);
+        } else if (selectedDocGroup === "khoi_6") {
+          setDocList(defaultDocumentsGrade6);
+        }
+      }
+    }
+  }, [selectedDocGroup, defaultDocumentsGrade1, defaultDocumentsGrade2_5, defaultDocumentsGrade6, getDocStorageKey]);
+
+
 
   const [rcCampusId, setRcCampusId] = useState("")
   const [rcReportType, setRcReportType] = useState("thu_chuc_mung")
