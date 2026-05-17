@@ -1915,7 +1915,7 @@ return {
             { id:"mapping",              label:"C\u1ea5u h\u00ecnh",   tip:"C\u1ea5u h\u00ecnh theo Kh\u1ed1i",  icon:Layers },
             { id:"students",             label:"H\u1ecdc sinh",   tip:"DS HS kh\u1ea3o s\u00e1t",      icon:Users },
             { id:"assignments",          label:"Ph\u00e2n c\u00f4ng",  tip:"Ph\u00e2n c\u00f4ng GV",        icon:UserCheck },
-            { id:"reports",              label:"K\u1ebft qu\u1ea3",    tip:"K\u1ebft qu\u1ea3 T\u1ed5ng h\u1ee3p",    icon:BarChart3 },
+            { id:"reports",              label:"Tổng hợp KQKS",    tip:"Tổng hợp kết quả khảo sát",    icon:BarChart3 },
             { id:"report_config",        label:"B\u00e1o c\u00e1o",    tip:"C\u1ea5u h\u00ecnh B\u00e1o c\u00e1o",    icon:PenLine },
             { id:"admission_documents",  label:"H\u1ed3 s\u01a1",      tip:"H\u1ed3 s\u01a1 nh\u1eadp h\u1ecdc",      icon:Tag },
           ].map(t=>(
