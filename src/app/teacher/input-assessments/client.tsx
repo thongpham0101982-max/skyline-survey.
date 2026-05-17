@@ -729,6 +729,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
               setIsThinkingSkillsModalOpen(false);
             }}
             onClose={() => setIsThinkingSkillsModalOpen(false)}
+            isLocked={isLocked}
           />
         </div>
       )}

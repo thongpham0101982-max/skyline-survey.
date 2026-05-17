@@ -107,6 +107,7 @@ export async function GET(req: any) {
             where: { periodId: periodId },
             orderBy: [{ grade: 'asc' }, { fullName: 'asc' }],
             include: {
+                batch: true,
                 scores: {
                     include: { subject: true }
                 }

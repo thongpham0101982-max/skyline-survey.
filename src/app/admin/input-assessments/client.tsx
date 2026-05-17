@@ -1331,6 +1331,13 @@ ${reportForm.directorNote}`;
   const canApprove = useMemo(() => {
     if (!currentUser) return false;
     const userRole = (currentUser.role || "").toUpperCase();
+    
+    // Lock check for GĐCS/GVBM
+    const isStudentBatchLocked = selectedReportStudent?.batch?.status === "LOCKED" || selectedReportStudent?.batch?.status === "CLOSED";
+    if (isStudentBatchLocked && ["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole)) {
+      return false;
+    }
+
     if (userRole === "ADMIN" || userRole === "KT_DBCL") return true;
     if (["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole)) {
       const periodCampusId = reportSelPeriod?.campusId;
@@ -3853,7 +3860,9 @@ return {
                   {!canApprove && (
                     <div className="bg-rose-50 text-rose-600 p-3.5 rounded-2xl text-xs font-semibold border border-rose-100 flex items-center gap-2 animate-pulse mb-2">
                       <AlertCircle className="w-4 h-4 flex-shrink-0"/>
-                      Bạn không có quyền xét duyệt kết quả cho cơ sở này.
+                      {selectedReportStudent?.batch?.status === "LOCKED" || selectedReportStudent?.batch?.status === "CLOSED" ? 
+                        "Đợt khảo sát đã BỊ KHÓA. Giáo viên và GĐCS không thể điều chỉnh kết quả!" : 
+                        "Bạn không có quyền xét duyệt kết quả cho cơ sở này."}
                     </div>
                   )}
 

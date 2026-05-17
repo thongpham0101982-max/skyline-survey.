@@ -5,9 +5,10 @@ interface ThinkingSkillsFormProps {
     student: any;
     onClose: () => void;
     onSave: (student: any, scores: string[], comments: string[]) => Promise<void>;
+    isLocked?: boolean;
 }
 
-export default function ThinkingSkillsForm({ student, onClose, onSave }: ThinkingSkillsFormProps) {
+export default function ThinkingSkillsForm({ student, onClose, onSave, isLocked = false }: ThinkingSkillsFormProps) {
     const [isSaving, setIsSaving] = useState(false);
     
     // States for the 5 criteria
@@ -16,8 +17,6 @@ export default function ThinkingSkillsForm({ student, onClose, onSave }: Thinkin
     const [phanBien, setPhanBien] = useState("");
     const [giaiQuyet, setGiaiQuyet] = useState("");
     const [percent, setPercent] = useState("");
-
-    const isLocked = false; // Add actual lock logic if needed
 
     useEffect(() => {
         if (student && student.scoreVals) {

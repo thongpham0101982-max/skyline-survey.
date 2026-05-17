@@ -147,9 +147,29 @@ export async function POST(req) {
 }
 
 export async function PUT(req) {
+  const session = await auth();
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const user = session?.user as any;
+  const userRole = (user?.role || "").toUpperCase();
+
   try {
     const body = await req.json();
     const { id, data } = body;
+
+    // Check if the student belongs to a locked batch
+    const student = await (prisma as any).inputAssessmentStudent.findUnique({
+      where: { id },
+      include: { batch: true }
+    });
+
+    if (!student) return NextResponse.json({ error: "Student not found" }, { status: 404 });
+
+    const isBatchLocked = student.batch?.status === "LOCKED" || student.batch?.status === "CLOSED";
+    const isGDCSUser = ["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole);
+
+    if (isBatchLocked && isGDCSUser) {
+      return NextResponse.json({ error: "Đợt khảo sát đã bị khóa. Giám đốc cơ sở không có quyền điều chỉnh!" }, { status: 403 });
+    }
     
     const result = await (prisma as any).inputAssessmentStudent.update({
       where: { id },
