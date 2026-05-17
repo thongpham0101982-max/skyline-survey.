@@ -860,9 +860,12 @@ ${reportForm.directorNote}`;
     });
 
     if (selectedReportStudent.targetType) {
+      // Split the student's targetType into an array of lowercase trimmed values to support multiple selections
+      const studentTargets = selectedReportStudent.targetType.split(',').map(x => x.trim().toLowerCase()).filter(Boolean);
+      
       const targetMatch = gradeMatchedGroups.find(g => {
         const mappedTs = docGroupTargets[g.id] || [];
-        return mappedTs.some(ts => ts.toLowerCase() === selectedReportStudent.targetType.toLowerCase());
+        return mappedTs.some(ts => studentTargets.includes(ts.toLowerCase()));
       });
       
       if (targetMatch) {
@@ -870,7 +873,7 @@ ${reportForm.directorNote}`;
       } else {
         const anyTargetMatch = docGroups.find(g => {
           const mappedTs = docGroupTargets[g.id] || [];
-          return mappedTs.some(ts => ts.toLowerCase() === selectedReportStudent.targetType.toLowerCase());
+          return mappedTs.some(ts => studentTargets.includes(ts.toLowerCase()));
         });
         if (anyTargetMatch) {
           studentGroup = anyTargetMatch.id;
@@ -882,7 +885,7 @@ ${reportForm.directorNote}`;
       studentGroup = gradeMatchedGroups[0]?.id || "khoi_1";
     }
     
-    const saved = localStorage.getItem('admission_docs_' + studentGroup);
+    const saved = etItem('admission_docs_' + studentGroup);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -4230,69 +4233,65 @@ return {
                </Field>
             </div>
 
-           <div className="grid grid-cols-3 gap-4">
-               <Field label="Đối tượng Tuyển sinh">
-                 <div className="flex items-center gap-1.5">
-                   <select value={sForm.targetType} onChange={e=>setSForm(f=>({...f,targetType:e.target.value}))} className={inp + " flex-1 min-w-[120px]"}>
-                     <option value="">--</option>
-                     {configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                   </select>
+           <div className="space-y-4">
+             <Field label="Đối tượng Tuyển sinh">
+               <div className="bg-slate-50 rounded-2xl p-3.5 border border-slate-200/80 space-y-3">
+                 <div className="flex items-center justify-between">
+                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Chọn một hoặc nhiều đối tượng tuyển sinh:</span>
                    <button 
                      type="button"
                      onClick={() => openAddConfig("DOI_TUONG_TS")}
-                     className="w-10 h-10 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center transition-all border border-indigo-100 shadow-sm shrink-0"
-                     title="Thêm đối tượng mới"
+                     className="px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center gap-1.5 text-xs font-black transition-all border border-indigo-100"
                    >
-                     <Plus className="w-4 h-4" />
+                     <Plus className="w-3.5 h-3.5" />
+                     Thêm đối tượng
                    </button>
-                   {sForm.targetType && (
-                     <>
-                       <button 
-                         type="button"
-                         onClick={() => {
-                           const current = configs.find(c => c.categoryType === "DOI_TUONG_TS" && c.name === sForm.targetType);
-                           if (current) openEditConfig(current);
-                         }}
-                         className="w-10 h-10 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-600 flex items-center justify-center transition-all border border-amber-100 shadow-sm shrink-0"
-                         title="Sửa tên đối tượng"
-                       >
-                         <Pencil className="w-3.5 h-3.5" />
-                       </button>
-                       <button 
-                         type="button"
-                         onClick={() => {
-                           const current = configs.find(c => c.categoryType === "DOI_TUONG_TS" && c.name === sForm.targetType);
-                           if (current) {
-                             setConfirm({
-                               msg: `Bạn có chắc chắn muốn xóa Đối tượng Tuyển sinh "${current.name}"?`,
-                               fn: () => {
-                                 doDeleteConfig(current.id);
-                                 setSForm(f => ({ ...f, targetType: "" }));
-                               }
-                             });
-                           }
-                         }}
-                         className="w-10 h-10 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 flex items-center justify-center transition-all border border-rose-100 shadow-sm shrink-0"
-                         title="Xóa đối tượng"
-                       >
-                         <Trash2 className="w-3.5 h-3.5" />
-                       </button>
-                     </>
+                 </div>
+                 <div className="flex flex-wrap gap-2">
+                   {configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => {
+                     const selectedTargets = sForm.targetType ? sForm.targetType.split(",").map(t => t.trim()).filter(Boolean) : [];
+                     const isChecked = selectedTargets.includes(c.name);
+                     return (
+                       <label key={c.id} className={"flex items-center gap-1.5 px-3 py-2 rounded-xl border cursor-pointer select-none transition-all " + (isChecked ? "bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-100 font-bold" : "bg-white hover:bg-slate-50 border-slate-200 text-slate-600")}>
+                         <input 
+                           type="checkbox" 
+                           checked={isChecked}
+                           onChange={(e) => {
+                             let updated;
+                             if (e.target.checked) {
+                               updated = [...selectedTargets, c.name];
+                             } else {
+                               updated = selectedTargets.filter(t => t !== c.name);
+                             }
+                             setSForm(f => ({ ...f, targetType: updated.join(", ") }));
+                           }}
+                           className={"w-4 h-4 rounded border-slate-300 " + (isChecked ? "text-white focus:ring-offset-indigo-600" : "text-indigo-600 focus:ring-indigo-500")}
+                         />
+                         <span className="text-xs">{c.name}</span>
+                       </label>
+                     );
+                   })}
+                   {configs.filter(c => c.categoryType === "DOI_TUONG_TS").length === 0 && (
+                     <span className="text-xs text-slate-400 italic">Chưa có đối tượng tuyển sinh nào trong danh mục</span>
                    )}
                  </div>
-               </Field>
-               <Field label="Diện Khảo sát">
-                <select value={sForm.admissionCriteria} onChange={e=>setSForm(f=>({...f,admissionCriteria:e.target.value}))} className={inp}>
-                  <option value="">--</option>
-                  {configs.filter(c => c.categoryType === "DIEN_KS").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                </select>
-              </Field>
-              <Field label="Hình thức KS">
-                <select value={sForm.surveySystem} onChange={e=>setSForm(f=>({...f,surveySystem:e.target.value}))} className={inp}>
-                  <option value="">--</option>
-                  {configs.filter(c => c.categoryType === "HINH_THUC_KS").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                </select>
-              </Field>
+               </div>
+             </Field>
+
+             <div className="grid grid-cols-2 gap-4">
+                 <Field label="Diện Khảo sát">
+                  <select value={sForm.admissionCriteria} onChange={e=>setSForm(f=>({...f,admissionCriteria:e.target.value}))} className={inp}>
+                    <option value="">--</option>
+                    {configs.filter(c => c.categoryType === "DIEN_KS").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                  </select>
+                </Field>
+                <Field label="Hình thức KS">
+                  <select value={sForm.surveySystem} onChange={e=>setSForm(f=>({...f,surveySystem:e.target.value}))} className={inp}>
+                    <option value="">--</option>
+                    {configs.filter(c => c.categoryType === "HINH_THUC_KS").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                  </select>
+                </Field>
+             </div>
            </div>
 
            <div className="grid grid-cols-3 gap-4">

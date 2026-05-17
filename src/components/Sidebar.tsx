@@ -19,7 +19,7 @@ export function Sidebar({ role, permissionModules, actualRole, taskCount = 0 }: 
   const [isOpen, setIsOpen] = useState(false)
 
   let title = "Portal"
-  if (role === "ADMIN") title = "Cổng Quản trị"
+  if (role === "ADMIN") title = ""
   else if (role === "TEACHER") title = "Cổng Giáo viên"
   else if (role === "PARENT") title = "Cổng Phụ huynh"
 
