@@ -826,14 +826,18 @@ function TransferInModal({ onClose, onSaved, initialData }: { onClose: () => voi
             {/* Destination Info */}
             <div>
               <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 pb-2 border-b">Thông tin tiếp nhận</h3>
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
-                <div className="col-span-2">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Họ và tên học sinh</label>
                   <input required type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-emerald-500 transition-colors" value={form.studentName} onChange={e => setForm({...form, studentName: e.target.value})} placeholder="Nhập họ và tên..." />
                 </div>
                 <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Mã KS (Khảo sát)</label>
+                  <input disabled type="text" className="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 font-semibold outline-none text-slate-500 cursor-not-allowed" value={selectedAssessmentStudent?.studentCode || ""} placeholder="Mã KS từ dữ liệu..." />
+                </div>
+                <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Mã HS</label>
-                  <input required type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-emerald-500 transition-colors" value={form.studentCode} onChange={e => setForm({...form, studentCode: e.target.value})} placeholder="Nhập mã HS..." />
+                  <input required type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-emerald-500 transition-colors" value={form.studentCode} onChange={e => setForm({...form, studentCode: e.target.value})} placeholder="Nhập mã HS mới..." />
                 </div>
               </div>
 
