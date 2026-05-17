@@ -1756,8 +1756,8 @@ return {
         </div>
       </div>
 
-      {/* TAB NAV */}
-      <div className="bg-white border border-slate-200 shadow-sm rounded-2xl p-1.5 flex flex-wrap gap-1">
+      {/* TAB NAV - Premium horizontal scrollable sleek bar */}
+      <div className="bg-white border border-slate-200 shadow-sm rounded-2xl p-2 flex gap-1 overflow-x-auto scrollbar-none max-w-full" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
         {[
           { id:"periods",    label:"Kỳ khảo sát",       icon:Clock },
           { id:"categories", label:"Danh mục",          icon:Settings },
