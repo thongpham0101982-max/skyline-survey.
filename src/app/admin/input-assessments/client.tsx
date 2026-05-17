@@ -255,8 +255,16 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
           parsed = JSON.parse(savedTargets);
         } catch (e) {}
       }
+      let updated = false;
       if (!parsed["khoi_2_5"]) {
         parsed["khoi_2_5"] = ["Nội tỉnh", "Ngoại tỉnh"];
+        updated = true;
+      }
+      if (!parsed["khoi_6"]) {
+        parsed["khoi_6"] = ["Nội tỉnh", "Ngoại tỉnh"];
+        updated = true;
+      }
+      if (updated) {
         localStorage.setItem('admission_doc_targets', JSON.stringify(parsed));
       }
       setDocGroupTargets(parsed);
@@ -327,6 +335,19 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     { id: 6, name: "Bản cam kết (nếu có)", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 2", "Khối 3", "Khối 4", "Khối 5"] },
   ], []);
 
+  const defaultDocumentsGrade6 = useMemo(() => [
+    { id: 1, name: "Giấy khai sinh (có dấu đỏ)", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 6"] },
+    { id: 2, name: "Học bạ Tiểu học (bản gốc)", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 6"] },
+    { id: 3, name: "Giấy chứng nhận HTCT Tiểu học", qty: "1", note: "Nếu có", targets: ["Nội tỉnh"], grades: ["Khối 6"] },
+    { id: 4, name: "Giấy giới thiệu chuyển của trường nơi đi (nhập học sau 15/8)", qty: "1", note: "", targets: ["Nội tỉnh"], grades: ["Khối 6"] },
+    { id: 5, name: "Giấy giới thiệu chuyển của trường nơi đi (nếu nhập học sau 15/8)", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 6"] },
+    { id: 6, name: "Giấy giới thiệu chuyển trường do UBND/ Sở GD&ĐT nơi đi (Trường trực thuộc sở)", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 6"] },
+    { id: 7, name: "Bản cam kết (nếu có)", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 6"] },
+    { id: 8, name: "Ảnh thẻ 3x4", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 6"] },
+    { id: 9, name: "Đơn xin xác nhận về việc đồng ý tiếp nhận học sinh", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 6"] },
+    { id: 10, name: "Đơn xin chuyển trường", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 6"] },
+  ], []);
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       const storageKey = getDocStorageKey(selectedDocGroup);
@@ -343,11 +364,14 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
       } else if (selectedDocGroup === "khoi_2_5") {
         setDocList(defaultDocumentsGrade2_5);
         localStorage.setItem(storageKey, JSON.stringify(defaultDocumentsGrade2_5));
+      } else if (selectedDocGroup === "khoi_6") {
+        setDocList(defaultDocumentsGrade6);
+        localStorage.setItem(storageKey, JSON.stringify(defaultDocumentsGrade6));
       } else {
         setDocList([]);
       }
     }
-  }, [selectedDocGroup, defaultDocumentsGrade1, defaultDocumentsGrade2_5, getDocStorageKey]);
+  }, [selectedDocGroup, defaultDocumentsGrade1, defaultDocumentsGrade2_5, defaultDocumentsGrade6, getDocStorageKey]);
 
   const [rcCampusId, setRcCampusId] = useState("")
   const [rcReportType, setRcReportType] = useState("thu_chuc_mung")
@@ -371,8 +395,10 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       } catch(e) {}
     }
-    return activeGroup === "khoi_2_5" ? defaultDocumentsGrade2_5 : defaultDocumentsGrade1;
-  }, [rcTargetGroup, defaultDocumentsGrade1, defaultDocumentsGrade2_5]);
+    if (activeGroup === "khoi_2_5") return defaultDocumentsGrade2_5;
+    if (activeGroup === "khoi_6") return defaultDocumentsGrade6;
+    return defaultDocumentsGrade1;
+  }, [rcTargetGroup, defaultDocumentsGrade1, defaultDocumentsGrade2_5, defaultDocumentsGrade6]);
 
 
   // One-time migration and load for Master Branding Assets (Logo, BG, Footer)
@@ -914,8 +940,10 @@ ${reportForm.directorNote}`;
     }
     
     // Fallback to default documents group, guaranteeing Page 2 is never empty!
-    return studentGroup === "khoi_2_5" ? defaultDocumentsGrade2_5 : defaultDocumentsGrade1;
-  }, [selectedReportStudent, defaultDocumentsGrade1, defaultDocumentsGrade2_5, docGroups, docGroupTargets, docGroupGrades]);
+    if (studentGroup === "khoi_2_5") return defaultDocumentsGrade2_5;
+    if (studentGroup === "khoi_6") return defaultDocumentsGrade6;
+    return defaultDocumentsGrade1;
+  }, [selectedReportStudent, defaultDocumentsGrade1, defaultDocumentsGrade2_5, defaultDocumentsGrade6, docGroups, docGroupTargets, docGroupGrades]);
 
   const studentCampusConfig = useMemo(() => {
     if (typeof window === "undefined" || !selectedReportStudent) return null;
