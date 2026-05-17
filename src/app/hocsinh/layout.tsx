@@ -13,18 +13,18 @@ export default async function StudentLayout({ children }: { children: React.Reac
           <div className="flex justify-between h-16 items-center">
             <div className="flex items-center gap-8">
               <Link href="/hocsinh/hs-khaosat/danh-sach" className="flex items-center gap-3">
-                <div className="p-2 rounded-xl" style={{ background: "#BE1E2E" }}>
+                <div className="p-2 rounded-xl" style={{ background: "#135E5B" }}>
                   <GraduationCap className="w-6 h-6 text-white" />
                 </div>
                 <div className="hidden sm:block">
-                  <span className="text-xl font-black text-slate-900 tracking-tight">SKYLINE</span>
+                  <span className="text-xl font-black text-slate-900 tracking-tight">Sky-Line</span>
                   <span className="ml-2 px-2 py-0.5 bg-slate-100 text-[10px] font-bold text-slate-500 rounded uppercase">Học Sinh</span>
                 </div>
               </Link>
               <div className="hidden md:flex items-center gap-1">
                 <Link 
                   href="/hocsinh/hs-khaosat/danh-sach"
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-slate-600 hover:text-[#BE1E2E] hover:bg-red-50 transition-all"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-slate-600 hover:text-[#135E5B] hover:bg-teal-50 transition-all"
                 >
                   <ClipboardList className="w-4 h-4" />
                   Khảo sát
@@ -39,7 +39,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
                 </div>
               )}
               <form action="/api/hocsinh/logout" method="post">
-                <button className="p-2.5 text-slate-400 hover:text-[#BE1E2E] hover:bg-red-50 rounded-xl transition-all flex items-center gap-2">
+                <button className="p-2.5 text-slate-400 hover:text-[#135E5B] hover:bg-teal-50 rounded-xl transition-all flex items-center gap-2">
                   <span className="hidden sm:inline text-xs font-bold">Đăng xuất</span>
                   <LogOut className="w-5 h-5" />
                 </button>

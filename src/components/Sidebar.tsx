@@ -19,7 +19,7 @@ export function Sidebar({ role, permissionModules, actualRole, taskCount = 0 }: 
   let title = "Portal"
   if (role === "ADMIN") title = "Cổng Quản trị"
   else if (role === "TEACHER") title = "Cổng Giáo viên"
-  else if (role === "PARENT") title = "Parent Portal"
+  else if (role === "PARENT") title = "Cổng Phụ huynh"
 
   const checkPermission = (module?: string, requiresAdmin?: boolean) => {
     if (requiresAdmin && !isSuperAdmin) return false
@@ -32,7 +32,7 @@ export function Sidebar({ role, permissionModules, actualRole, taskCount = 0 }: 
   return (
     <aside className="w-64 bg-slate-900 text-white min-h-screen p-6 flex flex-col shadow-xl sticky top-0 h-screen">
       <div className="flex items-center gap-3 mb-8 px-2">
-        <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center font-bold text-lg shadow-lg shadow-indigo-500/20">S</div>
+        <div className="w-8 h-8 bg-[#135E5B] rounded-lg flex items-center justify-center font-bold text-lg shadow-lg shadow-indigo-500/20">S</div>
         <div className="font-bold text-xl tracking-tight leading-none">{title}</div>
       </div>
 
@@ -42,11 +42,11 @@ export function Sidebar({ role, permissionModules, actualRole, taskCount = 0 }: 
             href={role === "ADMIN" ? "/admin" : "/parent"}
             className={`group flex items-center px-3 py-2.5 rounded-xl transition-all duration-200 text-sm font-medium ${
               pathname === (role === "ADMIN" ? "/admin" : "/parent") 
-                ? "bg-indigo-600/20 text-white border border-indigo-500/30 shadow-[0_0_15px_-3px_rgba(79,70,229,0.2)]" 
+                ? "bg-[#135E5B]/20 text-white border border-[#135E5B]/30 shadow-[0_0_15px_-3px_rgba(19,94,91,0.2)]" 
                 : "text-slate-400 hover:text-white hover:bg-slate-800"
             }`}
           >
-            <LayoutDashboard className={`w-4 h-4 mr-3 ${pathname === (role === "ADMIN" ? "/admin" : "/parent") ? "text-indigo-400" : "text-slate-500 group-hover:text-indigo-400"}`} />
+            <LayoutDashboard className={`w-4 h-4 mr-3 ${pathname === (role === "ADMIN" ? "/admin" : "/parent") ? "text-[#1E8B87]" : "text-slate-500 group-hover:text-[#1E8B87]"}`} />
             Dashboard
           </Link>
         )}
@@ -70,12 +70,12 @@ export function Sidebar({ role, permissionModules, actualRole, taskCount = 0 }: 
                     href={m.href}
                     className={`group flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${
                       isActive 
-                        ? "bg-indigo-600/20 text-white border border-indigo-500/30 shadow-[0_0_15px_-3px_rgba(79,70,229,0.2)]" 
+                        ? "bg-[#135E5B]/20 text-white border border-[#135E5B]/30 shadow-[0_0_15px_-3px_rgba(19,94,91,0.2)]" 
                         : "text-slate-400 hover:text-white hover:bg-slate-800"
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <m.icon className={`w-4 h-4 ${isActive ? "text-indigo-400" : "text-slate-500 group-hover:text-indigo-400 transition-colors"}`} />
+                      <m.icon className={`w-4 h-4 ${isActive ? "text-[#1E8B87]" : "text-slate-500 group-hover:text-[#1E8B87] transition-colors"}`} />
                       <span>{m.name}</span>
                     </div>
                     {m.code === "TASKS" && taskCount > 0 && (
@@ -96,8 +96,8 @@ export function Sidebar({ role, permissionModules, actualRole, taskCount = 0 }: 
               <div className="px-3 py-2">
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.1em]">Lớp học</span>
               </div>
-              <Link href="/teacher/classes" className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/classes') ? "bg-indigo-600/20 text-white border border-indigo-500/30" : "text-slate-400 hover:text-white hover:bg-slate-800"}`}>
-                <Layers className={`w-4 h-4 mr-3 ${pathname.includes('/teacher/classes') ? "text-indigo-400" : "text-slate-500 group-hover:text-indigo-400"}`} />
+              <Link href="/teacher/classes" className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/classes') ? "bg-[#135E5B]/20 text-white border border-[#135E5B]/30" : "text-slate-400 hover:text-white hover:bg-slate-800"}`}>
+                <Layers className={`w-4 h-4 mr-3 ${pathname.includes('/teacher/classes') ? "text-[#1E8B87]" : "text-slate-500 group-hover:text-[#1E8B87]"}`} />
                 Lớp học của tôi
               </Link>
             </div>
@@ -108,8 +108,8 @@ export function Sidebar({ role, permissionModules, actualRole, taskCount = 0 }: 
                 <div className="px-3 py-2">
                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.1em]">Khảo thí</span>
                 </div>
-                <Link href="/teacher/input-assessments" className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/input-assessments') ? "bg-indigo-600/20 text-white border border-indigo-500/30" : "text-slate-400 hover:text-white hover:bg-slate-800"}`}>
-                  <ClipboardCheck className={`w-4 h-4 mr-3 ${pathname.includes('/teacher/input-assessments') ? "text-indigo-400" : "text-slate-500 group-hover:text-indigo-400"}`} />
+                <Link href="/teacher/input-assessments" className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/input-assessments') ? "bg-[#135E5B]/20 text-white border border-[#135E5B]/30" : "text-slate-400 hover:text-white hover:bg-slate-800"}`}>
+                  <ClipboardCheck className={`w-4 h-4 mr-3 ${pathname.includes('/teacher/input-assessments') ? "text-[#1E8B87]" : "text-slate-500 group-hover:text-[#1E8B87]"}`} />
                   Quản lý KSNL Đầu vào
                 </Link>
               </div>
@@ -119,16 +119,16 @@ export function Sidebar({ role, permissionModules, actualRole, taskCount = 0 }: 
               <div className="px-3 py-2">
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.1em]">Khảo sát</span>
               </div>
-              <Link href="/teacher/surveys" className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/surveys') ? "bg-indigo-600/20 text-white border border-indigo-500/30" : "text-slate-400 hover:text-white hover:bg-slate-800"}`}>
-                <FileText className={`w-4 h-4 mr-3 ${pathname.includes('/teacher/surveys') ? "text-indigo-400" : "text-slate-500 group-hover:text-indigo-400"}`} />
+              <Link href="/teacher/surveys" className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/surveys') ? "bg-[#135E5B]/20 text-white border border-[#135E5B]/30" : "text-slate-400 hover:text-white hover:bg-slate-800"}`}>
+                <FileText className={`w-4 h-4 mr-3 ${pathname.includes('/teacher/surveys') ? "text-[#1E8B87]" : "text-slate-500 group-hover:text-[#1E8B87]"}`} />
                 Quản lý Khảo sát
               </Link>
-              <Link href="/teacher/nps" className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/nps') ? "bg-indigo-600/20 text-white border border-indigo-500/30" : "text-slate-400 hover:text-white hover:bg-slate-800"}`}>
-                <PieChart className={`w-4 h-4 mr-3 ${pathname.includes('/teacher/nps') ? "text-indigo-400" : "text-slate-500 group-hover:text-indigo-400"}`} />
+              <Link href="/teacher/nps" className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/nps') ? "bg-[#135E5B]/20 text-white border border-[#135E5B]/30" : "text-slate-400 hover:text-white hover:bg-slate-800"}`}>
+                <PieChart className={`w-4 h-4 mr-3 ${pathname.includes('/teacher/nps') ? "text-[#1E8B87]" : "text-slate-500 group-hover:text-[#1E8B87]"}`} />
                 Phân tích NPS
               </Link>
-              <Link href="/teacher/feedback" className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/feedback') ? "bg-indigo-600/20 text-white border border-indigo-500/30" : "text-slate-400 hover:text-white hover:bg-slate-800"}`}>
-                <MessageSquare className={`w-4 h-4 mr-3 ${pathname.includes('/teacher/feedback') ? "text-indigo-400" : "text-slate-500 group-hover:text-indigo-400"}`} />
+              <Link href="/teacher/feedback" className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/feedback') ? "bg-[#135E5B]/20 text-white border border-[#135E5B]/30" : "text-slate-400 hover:text-white hover:bg-slate-800"}`}>
+                <MessageSquare className={`w-4 h-4 mr-3 ${pathname.includes('/teacher/feedback') ? "text-[#1E8B87]" : "text-slate-500 group-hover:text-[#1E8B87]"}`} />
                 Theo dõi Phản hồi
               </Link>
             </div>

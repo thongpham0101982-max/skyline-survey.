@@ -127,7 +127,7 @@ export default async function HsDanhSachPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 space-y-10 min-h-screen pb-20">
       {/* Premium Header Card */}
-      <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl p-1" style={{ background: 'linear-gradient(135deg, #BE1E2E 0%, #7a0010 100%)' }}>
+      <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl p-1" style={{ background: 'linear-gradient(135deg, #135E5B 0%, #0E4E4B 100%)' }}>
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-20 -mt-20 blur-3xl animate-pulse" />
         <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full -ml-10 -mb-10 blur-2xl" />
         
@@ -178,16 +178,16 @@ export default async function HsDanhSachPage() {
             <div className="grid gap-4">
               {allItems.filter(i => i.status === 'OPEN' || i.status === 'UPCOMING').map(item => (
                 <div key={item.id} 
-                  className="group bg-white rounded-[2rem] border border-slate-200 shadow-sm hover:shadow-xl hover:border-indigo-100 transition-all duration-300 p-2 overflow-hidden relative"
+                  className="group bg-white rounded-[2rem] border border-slate-200 shadow-sm hover:shadow-xl hover:border-teal-100 transition-all duration-300 p-2 overflow-hidden relative"
                 >
                   {/* Status Indicator */}
                   <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
-                     <Sparkles className="w-24 h-24 text-indigo-900" />
+                     <Sparkles className="w-24 h-24 text-teal-900" />
                   </div>
 
                   <div className="flex flex-col md:flex-row md:items-center gap-4 p-4 md:p-6 relative z-10">
                     <div className={`w-16 h-16 rounded-[1.5rem] flex items-center justify-center shrink-0 transition-transform group-hover:scale-110 duration-300
-                      ${item.status === 'OPEN' ? 'bg-indigo-50 text-indigo-600' : 'bg-amber-50 text-amber-600'}`}>
+                      ${item.status === 'OPEN' ? 'bg-teal-50 text-[#135E5B]' : 'bg-amber-50 text-amber-600'}`}>
                        <ClipboardList className="w-8 h-8" />
                     </div>
 
@@ -199,7 +199,7 @@ export default async function HsDanhSachPage() {
                             : 'bg-amber-50 text-amber-600 border-amber-100'}`}>
                           {item.statusLabel}
                         </span>
-                        {!item.isAssigned && <span className="px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider bg-indigo-50 text-indigo-600 border border-indigo-100">Tự chọn</span>}
+                        {!item.isAssigned && <span className="px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider bg-teal-50 text-[#135E5B] border border-teal-100">Tự chọn</span>}
                       </div>
                       <h3 className="text-xl font-black text-slate-800 leading-tight">{item.name}</h3>
                       <div className="flex items-center gap-4 text-xs font-bold text-slate-400">
@@ -211,7 +211,7 @@ export default async function HsDanhSachPage() {
                     <div className="pt-2 md:pt-0">
                       {item.status === 'OPEN' ? (
                         <Link href={item.href}
-                          className="flex items-center justify-center gap-2 px-8 py-4 rounded-2xl text-sm font-black text-white shadow-lg shadow-indigo-100 transition-all hover:scale-105 active:scale-95 whitespace-nowrap bg-indigo-600 hover:bg-indigo-700"
+                          className="flex items-center justify-center gap-2 px-8 py-4 rounded-2xl text-sm font-black text-white shadow-lg shadow-teal-100 transition-all hover:scale-105 active:scale-95 whitespace-nowrap bg-[#135E5B] hover:bg-[#0E4E4B]"
                         >
                           Bắt đầu ngay <ArrowRight className="w-4 h-4" />
                         </Link>
