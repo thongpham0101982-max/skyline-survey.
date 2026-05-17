@@ -140,13 +140,8 @@ export default async function InputAssessmentsPage() {
   }
 
   return (
-    <div className="p-4 lg:p-8 space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-6 mb-2">
-        <div>
-          <h1 className="text-3xl font-black text-slate-800 tracking-tight">Quản lý KSNL Đầu vào</h1>
-          <p className="text-slate-500 font-medium mt-1">Quản lý Kỳ khảo sát, Danh mục và Cấu hình Môn theo Khối - Hệ học.</p>
-        </div>
-      </div>
+    <div className="p-3 sm:p-4 lg:p-5">
+
       <InputAssessmentsClient
         academicYears={safeJson(academicYears)}
         campuses={safeJson(campuses)}

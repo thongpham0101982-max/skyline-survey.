@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 const DEFAULT_WATERMARK_SVG = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='%23007A87'><path d='M10,80 Q50,40 90,20 Q60,50 10,80 Z'/><path d='M30,80 Q60,55 90,35 Q65,60 30,80 Z'/></svg>";
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
@@ -1732,53 +1732,60 @@ return {
 
   // ====================== RENDER ======================
   return (
-    <div className="space-y-4 font-sans max-w-[1600px] mx-auto pb-20">
+    <div className="space-y-3 font-sans max-w-[1440px] mx-auto pb-16">
       {toast && <Toast msg={toast.msg} type={toast.type}/>}
       {confirm && <ConfirmDialog open={true} onClose={()=>setConfirm(null)} onConfirm={confirm.fn} message={confirm.msg}/>}
 
-      <div className="no-print flex flex-col gap-4 w-full">
+      <div className="no-print flex flex-col gap-3 w-full">
       {/* HEADER BAR */}
-      <div className="bg-white border border-slate-200 shadow-sm rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 via-indigo-600 to-violet-700 rounded-2xl flex items-center justify-center shadow-indigo-100 shadow-xl border border-white/20">
-            <ClipboardCheck className="w-6 h-6 text-white"/>
+      <div className="bg-white border border-slate-200 shadow-sm rounded-xl px-4 py-3 flex items-center justify-between gap-3 min-h-[56px]">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-9 h-9 bg-indigo-600 rounded-lg flex items-center justify-center flex-shrink-0">
+            <ClipboardCheck className="w-4 h-4 text-white"/>
           </div>
-          <div>
-            <h1 className="text-xl font-black text-slate-800 tracking-tight">Quản lý KSNL Đầu vào</h1>
-            <p className="text-[11px] text-slate-400 font-bold uppercase tracking-[0.2em]">Hệ thống khảo sát & phân công giáo viên</p>
+          <div className="min-w-0">
+            <h1 className="text-base font-black text-slate-800 tracking-tight leading-tight truncate">Quản lý KSNL Đầu vào</h1>
+            <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest hidden sm:block">Hệ thống khảo sát & phân công giáo viên</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 pr-1.5 py-1.5 bg-slate-50 rounded-2xl border border-slate-200 shadow-inner">
-          <Calendar className="w-4 h-4 text-slate-400 ml-3"/>
-          <select value={yearId} onChange={e=>{setYearId(e.target.value); setSPeriodId(""); setAsPeriodId(""); setStudents([]); setAssignments([])}} className="bg-transparent text-sm font-black text-slate-700 outline-none pr-4 py-1.5 cursor-pointer">
+        <div className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 rounded-lg border border-slate-200 flex-shrink-0">
+          <Calendar className="w-3.5 h-3.5 text-slate-400"/>
+          <select value={yearId} onChange={e=>{setYearId(e.target.value); setSPeriodId(""); setAsPeriodId(""); setStudents([]); setAssignments([])}} className="bg-transparent text-xs font-bold text-slate-700 outline-none cursor-pointer max-w-[140px] sm:max-w-none">
             {academicYears.map(ay=><option key={ay.id} value={ay.id}>Năm học {ay.name}</option>)}
           </select>
         </div>
       </div>
 
-      {/* TAB NAV - Premium horizontal scrollable sleek bar */}
-      <div className="bg-white border border-slate-200 shadow-sm rounded-2xl p-2 flex gap-1 overflow-x-auto scrollbar-none max-w-full" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-        {[
-          { id:"periods",    label:"Kỳ khảo sát",       icon:Clock },
-          { id:"categories", label:"Danh mục",          icon:Settings },
-          { id:"subjects",   label:"Môn khảo sát",      icon:BookOpen },
-          { id:"mapping",    label:"Cấu hình theo Khối",  icon:Layers },
-          { id:"students",   label:"DS HS khảo sát",     icon:Users },
-          { id:"assignments",label:"Phân công GV",        icon:UserCheck },
-          { id:"reports",    label:"Kết quả Tổng hợp",   icon:BarChart3 },
-          { id:"report_config", label:"Cấu hình Báo cáo", icon: PenLine },
-          { id:"admission_documents", label:"Hồ sơ nhập học", icon: Tag },
-        ].map(t=>(
-          <button key={t.id} onClick={()=>setTab(t.id)} className={`flex items-center gap-2.5 px-5 py-3 rounded-xl text-[13px] font-black tracking-tight transition-all duration-300 whitespace-nowrap ${tab===t.id?"bg-indigo-600 text-white shadow-xl shadow-indigo-100 scale-[1.03]":"text-slate-400 hover:bg-slate-50 hover:text-slate-600"}`}>
-            <t.icon className={`w-4 h-4 ${tab===t.id?"text-white":"opacity-70"}`}/>
-            {t.label}
-          </button>
-        ))}
+      {/* TAB NAV - icon + label, wraps to fit, no overflow */}
+      <div className="bg-white border border-slate-200 shadow-sm rounded-xl px-1 py-1">
+        <div className="flex flex-wrap gap-0.5">
+          {[
+            { id:"periods",              label:"K\u1ef3 KS",      tip:"K\u1ef3 kh\u1ea3o s\u00e1t",        icon:Clock },
+            { id:"categories",           label:"Danh m\u1ee5c",   tip:"Danh m\u1ee5c",            icon:Settings },
+            { id:"subjects",             label:"M\u00f4n KS",     tip:"M\u00f4n kh\u1ea3o s\u00e1t",        icon:BookOpen },
+            { id:"mapping",              label:"C\u1ea5u h\u00ecnh",   tip:"C\u1ea5u h\u00ecnh theo Kh\u1ed1i",  icon:Layers },
+            { id:"students",             label:"H\u1ecdc sinh",   tip:"DS HS kh\u1ea3o s\u00e1t",      icon:Users },
+            { id:"assignments",          label:"Ph\u00e2n c\u00f4ng",  tip:"Ph\u00e2n c\u00f4ng GV",        icon:UserCheck },
+            { id:"reports",              label:"K\u1ebft qu\u1ea3",    tip:"K\u1ebft qu\u1ea3 T\u1ed5ng h\u1ee3p",    icon:BarChart3 },
+            { id:"report_config",        label:"B\u00e1o c\u00e1o",    tip:"C\u1ea5u h\u00ecnh B\u00e1o c\u00e1o",    icon:PenLine },
+            { id:"admission_documents",  label:"H\u1ed3 s\u01a1",      tip:"H\u1ed3 s\u01a1 nh\u1eadp h\u1ecdc",      icon:Tag },
+          ].map(t=>(
+            <button
+              key={t.id}
+              onClick={()=>setTab(t.id)}
+              title={t.tip}
+              className={"flex flex-col sm:flex-row items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-2 sm:py-2.5 rounded-lg text-[9px] sm:text-[11px] font-bold transition-all duration-200 min-w-[44px] sm:min-w-0 " + (tab===t.id ? "bg-indigo-600 text-white shadow-sm" : "text-slate-500 hover:bg-slate-100 hover:text-slate-700")}
+            >
+              <t.icon className={"w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 " + (tab===t.id ? "text-white" : "text-slate-400")}/>
+              <span className="leading-tight text-center whitespace-nowrap">{t.label}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* ===== TAB: ASSIGNMENTS (PHÂN CÔNG) ===== */}
       {tab==="assignments" && (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
           <div className="flex items-center gap-4 bg-white p-5 rounded-3xl border border-slate-200 shadow-sm">
              <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center flex-shrink-0 animate-pulse">
                 <UserCheck className="w-6 h-6 text-indigo-500"/>
@@ -2020,8 +2027,8 @@ return {
           {pLoading ? <Spin/> : periods.length === 0 ? <Empty icon={Calendar} text="Chưa có Kỳ khảo sát nào" sub="Bấm Tạo Kỳ mới để bắt đầu" /> : (
             <div className="space-y-3">
               {visiblePeriods.map(p => (
-                <div key={p.id} className="bg-white rounded-[1.5rem] border border-slate-200 shadow-sm overflow-hidden group/p hover:border-indigo-200 transition-all">
-                  <div className="px-6 py-5 flex flex-wrap items-center justify-between gap-4 cursor-pointer" onClick={()=>setExpandedId(expandedId===p.id?null:p.id)}>
+                <div key={p.id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden group/p hover:border-indigo-200 transition-all">
+                  <div className="px-4 py-3.5 flex flex-wrap items-center justify-between gap-3 cursor-pointer" onClick={()=>setExpandedId(expandedId===p.id?null:p.id)}>
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center flex-shrink-0 group-hover/p:bg-indigo-600 group-hover/p:text-white transition-all">
                         <Clock className="w-5 h-5"/>
@@ -2241,7 +2248,7 @@ return {
 
       {/* ===== TAB: CATEGORIES (RESTORED) ===== */}
       {tab==="categories" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
            {CATEGORY_TYPES.map(type => (
              <div key={type.code} className="bg-white border border-slate-200 rounded-3xl shadow-sm flex flex-col overflow-hidden">
                 <div className={`h-1.5 bg-gradient-to-r ${type.color}`}/>
@@ -2334,7 +2341,7 @@ return {
         </div>
       )}      {/* ===== TAB: MAPPING (CAU HINH KHOI) ===== */}
       {tab === "mapping" && (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
           {/* TOP PANEL: Form ThemMoi / Sua */}
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
             <div className="flex items-center gap-3 mb-5 border-b pb-4">
@@ -2942,7 +2949,7 @@ return {
 
       {/* ===== TAB: ADMISSION DOCUMENTS (HỒ SƠ NHẬP HỌC) ===== */}
       {tab === "admission_documents" && (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
           <div className="bg-white/80 backdrop-blur-md p-6 rounded-3xl shadow-sm border border-slate-200/60 flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 shadow-inner">
@@ -3385,7 +3392,7 @@ return {
 
       {/* ===== OTHER TABS PLACEHOLDERS ===== */}
       {tab === "reports" && (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
           
           {/* TOP SELECTORS BAR */}
           <div className="bg-white/80 backdrop-blur-md p-6 rounded-3xl shadow-sm border border-slate-200/60 grid grid-cols-1 md:grid-cols-3 gap-6">
