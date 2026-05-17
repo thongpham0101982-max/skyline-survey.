@@ -41,7 +41,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <div className="flex min-h-screen bg-slate-50">
       <Sidebar role="ADMIN" permissionModules={readableModules} actualRole={roleCode} taskCount={taskCount} />
-      <main className="flex-1 p-8 relative">
+      <main className="flex-1 p-4 sm:p-6 md:p-8 pt-16 md:pt-8 relative">
         <NotificationBell />
         {children}
       </main>
