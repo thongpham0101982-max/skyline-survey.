@@ -1573,12 +1573,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
         
         const eligibleStudents = emailStudents.filter(s => s.admissionResult === "Đạt" || s.admissionResult === "Đạt cam kết");
         let currentPdfCount = 0;
-        
-        let totalPdfs = 0;
-        eligibleStudents.forEach(s => {
-          if (s.admissionResult === "Đạt") totalPdfs += 1;
-          if (s.admissionResult === "Đạt cam kết") totalPdfs += 2;
-        });
+        let totalPdfs = eligibleStudents.length;
 
         for (const s of emailStudents) {
           if (s.admissionResult === "Đạt" || s.admissionResult === "Đạt cam kết") {
@@ -1587,42 +1582,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
               currentPdfCount++;
               setEmailSendingStatus(`Đang tạo PDF (${currentPdfCount}/${totalPdfs}): Thư chúc mừng - ${s.fullName}`);
               const docHtml = buildLetterHtml(s, config, false);
-              
               const filename = `Thu_Chuc_Mung_${s.fullName.replace(/\s+/g, '_')}.pdf`;
-              const opt = {
-                margin: 0,
-                filename: filename,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 1.8, useCORS: true, logging: false, letterRendering: true },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-              };
-
-              try {
-                const pdfBase64 = await generatePdfBase64(html2pdf, docHtml, opt);
-                const base64Data = pdfBase64.split(',')[1];
-                
-                pdfAttachmentsList.push({
-                  filename: filename,
-                  base64: base64Data
-                });
-              } catch (pdfErr) {
-                console.error("Client PDF generation failed, falling back to server:", pdfErr);
-                pdfAttachmentsList.push({
-                  filename: filename,
-                  html: docHtml
-                });
-              }
-            }
-          }
-          
-          if (s.admissionResult === "Đạt cam kết") {
-            const config = getStudentCampusConfig(s, false, true);
-            if (config) {
-              currentPdfCount++;
-              setEmailSendingStatus(`Đang tạo PDF (${currentPdfCount}/${totalPdfs}): Bản cam kết - ${s.fullName}`);
-              const docHtml = buildLetterHtml(s, config, true);
-              
-              const filename = `Ban_Cam_Ket_${s.fullName.replace(/\s+/g, '_')}.pdf`;
               const opt = {
                 margin: 0,
                 filename: filename,
@@ -1697,11 +1657,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
       const html2pdf = await getHtml2Pdf();
       
       let count = 0;
-      let totalPdfs = 0;
-      eligibleStudents.forEach(s => {
-        if (s.admissionResult === "Đạt") totalPdfs += 1;
-        if (s.admissionResult === "Đạt cam kết") totalPdfs += 2;
-      });
+      let totalPdfs = eligibleStudents.length;
 
       for (const s of emailStudents) {
         if (s.admissionResult === "Đạt" || s.admissionResult === "Đạt cam kết") {
@@ -1711,34 +1667,6 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
             setEmailSendingStatus(`Đang tải (${count}/${totalPdfs}): Thư chúc mừng - ${s.fullName.split(' ').pop()}`);
             const docHtml = buildLetterHtml(s, config, false);
             const filename = `Thu_Chuc_Mung_${s.fullName.replace(/\s+/g, '_')}.pdf`;
-            const opt = {
-              margin: 0,
-              filename: filename,
-              image: { type: 'jpeg', quality: 0.98 },
-              html2canvas: { scale: 1.8, useCORS: true, logging: false, letterRendering: true },
-              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
-
-            const pdfBase64 = await generatePdfBase64(html2pdf, docHtml, opt);
-            
-            const link = document.createElement('a');
-            link.href = pdfBase64;
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            await new Promise(r => setTimeout(r, 600));
-          }
-        }
-        
-        if (s.admissionResult === "Đạt cam kết") {
-          const config = getStudentCampusConfig(s, false, true);
-          if (config) {
-            count++;
-            setEmailSendingStatus(`Đang tải (${count}/${totalPdfs}): Bản cam kết - ${s.fullName.split(' ').pop()}`);
-            const docHtml = buildLetterHtml(s, config, true);
-            const filename = `Ban_Cam_Ket_${s.fullName.replace(/\s+/g, '_')}.pdf`;
             const opt = {
               margin: 0,
               filename: filename,
