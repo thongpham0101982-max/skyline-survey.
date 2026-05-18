@@ -151,46 +151,64 @@ export async function POST(req: Request) {
       </html>
     `;
 
-    // Process PDF generation using headless Puppeteer browser on the server side
+    // Process PDF attachments - supports direct client-side pre-compiled base64 PDFs
     const mailAttachments = [];
     if (showAttachments && Array.isArray(pdfAttachments) && pdfAttachments.length > 0) {
-      let puppeteer;
-      try {
-        puppeteer = require("puppeteer");
-      } catch (e) {
-        console.error("Puppeteer import failed:", e);
+      let hasBase64 = false;
+      for (const att of pdfAttachments) {
+        if (att.base64) {
+          hasBase64 = true;
+          mailAttachments.push({
+            filename: att.filename,
+            content: Buffer.from(att.base64, "base64"),
+            contentType: "application/pdf"
+          });
+        }
       }
 
-      if (puppeteer) {
+      // Fallback to server-side Puppeteer ONLY if HTML is passed without base64 pre-compilation
+      if (!hasBase64) {
+        let puppeteer;
         try {
-          const browser = await puppeteer.launch({
-            headless: true,
-            args: ["--no-sandbox", "--disable-setuid-sandbox"]
-          });
-          
-          for (const att of pdfAttachments) {
-            try {
-              const page = await browser.newPage();
-              await page.emulateMediaType("screen");
-              await page.setContent(att.html, { waitUntil: "networkidle0", timeout: 15000 });
-              
-              const pdfBuffer = await page.pdf({
-                format: "A4",
-                printBackground: true,
-                margin: { top: "0mm", right: "0mm", bottom: "0mm", left: "0mm" }
-              });
-              
-              mailAttachments.push({
-                filename: att.filename,
-                content: pdfBuffer
-              });
-            } catch (err) {
-              console.error(`Failed to generate PDF for ${att.filename}:`, err);
+          puppeteer = require("puppeteer");
+        } catch (e) {
+          console.error("Puppeteer import failed:", e);
+        }
+
+        if (puppeteer) {
+          try {
+            const browser = await puppeteer.launch({
+              headless: true,
+              args: ["--no-sandbox", "--disable-setuid-sandbox"]
+            });
+            
+            for (const att of pdfAttachments) {
+              if (att.html) {
+                try {
+                  const page = await browser.newPage();
+                  await page.emulateMediaType("screen");
+                  await page.setContent(att.html, { waitUntil: "networkidle0", timeout: 15000 });
+                  
+                  const pdfBuffer = await page.pdf({
+                    format: "A4",
+                    printBackground: true,
+                    margin: { top: "0mm", right: "0mm", bottom: "0mm", left: "0mm" }
+                  });
+                  
+                  mailAttachments.push({
+                    filename: att.filename,
+                    content: pdfBuffer,
+                    contentType: "application/pdf"
+                  });
+                } catch (err) {
+                  console.error(`Failed to generate PDF for ${att.filename}:`, err);
+                }
+              }
             }
+            await browser.close();
+          } catch (launchErr) {
+            console.error("Failed to launch Puppeteer:", launchErr);
           }
-          await browser.close();
-        } catch (launchErr) {
-          console.error("Failed to launch Puppeteer:", launchErr);
         }
       }
     }

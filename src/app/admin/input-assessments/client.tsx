@@ -911,6 +911,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
   const [emailSubject, setEmailSubject] = useState("");
   const [emailStudents, setEmailStudents] = useState<any[]>([]);
   const [emailSending, setEmailSending] = useState(false);
+  const [emailSendingStatus, setEmailSendingStatus] = useState("");
   const [emailResult, setEmailResult] = useState<any>(null);
   const [attachLetters, setAttachLetters] = useState(true);
   const [checkedEmails, setCheckedEmails] = useState({
@@ -1403,6 +1404,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
       return;
     }
     setEmailSending(true);
+    setEmailSendingStatus("Đang khởi tạo...");
     setEmailResult(null);
     try {
       const activeBatchName = reportBatchId === "all" ? "Tất cả các đợt" : reportBatches.find(b => b.id === reportBatchId)?.name || "Đợt khảo sát";
@@ -1410,29 +1412,91 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
 
       const pdfAttachmentsList: any[] = [];
       if (attachLetters) {
+        // Dynamically import html2pdf.js on the client browser side to prevent SSR errors
+        const html2pdf = (await import('html2pdf.js')).default;
+        
+        const eligibleStudents = emailStudents.filter(s => s.admissionResult === "Đạt" || s.admissionResult === "Đạt cam kết");
+        let currentPdfCount = 0;
+        
+        // Calculate total PDFs to generate
+        let totalPdfs = 0;
+        eligibleStudents.forEach(s => {
+          if (s.admissionResult === "Đạt") totalPdfs += 1;
+          if (s.admissionResult === "Đạt cam kết") totalPdfs += 2; // Thư chúc mừng + Bản cam kết
+        });
+
         for (const s of emailStudents) {
           if (s.admissionResult === "Đạt" || s.admissionResult === "Đạt cam kết") {
             const config = getStudentCampusConfig(s, false, false);
             if (config) {
+              currentPdfCount++;
+              setEmailSendingStatus(`Đang tạo PDF (${currentPdfCount}/${totalPdfs}): Thư chúc mừng - ${s.fullName}`);
               const docHtml = buildLetterHtml(s, config, false);
-              pdfAttachmentsList.push({
-                filename: `Thu_Chuc_Mung_${s.fullName.replace(/\s+/g, '_')}.pdf`,
-                html: docHtml
-              });
+              
+              const filename = `Thu_Chuc_Mung_${s.fullName.replace(/\s+/g, '_')}.pdf`;
+              const opt = {
+                margin: 0,
+                filename: filename,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 1.8, useCORS: true, logging: false, letterRendering: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+              };
+
+              try {
+                const pdfBase64 = await html2pdf().from(docHtml).set(opt).outputPdf('datauristring');
+                const base64Data = pdfBase64.split(',')[1];
+                
+                pdfAttachmentsList.push({
+                  filename: filename,
+                  base64: base64Data
+                });
+              } catch (pdfErr) {
+                console.error("Client PDF generation failed, falling back to server:", pdfErr);
+                pdfAttachmentsList.push({
+                  filename: filename,
+                  html: docHtml
+                });
+              }
             }
           }
+          
           if (s.admissionResult === "Đạt cam kết") {
             const config = getStudentCampusConfig(s, false, true);
             if (config) {
+              currentPdfCount++;
+              setEmailSendingStatus(`Đang tạo PDF (${currentPdfCount}/${totalPdfs}): Bản cam kết - ${s.fullName}`);
               const docHtml = buildLetterHtml(s, config, true);
-              pdfAttachmentsList.push({
-                filename: `Ban_Cam_Ket_${s.fullName.replace(/\s+/g, '_')}.pdf`,
-                html: docHtml
-              });
+              
+              const filename = `Ban_Cam_Ket_${s.fullName.replace(/\s+/g, '_')}.pdf`;
+              const opt = {
+                margin: 0,
+                filename: filename,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 1.8, useCORS: true, logging: false, letterRendering: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+              };
+
+              try {
+                const pdfBase64 = await html2pdf().from(docHtml).set(opt).outputPdf('datauristring');
+                const base64Data = pdfBase64.split(',')[1];
+                
+                pdfAttachmentsList.push({
+                  filename: filename,
+                  base64: base64Data
+                });
+              } catch (pdfErr) {
+                console.error("Client PDF generation failed, falling back to server:", pdfErr);
+                pdfAttachmentsList.push({
+                  filename: filename,
+                  html: docHtml
+                });
+              }
             }
           }
         }
       }
+
+      setEmailSendingStatus("Đang truyền tải & gửi Email...");
 
       const res = await fetch("/api/admin/send-quick-email", {
         method: "POST",
@@ -1460,8 +1524,9 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
       alert("Lỗi kết nối: " + err.message);
     } finally {
       setEmailSending(false);
+      setEmailSendingStatus("");
     }
-  };
+  };;
   const [reportLoading, setReportLoading] = useState(false);
   const [reportForm, setReportForm] = useState({
     admissionResult: "",
@@ -6588,7 +6653,7 @@ return {
                 {emailSending ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Đang gửi...
+                    <span>{emailSendingStatus || "Đang gửi..."}</span>
                   </>
                 ) : (
                   <>
