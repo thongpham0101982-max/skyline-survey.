@@ -1422,10 +1422,13 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     // Detach all style elements to completely hide Tailwind's modern oklch/lab colors from html2canvas
     styleElements.forEach((el: any) => {
       const parent = el.parentNode;
-      const nextSibling = el.nextSibling;
       if (parent) {
-        parent.removeChild(el);
-        detachedElements.push({ element: el, parent, nextSibling });
+        try {
+          parent.removeChild(el);
+          detachedElements.push({ element: el, parent });
+        } catch (err) {
+          console.error("Failed to detach style element:", err);
+        }
       }
     });
 
@@ -1433,18 +1436,18 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
       const pdfBase64 = await html2pdf().from(docHtml).set(opt).outputPdf('datauristring');
       return pdfBase64;
     } finally {
-      // Re-attach all style elements in their exact original positions
-      detachedElements.forEach(({ element, parent, nextSibling }) => {
+      // Re-attach all style elements safely using appendChild to prevent insertBefore sibling errors
+      detachedElements.forEach(({ element, parent }) => {
         if (parent) {
-          if (nextSibling) {
-            parent.insertBefore(element, nextSibling);
-          } else {
+          try {
             parent.appendChild(element);
+          } catch (e) {
+            console.error("Failed to re-attach style element:", e);
           }
         }
       });
     }
-  };;
+  };;;
 
   const handleSendQuickEmailSubmit = async () => {
     if (!recipientEmail.trim()) {
