@@ -1061,6 +1061,80 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     return null;
   };
 
+  const getStudentDocList = (student: any) => {
+    if (typeof window === "undefined" || !student) return [];
+    
+    let studentGroup = "khoi_1";
+    const getNumericGrade = (g: any) => {
+      if (!g) return null;
+      const match = g.toString().match(/\d+/);
+      return match ? parseInt(match[0], 10) : null;
+    };
+    const sGradeNum = getNumericGrade(student.grade);
+    
+    const gradeMatchedGroups = docGroups.filter((g: any) => {
+      const mappedGrades = docGroupGrades[g.id] || [];
+      const hasGradeMatch = mappedGrades.some((gradeStr: string) => {
+        if (!student.grade) return false;
+        const sGrade = student.grade.toString().toLowerCase();
+        const gStr = gradeStr.toLowerCase();
+        return sGrade === gStr || sGrade.includes(gStr) || gStr.includes(sGrade);
+      });
+      if (hasGradeMatch) return true;
+      
+      if (sGradeNum !== null) {
+        if (g.id === "khoi_1" && sGradeNum === 1) return true;
+        if (g.id === "khoi_2_5" && sGradeNum >= 2 && sGradeNum <= 5) return true;
+        if (g.id === "khoi_6" && sGradeNum === 6) return true;
+        if (g.id === "khoi_7_9" && sGradeNum >= 7 && sGradeNum <= 9) return true;
+        if (g.id === "khoi_10" && sGradeNum === 10) return true;
+        if (g.id === "khoi_11_12" && sGradeNum >= 11 && sGradeNum <= 12) return true;
+      }
+      return false;
+    });
+
+    if (student.targetType) {
+      const studentTargets = student.targetType.split(',').map((x: string) => x.trim().toLowerCase()).filter(Boolean);
+      
+      const targetMatch = gradeMatchedGroups.find((g: any) => {
+        const mappedTs = docGroupTargets[g.id] || [];
+        return mappedTs.some((ts: string) => studentTargets.includes(ts.toLowerCase()));
+      });
+      
+      if (targetMatch) {
+        studentGroup = targetMatch.id;
+      } else {
+        const anyTargetMatch = docGroups.find((g: any) => {
+          const mappedTs = docGroupTargets[g.id] || [];
+          return mappedTs.some((ts: string) => studentTargets.includes(ts.toLowerCase()));
+        });
+        if (anyTargetMatch) {
+          studentGroup = anyTargetMatch.id;
+        } else {
+          studentGroup = gradeMatchedGroups[0]?.id || "doi_tuong_tuyen_sinh";
+        }
+      }
+    } else {
+      studentGroup = gradeMatchedGroups[0]?.id || "khoi_1";
+    }
+    
+    const saved = localStorage.getItem('admission_docs_' + studentGroup);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      } catch (e) {}
+    }
+    
+    if (studentGroup === "khoi_2_5") return defaultDocumentsGrade2_5;
+    if (studentGroup === "khoi_6") return defaultDocumentsGrade6;
+    if (studentGroup === "khoi_10_noi_tinh") return defaultDocumentsGrade10NoiTinh;
+    if (studentGroup === "khoi_10_ngoai_tinh") return defaultDocumentsGrade10NgoaiTinh;
+    return defaultDocumentsGrade1;
+  };
+
   const buildLetterHtml = (student: any, config: any, isCommitmentFlag: boolean) => {
     const rawGrade = student?.grade || "1";
     const gradeMatch = rawGrade.toString().match(/\d+/);
@@ -1080,15 +1154,14 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
       .replace(/\{\{signatureName\}\}/g, student?.signatureName || "");
 
     const paragraphs = renderedContent.split("\n").filter(Boolean);
-    const bodyHtml = paragraphs.map((p: string) => `<p style="text-indent: 1cm; margin: 0 0 10px 0;">${p}</p>`).join("");
+    const bodyHtml = paragraphs.map((p: string) => '<p style="text-indent: 1cm; margin: 0 0 10px 0;">' + p + '</p>').join("");
     
-    const greetingHtml = `Thân gửi em <strong style="font-weight: 900; font-style: normal; color: #0f172a;">${student.fullName}</strong>,`;
+    const greetingHtml = 'Thân gửi em <strong style="font-weight: 900; font-style: normal; color: #0f172a;">' + student.fullName + '</strong>,';
     const directorName = student?.signatureName || config.directorName || "Đỗ Quang Trung";
-    const logoHtml = config.logo ? `<img class="logo-img" src="${config.logo}" alt="Logo" />` : "";
-    const signatureHtml = config.signature ? `<img class="signature-img" src="${config.signature}" alt="Signature" />` : "";
-    const footerHtml = config.footer ? `<img class="footer-img" src="${config.footer}" alt="Footer" />` : "";
+    const logoHtml = config.logo ? '<img class="logo-img" src="' + config.logo + '" alt="Logo" />' : "";
+    const signatureHtml = config.signature ? '<img class="signature-img" src="' + config.signature + '" alt="Signature" />' : "";
+    const footerHtml = config.footer ? '<img class="footer-img" src="' + config.footer + '" alt="Footer" />' : "";
     
-    // Find school name fallback
     let schoolName = "HỆ THỐNG GIÁO DỤC SKY-LINE";
     if (student.admissionCampus) {
       if (student.admissionCampus.includes("CS1") || student.admissionCampus.includes("Riverside")) {
@@ -1104,199 +1177,232 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
       }
     }
 
-    return `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <title>${config.title || "Tài liệu"}</title>
-        <style>
-          @page {
-            size: A4;
-            margin: 0;
-          }
-          body {
-            margin: 0;
-            padding: 0;
-            background-color: #ffffff;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-          .print-page {
-            font-family: "Times New Roman", Times, serif;
-            width: 210mm;
-            height: 297mm;
-            padding: 20mm 20mm 48mm 20mm;
-            box-sizing: border-box;
-            position: relative;
-            overflow: hidden;
-            background-color: #ffffff;
-          }
-          .print-watermark {
-            display: block;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 80%;
-            height: auto;
-            opacity: 0.08;
-            z-index: 0;
-            pointer-events: none;
-          }
-          .logo-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #cbd5e1;
-            padding-bottom: 8px;
-            margin-bottom: 12px;
-            position: relative;
-            z-index: 10;
-          }
-          .logo-img {
-            max-height: 40px;
-            object-fit: contain;
-          }
-          .school-name {
-            font-family: Arial, sans-serif;
-            font-size: 13px;
-            font-weight: 800;
-            text-transform: uppercase;
-            color: #1e293b;
-            margin-top: 4px;
-          }
-          .letter-title {
-            text-align: center;
-            margin: 20px 0;
-            position: relative;
-            z-index: 10;
-          }
-          .letter-title h2 {
-            font-size: 22px;
-            font-weight: 900;
-            letter-spacing: 0.5px;
-            color: #1e1b4b;
-            text-transform: uppercase;
-            margin: 0;
-          }
-          .greeting {
-            font-size: 16px;
-            font-style: italic;
-            color: #1e293b;
-            margin-bottom: 12px;
-            position: relative;
-            z-index: 10;
-          }
-          .content-body {
-            font-size: 14pt;
-            line-height: 1.5;
-            text-align: justify;
-            color: #1e293b;
-            position: relative;
-            z-index: 10;
-          }
-          .signature-section {
-            margin-top: 30px;
-            display: flex;
-            justify-content: flex-end;
-            position: relative;
-            z-index: 10;
-          }
-          .signature-block {
-            text-align: center;
-            width: 200px;
-          }
-          .signature-title {
-            font-size: 14px;
-            font-weight: bold;
-            color: #1e293b;
-            margin-bottom: 4px;
-          }
-          .signature-desc {
-            font-size: 12px;
-            color: #475569;
-            font-style: italic;
-            margin-bottom: 10px;
-          }
-          .signature-img-container {
-            height: 64px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 8px;
-          }
-          .signature-img {
-            max-height: 64px;
-            object-fit: contain;
-          }
-          .signature-name {
-            font-size: 15px;
-            font-weight: bold;
-            color: #1e293b;
-          }
-          .footer-container {
-            position: absolute;
-            bottom: 15mm;
-            left: 20mm;
-            right: 20mm;
-            z-index: 10;
-            text-align: center;
-          }
-          .footer-img {
-            width: 100%;
-            max-height: 100px;
-            object-fit: contain;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="print-page">
-          <!-- Background Watermark -->
-          ${config.background ? `<img class="print-watermark" src="${config.background}" alt="Watermark" />` : ""}
-          
-          <!-- Top Header -->
-          <div class="logo-container">
-            ${logoHtml}
-            <div class="school-name">${schoolName}</div>
-          </div>
-          
-          <!-- Letter Title -->
-          <div class="letter-title">
-            <h2>${config.title}</h2>
-          </div>
-          
-          <!-- Greeting -->
-          <div class="greeting">
-            ${greetingHtml}
-          </div>
-          
-          <!-- Content Body -->
-          <div class="content-body">
-            ${bodyHtml}
-          </div>
-          
-          <!-- Signature Section -->
-          <div class="signature-section">
-            <div class="signature-block">
-              <div class="signature-title">HỘI ĐỒNG TUYỂN SINH</div>
-              <div class="signature-desc">(Ký và ghi rõ họ tên)</div>
-              <div class="signature-img-container">
-                ${signatureHtml}
-              </div>
-              <div class="signature-name">${directorName}</div>
-            </div>
-          </div>
-          
-          <!-- Footer -->
-          <div class="footer-container">
-            ${footerHtml}
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
-  };
+    // Page 2: Admission Documents Checklist (Danh mục Hồ sơ nhập học)
+    let page2Html = "";
+    if (student.admissionResult === "Đạt" || student.admissionResult === "Đạt cam kết") {
+      const docList = getStudentDocList(student);
+      if (docList && docList.length > 0) {
+        const rowsHtml = docList.map((item: any, idx: number) => {
+          return '<tr style="border-bottom: 1px solid #000000;">' +
+            '<td style="padding: 10px; border-right: 1px solid #000000; text-align: center; color: #000000;">' + (idx + 1) + '</td>' +
+            '<td style="padding: 10px 15px; border-right: 1px solid #000000; font-weight: bold; color: #000000;">' + item.name + '</td>' +
+            '<td style="padding: 10px; text-align: center; font-weight: bold; color: #000000;">' + item.qty + '</td>' +
+          '</tr>';
+        }).join("");
+
+        page2Html = '<div style="page-break-before: always;"></div>' +
+          '<div class="print-page">' +
+            (config.background ? '<img class="print-watermark" src="' + config.background + '" alt="Watermark" />' : "") +
+            '<div class="logo-container">' +
+              logoHtml +
+              '<div class="school-name">' + schoolName + '</div>' +
+            '</div>' +
+            '<div class="letter-title">' +
+              '<h2>DANH MỤC HỒ SƠ NHẬP HỌC</h2>' +
+            '</div>' +
+            '<div style="margin-top: 30px; border: 1px solid #000000; overflow: hidden; position: relative; z-index: 10;">' +
+              '<table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; color: #000000; font-family: \'Times New Roman\', Times, serif;">' +
+                '<thead>' +
+                  '<tr style="background-color: #ffffff; border-bottom: 1px solid #000000;">' +
+                    '<th style="padding: 10px; border-right: 1px solid #000000; text-align: center; font-weight: bold; width: 60px; text-transform: uppercase; color: #000000;">STT</th>' +
+                    '<th style="padding: 10px 15px; border-right: 1px solid #000000; text-align: center; font-weight: bold; text-transform: uppercase; color: #000000;">Tên hồ sơ</th>' +
+                    '<th style="padding: 10px; text-align: center; font-weight: bold; width: 120px; text-transform: uppercase; color: #000000;">Số lượng</th>' +
+                  '</tr>' +
+                '</thead>' +
+                '<tbody>' +
+                  rowsHtml +
+                '</tbody>' +
+              '</table>' +
+            '</div>' +
+            '<p style="margin-top: 35px; font-size: 14px; font-weight: bold; color: #000000; line-height: 1.6; text-align: left; position: relative; z-index: 10;">' +
+              'Quý phụ huynh vui lòng bổ sung hồ sơ thiếu (nếu có) trong vòng 10 ngày kể từ ngày nộp Hồ sơ.' +
+            '</p>' +
+            '<div class="footer-container">' +
+              footerHtml +
+            '</div>' +
+          '</div>';
+      }
+    }
+
+    return '<!DOCTYPE html>' +
+      '<html>' +
+      '<head>' +
+        '<meta charset="utf-8">' +
+        '<title>' + (config.title || "Tài liệu") + '</title>' +
+        '<style>' +
+          '@page {' +
+            'size: A4;' +
+            'margin: 0;' +
+          '}' +
+          'body {' +
+            'margin: 0;' +
+            'padding: 0;' +
+            'background-color: #ffffff;' +
+            '-webkit-print-color-adjust: exact !important;' +
+            'print-color-adjust: exact !important;' +
+          '}' +
+          '.print-page {' +
+            'font-family: "Times New Roman", Times, serif;' +
+            'width: 210mm;' +
+            'height: 297mm;' +
+            'padding: 20mm 20mm 48mm 20mm;' +
+            'box-sizing: border-box;' +
+            'position: relative;' +
+            'overflow: hidden;' +
+            'background-color: #ffffff;' +
+          '}' +
+          '.print-watermark {' +
+            'display: block;' +
+            'position: absolute;' +
+            'top: 50%;' +
+            'left: 50%;' +
+            'transform: translate(-50%, -50%);' +
+            'width: 80%;' +
+            'height: auto;' +
+            'opacity: 0.08;' +
+            'z-index: 0;' +
+            'pointer-events: none;' +
+          '}' +
+          '.logo-container {' +
+            'display: flex;' +
+            'justify-content: space-between;' +
+            'align-items: center;' +
+            'border-bottom: 1px solid #cbd5e1;' +
+            'padding-bottom: 8px;' +
+            'margin-bottom: 12px;' +
+            'position: relative;' +
+            'z-index: 10;' +
+          '}' +
+          '.logo-img {' +
+            'max-height: 40px;' +
+            'object-fit: contain;' +
+          '}' +
+          '.school-name {' +
+            'font-family: Arial, sans-serif;' +
+            'font-size: 13px;' +
+            'font-weight: 800;' +
+            'text-transform: uppercase;' +
+            'color: #1e293b;' +
+            'margin-top: 4px;' +
+          '}' +
+          '.letter-title {' +
+            'text-align: center;' +
+            'margin: 20px 0;' +
+            'position: relative;' +
+            'z-index: 10;' +
+          '}' +
+          '.letter-title h2 {' +
+            'font-size: 22px;' +
+            'font-weight: 900;' +
+            'letter-spacing: 0.5px;' +
+            'color: #1e1b4b;' +
+            'text-transform: uppercase;' +
+            'margin: 0;' +
+          '}' +
+          '.greeting {' +
+            'font-size: 16px;' +
+            'font-style: italic;' +
+            'color: #1e293b;' +
+            'margin-bottom: 12px;' +
+            'position: relative;' +
+            'z-index: 10;' +
+          '}' +
+          '.content-body {' +
+            'font-size: 14pt;' +
+            'line-height: 1.5;' +
+            'text-align: justify;' +
+            'color: #1e293b;' +
+            'position: relative;' +
+            'z-index: 10;' +
+          '}' +
+          '.signature-section {' +
+            'margin-top: 30px;' +
+            'display: flex;' +
+            'justify-content: flex-end;' +
+            'position: relative;' +
+            'z-index: 10;' +
+          '}' +
+          '.signature-block {' +
+            'text-align: center;' +
+            'width: 200px;' +
+          '}' +
+          '.signature-title {' +
+            'font-size: 14px;' +
+            'font-weight: bold;' +
+            'color: #1e293b;' +
+            'margin-bottom: 4px;' +
+          '}' +
+          '.signature-desc {' +
+            'font-size: 12px;' +
+            'color: #475569;' +
+            'font-style: italic;' +
+            'margin-bottom: 10px;' +
+          '}' +
+          '.signature-img-container {' +
+            'height: 64px;' +
+            'display: flex;' +
+            'justify-content: center;' +
+            'align-items: center;' +
+            'margin-bottom: 8px;' +
+          '}' +
+          '.signature-img {' +
+            'max-height: 64px;' +
+            'object-fit: contain;' +
+          '}' +
+          '.signature-name {' +
+            'font-size: 15px;' +
+            'font-weight: bold;' +
+            'color: #1e293b;' +
+          '}' +
+          '.footer-container {' +
+            'position: absolute;' +
+            'bottom: 15mm;' +
+            'left: 20mm;' +
+            'right: 20mm;' +
+            'z-index: 10;' +
+            'text-align: center;' +
+          '}' +
+          '.footer-img {' +
+            'width: 100%;' +
+            'max-height: 100px;' +
+            'object-fit: contain;' +
+          '}' +
+        '</style>' +
+      '</head>' +
+      '<body>' +
+        '<div class="print-page">' +
+          (config.background ? '<img class="print-watermark" src="' + config.background + '" alt="Watermark" />' : "") +
+          '<div class="logo-container">' +
+            logoHtml +
+            '<div class="school-name">' + schoolName + '</div>' +
+          '</div>' +
+          '<div class="letter-title">' +
+            '<h2>' + config.title + '</h2>' +
+          '</div>' +
+          '<div class="greeting">' +
+            greetingHtml +
+          '</div>' +
+          '<div class="content-body">' +
+            bodyHtml +
+          '</div>' +
+          '<div class="signature-section">' +
+            '<div class="signature-block">' +
+              '<div class="signature-title">HỘI ĐỒNG TUYỂN SINH</div>' +
+              '<div class="signature-desc">(Ký và ghi rõ họ tên)</div>' +
+              '<div class="signature-img-container">' +
+                signatureHtml +
+              '</div>' +
+              '<div class="signature-name">' + directorName + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="footer-container">' +
+            footerHtml +
+          '</div>' +
+        '</div>' +
+        page2Html +
+      '</body>' +
+      '</html>';
+  };;
 
   const handleCheckboxChange = (group: 'tuvan' | 'giaovu' | 'gdcs' | 'cc', cs?: string) => {
     setCheckedEmails(prev => {
