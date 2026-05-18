@@ -1415,33 +1415,36 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
   };
 
   const generatePdfBase64 = async (html2pdf: any, docHtml: string, opt: any) => {
-    const activeSheets: any[] = [];
-    for (let i = 0; i < document.styleSheets.length; i++) {
-      const sheet = document.styleSheets[i];
-      try {
-        if (!sheet.disabled) {
-          sheet.disabled = true;
-          activeSheets.push(sheet);
-        }
-      } catch (e) {
-        try {
-          sheet.disabled = true;
-          activeSheets.push(sheet);
-        } catch (err) {}
+    // Query all style and stylesheet link elements in the document
+    const styleElements = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'));
+    const detachedElements: any[] = [];
+
+    // Detach all style elements to completely hide Tailwind's modern oklch/lab colors from html2canvas
+    styleElements.forEach((el: any) => {
+      const parent = el.parentNode;
+      const nextSibling = el.nextSibling;
+      if (parent) {
+        parent.removeChild(el);
+        detachedElements.push({ element: el, parent, nextSibling });
       }
-    }
+    });
 
     try {
       const pdfBase64 = await html2pdf().from(docHtml).set(opt).outputPdf('datauristring');
       return pdfBase64;
     } finally {
-      activeSheets.forEach(sheet => {
-        try {
-          sheet.disabled = false;
-        } catch (e) {}
+      // Re-attach all style elements in their exact original positions
+      detachedElements.forEach(({ element, parent, nextSibling }) => {
+        if (parent) {
+          if (nextSibling) {
+            parent.insertBefore(element, nextSibling);
+          } else {
+            parent.appendChild(element);
+          }
+        }
       });
     }
-  };
+  };;
 
   const handleSendQuickEmailSubmit = async () => {
     if (!recipientEmail.trim()) {
