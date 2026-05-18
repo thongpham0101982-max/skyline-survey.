@@ -28,23 +28,11 @@ export async function POST(req: Request) {
       const resultBg = s.admissionResult === "Đạt" ? "#ecfdf5" : s.admissionResult === "Đạt cam kết" ? "#fef3c7" : s.admissionResult === "Không đạt" ? "#fef2f2" : "#f3f4f6";
       
       let attachmentsHtml = "—";
-      if (s.admissionResult === "Đạt") {
+      if (s.admissionResult === "Đạt" || s.admissionResult === "Đạt cam kết") {
         attachmentsHtml = `
           <a href="${baseUrl}/admin/input-assessments?studentId=${s.id}&print=chuc_mung" style="display: inline-block; padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; color: #ffffff; background-color: #059669; text-decoration: none; white-space: nowrap; border: 1px solid #047857; text-shadow: 0 1px 1px rgba(0,0,0,0.1);">
             Thư chúc mừng
           </a>
-        `;
-      } else if (s.admissionResult === "Đạt cam kết") {
-        attachmentsHtml = `
-          <div style="display: inline-block; text-align: center;">
-            <a href="${baseUrl}/admin/input-assessments?studentId=${s.id}&print=chuc_mung" style="display: inline-block; padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; color: #ffffff; background-color: #059669; text-decoration: none; white-space: nowrap; border: 1px solid #047857; margin-bottom: 4px; text-shadow: 0 1px 1px rgba(0,0,0,0.1);">
-              Thư chúc mừng
-            </a>
-            <br />
-            <a href="${baseUrl}/admin/input-assessments?studentId=${s.id}&print=cam_ket" style="display: inline-block; padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; color: #ffffff; background-color: #d97706; text-decoration: none; white-space: nowrap; border: 1px solid #b45309; text-shadow: 0 1px 1px rgba(0,0,0,0.1);">
-              Bản cam kết
-            </a>
-          </div>
         `;
       }
 
