@@ -1151,7 +1151,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     return defaultDocumentsGrade1;
   };
 
-  const buildLetterHtml = (student: any, config: any, isCommitmentFlag: boolean) => {
+  const buildLetterHtml = (student: any, config: any, isCommitmentFlag: boolean, isInvitationFlag: boolean = false) => {
     const rawGrade = student?.grade || "1";
     const gradeMatch = rawGrade.toString().match(/\d+/);
     const numericGrade = gradeMatch ? gradeMatch[0] : rawGrade;
