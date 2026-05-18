@@ -1693,12 +1693,24 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
 
             const pdfBase64 = await generatePdfBase64(html2pdf, docHtml, opt);
             
+            // Ultra-robust Blob-based download to bypass browser size and security limitations on data URIs
+            const base64Data = pdfBase64.split(',')[1];
+            const byteCharacters = atob(base64Data);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+              byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: 'application/pdf' });
+            const blobUrl = URL.createObjectURL(blob);
+
             const link = document.createElement('a');
-            link.href = pdfBase64;
+            link.href = blobUrl;
             link.download = filename;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            URL.revokeObjectURL(blobUrl);
             
             await new Promise(r => setTimeout(r, 600));
           }
