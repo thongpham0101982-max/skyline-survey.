@@ -1184,6 +1184,25 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
       schoolName = "TRƯỜNG TH, THCS, THPT SKY-LINE HILL";
     }
 
+    // Format current letter date y nguyên mẫu
+    const d = new Date();
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    const formattedLetterDate = `Đà Nẵng, ngày ${day} tháng ${month} năm ${year}`;
+
+    const campusTitleSuffix = (campusCodeStr.includes("CS1") || campusCodeStr.includes("RIVERSIDE")) ? "RIVERSIDE"
+      : (campusCodeStr.includes("CS2") || campusCodeStr.includes("CENTRAL")) ? "CENTRAL"
+      : (campusCodeStr.includes("CS3") || campusCodeStr.includes("GLOBAL")) ? "GLOBAL"
+      : (campusCodeStr.includes("CS4") || campusCodeStr.includes("HILL")) ? "HILL"
+      : (campusCodeStr.includes("CS5") || campusCodeStr.includes("BEACH")) ? "BEACH"
+      : campusCodeStr || "GLOBAL";
+
+    const titleText = isInvitationFlag ? "TM. HỘI ĐỒNG TUYỂN SINH" : "TM. HỘI ĐỒNG TUYỂN SINH";
+    const subTitleText = isInvitationFlag && !config.signature ? "TRƯỞNG BAN TUYỂN SINH SKY-LINE"
+      : `GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE ${campusTitleSuffix}`;
+    const signName = isInvitationFlag && !config.signature ? "Ban Tuyển sinh" : directorName;
+
     // Page 2: Admission Documents Checklist (Danh mục Hồ sơ nhập học)
     let page2Html = "";
     if (student.admissionResult === "Đạt" || student.admissionResult === "Đạt cam kết") {
@@ -1395,14 +1414,15 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
           '<div class="content-body">' +
             bodyHtml +
           '</div>' +
-          '<div class="signature-section">' +
-            '<div class="signature-block">' +
-              '<div class="signature-title">HỘI ĐỒNG TUYỂN SINH</div>' +
-              '<div class="signature-desc">(Ký và ghi rõ họ tên)</div>' +
-              '<div class="signature-img-container">' +
-                signatureHtml +
+          '<div class="signature-section" style="margin-top: 30px; display: flex; justify-content: flex-end; position: relative; z-index: 10;">' +
+            '<div class="signature-block" style="text-align: center; width: 240px;">' +
+              '<div style="font-size: 13px; font-style: italic; color: #4b5563; margin-bottom: 4px;">' + formattedLetterDate + '</div>' +
+              '<div class="signature-title" style="font-size: 12px; font-weight: bold; color: #1e1b4b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">' + titleText + '</div>' +
+              '<div style="font-size: 10px; font-weight: bold; color: #312e81; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px;">' + subTitleText + '</div>' +
+              '<div class="signature-img-container" style="height: 64px; display: flex; justify-content: center; align-items: center; margin-bottom: 8px;">' +
+                (config.signature ? signatureHtml : '<span style="font-family: \'Brush Script MT\', cursive, sans-serif; font-size: 20px; color: #94a3b8; font-style: italic; opacity: 0.6; letter-spacing: 2px;">' + signName + '</span>') +
               '</div>' +
-              '<div class="signature-name">' + directorName + '</div>' +
+              '<div class="signature-name" style="font-size: 14px; font-weight: bold; color: #1e293b;">' + signName + '</div>' +
             '</div>' +
           '</div>' +
           '<div class="footer-container">' +
