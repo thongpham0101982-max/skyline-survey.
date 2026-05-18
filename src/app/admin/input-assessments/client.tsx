@@ -203,9 +203,82 @@ const renderTemplate = (template, student) => {
     .replace(/\{\{signatureName\}\}/g, student?.signatureName || "");
 };
 
+
+
 // ========= MAIN =========
 export function InputAssessmentsClient({ academicYears = [], campuses = [], examBoardUsers = [], subjects: initialSubjects = [], eduSystems = [], configs: initialConfigs = [], grades = [], teachers = [], departments = [], giaoVuCSUsers = [], gdcsUsers = [], currentUser = null }: Props) {
   const [tab, setTab] = useState("periods")
+
+  const EMAIL_MAP = useMemo(() => {
+    const map = {
+      tuvan: {
+        CS1: "tuyensinh.cs1@skylineschool.edu.vn",
+        CS2: "tuyensinh.cs2@skylineschool.edu.vn",
+        CS3: "tuyensinh.cs3@skylineschool.edu.vn",
+        CS4: "tuyensinh.cs4@skylineschool.edu.vn",
+        CS5: "tuyensinh.cs5@skylineschool.edu.vn",
+      },
+      giaovu: {
+        CS1: "giaovu.cs1@skylineschool.edu.vn",
+        CS2: "giaovu.cs2@skylineschool.edu.vn",
+        CS3: "giaovu.cs3@skylineschool.edu.vn",
+        CS4: "giaovu.cs4@skylineschool.edu.vn",
+        CS5: "giaovu.cs5@skylineschool.edu.vn",
+      },
+      gdcs: {
+        CS1: "gdcs.cs1@skylineschool.edu.vn",
+        CS2: "gdcs.cs2@skylineschool.edu.vn",
+        CS3: "gdcs.cs3@skylineschool.edu.vn",
+        CS4: "gdcs.cs4@skylineschool.edu.vn",
+        CS5: "gdcs.cs5@skylineschool.edu.vn",
+      },
+      cc: "cc@skylineschool.edu.vn"
+    };
+
+    // 1. Dynamic GĐCS Lookup from campuses
+    (campuses || []).forEach((c) => {
+      const csCode = c.campusCode;
+      if (csCode && csCode in map.gdcs) {
+        const managerEmail = c.manager?.teacher?.email;
+        if (managerEmail && managerEmail.includes('@')) {
+          map.gdcs[csCode] = managerEmail;
+        } else {
+          const matchedTeacher = (teachers || []).find((t) => t.teacherCode === c.manager?.email);
+          if (matchedTeacher?.email && matchedTeacher.email.includes('@')) {
+            map.gdcs[csCode] = matchedTeacher.email;
+          }
+        }
+      }
+    });
+
+    // 2. Dynamic Giáo vụ and Tư vấn Lookup from teachers
+    (teachers || []).forEach((t) => {
+      const csCode = t.campus?.campusCode;
+      if (csCode && csCode in map.giaovu) {
+        const deptName = t.departmentRel?.name?.toLowerCase() || '';
+        const deptCode = t.departmentRel?.code?.toLowerCase() || '';
+        const hasEmail = t.email && t.email.includes('@');
+        
+        if (hasEmail) {
+          if (deptName.includes('giáo vụ') || deptCode.includes('gvu') || deptCode.includes('giaovu')) {
+            map.giaovu[csCode] = t.email;
+          }
+          if (deptName.includes('tư vấn') || deptName.includes('tuyển sinh') || deptCode.includes('tuvan') || deptCode.includes('tuyensinh')) {
+            map.tuvan[csCode] = t.email;
+          }
+        }
+      }
+    });
+
+    return map;
+  }, [campuses, teachers]);
+
+  const allMapEmails = useMemo(() => [
+    ...Object.values(EMAIL_MAP.tuvan),
+    ...Object.values(EMAIL_MAP.giaovu),
+    ...Object.values(EMAIL_MAP.gdcs),
+    EMAIL_MAP.cc
+  ], [EMAIL_MAP]);
 
   // ───────── CONFIGS STATE (MOVED TO TOP TO PREVENT TDZ REFERENCE ERROR) ─────────
   const [configs, setConfigs] = useState<AssessmentConfig[]>(initialConfigs)
@@ -839,6 +912,450 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
   const [emailStudents, setEmailStudents] = useState<any[]>([]);
   const [emailSending, setEmailSending] = useState(false);
   const [emailResult, setEmailResult] = useState<any>(null);
+  const [attachLetters, setAttachLetters] = useState(true);
+  const [checkedEmails, setCheckedEmails] = useState({
+    tuvan: [] as string[],
+    giaovu: [] as string[],
+    gdcs: [] as string[],
+    cc: false
+  });
+
+  const getStudentGroup = (student: any) => {
+    if (!student) return "khoi_1";
+    
+    let studentGroup = "khoi_1";
+    const getNumericGrade = (g: any) => {
+      if (!g) return null;
+      const match = g.toString().match(/\d+/);
+      return match ? parseInt(match[0], 10) : null;
+    };
+    const sGradeNum = getNumericGrade(student.grade);
+    
+    const gradeMatchedGroups = (docGroups || []).filter(g => {
+      const mappedGrades = docGroupGrades[g.id] || [];
+      const hasGradeMatch = mappedGrades.some(gradeStr => {
+        if (!student.grade) return false;
+        const sGrade = student.grade.toString().toLowerCase();
+        const gStr = gradeStr.toLowerCase();
+        return sGrade === gStr || sGrade.includes(gStr) || gStr.includes(sGrade);
+      });
+      if (hasGradeMatch) return true;
+      
+      if (sGradeNum !== null) {
+        if (g.id === "khoi_1" && sGradeNum === 1) return true;
+        if (g.id === "khoi_2_5" && sGradeNum >= 2 && sGradeNum <= 5) return true;
+        if (g.id === "khoi_6" && sGradeNum === 6) return true;
+        if (g.id === "khoi_7_9" && sGradeNum >= 7 && sGradeNum <= 9) return true;
+        if (g.id === "khoi_10" && sGradeNum === 10) return true;
+        if (g.id === "khoi_11_12" && sGradeNum >= 11 && sGradeNum <= 12) return true;
+      }
+      return false;
+    });
+
+    if (student.targetType) {
+      const studentTargets = student.targetType.split(',').map((x: any) => x.trim().toLowerCase()).filter(Boolean);
+      
+      const targetMatch = gradeMatchedGroups.find(g => {
+        const mappedTs = docGroupTargets[g.id] || [];
+        return mappedTs.some(ts => studentTargets.includes(ts.toLowerCase()));
+      });
+      
+      if (targetMatch) {
+        studentGroup = targetMatch.id;
+      } else {
+        const anyTargetMatch = (docGroups || []).find(g => {
+          const mappedTs = docGroupTargets[g.id] || [];
+          return mappedTs.some(ts => studentTargets.includes(ts.toLowerCase()));
+        });
+        if (anyTargetMatch) {
+          studentGroup = anyTargetMatch.id;
+        } else {
+          studentGroup = gradeMatchedGroups[0]?.id || "doi_tuong_tuyen_sinh";
+        }
+      }
+    } else {
+      studentGroup = gradeMatchedGroups[0]?.id || "khoi_1";
+    }
+    
+    return studentGroup;
+  };
+
+  const getStudentCampusConfig = (student: any, isInvitationFlag: boolean, isCommitmentFlag: boolean) => {
+    if (!student) return null;
+
+    // Find campus matching active selection in UI form or saved student record
+    const effCampus = student.admissionCampus;
+    let targetCampus = campuses.find((c: any) => 
+      c.campusName === effCampus ||
+      effCampus?.includes(c.campusCode) ||
+      effCampus?.includes(c.campusName)
+    );
+    
+    // Fallback: Find campus by student's batch/period
+    if (!targetCampus && student.batchId) {
+      const batchObj = reportBatches.find((b: any) => b.id === student.batchId);
+      if (batchObj?.campusId) {
+        targetCampus = campuses.find((c: any) => c.id === batchObj.campusId);
+      }
+    }
+    
+    if (!targetCampus && campuses.length > 0) {
+      targetCampus = campuses[0];
+    }
+    
+    if (targetCampus) {
+      const baseKey = isInvitationFlag ? 'thu_moi' : isCommitmentFlag ? 'cam_ket_hoc_tap' : 'thu_chuc_mung';
+      const studentGroup = getStudentGroup(student);
+      const candidateKeys = [baseKey + '_' + studentGroup, baseKey];
+      let typeKey = baseKey;
+      
+      const matchingKey = candidateKeys.find(k => {
+        return localStorage.getItem('report_config_' + targetCampus.id + '_' + k) || localStorage.getItem('report_config_global_' + k);
+      });
+      if (matchingKey) {
+        typeKey = matchingKey;
+      }
+      const savedCampus = localStorage.getItem('report_config_' + targetCampus.id + '_' + typeKey);
+      const savedGlobal = localStorage.getItem('report_config_global_' + typeKey);
+      
+      let campusData: any = {};
+      let globalData: any = {};
+      
+      if (savedCampus) {
+        try { campusData = JSON.parse(savedCampus); } catch (e) {}
+      }
+      if (savedGlobal) {
+        try { globalData = JSON.parse(savedGlobal); } catch (e) {}
+      }
+      
+      // Fallback for old saved campus config
+      if (!isCommitmentFlag && Object.keys(campusData).length === 0) {
+        const oldSaved = localStorage.getItem('report_config_' + targetCampus.id);
+        if (oldSaved) {
+          try { campusData = JSON.parse(oldSaved); } catch (e) {}
+        }
+      }
+      
+      const mergedTitle = globalData.title || campusData.title || (typeKey === "thu_chuc_mung" ? "BÁO CÁO KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO" : typeKey === "thu_moi" ? "THƯ MỜI" : "BẢN CAM KẾT HỌC TẬP");
+      
+      const mLogo = localStorage.getItem('report_config_master_logo');
+      const mBg = localStorage.getItem('report_config_master_background');
+      const mFooter = localStorage.getItem('report_config_master_footer');
+
+      const mergedLogo = mLogo !== null ? mLogo : (globalData.logo || campusData.logo || "");
+      const mergedBackground = mBg !== null ? mBg : (globalData.background || campusData.background || "");
+      const mergedContent = globalData.content || campusData.content || "";
+      const mergedFooter = mFooter !== null ? mFooter : (globalData.footer || campusData.footer || "");
+      
+      return {
+        title: mergedTitle,
+        logo: mergedLogo,
+        background: mergedBackground,
+        content: mergedContent,
+        footer: mergedFooter,
+        signature: campusData.signature || "",
+        directorName: campusData.directorName || targetCampus.manager?.fullName || ""
+      };
+    }
+    return null;
+  };
+
+  const buildLetterHtml = (student: any, config: any, isCommitmentFlag: boolean) => {
+    const rawGrade = student?.grade || "1";
+    const gradeMatch = rawGrade.toString().match(/\d+/);
+    const numericGrade = gradeMatch ? gradeMatch[0] : rawGrade;
+    const comSubs = Array.isArray(student?.committedSubjects) 
+      ? student.committedSubjects.join(", ") 
+      : (student?.committedSubjects || "");
+      
+    const renderedContent = (config.content || "")
+      .replace(/\{\{fullName\}\}/g, student?.fullName || "")
+      .replace(/\{\{grade\}\}/g, numericGrade)
+      .replace(/\{\{hocKy\}\}/g, student?.hocKy || "1")
+      .replace(/\{\{surveyFormType\}\}/g, student?.surveyFormType || "")
+      .replace(/\{\{admissionCampus\}\}/g, student?.admissionCampus || "")
+      .replace(/\{\{directorNote\}\}/g, student?.directorNote || "")
+      .replace(/\{\{committedSubjects\}\}/g, comSubs)
+      .replace(/\{\{signatureName\}\}/g, student?.signatureName || "");
+
+    const paragraphs = renderedContent.split("\n").filter(Boolean);
+    const bodyHtml = paragraphs.map((p: string) => `<p style="text-indent: 1cm; margin: 0 0 10px 0;">${p}</p>`).join("");
+    
+    const greetingHtml = `Thân gửi em <strong style="font-weight: 900; font-style: normal; color: #0f172a;">${student.fullName}</strong>,`;
+    const directorName = student?.signatureName || config.directorName || "Đỗ Quang Trung";
+    const logoHtml = config.logo ? `<img class="logo-img" src="${config.logo}" alt="Logo" />` : "";
+    const signatureHtml = config.signature ? `<img class="signature-img" src="${config.signature}" alt="Signature" />` : "";
+    const footerHtml = config.footer ? `<img class="footer-img" src="${config.footer}" alt="Footer" />` : "";
+    
+    // Find school name fallback
+    let schoolName = "HỆ THỐNG GIÁO DỤC SKY-LINE";
+    if (student.admissionCampus) {
+      if (student.admissionCampus.includes("CS1") || student.admissionCampus.includes("Riverside")) {
+        schoolName = "TRƯỜNG TIỂU HỌC, THCS & THPT SKY-LINE RIVERSIDE";
+      } else if (student.admissionCampus.includes("CS2") || student.admissionCampus.includes("Trung tâm")) {
+        schoolName = "TRƯỜNG TIỂU HỌC, THCS & THPT SKY-LINE";
+      } else if (student.admissionCampus.includes("CS3") || student.admissionCampus.includes("Hillilop") || student.admissionCampus.includes("Hilltop")) {
+        schoolName = "TRƯỜNG TIỂU HỌC, THCS & THPT SKY-LINE HILLTOP";
+      } else if (student.admissionCampus.includes("CS4") || student.admissionCampus.includes("Beach")) {
+        schoolName = "TRƯỜNG TH, THCS & THPT SKY-LINE BEACH (LIÊN CHIỂU)";
+      } else if (student.admissionCampus.includes("Quảng Nam")) {
+        schoolName = "TRƯỜNG SONG NGỮ QUỐC TẾ SKY-LINE QUẢNG NAM";
+      }
+    }
+
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>${config.title || "Tài liệu"}</title>
+        <style>
+          @page {
+            size: A4;
+            margin: 0;
+          }
+          body {
+            margin: 0;
+            padding: 0;
+            background-color: #ffffff;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          .print-page {
+            font-family: "Times New Roman", Times, serif;
+            width: 210mm;
+            height: 297mm;
+            padding: 20mm 20mm 48mm 20mm;
+            box-sizing: border-box;
+            position: relative;
+            overflow: hidden;
+            background-color: #ffffff;
+          }
+          .print-watermark {
+            display: block;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            height: auto;
+            opacity: 0.08;
+            z-index: 0;
+            pointer-events: none;
+          }
+          .logo-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #cbd5e1;
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 10;
+          }
+          .logo-img {
+            max-height: 40px;
+            object-fit: contain;
+          }
+          .school-name {
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            font-weight: 800;
+            text-transform: uppercase;
+            color: #1e293b;
+            margin-top: 4px;
+          }
+          .letter-title {
+            text-align: center;
+            margin: 20px 0;
+            position: relative;
+            z-index: 10;
+          }
+          .letter-title h2 {
+            font-size: 22px;
+            font-weight: 900;
+            letter-spacing: 0.5px;
+            color: #1e1b4b;
+            text-transform: uppercase;
+            margin: 0;
+          }
+          .greeting {
+            font-size: 16px;
+            font-style: italic;
+            color: #1e293b;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 10;
+          }
+          .content-body {
+            font-size: 14pt;
+            line-height: 1.5;
+            text-align: justify;
+            color: #1e293b;
+            position: relative;
+            z-index: 10;
+          }
+          .signature-section {
+            margin-top: 30px;
+            display: flex;
+            justify-content: flex-end;
+            position: relative;
+            z-index: 10;
+          }
+          .signature-block {
+            text-align: center;
+            width: 200px;
+          }
+          .signature-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 4px;
+          }
+          .signature-desc {
+            font-size: 12px;
+            color: #475569;
+            font-style: italic;
+            margin-bottom: 10px;
+          }
+          .signature-img-container {
+            height: 64px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 8px;
+          }
+          .signature-img {
+            max-height: 64px;
+            object-fit: contain;
+          }
+          .signature-name {
+            font-size: 15px;
+            font-weight: bold;
+            color: #1e293b;
+          }
+          .footer-container {
+            position: absolute;
+            bottom: 15mm;
+            left: 20mm;
+            right: 20mm;
+            z-index: 10;
+            text-align: center;
+          }
+          .footer-img {
+            width: 100%;
+            max-height: 100px;
+            object-fit: contain;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="print-page">
+          <!-- Background Watermark -->
+          ${config.background ? `<img class="print-watermark" src="${config.background}" alt="Watermark" />` : ""}
+          
+          <!-- Top Header -->
+          <div class="logo-container">
+            ${logoHtml}
+            <div class="school-name">${schoolName}</div>
+          </div>
+          
+          <!-- Letter Title -->
+          <div class="letter-title">
+            <h2>${config.title}</h2>
+          </div>
+          
+          <!-- Greeting -->
+          <div class="greeting">
+            ${greetingHtml}
+          </div>
+          
+          <!-- Content Body -->
+          <div class="content-body">
+            ${bodyHtml}
+          </div>
+          
+          <!-- Signature Section -->
+          <div class="signature-section">
+            <div class="signature-block">
+              <div class="signature-title">HỘI ĐỒNG TUYỂN SINH</div>
+              <div class="signature-desc">(Ký và ghi rõ họ tên)</div>
+              <div class="signature-img-container">
+                ${signatureHtml}
+              </div>
+              <div class="signature-name">${directorName}</div>
+            </div>
+          </div>
+          
+          <!-- Footer -->
+          <div class="footer-container">
+            ${footerHtml}
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  };
+
+  const handleCheckboxChange = (group: 'tuvan' | 'giaovu' | 'gdcs' | 'cc', cs?: string) => {
+    setCheckedEmails(prev => {
+      let nextChecked = { ...prev };
+      if (group === 'cc') {
+        nextChecked.cc = !prev.cc;
+      } else if (cs) {
+        if (prev[group].includes(cs)) {
+          nextChecked[group] = prev[group].filter(item => item !== cs);
+        } else {
+          nextChecked[group] = [...prev[group], cs];
+        }
+      }
+      
+      // Calculate new checked emails
+      const selectedEmails: string[] = [];
+      nextChecked.tuvan.forEach(c => selectedEmails.push(EMAIL_MAP.tuvan[c as keyof typeof EMAIL_MAP.tuvan]));
+      nextChecked.giaovu.forEach(c => selectedEmails.push(EMAIL_MAP.giaovu[c as keyof typeof EMAIL_MAP.giaovu]));
+      nextChecked.gdcs.forEach(c => selectedEmails.push(EMAIL_MAP.gdcs[c as keyof typeof EMAIL_MAP.gdcs]));
+      if (nextChecked.cc) {
+        selectedEmails.push(EMAIL_MAP.cc);
+      }
+      
+      // Parse current manual emails
+      const currentEmails = recipientEmail.split(',').map(e => e.trim()).filter(Boolean);
+      const manualEmails = currentEmails.filter(e => !allMapEmails.includes(e));
+      
+      // Combine
+      const finalEmails = [...manualEmails, ...selectedEmails];
+      
+      setRecipientEmail(finalEmails.join(', '));
+      return nextChecked;
+    });
+  };
+
+  const handleRecipientEmailChange = (val: string) => {
+    setRecipientEmail(val);
+    const emailsList = val.split(',').map(e => e.trim()).filter(Boolean);
+    const parsedChecked = {
+      tuvan: [] as string[],
+      giaovu: [] as string[],
+      gdcs: [] as string[],
+      cc: false
+    };
+    
+    emailsList.forEach(email => {
+      Object.entries(EMAIL_MAP.tuvan).forEach(([cs, addr]) => {
+        if (addr === email) parsedChecked.tuvan.push(cs);
+      });
+      Object.entries(EMAIL_MAP.giaovu).forEach(([cs, addr]) => {
+        if (addr === email) parsedChecked.giaovu.push(cs);
+      });
+      Object.entries(EMAIL_MAP.gdcs).forEach(([cs, addr]) => {
+        if (addr === email) parsedChecked.gdcs.push(cs);
+      });
+      if (email === EMAIL_MAP.cc) parsedChecked.cc = true;
+    });
+    
+    setCheckedEmails(parsedChecked);
+  };
 
   const handleOpenEmailModal = () => {
     const targetStudents = reportStudents.filter(s => 
@@ -847,12 +1364,38 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     const activeBatchName = reportBatchId === "all" ? "Tất cả các đợt" : reportBatches.find(b => b.id === reportBatchId)?.name || "Đợt khảo sát";
     const activePeriodName = reportSelPeriod?.name || "Kỳ khảo sát";
     
-    setRecipientEmail(currentUser?.email || "bankhaothi@skylineschool.edu.vn");
+    // Default checked recipient configurations (Giáo vụ, Tư vấn, GĐCS CS1, CS2, CS3, CS4 and CC)
+    const targetCampuses = ['CS1', 'CS2', 'CS3', 'CS4'];
+    const defaultChecked = {
+      tuvan: [...targetCampuses],
+      giaovu: [...targetCampuses],
+      gdcs: [...targetCampuses],
+      cc: true
+    };
+    
+    // Accumulate distinct emails
+    const initialEmailsSet = new Set();
+    const userEmail = currentUser?.email || "bankhaothi@skylineschool.edu.vn";
+    userEmail.split(',').map(e => e.trim()).filter(Boolean).forEach(e => initialEmailsSet.add(e));
+    
+    targetCampuses.forEach(cs => {
+      if (EMAIL_MAP.tuvan[cs]) initialEmailsSet.add(EMAIL_MAP.tuvan[cs]);
+      if (EMAIL_MAP.giaovu[cs]) initialEmailsSet.add(EMAIL_MAP.giaovu[cs]);
+      if (EMAIL_MAP.gdcs[cs]) initialEmailsSet.add(EMAIL_MAP.gdcs[cs]);
+    });
+    initialEmailsSet.add(EMAIL_MAP.cc);
+    
+    const finalInitialEmails = Array.from(initialEmailsSet).join(', ');
+    
+    setRecipientEmail(finalInitialEmails);
     setEmailSubject(`[Báo cáo nhanh] Kết quả Khảo sát đầu vào - Kỳ: ${activePeriodName} - Đợt: ${activeBatchName}`);
     setEmailStudents(targetStudents);
     setEmailResult(null);
+    setAttachLetters(true); // Default attachments is active
+    
+    setCheckedEmails(defaultChecked);
     setIsEmailModalOpen(true);
-  };
+  };;
 
   const handleSendQuickEmailSubmit = async () => {
     if (!recipientEmail.trim()) {
@@ -865,6 +1408,32 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
       const activeBatchName = reportBatchId === "all" ? "Tất cả các đợt" : reportBatches.find(b => b.id === reportBatchId)?.name || "Đợt khảo sát";
       const activePeriodName = reportSelPeriod?.name || "Kỳ khảo sát";
 
+      const pdfAttachmentsList: any[] = [];
+      if (attachLetters) {
+        for (const s of emailStudents) {
+          if (s.admissionResult === "Đạt" || s.admissionResult === "Đạt cam kết") {
+            const config = getStudentCampusConfig(s, false, false);
+            if (config) {
+              const docHtml = buildLetterHtml(s, config, false);
+              pdfAttachmentsList.push({
+                filename: `Thu_Chuc_Mung_${s.fullName.replace(/\s+/g, '_')}.pdf`,
+                html: docHtml
+              });
+            }
+          }
+          if (s.admissionResult === "Đạt cam kết") {
+            const config = getStudentCampusConfig(s, false, true);
+            if (config) {
+              const docHtml = buildLetterHtml(s, config, true);
+              pdfAttachmentsList.push({
+                filename: `Ban_Cam_Ket_${s.fullName.replace(/\s+/g, '_')}.pdf`,
+                html: docHtml
+              });
+            }
+          }
+        }
+      }
+
       const res = await fetch("/api/admin/send-quick-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -873,7 +1442,9 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
           subject: emailSubject,
           periodName: activePeriodName,
           batchName: activeBatchName,
-          students: emailStudents
+          students: emailStudents,
+          attachLetters: attachLetters,
+          pdfAttachments: pdfAttachmentsList
         })
       });
       const data = await res.json();
@@ -1000,6 +1571,32 @@ ${reportForm.directorNote}`;
       setReportPeriodId(visiblePeriods[0].id);
     }
   }, [visiblePeriods, reportPeriodId]);
+
+  // Handle URL query parameters for printing Congratulatory or Commitment letters directly
+  useEffect(() => {
+    if (typeof window !== "undefined" && Array.isArray(reportStudents) && reportStudents.length > 0) {
+      const params = new URLSearchParams(window.location.search);
+      const urlStudentId = params.get("studentId");
+      const urlPrint = params.get("print");
+      if (urlStudentId) {
+        const found = reportStudents.find(s => s.id === urlStudentId || s.studentCode === urlStudentId);
+        if (found) {
+          setTab("reports");
+          setReportsSubTab("results");
+          setReportStudentId(found.id);
+          if (urlPrint) {
+            setIsInvitation(false);
+            setIsCommitment(urlPrint === "cam_ket");
+            setIsPrintModalOpen(true);
+            
+            // Clean URL query parameters to avoid infinite popup on reload
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, document.title, newUrl);
+          }
+        }
+      }
+    }
+  }, [reportStudents, tab]);
 
   const reportSelPeriod = useMemo(() => visiblePeriods.find(p => p.id === reportPeriodId), [periods, reportPeriodId]);
   const reportBatches = useMemo(() => reportSelPeriod?.batches || [], [reportSelPeriod]);
@@ -1143,31 +1740,10 @@ ${reportForm.directorNote}`;
     }
     
     if (targetCampus) {
-      let typeKey = isInvitation ? 'thu_moi' : isCommitment ? 'cam_ket_hoc_tap' : 'thu_chuc_mung';
-      let candidateKeys = [];
       const baseKey = isInvitation ? 'thu_moi' : isCommitment ? 'cam_ket_hoc_tap' : 'thu_chuc_mung';
-      if (selectedReportStudent.targetType) {
-        candidateKeys.push(baseKey + '_doi_tuong_tuyen_sinh');
-      }
-      const getNumericGrade = (g) => {
-        if (!g) return null;
-        const match = g.toString().match(/\d+/);
-        return match ? parseInt(match[0], 10) : null;
-      };
-      const gradeNum = getNumericGrade(selectedReportStudent.grade);
-      if (gradeNum === 1) {
-        candidateKeys.push(baseKey + '_khoi_1');
-      } else if (gradeNum >= 2 && gradeNum <= 5) {
-        candidateKeys.push(baseKey + '_khoi_2_5');
-      } else if (gradeNum === 6) {
-        candidateKeys.push(baseKey + '_khoi_6');
-      } else if (gradeNum >= 7 && gradeNum <= 9) {
-        candidateKeys.push(baseKey + '_khoi_7_9');
-      } else if (gradeNum === 10) {
-        candidateKeys.push(baseKey + '_khoi_10');
-      } else if (gradeNum >= 11 && gradeNum <= 12) {
-        candidateKeys.push(baseKey + '_khoi_11_12');
-      }
+      const studentGroup = getStudentGroup(selectedReportStudent);
+      const candidateKeys = [baseKey + '_' + studentGroup, baseKey];
+      let typeKey = baseKey;
       
       const matchingKey = candidateKeys.find(k => {
         return localStorage.getItem('report_config_' + targetCampus.id + '_' + k) || localStorage.getItem('report_config_global_' + k);
@@ -1220,7 +1796,7 @@ ${reportForm.directorNote}`;
       };
     }
     return null;
-  }, [selectedReportStudent, campuses, reportBatches, isCommitment, isInvitation, reportForm.admissionCampus, rcTitle, rcLogo, rcBackground, rcContent, rcFooter, rcSignature, rcDirectorName, rcReportType, rcCampusId]);
+  }, [selectedReportStudent, campuses, reportBatches, isCommitment, isInvitation, reportForm.admissionCampus, rcTitle, rcLogo, rcBackground, rcContent, rcFooter, rcSignature, rcDirectorName, rcReportType, rcCampusId, docGroups, docGroupGrades, docGroupTargets]);
 
   const campusNameSuffix = useMemo(() => {
     if (!selectedReportStudent) return "GLOBAL";
@@ -5644,25 +6220,29 @@ return {
       </div>
     )}
       {/* Email Modal Overlay */}
-      {isEmailModalOpen && (
+                  {isEmailModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex justify-center items-center z-[150] p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-slate-200 animate-in fade-in zoom-in-95 duration-300">
             {/* Header */}
-            <div className="bg-gradient-to-br from-indigo-900 via-slate-800 to-indigo-900 p-6 text-white shrink-0 relative overflow-hidden">
+            <div className="bg-[#0c363f] p-6 text-white shrink-0 relative overflow-hidden border-b border-[#14b8a6]/10">
               <div className="absolute top-0 right-0 p-8 opacity-10">
-                <Mail className="w-32 h-32" />
+                <Mail className="w-32 h-32 text-white" />
               </div>
               <div className="relative z-10 flex justify-between items-center">
-                <div>
-                  <h2 className="text-xl font-black tracking-tight flex items-center gap-2">
-                    <Mail className="w-6 h-6 text-indigo-400" />
-                    Gửi Báo cáo nhanh qua Email
-                  </h2>
-                  <p className="text-indigo-100 text-xs mt-1">Gửi trực tiếp danh sách kết quả khảo sát qua hệ thống email</p>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-emerald-400 shadow-inner">
+                    <Mail className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-black tracking-wide flex items-center gap-2 text-white">
+                      Gửi Báo cáo nhanh qua Email
+                    </h2>
+                    <p className="text-slate-300 text-xs mt-0.5 font-medium">Gửi trực tiếp danh sách kết quả khảo sát qua hệ thống email</p>
+                  </div>
                 </div>
                 <button 
                   onClick={() => setIsEmailModalOpen(false)} 
-                  className="p-2 hover:bg-white/10 rounded-full transition-colors text-white/80 hover:text-white"
+                  className="p-2 hover:bg-white/10 rounded-xl transition-colors text-white/80 hover:text-white"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -5670,65 +6250,221 @@ return {
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 custom-scrollbar bg-slate-50">
+            <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 custom-scrollbar bg-[#f8fafc]">
               
-              {/* Form Config */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm">
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Người nhận (Email)</label>
+              {/* Recipient Checkbox Configuration Panel */}
+              <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <div>
+                    <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest block">
+                      THIẾT LẬP CHECK EMAIL NHẬN
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-semibold mt-0.5 block">
+                      Chọn nhanh nhóm nhận thư tự động dựa trên Cơ sở (CS)
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        const targetCS = ['CS1', 'CS2', 'CS3', 'CS4'];
+                        const newChecked = {
+                          tuvan: [...targetCS],
+                          giaovu: [...targetCS],
+                          gdcs: [...targetCS],
+                          cc: true
+                        };
+                        setCheckedEmails(newChecked);
+                        
+                        const selectedEmails = [];
+                        newChecked.tuvan.forEach(c => selectedEmails.push(EMAIL_MAP.tuvan[c]));
+                        newChecked.giaovu.forEach(c => selectedEmails.push(EMAIL_MAP.giaovu[c]));
+                        newChecked.gdcs.forEach(c => selectedEmails.push(EMAIL_MAP.gdcs[c]));
+                        if (newChecked.cc) selectedEmails.push(EMAIL_MAP.cc);
+                        
+                        const currentEmails = recipientEmail.split(',').map(e => e.trim()).filter(Boolean);
+                        const manualEmails = currentEmails.filter(e => !allMapEmails.includes(e));
+                        setRecipientEmail([...manualEmails, ...selectedEmails].join(', '));
+                      }}
+                      className="px-3 py-1.5 bg-[#0c363f]/5 hover:bg-[#0c363f]/10 text-[#0c363f] font-bold text-[10px] rounded-lg transition-colors cursor-pointer select-none"
+                    >
+                      Chọn nhanh CS1-CS4
+                    </button>
+                    <button
+                      onClick={() => {
+                        const newChecked = { tuvan: [], giaovu: [], gdcs: [], cc: false };
+                        setCheckedEmails(newChecked);
+                        const currentEmails = recipientEmail.split(',').map(e => e.trim()).filter(Boolean);
+                        const manualEmails = currentEmails.filter(e => !allMapEmails.includes(e));
+                        setRecipientEmail(manualEmails.join(', ') || (currentUser?.email || "bankhaothi@skylineschool.edu.vn"));
+                      }}
+                      className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-[10px] rounded-lg transition-colors cursor-pointer select-none"
+                    >
+                      Xóa chọn
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="divide-y divide-slate-50 text-xs">
+                  {/* Row 1: Tư vấn */}
+                  <div className="grid grid-cols-1 md:grid-cols-6 items-center gap-2 py-3">
+                    <span className="text-[11px] font-bold text-slate-500 md:col-span-1 tracking-wider uppercase">Tư vấn:</span>
+                    <div className="md:col-span-5 flex flex-wrap gap-x-6 gap-y-3">
+                      {['CS1', 'CS2', 'CS3', 'CS4', 'CS5'].map(cs => (
+                        <label key={`tuvan-${cs}`} className="inline-flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-600 hover:text-[#0c363f] transition-colors select-none">
+                          <input
+                            type="checkbox"
+                            checked={checkedEmails.tuvan.includes(cs)}
+                            onChange={() => handleCheckboxChange('tuvan', cs)}
+                            className="rounded border-slate-300 text-[#0c363f] focus:ring-[#0c363f] w-4.5 h-4.5 cursor-pointer accent-[#0c363f] transition-colors"
+                          />
+                          <span>{cs}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Row 2: Giáo vụ */}
+                  <div className="grid grid-cols-1 md:grid-cols-6 items-center gap-2 py-3">
+                    <span className="text-[11px] font-bold text-slate-500 md:col-span-1 tracking-wider uppercase">Giáo vụ:</span>
+                    <div className="md:col-span-5 flex flex-wrap gap-x-6 gap-y-3">
+                      {['CS1', 'CS2', 'CS3', 'CS4', 'CS5'].map(cs => (
+                        <label key={`giaovu-${cs}`} className="inline-flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-600 hover:text-[#0c363f] transition-colors select-none">
+                          <input
+                            type="checkbox"
+                            checked={checkedEmails.giaovu.includes(cs)}
+                            onChange={() => handleCheckboxChange('giaovu', cs)}
+                            className="rounded border-slate-300 text-[#0c363f] focus:ring-[#0c363f] w-4.5 h-4.5 cursor-pointer accent-[#0c363f] transition-colors"
+                          />
+                          <span>{cs}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Row 3: GĐCS */}
+                  <div className="grid grid-cols-1 md:grid-cols-6 items-center gap-2 py-3">
+                    <span className="text-[11px] font-bold text-slate-500 md:col-span-1 tracking-wider uppercase">GĐCS:</span>
+                    <div className="md:col-span-5 flex flex-wrap gap-x-6 gap-y-3">
+                      {['CS1', 'CS2', 'CS3', 'CS4', 'CS5'].map(cs => (
+                        <label key={`gdcs-${cs}`} className="inline-flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-600 hover:text-[#0c363f] transition-colors select-none">
+                          <input
+                            type="checkbox"
+                            checked={checkedEmails.gdcs.includes(cs)}
+                            onChange={() => handleCheckboxChange('gdcs', cs)}
+                            className="rounded border-slate-300 text-[#0c363f] focus:ring-[#0c363f] w-4.5 h-4.5 cursor-pointer accent-[#0c363f] transition-colors"
+                          />
+                          <span>{cs}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Row 4: CC */}
+                  <div className="grid grid-cols-1 md:grid-cols-6 items-center gap-2 py-3">
+                    <span className="text-[11px] font-bold text-slate-500 md:col-span-1 tracking-wider uppercase">CC:</span>
+                    <div className="md:col-span-5">
+                      <label className="inline-flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-600 hover:text-[#0c363f] transition-colors select-none">
+                        <input
+                          type="checkbox"
+                          checked={checkedEmails.cc}
+                          onChange={() => handleCheckboxChange('cc', 'cc')}
+                          className="rounded border-slate-300 text-[#0c363f] focus:ring-[#0c363f] w-4.5 h-4.5 cursor-pointer accent-[#0c363f] transition-colors"
+                        />
+                        <span className="text-slate-500">cc@skylineschool.edu.vn</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Form Config Card */}
+              <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="flex flex-col gap-2">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                    NGƯỜI NHẬN (EMAIL)
+                  </label>
                   <input
                     type="text"
                     value={recipientEmail}
-                    onChange={e => setRecipientEmail(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100 transition-all text-slate-700 placeholder-slate-400"
+                    onChange={e => handleRecipientEmailChange(e.target.value)}
+                    className="w-full bg-[#f8fafc] border border-slate-200/80 rounded-2xl px-4.5 py-3.5 text-sm font-semibold text-slate-700 outline-none focus:bg-white focus:border-[#0c363f] focus:ring-4 focus:ring-[#0c363f]/5 transition-all shadow-sm placeholder:text-slate-300"
                     placeholder="Nhập địa chỉ email người nhận..."
                   />
-                  <p className="text-[10px] text-slate-400 mt-1.5 ml-1">Có thể nhập nhiều email, phân cách bằng dấu phẩy ( , )</p>
+                  <p className="text-[10px] text-slate-400 font-semibold mt-0.5 ml-1">
+                    Có thể nhập nhiều email, phân cách bằng dấu phẩy ( , )
+                  </p>
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Tiêu đề Thư</label>
+                
+                <div className="flex flex-col gap-2">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                    TIÊU ĐỀ THƯ
+                  </label>
                   <input
                     type="text"
                     value={emailSubject}
                     onChange={e => setEmailSubject(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100 transition-all text-slate-700"
+                    className="w-full bg-[#f8fafc] border border-slate-200/80 rounded-2xl px-4.5 py-3.5 text-sm font-semibold text-slate-700 outline-none focus:bg-white focus:border-[#0c363f] focus:ring-4 focus:ring-[#0c363f]/5 transition-all shadow-sm"
                   />
                 </div>
               </div>
 
-              {/* Email Content Preview */}
-              <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden flex flex-col">
-                <div className="px-5 py-4 border-b bg-slate-50 flex justify-between items-center">
-                  <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Danh sách học sinh gửi đi ({emailStudents.length} học sinh)</span>
-                  <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md">Bản xem trước</span>
+              {/* Attach Letters Option Switch */}
+              <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm flex items-center justify-between transition-all hover:shadow-md">
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-xs font-black text-slate-800 uppercase tracking-widest">Có đính kèm File PDF (Thư chúc mừng & Bản cam kết)</span>
+                  <span className="text-[11px] text-slate-400 font-semibold leading-relaxed">Tự động tạo và đính kèm liên kết tệp PDF Thư chúc mừng / Bản cam kết cho từng học sinh đạt yêu cầu</span>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={attachLetters}
+                    onChange={e => setAttachLetters(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0c363f]"></div>
+                </label>
+              </div>
+
+              {/* Table Card */}
+              <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col">
+                <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-white">
+                  <span className="text-xs font-black text-slate-800 uppercase tracking-widest">
+                    DANH SÁCH HỌC SINH GỬI ĐI ({emailStudents.length} HỌC SINH)
+                  </span>
+                  <span className="text-[10px] font-black text-[#14b8a6] bg-[#14b8a6]/10 px-3 py-1 rounded-full">
+                    Bản xem trước
+                  </span>
                 </div>
                 
                 {/* Table Preview */}
                 <div className="overflow-x-auto max-h-[300px] custom-scrollbar">
                   <table className="w-full text-left text-xs border-collapse">
-                    <thead className="bg-slate-50/80 sticky top-0 border-b z-10">
+                    <thead className="bg-[#f8fafc] sticky top-0 border-b border-slate-100 z-10">
                       <tr>
-                        <th className="p-3 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50">STT</th>
-                        <th className="p-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50">Họ và Tên</th>
-                        <th className="p-3 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50">Khối</th>
-                        <th className="p-3 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50">Phái</th>
-                        <th className="p-3 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50">Ngày sinh</th>
-                        <th className="p-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50">Hệ Khảo sát</th>
-                        <th className="p-3 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50">Kết quả</th>
-                        <th className="p-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50">Cơ sở nhận</th>
+                        <th className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">STT</th>
+                        <th className="p-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">HỌ VÀ TÊN</th>
+                        <th className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">KHỐI</th>
+                        <th className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">PHÁI</th>
+                        <th className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">NGÀY SINH</th>
+                        <th className="p-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">HỆ KHẢO SÁT</th>
+                        <th className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">KẾT QUẢ</th>
+                        <th className="p-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">CƠ SỞ NHẬN</th>
+                        {attachLetters && (
+                          <th className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">HỒ SƠ ĐÍNH KÈM</th>
+                        )}
                       </tr>
                     </thead>
-                    <tbody className="divide-y">
+                    <tbody className="divide-y divide-slate-100 bg-white">
                       {emailStudents.map((s, idx) => (
                         <tr key={s.id} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="p-3 text-center text-slate-400 font-semibold">{idx + 1}</td>
-                          <td className="p-3 font-bold text-slate-700">{s.fullName}</td>
-                          <td className="p-3 text-center font-bold text-slate-500">K{s.grade}</td>
-                          <td className="p-3 text-center font-medium text-slate-500">{s.gender === "M" || s.gender === "Nam" ? "Nam" : s.gender === "F" || s.gender === "Nữ" ? "Nữ" : s.gender || "—"}</td>
-                          <td className="p-3 text-center text-slate-500">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
-                          <td className="p-3 text-slate-600 font-medium">{s.surveyFormType || "—"}</td>
-                          <td className="p-3 text-center">
-                            <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black ${
+                          <td className="p-4 text-center text-slate-400 font-semibold">{idx + 1}</td>
+                          <td className="p-4 font-bold text-slate-700">{s.fullName}</td>
+                          <td className="p-4 text-center font-bold text-slate-600">K{s.grade}</td>
+                          <td className="p-4 text-center font-medium text-slate-500">{s.gender === "M" || s.gender === "Nam" ? "Nam" : s.gender === "F" || s.gender === "Nữ" ? "Nữ" : s.gender || "—"}</td>
+                          <td className="p-4 text-center text-slate-500">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
+                          <td className="p-4 text-slate-600 font-medium">{s.surveyFormType || s.surveySystem || "—"}</td>
+                          <td className="p-4 text-center">
+                            <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-black ${
                               s.admissionResult === "Đạt" ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
                               s.admissionResult === "Đạt cam kết" ? "bg-amber-50 text-amber-600 border border-amber-100" :
                               s.admissionResult === "Không đạt" ? "bg-rose-50 text-rose-600 border border-rose-100" :
@@ -5737,12 +6473,36 @@ return {
                               {s.admissionResult || "Chưa duyệt"}
                             </span>
                           </td>
-                          <td className="p-3 font-semibold text-indigo-600">{s.admissionCampus || "—"}</td>
+                          <td className="p-4 font-bold text-slate-600">{s.admissionCampus || "—"}</td>
+                          {attachLetters && (
+                            <td className="p-4 text-center">
+                              <div className="flex flex-col gap-1 items-center justify-center">
+                                {s.admissionResult === "Đạt" && (
+                                  <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] font-black rounded border border-emerald-100">
+                                    Thư chúc mừng
+                                  </span>
+                                )}
+                                {s.admissionResult === "Đạt cam kết" && (
+                                  <>
+                                    <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] font-black rounded border border-emerald-100 mb-0.5">
+                                      Thư chúc mừng
+                                    </span>
+                                    <span className="px-2.5 py-0.5 bg-amber-50 text-amber-600 text-[10px] font-black rounded border border-amber-100">
+                                      Bản cam kết
+                                    </span>
+                                  </>
+                                )}
+                                {s.admissionResult !== "Đạt" && s.admissionResult !== "Đạt cam kết" && (
+                                  <span className="text-slate-400">—</span>
+                                )}
+                              </div>
+                            </td>
+                          )}
                         </tr>
                       ))}
                       {emailStudents.length === 0 && (
                         <tr>
-                          <td colSpan={8} className="p-8 text-center text-slate-400 font-bold bg-slate-50/30">Không có học sinh nào có kết quả xét duyệt dưới đợt/kỳ này.</td>
+                          <td colSpan={attachLetters ? 9 : 8} className="p-8 text-center text-slate-400 font-bold bg-slate-50/30">Không có học sinh nào có kết quả xét duyệt dưới đợt/kỳ này.</td>
                         </tr>
                       )}
                     </tbody>
@@ -5771,8 +6531,8 @@ return {
                       </h4>
                       <p className="text-xs leading-relaxed opacity-90">
                         {emailResult.sent 
-                          ? `Báo cáo nhanh đã được gửi trực tiếp tới hòm thư ${recipientEmail}. Hệ thống SMTP hoạt động hoàn hảo.`
-                          : `Máy chủ SMTP không thể gửi thư do chính sách bảo mật (Lỗi: ${emailResult.error || "Timeout"}). Tuy nhiên, Skyline đã tạo sẵn mã HTML email chuyên nghiệp phía dưới cho thầy cô.`}
+                          ? `Báo cáo nhanh đã được gửi trực tiếp tới hòm thư ${recipientEmail}. Báo cáo đính kèm bản cam kết học tập.`
+                          : `Máy chủ SMTP không thể gửi thư trực tiếp (Lỗi: ${emailResult.error || "Timeout"}). Tuy nhiên, Skyline đã tạo sẵn mã HTML email chuyên nghiệp phía dưới cho thầy cô.`}
                       </p>
                       
                       {/* Live Iframe Preview if SMTP failed */}
@@ -5792,7 +6552,7 @@ return {
                                 navigator.clipboard.writeText(emailResult.html || "");
                                 alert("Đã sao chép nội dung HTML! Bạn có thể dán trực tiếp vào Outlook/Gmail để gửi.");
                               }}
-                              className="bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-bold text-xs px-4 py-2 rounded-xl transition-all"
+                              className="bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-bold text-xs px-4 py-2 rounded-xl transition-all cursor-pointer"
                             >
                               📋 Sao chép HTML Email
                             </button>
@@ -5813,17 +6573,17 @@ return {
             </div>
 
             {/* Footer */}
-            <div className="p-4 bg-white border-t border-slate-100 flex justify-end gap-3 shrink-0">
+            <div className="p-4 bg-white border-t border-slate-100 flex justify-end items-center gap-3 shrink-0">
               <button 
                 onClick={() => setIsEmailModalOpen(false)} 
-                className="px-5 py-2.5 rounded-xl hover:bg-slate-100 font-bold text-slate-600 text-xs transition-colors"
+                className="px-5 py-2.5 rounded-xl hover:bg-slate-100 font-bold text-slate-700 text-xs transition-colors"
               >
                 Đóng lại
               </button>
               <button
                 onClick={handleSendQuickEmailSubmit}
                 disabled={emailSending || emailStudents.length === 0}
-                className="bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                className="bg-[#0c363f] hover:bg-[#08262c] text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {emailSending ? (
                   <>

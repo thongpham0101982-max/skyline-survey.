@@ -51,7 +51,13 @@ export default async function InputAssessmentsPage() {
       if (pAny.campus) {
         campuses = await pAny.campus.findMany({ 
           where: isGDCS ? { id: { in: allowedCampusIds } } : { status: "ACTIVE" }, 
-          include: { manager: true },
+          include: { 
+            manager: {
+              include: {
+                teacher: true
+              }
+            } 
+          },
           orderBy: { campusName: "asc" } 
         }).catch(() => []);
       }
@@ -89,7 +95,11 @@ export default async function InputAssessmentsPage() {
       if (pAny.teacher) {
         teachers = await pAny.teacher.findMany({
           where: { status: "ACTIVE" },
-          select: { userId: true, teacherName: true, departmentId: true },
+          include: {
+            departmentRel: true,
+            campus: true,
+            user: true
+          },
           orderBy: { teacherName: "asc" }
         }).catch(() => []);
       }

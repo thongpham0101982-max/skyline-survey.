@@ -8,11 +8,17 @@ export async function POST(req: Request) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
-    const { to, subject, periodName, batchName, students } = await req.json();
+    const { to, subject, periodName, batchName, students, attachLetters, pdfAttachments } = await req.json();
 
     if (!to || !students || !Array.isArray(students)) {
       return NextResponse.json({ error: "Missing required parameters" }, { status: 400 });
     }
+
+    const host = req.headers.get("host") || "skyline-survey-rh4k.vercel.app";
+    const protocol = req.headers.get("x-forwarded-proto") || "https";
+    const baseUrl = `${protocol}://${host}`;
+
+    const showAttachments = attachLetters === true;
 
     // Build the gorgeous HTML email body
     const rowsHtml = students.map((s, idx) => {
@@ -21,6 +27,33 @@ export async function POST(req: Request) {
       const resultColor = s.admissionResult === "Đạt" ? "#059669" : s.admissionResult === "Đạt cam kết" ? "#d97706" : s.admissionResult === "Không đạt" ? "#dc2626" : "#4b5563";
       const resultBg = s.admissionResult === "Đạt" ? "#ecfdf5" : s.admissionResult === "Đạt cam kết" ? "#fef3c7" : s.admissionResult === "Không đạt" ? "#fef2f2" : "#f3f4f6";
       
+      let attachmentsHtml = "—";
+      if (s.admissionResult === "Đạt") {
+        attachmentsHtml = `
+          <a href="${baseUrl}/admin/input-assessments?studentId=${s.id}&print=chuc_mung" style="display: inline-block; padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; color: #ffffff; background-color: #059669; text-decoration: none; white-space: nowrap; border: 1px solid #047857; text-shadow: 0 1px 1px rgba(0,0,0,0.1);">
+            Thư chúc mừng
+          </a>
+        `;
+      } else if (s.admissionResult === "Đạt cam kết") {
+        attachmentsHtml = `
+          <div style="display: inline-block; text-align: center;">
+            <a href="${baseUrl}/admin/input-assessments?studentId=${s.id}&print=chuc_mung" style="display: inline-block; padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; color: #ffffff; background-color: #059669; text-decoration: none; white-space: nowrap; border: 1px solid #047857; margin-bottom: 4px; text-shadow: 0 1px 1px rgba(0,0,0,0.1);">
+              Thư chúc mừng
+            </a>
+            <br />
+            <a href="${baseUrl}/admin/input-assessments?studentId=${s.id}&print=cam_ket" style="display: inline-block; padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; color: #ffffff; background-color: #d97706; text-decoration: none; white-space: nowrap; border: 1px solid #b45309; text-shadow: 0 1px 1px rgba(0,0,0,0.1);">
+              Bản cam kết
+            </a>
+          </div>
+        `;
+      }
+
+      const attachmentsTd = showAttachments ? `
+        <td style="padding: 12px; text-align: center; vertical-align: middle;">
+          ${attachmentsHtml}
+        </td>
+      ` : "";
+
       return `
         <tr style="border-bottom: 1px solid #e2e8f0;">
           <td style="padding: 12px; text-align: center; font-size: 13px; color: #64748b;">${idx + 1}</td>
@@ -35,6 +68,7 @@ export async function POST(req: Request) {
             </span>
           </td>
           <td style="padding: 12px; font-size: 12px; font-weight: 600; color: #4f46e5;">${s.admissionCampus || "—"}</td>
+          ${attachmentsTd}
         </tr>
       `;
     }).join("");
@@ -50,7 +84,7 @@ export async function POST(req: Request) {
         <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; padding: 20px 0;">
           <tr>
             <td align="center">
-              <table width="650" border="0" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); border: 1px solid #e2e8f0;">
+              <table width="750" border="0" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); border: 1px solid #e2e8f0;">
                 <!-- Header -->
                 <tr>
                   <td style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); padding: 30px; text-align: center;">
@@ -93,6 +127,7 @@ export async function POST(req: Request) {
                           <th style="padding: 12px 8px; text-align: left; font-size: 11px; font-weight: bold; color: #475569; text-transform: uppercase;">Hệ Khảo sát</th>
                           <th style="padding: 12px 8px; text-align: center; font-size: 11px; font-weight: bold; color: #475569; text-transform: uppercase;">Kết quả</th>
                           <th style="padding: 12px 8px; text-align: left; font-size: 11px; font-weight: bold; color: #475569; text-transform: uppercase;">Cơ sở nhận</th>
+                          ${showAttachments ? `<th style="padding: 12px 8px; text-align: center; font-size: 11px; font-weight: bold; color: #475569; text-transform: uppercase;">Hồ sơ đính kèm</th>` : ""}
                         </tr>
                       </thead>
                       <tbody>
@@ -116,16 +151,60 @@ export async function POST(req: Request) {
       </html>
     `;
 
+    // Process PDF generation using headless Puppeteer browser on the server side
+    const mailAttachments = [];
+    if (showAttachments && Array.isArray(pdfAttachments) && pdfAttachments.length > 0) {
+      let puppeteer;
+      try {
+        puppeteer = require("puppeteer");
+      } catch (e) {
+        console.error("Puppeteer import failed:", e);
+      }
+
+      if (puppeteer) {
+        try {
+          const browser = await puppeteer.launch({
+            headless: true,
+            args: ["--no-sandbox", "--disable-setuid-sandbox"]
+          });
+          
+          for (const att of pdfAttachments) {
+            try {
+              const page = await browser.newPage();
+              await page.emulateMediaType("screen");
+              await page.setContent(att.html, { waitUntil: "networkidle0", timeout: 15000 });
+              
+              const pdfBuffer = await page.pdf({
+                format: "A4",
+                printBackground: true,
+                margin: { top: "0mm", right: "0mm", bottom: "0mm", left: "0mm" }
+              });
+              
+              mailAttachments.push({
+                filename: att.filename,
+                content: pdfBuffer
+              });
+            } catch (err) {
+              console.error(`Failed to generate PDF for ${att.filename}:`, err);
+            }
+          }
+          await browser.close();
+        } catch (launchErr) {
+          console.error("Failed to launch Puppeteer:", launchErr);
+        }
+      }
+    }
+
     try {
       await sendEmail({
         to,
         subject,
         html: emailHtml,
+        attachments: mailAttachments
       });
       return NextResponse.json({ success: true, sent: true });
     } catch (err) {
       console.error("SMTP SEND ERROR:", err);
-      // Fail elegantly! Provide HTML back so client can copy or preview.
       return NextResponse.json({
         success: true,
         sent: false,
