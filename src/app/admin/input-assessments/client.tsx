@@ -842,8 +842,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
 
   const handleOpenEmailModal = () => {
     const targetStudents = reportStudents.filter(s => 
-      (reportBatchId === "all" || s.batchId === reportBatchId) && 
-      s.admissionResult && s.admissionResult.trim() !== ""
+      (reportBatchId === "all" || s.batchId === reportBatchId)
     );
     const activeBatchName = reportBatchId === "all" ? "Tất cả các đợt" : reportBatches.find(b => b.id === reportBatchId)?.name || "Đợt khảo sát";
     const activePeriodName = reportSelPeriod?.name || "Kỳ khảo sát";
