@@ -1398,6 +1398,51 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     setIsEmailModalOpen(true);
   };;
 
+  const getHtml2Pdf = async () => {
+    if (typeof window !== "undefined" && (window as any).html2pdf) {
+      return (window as any).html2pdf;
+    }
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
+      script.onload = () => {
+        if ((window as any).html2pdf) resolve((window as any).html2pdf);
+        else reject(new Error("html2pdf failed to load"));
+      };
+      script.onerror = () => reject(new Error("Failed to load html2pdf script"));
+      document.head.appendChild(script);
+    });
+  };
+
+  const generatePdfBase64 = async (html2pdf: any, docHtml: string, opt: any) => {
+    const activeSheets: any[] = [];
+    for (let i = 0; i < document.styleSheets.length; i++) {
+      const sheet = document.styleSheets[i];
+      try {
+        if (!sheet.disabled) {
+          sheet.disabled = true;
+          activeSheets.push(sheet);
+        }
+      } catch (e) {
+        try {
+          sheet.disabled = true;
+          activeSheets.push(sheet);
+        } catch (err) {}
+      }
+    }
+
+    try {
+      const pdfBase64 = await html2pdf().from(docHtml).set(opt).outputPdf('datauristring');
+      return pdfBase64;
+    } finally {
+      activeSheets.forEach(sheet => {
+        try {
+          sheet.disabled = false;
+        } catch (e) {}
+      });
+    }
+  };
+
   const handleSendQuickEmailSubmit = async () => {
     if (!recipientEmail.trim()) {
       alert("Vui lòng nhập email người nhận!");
@@ -1412,17 +1457,15 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
 
       const pdfAttachmentsList: any[] = [];
       if (attachLetters) {
-        // Dynamically import html2pdf.js on the client browser side to prevent SSR errors
-        const html2pdf = (await import('html2pdf.js')).default;
+        const html2pdf = await getHtml2Pdf();
         
         const eligibleStudents = emailStudents.filter(s => s.admissionResult === "Đạt" || s.admissionResult === "Đạt cam kết");
         let currentPdfCount = 0;
         
-        // Calculate total PDFs to generate
         let totalPdfs = 0;
         eligibleStudents.forEach(s => {
           if (s.admissionResult === "Đạt") totalPdfs += 1;
-          if (s.admissionResult === "Đạt cam kết") totalPdfs += 2; // Thư chúc mừng + Bản cam kết
+          if (s.admissionResult === "Đạt cam kết") totalPdfs += 2;
         });
 
         for (const s of emailStudents) {
@@ -1443,7 +1486,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
               };
 
               try {
-                const pdfBase64 = await html2pdf().from(docHtml).set(opt).outputPdf('datauristring');
+                const pdfBase64 = await generatePdfBase64(html2pdf, docHtml, opt);
                 const base64Data = pdfBase64.split(',')[1];
                 
                 pdfAttachmentsList.push({
@@ -1477,7 +1520,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
               };
 
               try {
-                const pdfBase64 = await html2pdf().from(docHtml).set(opt).outputPdf('datauristring');
+                const pdfBase64 = await generatePdfBase64(html2pdf, docHtml, opt);
                 const base64Data = pdfBase64.split(',')[1];
                 
                 pdfAttachmentsList.push({
@@ -1526,7 +1569,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
       setEmailSending(false);
       setEmailSendingStatus("");
     }
-  };;
+  };
 
   const handleExportDirectPDFs = async () => {
     const eligibleStudents = emailStudents.filter(s => s.admissionResult === "Đạt" || s.admissionResult === "Đạt cam kết");
@@ -1539,7 +1582,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     setEmailSendingStatus("Đang khởi tạo...");
     
     try {
-      const html2pdf = (await import('html2pdf.js')).default;
+      const html2pdf = await getHtml2Pdf();
       
       let count = 0;
       let totalPdfs = 0;
@@ -1564,7 +1607,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
               jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
-            const pdfBase64 = await html2pdf().from(docHtml).set(opt).outputPdf('datauristring');
+            const pdfBase64 = await generatePdfBase64(html2pdf, docHtml, opt);
             
             const link = document.createElement('a');
             link.href = pdfBase64;
@@ -1592,7 +1635,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
               jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
-            const pdfBase64 = await html2pdf().from(docHtml).set(opt).outputPdf('datauristring');
+            const pdfBase64 = await generatePdfBase64(html2pdf, docHtml, opt);
             
             const link = document.createElement('a');
             link.href = pdfBase64;
@@ -1614,7 +1657,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     }
   };
 
-  const [reportLoading, setReportLoading] = useState(false);
+  const [reportLoading, setReportLoading] = useState(false);  const [reportLoading, setReportLoading] = useState(false);
   const [reportForm, setReportForm] = useState({
     admissionResult: "",
     admissionCampus: "",
