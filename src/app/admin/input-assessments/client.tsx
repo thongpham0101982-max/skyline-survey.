@@ -1178,19 +1178,10 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     const signatureHtml = config.signature ? '<img class="signature-img" src="' + config.signature + '" alt="Signature" />' : "";
     const footerHtml = config.footer ? '<img class="footer-img" src="' + config.footer + '" alt="Footer" />' : "";
     
-    let schoolName = "HỆ THỐNG GIÁO DỤC SKY-LINE";
-    if (student.admissionCampus) {
-      if (student.admissionCampus.includes("CS1") || student.admissionCampus.includes("Riverside")) {
-        schoolName = "TRƯỜNG TIỂU HỌC, THCS & THPT SKY-LINE RIVERSIDE";
-      } else if (student.admissionCampus.includes("CS2") || student.admissionCampus.includes("Trung tâm")) {
-        schoolName = "TRƯỜNG TIỂU HỌC, THCS & THPT SKY-LINE";
-      } else if (student.admissionCampus.includes("CS3") || student.admissionCampus.includes("Hillilop") || student.admissionCampus.includes("Hilltop")) {
-        schoolName = "TRƯỜNG TIỂU HỌC, THCS & THPT SKY-LINE HILLTOP";
-      } else if (student.admissionCampus.includes("CS4") || student.admissionCampus.includes("Beach")) {
-        schoolName = "TRƯỜNG TH, THCS & THPT SKY-LINE BEACH (LIÊN CHIỂU)";
-      } else if (student.admissionCampus.includes("Quảng Nam")) {
-        schoolName = "TRƯỜNG SONG NGỮ QUỐC TẾ SKY-LINE QUẢNG NAM";
-      }
+    const campusCodeStr = ((config?.campusCode || config?.campusName || student.admissionCampus || "") as string).toUpperCase();
+    let schoolName = "TRƯỜNG TH, THCS, THPT SKY-LINE";
+    if (campusCodeStr.includes("CS4") || campusCodeStr.includes("HILL") || campusCodeStr.includes("HILLTOP") || campusCodeStr.includes("CS3")) {
+      schoolName = "TRƯỜNG TH, THCS, THPT SKY-LINE HILL";
     }
 
     // Page 2: Admission Documents Checklist (Danh mục Hồ sơ nhập học)
@@ -1206,8 +1197,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
           '</tr>';
         }).join("");
 
-        page2Html = '<div style="page-break-before: always;"></div>' +
-          '<div class="print-page">' +
+        page2Html = '<div class="print-page">' +
             (config.background ? '<img class="print-watermark" src="' + config.background + '" alt="Watermark" />' : "") +
             '<div class="logo-container">' +
               logoHtml +
@@ -1266,6 +1256,10 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
             'position: relative;' +
             'overflow: hidden;' +
             'background-color: #ffffff;' +
+          '}' +
+          '.print-page + .print-page {' +
+            'page-break-before: always !important;' +
+            'break-before: page !important;' +
           '}' +
           '.print-watermark {' +
             'display: block;' +
