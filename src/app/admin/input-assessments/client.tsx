@@ -3,7 +3,7 @@ const DEFAULT_WATERMARK_SVG = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import {
-  Plus, Search, Edit2, Trash2, Users, Settings, Clock, BarChart3, Mail,
+  Plus, Search, Edit2, Trash2, Users, Settings, Clock, BarChart3,
   Upload, Download, Layers, Database, UserCheck, Calendar, X, Check, AlertCircle,
   ChevronDown, ChevronUp, Loader2, BookOpen, GraduationCap, RefreshCw,
   Tag, FolderOpen, Hash, MoreVertical, PenLine, CheckCircle2,
