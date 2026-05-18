@@ -985,7 +985,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     if (!student) return null;
 
     // Find campus matching active selection in UI form or saved student record
-    const effCampus = student.admissionCampus;
+    const effCampus = (typeof reportForm !== "undefined" && reportForm?.admissionCampus) || student.admissionCampus;
     let targetCampus = campuses.find((c: any) => 
       c.campusName === effCampus ||
       effCampus?.includes(c.campusCode) ||
@@ -997,6 +997,22 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
       const batchObj = reportBatches.find((b: any) => b.id === student.batchId);
       if (batchObj?.campusId) {
         targetCampus = campuses.find((c: any) => c.id === batchObj.campusId);
+      }
+    }
+
+    // Fallback: Find campus by UI active selected reportBatchId
+    if (!targetCampus && typeof reportBatchId !== "undefined" && reportBatchId !== "all") {
+      const batchObj = reportBatches.find((b: any) => b.id === reportBatchId);
+      if (batchObj?.campusId) {
+        targetCampus = campuses.find((c: any) => c.id === batchObj.campusId);
+      }
+    }
+
+    // Fallback: Find campus by UI active selected reportSelPeriod first batch
+    if (!targetCampus && typeof reportSelPeriod !== "undefined" && reportSelPeriod?.batches) {
+      const firstBatch = reportSelPeriod.batches[0];
+      if (firstBatch?.campusId) {
+        targetCampus = campuses.find((c: any) => c.id === firstBatch.campusId);
       }
     }
     
@@ -1967,6 +1983,22 @@ ${reportForm.directorNote}`;
       const batchObj = reportBatches.find(b => b.id === selectedReportStudent.batchId);
       if (batchObj?.campusId) {
         targetCampus = campuses.find(c => c.id === batchObj.campusId);
+      }
+    }
+
+    // Fallback: Find campus by UI active selected reportBatchId
+    if (!targetCampus && typeof reportBatchId !== "undefined" && reportBatchId !== "all") {
+      const batchObj = reportBatches.find(b => b.id === reportBatchId);
+      if (batchObj?.campusId) {
+        targetCampus = campuses.find(c => c.id === batchObj.campusId);
+      }
+    }
+
+    // Fallback: Find campus by UI active selected reportSelPeriod first batch
+    if (!targetCampus && typeof reportSelPeriod !== "undefined" && reportSelPeriod?.batches) {
+      const firstBatch = reportSelPeriod.batches[0];
+      if (firstBatch?.campusId) {
+        targetCampus = campuses.find(c => c.id === firstBatch.campusId);
       }
     }
     
