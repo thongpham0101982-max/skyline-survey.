@@ -1527,6 +1527,93 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
       setEmailSendingStatus("");
     }
   };;
+
+  const handleExportDirectPDFs = async () => {
+    const eligibleStudents = emailStudents.filter(s => s.admissionResult === "Đạt" || s.admissionResult === "Đạt cam kết");
+    if (eligibleStudents.length === 0) {
+      alert("Không có học sinh nào đạt hoặc đạt cam kết để xuất PDF!");
+      return;
+    }
+    
+    setEmailSending(true);
+    setEmailSendingStatus("Đang khởi tạo...");
+    
+    try {
+      const html2pdf = (await import('html2pdf.js')).default;
+      
+      let count = 0;
+      let totalPdfs = 0;
+      eligibleStudents.forEach(s => {
+        if (s.admissionResult === "Đạt") totalPdfs += 1;
+        if (s.admissionResult === "Đạt cam kết") totalPdfs += 2;
+      });
+
+      for (const s of emailStudents) {
+        if (s.admissionResult === "Đạt" || s.admissionResult === "Đạt cam kết") {
+          const config = getStudentCampusConfig(s, false, false);
+          if (config) {
+            count++;
+            setEmailSendingStatus(`Đang tải (${count}/${totalPdfs}): Thư chúc mừng - ${s.fullName.split(' ').pop()}`);
+            const docHtml = buildLetterHtml(s, config, false);
+            const filename = `Thu_Chuc_Mung_${s.fullName.replace(/\s+/g, '_')}.pdf`;
+            const opt = {
+              margin: 0,
+              filename: filename,
+              image: { type: 'jpeg', quality: 0.98 },
+              html2canvas: { scale: 1.8, useCORS: true, logging: false, letterRendering: true },
+              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            const pdfBase64 = await html2pdf().from(docHtml).set(opt).outputPdf('datauristring');
+            
+            const link = document.createElement('a');
+            link.href = pdfBase64;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            await new Promise(r => setTimeout(r, 600));
+          }
+        }
+        
+        if (s.admissionResult === "Đạt cam kết") {
+          const config = getStudentCampusConfig(s, false, true);
+          if (config) {
+            count++;
+            setEmailSendingStatus(`Đang tải (${count}/${totalPdfs}): Bản cam kết - ${s.fullName.split(' ').pop()}`);
+            const docHtml = buildLetterHtml(s, config, true);
+            const filename = `Ban_Cam_Ket_${s.fullName.replace(/\s+/g, '_')}.pdf`;
+            const opt = {
+              margin: 0,
+              filename: filename,
+              image: { type: 'jpeg', quality: 0.98 },
+              html2canvas: { scale: 1.8, useCORS: true, logging: false, letterRendering: true },
+              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            const pdfBase64 = await html2pdf().from(docHtml).set(opt).outputPdf('datauristring');
+            
+            const link = document.createElement('a');
+            link.href = pdfBase64;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            await new Promise(r => setTimeout(r, 600));
+          }
+        }
+      }
+      alert("Đã tải xuống toàn bộ tệp PDF thành công!");
+    } catch (err) {
+      alert("Lỗi xuất PDF: " + err.message);
+    } finally {
+      setEmailSending(false);
+      setEmailSendingStatus("");
+    }
+  };
+
   const [reportLoading, setReportLoading] = useState(false);
   const [reportForm, setReportForm] = useState({
     admissionResult: "",
@@ -6644,6 +6731,23 @@ return {
                 className="px-5 py-2.5 rounded-xl hover:bg-slate-100 font-bold text-slate-700 text-xs transition-colors"
               >
                 Đóng lại
+              </button>
+              <button
+                onClick={handleExportDirectPDFs}
+                disabled={emailSending || emailStudents.length === 0}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              >
+                {emailSending && emailSendingStatus.includes("tải") ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>{emailSendingStatus || "Đang tải..."}</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4" />
+                    Xuất & Tải trực tiếp PDF
+                  </>
+                )}
               </button>
               <button
                 onClick={handleSendQuickEmailSubmit}
