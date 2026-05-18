@@ -1660,7 +1660,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     }
   };
 
-  const [reportLoading, setReportLoading] = useState(false);  const [reportLoading, setReportLoading] = useState(false);
+  const [reportLoading, setReportLoading] = useState(false);
   const [reportForm, setReportForm] = useState({
     admissionResult: "",
     admissionCampus: "",
