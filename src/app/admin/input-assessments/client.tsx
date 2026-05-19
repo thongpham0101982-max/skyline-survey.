@@ -1176,13 +1176,13 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     const directorName = student?.signatureName || config.directorName || "Đỗ Quang Trung";
     const logoHtml = config.logo ? '<img class="logo-img" crossorigin="anonymous" src="' + config.logo + '" alt="Logo" />' : "";
     const signatureHtml = config.signature ? '<img class="signature-img" crossorigin="anonymous" src="' + config.signature + '" alt="Signature" />' : "";
-    const footerHtml = config.footer ? '<img class="footer-img" src="' + config.footer + '" alt="Footer" />' : "";
+    const footerHtml = config.footer ? '<img class="footer-img" crossorigin="anonymous" src="' + config.footer + '" alt="Footer" />' : "";
     
     const effCampus = (typeof reportForm !== "undefined" && reportForm?.admissionCampus) || student.admissionCampus;
     const campusObj = campuses.find((c: any) => c.id === effCampus || c.campusName === effCampus || c.campusCode === effCampus);
     const campusCodeStr = (campusObj ? campusObj.campusCode || campusObj.campusName : effCampus || "").toUpperCase();
     let schoolName = "TRƯỜNG TH, THCS, THPT SKY-LINE";
-    if (campusCodeStr.includes("CS4") || campusCodeStr.includes("HILL") || campusCodeStr.includes("HILLTOP") || campusCodeStr.includes("CS3")) {
+    if (campusCodeStr.includes("CS4") || campusCodeStr.includes("HILL") || campusCodeStr.includes("HILLTOP")) {
       schoolName = "TRƯỜNG TH, THCS, THPT SKY-LINE HILL";
     }
 
