@@ -1279,7 +1279,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
         }).join("");
 
         page2Html = '<div class="print-page">' +
-            getImgTag(config.background || DEFAULT_WATERMARK_SVG, "print-watermark", "display: block; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; height: auto; opacity: 0.08; z-index: 0; pointer-events: none;", "Watermark") +
+            getImgTag(config.background || DEFAULT_WATERMARK_SVG, "print-watermark", "display: block; position: absolute; top: 22%; left: 10%; transform: none; width: 80%; height: auto; opacity: 0.08; z-index: 0; pointer-events: none;", "Watermark") +
             '<div class="header-container" style="display: flex; flex-direction: column; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; margin-bottom: 12px; position: relative; z-index: 10;">' +
               '<div style="display: flex; align-items: center; justify-content: space-between;">' +
                 logoHtml +
@@ -1349,9 +1349,9 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
           '.print-watermark {' +
             'display: block;' +
             'position: absolute;' +
-            'top: 50%;' +
-            'left: 50%;' +
-            'transform: translate(-50%, -50%);' +
+            'top: 22%;' +
+            'left: 10%;' +
+            'transform: none;' +
             'width: 80%;' +
             'height: auto;' +
             'opacity: 0.08;' +
@@ -1451,7 +1451,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
       '</head>' +
       '<body>' +
         '<div class="print-page">' +
-          getImgTag(config.background || DEFAULT_WATERMARK_SVG, "print-watermark", "display: block; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; height: auto; opacity: 0.08; z-index: 0; pointer-events: none;", "Watermark") +
+          getImgTag(config.background || DEFAULT_WATERMARK_SVG, "print-watermark", "display: block; position: absolute; top: 22%; left: 10%; transform: none; width: 80%; height: auto; opacity: 0.08; z-index: 0; pointer-events: none;", "Watermark") +
           '<div class="header-container" style="display: flex; flex-direction: column; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; margin-bottom: 12px; position: relative; z-index: 10;">' +
             '<div style="display: flex; align-items: center; justify-content: space-between;">' +
               logoHtml +
@@ -5538,9 +5538,9 @@ return {
               .print-watermark {
                     display: block !important;
                     position: absolute !important;
-                    top: 50% !important;
-                    left: 50% !important;
-                    transform: translate(-50%, -50%) !important;
+                    top: 22% !important;
+                    left: 10% !important;
+                    transform: none !important;
                     width: 80% !important;
                     height: auto !important;
                     opacity: 0.08 !important;
@@ -6056,7 +6056,7 @@ return {
                   style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "297mm", padding: "12.7mm 15mm 48mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "block", overflow: "hidden" }}
               >
                 {/* Print Watermark */}
-                <img crossOrigin="anonymous"  className="print-watermark" src={rcBackground || DEFAULT_WATERMARK_SVG} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "80%", height: "auto", opacity: 0.08, zIndex: 0, pointerEvents: "none" }} />
+                <img crossOrigin="anonymous"  className="print-watermark" src={rcBackground || DEFAULT_WATERMARK_SVG} alt="Watermark" style={{ display: "block", position: "absolute", top: "22%", left: "10%", transform: "none", width: "80%", height: "auto", opacity: 0.08, zIndex: 0, pointerEvents: "none" }} />
                 {/* Top Logo and Header */}
                 <div className="flex flex-col relative z-10 w-full">
                   <div className="flex flex-col gap-1 border-b pb-2 mb-3">
@@ -6300,7 +6300,7 @@ return {
                   >
                     <div className="flex flex-col relative z-10 w-full">
                 {/* Print Watermark */}
-                <img crossOrigin="anonymous"  className="print-watermark" src={rcBackground || DEFAULT_WATERMARK_SVG} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "80%", height: "auto", opacity: 0.08, zIndex: 0, pointerEvents: "none" }} />
+                <img crossOrigin="anonymous"  className="print-watermark" src={rcBackground || DEFAULT_WATERMARK_SVG} alt="Watermark" style={{ display: "block", position: "absolute", top: "22%", left: "10%", transform: "none", width: "80%", height: "auto", opacity: 0.08, zIndex: 0, pointerEvents: "none" }} />
                 {/* Top Logo and Header (Synchronized perfectly with Page 1) */}
                       <div className="flex flex-col gap-1 border-b pb-2 mb-3">
                         <div className="flex items-center justify-between">
@@ -6489,7 +6489,7 @@ return {
                     >
                       <div className="flex flex-col relative z-10 w-full">
                         {/* Print Watermark */}
-                        <img crossOrigin="anonymous" className="print-watermark" src={rcBackground || DEFAULT_WATERMARK_SVG} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "80%", height: "auto", opacity: 0.08, zIndex: 0, pointerEvents: "none" }} />
+                        <img crossOrigin="anonymous" className="print-watermark" src={rcBackground || DEFAULT_WATERMARK_SVG} alt="Watermark" style={{ display: "block", position: "absolute", top: "22%", left: "10%", transform: "none", width: "80%", height: "auto", opacity: 0.08, zIndex: 0, pointerEvents: "none" }} />
                         
                         {/* Top Logo and Header */}
                         <div className="flex flex-col gap-1 border-b pb-2 mb-3">
