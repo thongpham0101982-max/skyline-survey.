@@ -1178,7 +1178,9 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     const signatureHtml = config.signature ? '<img class="signature-img" src="' + config.signature + '" alt="Signature" />' : "";
     const footerHtml = config.footer ? '<img class="footer-img" src="' + config.footer + '" alt="Footer" />' : "";
     
-    const campusCodeStr = ((config?.campusCode || config?.campusName || student.admissionCampus || "") as string).toUpperCase();
+    const effCampus = student.admissionCampus;
+    const campusObj = campuses.find((c: any) => c.id === effCampus || c.campusName === effCampus || c.campusCode === effCampus);
+    const campusCodeStr = (campusObj ? campusObj.campusCode || campusObj.campusName : effCampus || "").toUpperCase();
     let schoolName = "TRƯỜNG TH, THCS, THPT SKY-LINE";
     if (campusCodeStr.includes("CS4") || campusCodeStr.includes("HILL") || campusCodeStr.includes("HILLTOP") || campusCodeStr.includes("CS3")) {
       schoolName = "TRƯỜNG TH, THCS, THPT SKY-LINE HILL";
@@ -1269,7 +1271,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
         }).join("");
 
         page2Html = '<div class="print-page">' +
-            (config.background ? '<img class="print-watermark" src="' + config.background + '" alt="Watermark" />' : "") +
+            '<img class="print-watermark" src="' + (config.background || DEFAULT_WATERMARK_SVG) + '" alt="Watermark" style="display: block; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; height: auto; opacity: 0.08; z-index: 0; pointer-events: none;" />' +
             '<div class="header-container" style="display: flex; flex-direction: column; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; margin-bottom: 12px; position: relative; z-index: 10;">' +
               '<div style="display: flex; align-items: center; justify-content: space-between;">' +
                 logoHtml +
@@ -1441,7 +1443,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
       '</head>' +
       '<body>' +
         '<div class="print-page">' +
-          (config.background ? '<img class="print-watermark" src="' + config.background + '" alt="Watermark" />' : "") +
+          '<img class="print-watermark" src="' + (config.background || DEFAULT_WATERMARK_SVG) + '" alt="Watermark" style="display: block; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; height: auto; opacity: 0.08; z-index: 0; pointer-events: none;" />' +
           '<div class="header-container" style="display: flex; flex-direction: column; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; margin-bottom: 12px; position: relative; z-index: 10;">' +
             '<div style="display: flex; align-items: center; justify-content: space-between;">' +
               logoHtml +
