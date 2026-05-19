@@ -3765,7 +3765,7 @@ return {
                 <div className="flex items-center gap-4">
                   {rcLogo ? (
                     <div className="relative w-16 h-16 rounded-xl border border-slate-200 bg-white p-1 flex items-center justify-center group">
-                      <img crossOrigin="anonymous"  src={rcLogo} alt="Logo" className="max-w-full max-h-full object-contain rounded-lg" />
+                      <img crossOrigin={rcLogo?.startsWith("data:") ? undefined : "anonymous"}  src={rcLogo} alt="Logo" className="max-w-full max-h-full object-contain rounded-lg" />
                       <button onClick={() => setRcLogo("")} className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-rose-600 text-white rounded-full flex items-center justify-center shadow-md hover:bg-rose-700 transition-colors">
                         <X className="w-3 h-3"/>
                       </button>
@@ -3789,7 +3789,7 @@ return {
                 <div className="flex items-center gap-4">
                   {rcSignature ? (
                     <div className="relative w-16 h-16 rounded-xl border border-slate-200 bg-white p-1 flex items-center justify-center group">
-                      <img crossOrigin="anonymous"  src={rcSignature} alt="Chữ ký" className="max-w-full max-h-full object-contain rounded-lg" />
+                      <img crossOrigin={rcSignature?.startsWith("data:") ? undefined : "anonymous"}  src={rcSignature} alt="Chữ ký" className="max-w-full max-h-full object-contain rounded-lg" />
                       <button onClick={() => setRcSignature("")} className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-rose-600 text-white rounded-full flex items-center justify-center shadow-md hover:bg-rose-700 transition-colors">
                         <X className="w-3 h-3"/>
                       </button>
@@ -3813,7 +3813,7 @@ return {
                 <div className="flex items-center gap-4">
                   {rcBackground ? (
                     <div className="relative w-16 h-16 rounded-xl border border-slate-200 bg-white p-1 flex items-center justify-center group">
-                      <img crossOrigin="anonymous"  src={rcBackground} alt="Hình nền" className="max-w-full max-h-full object-contain rounded-lg" />
+                      <img crossOrigin={rcBackground?.startsWith("data:") ? undefined : "anonymous"}  src={rcBackground} alt="Hình nền" className="max-w-full max-h-full object-contain rounded-lg" />
                       <button onClick={() => setRcBackground("")} className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-rose-600 text-white rounded-full flex items-center justify-center shadow-md hover:bg-rose-700 transition-colors">
                         <X className="w-3 h-3"/>
                       </button>
@@ -3837,7 +3837,7 @@ return {
                 <div className="flex items-center gap-4">
                   {rcFooter ? (
                     <div className="relative w-16 h-16 rounded-xl border border-slate-200 bg-white p-1 flex items-center justify-center group">
-                      <img crossOrigin="anonymous"  src={rcFooter} alt="Hình Footer" className="max-w-full max-h-full object-contain rounded-lg" />
+                      <img crossOrigin={rcFooter?.startsWith("data:") ? undefined : "anonymous"}  src={rcFooter} alt="Hình Footer" className="max-w-full max-h-full object-contain rounded-lg" />
                       <button onClick={() => setRcFooter("")} className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-rose-600 text-white rounded-full flex items-center justify-center shadow-md hover:bg-rose-700 transition-colors">
                         <X className="w-3 h-3"/>
                       </button>
@@ -3904,7 +3904,7 @@ return {
                   <div className="border-b border-slate-200 pb-2">
                     <div className="flex justify-between items-center mb-1">
                       {rcLogo ? (
-                        <img crossOrigin="anonymous"  src={rcLogo} alt="Logo" className="h-8 object-contain" />
+                        <img crossOrigin={rcLogo?.startsWith("data:") ? undefined : "anonymous"}  src={rcLogo} alt="Logo" className="h-8 object-contain" />
                       ) : (
                         <span className="text-[10px] font-black tracking-tight text-teal-600 uppercase" style={{ fontFamily: "Arial, sans-serif" }}>SKY-LINE</span>
                       )}
@@ -3943,7 +3943,7 @@ return {
                       <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {previewTitleSuffix}</p>
                       <div className="h-12 flex items-center justify-center">
                         {rcSignature ? (
-                          <img crossOrigin="anonymous"  src={rcSignature} alt="Chữ ký Preview" className="max-h-full object-contain" />
+                          <img crossOrigin={rcSignature?.startsWith("data:") ? undefined : "anonymous"}  src={rcSignature} alt="Chữ ký Preview" className="max-h-full object-contain" />
                         ) : (
                           <div className="text-[8px] font-semibold text-slate-300 italic">Chưa upload chữ ký</div>
                         )}
@@ -3956,7 +3956,7 @@ return {
                 {/* Live Preview Footer Contact (anchored to bottom via flex justify-between) */}
                 {rcFooter ? (
                   <div className="pt-2 mt-4 border-t border-slate-200 relative z-10 w-full">
-                    <img crossOrigin="anonymous"  src={rcFooter} alt="Footer Preview" className="w-full h-auto" />
+                    <img crossOrigin={rcFooter?.startsWith("data:") ? undefined : "anonymous"}  src={rcFooter} alt="Footer Preview" className="w-full h-auto" />
                   </div>
                 ) : (
                   <div className="border-t border-teal-500/30 pt-2 mt-4 text-[6px] text-slate-400 font-sans leading-normal relative z-10 w-full" style={{ fontFamily: "Arial, sans-serif" }}>
@@ -4008,7 +4008,7 @@ return {
                   <div className="border-b border-slate-200 pb-2">
                     <div className="flex justify-between items-center mb-1">
                       {rcLogo ? (
-                        <img crossOrigin="anonymous"  src={rcLogo} alt="Logo" className="h-8 object-contain" />
+                        <img crossOrigin={rcLogo?.startsWith("data:") ? undefined : "anonymous"}  src={rcLogo} alt="Logo" className="h-8 object-contain" />
                       ) : (
                         <div className="flex items-center gap-1">
                           <span className="text-[10px] font-black tracking-tight text-teal-600 uppercase" style={{ fontFamily: "Arial, sans-serif" }}>SKY-LINE</span>
@@ -4060,7 +4060,7 @@ return {
                 {/* Footer Contact (Synchronized perfectly) */}
                 {rcFooter ? (
                   <div className="pt-2 mt-4 border-t border-slate-200 relative z-10 w-full">
-                    <img crossOrigin="anonymous"  src={rcFooter} alt="Footer Preview" className="w-full h-auto" />
+                    <img crossOrigin={rcFooter?.startsWith("data:") ? undefined : "anonymous"}  src={rcFooter} alt="Footer Preview" className="w-full h-auto" />
                   </div>
                 ) : (
                   <div className="border-t border-teal-500/30 pt-2 mt-4 text-[6px] text-slate-400 font-sans leading-normal relative z-10 w-full" style={{ fontFamily: "Arial, sans-serif" }}>
@@ -6058,13 +6058,13 @@ return {
                   style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "297mm", padding: "12.7mm 15mm 48mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "block", overflow: "hidden" }}
               >
                 {/* Print Watermark */}
-                <img crossOrigin="anonymous"  className="print-watermark" src={rcBackground || DEFAULT_WATERMARK_SVG} alt="Watermark" style={{ display: "block", position: "absolute", top: "22%", left: "10%", transform: "none", width: "80%", height: "auto", opacity: 0.08, zIndex: 0, pointerEvents: "none" }} />
+                <img crossOrigin={(rcBackground || DEFAULT_WATERMARK_SVG).startsWith("data:") ? undefined : "anonymous"}  className="print-watermark" src={rcBackground || DEFAULT_WATERMARK_SVG} alt="Watermark" style={{ display: "block", position: "absolute", top: "22%", left: "10%", transform: "none", width: "80%", height: "auto", opacity: 0.08, zIndex: 0, pointerEvents: "none" }} />
                 {/* Top Logo and Header */}
                 <div className="flex flex-col relative z-10 w-full">
                   <div className="flex flex-col gap-1 border-b pb-2 mb-3">
                     <div className="flex items-center justify-between">
                       {studentCampusConfig?.logo ? (
-                        <img crossOrigin="anonymous"  src={studentCampusConfig.logo} alt="Logo" className="h-12 object-contain" />
+                        <img crossOrigin={studentCampusConfig.logo?.startsWith("data:") ? undefined : "anonymous"}  src={studentCampusConfig.logo} alt="Logo" className="h-12 object-contain" />
                       ) : (
                         <div className="flex items-center gap-1.5">
                           <span className="text-2xl font-black tracking-tight text-teal-600" style={{ fontFamily: "Arial, sans-serif" }}>SKY-LINE</span>
@@ -6174,7 +6174,7 @@ return {
                       
                       <div className="h-16 flex items-center justify-center">
                         {studentCampusConfig?.signature ? (
-                          <img crossOrigin="anonymous"  src={studentCampusConfig.signature} alt="Signature" className="max-h-full object-contain" />
+                          <img crossOrigin={studentCampusConfig.signature?.startsWith("data:") ? undefined : "anonymous"}  src={studentCampusConfig.signature} alt="Signature" className="max-h-full object-contain" />
                         ) : (
                           <span className="font-serif italic text-xl text-slate-400 font-light tracking-widest opacity-60" style={{ fontFamily: "'Brush Script MT', cursive, sans-serif" }}>
                             {mergedStudent?.signatureName || studentCampusConfig?.directorName || "Đỗ Quang Trung"}
@@ -6225,7 +6225,7 @@ return {
                 {/* Footer Contact */}
                 {studentCampusConfig?.footer ? (
                   <div className="border-t border-slate-200 pt-3 absolute z-10 w-full print-footer" style={{ bottom: "8mm", left: "0", right: "0", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box" }}>
-                    <img crossOrigin="anonymous"  src={studentCampusConfig.footer} alt="Footer Print" className="w-full" style={{ maxHeight: "100px", objectFit: "contain" }} />
+                    <img crossOrigin={studentCampusConfig.footer?.startsWith("data:") ? undefined : "anonymous"}  src={studentCampusConfig.footer} alt="Footer Print" className="w-full" style={{ maxHeight: "100px", objectFit: "contain" }} />
                   </div>
                 ) : (
                   <div className="w-full pt-1 mt-4 absolute z-10 print-footer" style={{ bottom: "8mm", left: "0", right: "0", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}>
@@ -6307,7 +6307,7 @@ return {
                       <div className="flex flex-col gap-1 border-b pb-2 mb-3">
                         <div className="flex items-center justify-between">
                           {studentCampusConfig?.logo ? (
-                            <img crossOrigin="anonymous"  src={studentCampusConfig.logo} alt="Logo" className="h-12 object-contain" />
+                            <img crossOrigin={studentCampusConfig.logo?.startsWith("data:") ? undefined : "anonymous"}  src={studentCampusConfig.logo} alt="Logo" className="h-12 object-contain" />
                           ) : (
                             <div className="flex items-center gap-1.5">
                               <span className="text-2xl font-black tracking-tight text-teal-600" style={{ fontFamily: "Arial, sans-serif" }}>SKY-LINE</span>
@@ -6361,7 +6361,7 @@ return {
                     {/* Footer Contact */}
                     {studentCampusConfig?.footer ? (
                       <div className="border-t border-slate-200 pt-3 absolute z-10 w-full print-footer" style={{ bottom: "8mm", left: "0", right: "0", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box" }}>
-                        <img crossOrigin="anonymous"  src={studentCampusConfig.footer} alt="Footer Print" className="w-full" style={{ maxHeight: "100px", objectFit: "contain" }} />
+                        <img crossOrigin={studentCampusConfig.footer?.startsWith("data:") ? undefined : "anonymous"}  src={studentCampusConfig.footer} alt="Footer Print" className="w-full" style={{ maxHeight: "100px", objectFit: "contain" }} />
                       </div>
                     ) : (
                       <div className="w-full pt-1 mt-4 absolute z-10 print-footer" style={{ bottom: "8mm", left: "0", right: "0", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}>
@@ -6491,13 +6491,13 @@ return {
                     >
                       <div className="flex flex-col relative z-10 w-full">
                         {/* Print Watermark */}
-                        <img crossOrigin="anonymous" className="print-watermark" src={rcBackground || DEFAULT_WATERMARK_SVG} alt="Watermark" style={{ display: "block", position: "absolute", top: "22%", left: "10%", transform: "none", width: "80%", height: "auto", opacity: 0.08, zIndex: 0, pointerEvents: "none" }} />
+                        <img crossOrigin={(rcBackground || DEFAULT_WATERMARK_SVG).startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={rcBackground || DEFAULT_WATERMARK_SVG} alt="Watermark" style={{ display: "block", position: "absolute", top: "22%", left: "10%", transform: "none", width: "80%", height: "auto", opacity: 0.08, zIndex: 0, pointerEvents: "none" }} />
                         
                         {/* Top Logo and Header */}
                         <div className="flex flex-col gap-1 border-b pb-2 mb-3">
                           <div className="flex items-center justify-between">
                             {studentCampusConfig?.logo ? (
-                              <img crossOrigin="anonymous" src={studentCampusConfig.logo} alt="Logo" className="h-12 object-contain" />
+                              <img crossOrigin={studentCampusConfig.logo?.startsWith("data:") ? undefined : "anonymous"} src={studentCampusConfig.logo} alt="Logo" className="h-12 object-contain" />
                             ) : (
                               <span className="text-2xl font-black tracking-tight text-teal-600" style={{ fontFamily: "Arial, sans-serif" }}>SKY-LINE</span>
                             )}
@@ -6546,7 +6546,7 @@ return {
                       {/* Footer Contact */}
                       {studentCampusConfig?.footer ? (
                         <div className="border-t border-slate-200 pt-3 absolute z-10 w-full print-footer" style={{ bottom: "8mm", left: "0", right: "0", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box" }}>
-                          <img crossOrigin="anonymous" src={studentCampusConfig.footer} alt="Footer Print" className="w-full" style={{ maxHeight: "100px", objectFit: "contain" }} />
+                          <img crossOrigin={studentCampusConfig.footer?.startsWith("data:") ? undefined : "anonymous"} src={studentCampusConfig.footer} alt="Footer Print" className="w-full" style={{ maxHeight: "100px", objectFit: "contain" }} />
                         </div>
                       ) : (
                         <div className="w-full pt-1 mt-4 absolute z-10 print-footer" style={{ bottom: "8mm", left: "0", right: "0", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}>
