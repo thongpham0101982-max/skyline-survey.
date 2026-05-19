@@ -1059,10 +1059,10 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
       const mBg = localStorage.getItem('report_config_master_background');
       const mFooter = localStorage.getItem('report_config_master_footer');
 
-      const mergedLogo = mLogo !== null ? mLogo : (globalData.logo || campusData.logo || "");
-      const mergedBackground = mBg !== null ? mBg : (globalData.background || campusData.background || "");
+      const mergedLogo = mLogo ? mLogo : (globalData.logo || campusData.logo || "");
+      const mergedBackground = mBg ? mBg : (globalData.background || campusData.background || "");
       const mergedContent = globalData.content || campusData.content || "";
-      const mergedFooter = mFooter !== null ? mFooter : (globalData.footer || campusData.footer || "");
+      const mergedFooter = mFooter ? mFooter : (globalData.footer || campusData.footer || "");
       
       return {
         title: mergedTitle,
@@ -2130,10 +2130,10 @@ ${reportForm.directorNote}`;
       const mBg = localStorage.getItem('report_config_master_background');
       const mFooter = localStorage.getItem('report_config_master_footer');
 
-      const mergedLogo = mLogo !== null ? mLogo : (globalData.logo || campusData.logo || "");
-      const mergedBackground = mBg !== null ? mBg : (globalData.background || campusData.background || "");
+      const mergedLogo = mLogo ? mLogo : (globalData.logo || campusData.logo || "");
+      const mergedBackground = mBg ? mBg : (globalData.background || campusData.background || "");
       const mergedContent = globalData.content || campusData.content || "";
-      const mergedFooter = mFooter !== null ? mFooter : (globalData.footer || campusData.footer || "");
+      const mergedFooter = mFooter ? mFooter : (globalData.footer || campusData.footer || "");
       
       return {
         title: mergedTitle,
