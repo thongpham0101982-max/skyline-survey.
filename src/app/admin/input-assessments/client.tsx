@@ -1174,11 +1174,19 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     
     const greetingHtml = 'Thân gửi em <strong style="font-weight: 900; font-style: normal; color: #0f172a;">' + student.fullName + '</strong>,';
     const directorName = student?.signatureName || config.directorName || "Đỗ Quang Trung";
-    const logoHtml = config.logo ? '<img class="logo-img" crossorigin="anonymous" src="' + config.logo + '" alt="Logo" />' : "";
-    const signatureHtml = config.signature ? '<img class="signature-img" crossorigin="anonymous" src="' + config.signature + '" alt="Signature" />' : "";
-    const footerHtml = config.footer ? '<img class="footer-img" crossorigin="anonymous" src="' + config.footer + '" alt="Footer" />' : "";
+    const getImgTag = (src: string, className: string, style: string = "", alt: string = "") => {
+      if (!src) return "";
+      const cors = src.startsWith("data:") ? "" : ' crossorigin="anonymous"';
+      const styleAttr = style ? ' style="' + style + '"' : "";
+      const altAttr = alt ? ' alt="' + alt + '"' : "";
+      return '<img class="' + className + '"' + cors + ' src="' + src + '"' + styleAttr + altAttr + ' />';
+    };
+
+    const logoHtml = config.logo ? getImgTag(config.logo, "logo-img", "", "Logo") : "";
+    const signatureHtml = config.signature ? getImgTag(config.signature, "signature-img", "", "Signature") : "";
+    const footerHtml = config.footer ? getImgTag(config.footer, "footer-img", "", "Footer") : "";
     
-    const effCampus = (typeof reportForm !== "undefined" && reportForm?.admissionCampus) || student.admissionCampus;
+    const effCampus = (typeof reportForm !== "undefined" && reportForm?.admissionCampus && reportForm?.admissionCampus !== "all") ? reportForm.admissionCampus : student.admissionCampus;
     const campusObj = campuses.find((c: any) => c.id === effCampus || c.campusName === effCampus || c.campusCode === effCampus);
     const campusCodeStr = (campusObj ? campusObj.campusCode || campusObj.campusName : effCampus || "").toUpperCase();
     let schoolName = "TRƯỜNG TH, THCS, THPT SKY-LINE";
@@ -1205,7 +1213,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
       : `GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE ${campusTitleSuffix}`;
     const signName = isInvitationFlag && !config.signature ? "Ban Tuyển sinh" : directorName;
 
-    const customFooterHtml = config.footer ? '<img class="footer-img" crossorigin="anonymous" src="' + config.footer + '" alt="Footer" style="width: 100%; max-height: 100px; object-fit: contain;" />' :
+    const customFooterHtml = config.footer ? getImgTag(config.footer, "footer-img", "width: 100%; max-height: 100px; object-fit: contain;", "Footer") :
       '<div style="width: 100%; font-family: Arial, sans-serif; box-sizing: border-box; text-align: left;">' +
         '<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; width: 100%;">' +
           '<span style="font-weight: bold; color: #00A6A9; white-space: nowrap; text-transform: uppercase; font-size: 11.5px; letter-spacing: 0.5px;">HỆ THỐNG GIÁO DỤC SKY-LINE</span>' +
@@ -1271,7 +1279,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
         }).join("");
 
         page2Html = '<div class="print-page">' +
-            '<img class="print-watermark" crossorigin="anonymous" src="' + (config.background || DEFAULT_WATERMARK_SVG) + '" alt="Watermark" style="display: block; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; height: auto; opacity: 0.08; z-index: 0; pointer-events: none;" />' +
+            getImgTag(config.background || DEFAULT_WATERMARK_SVG, "print-watermark", "display: block; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; height: auto; opacity: 0.08; z-index: 0; pointer-events: none;", "Watermark") +
             '<div class="header-container" style="display: flex; flex-direction: column; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; margin-bottom: 12px; position: relative; z-index: 10;">' +
               '<div style="display: flex; align-items: center; justify-content: space-between;">' +
                 logoHtml +
@@ -1443,7 +1451,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
       '</head>' +
       '<body>' +
         '<div class="print-page">' +
-          '<img class="print-watermark" crossorigin="anonymous" src="' + (config.background || DEFAULT_WATERMARK_SVG) + '" alt="Watermark" style="display: block; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; height: auto; opacity: 0.08; z-index: 0; pointer-events: none;" />' +
+          getImgTag(config.background || DEFAULT_WATERMARK_SVG, "print-watermark", "display: block; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; height: auto; opacity: 0.08; z-index: 0; pointer-events: none;", "Watermark") +
           '<div class="header-container" style="display: flex; flex-direction: column; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; margin-bottom: 12px; position: relative; z-index: 10;">' +
             '<div style="display: flex; align-items: center; justify-content: space-between;">' +
               logoHtml +
