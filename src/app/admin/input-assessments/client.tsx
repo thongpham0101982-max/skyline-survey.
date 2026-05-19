@@ -1178,7 +1178,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     const signatureHtml = config.signature ? '<img class="signature-img" src="' + config.signature + '" alt="Signature" />' : "";
     const footerHtml = config.footer ? '<img class="footer-img" src="' + config.footer + '" alt="Footer" />' : "";
     
-    const effCampus = student.admissionCampus;
+    const effCampus = (typeof reportForm !== "undefined" && reportForm?.admissionCampus) || student.admissionCampus;
     const campusObj = campuses.find((c: any) => c.id === effCampus || c.campusName === effCampus || c.campusCode === effCampus);
     const campusCodeStr = (campusObj ? campusObj.campusCode || campusObj.campusName : effCampus || "").toUpperCase();
     let schoolName = "TRƯỜNG TH, THCS, THPT SKY-LINE";
@@ -1257,9 +1257,9 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
         '</div>' +
       '</div>';
 
-    // Page 2: Admission Documents Checklist (Danh mục Hồ sơ nhập học)
+    // Page 2: Admission Documents Checklist (Danh mục Hồ sơ nhập học) - Only for Commitments and Invitations!
     let page2Html = "";
-    if (student.admissionResult === "Đạt" || student.admissionResult === "Đạt cam kết") {
+    if (isCommitmentFlag || isInvitationFlag) {
       const docList = getStudentDocList(student);
       if (docList && docList.length > 0) {
         const rowsHtml = docList.map((item: any, idx: number) => {
@@ -6283,7 +6283,7 @@ return {
               
 
                 </div>
-                {modalDocList && modalDocList.length > 0 && (
+                {modalDocList && modalDocList.length > 0 && (isInvitation || isCommitment) && (
                   <div 
                     className="bg-white shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed print-page mt-8"
                     style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "297mm", padding: "12.7mm 15mm 48mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "block", overflow: "hidden" }}
