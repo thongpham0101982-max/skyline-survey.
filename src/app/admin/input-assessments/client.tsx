@@ -985,9 +985,11 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     if (!student) return null;
 
     // Find campus matching active selection in UI form or saved student record
-    const effCampus = (typeof reportForm !== "undefined" && reportForm?.admissionCampus) || student.admissionCampus;
+    const effCampus = (typeof reportForm !== "undefined" && reportForm?.admissionCampus && reportForm?.admissionCampus !== "all") ? reportForm.admissionCampus : student.admissionCampus;
     let targetCampus = campuses.find((c: any) => 
+      c.id === effCampus ||
       c.campusName === effCampus ||
+      c.campusCode === effCampus ||
       effCampus?.includes(c.campusCode) ||
       effCampus?.includes(c.campusName)
     );
