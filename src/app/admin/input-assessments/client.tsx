@@ -1203,6 +1203,58 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
       : `GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE ${campusTitleSuffix}`;
     const signName = isInvitationFlag && !config.signature ? "Ban Tuyển sinh" : directorName;
 
+    const customFooterHtml = config.footer ? '<img class="footer-img" src="' + config.footer + '" alt="Footer" style="width: 100%; max-height: 100px; object-fit: contain;" />' :
+      '<div style="width: 100%; font-family: Arial, sans-serif; box-sizing: border-box; text-align: left;">' +
+        '<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; width: 100%;">' +
+          '<span style="font-weight: bold; color: #00A6A9; white-space: nowrap; text-transform: uppercase; font-size: 11.5px; letter-spacing: 0.5px;">HỆ THỐNG GIÁO DỤC SKY-LINE</span>' +
+          '<div style="flex-grow: 1; border-top: 1px solid rgba(0, 166, 169, 0.7); height: 0; margin-top: 2px;"></div>' +
+          '<span style="font-weight: 600; color: #00A6A9; white-space: nowrap; text-transform: lowercase; font-size: 11px;">www.skylineschool.edu.vn</span>' +
+        '</div>' +
+        '<div style="display: flex; justify-content: space-between; font-size: 9px; position: relative; width: 100%;">' +
+          '<div style="width: 32%; display: flex; flex-direction: column; gap: 4px;">' +
+            '<div>' +
+              '<p style="font-weight: bold; color: #00A6A9; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Riverside</p>' +
+              '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Lô A2.4 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>' +
+            '</div>' +
+            '<div>' +
+              '<p style="font-weight: bold; color: #00A6A9; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Central</p>' +
+              '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>' +
+            '</div>' +
+            '<div>' +
+              '<p style="font-weight: bold; color: #00A6A9; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Global</p>' +
+              '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Lô A2 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>' +
+            '</div>' +
+          '</div>' +
+          '<div style="width: 32%; display: flex; flex-direction: column; gap: 4px;">' +
+            '<div>' +
+              '<p style="font-weight: bold; color: #00A6A9; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Beach</p>' +
+              '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Số 199 Trần Anh Tông, P. Thanh Khê, TP. Đà Nẵng</p>' +
+            '</div>' +
+            '<div>' +
+              '<p style="font-weight: bold; color: #00A6A9; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Hill</p>' +
+              '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Khối Hà My Đông A, P. Điện Bàn Đông, TP. Đà Nẵng</p>' +
+            '</div>' +
+            '<div>' +
+              '<p style="font-weight: bold; color: #00A6A9; margin: 0; font-size: 9.5px; line-height: 1.2;">Trung tâm sống thành công - SLS</p>' +
+              '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>' +
+            '</div>' +
+          '</div>' +
+          '<div style="width: 32%; display: flex; align-items: center; justify-content: flex-end; text-align: right; gap: 6px; font-size: 8.5px; font-weight: 600; color: #1e293b;">' +
+            '<div style="display: flex; flex-direction: column; line-height: 1.3;">' +
+              '<p style="margin: 0;">(+84.236) 378 7777</p>' +
+              '<p style="margin: 0;">(+84.236) 356 8777</p>' +
+              '<p style="margin: 0;">(+84.236) 378 7779</p>' +
+              '<p style="margin: 0;">(+84.235) 375 1777</p>' +
+            '</div>' +
+          '</div>' +
+          '<div style="position: absolute; right: -5px; top: 2px; width: 64px; height: 48px; pointer-events: none; display: flex; align-items: center; justify-content: center; color: #00A6A9;">' +
+            '<svg viewBox="0 0 120 60" style="width: 100%; height: 100%; fill: currentColor;">' +
+              '<path d="M 8 26 C 24 32, 50 52, 62 60 C 78 36, 102 16, 118 3 C 95 16, 76 44, 62 62 C 48 46, 25 32, 8 26 Z" />' +
+            '</svg>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
     // Page 2: Admission Documents Checklist (Danh mục Hồ sơ nhập học)
     let page2Html = "";
     if (student.admissionResult === "Đạt" || student.admissionResult === "Đạt cam kết") {
@@ -1218,9 +1270,13 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
 
         page2Html = '<div class="print-page">' +
             (config.background ? '<img class="print-watermark" src="' + config.background + '" alt="Watermark" />' : "") +
-            '<div class="logo-container">' +
-              logoHtml +
-              '<div class="school-name">' + schoolName + '</div>' +
+            '<div class="header-container" style="display: flex; flex-direction: column; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; margin-bottom: 12px; position: relative; z-index: 10;">' +
+              '<div style="display: flex; align-items: center; justify-content: space-between;">' +
+                logoHtml +
+              '</div>' +
+              '<div style="text-align: left; margin-top: 4px;">' +
+                '<h4 style="font-family: Arial, sans-serif; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #1e293b; margin: 0;">' + schoolName + '</h4>' +
+              '</div>' +
             '</div>' +
             '<div class="letter-title">' +
               '<h2>DANH MỤC HỒ SƠ NHẬP HỌC</h2>' +
@@ -1243,7 +1299,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
               'Quý phụ huynh vui lòng bổ sung hồ sơ thiếu (nếu có) trong vòng 10 ngày kể từ ngày nộp Hồ sơ.' +
             '</p>' +
             '<div class="footer-container">' +
-              footerHtml +
+              customFooterHtml +
             '</div>' +
           '</div>';
       }
@@ -1270,7 +1326,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
             'font-family: "Times New Roman", Times, serif;' +
             'width: 210mm;' +
             'height: 297mm;' +
-            'padding: 20mm 20mm 48mm 20mm;' +
+            'padding: 12.7mm 15mm 48mm 15mm;' +
             'box-sizing: border-box;' +
             'position: relative;' +
             'overflow: hidden;' +
@@ -1292,27 +1348,9 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
             'z-index: 0;' +
             'pointer-events: none;' +
           '}' +
-          '.logo-container {' +
-            'display: flex;' +
-            'justify-content: space-between;' +
-            'align-items: center;' +
-            'border-bottom: 1px solid #cbd5e1;' +
-            'padding-bottom: 8px;' +
-            'margin-bottom: 12px;' +
-            'position: relative;' +
-            'z-index: 10;' +
-          '}' +
           '.logo-img {' +
-            'max-height: 40px;' +
+            'max-height: 48px;' +
             'object-fit: contain;' +
-          '}' +
-          '.school-name {' +
-            'font-family: Arial, sans-serif;' +
-            'font-size: 13px;' +
-            'font-weight: 800;' +
-            'text-transform: uppercase;' +
-            'color: #1e293b;' +
-            'margin-top: 4px;' +
           '}' +
           '.letter-title {' +
             'text-align: center;' +
@@ -1385,11 +1423,14 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
           '}' +
           '.footer-container {' +
             'position: absolute;' +
-            'bottom: 15mm;' +
-            'left: 20mm;' +
-            'right: 20mm;' +
+            'bottom: 8mm;' +
+            'left: 0;' +
+            'right: 0;' +
+            'width: 100%;' +
+            'padding-left: 15mm;' +
+            'padding-right: 15mm;' +
+            'box-sizing: border-box;' +
             'z-index: 10;' +
-            'text-align: center;' +
           '}' +
           '.footer-img {' +
             'width: 100%;' +
@@ -1401,9 +1442,13 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
       '<body>' +
         '<div class="print-page">' +
           (config.background ? '<img class="print-watermark" src="' + config.background + '" alt="Watermark" />' : "") +
-          '<div class="logo-container">' +
-            logoHtml +
-            '<div class="school-name">' + schoolName + '</div>' +
+          '<div class="header-container" style="display: flex; flex-direction: column; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; margin-bottom: 12px; position: relative; z-index: 10;">' +
+            '<div style="display: flex; align-items: center; justify-content: space-between;">' +
+              logoHtml +
+            '</div>' +
+            '<div style="text-align: left; margin-top: 4px;">' +
+              '<h4 style="font-family: Arial, sans-serif; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #1e293b; margin: 0;">' + schoolName + '</h4>' +
+            '</div>' +
           '</div>' +
           '<div class="letter-title">' +
             '<h2>' + config.title + '</h2>' +
@@ -1426,7 +1471,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
             '</div>' +
           '</div>' +
           '<div class="footer-container">' +
-            footerHtml +
+            customFooterHtml +
           '</div>' +
         '</div>' +
         page2Html +
