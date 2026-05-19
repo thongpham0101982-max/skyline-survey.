@@ -1257,9 +1257,9 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
         '</div>' +
       '</div>';
 
-    // Page 2: Admission Documents Checklist (Danh mục Hồ sơ nhập học) - Only for Commitments and Invitations!
+    // Page 2: Admission Documents Checklist (Danh mục Hồ sơ nhập học) - Active for congratulations, invitations and commitments!
     let page2Html = "";
-    if (isCommitmentFlag || isInvitationFlag) {
+    if (student.admissionResult === "Đạt" || student.admissionResult === "Đạt cam kết" || isCommitmentFlag || isInvitationFlag) {
       const docList = getStudentDocList(student);
       if (docList && docList.length > 0) {
         const rowsHtml = docList.map((item: any, idx: number) => {
@@ -1327,7 +1327,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
           '.print-page {' +
             'font-family: "Times New Roman", Times, serif;' +
             'width: 210mm;' +
-            'height: 297mm;' +
+            'height: 296.8mm;' +
             'padding: 12.7mm 15mm 48mm 15mm;' +
             'box-sizing: border-box;' +
             'position: relative;' +
@@ -1665,7 +1665,8 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
                 filename: filename,
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { scale: 1.8, useCORS: true, logging: false, letterRendering: true },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak: { mode: ['avoid-all', 'css'] }
               };
 
               try {
@@ -1749,7 +1750,8 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
               filename: filename,
               image: { type: 'jpeg', quality: 0.98 },
               html2canvas: { scale: 1.8, useCORS: true, logging: false, letterRendering: true },
-              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+              pagebreak: { mode: ['avoid-all', 'css'] }
             };
 
             const pdfBase64 = await generatePdfBase64(html2pdf, docHtml, opt);
@@ -6283,7 +6285,7 @@ return {
               
 
                 </div>
-                {modalDocList && modalDocList.length > 0 && (isInvitation || isCommitment) && (
+                {modalDocList && modalDocList.length > 0 && (
                   <div 
                     className="bg-white shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed print-page mt-8"
                     style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "297mm", padding: "12.7mm 15mm 48mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "block", overflow: "hidden" }}
