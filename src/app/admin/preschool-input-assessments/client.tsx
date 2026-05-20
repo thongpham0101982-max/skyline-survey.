@@ -298,15 +298,29 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
       const mapped = rows.map((row: any) => {
         const studentCode = String(findVal(row, ["mã", "ma be", "studentcode"]) || "").trim();
         const fullName = String(findVal(row, ["họ và tên", "họ tên", "fullname"]) || "").trim();
-        const grade = String(findVal(row, ["lớp", "khối", "grade"]) || "").trim();
+        const grade = String(findVal(row, ["lớp / nhóm tuổi", "nhóm tuổi", "lớp", "khối", "grade"]) || "").trim();
         const gender = String(findVal(row, ["giới tính", "gender"]) || "").trim();
+        const className = String(findVal(row, ["tên lớp", "ten lop", "classname"]) || "").trim();
+        const targetType = String(findVal(row, ["đối tượng", "doi tuong", "targettype"]) || "").trim();
+        const admissionCriteria = String(findVal(row, ["diện khảo sát", "dien khao sat", "admissioncriteria", "diện ks"]) || "").trim();
         let parsedDate = null;
         const rawDate = findVal(row, ["ngày sinh", "ngay sinh"]);
         if (rawDate) {
           if (typeof rawDate === "number") { const date = new Date(Math.round((rawDate - 25569) * 86400 * 1000)); parsedDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000).toISOString(); }
           else if (typeof rawDate === "string") { const parts = rawDate.split(/[\/\-]/); if (parts.length === 3 && parts[0].length <= 2) parsedDate = `${parts[2]}-${parts[1].padStart(2, "0")}-${parts[0].padStart(2, "0")}T00:00:00.000Z`; else { const date = new Date(rawDate); if (!isNaN(date.getTime())) parsedDate = date.toISOString(); } }
         }
-        return { studentCode, fullName, dateOfBirth: parsedDate, gender: gender || null, grade, periodId: cPeriodId, batchId: cBatchId || null };
+        return {
+          studentCode,
+          fullName,
+          dateOfBirth: parsedDate,
+          gender: gender || null,
+          grade: grade || null,
+          className: className || null,
+          targetType: targetType || null,
+          admissionCriteria: admissionCriteria || null,
+          periodId: cPeriodId,
+          batchId: cBatchId || null
+        };
       }).filter((r: any) => r.studentCode && r.fullName);
       const res = await fetch("/api/preschool-input-assessment-students", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "BULK_CREATE", data: mapped }) });
       if (res.ok) { const dr = await res.json(); notify(`Import ${dr.created || 0} bé thành công`); fetchChildren(); }
@@ -316,10 +330,10 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
 
   const downloadTemplate = () => {
     const ws = XLSX.utils.json_to_sheet([
-      { "Mã bé": "MN001", "Họ và tên": "Nguyễn Bé An", "Ngày sinh": "15/08/2022", "Giới tính": "Nữ", "Lớp": "Mẫu giáo bé", "Đối tượng": "Nội tỉnh" },
-      { "Mã bé": "MN002", "Họ và tên": "Trần Bé Minh", "Ngày sinh": "20/03/2021", "Giới tính": "Nam", "Lớp": "Mẫu giáo nhỡ", "Đối tượng": "Ngoại tỉnh" },
-    ], { header: ["Mã bé", "Họ và tên", "Ngày sinh", "Giới tính", "Lớp", "Đối tượng"] });
-    ws['!cols'] = [{ wch: 12 }, { wch: 25 }, { wch: 14 }, { wch: 12 }, { wch: 18 }, { wch: 15 }];
+      { "Mã bé": "MN001", "Họ và tên": "Nguyễn Bé An", "Ngày sinh": "15/08/2022", "Giới tính": "Nữ", "Lớp / Nhóm tuổi": "18 đến 24 tháng", "Tên lớp": "Lớp Hoa Hồng", "Đối tượng": "Tuyển mới", "Diện khảo sát": "Nội tỉnh" },
+      { "Mã bé": "MN002", "Họ và tên": "Trần Bé Minh", "Ngày sinh": "20/03/2021", "Giới tính": "Nam", "Lớp / Nhóm tuổi": "24 đến 36 tháng", "Tên lớp": "Lớp Sen Hồng", "Đối tượng": "Chuyển lớp", "Diện khảo sát": "Ngoại tỉnh" },
+    ], { header: ["Mã bé", "Họ và tên", "Ngày sinh", "Giới tính", "Lớp / Nhóm tuổi", "Tên lớp", "Đối tượng", "Diện khảo sát"] });
+    ws['!cols'] = [{ wch: 12 }, { wch: 25 }, { wch: 14 }, { wch: 12 }, { wch: 18 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Danh_sach_be");
     XLSX.writeFile(wb, "Form_Mau_Them_Be_Mam_Non.xlsx");
