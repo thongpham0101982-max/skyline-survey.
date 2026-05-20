@@ -104,7 +104,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   const [cSelected, setCSelected] = useState<string[]>([]);
   const [cModal, setCModal] = useState(false);
   const [editC, setEditC] = useState<PreschoolChild | null>(null);
-  const [cForm, setCForm] = useState({ studentCode: "", fullName: "", dateOfBirth: "", gender: "", grade: "", admissionCriteria: "", surveyFormType: "", batchId: "" });
+  const [cForm, setCForm] = useState({ studentCode: "", fullName: "", dateOfBirth: "", gender: "", grade: "", admissionCampus: "", surveyFormType: "", batchId: "" });
   const [importing, setImporting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -265,10 +265,13 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
     let genCode = "MN001";
     try { const r = await fetch("/api/preschool-input-assessment-students?get_max_code=true"); if (r.ok) { const res = await r.json(); if (res.nextCode) genCode = "MN" + res.nextCode.replace(/^\D+/, ""); } } catch {}
     const initBatch = cBatchId || (periods.find(p => p.id === cPeriodId)?.batches?.[0]?.id || "");
-    setCForm({ studentCode: genCode, fullName: "", dateOfBirth: "", gender: "", grade: "", admissionCriteria: "", surveyFormType: "", batchId: initBatch });
+    const batch = periods.flatMap(p => p.batches || []).find(b => b.id === initBatch);
+    const campus = campuses.find(c => c.id === batch?.campusId);
+    const initCampus = campus ? campus.campusName : "";
+    setCForm({ studentCode: genCode, fullName: "", dateOfBirth: "", gender: "", grade: "", admissionCampus: initCampus, surveyFormType: "", batchId: initBatch });
     setCModal(true);
   };
-  const openEditChild = (child: PreschoolChild) => { setEditC(child); setCForm({ studentCode: child.studentCode, fullName: child.fullName, dateOfBirth: child.dateOfBirth?.slice(0,10) || "", gender: child.gender || "", grade: child.grade || "", admissionCriteria: child.admissionCriteria || "", surveyFormType: child.surveyFormType || "", batchId: child.batchId || "" }); setCModal(true); };
+  const openEditChild = (child: PreschoolChild) => { setEditC(child); setCForm({ studentCode: child.studentCode, fullName: child.fullName, dateOfBirth: child.dateOfBirth?.slice(0,10) || "", gender: child.gender || "", grade: child.grade || "", admissionCampus: child.admissionCampus || "", surveyFormType: child.surveyFormType || "", batchId: child.batchId || "" }); setCModal(true); };
   const saveChild = async () => {
     if (!cForm.studentCode.trim() || !cForm.fullName.trim()) return notify("Cần nhập Mã bé và Họ tên", "err");
     const r = editC
@@ -302,7 +305,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
         const fullName = String(findVal(row, ["họ và tên", "họ tên", "fullname"]) || "").trim();
         const grade = String(findVal(row, ["lớp / nhóm tuổi", "nhóm tuổi", "lớp", "khối", "grade"]) || "").trim();
         const gender = String(findVal(row, ["giới tính", "gender"]) || "").trim();
-        const admissionCriteria = String(findVal(row, ["diện khảo sát", "dien khao sat", "admissioncriteria", "diện ks"]) || "").trim();
+        const admissionCampus = String(findVal(row, ["cơ sở", "co so", "admissioncampus", "cơ sở ks"]) || "").trim();
         let parsedDate = null;
         const rawDate = findVal(row, ["ngày sinh", "ngay sinh"]);
         if (rawDate) {
@@ -315,7 +318,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
           dateOfBirth: parsedDate,
           gender: gender || null,
           grade: grade || null,
-          admissionCriteria: admissionCriteria || null,
+          admissionCampus: admissionCampus || (cBatchId ? (periods.flatMap(p => p.batches || []).find(b => b.id === cBatchId) ? campuses.find(c => c.id === periods.flatMap(p => p.batches || []).find(b => b.id === cBatchId)?.campusId)?.campusName || null : null) : null),
           periodId: cPeriodId,
           batchId: cBatchId || null
         };
@@ -328,9 +331,9 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
 
   const downloadTemplate = () => {
     const ws = XLSX.utils.json_to_sheet([
-      { "Mã bé": "MN001", "Họ và tên": "Nguyễn Bé An", "Ngày sinh": "15/08/2022", "Giới tính": "Nữ", "Nhóm tuổi": "18 đến 24 tháng", "Diện khảo sát": "Nội tỉnh" },
-      { "Mã bé": "MN002", "Họ và tên": "Trần Bé Minh", "Ngày sinh": "20/03/2021", "Giới tính": "Nam", "Nhóm tuổi": "24 đến 36 tháng", "Diện khảo sát": "Ngoại tỉnh" },
-    ], { header: ["Mã bé", "Họ và tên", "Ngày sinh", "Giới tính", "Nhóm tuổi", "Diện khảo sát"] });
+      { "Mã bé": "MN001", "Họ và tên": "Nguyễn Bé An", "Ngày sinh": "15/08/2022", "Giới tính": "Nữ", "Nhóm tuổi": "18 đến 24 tháng", "Cơ sở": "Skyline Hill" },
+      { "Mã bé": "MN002", "Họ và tên": "Trần Bé Minh", "Ngày sinh": "20/03/2021", "Giới tính": "Nam", "Nhóm tuổi": "24 đến 36 tháng", "Cơ sở": "Skyline Central" },
+    ], { header: ["Mã bé", "Họ và tên", "Ngày sinh", "Giới tính", "Nhóm tuổi", "Cơ sở"] });
     ws['!cols'] = [{ wch: 12 }, { wch: 25 }, { wch: 14 }, { wch: 12 }, { wch: 18 }, { wch: 15 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Danh_sach_be");
@@ -569,7 +572,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                   <thead className="bg-violet-50 border-b border-violet-100">
                     <tr>
                       <th className="p-4 w-12"><input type="checkbox" className="w-4 h-4 rounded accent-violet-600" checked={filtChildren.length > 0 && cSelected.length === filtChildren.length} onChange={e => setCSelected(e.target.checked ? filtChildren.map(c => c.id) : [])} /></th>
-                      {["STT", "Mã bé", "Họ và tên", "Ngày sinh", "Giới tính", "Nhóm tuổi", "Diện khảo sát", "Kết quả", "Thao tác"].map(h => <th key={h} className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">{h}</th>)}
+                      {["STT", "Mã bé", "Họ và tên", "Ngày sinh", "Giới tính", "Nhóm tuổi", "Cơ sở", "Kết quả", "Thao tác"].map(h => <th key={h} className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">{h}</th>)}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-violet-50">
@@ -582,7 +585,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                         <td className="p-4 text-sm text-slate-500">{child.dateOfBirth ? new Date(child.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
                         <td className="p-4">{child.gender ? <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${child.gender === "Nữ" || child.gender === "F" ? "bg-violet-100 text-violet-600" : "bg-blue-100 text-blue-600"}`}>{child.gender === "M" ? "Nam" : child.gender === "F" ? "Nữ" : child.gender}</span> : <span className="text-slate-300">—</span>}</td>
                         <td className="p-4"><span className="text-xs font-bold text-purple-700 bg-purple-50 px-2 py-1 rounded-lg border border-purple-100">{child.grade || "—"}</span></td>
-                        <td className="p-4 text-xs font-semibold text-slate-600">{child.admissionCriteria || "—"}</td>
+                        <td className="p-4 text-xs font-semibold text-slate-600">{child.admissionCampus || "—"}</td>
                         <td className="p-4">{child.admissionResult ? <span className={`text-xs font-black px-2.5 py-1 rounded-full ${child.admissionResult.toUpperCase().includes("ĐẠT") && !child.admissionResult.toUpperCase().includes("KHÔNG") ? "bg-emerald-100 text-emerald-700" : child.admissionResult.toUpperCase().includes("KHÔNG") ? "bg-rose-100 text-rose-600" : "bg-amber-100 text-amber-700"}`}>{child.admissionResult}</span> : <span className="text-xs text-slate-300">Chưa</span>}</td>
                         <td className="p-4 text-right"><div className="flex justify-end gap-1"><button onClick={() => openEditChild(child)} className="p-2 text-slate-300 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition-all"><Edit2 className="w-4 h-4" /></button><button onClick={() => setConfirm({ msg: `Xóa bé "${child.fullName}"?`, fn: () => doDeleteChild(child.id) })} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"><Trash2 className="w-4 h-4" /></button></div></td>
                       </tr>
@@ -883,7 +886,16 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
           </Field>
           <Field label="Giới tính"><select value={cForm.gender} onChange={e => setCForm({...cForm, gender: e.target.value})} className={inp}><option value="">-- Chọn --</option><option value="Nam">Nam</option><option value="Nữ">Nữ</option></select></Field>
           <Field label="Nhóm tuổi"><select value={cForm.grade} onChange={e => setCForm({...cForm, grade: e.target.value})} className={inp}><option value="">-- Chọn nhóm tuổi --</option>{grades.map(g => <option key={g} value={g}>{g}</option>)}</select></Field>
-          <Field label="Diện khảo sát"><input value={cForm.admissionCriteria} onChange={e => setCForm({...cForm, admissionCriteria: e.target.value})} className={inp} placeholder="Nội tỉnh / Ngoại tỉnh" /></Field>
+          <Field label="Cơ sở">
+            <select
+              value={cForm.admissionCampus}
+              onChange={e => setCForm({...cForm, admissionCampus: e.target.value})}
+              className={inp}
+            >
+              <option value="">-- Chọn cơ sở --</option>
+              {campuses.map(c => <option key={c.campusName} value={c.campusName}>{c.campusName}</option>)}
+            </select>
+          </Field>
           <Field label="Đợt KS">
             <select
               value={cForm.batchId}
@@ -894,6 +906,13 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                   const info = getMonthsAndSuggestGrade(nextState.dateOfBirth, bIdVal);
                   if (info.suggest) {
                     nextState.grade = info.suggest;
+                  }
+                  const batch = periods.flatMap(p => p.batches || []).find(b => b.id === bIdVal);
+                  const campus = campuses.find(c => c.id === batch?.campusId);
+                  if (campus) {
+                    nextState.admissionCampus = campus.campusName;
+                  } else {
+                    nextState.admissionCampus = "";
                   }
                   return nextState;
                 });
