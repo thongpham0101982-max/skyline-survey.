@@ -160,7 +160,11 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
       if (r.ok) {
         const res = await r.json();
         if (res.nextCode) {
-          setPForm(prev => ({ ...prev, code: res.nextCode }));
+          setPForm(prev => {
+            const nextState = { ...prev, code: res.nextCode };
+            nextState.name = `Khảo sát lẻ cơ sở - ${res.nextCode}`;
+            return nextState;
+          });
         }
       }
     } catch (e) {
@@ -548,23 +552,90 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
       {/* Modal: Period */}
       <Modal open={pModal} onClose={() => setPModal(false)} title={editP ? "Sửa Kỳ" : "Tạo Kỳ mới"} footer={<><button onClick={() => setPModal(false)} className="flex-1 text-xs font-black uppercase text-slate-400 hover:text-slate-600">Hủy</button><button onClick={savePeriod} className="flex-1 py-3.5 bg-violet-500 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-violet-100">Lưu</button></>}>
         <div className="space-y-4">
-          <Field label="Mã Kỳ" required><input value={pForm.code} onChange={e => setPForm({...pForm, code: e.target.value})} disabled={!!editP} className={inp} placeholder="VD: MN-HK1-2026" /></Field>
+          <Field label="Mã Kỳ" required>
+            <input
+              value={pForm.code}
+              onChange={(e) => {
+                const codeVal = e.target.value;
+                setPForm(prev => {
+                  const nextState = { ...prev, code: codeVal };
+                  if (!editP) {
+                    const typeLabel = nextState.surveyType === "OPEN_DAY" ? "Khảo sát Open Day" : "Khảo sát lẻ cơ sở";
+                    let formattedDate = "";
+                    if (nextState.startDate) {
+                      const parts = nextState.startDate.split('-');
+                      if (parts.length === 3) formattedDate = ` - ${parts[2]}/${parts[1]}/${parts[0]}`;
+                    }
+                    nextState.name = `${typeLabel} - ${codeVal}${formattedDate}`;
+                  }
+                  return nextState;
+                });
+              }}
+              disabled={!!editP}
+              className={inp}
+              placeholder="VD: MN-HK1-2026"
+            />
+          </Field>
           <Field label="Tên Kỳ" required><input value={pForm.name} onChange={e => setPForm({...pForm, name: e.target.value})} className={inp} placeholder="VD: KS đầu vào Mầm non 2026" /></Field>
-          <div className="grid grid-cols-2 gap-3"><Field label="Ngày bắt đầu"><input type="date" value={pForm.startDate} onChange={e => setPForm({...pForm, startDate: e.target.value})} className={inp} /></Field><Field label="Ngày kết thúc"><input type="date" value={pForm.endDate} onChange={e => setPForm({...pForm, endDate: e.target.value})} className={inp} /></Field></div>
+          <div className="grid grid-cols-2 gap-3"><Field label="Ngày bắt đầu">
+              <input
+                type="date"
+                value={pForm.startDate}
+                onChange={(e) => {
+                  const dateVal = e.target.value;
+                  setPForm(prev => {
+                    const nextState = { ...prev, startDate: dateVal };
+                    if (!editP) {
+                      const typeLabel = nextState.surveyType === "OPEN_DAY" ? "Khảo sát Open Day" : "Khảo sát lẻ cơ sở";
+                      let formattedDate = "";
+                      if (dateVal) {
+                        const parts = dateVal.split('-');
+                        if (parts.length === 3) formattedDate = ` - ${parts[2]}/${parts[1]}/${parts[0]}`;
+                      }
+                      nextState.name = `${typeLabel} - ${nextState.code || ""}${formattedDate}`;
+                    }
+                    return nextState;
+                  });
+                }}
+                className={inp}
+              />
+            </Field><Field label="Ngày kết thúc"><input type="date" value={pForm.endDate} onChange={e => setPForm({...pForm, endDate: e.target.value})} className={inp} /></Field></div>
           <Field label="Trạng thái"><select value={pForm.status} onChange={e => setPForm({...pForm, status: e.target.value})} className={inp}><option value="ACTIVE">Đang mở</option><option value="INACTIVE">Đã đóng</option><option value="LOCKED">Đã khóa</option></select></Field>
           <Field label="Dạng khảo sát">
             <select
               value={pForm.surveyType}
               onChange={async (e) => {
                 const val = e.target.value;
-                setPForm(prev => ({ ...prev, surveyType: val }));
+                setPForm(prev => {
+                  const nextState = { ...prev, surveyType: val };
+                  if (!editP) {
+                    const typeLabel = val === "OPEN_DAY" ? "Khảo sát Open Day" : "Khảo sát lẻ cơ sở";
+                    let formattedDate = "";
+                    if (nextState.startDate) {
+                      const parts = nextState.startDate.split('-');
+                      if (parts.length === 3) formattedDate = ` - ${parts[2]}/${parts[1]}/${parts[0]}`;
+                    }
+                    nextState.name = `${typeLabel} - ${nextState.code || ""}${formattedDate}`;
+                  }
+                  return nextState;
+                });
                 if (!editP) {
                   try {
                     const r = await fetch(`/api/preschool-input-assessments?get_next_code=true&surveyType=${val}`);
                     if (r.ok) {
                       const res = await r.json();
                       if (res.nextCode) {
-                        setPForm(prev => ({ ...prev, surveyType: val, code: res.nextCode }));
+                        setPForm(prev => {
+                          const nextState = { ...prev, surveyType: val, code: res.nextCode };
+                          const typeLabel = val === "OPEN_DAY" ? "Khảo sát Open Day" : "Khảo sát lẻ cơ sở";
+                          let formattedDate = "";
+                          if (nextState.startDate) {
+                            const parts = nextState.startDate.split('-');
+                            if (parts.length === 3) formattedDate = ` - ${parts[2]}/${parts[1]}/${parts[0]}`;
+                          }
+                          nextState.name = `${typeLabel} - ${res.nextCode}${formattedDate}`;
+                          return nextState;
+                        });
                       }
                     }
                   } catch (err) {
