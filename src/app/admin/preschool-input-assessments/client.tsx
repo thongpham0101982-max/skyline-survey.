@@ -198,7 +198,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
     try { const r = await fetch("/api/preschool-assessment-configs"); if (r.ok) setConfigs(await r.json()); } finally { setCfgLoading(false); }
   }, []);
 
-  useEffect(() => { if (tab === "categories") fetchConfigs(); }, [tab, fetchConfigs]);
+  useEffect(() => { fetchConfigs(); }, [fetchConfigs]);
 
   // Period actions
   const openAddPeriod = async () => {
@@ -306,6 +306,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
         const grade = String(findVal(row, ["lớp / nhóm tuổi", "nhóm tuổi", "lớp", "khối", "grade"]) || "").trim();
         const gender = String(findVal(row, ["giới tính", "gender"]) || "").trim();
         const admissionCampus = String(findVal(row, ["cơ sở", "co so", "admissioncampus", "cơ sở ks"]) || "").trim();
+        const surveyFormType = String(findVal(row, ["hệ ks", "he ks", "surveyformtype", "hệ khảo sát"]) || "").trim();
         let parsedDate = null;
         const rawDate = findVal(row, ["ngày sinh", "ngay sinh"]);
         if (rawDate) {
@@ -319,6 +320,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
           gender: gender || null,
           grade: grade || null,
           admissionCampus: admissionCampus || (cBatchId ? (periods.flatMap(p => p.batches || []).find(b => b.id === cBatchId) ? campuses.find(c => c.id === periods.flatMap(p => p.batches || []).find(b => b.id === cBatchId)?.campusId)?.campusName || null : null) : null),
+          surveyFormType: surveyFormType || null,
           periodId: cPeriodId,
           batchId: cBatchId || null
         };
@@ -331,10 +333,10 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
 
   const downloadTemplate = () => {
     const ws = XLSX.utils.json_to_sheet([
-      { "Mã bé": "MN001", "Họ và tên": "Nguyễn Bé An", "Ngày sinh": "15/08/2022", "Giới tính": "Nữ", "Nhóm tuổi": "18 đến 24 tháng", "Cơ sở": "Skyline Hill" },
-      { "Mã bé": "MN002", "Họ và tên": "Trần Bé Minh", "Ngày sinh": "20/03/2021", "Giới tính": "Nam", "Nhóm tuổi": "24 đến 36 tháng", "Cơ sở": "Skyline Central" },
-    ], { header: ["Mã bé", "Họ và tên", "Ngày sinh", "Giới tính", "Nhóm tuổi", "Cơ sở"] });
-    ws['!cols'] = [{ wch: 12 }, { wch: 25 }, { wch: 14 }, { wch: 12 }, { wch: 18 }, { wch: 15 }];
+      { "Mã bé": "MN001", "Họ và tên": "Nguyễn Bé An", "Ngày sinh": "15/08/2022", "Giới tính": "Nữ", "Nhóm tuổi": "18 đến 24 tháng", "Cơ sở": "Skyline Hill", "Hệ KS": "Chất lượng cao" },
+      { "Mã bé": "MN002", "Họ và tên": "Trần Bé Minh", "Ngày sinh": "20/03/2021", "Giới tính": "Nam", "Nhóm tuổi": "24 đến 36 tháng", "Cơ sở": "Skyline Central", "Hệ KS": "Song ngữ" },
+    ], { header: ["Mã bé", "Họ và tên", "Ngày sinh", "Giới tính", "Nhóm tuổi", "Cơ sở", "Hệ KS"] });
+    ws['!cols'] = [{ wch: 12 }, { wch: 25 }, { wch: 14 }, { wch: 12 }, { wch: 18 }, { wch: 15 }, { wch: 15 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Danh_sach_be");
     XLSX.writeFile(wb, "Form_Mau_Them_Be_Mam_Non.xlsx");
@@ -923,7 +925,18 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
               {selPeriod?.batches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
             </select>
           </Field>
-          <Field label="Hệ KS"><input value={cForm.surveyFormType} onChange={e => setCForm({...cForm, surveyFormType: e.target.value})} className={inp} placeholder="Mầm non Sky-Line" /></Field>
+          <Field label="Hệ KS">
+            <select
+              value={cForm.surveyFormType}
+              onChange={e => setCForm({...cForm, surveyFormType: e.target.value})}
+              className={inp}
+            >
+              <option value="">-- Chọn Hệ KS --</option>
+              {configs.filter(c => c.categoryType === "system").map(c => (
+                <option key={c.code} value={c.name}>{c.name}</option>
+              ))}
+            </select>
+          </Field>
         </div>
       </Modal>
 
