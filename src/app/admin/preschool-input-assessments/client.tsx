@@ -7,7 +7,7 @@ import {
   X, CheckCircle, AlertCircle, Download, Upload, Star, Heart, Sparkles
 } from "lucide-react"
 
-interface Period { id: string; code: string; name: string; status: string; startDate?: string; endDate?: string; description?: string; assignedUserId?: string; batches: Batch[] }
+interface Period { id: string; code: string; name: string; status: string; startDate?: string; endDate?: string; description?: string; assignedUserId?: string; surveyType?: string; batches: Batch[] }
 interface Batch { id: string; periodId: string; batchNumber: number; name: string; startDate: string; endDate: string; status: string; campusId?: string; assignedUserId?: string }
 interface PreschoolChild { id: string; studentCode: string; fullName: string; dateOfBirth?: string; gender?: string; className?: string; grade?: string; admissionCriteria?: string; targetType?: string; surveyFormType?: string; admissionResult?: string; admissionCampus?: string; periodId: string; batchId?: string; }
 interface Camp { id: string; campusName: string }
@@ -26,6 +26,18 @@ function Spin() {
 
 function Empty({ text, sub }: { text: string; sub?: string }) {
   return <div className="flex flex-col items-center justify-center py-16 text-center"><div className="w-20 h-20 bg-violet-50 rounded-full flex items-center justify-center mb-4"><Baby className="w-10 h-10 text-violet-400" /></div><p className="font-black text-slate-500 text-sm">{text}</p>{sub && <p className="text-xs text-slate-400 mt-1 font-medium">{sub}</p>}</div>;
+}
+
+function TypeBadge({ t }: { t: string }) {
+  const map: Record<string, string> = {
+    KHAO_SAT_LE: "bg-blue-50 text-blue-700 border border-blue-200",
+    OPEN_DAY: "bg-purple-50 text-purple-700 border border-purple-200"
+  };
+  const label: Record<string, string> = {
+    KHAO_SAT_LE: "Khảo sát lẻ cơ sở",
+    OPEN_DAY: "Khảo sát Open Day"
+  };
+  return <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-lg border border-blue-200 bg-blue-50 text-blue-700">{label[t] || t}</span>;
 }
 
 function Badge({ s }: { s: string }) {
@@ -75,7 +87,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [pModal, setPModal] = useState(false);
   const [editP, setEditP] = useState<Period | null>(null);
-  const [pForm, setPForm] = useState({ code: "", name: "", assignedUserId: "", startDate: "", endDate: "", description: "", status: "ACTIVE" });
+  const [pForm, setPForm] = useState({ code: "", name: "", assignedUserId: "", startDate: "", endDate: "", description: "", status: "ACTIVE", surveyType: "KHAO_SAT_LE" });
 
   // Batches
   const [bModal, setBModal] = useState(false);
@@ -139,8 +151,8 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   useEffect(() => { if (tab === "categories") fetchConfigs(); }, [tab, fetchConfigs]);
 
   // Period actions
-  const openAddPeriod = () => { setEditP(null); setPForm({ code: "", name: "", assignedUserId: "", startDate: "", endDate: "", description: "", status: "ACTIVE" }); setPModal(true); };
-  const openEditPeriod = (p: Period) => { setEditP(p); setPForm({ code: p.code, name: p.name, assignedUserId: p.assignedUserId || "", startDate: p.startDate?.slice(0,10) || "", endDate: p.endDate?.slice(0,10) || "", description: p.description || "", status: p.status }); setPModal(true); };
+  const openAddPeriod = () => { setEditP(null); setPForm({ code: "", name: "", assignedUserId: "", startDate: "", endDate: "", description: "", status: "ACTIVE", surveyType: "KHAO_SAT_LE" }); setPModal(true); };
+  const openEditPeriod = (p: Period) => { setEditP(p); setPForm({ code: p.code, name: p.name, assignedUserId: p.assignedUserId || "", startDate: p.startDate?.slice(0,10) || "", endDate: p.endDate?.slice(0,10) || "", description: p.description || "", status: p.status, surveyType: p.surveyType || "KHAO_SAT_LE" }); setPModal(true); };
   const savePeriod = async () => {
     if (!pForm.code.trim() || !pForm.name.trim()) return notify("Cần nhập Mã và Tên", "err");
     const r = await fetch("/api/preschool-input-assessments", { method: editP ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: editP ? "UPDATE_PERIOD" : "CREATE_PERIOD", id: editP?.id, data: { ...pForm, academicYearId: yearId } }) });
@@ -310,7 +322,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-2xl bg-violet-50 flex items-center justify-center flex-shrink-0"><Baby className="w-6 h-6 text-violet-400" /></div>
                       <div>
-                        <div className="flex items-center gap-2"><span className="font-black text-slate-800 text-lg">{p.name}</span><Badge s={p.status} /></div>
+                        <div className="flex items-center gap-2"><span className="font-black text-slate-800 text-lg">{p.name}</span><Badge s={p.status} /><TypeBadge t={p.surveyType || "KHAO_SAT_LE"} /></div>
                         <div className="flex items-center gap-3 mt-1 text-[11px] text-slate-400 font-bold">
                           <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {p.startDate?.slice(0,10)} → {p.endDate?.slice(0,10) || "?"}</span>
                           <span className="text-violet-400">{p.batches?.length || 0} đợt</span>
@@ -525,6 +537,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
           <Field label="Tên Kỳ" required><input value={pForm.name} onChange={e => setPForm({...pForm, name: e.target.value})} className={inp} placeholder="VD: KS đầu vào Mầm non 2026" /></Field>
           <div className="grid grid-cols-2 gap-3"><Field label="Ngày bắt đầu"><input type="date" value={pForm.startDate} onChange={e => setPForm({...pForm, startDate: e.target.value})} className={inp} /></Field><Field label="Ngày kết thúc"><input type="date" value={pForm.endDate} onChange={e => setPForm({...pForm, endDate: e.target.value})} className={inp} /></Field></div>
           <Field label="Trạng thái"><select value={pForm.status} onChange={e => setPForm({...pForm, status: e.target.value})} className={inp}><option value="ACTIVE">Đang mở</option><option value="INACTIVE">Đã đóng</option><option value="LOCKED">Đã khóa</option></select></Field>
+          <Field label="Dạng khảo sát"><select value={pForm.surveyType} onChange={e => setPForm({...pForm, surveyType: e.target.value})} className={inp}><option value="KHAO_SAT_LE">Khảo sát lẻ cơ sở</option><option value="OPEN_DAY">Khảo sát Open Day</option></select></Field>
           <Field label="Mô tả"><textarea value={pForm.description} onChange={e => setPForm({...pForm, description: e.target.value})} className={inp + " resize-none"} rows={2} /></Field>
         </div>
       </Modal>

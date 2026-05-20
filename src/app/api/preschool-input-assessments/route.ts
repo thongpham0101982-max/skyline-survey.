@@ -51,6 +51,7 @@ export async function POST(req) {
            startDate: data.startDate ? new Date(data.startDate) : null,
            endDate: data.endDate ? new Date(data.endDate) : null,
            status: data.status || "ACTIVE",
+           surveyType: data.surveyType || "KHAO_SAT_LE",
         }
       });
       return NextResponse.json(result);
@@ -92,7 +93,8 @@ export async function PUT(req) {
            assignedUserId: data.assignedUserId || null,
            startDate: data.startDate ? new Date(data.startDate) : null,
            endDate: data.endDate ? new Date(data.endDate) : null,
-           status: data.status || "ACTIVE"
+           status: data.status || "ACTIVE",
+           surveyType: data.surveyType || "KHAO_SAT_LE"
         }
       });
       return NextResponse.json(result);

@@ -733,6 +733,7 @@ model PreschoolInputAssessmentPeriod {
   endDate                          DateTime?
   description                      String?
   status                           String                             @default("ACTIVE")
+  surveyType                       String?                            @default("KHAO_SAT_LE")
   createdAt                        DateTime                           @default(now())
   updatedAt                        DateTime                           @updatedAt
   batches                          PreschoolInputAssessmentBatch[]
