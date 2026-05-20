@@ -18,8 +18,6 @@ model User {
   createdAt                        DateTime                           @default(now())
   updatedAt                        DateTime                           @updatedAt
   inputAssessmentPeriods           InputAssessmentPeriod[]            @relation("PeriodAssignee")
-  preschoolInputAssessmentPeriods  PreschoolInputAssessmentPeriod[]   @relation("PreschoolPeriodAssignee")
-  preschoolInputAssessmentBatches  PreschoolInputAssessmentBatch[]    @relation("PreschoolBatchAssignee")
   InputAssessmentTeacherAssignment InputAssessmentTeacherAssignment[]
   notifications                    Notification[]
   parent                           Parent?
@@ -81,8 +79,6 @@ model Campus {
   manager                User?                   @relation("CampusManager", fields: [managerId], references: [id], onDelete: SetNull)
   classes                Class[]
   inputAssessmentPeriods InputAssessmentPeriod[]
-  preschoolInputAssessmentPeriods PreschoolInputAssessmentPeriod[]
-  preschoolInputAssessmentBatches PreschoolInputAssessmentBatch[]
   students               Student[]
   summaries              SummaryByCampus[]
   surveyForms            SurveyForm[]
@@ -102,7 +98,6 @@ model AcademicYear {
   classes                Class[]
   educationSystems       EducationSystem[]
   inputAssessmentPeriods InputAssessmentPeriod[]
-  preschoolInputAssessmentPeriods PreschoolInputAssessmentPeriod[]
   students               Student[]
   subjectQuotas          SubjectQuota[]
   surveyForms            SurveyForm[]
@@ -475,6 +470,7 @@ model InputAssessmentPeriod {
   assignedUser                     User?                              @relation("PeriodAssignee", fields: [assignedUserId], references: [id])
   students                         InputAssessmentStudent[]
   InputAssessmentTeacherAssignment InputAssessmentTeacherAssignment[]
+  preschoolStudents                PreschoolInputAssessmentStudent[]
 }
 
 model InputAssessmentBatch {
@@ -494,6 +490,7 @@ model InputAssessmentBatch {
   period                           InputAssessmentPeriod              @relation(fields: [periodId], references: [id], onDelete: Cascade)
   students                         InputAssessmentStudent[]
   InputAssessmentTeacherAssignment InputAssessmentTeacherAssignment[]
+  preschoolStudents                PreschoolInputAssessmentStudent[]
 
   @@unique([periodId, batchNumber])
 }
@@ -722,45 +719,9 @@ model StudentTransfer {
   createdBy           User?    @relation(fields: [createdById], references: [id])
 }
 
-model PreschoolInputAssessmentPeriod {
-  id                               String                             @id @default(cuid())
-  code                             String                             @unique
-  name                             String
-  academicYearId                   String
-  campusId                         String?
-  assignedUserId                   String?
-  startDate                        DateTime?
-  endDate                          DateTime?
-  description                      String?
-  status                           String                             @default("ACTIVE")
-  createdAt                        DateTime                           @default(now())
-  updatedAt                        DateTime                           @updatedAt
-  batches                          PreschoolInputAssessmentBatch[]
-  academicYear                     AcademicYear                       @relation(fields: [academicYearId], references: [id])
-  campus                           Campus?                            @relation(fields: [campusId], references: [id])
-  assignedUser                     User?                              @relation("PreschoolPeriodAssignee", fields: [assignedUserId], references: [id])
-  students                         PreschoolInputAssessmentStudent[]
-}
 
-model PreschoolInputAssessmentBatch {
-  id                               String                             @id @default(cuid())
-  periodId                         String
-  batchNumber                      Int
-  name                             String
-  startDate                        DateTime
-  endDate                          DateTime
-  status                           String                             @default("ACTIVE")
-  createdAt                        DateTime                           @default(now())
-  updatedAt                        DateTime                           @updatedAt
-  campusId                         String?
-  assignedUserId                   String?
-  campus                           Campus?                            @relation(fields: [campusId], references: [id])
-  assignedUser                     User?                              @relation("PreschoolBatchAssignee", fields: [assignedUserId], references: [id])
-  period                           PreschoolInputAssessmentPeriod     @relation(fields: [periodId], references: [id], onDelete: Cascade)
-  students                         PreschoolInputAssessmentStudent[]
 
-  @@unique([periodId, batchNumber])
-}
+
 
 model PreschoolInputAssessmentStudent {
   id                  String                   @id @default(cuid())
@@ -782,8 +743,8 @@ model PreschoolInputAssessmentStudent {
   admissionResult     String?
   directorNote        String?
   admissionCampus     String?
-  batch               PreschoolInputAssessmentBatch?    @relation(fields: [batchId], references: [id])
-  period              PreschoolInputAssessmentPeriod    @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  batch               InputAssessmentBatch?             @relation(fields: [batchId], references: [id])
+  period              InputAssessmentPeriod             @relation(fields: [periodId], references: [id], onDelete: Cascade)
 
   @@unique([studentCode, periodId])
 }

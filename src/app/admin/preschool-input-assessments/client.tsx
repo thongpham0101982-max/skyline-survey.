@@ -111,7 +111,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
     if (!yearId) return;
     setPLoading(true);
     try {
-      const r = await fetch(`/api/preschool-input-assessments?academicYearId=${yearId}`);
+      const r = await fetch(`/api/input-assessments?academicYearId=${yearId}`);
       if (r.ok) { const d: Period[] = await r.json(); setPeriods(d); if (!cPeriodId && d.length > 0) { setCPeriodId(d[0].id); setRptPeriodId(d[0].id); } }
     } finally { setPLoading(false); }
   }, [yearId, cPeriodId]);
@@ -143,10 +143,10 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   const openEditPeriod = (p: Period) => { setEditP(p); setPForm({ code: p.code, name: p.name, assignedUserId: p.assignedUserId || "", startDate: p.startDate?.slice(0,10) || "", endDate: p.endDate?.slice(0,10) || "", description: p.description || "", status: p.status }); setPModal(true); };
   const savePeriod = async () => {
     if (!pForm.code.trim() || !pForm.name.trim()) return notify("Cần nhập Mã và Tên", "err");
-    const r = await fetch("/api/preschool-input-assessments", { method: editP ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: editP ? "UPDATE_PERIOD" : "CREATE_PERIOD", id: editP?.id, data: { ...pForm, academicYearId: yearId } }) });
+    const r = await fetch("/api/input-assessments", { method: editP ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: editP ? "UPDATE_PERIOD" : "CREATE_PERIOD", id: editP?.id, data: { ...pForm, academicYearId: yearId } }) });
     if (r.ok) { setPModal(false); fetchPeriods(); notify(editP ? "Đã cập nhật kỳ" : "Đã tạo kỳ mới"); } else notify("Lỗi", "err");
   };
-  const doDeletePeriod = async (id: string) => { const r = await fetch(`/api/preschool-input-assessments?type=period&id=${id}`, { method: "DELETE" }); if (r.ok) { fetchPeriods(); notify("Đã xóa kỳ"); } };
+  const doDeletePeriod = async (id: string) => { const r = await fetch(`/api/input-assessments?type=period&id=${id}`, { method: "DELETE" }); if (r.ok) { fetchPeriods(); notify("Đã xóa kỳ"); } };
 
   // Batch actions
   const openAddBatch = (pid: string) => { setTargetPeriodId(pid); setEditB(null); const period = periods.find(p => p.id === pid); const nextNum = period && period.batches.length > 0 ? Math.max(...period.batches.map(b => b.batchNumber)) + 1 : 1; setBForm({ batchNumber: String(nextNum), name: "", startDate: "", endDate: "", status: "ACTIVE", campusId: "", assignedUserId: "" }); setBModal(true); };
@@ -158,10 +158,10 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
     const startStr = bForm.startDate.split('-').reverse().join('/');
     const endStr = bForm.endDate.split('-').reverse().join('/');
     const fullName = `Đợt ${bForm.batchNumber || "1"} - ${bForm.name} | ${campusName} (${startStr} ~ ${endStr})`;
-    const r = await fetch("/api/preschool-input-assessments", { method: editB ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: editB ? "UPDATE_BATCH" : "CREATE_BATCH", id: editB?.id, data: { ...bForm, name: fullName, periodId: targetPeriodId, batchNumber: parseInt(bForm.batchNumber) || 1 } }) });
+    const r = await fetch("/api/input-assessments", { method: editB ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: editB ? "UPDATE_BATCH" : "CREATE_BATCH", id: editB?.id, data: { ...bForm, name: fullName, periodId: targetPeriodId, batchNumber: parseInt(bForm.batchNumber) || 1 } }) });
     if (r.ok) { setBModal(false); fetchPeriods(); notify(editB ? "Đã cập nhật đợt" : "Đã tạo đợt mới"); } else notify("Lỗi", "err");
   };
-  const doDeleteBatch = async (id: string) => { const r = await fetch(`/api/preschool-input-assessments?type=batch&id=${id}`, { method: "DELETE" }); if (r.ok) { fetchPeriods(); notify("Đã xóa đợt"); } };
+  const doDeleteBatch = async (id: string) => { const r = await fetch(`/api/input-assessments?type=batch&id=${id}`, { method: "DELETE" }); if (r.ok) { fetchPeriods(); notify("Đã xóa đợt"); } };
 
   // Child actions
   const openAddChild = async () => {
