@@ -111,7 +111,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
     if (!yearId) return;
     setPLoading(true);
     try {
-      const r = await fetch(`/api/input-assessments?academicYearId=${yearId}`);
+      const r = await fetch(`/api/preschool-input-assessments?academicYearId=${yearId}`);
       if (r.ok) { const d: Period[] = await r.json(); setPeriods(d); if (!cPeriodId && d.length > 0) { setCPeriodId(d[0].id); setRptPeriodId(d[0].id); } }
     } finally { setPLoading(false); }
   }, [yearId, cPeriodId]);
@@ -122,7 +122,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
     if (!cPeriodId) return;
     setCLoading(true);
     try {
-      let url = `/api/input-assessment-students?periodId=${cPeriodId}`;
+      let url = `/api/preschool-input-assessment-students?periodId=${cPeriodId}`;
       if (cBatchId) url += `&batchId=${cBatchId}`;
       const r = await fetch(url);
       if (r.ok) setChildren(await r.json());
@@ -143,10 +143,10 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   const openEditPeriod = (p: Period) => { setEditP(p); setPForm({ code: p.code, name: p.name, assignedUserId: p.assignedUserId || "", startDate: p.startDate?.slice(0,10) || "", endDate: p.endDate?.slice(0,10) || "", description: p.description || "", status: p.status }); setPModal(true); };
   const savePeriod = async () => {
     if (!pForm.code.trim() || !pForm.name.trim()) return notify("Cần nhập Mã và Tên", "err");
-    const r = await fetch("/api/input-assessments", { method: editP ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: editP ? "UPDATE_PERIOD" : "CREATE_PERIOD", id: editP?.id, data: { ...pForm, academicYearId: yearId } }) });
+    const r = await fetch("/api/preschool-input-assessments", { method: editP ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: editP ? "UPDATE_PERIOD" : "CREATE_PERIOD", id: editP?.id, data: { ...pForm, academicYearId: yearId } }) });
     if (r.ok) { setPModal(false); fetchPeriods(); notify(editP ? "Đã cập nhật kỳ" : "Đã tạo kỳ mới"); } else notify("Lỗi", "err");
   };
-  const doDeletePeriod = async (id: string) => { const r = await fetch(`/api/input-assessments?type=period&id=${id}`, { method: "DELETE" }); if (r.ok) { fetchPeriods(); notify("Đã xóa kỳ"); } };
+  const doDeletePeriod = async (id: string) => { const r = await fetch(`/api/preschool-input-assessments?type=period&id=${id}`, { method: "DELETE" }); if (r.ok) { fetchPeriods(); notify("Đã xóa kỳ"); } };
 
   // Batch actions
   const openAddBatch = (pid: string) => { setTargetPeriodId(pid); setEditB(null); const period = periods.find(p => p.id === pid); const nextNum = period && period.batches.length > 0 ? Math.max(...period.batches.map(b => b.batchNumber)) + 1 : 1; setBForm({ batchNumber: String(nextNum), name: "", startDate: "", endDate: "", status: "ACTIVE", campusId: "", assignedUserId: "" }); setBModal(true); };
@@ -158,16 +158,16 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
     const startStr = bForm.startDate.split('-').reverse().join('/');
     const endStr = bForm.endDate.split('-').reverse().join('/');
     const fullName = `Đợt ${bForm.batchNumber || "1"} - ${bForm.name} | ${campusName} (${startStr} ~ ${endStr})`;
-    const r = await fetch("/api/input-assessments", { method: editB ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: editB ? "UPDATE_BATCH" : "CREATE_BATCH", id: editB?.id, data: { ...bForm, name: fullName, periodId: targetPeriodId, batchNumber: parseInt(bForm.batchNumber) || 1 } }) });
+    const r = await fetch("/api/preschool-input-assessments", { method: editB ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: editB ? "UPDATE_BATCH" : "CREATE_BATCH", id: editB?.id, data: { ...bForm, name: fullName, periodId: targetPeriodId, batchNumber: parseInt(bForm.batchNumber) || 1 } }) });
     if (r.ok) { setBModal(false); fetchPeriods(); notify(editB ? "Đã cập nhật đợt" : "Đã tạo đợt mới"); } else notify("Lỗi", "err");
   };
-  const doDeleteBatch = async (id: string) => { const r = await fetch(`/api/input-assessments?type=batch&id=${id}`, { method: "DELETE" }); if (r.ok) { fetchPeriods(); notify("Đã xóa đợt"); } };
+  const doDeleteBatch = async (id: string) => { const r = await fetch(`/api/preschool-input-assessments?type=batch&id=${id}`, { method: "DELETE" }); if (r.ok) { fetchPeriods(); notify("Đã xóa đợt"); } };
 
   // Child actions
   const openAddChild = async () => {
     setEditC(null);
     let genCode = "MN001";
-    try { const r = await fetch("/api/input-assessment-students?get_max_code=true"); if (r.ok) { const res = await r.json(); if (res.nextCode) genCode = "MN" + res.nextCode.replace(/^\D+/, ""); } } catch {}
+    try { const r = await fetch("/api/preschool-input-assessment-students?get_max_code=true"); if (r.ok) { const res = await r.json(); if (res.nextCode) genCode = "MN" + res.nextCode.replace(/^\D+/, ""); } } catch {}
     const initBatch = cBatchId || (periods.find(p => p.id === cPeriodId)?.batches?.[0]?.id || "");
     setCForm({ studentCode: genCode, fullName: "", dateOfBirth: "", gender: "", grade: "", admissionCriteria: "", className: "", targetType: "", surveyFormType: "", batchId: initBatch });
     setCModal(true);
@@ -176,12 +176,12 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   const saveChild = async () => {
     if (!cForm.studentCode.trim() || !cForm.fullName.trim()) return notify("Cần nhập Mã bé và Họ tên", "err");
     const r = editC
-      ? await fetch("/api/input-assessment-students", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: editC.id, data: cForm }) })
-      : await fetch("/api/input-assessment-students", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "CREATE", data: { ...cForm, periodId: cPeriodId, batchId: cForm.batchId || cBatchId || null } }) });
+      ? await fetch("/api/preschool-input-assessment-students", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: editC.id, data: cForm }) })
+      : await fetch("/api/preschool-input-assessment-students", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "CREATE", data: { ...cForm, periodId: cPeriodId, batchId: cForm.batchId || cBatchId || null } }) });
     if (r.ok) { setCModal(false); fetchChildren(); notify(editC ? "Đã cập nhật bé" : "Đã thêm bé mới"); } else notify("Lỗi", "err");
   };
-  const doDeleteChild = async (id: string) => { await fetch(`/api/input-assessment-students?id=${id}`, { method: "DELETE" }); fetchChildren(); notify("Đã xóa"); };
-  const doDeleteSelected = async () => { await fetch(`/api/input-assessment-students?ids=${cSelected.join(",")}`, { method: "DELETE" }); setCSelected([]); fetchChildren(); notify(`Đã xóa ${cSelected.length} bé`); };
+  const doDeleteChild = async (id: string) => { await fetch(`/api/preschool-input-assessment-students?id=${id}`, { method: "DELETE" }); fetchChildren(); notify("Đã xóa"); };
+  const doDeleteSelected = async () => { await fetch(`/api/preschool-input-assessment-students?ids=${cSelected.join(",")}`, { method: "DELETE" }); setCSelected([]); fetchChildren(); notify(`Đã xóa ${cSelected.length} bé`); };
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file || !cPeriodId) return;
@@ -214,7 +214,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
         }
         return { studentCode, fullName, dateOfBirth: parsedDate, gender: gender || null, grade, periodId: cPeriodId, batchId: cBatchId || null };
       }).filter((r: any) => r.studentCode && r.fullName);
-      const res = await fetch("/api/input-assessment-students", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "BULK_CREATE", data: mapped }) });
+      const res = await fetch("/api/preschool-input-assessment-students", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "BULK_CREATE", data: mapped }) });
       if (res.ok) { const dr = await res.json(); notify(`Import ${dr.created || 0} bé thành công`); fetchChildren(); }
       else { const err = await res.json().catch(() => ({})); notify("Lỗi: " + (err.error || ""), "err"); }
     } finally { setImporting(false); if (fileRef.current) fileRef.current.value = ""; }
