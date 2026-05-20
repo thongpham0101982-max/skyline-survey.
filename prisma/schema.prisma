@@ -769,10 +769,8 @@ model PreschoolInputAssessmentStudent {
   fullName            String
   dateOfBirth         DateTime?
   gender              String?
-  className           String?
   admissionCriteria   String?
   surveySystem        String?
-  targetType          String?
   periodId            String
   batchId             String?
   createdAt           DateTime                 @default(now())

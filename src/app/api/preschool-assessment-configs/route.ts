@@ -6,7 +6,11 @@ export async function GET(req: any) {
     const { searchParams } = new URL(req.url);
     const categoryType = searchParams.get("categoryType");
     const academicYearId = searchParams.get("academicYearId");
-    const where: any = {};
+    const where: any = {
+      categoryType: {
+        notIn: ["target", "LOAI_TUYEN_SINH", "DOI_TUONG_TS", "loai_tuyen_sinh", "doi_tuong_ts", "target_type", "TARGET_TYPE", "targetType"]
+      }
+    };
     if (categoryType) where.categoryType = categoryType;
     if (academicYearId) where.academicYearId = academicYearId;
     const configs = await (prisma as any).preschoolAssessmentConfig.findMany({
@@ -24,6 +28,9 @@ export async function POST(req: any) {
   try {
     const { categoryType, code, name, academicYearId } = await req.json();
     if (!categoryType || !code || !name) return NextResponse.json({ error: "Thieu thong tin" }, { status: 400 });
+    if (["target", "LOAI_TUYEN_SINH", "DOI_TUONG_TS", "loai_tuyen_sinh", "doi_tuong_ts", "target_type", "TARGET_TYPE", "targetType"].includes(categoryType)) {
+      return NextResponse.json({ error: "Loại đối tượng không khả dụng cho Mầm non" }, { status: 400 });
+    }
     const count = await (prisma as any).preschoolAssessmentConfig.count({ where: { categoryType } });
     const data: any = { categoryType, code, name, sortOrder: count };
     if (academicYearId) data.academicYearId = academicYearId;

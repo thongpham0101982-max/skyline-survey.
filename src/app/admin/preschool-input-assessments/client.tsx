@@ -9,7 +9,7 @@ import {
 
 interface Period { id: string; code: string; name: string; status: string; startDate?: string; endDate?: string; description?: string; assignedUserId?: string; surveyType?: string; batches: Batch[] }
 interface Batch { id: string; periodId: string; batchNumber: number; name: string; startDate: string; endDate: string; status: string; campusId?: string; assignedUserId?: string }
-interface PreschoolChild { id: string; studentCode: string; fullName: string; dateOfBirth?: string; gender?: string; className?: string; grade?: string; admissionCriteria?: string; targetType?: string; surveyFormType?: string; admissionResult?: string; admissionCampus?: string; periodId: string; batchId?: string; }
+interface PreschoolChild { id: string; studentCode: string; fullName: string; dateOfBirth?: string; gender?: string; grade?: string; admissionCriteria?: string; surveyFormType?: string; admissionResult?: string; admissionCampus?: string; periodId: string; batchId?: string; }
 interface Camp { id: string; campusName: string }
 interface AcademicYear { id: string; name: string }
 interface AssessmentConfig { id: string; categoryType: string; code: string; name: string; sortOrder: number }
@@ -104,7 +104,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   const [cSelected, setCSelected] = useState<string[]>([]);
   const [cModal, setCModal] = useState(false);
   const [editC, setEditC] = useState<PreschoolChild | null>(null);
-  const [cForm, setCForm] = useState({ studentCode: "", fullName: "", dateOfBirth: "", gender: "", grade: "", admissionCriteria: "", className: "", targetType: "", surveyFormType: "", batchId: "" });
+  const [cForm, setCForm] = useState({ studentCode: "", fullName: "", dateOfBirth: "", gender: "", grade: "", admissionCriteria: "", surveyFormType: "", batchId: "" });
   const [importing, setImporting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -263,10 +263,10 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
     let genCode = "MN001";
     try { const r = await fetch("/api/preschool-input-assessment-students?get_max_code=true"); if (r.ok) { const res = await r.json(); if (res.nextCode) genCode = "MN" + res.nextCode.replace(/^\D+/, ""); } } catch {}
     const initBatch = cBatchId || (periods.find(p => p.id === cPeriodId)?.batches?.[0]?.id || "");
-    setCForm({ studentCode: genCode, fullName: "", dateOfBirth: "", gender: "", grade: "", admissionCriteria: "", className: "", targetType: "", surveyFormType: "", batchId: initBatch });
+    setCForm({ studentCode: genCode, fullName: "", dateOfBirth: "", gender: "", grade: "", admissionCriteria: "", surveyFormType: "", batchId: initBatch });
     setCModal(true);
   };
-  const openEditChild = (child: PreschoolChild) => { setEditC(child); setCForm({ studentCode: child.studentCode, fullName: child.fullName, dateOfBirth: child.dateOfBirth?.slice(0,10) || "", gender: child.gender || "", grade: child.grade || "", admissionCriteria: child.admissionCriteria || "", className: child.className || "", targetType: child.targetType || "", surveyFormType: child.surveyFormType || "", batchId: child.batchId || "" }); setCModal(true); };
+  const openEditChild = (child: PreschoolChild) => { setEditC(child); setCForm({ studentCode: child.studentCode, fullName: child.fullName, dateOfBirth: child.dateOfBirth?.slice(0,10) || "", gender: child.gender || "", grade: child.grade || "", admissionCriteria: child.admissionCriteria || "", surveyFormType: child.surveyFormType || "", batchId: child.batchId || "" }); setCModal(true); };
   const saveChild = async () => {
     if (!cForm.studentCode.trim() || !cForm.fullName.trim()) return notify("Cần nhập Mã bé và Họ tên", "err");
     const r = editC
@@ -300,8 +300,6 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
         const fullName = String(findVal(row, ["họ và tên", "họ tên", "fullname"]) || "").trim();
         const grade = String(findVal(row, ["lớp / nhóm tuổi", "nhóm tuổi", "lớp", "khối", "grade"]) || "").trim();
         const gender = String(findVal(row, ["giới tính", "gender"]) || "").trim();
-        const className = String(findVal(row, ["tên lớp", "ten lop", "classname"]) || "").trim();
-        const targetType = String(findVal(row, ["đối tượng", "doi tuong", "targettype"]) || "").trim();
         const admissionCriteria = String(findVal(row, ["diện khảo sát", "dien khao sat", "admissioncriteria", "diện ks"]) || "").trim();
         let parsedDate = null;
         const rawDate = findVal(row, ["ngày sinh", "ngay sinh"]);
@@ -315,8 +313,6 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
           dateOfBirth: parsedDate,
           gender: gender || null,
           grade: grade || null,
-          className: className || null,
-          targetType: targetType || null,
           admissionCriteria: admissionCriteria || null,
           periodId: cPeriodId,
           batchId: cBatchId || null
@@ -330,10 +326,10 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
 
   const downloadTemplate = () => {
     const ws = XLSX.utils.json_to_sheet([
-      { "Mã bé": "MN001", "Họ và tên": "Nguyễn Bé An", "Ngày sinh": "15/08/2022", "Giới tính": "Nữ", "Lớp / Nhóm tuổi": "18 đến 24 tháng", "Tên lớp": "Lớp Hoa Hồng", "Đối tượng": "Tuyển mới", "Diện khảo sát": "Nội tỉnh" },
-      { "Mã bé": "MN002", "Họ và tên": "Trần Bé Minh", "Ngày sinh": "20/03/2021", "Giới tính": "Nam", "Lớp / Nhóm tuổi": "24 đến 36 tháng", "Tên lớp": "Lớp Sen Hồng", "Đối tượng": "Chuyển lớp", "Diện khảo sát": "Ngoại tỉnh" },
-    ], { header: ["Mã bé", "Họ và tên", "Ngày sinh", "Giới tính", "Lớp / Nhóm tuổi", "Tên lớp", "Đối tượng", "Diện khảo sát"] });
-    ws['!cols'] = [{ wch: 12 }, { wch: 25 }, { wch: 14 }, { wch: 12 }, { wch: 18 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
+      { "Mã bé": "MN001", "Họ và tên": "Nguyễn Bé An", "Ngày sinh": "15/08/2022", "Giới tính": "Nữ", "Nhóm tuổi": "18 đến 24 tháng", "Diện khảo sát": "Nội tỉnh" },
+      { "Mã bé": "MN002", "Họ và tên": "Trần Bé Minh", "Ngày sinh": "20/03/2021", "Giới tính": "Nam", "Nhóm tuổi": "24 đến 36 tháng", "Diện khảo sát": "Ngoại tỉnh" },
+    ], { header: ["Mã bé", "Họ và tên", "Ngày sinh", "Giới tính", "Nhóm tuổi", "Diện khảo sát"] });
+    ws['!cols'] = [{ wch: 12 }, { wch: 25 }, { wch: 14 }, { wch: 12 }, { wch: 18 }, { wch: 15 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Danh_sach_be");
     XLSX.writeFile(wb, "Form_Mau_Them_Be_Mam_Non.xlsx");
@@ -478,7 +474,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-black text-slate-600 uppercase tracking-widest flex items-center gap-2"><Settings className="w-4 h-4 text-violet-400" /> Danh mục cấu hình</h2>
-            <button onClick={() => openAddCfg("target")} className="flex items-center gap-2 px-5 py-2.5 bg-violet-500 text-white text-[13px] font-black rounded-xl hover:bg-violet-700 transition-all shadow-lg shadow-violet-100"><Plus className="w-4 h-4" /> Thêm mục</button>
+            <button onClick={() => openAddCfg("criteria")} className="flex items-center gap-2 px-5 py-2.5 bg-violet-500 text-white text-[13px] font-black rounded-xl hover:bg-violet-700 transition-all shadow-lg shadow-violet-100"><Plus className="w-4 h-4" /> Thêm mục</button>
           </div>
           {cfgLoading ? <Spin /> : (
             <div className="bg-white rounded-2xl border border-violet-100 shadow-sm overflow-hidden">
@@ -551,7 +547,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                   <thead className="bg-violet-50 border-b border-violet-100">
                     <tr>
                       <th className="p-4 w-12"><input type="checkbox" className="w-4 h-4 rounded accent-violet-600" checked={filtChildren.length > 0 && cSelected.length === filtChildren.length} onChange={e => setCSelected(e.target.checked ? filtChildren.map(c => c.id) : [])} /></th>
-                      {["STT", "Mã bé", "Họ và tên", "Ngày sinh", "Giới tính", "Nhóm tuổi", "Tên lớp", "Đối tượng", "Kết quả", "Thao tác"].map(h => <th key={h} className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">{h}</th>)}
+                      {["STT", "Mã bé", "Họ và tên", "Ngày sinh", "Giới tính", "Nhóm tuổi", "Diện khảo sát", "Kết quả", "Thao tác"].map(h => <th key={h} className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">{h}</th>)}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-violet-50">
@@ -564,8 +560,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                         <td className="p-4 text-sm text-slate-500">{child.dateOfBirth ? new Date(child.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
                         <td className="p-4">{child.gender ? <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${child.gender === "Nữ" || child.gender === "F" ? "bg-violet-100 text-violet-600" : "bg-blue-100 text-blue-600"}`}>{child.gender === "M" ? "Nam" : child.gender === "F" ? "Nữ" : child.gender}</span> : <span className="text-slate-300">—</span>}</td>
                         <td className="p-4"><span className="text-xs font-bold text-purple-700 bg-purple-50 px-2 py-1 rounded-lg border border-purple-100">{child.grade || "—"}</span></td>
-                        <td className="p-4 text-xs font-semibold text-slate-600">{child.className || "—"}</td>
-                        <td className="p-4 text-xs font-semibold text-slate-600">{child.targetType || "—"}</td>
+                        <td className="p-4 text-xs font-semibold text-slate-600">{child.admissionCriteria || "—"}</td>
                         <td className="p-4">{child.admissionResult ? <span className={`text-xs font-black px-2.5 py-1 rounded-full ${child.admissionResult.toUpperCase().includes("ĐẠT") && !child.admissionResult.toUpperCase().includes("KHÔNG") ? "bg-emerald-100 text-emerald-700" : child.admissionResult.toUpperCase().includes("KHÔNG") ? "bg-rose-100 text-rose-600" : "bg-amber-100 text-amber-700"}`}>{child.admissionResult}</span> : <span className="text-xs text-slate-300">Chưa</span>}</td>
                         <td className="p-4 text-right"><div className="flex justify-end gap-1"><button onClick={() => openEditChild(child)} className="p-2 text-slate-300 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition-all"><Edit2 className="w-4 h-4" /></button><button onClick={() => setConfirm({ msg: `Xóa bé "${child.fullName}"?`, fn: () => doDeleteChild(child.id) })} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"><Trash2 className="w-4 h-4" /></button></div></td>
                       </tr>
@@ -610,7 +605,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
           </div>
 
           <div className="bg-white rounded-2xl border border-violet-100 shadow-sm p-6">
-            <h3 className="font-black text-slate-800 text-sm uppercase tracking-widest mb-5 flex items-center gap-2"><Heart className="w-4 h-4 text-violet-400" /> Phân bố theo Độ tuổi / Lớp</h3>
+            <h3 className="font-black text-slate-800 text-sm uppercase tracking-widest mb-5 flex items-center gap-2"><Heart className="w-4 h-4 text-violet-400" /> Phân bố theo Nhóm tuổi</h3>
             {rptStats.total === 0 ? <p className="text-center text-slate-400 font-bold text-xs py-6 uppercase tracking-wider">Chưa có dữ liệu</p> : (
               <div className="space-y-4">
                 {rptStats.gradeStats.map(g => {
@@ -865,10 +860,8 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
             )}
           </Field>
           <Field label="Giới tính"><select value={cForm.gender} onChange={e => setCForm({...cForm, gender: e.target.value})} className={inp}><option value="">-- Chọn --</option><option value="Nam">Nam</option><option value="Nữ">Nữ</option></select></Field>
-          <Field label="Lớp / Nhóm tuổi"><select value={cForm.grade} onChange={e => setCForm({...cForm, grade: e.target.value})} className={inp}><option value="">-- Chọn nhóm tuổi --</option>{grades.map(g => <option key={g} value={g}>{g}</option>)}</select></Field>
-          <Field label="Tên lớp"><input value={cForm.className} onChange={e => setCForm({...cForm, className: e.target.value})} className={inp} placeholder="Lớp Hoa Hồng" /></Field>
+          <Field label="Nhóm tuổi"><select value={cForm.grade} onChange={e => setCForm({...cForm, grade: e.target.value})} className={inp}><option value="">-- Chọn nhóm tuổi --</option>{grades.map(g => <option key={g} value={g}>{g}</option>)}</select></Field>
           <Field label="Diện khảo sát"><input value={cForm.admissionCriteria} onChange={e => setCForm({...cForm, admissionCriteria: e.target.value})} className={inp} placeholder="Nội tỉnh / Ngoại tỉnh" /></Field>
-          <Field label="Đối tượng"><input value={cForm.targetType} onChange={e => setCForm({...cForm, targetType: e.target.value})} className={inp} placeholder="Tuyển mới / Chuyển lớp" /></Field>
           <Field label="Đợt KS">
             <select
               value={cForm.batchId}
@@ -896,7 +889,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
       {/* Modal: Config */}
       <Modal open={cfgModal} onClose={() => setCfgModal(false)} title={editCfg ? "Sửa danh mục" : "Thêm danh mục"} footer={<><button onClick={() => setCfgModal(false)} className="flex-1 text-xs font-black uppercase text-slate-400">Hủy</button><button onClick={saveCfg} className="flex-1 py-3.5 bg-violet-500 text-white rounded-2xl text-xs font-black uppercase tracking-widest">Lưu</button></>}>
         <div className="space-y-4">
-          <Field label="Loại" required><select value={cfgForm.categoryType} onChange={e => setCfgForm({...cfgForm, categoryType: e.target.value})} className={inp}><option value="">-- Chọn loại --</option><option value="target">Đối tượng</option><option value="criteria">Diện KS</option><option value="system">Hệ KS</option></select></Field>
+          <Field label="Loại" required><select value={cfgForm.categoryType} onChange={e => setCfgForm({...cfgForm, categoryType: e.target.value})} className={inp}><option value="">-- Chọn loại --</option><option value="criteria">Diện KS</option><option value="system">Hệ KS</option></select></Field>
           <Field label="Mã" required><input value={cfgForm.code} onChange={e => setCfgForm({...cfgForm, code: e.target.value})} disabled={!!editCfg} className={inp} placeholder="TUYEN_MOI" /></Field>
           <Field label="Tên" required><input value={cfgForm.name} onChange={e => setCfgForm({...cfgForm, name: e.target.value})} className={inp} placeholder="Tuyển mới" /></Field>
         </div>
