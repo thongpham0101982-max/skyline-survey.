@@ -14,7 +14,8 @@ import {
   PieChart,
   Settings,
   Briefcase,
-  ArrowRightLeft
+  ArrowRightLeft,
+  Baby
 } from "lucide-react"
 
 export const APP_CATEGORIES = [
@@ -50,6 +51,7 @@ export const APP_CATEGORIES = [
     color: "emerald",
     icon: ClipboardList,
     modules: [
+      { code: "PRESCHOOL_INPUT_ASSESSMENTS", name: "KSNL Đầu vào Mầm non", icon: Baby, href: "/admin/preschool-input-assessments" },
       { code: "INPUT_ASSESSMENTS", name: "Quản lý KSNL Đầu vào", icon: ClipboardList, href: "/admin/input-assessments" },
       { code: "STUDENT_ACHIEVEMENTS", name: "Thành tích Học sinh", icon: GraduationCap, href: "/admin/achievements" },
     ]
