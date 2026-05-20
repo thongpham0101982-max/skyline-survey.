@@ -2,7 +2,7 @@
 import { auth } from "@/lib/auth"
 import { InputAssessmentsClient } from "./client"
 
-export const metadata = { title: "Quản lý KSNL đầu vào | Admin" }
+export const metadata = { title: "KSNL đầu vào Phổ thông | Admin" }
 export const dynamic = "force-dynamic";
 
 export default async function InputAssessmentsPage() {

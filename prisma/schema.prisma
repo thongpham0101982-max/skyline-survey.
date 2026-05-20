@@ -98,6 +98,7 @@ model AcademicYear {
   endDate                DateTime
   status                 String                  @default("ACTIVE")
   assessmentConfigs      AssessmentConfig[]
+  preschoolAssessmentConfigs PreschoolAssessmentConfig[]
   classes                Class[]
   educationSystems       EducationSystem[]
   inputAssessmentPeriods InputAssessmentPeriod[]
@@ -785,4 +786,19 @@ model PreschoolInputAssessmentStudent {
   period              PreschoolInputAssessmentPeriod    @relation(fields: [periodId], references: [id], onDelete: Cascade)
 
   @@unique([studentCode, periodId])
+}
+
+
+model PreschoolAssessmentConfig {
+  id             String        @id @default(cuid())
+  categoryType   String
+  code           String
+  name           String
+  status         String        @default("ACTIVE")
+  sortOrder      Int           @default(0)
+  academicYearId String?
+  createdAt      DateTime      @default(now())
+  academicYear   AcademicYear? @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+
+  @@unique([categoryType, code, academicYearId])
 }

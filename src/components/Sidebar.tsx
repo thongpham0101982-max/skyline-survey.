@@ -131,7 +131,7 @@ export function Sidebar({ role, permissionModules, actualRole, taskCount = 0 }: 
                   </div>
                   <Link href="/teacher/input-assessments" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/input-assessments') ? "bg-[#135E5B]/20 text-white border border-[#135E5B]/30" : "text-slate-400 hover:text-white hover:bg-slate-800"}`}>
                     <ClipboardCheck className={`w-4 h-4 mr-3 ${pathname.includes('/teacher/input-assessments') ? "text-[#1E8B87]" : "text-slate-500 group-hover:text-[#1E8B87]"}`} />
-                    Quản lý KSNL Đầu vào
+                    KSNL đầu vào Phổ thông
                   </Link>
                 </div>
               )}
