@@ -180,7 +180,22 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   const doDeletePeriod = async (id: string) => { const r = await fetch(`/api/preschool-input-assessments?type=period&id=${id}`, { method: "DELETE" }); if (r.ok) { fetchPeriods(); notify("Đã xóa kỳ"); } };
 
   // Batch actions
-  const openAddBatch = (pid: string) => { setTargetPeriodId(pid); setEditB(null); const period = periods.find(p => p.id === pid); const nextNum = period && period.batches.length > 0 ? Math.max(...period.batches.map(b => b.batchNumber)) + 1 : 1; setBForm({ batchNumber: String(nextNum), name: "", startDate: "", endDate: "", status: "ACTIVE", campusId: "", assignedUserId: "" }); setBModal(true); };
+  const openAddBatch = (pid: string) => {
+    setTargetPeriodId(pid);
+    setEditB(null);
+    const period = periods.find(p => p.id === pid);
+    const nextNum = period && period.batches.length > 0 ? Math.max(...period.batches.map(b => b.batchNumber)) + 1 : 1;
+    setBForm({
+      batchNumber: String(nextNum),
+      name: "KSĐV_Tất cả _ Đợt " + nextNum,
+      startDate: "",
+      endDate: "",
+      status: "ACTIVE",
+      campusId: "",
+      assignedUserId: ""
+    });
+    setBModal(true);
+  };
   const openEditBatch = (b: Batch) => { setTargetPeriodId(b.periodId); setEditB(b); let baseName = b.name; const m = b.name.match(/Đợt \d+ - (.*?) \|/); if (m) baseName = m[1]; else { const m2 = b.name.match(/Đợt \d+ - (.*)/); if (m2) baseName = m2[1]; } setBForm({ batchNumber: String(b.batchNumber), name: baseName, startDate: b.startDate?.slice(0,10) || "", endDate: b.endDate?.slice(0,10) || "", status: b.status, campusId: b.campusId || "", assignedUserId: b.assignedUserId || "" }); setBModal(true); };
   const saveBatch = async () => {
     if (!bForm.name.trim() || !bForm.startDate || !bForm.endDate) return notify("Cần nhập Tên, Ngày bắt đầu và kết thúc", "err");
@@ -656,9 +671,101 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
       {/* Modal: Batch */}
       <Modal open={bModal} onClose={() => setBModal(false)} title={editB ? "Sửa Đợt" : "Thêm Đợt mới"} footer={<><button onClick={() => setBModal(false)} className="flex-1 text-xs font-black uppercase text-slate-400 hover:text-slate-600">Hủy</button><button onClick={saveBatch} className="flex-1 py-3.5 bg-violet-500 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-violet-100">Lưu</button></>}>
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3"><Field label="Số đợt"><input type="number" min={1} value={bForm.batchNumber} onChange={e => setBForm({...bForm, batchNumber: e.target.value})} className={inp} /></Field><Field label="Tên nội dung" required><input value={bForm.name} onChange={e => setBForm({...bForm, name: e.target.value})} className={inp} placeholder="VD: KS Mầm non CS A" /></Field></div>
-          <div className="grid grid-cols-2 gap-3"><Field label="Ngày bắt đầu" required><input type="date" value={bForm.startDate} onChange={e => setBForm({...bForm, startDate: e.target.value})} className={inp} /></Field><Field label="Ngày kết thúc" required><input type="date" value={bForm.endDate} onChange={e => setBForm({...bForm, endDate: e.target.value})} className={inp} /></Field></div>
-          <Field label="Cơ sở"><select value={bForm.campusId} onChange={e => setBForm({...bForm, campusId: e.target.value})} className={inp}><option value="">-- Tất cả cơ sở --</option>{campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}</select></Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Số đợt">
+              <input
+                type="number"
+                min={1}
+                value={bForm.batchNumber}
+                onChange={(e) => {
+                  const numVal = e.target.value;
+                  setBForm(prev => {
+                    const nextState = { ...prev, batchNumber: numVal };
+                    if (!editB) {
+                      const campus = campuses.find(c => c.id === nextState.campusId);
+                      const campusName = campus ? campus.campusName : "Tất cả";
+                      let formattedDate = "";
+                      if (nextState.startDate) {
+                        const parts = nextState.startDate.split('-');
+                        if (parts.length === 3) formattedDate = `_${parts[2]}/${parts[1]}/${parts[0]}`;
+                      }
+                      nextState.name = `KSĐV_${campusName} _ Đợt ${numVal || "1"}${formattedDate}`;
+                    }
+                    return nextState;
+                  });
+                }}
+                className={inp}
+              />
+            </Field>
+            <Field label="Tên nội dung" required>
+              <input
+                value={bForm.name}
+                onChange={e => setBForm({...bForm, name: e.target.value})}
+                className={inp}
+                placeholder="VD: KS Mầm non CS A"
+              />
+            </Field>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Ngày bắt đầu" required>
+              <input
+                type="date"
+                value={bForm.startDate}
+                onChange={(e) => {
+                  const dateVal = e.target.value;
+                  setBForm(prev => {
+                    const nextState = { ...prev, startDate: dateVal };
+                    if (!editB) {
+                      const campus = campuses.find(c => c.id === nextState.campusId);
+                      const campusName = campus ? campus.campusName : "Tất cả";
+                      let formattedDate = "";
+                      if (dateVal) {
+                        const parts = dateVal.split('-');
+                        if (parts.length === 3) formattedDate = `_${parts[2]}/${parts[1]}/${parts[0]}`;
+                      }
+                      nextState.name = `KSĐV_${campusName} _ Đợt ${nextState.batchNumber || "1"}${formattedDate}`;
+                    }
+                    return nextState;
+                  });
+                }}
+                className={inp}
+              />
+            </Field>
+            <Field label="Ngày kết thúc" required>
+              <input
+                type="date"
+                value={bForm.endDate}
+                onChange={e => setBForm({...bForm, endDate: e.target.value})}
+                className={inp}
+              />
+            </Field>
+          </div>
+          <Field label="Cơ sở">
+            <select
+              value={bForm.campusId}
+              onChange={(e) => {
+                const campVal = e.target.value;
+                setBForm(prev => {
+                  const nextState = { ...prev, campusId: campVal };
+                  if (!editB) {
+                    const campus = campuses.find(c => c.id === campVal);
+                    const campusName = campus ? campus.campusName : "Tất cả";
+                    let formattedDate = "";
+                    if (nextState.startDate) {
+                      const parts = nextState.startDate.split('-');
+                      if (parts.length === 3) formattedDate = `_${parts[2]}/${parts[1]}/${parts[0]}`;
+                    }
+                    nextState.name = `KSĐV_${campusName} _ Đợt ${nextState.batchNumber || "1"}${formattedDate}`;
+                  }
+                  return nextState;
+                });
+              }}
+              className={inp}
+            >
+              <option value="">-- Tất cả cơ sở --</option>
+              {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
+            </select>
+          </Field>
           <Field label="Người phụ trách"><select value={bForm.assignedUserId} onChange={e => setBForm({...bForm, assignedUserId: e.target.value})} className={inp}><option value="">-- Chưa gán --</option>{giaoVuCSUsers.map((u: any) => <option key={u.id} value={u.id}>{u.fullName}</option>)}</select></Field>
           <Field label="Trạng thái"><select value={bForm.status} onChange={e => setBForm({...bForm, status: e.target.value})} className={inp}><option value="ACTIVE">Đang mở</option><option value="INACTIVE">Đóng</option><option value="LOCKED">Khóa</option></select></Field>
         </div>
