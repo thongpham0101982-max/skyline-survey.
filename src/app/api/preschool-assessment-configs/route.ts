@@ -60,6 +60,14 @@ export async function DELETE(req: any) {
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
+    const ids = searchParams.get("ids");
+    if (ids) {
+      const idList = ids.split(",");
+      await (prisma as any).preschoolAssessmentConfig.deleteMany({
+        where: { id: { in: idList } }
+      });
+      return NextResponse.json({ success: true });
+    }
     if (!id) return NextResponse.json({ error: "Thieu ID" }, { status: 400 });
     await (prisma as any).preschoolAssessmentConfig.delete({ where: { id } });
     return NextResponse.json({ success: true });

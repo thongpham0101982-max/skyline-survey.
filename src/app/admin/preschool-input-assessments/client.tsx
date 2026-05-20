@@ -111,6 +111,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   // Configs
   const [configs, setConfigs] = useState<AssessmentConfig[]>([]);
   const [cfgLoading, setCfgLoading] = useState(false);
+  const [cfgSelected, setCfgSelected] = useState<string[]>([]);
   const [cfgModal, setCfgModal] = useState(false);
   const [editCfg, setEditCfg] = useState<AssessmentConfig | null>(null);
   const [cfgForm, setCfgForm] = useState({ categoryType: "", code: "", name: "" });
@@ -193,6 +194,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
 
   const fetchConfigs = useCallback(async () => {
     setCfgLoading(true);
+    setCfgSelected([]);
     try { const r = await fetch("/api/preschool-assessment-configs"); if (r.ok) setConfigs(await r.json()); } finally { setCfgLoading(false); }
   }, []);
 
@@ -346,6 +348,13 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
     if (r.ok) { setCfgModal(false); fetchConfigs(); notify("Đã lưu"); }
   };
   const doDeleteCfg = async (id: string) => { await fetch(`/api/preschool-assessment-configs?id=${id}`, { method: "DELETE" }); fetchConfigs(); notify("Đã xóa"); };
+  const doBulkDeleteCfg = async () => {
+    if (cfgSelected.length === 0) return;
+    await fetch(`/api/preschool-assessment-configs?ids=${cfgSelected.join(",")}`, { method: "DELETE" });
+    setCfgSelected([]);
+    fetchConfigs();
+    notify("Đã xóa các mục đã chọn");
+  };
 
   const filtChildren = useMemo(() => children.filter(c => !cSearch || c.studentCode.toLowerCase().includes(cSearch.toLowerCase()) || c.fullName.toLowerCase().includes(cSearch.toLowerCase())), [children, cSearch]);
   const reportChildren = useMemo(() => { let all = children; if (rptBatchId !== "all") all = all.filter(c => c.batchId === rptBatchId); return all; }, [children, rptBatchId]);
@@ -474,7 +483,12 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-black text-slate-600 uppercase tracking-widest flex items-center gap-2"><Settings className="w-4 h-4 text-violet-400" /> Danh mục cấu hình</h2>
-            <button onClick={() => openAddCfg("criteria")} className="flex items-center gap-2 px-5 py-2.5 bg-violet-500 text-white text-[13px] font-black rounded-xl hover:bg-violet-700 transition-all shadow-lg shadow-violet-100"><Plus className="w-4 h-4" /> Thêm mục</button>
+            <div className="flex items-center gap-2">
+              {cfgSelected.length > 0 && (
+                <button onClick={() => setConfirm({ msg: `Xóa ${cfgSelected.length} mục đã chọn?`, fn: doBulkDeleteCfg })} className="flex items-center gap-2 px-5 py-2.5 bg-rose-500 text-white text-[13px] font-black rounded-xl hover:bg-rose-700 transition-all shadow-lg shadow-rose-100 animate-in fade-in duration-200"><Trash2 className="w-4 h-4" /> Xóa mục đã chọn (${cfgSelected.length})</button>
+              )}
+              <button onClick={() => openAddCfg("criteria")} className="flex items-center gap-2 px-5 py-2.5 bg-violet-500 text-white text-[13px] font-black rounded-xl hover:bg-violet-700 transition-all shadow-lg shadow-violet-100"><Plus className="w-4 h-4" /> Thêm mục</button>
+            </div>
           </div>
           {cfgLoading ? <Spin /> : (
             <div className="bg-white rounded-2xl border border-violet-100 shadow-sm overflow-hidden">
@@ -482,11 +496,19 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                 <div className="overflow-x-auto">
                   <table className="w-full text-left">
                     <thead className="bg-violet-50 border-b border-violet-100">
-                      <tr>{["STT", "Loại", "Mã", "Tên", "Thao tác"].map(h => <th key={h} className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">{h}</th>)}</tr>
+                      <tr>
+                        <th className="p-4 w-12">
+                          <input type="checkbox" className="w-4 h-4 rounded accent-violet-600" checked={configs.length > 0 && cfgSelected.length === configs.length} onChange={e => setCfgSelected(e.target.checked ? configs.map(c => c.id) : [])} />
+                        </th>
+                        {["STT", "Loại", "Mã", "Tên", "Thao tác"].map(h => <th key={h} className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">{h}</th>)}
+                      </tr>
                     </thead>
                     <tbody className="divide-y divide-violet-50">
                       {configs.map((c, i) => (
                         <tr key={c.id} className="hover:bg-violet-50/30 transition-colors">
+                          <td className="p-4 w-12">
+                            <input type="checkbox" className="w-4 h-4 rounded accent-violet-600" checked={cfgSelected.includes(c.id)} onChange={e => setCfgSelected(e.target.checked ? [...cfgSelected, c.id] : cfgSelected.filter(id => id !== c.id))} />
+                          </td>
                           <td className="p-4 text-slate-400 text-sm">{i+1}</td>
                           <td className="p-4"><span className="text-[10px] font-black text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full uppercase">{c.categoryType}</span></td>
                           <td className="p-4 font-mono text-xs font-bold text-violet-600">{c.code}</td>
