@@ -8,6 +8,28 @@ export async function GET(req) {
   const user = session?.user as any;
   try {
     const { searchParams } = new URL(req.url);
+    
+    if (searchParams.get("get_next_code") === "true") {
+      const surveyType = searchParams.get("surveyType") || "KHAO_SAT_LE";
+      const periods = await (prisma as any).preschoolInputAssessmentPeriod.findMany({
+        select: { code: true }
+      });
+      let maxNum = 0;
+      const prefix = surveyType === "OPEN_DAY" ? "KSĐV_OP_" : "KSĐV_LE_";
+      for (const p of periods) {
+        if (p.code && p.code.startsWith(prefix)) {
+          const suffix = p.code.substring(prefix.length);
+          const num = parseInt(suffix, 10);
+          if (!isNaN(num) && num > maxNum) {
+            maxNum = num;
+          }
+        }
+      }
+      const nextNum = maxNum + 1;
+      const nextCode = prefix + nextNum.toString().padStart(2, "0");
+      return NextResponse.json({ nextCode });
+    }
+    
     const academicYearId = searchParams.get("academicYearId");
     
     if (!academicYearId) {

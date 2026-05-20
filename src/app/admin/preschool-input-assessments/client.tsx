@@ -151,7 +151,22 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   useEffect(() => { if (tab === "categories") fetchConfigs(); }, [tab, fetchConfigs]);
 
   // Period actions
-  const openAddPeriod = () => { setEditP(null); setPForm({ code: "", name: "", assignedUserId: "", startDate: "", endDate: "", description: "", status: "ACTIVE", surveyType: "KHAO_SAT_LE" }); setPModal(true); };
+  const openAddPeriod = async () => {
+    setEditP(null);
+    setPForm({ code: "", name: "", assignedUserId: "", startDate: "", endDate: "", description: "", status: "ACTIVE", surveyType: "KHAO_SAT_LE" });
+    setPModal(true);
+    try {
+      const r = await fetch("/api/preschool-input-assessments?get_next_code=true&surveyType=KHAO_SAT_LE");
+      if (r.ok) {
+        const res = await r.json();
+        if (res.nextCode) {
+          setPForm(prev => ({ ...prev, code: res.nextCode }));
+        }
+      }
+    } catch (e) {
+      console.error("Error fetching next period code:", e);
+    }
+  };
   const openEditPeriod = (p: Period) => { setEditP(p); setPForm({ code: p.code, name: p.name, assignedUserId: p.assignedUserId || "", startDate: p.startDate?.slice(0,10) || "", endDate: p.endDate?.slice(0,10) || "", description: p.description || "", status: p.status, surveyType: p.surveyType || "KHAO_SAT_LE" }); setPModal(true); };
   const savePeriod = async () => {
     if (!pForm.code.trim() || !pForm.name.trim()) return notify("Cần nhập Mã và Tên", "err");
@@ -537,7 +552,32 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
           <Field label="Tên Kỳ" required><input value={pForm.name} onChange={e => setPForm({...pForm, name: e.target.value})} className={inp} placeholder="VD: KS đầu vào Mầm non 2026" /></Field>
           <div className="grid grid-cols-2 gap-3"><Field label="Ngày bắt đầu"><input type="date" value={pForm.startDate} onChange={e => setPForm({...pForm, startDate: e.target.value})} className={inp} /></Field><Field label="Ngày kết thúc"><input type="date" value={pForm.endDate} onChange={e => setPForm({...pForm, endDate: e.target.value})} className={inp} /></Field></div>
           <Field label="Trạng thái"><select value={pForm.status} onChange={e => setPForm({...pForm, status: e.target.value})} className={inp}><option value="ACTIVE">Đang mở</option><option value="INACTIVE">Đã đóng</option><option value="LOCKED">Đã khóa</option></select></Field>
-          <Field label="Dạng khảo sát"><select value={pForm.surveyType} onChange={e => setPForm({...pForm, surveyType: e.target.value})} className={inp}><option value="KHAO_SAT_LE">Khảo sát lẻ cơ sở</option><option value="OPEN_DAY">Khảo sát Open Day</option></select></Field>
+          <Field label="Dạng khảo sát">
+            <select
+              value={pForm.surveyType}
+              onChange={async (e) => {
+                const val = e.target.value;
+                setPForm(prev => ({ ...prev, surveyType: val }));
+                if (!editP) {
+                  try {
+                    const r = await fetch(`/api/preschool-input-assessments?get_next_code=true&surveyType=${val}`);
+                    if (r.ok) {
+                      const res = await r.json();
+                      if (res.nextCode) {
+                        setPForm(prev => ({ ...prev, surveyType: val, code: res.nextCode }));
+                      }
+                    }
+                  } catch (err) {
+                    console.error("Error fetching next period code:", err);
+                  }
+                }
+              }}
+              className={inp}
+            >
+              <option value="KHAO_SAT_LE">Khảo sát lẻ cơ sở</option>
+              <option value="OPEN_DAY">Khảo sát Open Day</option>
+            </select>
+          </Field>
           <Field label="Mô tả"><textarea value={pForm.description} onChange={e => setPForm({...pForm, description: e.target.value})} className={inp + " resize-none"} rows={2} /></Field>
         </div>
       </Modal>
