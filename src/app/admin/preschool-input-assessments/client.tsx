@@ -119,6 +119,54 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   const [rptPeriodId, setRptPeriodId] = useState("");
   const [rptBatchId, setRptBatchId] = useState("all");
 
+  // Age & Grade auto-verifier helper
+  const getMonthsAndSuggestGrade = useCallback((dobStr: string, batchId: string) => {
+    if (!dobStr) return { months: null, suggest: "", surveyDateStr: "" };
+    
+    // 1. Find the survey date
+    let surveyDate = new Date();
+    let source = "Ngày hôm nay";
+    
+    if (batchId) {
+      const selectedBatch = periods.flatMap(p => p.batches || []).find(b => b.id === batchId);
+      if (selectedBatch?.startDate) {
+        surveyDate = new Date(selectedBatch.startDate);
+        source = `Ngày bắt đầu đợt: ${surveyDate.toLocaleDateString("vi-VN")}`;
+      }
+    } else if (periods.find(p => p.id === cPeriodId)?.startDate) {
+      const pStart = periods.find(p => p.id === cPeriodId)?.startDate;
+      if (pStart) {
+        surveyDate = new Date(pStart);
+        source = `Ngày bắt đầu kỳ: ${surveyDate.toLocaleDateString("vi-VN")}`;
+      }
+    } else {
+      source = `Ngày hôm nay: ${surveyDate.toLocaleDateString("vi-VN")}`;
+    }
+
+    const birth = new Date(dobStr);
+    if (isNaN(birth.getTime())) return { months: null, suggest: "", surveyDateStr: "" };
+
+    // 2. Calculate months difference precisely
+    let months = (surveyDate.getFullYear() - birth.getFullYear()) * 12 + (surveyDate.getMonth() - birth.getMonth());
+    if (surveyDate.getDate() < birth.getDate()) {
+      months--;
+    }
+
+    // 3. Suggest grade
+    let suggest = "";
+    if (months >= 18 && months <= 24) suggest = "18 đến 24 tháng";
+    else if (months > 24 && months <= 36) suggest = "24 đến 36 tháng";
+    else if (months > 36 && months <= 48) suggest = "Mẫu giáo bé";
+    else if (months > 48 && months <= 60) suggest = "Mẫu giáo nhỡ";
+    else if (months > 60) suggest = "Mẫu giáo lớn";
+
+    return { months, suggest, surveyDateStr: source };
+  }, [periods, cPeriodId]);
+
+  const ageInfo = useMemo(() => {
+    return getMonthsAndSuggestGrade(cForm.dateOfBirth, cForm.batchId);
+  }, [cForm.dateOfBirth, cForm.batchId, getMonthsAndSuggestGrade]);
+
   const fetchPeriods = useCallback(async () => {
     if (!yearId) return;
     setPLoading(true);
@@ -489,7 +537,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                   <thead className="bg-violet-50 border-b border-violet-100">
                     <tr>
                       <th className="p-4 w-12"><input type="checkbox" className="w-4 h-4 rounded accent-violet-600" checked={filtChildren.length > 0 && cSelected.length === filtChildren.length} onChange={e => setCSelected(e.target.checked ? filtChildren.map(c => c.id) : [])} /></th>
-                      {["STT", "Mã bé", "Họ và tên", "Ngày sinh", "Giới tính", "Lớp", "Kết quả", "Thao tác"].map(h => <th key={h} className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">{h}</th>)}
+                      {["STT", "Mã bé", "Họ và tên", "Ngày sinh", "Giới tính", "Nhóm tuổi", "Tên lớp", "Đối tượng", "Kết quả", "Thao tác"].map(h => <th key={h} className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">{h}</th>)}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-violet-50">
@@ -502,6 +550,8 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                         <td className="p-4 text-sm text-slate-500">{child.dateOfBirth ? new Date(child.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
                         <td className="p-4">{child.gender ? <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${child.gender === "Nữ" || child.gender === "F" ? "bg-violet-100 text-violet-600" : "bg-blue-100 text-blue-600"}`}>{child.gender === "M" ? "Nam" : child.gender === "F" ? "Nữ" : child.gender}</span> : <span className="text-slate-300">—</span>}</td>
                         <td className="p-4"><span className="text-xs font-bold text-purple-700 bg-purple-50 px-2 py-1 rounded-lg border border-purple-100">{child.grade || "—"}</span></td>
+                        <td className="p-4 text-xs font-semibold text-slate-600">{child.className || "—"}</td>
+                        <td className="p-4 text-xs font-semibold text-slate-600">{child.targetType || "—"}</td>
                         <td className="p-4">{child.admissionResult ? <span className={`text-xs font-black px-2.5 py-1 rounded-full ${child.admissionResult.toUpperCase().includes("ĐẠT") && !child.admissionResult.toUpperCase().includes("KHÔNG") ? "bg-emerald-100 text-emerald-700" : child.admissionResult.toUpperCase().includes("KHÔNG") ? "bg-rose-100 text-rose-600" : "bg-amber-100 text-amber-700"}`}>{child.admissionResult}</span> : <span className="text-xs text-slate-300">Chưa</span>}</td>
                         <td className="p-4 text-right"><div className="flex justify-end gap-1"><button onClick={() => openEditChild(child)} className="p-2 text-slate-300 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition-all"><Edit2 className="w-4 h-4" /></button><button onClick={() => setConfirm({ msg: `Xóa bé "${child.fullName}"?`, fn: () => doDeleteChild(child.id) })} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"><Trash2 className="w-4 h-4" /></button></div></td>
                       </tr>
@@ -776,13 +826,55 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field label="Mã bé" required><input value={cForm.studentCode} onChange={e => setCForm({...cForm, studentCode: e.target.value})} disabled={!!editC} className={inp + (editC ? " bg-violet-50/50" : "")} placeholder="MN001" /></Field>
           <Field label="Họ và tên" required><input value={cForm.fullName} onChange={e => setCForm({...cForm, fullName: e.target.value})} className={inp} placeholder="Họ và tên đầy đủ" /></Field>
-          <Field label="Ngày sinh"><input type="date" value={cForm.dateOfBirth} onChange={e => setCForm({...cForm, dateOfBirth: e.target.value})} className={inp} /></Field>
+          <Field label="Ngày sinh">
+            <input
+              type="date"
+              value={cForm.dateOfBirth}
+              onChange={e => {
+                const dobVal = e.target.value;
+                setCForm(prev => {
+                  const nextState = { ...prev, dateOfBirth: dobVal };
+                  const info = getMonthsAndSuggestGrade(dobVal, nextState.batchId);
+                  if (info.suggest) {
+                    nextState.grade = info.suggest;
+                  }
+                  return nextState;
+                });
+              }}
+              className={inp}
+            />
+            {ageInfo.months !== null && (
+              <div className="text-[11px] font-black text-violet-600 mt-1.5 uppercase tracking-wider bg-violet-50/50 rounded-xl px-3 py-1.5 border border-violet-100 flex items-center gap-1.5 animate-in fade-in duration-200">
+                <Sparkles className="w-3.5 h-3.5" />
+                Xác minh: {ageInfo.months} tháng tuổi ({ageInfo.surveyDateStr})
+              </div>
+            )}
+          </Field>
           <Field label="Giới tính"><select value={cForm.gender} onChange={e => setCForm({...cForm, gender: e.target.value})} className={inp}><option value="">-- Chọn --</option><option value="Nam">Nam</option><option value="Nữ">Nữ</option></select></Field>
           <Field label="Lớp / Nhóm tuổi"><select value={cForm.grade} onChange={e => setCForm({...cForm, grade: e.target.value})} className={inp}><option value="">-- Chọn nhóm tuổi --</option>{grades.map(g => <option key={g} value={g}>{g}</option>)}</select></Field>
           <Field label="Tên lớp"><input value={cForm.className} onChange={e => setCForm({...cForm, className: e.target.value})} className={inp} placeholder="Lớp Hoa Hồng" /></Field>
           <Field label="Diện khảo sát"><input value={cForm.admissionCriteria} onChange={e => setCForm({...cForm, admissionCriteria: e.target.value})} className={inp} placeholder="Nội tỉnh / Ngoại tỉnh" /></Field>
           <Field label="Đối tượng"><input value={cForm.targetType} onChange={e => setCForm({...cForm, targetType: e.target.value})} className={inp} placeholder="Tuyển mới / Chuyển lớp" /></Field>
-          <Field label="Đợt KS"><select value={cForm.batchId} onChange={e => setCForm({...cForm, batchId: e.target.value})} className={inp}><option value="">-- Không gán --</option>{selPeriod?.batches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}</select></Field>
+          <Field label="Đợt KS">
+            <select
+              value={cForm.batchId}
+              onChange={e => {
+                const bIdVal = e.target.value;
+                setCForm(prev => {
+                  const nextState = { ...prev, batchId: bIdVal };
+                  const info = getMonthsAndSuggestGrade(nextState.dateOfBirth, bIdVal);
+                  if (info.suggest) {
+                    nextState.grade = info.suggest;
+                  }
+                  return nextState;
+                });
+              }}
+              className={inp}
+            >
+              <option value="">-- Không gán --</option>
+              {selPeriod?.batches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+            </select>
+          </Field>
           <Field label="Hệ KS"><input value={cForm.surveyFormType} onChange={e => setCForm({...cForm, surveyFormType: e.target.value})} className={inp} placeholder="Mầm non Sky-Line" /></Field>
         </div>
       </Modal>
