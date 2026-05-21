@@ -1438,8 +1438,9 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                   </div>
                   <div className="divide-y divide-slate-100 p-4 space-y-4">
                     {area.criteria.map((crit, idx) => {
-                      const isHeight = crit.code?.endsWith("_01") || crit.name?.toLowerCase().includes("chiều cao");
-                      const isWeight = crit.code?.endsWith("_02") || crit.name?.toLowerCase().includes("cân nặng");
+                      const isTheChat = area.code === "THE_CHAT" || area.name?.toLowerCase().includes("thể chất");
+                      const isHeight = isTheChat && (crit.code?.endsWith("_01") || crit.name?.toLowerCase().includes("chiều cao"));
+                      const isWeight = isTheChat && (crit.code?.endsWith("_02") || crit.name?.toLowerCase().includes("cân nặng"));
                       const isPhysical = isHeight || isWeight;
                       const unit = isHeight ? "cm" : "kg";
 
