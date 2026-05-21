@@ -82,7 +82,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   const [tab, setTab] = useState("periods");
 
   // Đánh giá phát triển
-  const [devTab, setDevTab] = useState<"assess" | "manage">("assess");
+  const [devTab, setDevTab] = useState<"assess" | "xetDuyet" | "manage">("assess");
   const [ageGroupFilter, setAgeGroupFilter] = useState("18 đến 24 tháng");
   
   // Đánh giá học sinh
@@ -298,7 +298,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   }, [cPeriodId, cBatchId]);
 
   useEffect(() => {
-    if (tab === "devAssess" && devTab === "assess") {
+    if (tab === "devAssess" && (devTab === "assess" || devTab === "xetDuyet")) {
       fetchStudentSummaries();
     }
   }, [tab, devTab, fetchStudentSummaries]);
@@ -879,6 +879,12 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
               Đánh giá Trẻ
             </button>
             <button
+              onClick={() => setDevTab("xetDuyet")}
+              className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${devTab === "xetDuyet" ? "bg-violet-500 text-white shadow-sm" : "text-slate-500 hover:bg-violet-50"}`}
+            >
+              Xét duyệt học thử
+            </button>
+            <button
               onClick={() => setDevTab("manage")}
               className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${devTab === "manage" ? "bg-violet-500 text-white shadow-sm" : "text-slate-500 hover:bg-violet-50"}`}
             >
@@ -887,7 +893,90 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
           </div>
 
           {/* Sub-tab: Đánh giá Trẻ */}
+          {/* Sub-tab: Đánh giá Trẻ */}
           {devTab === "assess" && (
+            <div className="space-y-4">
+              <div className="bg-white rounded-2xl border border-violet-100 shadow-sm p-4 flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Kỳ KS:</label>
+                  <select value={cPeriodId} onChange={e => { setCPeriodId(e.target.value); setCBatchId(""); }} className="border border-violet-100 rounded-xl p-2 text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-violet-300 min-w-[160px]">
+                    <option value="">-- Chọn Kỳ --</option>
+                    {periods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Đợt:</label>
+                  <select value={cBatchId} onChange={e => setCBatchId(e.target.value)} className="border border-violet-100 rounded-xl p-2 text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-violet-300 min-w-[140px]" disabled={!cPeriodId}>
+                    <option value="">Tất cả đợt</option>
+                    {selPeriod?.batches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                  </select>
+                </div>
+                <button onClick={fetchStudentSummaries} className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-violet-600 bg-violet-50 hover:bg-violet-100 rounded-xl border border-violet-100"><Search className="w-4 h-4" /> Tìm</button>
+                <div className="ml-auto relative"><Search className="w-4 h-4 text-slate-300 absolute left-3 top-1/2 -translate-y-1/2" /><input value={cSearch} onChange={e => setCSearch(e.target.value)} placeholder="Tìm bé..." className="pl-9 pr-4 py-2 border border-violet-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-violet-300 min-w-[200px]" /></div>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-violet-100 shadow-sm overflow-hidden">
+                {sumLoading ? <Spin /> : studentSummaries.length === 0 ? (
+                  <Empty text={cPeriodId ? "Chưa có bé nào" : "Vui lòng chọn Kỳ và bấm Tìm"} sub={cPeriodId ? "Hãy thêm học sinh trước" : ""} />
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left whitespace-nowrap">
+                      <thead className="bg-violet-50 border-b border-violet-100">
+                        <tr>
+                          {["STT", "Mã bé", "Họ và tên", "Ngày sinh", "Nhóm tuổi", "Tiến độ", "Trạng thái", "Thao tác"].map(h => (
+                            <th key={h} className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-violet-50">
+                        {studentSummaries
+                          .filter(s => !cSearch || s.studentCode.toLowerCase().includes(cSearch.toLowerCase()) || s.fullName.toLowerCase().includes(cSearch.toLowerCase()))
+                          .map((s, idx) => {
+                            const pct = s.totalCriteria > 0 ? Math.round((s.scoredCount / s.totalCriteria) * 100) : 0;
+                            const statusBadge = () => {
+                              if (s.totalCriteria === 0) return <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2.5 py-0.5 rounded-full border border-slate-100">Không có tiêu chí</span>;
+                              if (s.scoredCount === s.totalCriteria) return <span className="text-[10px] font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">🟢 Hoàn tất</span>;
+                              if (s.scoredCount > 0) return <span className="text-[10px] font-black text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-100">🟡 Đang chấm</span>;
+                              return <span className="text-[10px] font-black text-slate-500 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-200">⚪ Chưa đánh giá</span>;
+                            };
+
+                            return (
+                              <tr key={s.id} className="hover:bg-violet-50/30 transition-colors">
+                                <td className="p-4 text-slate-400 text-sm">{idx + 1}</td>
+                                <td className="p-4"><span className="font-mono text-xs font-black text-violet-600 bg-violet-50 px-2 py-1 rounded-lg">{s.studentCode}</span></td>
+                                <td className="p-4 font-bold text-slate-800 text-sm">{s.fullName}</td>
+                                <td className="p-4 text-sm text-slate-500">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
+                                <td className="p-4"><span className="text-xs font-bold text-purple-700 bg-purple-50 px-2 py-1 rounded-lg border border-purple-100">{s.grade || "—"}</span></td>
+                                <td className="p-4">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-24 bg-slate-100 h-2 rounded-full overflow-hidden">
+                                      <div className="h-full bg-gradient-to-r from-violet-500 to-fuchsia-400 rounded-full" style={{ width: `${pct}%` }} />
+                                    </div>
+                                    <span className="text-[10px] font-black text-violet-600">{s.scoredCount}/{s.totalCriteria}</span>
+                                  </div>
+                                </td>
+                                <td className="p-4">{statusBadge()}</td>
+                                <td className="p-4">
+                                  <button
+                                    onClick={() => openEvaluation(s)}
+                                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-black text-violet-700 bg-violet-50 hover:bg-violet-500 hover:text-white rounded-lg border border-violet-100 transition-all shadow-sm"
+                                  >
+                                    <Star className="w-3.5 h-3.5" /> Đánh giá
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Sub-tab: Xét duyệt học thử */}
+          {devTab === "xetDuyet" && (
             <div className="space-y-4">
               <div className="bg-white rounded-2xl border border-violet-100 shadow-sm p-4 flex flex-wrap items-center gap-4">
                 <div className="flex items-center gap-2">
