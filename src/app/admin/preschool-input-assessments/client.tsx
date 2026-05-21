@@ -173,7 +173,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   const [cSelected, setCSelected] = useState<string[]>([]);
   const [cModal, setCModal] = useState(false);
   const [editC, setEditC] = useState<PreschoolChild | null>(null);
-  const [cForm, setCForm] = useState({ studentCode: "", fullName: "", dateOfBirth: "", gender: "", grade: "", admissionCampus: "", surveyFormType: "", batchId: "" });
+  const [cForm, setCForm] = useState({ studentCode: "", fullName: "", dateOfBirth: "", gender: "", grade: "", admissionCampus: "", surveyFormType: "", batchId: "", admissionResult: "" });
   const [importing, setImporting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -487,10 +487,10 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
     const batch = periods.flatMap(p => p.batches || []).find(b => b.id === initBatch);
     const campus = campuses.find(c => c.id === batch?.campusId);
     const initCampus = campus ? campus.campusName : "";
-    setCForm({ studentCode: genCode, fullName: "", dateOfBirth: "", gender: "", grade: "", admissionCampus: initCampus, surveyFormType: "", batchId: initBatch });
+    setCForm({ studentCode: genCode, fullName: "", dateOfBirth: "", gender: "", grade: "", admissionCampus: initCampus, surveyFormType: "", batchId: initBatch, admissionResult: "" });
     setCModal(true);
   };
-  const openEditChild = (child: PreschoolChild) => { setEditC(child); setCForm({ studentCode: child.studentCode, fullName: child.fullName, dateOfBirth: child.dateOfBirth?.slice(0,10) || "", gender: child.gender || "", grade: child.grade || "", admissionCampus: child.admissionCampus || "", surveyFormType: child.surveyFormType || "", batchId: child.batchId || "" }); setCModal(true); };
+  const openEditChild = (child: PreschoolChild) => { setEditC(child); setCForm({ studentCode: child.studentCode, fullName: child.fullName, dateOfBirth: child.dateOfBirth?.slice(0,10) || "", gender: child.gender || "", grade: child.grade || "", admissionCampus: child.admissionCampus || "", surveyFormType: child.surveyFormType || "", batchId: child.batchId || "", admissionResult: child.admissionResult || "" }); setCModal(true); };
   const saveChild = async () => {
     if (!cForm.studentCode.trim() || !cForm.fullName.trim()) return notify("Cần nhập Mã bé và Họ tên", "err");
     const r = editC
@@ -584,7 +584,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   const reportChildren = useMemo(() => { let all = children; if (rptBatchId !== "all") all = all.filter(c => c.batchId === rptBatchId); return all; }, [children, rptBatchId]);
   const rptStats = useMemo(() => {
     const total = reportChildren.length;
-    const passed = reportChildren.filter(c => c.admissionResult && c.admissionResult.toUpperCase().includes("ĐẠT")).length;
+    const passed = reportChildren.filter(c => c.admissionResult && (c.admissionResult.toUpperCase().includes("ĐẠT") || c.admissionResult === "Học thử")).length;
     const pending = reportChildren.filter(c => !c.admissionResult).length;
     const failed = reportChildren.filter(c => c.admissionResult && c.admissionResult.toUpperCase().includes("KHÔNG")).length;
     const gradeStats = grades.map(g => ({ grade: g, count: reportChildren.filter(c => c.grade === g).length }));
@@ -813,7 +813,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                         <td className="p-4">{child.gender ? <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${child.gender === "Nữ" || child.gender === "F" ? "bg-violet-100 text-violet-600" : "bg-blue-100 text-blue-600"}`}>{child.gender === "M" ? "Nam" : child.gender === "F" ? "Nữ" : child.gender}</span> : <span className="text-slate-300">—</span>}</td>
                         <td className="p-4"><span className="text-xs font-bold text-purple-700 bg-purple-50 px-2 py-1 rounded-lg border border-purple-100">{child.grade || "—"}</span></td>
                         <td className="p-4 text-xs font-semibold text-slate-600">{child.admissionCampus || "—"}</td>
-                        <td className="p-4">{child.admissionResult ? <span className={`text-xs font-black px-2.5 py-1 rounded-full ${child.admissionResult.toUpperCase().includes("ĐẠT") && !child.admissionResult.toUpperCase().includes("KHÔNG") ? "bg-emerald-100 text-emerald-700" : child.admissionResult.toUpperCase().includes("KHÔNG") ? "bg-rose-100 text-rose-600" : "bg-amber-100 text-amber-700"}`}>{child.admissionResult}</span> : <span className="text-xs text-slate-300">Chưa</span>}</td>
+                        <td className="p-4">{child.admissionResult ? <span className={`text-xs font-black px-2.5 py-1 rounded-full ${child.admissionResult === "Học thử" ? "bg-indigo-50 text-indigo-600 border border-indigo-100" : child.admissionResult.toUpperCase().includes("ĐẠT") && !child.admissionResult.toUpperCase().includes("KHÔNG") ? "bg-emerald-100 text-emerald-700" : child.admissionResult.toUpperCase().includes("KHÔNG") ? "bg-rose-100 text-rose-600" : "bg-amber-100 text-amber-700"}`}>{child.admissionResult}</span> : <span className="text-xs text-slate-300">Chưa</span>}</td>
                         <td className="p-4 text-right"><div className="flex justify-end gap-1"><button onClick={() => openEditChild(child)} className="p-2 text-slate-300 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition-all"><Edit2 className="w-4 h-4" /></button><button onClick={() => setConfirm({ msg: `Xóa bé "${child.fullName}"?`, fn: () => doDeleteChild(child.id) })} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"><Trash2 className="w-4 h-4" /></button></div></td>
                       </tr>
                     ))}
@@ -1360,6 +1360,18 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
               {configs.filter(c => c.categoryType === "system").map(c => (
                 <option key={c.code} value={c.name}>{c.name}</option>
               ))}
+            </select>
+          </Field>
+          <Field label="Xét duyệt">
+            <select
+              value={cForm.admissionResult}
+              onChange={e => setCForm({...cForm, admissionResult: e.target.value})}
+              className={inp}
+            >
+              <option value="">Chưa duyệt</option>
+              <option value="Đạt">Đạt</option>
+              <option value="Không đạt">Không đạt</option>
+              <option value="Học thử">Học thử</option>
             </select>
           </Field>
         </div>

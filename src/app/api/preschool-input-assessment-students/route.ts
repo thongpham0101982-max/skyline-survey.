@@ -60,6 +60,7 @@ export async function POST(req) {
            signatureName: data.signatureName || null,
            periodId: data.periodId,
            batchId: data.batchId || null,
+           admissionResult: data.admissionResult || null,
         }
       });
       return NextResponse.json(result);
