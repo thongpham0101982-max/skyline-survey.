@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
 
       const students = await (prisma as any).preschoolInputAssessmentStudent.findMany({
         where,
-        select: { id: true, studentCode: true, fullName: true, grade: true, gender: true, dateOfBirth: true, admissionCampus: true, batchId: true }
+        select: { id: true, studentCode: true, fullName: true, grade: true, gender: true, dateOfBirth: true, admissionCampus: true, batchId: true, devProfessionalComment: true, devPsychologyComment: true, devImportantNote: true, devAssessmentResult: true }
       })
 
       const studentIds = students.map((s: any) => s.id)
@@ -70,7 +70,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { studentId, scores } = body
+    const { studentId, scores, devProfessionalComment, devPsychologyComment, devImportantNote, devAssessmentResult } = body
 
     if (!studentId || !Array.isArray(scores)) {
       return NextResponse.json({ error: "Cần studentId và mảng scores" }, { status: 400 })
@@ -100,6 +100,16 @@ export async function POST(req: NextRequest) {
       results.push(upserted)
     }
 
+    // Save general comments to student record
+    await (prisma as any).preschoolInputAssessmentStudent.update({
+      where: { id: studentId },
+      data: {
+        devProfessionalComment: devProfessionalComment !== undefined ? devProfessionalComment : undefined,
+        devPsychologyComment: devPsychologyComment !== undefined ? devPsychologyComment : undefined,
+        devImportantNote: devImportantNote !== undefined ? devImportantNote : undefined,
+        devAssessmentResult: devAssessmentResult !== undefined ? devAssessmentResult : undefined,
+      }
+    })
     return NextResponse.json({ success: true, count: results.length })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })

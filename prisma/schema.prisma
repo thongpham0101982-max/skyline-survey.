@@ -781,6 +781,10 @@ model PreschoolInputAssessmentStudent {
   admissionResult     String?
   directorNote        String?
   admissionCampus     String?
+  devProfessionalComment String?
+  devPsychologyComment    String?
+  devImportantNote        String?
+  devAssessmentResult     String?
   batch               PreschoolInputAssessmentBatch?    @relation(fields: [batchId], references: [id])
   period              PreschoolInputAssessmentPeriod    @relation(fields: [periodId], references: [id], onDelete: Cascade)
 

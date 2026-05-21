@@ -9,7 +9,7 @@ import {
 
 interface Period { id: string; code: string; name: string; status: string; startDate?: string; endDate?: string; description?: string; assignedUserId?: string; surveyType?: string; batches: Batch[] }
 interface Batch { id: string; periodId: string; batchNumber: number; name: string; startDate: string; endDate: string; status: string; campusId?: string; assignedUserId?: string }
-interface PreschoolChild { id: string; studentCode: string; fullName: string; dateOfBirth?: string; gender?: string; grade?: string; admissionCriteria?: string; surveyFormType?: string; admissionResult?: string; admissionCampus?: string; periodId: string; batchId?: string; }
+interface PreschoolChild { id: string; studentCode: string; fullName: string; dateOfBirth?: string; gender?: string; grade?: string; admissionCriteria?: string; surveyFormType?: string; admissionResult?: string; admissionCampus?: string; periodId: string; batchId?: string; devProfessionalComment?: string; devPsychologyComment?: string; devImportantNote?: string; devAssessmentResult?: string; }
 interface Camp { id: string; campusName: string }
 interface AcademicYear { id: string; name: string }
 interface AssessmentConfig { id: string; categoryType: string; code: string; name: string; sortOrder: number }
@@ -92,6 +92,10 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   const [devLoading, setDevLoading] = useState(false);
   const [studentScores, setStudentScores] = useState<Record<string, { result: string; note: string }>>({});
   const [savingEval, setSavingEval] = useState(false);
+  const [devProfComment, setDevProfComment] = useState("");
+  const [devPsyComment, setDevPsyComment] = useState("");
+  const [devNote, setDevNote] = useState("");
+  const [devResult, setDevResult] = useState("");
 
   // Summary scores for students list
   const [studentSummaries, setStudentSummaries] = useState<any[]>([]);
@@ -264,6 +268,10 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   const openEvaluation = async (student: any) => {
     setEvalStudent(student);
     setStudentScores({});
+    setDevProfComment(student.devProfessionalComment || "");
+    setDevPsyComment(student.devPsychologyComment || "");
+    setDevNote(student.devImportantNote || "");
+    setDevResult(student.devAssessmentResult || "");
     setEvalModal(true);
     setDevLoading(true);
     try {
@@ -301,7 +309,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
       const r = await fetch("/api/preschool-dev-scores", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ studentId: evalStudent.id, scores: scoresPayload })
+        body: JSON.stringify({ studentId: evalStudent.id, scores: scoresPayload, devProfessionalComment: devProfComment, devPsychologyComment: devPsyComment, devImportantNote: devNote, devAssessmentResult: devResult })
       });
       if (r.ok) {
         setEvalModal(false);
@@ -1435,6 +1443,67 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                   </div>
                 </div>
               ))}
+
+              {/* ĐÁNH GIÁ CHUNG */}
+              <div className="mt-6 rounded-2xl border border-dashed border-rose-200 bg-gradient-to-br from-rose-50/60 to-pink-50/60 p-5 space-y-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-2.5 h-2.5 rounded-full bg-rose-400"></div>
+                  <h4 className="text-xs font-black text-rose-600 uppercase tracking-widest">ĐÁNH GIÁ CHUNG</h4>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Đánh giá chuyên môn</label>
+                  <textarea
+                    value={devProfComment}
+                    onChange={e => setDevProfComment(e.target.value)}
+                    rows={3}
+                    placeholder="Nhận xét về sự phát triển chuyên môn của trẻ..."
+                    className="w-full bg-white border border-rose-100 rounded-xl px-4 py-2.5 text-xs font-medium outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100 transition-all resize-none placeholder:text-slate-300"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Đánh giá tâm lý</label>
+                  <textarea
+                    value={devPsyComment}
+                    onChange={e => setDevPsyComment(e.target.value)}
+                    rows={3}
+                    placeholder="Nhận xét về trạng thái tâm lý, cảm xúc của trẻ..."
+                    className="w-full bg-white border border-rose-100 rounded-xl px-4 py-2.5 text-xs font-medium outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100 transition-all resize-none placeholder:text-slate-300"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Lưu ý quan trọng</label>
+                  <textarea
+                    value={devNote}
+                    onChange={e => setDevNote(e.target.value)}
+                    rows={2}
+                    placeholder="Những điểm cần lưu ý đặc biệt..."
+                    className="w-full bg-white border border-amber-100 rounded-xl px-4 py-2.5 text-xs font-medium outline-none focus:border-amber-300 focus:ring-2 focus:ring-amber-100 transition-all resize-none placeholder:text-slate-300"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">KẾT LUẬN</label>
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setDevResult(devResult === "DAT" ? "" : "DAT")}
+                      className={`flex-1 py-3 rounded-xl border-2 text-sm font-black transition-all duration-200 ${devResult === "DAT" ? "bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-100" : "border-emerald-200 text-emerald-600 hover:bg-emerald-50"}`}
+                    >
+                      ✓ ĐẠT
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDevResult(devResult === "KHONG_DAT" ? "" : "KHONG_DAT")}
+                      className={`flex-1 py-3 rounded-xl border-2 text-sm font-black transition-all duration-200 ${devResult === "KHONG_DAT" ? "bg-rose-500 border-rose-500 text-white shadow-lg shadow-rose-100" : "border-rose-200 text-rose-600 hover:bg-rose-50"}`}
+                    >
+                      ✗ KHÔNG ĐẠT
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
