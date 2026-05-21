@@ -105,14 +105,17 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
         if (crit.code.endsWith("_01") || crit.name.toLowerCase().includes("chiều cao")) {
           const score = studentScores[crit.id];
           if (score && score.note) {
-            const num = parseFloat(score.note.replace(/[^\d.]/g, ""));
+            // Handle pipe separator: "110 cm|obs text" -> parse only the measurement part
+            const rawPart = score.note.includes("|") ? score.note.split("|")[0] : score.note;
+            const num = parseFloat(rawPart.replace(/[^\d.]/g, ""));
             if (!isNaN(num) && num > 0) height = num;
           }
         }
         if (crit.code.endsWith("_02") || crit.name.toLowerCase().includes("cân nặng")) {
           const score = studentScores[crit.id];
           if (score && score.note) {
-            const num = parseFloat(score.note.replace(/[^\d.]/g, ""));
+            const rawPart = score.note.includes("|") ? score.note.split("|")[0] : score.note;
+            const num = parseFloat(rawPart.replace(/[^\d.]/g, ""));
             if (!isNaN(num) && num > 0) weight = num;
           }
         }
@@ -1434,73 +1437,157 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                     })()}
                   </div>
                   <div className="divide-y divide-slate-100 p-4 space-y-4">
-                    {area.criteria.map((crit, idx) => (
-                      <div key={crit.id} className="pt-3 first:pt-0">
-                        <p className="text-sm font-bold text-slate-700 flex items-start gap-2">
-                          <span className="font-mono text-xs text-slate-400 font-normal">#{idx+1}</span>
-                          {crit.name}
-                        </p>
-                        
-                        {/* Radio selection */}
-                        <div className="flex flex-wrap gap-4 mt-2">
-                          {[
-                            { key: "CHUA_THE_HIEN", label: "Chưa thể hiện", color: "peer-checked:bg-slate-100 peer-checked:text-slate-700 border-slate-200" },
-                            { key: "DAT", label: "Đạt", color: "peer-checked:bg-emerald-50 peer-checked:text-emerald-700 peer-checked:border-emerald-200 border-slate-200" },
-                            { key: "KHONG_DAT", label: "Không đạt", color: "peer-checked:bg-rose-50 peer-checked:text-rose-700 peer-checked:border-rose-200 border-slate-200" }
-                          ].map(opt => (
-                            <label key={opt.key} className="relative flex items-center cursor-pointer">
-                              <input
-                                type="radio"
-                                name={`crit-${crit.id}`}
-                                checked={studentScores[crit.id]?.result === opt.key}
-                                onChange={() => setStudentScores(prev => ({
-                                  ...prev,
-                                  [crit.id]: {
-                                    result: opt.key,
-                                    note: prev[crit.id]?.note || ""
+                    {area.criteria.map((crit, idx) => {
+                      const isHeight = crit.code?.endsWith("_01") || crit.name?.toLowerCase().includes("chiều cao");
+                      const isWeight = crit.code?.endsWith("_02") || crit.name?.toLowerCase().includes("cân nặng");
+                      const isPhysical = isHeight || isWeight;
+                      const unit = isHeight ? "cm" : "kg";
+
+                      // Parse note with pipe separator: "110 cm|obs text"
+                      const rawNote = studentScores[crit.id]?.note || "";
+                      const pipeIdx = rawNote.indexOf("|");
+                      const rawMeasure = pipeIdx >= 0 ? rawNote.substring(0, pipeIdx) : rawNote;
+                      const rawObs = pipeIdx >= 0 ? rawNote.substring(pipeIdx + 1) : "";
+                      const parsedNum = parseFloat(rawMeasure.replace(/[^\d.]/g, ""));
+                      const numStr = (isPhysical && !isNaN(parsedNum) && parsedNum > 0) ? String(parsedNum) : "";
+
+                      const updatePhysical = (newNum: string, newObs: string) => {
+                        let combined = "";
+                        if (newNum && newObs) combined = `${newNum} ${unit}|${newObs}`;
+                        else if (newNum) combined = `${newNum} ${unit}`;
+                        else if (newObs) combined = `|${newObs}`;
+                        setStudentScores(prev => ({
+                          ...prev,
+                          [crit.id]: { result: prev[crit.id]?.result || "CHUA_THE_HIEN", note: combined }
+                        }));
+                      };
+
+                      const radioOpts = [
+                        { key: "CHUA_THE_HIEN", label: "Chưa thể hiện", color: "peer-checked:bg-slate-100 peer-checked:text-slate-700 border-slate-200" },
+                        { key: "DAT", label: "Đạt", color: "peer-checked:bg-emerald-50 peer-checked:text-emerald-700 peer-checked:border-emerald-200 border-slate-200" },
+                        { key: "KHONG_DAT", label: "Không đạt", color: "peer-checked:bg-rose-50 peer-checked:text-rose-700 peer-checked:border-rose-200 border-slate-200" }
+                      ];
+
+                      return (
+                        <div key={crit.id} className="pt-3 first:pt-0">
+                          <p className="text-sm font-bold text-slate-700 flex items-start gap-2">
+                            <span className="font-mono text-xs text-slate-400 font-normal">#{idx+1}</span>
+                            {crit.name}
+                          </p>
+
+                          {isPhysical ? (
+                            <>
+                              {/* Dedicated numeric measurement input */}
+                              <div className="mt-2.5 flex flex-wrap items-center gap-3">
+                                <div className="flex items-center bg-white border-2 border-violet-200 rounded-2xl overflow-hidden hover:border-violet-400 focus-within:border-violet-500 focus-within:ring-4 focus-within:ring-violet-100 transition-all shadow-sm">
+                                  <input
+                                    type="number"
+                                    step={isHeight ? "1" : "0.1"}
+                                    min="0"
+                                    max={isHeight ? "250" : "150"}
+                                    value={numStr}
+                                    onChange={e => updatePhysical(e.target.value, rawObs)}
+                                    placeholder={isHeight ? "0" : "0.0"}
+                                    className="w-24 text-xl font-black text-slate-800 outline-none bg-transparent text-center px-3 py-2.5 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                  />
+                                  <div className="px-3.5 py-2.5 bg-violet-50 border-l-2 border-violet-200 text-sm font-black text-violet-600 select-none min-w-[48px] text-center">
+                                    {unit}
+                                  </div>
+                                </div>
+
+                                {/* BMI live display — shown on weight row */}
+                                {isWeight && (() => {
+                                  const bmiVal = calculateBMI();
+                                  const bmiClass = bmiVal ? getBMIClassification(bmiVal) : null;
+                                  if (!bmiVal || !bmiClass) {
+                                    return (
+                                      <div className="flex items-center gap-2 px-3.5 py-2.5 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                                        <span className="text-xs font-black text-slate-400 uppercase tracking-wider">BMI:</span>
+                                        <span className="text-sm font-black text-slate-300 font-mono">--</span>
+                                        <span className="text-[10px] text-slate-300">(nhập chiều cao trước)</span>
+                                      </div>
+                                    );
                                   }
-                                }))}
-                                className="sr-only peer"
+                                  return (
+                                    <div className={`flex items-center gap-2 px-3.5 py-2.5 rounded-2xl border font-black animate-in fade-in zoom-in-95 duration-300 ${bmiClass.color}`}>
+                                      <div className={`w-2.5 h-2.5 rounded-full animate-pulse flex-shrink-0 ${bmiClass.dot}`} />
+                                      <span className="text-[11px] uppercase tracking-wider">BMI:</span>
+                                      <span className="text-lg font-mono">{bmiVal.toFixed(1)}</span>
+                                      <span className="text-[11px] opacity-80">— {bmiClass.label}</span>
+                                    </div>
+                                  );
+                                })()}
+                              </div>
+
+                              {/* Radio buttons */}
+                              <div className="flex flex-wrap gap-3 mt-3">
+                                {radioOpts.map(opt => (
+                                  <label key={opt.key} className="relative flex items-center cursor-pointer">
+                                    <input
+                                      type="radio"
+                                      name={`crit-${crit.id}`}
+                                      checked={studentScores[crit.id]?.result === opt.key}
+                                      onChange={() => setStudentScores(prev => ({
+                                        ...prev,
+                                        [crit.id]: { result: opt.key, note: prev[crit.id]?.note || "" }
+                                      }))}
+                                      className="sr-only peer"
+                                    />
+                                    <span className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all peer-checked:ring-2 peer-checked:ring-violet-500/20 ${opt.color}`}>
+                                      {opt.label}
+                                    </span>
+                                  </label>
+                                ))}
+                              </div>
+
+                              {/* Observation note */}
+                              <input
+                                type="text"
+                                value={rawObs}
+                                onChange={e => updatePhysical(numStr, e.target.value)}
+                                placeholder="Ghi chú quan sát..."
+                                className="mt-2 w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-1.5 text-xs font-medium outline-none focus:border-violet-400 focus:bg-white transition-all"
                               />
-                              <span className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all peer-checked:ring-2 peer-checked:ring-violet-500/20 ${opt.color}`}>
-                                {opt.label}
-                              </span>
-                            </label>
-                          ))}
+                            </>
+                          ) : (
+                            <>
+                              {/* Standard radio buttons */}
+                              <div className="flex flex-wrap gap-4 mt-2">
+                                {radioOpts.map(opt => (
+                                  <label key={opt.key} className="relative flex items-center cursor-pointer">
+                                    <input
+                                      type="radio"
+                                      name={`crit-${crit.id}`}
+                                      checked={studentScores[crit.id]?.result === opt.key}
+                                      onChange={() => setStudentScores(prev => ({
+                                        ...prev,
+                                        [crit.id]: { result: opt.key, note: prev[crit.id]?.note || "" }
+                                      }))}
+                                      className="sr-only peer"
+                                    />
+                                    <span className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all peer-checked:ring-2 peer-checked:ring-violet-500/20 ${opt.color}`}>
+                                      {opt.label}
+                                    </span>
+                                  </label>
+                                ))}
+                              </div>
+
+                              {/* Standard note input */}
+                              <input
+                                type="text"
+                                value={rawNote}
+                                onChange={e => setStudentScores(prev => ({
+                                  ...prev,
+                                  [crit.id]: { result: prev[crit.id]?.result || "CHUA_THE_HIEN", note: e.target.value }
+                                }))}
+                                placeholder="Nhập ghi chú quan sát..."
+                                className="mt-2 w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-1.5 text-xs font-medium outline-none focus:border-violet-400 focus:bg-white transition-all"
+                              />
+                            </>
+                          )}
                         </div>
-
-                        {/* Note input */}
-                        <input
-                          type="text"
-                          value={studentScores[crit.id]?.note || ""}
-                          onChange={e => {
-                            const val = e.target.value;
-                            setStudentScores(prev => ({
-                              ...prev,
-                              [crit.id]: {
-                                result: prev[crit.id]?.result || "CHUA_THE_HIEN",
-                                note: val
-                              }
-                            }));
-                          }}
-                          placeholder="Nhập ghi chú quan sát..."
-                          className="mt-2 w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-1.5 text-xs font-medium outline-none focus:border-violet-400 focus:bg-white transition-all"
-                        />
-
-                        {/* BMI dynamic indicator */}
-                        {(crit.code?.endsWith("_02") || crit.name?.toLowerCase().includes("cân nặng")) && (() => {
-                          const bmiVal = calculateBMI();
-                          const bmiClass = bmiVal ? getBMIClassification(bmiVal) : null;
-                          if (!bmiVal || !bmiClass) return null;
-                          return (
-                            <div className="mt-2 text-[11px] font-bold text-violet-600 flex items-center gap-1.5 bg-violet-50/50 border border-violet-100 rounded-xl px-3 py-1.5 animate-in slide-in-from-top-1 duration-200">
-                              <Sparkles className="w-3.5 h-3.5 text-violet-500 animate-pulse" />
-                              <span>Chỉ số BMI tự động: <span className="font-mono font-black">{bmiVal.toFixed(2)}</span> ({bmiClass.label})</span>
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               ))}
