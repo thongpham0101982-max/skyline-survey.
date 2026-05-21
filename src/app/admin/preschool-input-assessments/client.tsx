@@ -321,7 +321,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
       const scoresRes = await fetch(`/api/preschool-dev-scores?studentId=${student.id}`);
       if (scoresRes.ok) {
         const scoredList = await scoresRes.json();
-        const scoreMap = {};
+        const scoreMap: Record<string, { result: string; note: string }> = {};
         for (const sc of scoredList) {
           scoreMap[sc.criteriaId] = { result: sc.result, note: sc.note || "" };
         }
@@ -1424,7 +1424,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                       <div className="w-3 h-3 rounded-full" style={{ backgroundColor: area.color || "#6366f1" }} />
                       <h4 className="font-black text-slate-800 text-sm uppercase tracking-wide">{area.name}</h4>
                     </div>
-                    {area.code === "THE_CHAT" && (() => {
+                    {(area.code === "THE_CHAT" || area.name?.toLowerCase().includes("thể chất")) && (() => {
                       const bmiVal = calculateBMI();
                       const bmiClass = bmiVal ? getBMIClassification(bmiVal) : null;
                       if (!bmiVal || !bmiClass) return null;
@@ -1438,7 +1438,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                   </div>
                   <div className="divide-y divide-slate-100 p-4 space-y-4">
                     {area.criteria.map((crit, idx) => {
-                      const isTheChat = area.code === "THE_CHAT" || area.name?.toLowerCase().includes("thể chất");
+                      const isTheChat = area.code === "THE_CHAT" || area.code?.includes("THE_CHAT") || area.name?.toLowerCase().includes("thể chất");
                       const isHeight = isTheChat && (crit.code?.endsWith("_01") || crit.name?.toLowerCase().includes("chiều cao"));
                       const isWeight = isTheChat && (crit.code?.endsWith("_02") || crit.name?.toLowerCase().includes("cân nặng"));
                       const isPhysical = isHeight || isWeight;

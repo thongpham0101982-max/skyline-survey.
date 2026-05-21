@@ -2281,7 +2281,7 @@ ${reportForm.directorNote}`;
       }
       
       stat.total++;
-      if (s.admissionResult === "Đạt") {
+      if (s.admissionResult === "Đạt" || s.admissionResult === "Học thử") {
         stat.passed++;
       } else if (s.admissionResult === "Không đạt") {
         stat.failed++;
@@ -2305,7 +2305,7 @@ ${reportForm.directorNote}`;
     let pending = 0;
     
     filteredReportStudents.forEach(s => {
-      if (s.admissionResult === "Đạt") passed++;
+      if (s.admissionResult === "Đạt" || s.admissionResult === "Học thử") passed++;
       else if (s.admissionResult === "Không đạt") failed++;
       else if (s.admissionResult === "Đạt cam kết") committed++;
       else pending++;
@@ -4874,6 +4874,7 @@ return {
                       <option value="Đạt">Đạt</option>
                       <option value="Không đạt">Không đạt</option>
                       <option value="Đạt cam kết">Đạt cam kết</option>
+                      <option value="Học thử">Học thử</option>
                     </select>
                   </Field>
 
@@ -6820,6 +6821,7 @@ return {
                               s.admissionResult === "Đạt" ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
                               s.admissionResult === "Đạt cam kết" ? "bg-amber-50 text-amber-600 border border-amber-100" :
                               s.admissionResult === "Không đạt" ? "bg-rose-50 text-rose-600 border border-rose-100" :
+                              s.admissionResult === "Học thử" ? "bg-indigo-50 text-indigo-600 border border-indigo-100" :
                               "bg-slate-50 text-slate-500"
                             }`}>
                               {s.admissionResult || "Chưa duyệt"}

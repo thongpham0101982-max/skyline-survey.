@@ -24,8 +24,8 @@ export async function POST(req: Request) {
     const rowsHtml = students.map((s, idx) => {
       const dob = s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—";
       const gender = s.gender === "M" || s.gender === "Nam" ? "Nam" : s.gender === "F" || s.gender === "Nữ" ? "Nữ" : s.gender || "—";
-      const resultColor = s.admissionResult === "Đạt" ? "#059669" : s.admissionResult === "Đạt cam kết" ? "#d97706" : s.admissionResult === "Không đạt" ? "#dc2626" : "#4b5563";
-      const resultBg = s.admissionResult === "Đạt" ? "#ecfdf5" : s.admissionResult === "Đạt cam kết" ? "#fef3c7" : s.admissionResult === "Không đạt" ? "#fef2f2" : "#f3f4f6";
+      const resultColor = s.admissionResult === "Đạt" ? "#059669" : s.admissionResult === "Đạt cam kết" ? "#d97706" : s.admissionResult === "Không đạt" ? "#dc2626" : s.admissionResult === "Học thử" ? "#4f46e5" : "#4b5563";
+      const resultBg = s.admissionResult === "Đạt" ? "#ecfdf5" : s.admissionResult === "Đạt cam kết" ? "#fef3c7" : s.admissionResult === "Không đạt" ? "#fef2f2" : s.admissionResult === "Học thử" ? "#e0e7ff" : "#f3f4f6";
       
       let attachmentsHtml = "—";
       if (s.admissionResult === "Đạt" || s.admissionResult === "Đạt cam kết") {
