@@ -24,11 +24,17 @@ export async function GET(req: NextRequest) {
 
       const students = await (prisma as any).preschoolInputAssessmentStudent.findMany({
         where,
-        select: { id: true, studentCode: true, fullName: true, grade: true, gender: true, dateOfBirth: true, admissionCampus: true, batchId: true, devProfessionalComment: true, devPsychologyComment: true, devImportantNote: true, devAssessmentResult: true }
+        select: { id: true, studentCode: true, fullName: true, grade: true, gender: true, dateOfBirth: true, admissionCampus: true, batchId: true, devProfessionalComment: true, devPsychologyComment: true, devImportantNote: true, devAssessmentResult: true, admissionResult: true }
       })
 
       const studentIds = students.map((s: any) => s.id)
       
+      // Fetch all scores for all students in this period
+      const scores = await (prisma as any).preschoolDevScore.findMany({
+        where: { studentId: { in: studentIds } },
+        include: { criteria: { include: { area: true } } }
+      })
+
       // Count scores per student
       const scoreCounts = await (prisma as any).preschoolDevScore.groupBy({
         by: ["studentId"],
@@ -52,11 +58,67 @@ export async function GET(req: NextRequest) {
         criteriaMap[cc.ageGroup] = cc._count.id
       }
 
-      const result = students.map((s: any) => ({
-        ...s,
-        scoredCount: scoreMap[s.id] || 0,
-        totalCriteria: criteriaMap[s.grade || ""] || 0
-      }))
+      // Map scores by studentId
+      const studentScoresMap: Record<string, any[]> = {}
+      for (const sc of scores) {
+        if (!studentScoresMap[sc.studentId]) {
+          studentScoresMap[sc.studentId] = []
+        }
+        studentScoresMap[sc.studentId].push(sc)
+      }
+
+      const result = students.map((s: any) => {
+        const studentScoresList = studentScoresMap[s.id] || []
+        
+        const theChatScores = studentScoresList.filter((sc: any) => sc.criteria?.area?.code === "THE_CHAT")
+        const nhanThucScores = studentScoresList.filter((sc: any) => sc.criteria?.area?.code === "NHAN_THUC")
+        const ngonNguScores = studentScoresList.filter((sc: any) => sc.criteria?.area?.code === "NGON_NGU")
+        const tinhCamXhTmScores = studentScoresList.filter((sc: any) => sc.criteria?.area?.code === "TINH_CAM_XH_TM")
+
+        const formatSummary = (arr: any[]) => {
+          if (arr.length === 0) return "Chưa đánh giá"
+          return arr.map(sc => {
+            const critName = sc.criteria?.name || ""
+            const resLabel = sc.result === "DAT" ? "Đạt" : sc.result === "KHONG_DAT" ? "Không đạt" : "Chưa thể hiện"
+            let noteText = ""
+            if (sc.note) {
+              if (sc.note.includes("|")) {
+                const parts = sc.note.split("|")
+                const metric = parts[0]?.trim()
+                const obs = parts[1]?.trim()
+                noteText = metric && obs ? `(${metric} - ${obs})` : metric ? `(${metric})` : `(${obs})`
+              } else {
+                noteText = `(${sc.note})`
+              }
+            }
+            return `${critName}: ${resLabel} ${noteText}`.trim()
+          }).join("; ")
+        }
+
+        const teacherComment = [
+          s.devProfessionalComment ? `Chuyên môn: ${s.devProfessionalComment}` : "",
+          s.devPsychologyComment ? `Tâm lý: ${s.devPsychologyComment}` : "",
+          s.devImportantNote ? `Lưu ý: ${s.devImportantNote}` : ""
+        ].filter(Boolean).join(". ")
+
+        let generalResult = s.devAssessmentResult
+        if (s.devAssessmentResult === "DAT") generalResult = "Đạt"
+        else if (s.devAssessmentResult === "KHONG_DAT") generalResult = "Không đạt"
+        else if (s.devAssessmentResult === "HOC_THU") generalResult = "Học thử"
+        else if (!generalResult) generalResult = s.admissionResult || "Chưa"
+
+        return {
+          ...s,
+          scoredCount: scoreMap[s.id] || 0,
+          totalCriteria: criteriaMap[s.grade || ""] || 0,
+          theChatSummary: formatSummary(theChatScores),
+          nhanThucSummary: formatSummary(nhanThucScores),
+          ngonNguSummary: formatSummary(ngonNguScores),
+          tinhCamXhTmSummary: formatSummary(tinhCamXhTmScores),
+          teacherComment,
+          generalResult
+        }
+      })
 
       return NextResponse.json(result)
     }
@@ -100,6 +162,17 @@ export async function POST(req: NextRequest) {
       results.push(upserted)
     }
 
+    let admissionResult = undefined
+    if (devAssessmentResult === "DAT") {
+      admissionResult = "Đạt"
+    } else if (devAssessmentResult === "KHONG_DAT") {
+      admissionResult = "Không đạt"
+    } else if (devAssessmentResult === "HOC_THU") {
+      admissionResult = "Học thử"
+    } else if (devAssessmentResult === "") {
+      admissionResult = ""
+    }
+
     // Save general comments to student record
     await (prisma as any).preschoolInputAssessmentStudent.update({
       where: { id: studentId },
@@ -108,6 +181,7 @@ export async function POST(req: NextRequest) {
         devPsychologyComment: devPsychologyComment !== undefined ? devPsychologyComment : undefined,
         devImportantNote: devImportantNote !== undefined ? devImportantNote : undefined,
         devAssessmentResult: devAssessmentResult !== undefined ? devAssessmentResult : undefined,
+        admissionResult: admissionResult !== undefined ? admissionResult : undefined,
       }
     })
     return NextResponse.json({ success: true, count: results.length })

@@ -364,6 +364,49 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
     }
   };
 
+  const exportDevExcel = () => {
+    if (studentSummaries.length === 0) return;
+    try {
+      const exportData = studentSummaries
+        .filter(s => !cSearch || s.studentCode.toLowerCase().includes(cSearch.toLowerCase()) || s.fullName.toLowerCase().includes(cSearch.toLowerCase()))
+        .map((s, idx) => ({
+          "STT": idx + 1,
+          "Mã bé": s.studentCode,
+          "Họ và tên": s.fullName,
+          "Ngày sinh": s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—",
+          "Giới tính": s.gender || "—",
+          "Nhóm tuổi": s.grade || "—",
+          "Cơ sở": s.admissionCampus || "—",
+          "Thể chất": s.theChatSummary || "Chưa đánh giá",
+          "Nhận thức": s.nhanThucSummary || "Chưa đánh giá",
+          "Ngôn ngữ": s.ngonNguSummary || "Chưa đánh giá",
+          "Tình cảm - Kỹ năng XH - TM": s.tinhCamXhTmSummary || "Chưa đánh giá",
+          "Giáo viên đánh giá": s.teacherComment || "Chưa có nhận xét",
+          "Đánh giá chung": s.generalResult || "Chưa duyệt"
+        }));
+
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      
+      const maxLens = Object.keys(exportData[0] || {}).map(key => {
+        let maxLen = key.length;
+        for (const row of exportData) {
+          const val = String((row as any)[key] || "");
+          if (val.length > maxLen) maxLen = val.length;
+        }
+        return { wch: Math.min(Math.max(maxLen + 3, 10), 50) };
+      });
+      ws['!cols'] = maxLens;
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Xet_Duyet_Hoc_Thu");
+      XLSX.writeFile(wb, `Xet_Duyet_Hoc_Thu_Mam_Non_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      notify("Xuất Excel thành công!");
+    } catch (e) {
+      console.error(e);
+      notify("Lỗi khi xuất Excel", "err");
+    }
+  };
+
   const openAddCriteria = (areaId: string) => {
     setEditCriteria(null);
     setCriteriaForm({ areaId, code: "", name: "", ageGroup: ageGroupFilter });
@@ -862,6 +905,13 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                   </select>
                 </div>
                 <button onClick={fetchStudentSummaries} className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-violet-600 bg-violet-50 hover:bg-violet-100 rounded-xl border border-violet-100"><Search className="w-4 h-4" /> Tìm</button>
+                <button
+                  onClick={exportDevExcel}
+                  disabled={studentSummaries.length === 0}
+                  className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl border border-emerald-100 disabled:opacity-50 transition-all shadow-sm"
+                >
+                  <Download className="w-4 h-4" /> Xuất Excel Đánh Giá
+                </button>
                 <div className="ml-auto relative"><Search className="w-4 h-4 text-slate-300 absolute left-3 top-1/2 -translate-y-1/2" /><input value={cSearch} onChange={e => setCSearch(e.target.value)} placeholder="Tìm bé..." className="pl-9 pr-4 py-2 border border-violet-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-violet-300 min-w-[200px]" /></div>
               </div>
 
@@ -873,7 +923,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                     <table className="w-full text-left whitespace-nowrap">
                       <thead className="bg-violet-50 border-b border-violet-100">
                         <tr>
-                          {["STT", "Mã bé", "Họ và tên", "Ngày sinh", "Nhóm tuổi", "Tiến độ", "Trạng thái", "Thao tác"].map(h => (
+                          {["STT", "Mã bé", "Họ và tên", "Ngày sinh", "Giới tính", "Nhóm tuổi", "Cơ sở", "Thể chất", "Nhận thức", "Ngôn ngữ", "Tình cảm - Kỹ năng XH - TM", "Giáo viên đánh giá", "Đánh giá chung", "Thao tác"].map(h => (
                             <th key={h} className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">{h}</th>
                           ))}
                         </tr>
@@ -882,29 +932,46 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                         {studentSummaries
                           .filter(s => !cSearch || s.studentCode.toLowerCase().includes(cSearch.toLowerCase()) || s.fullName.toLowerCase().includes(cSearch.toLowerCase()))
                           .map((s, idx) => {
-                            const pct = s.totalCriteria > 0 ? Math.round((s.scoredCount / s.totalCriteria) * 100) : 0;
-                            const statusBadge = () => {
-                              if (s.totalCriteria === 0) return <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100">Không có tiêu chí</span>;
-                              if (s.scoredCount === s.totalCriteria) return <span className="text-[10px] font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">🟢 Hoàn tất</span>;
-                              if (s.scoredCount > 0) return <span className="text-[10px] font-black text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-100">🟡 Đang chấm</span>;
-                              return <span className="text-[10px] font-black text-slate-500 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-200">⚪ Chưa đánh giá</span>;
+                            const getResultBadge = (res: string) => {
+                              if (res === "Đạt" || res === "DAT") {
+                                return <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">✓ ĐẠT</span>;
+                              }
+                              if (res === "Không đạt" || res === "KHONG_DAT") {
+                                return <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-rose-50 text-rose-600 border border-rose-100">✗ KHÔNG ĐẠT</span>;
+                              }
+                              if (res === "Học thử" || res === "HOC_THU") {
+                                return <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100">★ HỌC THỬ</span>;
+                              }
+                              return <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-slate-50 text-slate-400 border border-slate-200">Chưa duyệt</span>;
                             };
+
+                            const renderCellWithTooltip = (text: string) => {
+                              const isDefault = text === "Chưa đánh giá" || !text;
+                              return (
+                                <td 
+                                  className={`p-4 text-xs font-medium max-w-[200px] truncate ${isDefault ? 'text-slate-300' : 'text-slate-600'}`} 
+                                  title={text || ""}
+                                >
+                                  {text || "—"}
+                                </td>
+                              );
+                            };
+
                             return (
                               <tr key={s.id} className="hover:bg-violet-50/30 transition-colors">
                                 <td className="p-4 text-slate-400 text-sm">{idx + 1}</td>
                                 <td className="p-4"><span className="font-mono text-xs font-black text-violet-600 bg-violet-50 px-2 py-1 rounded-lg">{s.studentCode}</span></td>
                                 <td className="p-4 font-bold text-slate-800 text-sm">{s.fullName}</td>
                                 <td className="p-4 text-sm text-slate-500">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
+                                <td className="p-4 text-sm text-slate-600">{s.gender || "—"}</td>
                                 <td className="p-4"><span className="text-xs font-bold text-purple-700 bg-purple-50 px-2 py-1 rounded-lg border border-purple-100">{s.grade || "—"}</span></td>
-                                <td className="p-4">
-                                  <div className="flex items-center gap-2">
-                                    <div className="w-24 bg-slate-100 h-2 rounded-full overflow-hidden">
-                                      <div className="h-full bg-gradient-to-r from-violet-500 to-fuchsia-400 rounded-full" style={{ width: `${pct}%` }} />
-                                    </div>
-                                    <span className="text-[10px] font-black text-violet-600">{s.scoredCount}/{s.totalCriteria}</span>
-                                  </div>
-                                </td>
-                                <td className="p-4">{statusBadge()}</td>
+                                <td className="p-4 text-sm text-slate-600">{s.admissionCampus || "—"}</td>
+                                {renderCellWithTooltip(s.theChatSummary)}
+                                {renderCellWithTooltip(s.nhanThucSummary)}
+                                {renderCellWithTooltip(s.ngonNguSummary)}
+                                {renderCellWithTooltip(s.tinhCamXhTmSummary)}
+                                {renderCellWithTooltip(s.teacherComment)}
+                                <td className="p-4">{getResultBadge(s.generalResult)}</td>
                                 <td className="p-4">
                                   <button
                                     onClick={() => openEvaluation(s)}
@@ -1661,6 +1728,13 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                       className={`flex-1 py-3 rounded-xl border-2 text-sm font-black transition-all duration-200 ${devResult === "KHONG_DAT" ? "bg-rose-500 border-rose-500 text-white shadow-lg shadow-rose-100" : "border-rose-200 text-rose-600 hover:bg-rose-50"}`}
                     >
                       ✗ KHÔNG ĐẠT
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDevResult(devResult === "HOC_THU" ? "" : "HOC_THU")}
+                      className={`flex-1 py-3 rounded-xl border-2 text-sm font-black transition-all duration-200 ${devResult === "HOC_THU" ? "bg-indigo-500 border-indigo-500 text-white shadow-lg shadow-indigo-100" : "border-indigo-200 text-indigo-600 hover:bg-indigo-50"}`}
+                    >
+                      ★ HỌC THỬ
                     </button>
                   </div>
                 </div>
