@@ -57,9 +57,10 @@ const newCriteria = [
   { areaCode: 'THE_CHAT', code: 'TC_MGN_03', name: 'Vận động tinh: Cuộn - xoay tròn cổ tay. Gập, mở, các ngón tay.', ageGroup: 'Mẫu giáo nhỡ', sortOrder: 2 },
   { areaCode: 'THE_CHAT', code: 'TC_MGN_04', name: 'Vận động thô: Đi, chạy, nhảy, leo trèo nhanh nhẹn.', ageGroup: 'Mẫu giáo nhỡ', sortOrder: 3 },
   // Mẫu giáo lớn
-  { areaCode: 'THE_CHAT', code: 'TC_MGL_01', name: 'Chạy nhanh 15m trong 5 giây', ageGroup: 'Mẫu giáo lớn', sortOrder: 0 },
-  { areaCode: 'THE_CHAT', code: 'TC_MGL_02', name: 'Viết tên bản thân bằng chữ in hoa', ageGroup: 'Mẫu giáo lớn', sortOrder: 1 },
-  { areaCode: 'THE_CHAT', code: 'TC_MGL_03', name: 'Nhảy dây đơn giản', ageGroup: 'Mẫu giáo lớn', sortOrder: 2 },
+  { areaCode: 'THE_CHAT', code: 'TC_MGL_01', name: 'Sức khỏe - Chiều cao (cm)', ageGroup: 'Mẫu giáo lớn', sortOrder: 0 },
+  { areaCode: 'THE_CHAT', code: 'TC_MGL_02', name: 'Sức khỏe - Cân nặng (Kg)', ageGroup: 'Mẫu giáo lớn', sortOrder: 1 },
+  { areaCode: 'THE_CHAT', code: 'TC_MGL_03', name: 'Vận động tinh: Sử dụng kéo khéo léo cắt theo đường cong; cài, mở cúc áo, thắt dây giày thành thạo.', ageGroup: 'Mẫu giáo lớn', sortOrder: 2 },
+  { areaCode: 'THE_CHAT', code: 'TC_MGL_04', name: 'Vận động thô: Giữ thăng bằng tốt khi đi trên ghế thể dục, nhảy lò cò và chạy đổi hướng nhanh nhẹn.', ageGroup: 'Mẫu giáo lớn', sortOrder: 3 },
 
   // ================= NHAN_THUC =================
   // 18-24 tháng (Exact 4 criteria)
@@ -83,8 +84,11 @@ const newCriteria = [
   { areaCode: 'NHAN_THUC', code: 'NT_MGN_04', name: 'Biết sắp xếp theo qui tắc các đối tượng.', ageGroup: 'Mẫu giáo nhỡ', sortOrder: 3 },
   { areaCode: 'NHAN_THUC', code: 'NT_MGN_05', name: 'Chỉ ra các điểm giống, khác nhau giữa một số hình học.', ageGroup: 'Mẫu giáo nhỡ', sortOrder: 4 },
   // Mẫu giáo lớn
-  { areaCode: 'NHAN_THUC', code: 'NT_MGL_01', name: 'Đếm, nhận biết số từ 1 đến 10', ageGroup: 'Mẫu giáo lớn', sortOrder: 0 },
-  { areaCode: 'NHAN_THUC', code: 'NT_MGL_02', name: 'Giải bài toán cộng trừ trong phạm vi 5', ageGroup: 'Mẫu giáo lớn', sortOrder: 1 },
+  { areaCode: 'NHAN_THUC', code: 'NT_MGL_01', name: 'Tự giới thiệu bản thân, nói được số điện thoại, địa chỉ nhà hoặc thông tin cơ bản của gia đình khi trò chuyện.', ageGroup: 'Mẫu giáo lớn', sortOrder: 0 },
+  { areaCode: 'NHAN_THUC', code: 'NT_MGL_02', name: 'Phân loại các đối tượng theo 2-3 dấu hiệu khác nhau và giải thích được lý do phân loại.', ageGroup: 'Mẫu giáo lớn', sortOrder: 1 },
+  { areaCode: 'NHAN_THUC', code: 'NT_MGL_03', name: 'Đếm, nhận biết chữ số, số lượng và thứ tự trong phạm vi 10 (và hơn theo khả năng).', ageGroup: 'Mẫu giáo lớn', sortOrder: 2 },
+  { areaCode: 'NHAN_THUC', code: 'NT_MGL_04', name: 'Nhận ra và tự tạo quy tắc sắp xếp đơn giản của các đối tượng.', ageGroup: 'Mẫu giáo lớn', sortOrder: 3 },
+  { areaCode: 'NHAN_THUC', code: 'NT_MGL_05', name: 'Nhận biết, phân biệt và chỉ ra các điểm giống, khác nhau giữa các hình khối (hình cầu, hình trụ, hình lập phương, hình chữ nhật).', ageGroup: 'Mẫu giáo lớn', sortOrder: 4 },
 
   // ================= NGON_NGU =================
   // 18-24 tháng (Exact 5 criteria)
@@ -107,8 +111,10 @@ const newCriteria = [
   { areaCode: 'NGON_NGU', code: 'NN_MGN_03', name: 'Hiểu nghĩa từ khái quát: rau quả, con vật, đồ chơi...', ageGroup: 'Mẫu giáo nhỡ', sortOrder: 2 },
   { areaCode: 'NGON_NGU', code: 'NN_MGN_04', name: 'Sử dụng được các từ chỉ sự vật, hoạt động, đặc điểm.', ageGroup: 'Mẫu giáo nhỡ', sortOrder: 3 },
   // Mẫu giáo lớn
-  { areaCode: 'NGON_NGU', code: 'NN_MGL_01', name: 'Nhận biết 29 chữ cái tiếng Việt', ageGroup: 'Mẫu giáo lớn', sortOrder: 0 },
-  { areaCode: 'NGON_NGU', code: 'NN_MGL_02', name: 'Đọc thơ, kể chuyện diễn cảm', ageGroup: 'Mẫu giáo lớn', sortOrder: 1 },
+  { areaCode: 'NGON_NGU', code: 'NN_MGL_01', name: 'Phát âm rõ ràng các âm, từ và nói câu trọn vẹn để người nghe hiểu rõ.', ageGroup: 'Mẫu giáo lớn', sortOrder: 0 },
+  { areaCode: 'NGON_NGU', code: 'NN_MGL_02', name: 'Hiểu và thực hiện tốt chuỗi 3-4 yêu cầu liên tiếp từ người lớn.', ageGroup: 'Mẫu giáo lớn', sortOrder: 1 },
+  { areaCode: 'NGON_NGU', code: 'NN_MGL_03', name: 'Nhận biết đầy đủ 29 chữ cái tiếng Việt và phát âm đúng âm của các chữ cái đó.', ageGroup: 'Mẫu giáo lớn', sortOrder: 2 },
+  { areaCode: 'NGON_NGU', code: 'NN_MGL_04', name: 'Kể lại truyện ngắn hoặc sự việc một cách mạch lạc, có mở đầu và kết thúc rõ ràng.', ageGroup: 'Mẫu giáo lớn', sortOrder: 3 },
 
   // ================= TINH_CAM_XH_TM =================
   // 18-24 tháng (Exact 3 criteria)
