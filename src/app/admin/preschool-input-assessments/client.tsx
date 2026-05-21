@@ -14,6 +14,10 @@ interface Camp { id: string; campusName: string }
 interface AcademicYear { id: string; name: string }
 interface AssessmentConfig { id: string; categoryType: string; code: string; name: string; sortOrder: number }
 
+interface DevArea { id: string; code: string; name: string; description?: string; color?: string; sortOrder: number; criteria: DevCriteria[] }
+interface DevCriteria { id: string; areaId: string; code: string; name: string; ageGroup: string; sortOrder: number; status: string }
+interface DevScore { id: string; studentId: string; criteriaId: string; result: string; note?: string; assessorId?: string }
+
 const inp = "w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-400/10 text-sm font-medium text-slate-700 transition-all shadow-sm";
 
 function Toast({ msg, type }: { msg: string; type: string }) {
@@ -76,6 +80,29 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   const grades = gradesProp && gradesProp.length > 0 ? gradesProp : ["18 đến 24 tháng", "24 đến 36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"];
 
   const [tab, setTab] = useState("periods");
+
+  // Đánh giá phát triển
+  const [devTab, setDevTab] = useState<"assess" | "manage">("assess");
+  const [ageGroupFilter, setAgeGroupFilter] = useState("18 đến 24 tháng");
+  
+  // Đánh giá học sinh
+  const [evalStudent, setEvalStudent] = useState<PreschoolChild | null>(null);
+  const [evalModal, setEvalModal] = useState(false);
+  const [devAreas, setDevAreas] = useState<DevArea[]>([]);
+  const [devLoading, setDevLoading] = useState(false);
+  const [studentScores, setStudentScores] = useState<Record<string, { result: string; note: string }>>({});
+  const [savingEval, setSavingEval] = useState(false);
+
+  // Summary scores for students list
+  const [studentSummaries, setStudentSummaries] = useState<any[]>([]);
+  const [sumLoading, setSumLoading] = useState(false);
+
+  // Quản lý tiêu chí / lĩnh vực
+  const [criteriaModal, setCriteriaModal] = useState(false);
+  const [editCriteria, setEditCriteria] = useState<DevCriteria | null>(null);
+  const [criteriaForm, setCriteriaForm] = useState({ areaId: "", code: "", name: "", ageGroup: "18 đến 24 tháng" });
+  const [savingCriteria, setSavingCriteria] = useState(false);
+  const [expAreaId, setExpAreaId] = useState<string | null>(null);
   const [yearId, setYearId] = useState(academicYears[0]?.id || "");
   const [toast, setToast] = useState<{ msg: string; type: string } | null>(null);
   const [confirm, setConfirm] = useState<{ msg: string; fn: () => void } | null>(null);
@@ -199,6 +226,152 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   }, []);
 
   useEffect(() => { fetchConfigs(); }, [fetchConfigs]);
+
+  // Dev Assess fetches & actions
+  const fetchDevAreas = useCallback(async (ageGroup?: string) => {
+    setDevLoading(true);
+    try {
+      let url = "/api/preschool-dev-areas";
+      if (ageGroup) url += `?ageGroup=${encodeURIComponent(ageGroup)}`;
+      const r = await fetch(url);
+      if (r.ok) setDevAreas(await r.json());
+    } finally { setDevLoading(false); }
+  }, []);
+
+  useEffect(() => {
+    if (tab === "devAssess" && devTab === "manage") {
+      fetchDevAreas(ageGroupFilter);
+    }
+  }, [tab, devTab, ageGroupFilter, fetchDevAreas]);
+
+  const fetchStudentSummaries = useCallback(async () => {
+    if (!cPeriodId) return;
+    setSumLoading(true);
+    try {
+      let url = `/api/preschool-dev-scores?periodId=${cPeriodId}`;
+      if (cBatchId) url += `&batchId=${cBatchId}`;
+      const r = await fetch(url);
+      if (r.ok) setStudentSummaries(await r.json());
+    } finally { setSumLoading(false); }
+  }, [cPeriodId, cBatchId]);
+
+  useEffect(() => {
+    if (tab === "devAssess" && devTab === "assess") {
+      fetchStudentSummaries();
+    }
+  }, [tab, devTab, fetchStudentSummaries]);
+
+  const openEvaluation = async (student: any) => {
+    setEvalStudent(student);
+    setStudentScores({});
+    setEvalModal(true);
+    setDevLoading(true);
+    try {
+      const ageGroup = student.grade || "18 đến 24 tháng";
+      const areasRes = await fetch(`/api/preschool-dev-areas?ageGroup=${encodeURIComponent(ageGroup)}`);
+      if (areasRes.ok) {
+        setDevAreas(await areasRes.json());
+      }
+      const scoresRes = await fetch(`/api/preschool-dev-scores?studentId=${student.id}`);
+      if (scoresRes.ok) {
+        const scoredList = await scoresRes.json();
+        const scoreMap = {};
+        for (const sc of scoredList) {
+          scoreMap[sc.criteriaId] = { result: sc.result, note: sc.note || "" };
+        }
+        setStudentScores(scoreMap);
+      }
+    } catch (e) {
+      console.error(e);
+      notify("Lỗi khi tải thông tin đánh giá", "err");
+    } finally {
+      setDevLoading(false);
+    }
+  };
+
+  const saveEvaluation = async () => {
+    if (!evalStudent) return;
+    setSavingEval(true);
+    try {
+      const scoresPayload = Object.entries(studentScores).map(([criteriaId, val]) => ({
+        criteriaId,
+        result: val.result,
+        note: val.note
+      }));
+      const r = await fetch("/api/preschool-dev-scores", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ studentId: evalStudent.id, scores: scoresPayload })
+      });
+      if (r.ok) {
+        setEvalModal(false);
+        fetchStudentSummaries();
+        notify("Đã lưu kết quả đánh giá");
+      } else {
+        notify("Lỗi khi lưu đánh giá", "err");
+      }
+    } catch (e) {
+      console.error(e);
+      notify("Lỗi", "err");
+    } finally {
+      setSavingEval(false);
+    }
+  };
+
+  const openAddCriteria = (areaId: string) => {
+    setEditCriteria(null);
+    setCriteriaForm({ areaId, code: "", name: "", ageGroup: ageGroupFilter });
+    setCriteriaModal(true);
+  };
+
+  const openEditCriteria = (crit: DevCriteria) => {
+    setEditCriteria(crit);
+    setCriteriaForm({ areaId: crit.areaId, code: crit.code, name: crit.name, ageGroup: crit.ageGroup });
+    setCriteriaModal(true);
+  };
+
+  const saveCriteria = async () => {
+    if (!criteriaForm.code.trim() || !criteriaForm.name.trim()) return notify("Cần nhập đầy đủ thông tin", "err");
+    setSavingCriteria(true);
+    try {
+      const payload = editCriteria
+        ? { action: "UPDATE_CRITERIA", id: editCriteria.id, name: criteriaForm.name, ageGroup: criteriaForm.ageGroup }
+        : { action: "CREATE_CRITERIA", ...criteriaForm };
+      const r = await fetch("/api/preschool-dev-areas", {
+        method: editCriteria ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (r.ok) {
+        setCriteriaModal(false);
+        fetchDevAreas(ageGroupFilter);
+        notify(editCriteria ? "Đã cập nhật tiêu chí" : "Đã thêm tiêu chí mới");
+      } else {
+        const data = await r.json();
+        notify(data.error || "Có lỗi xảy ra", "err");
+      }
+    } catch (e) {
+      console.error(e);
+      notify("Lỗi", "err");
+    } finally {
+      setSavingCriteria(false);
+    }
+  };
+
+  const doDeleteCriteria = async (id: string) => {
+    try {
+      const r = await fetch(`/api/preschool-dev-areas?type=criteria&id=${id}`, { method: "DELETE" });
+      if (r.ok) {
+        fetchDevAreas(ageGroupFilter);
+        notify("Đã xóa tiêu chí");
+      } else {
+        notify("Lỗi khi xóa", "err");
+      }
+    } catch (e) {
+      console.error(e);
+      notify("Lỗi", "err");
+    }
+  };
 
   // Period actions
   const openAddPeriod = async () => {
@@ -401,7 +574,13 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
       {/* Tabs */}
       <div className="bg-white border border-violet-100 shadow-sm rounded-2xl px-1 py-1">
         <div className="flex flex-wrap gap-0.5">
-          {[{ id: "periods", label: "Kỳ KS", icon: Clock }, { id: "categories", label: "Danh mục", icon: Settings }, { id: "children", label: "DS Trẻ", icon: Users }, { id: "reports", label: "Tổng hợp KQKS", icon: BarChart3 }].map(t => (
+          {[
+            { id: "periods", label: "Kỳ KS", icon: Clock },
+            { id: "categories", label: "Danh mục", icon: Settings },
+            { id: "children", label: "DS Trẻ", icon: Users },
+            { id: "devAssess", label: "Đánh giá PT", icon: Star },
+            { id: "reports", label: "Tổng hợp KQKS", icon: BarChart3 }
+          ].map(t => (
             <button key={t.id} onClick={() => setTab(t.id)} className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-[11px] font-bold transition-all duration-200 ${tab === t.id ? "bg-violet-500 text-white shadow-sm" : "text-slate-500 hover:bg-violet-50 hover:text-violet-600"}`}>
               <t.icon className={`w-4 h-4 ${tab === t.id ? "text-white" : "text-slate-400"}`} />
               <span className="hidden sm:inline">{t.label}</span>
@@ -597,6 +776,206 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Tab: Dev Assess */}
+      {tab === "devAssess" && (
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <div className="flex gap-2 border-b border-violet-100 pb-2">
+            <button
+              onClick={() => setDevTab("assess")}
+              className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${devTab === "assess" ? "bg-violet-500 text-white shadow-sm" : "text-slate-500 hover:bg-violet-50"}`}
+            >
+              Đánh giá Trẻ
+            </button>
+            <button
+              onClick={() => setDevTab("manage")}
+              className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${devTab === "manage" ? "bg-violet-500 text-white shadow-sm" : "text-slate-500 hover:bg-violet-50"}`}
+            >
+              Quản lý Tiêu chí & Lĩnh vực
+            </button>
+          </div>
+
+          {/* Sub-tab: Đánh giá Trẻ */}
+          {devTab === "assess" && (
+            <div className="space-y-4">
+              <div className="bg-white rounded-2xl border border-violet-100 shadow-sm p-4 flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Kỳ KS:</label>
+                  <select value={cPeriodId} onChange={e => { setCPeriodId(e.target.value); setCBatchId(""); }} className="border border-violet-100 rounded-xl p-2 text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-violet-300 min-w-[160px]">
+                    <option value="">-- Chọn Kỳ --</option>
+                    {periods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Đợt:</label>
+                  <select value={cBatchId} onChange={e => setCBatchId(e.target.value)} className="border border-violet-100 rounded-xl p-2 text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-violet-300 min-w-[140px]" disabled={!cPeriodId}>
+                    <option value="">Tất cả đợt</option>
+                    {selPeriod?.batches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                  </select>
+                </div>
+                <button onClick={fetchStudentSummaries} className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-violet-600 bg-violet-50 hover:bg-violet-100 rounded-xl border border-violet-100"><Search className="w-4 h-4" /> Tìm</button>
+                <div className="ml-auto relative"><Search className="w-4 h-4 text-slate-300 absolute left-3 top-1/2 -translate-y-1/2" /><input value={cSearch} onChange={e => setCSearch(e.target.value)} placeholder="Tìm bé..." className="pl-9 pr-4 py-2 border border-violet-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-violet-300 min-w-[200px]" /></div>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-violet-100 shadow-sm overflow-hidden">
+                {sumLoading ? <Spin /> : studentSummaries.length === 0 ? (
+                  <Empty text={cPeriodId ? "Chưa có bé nào" : "Vui lòng chọn Kỳ và bấm Tìm"} sub={cPeriodId ? "Hãy thêm học sinh trước" : ""} />
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left whitespace-nowrap">
+                      <thead className="bg-violet-50 border-b border-violet-100">
+                        <tr>
+                          {["STT", "Mã bé", "Họ và tên", "Ngày sinh", "Nhóm tuổi", "Tiến độ", "Trạng thái", "Thao tác"].map(h => (
+                            <th key={h} className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-violet-50">
+                        {studentSummaries
+                          .filter(s => !cSearch || s.studentCode.toLowerCase().includes(cSearch.toLowerCase()) || s.fullName.toLowerCase().includes(cSearch.toLowerCase()))
+                          .map((s, idx) => {
+                            const pct = s.totalCriteria > 0 ? Math.round((s.scoredCount / s.totalCriteria) * 100) : 0;
+                            const statusBadge = () => {
+                              if (s.totalCriteria === 0) return <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100">Không có tiêu chí</span>;
+                              if (s.scoredCount === s.totalCriteria) return <span className="text-[10px] font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">🟢 Hoàn tất</span>;
+                              if (s.scoredCount > 0) return <span className="text-[10px] font-black text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-100">🟡 Đang chấm</span>;
+                              return <span className="text-[10px] font-black text-slate-500 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-200">⚪ Chưa đánh giá</span>;
+                            };
+                            return (
+                              <tr key={s.id} className="hover:bg-violet-50/30 transition-colors">
+                                <td className="p-4 text-slate-400 text-sm">{idx + 1}</td>
+                                <td className="p-4"><span className="font-mono text-xs font-black text-violet-600 bg-violet-50 px-2 py-1 rounded-lg">{s.studentCode}</span></td>
+                                <td className="p-4 font-bold text-slate-800 text-sm">{s.fullName}</td>
+                                <td className="p-4 text-sm text-slate-500">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
+                                <td className="p-4"><span className="text-xs font-bold text-purple-700 bg-purple-50 px-2 py-1 rounded-lg border border-purple-100">{s.grade || "—"}</span></td>
+                                <td className="p-4">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-24 bg-slate-100 h-2 rounded-full overflow-hidden">
+                                      <div className="h-full bg-gradient-to-r from-violet-500 to-fuchsia-400 rounded-full" style={{ width: `${pct}%` }} />
+                                    </div>
+                                    <span className="text-[10px] font-black text-violet-600">{s.scoredCount}/{s.totalCriteria}</span>
+                                  </div>
+                                </td>
+                                <td className="p-4">{statusBadge()}</td>
+                                <td className="p-4">
+                                  <button
+                                    onClick={() => openEvaluation(s)}
+                                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-black text-violet-700 bg-violet-50 hover:bg-violet-500 hover:text-white rounded-lg border border-violet-100 transition-all shadow-sm"
+                                  >
+                                    <Star className="w-3.5 h-3.5" /> Đánh giá
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Sub-tab: Quản lý Tiêu chí & Lĩnh vực */}
+          {devTab === "manage" && (
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-1.5 bg-violet-50/50 p-1.5 rounded-2xl border border-violet-100 max-w-fit">
+                {grades.map(g => (
+                  <button
+                    key={g}
+                    onClick={() => setAgeGroupFilter(g)}
+                    className={`px-4 py-2 text-[11px] font-bold rounded-xl transition-all ${ageGroupFilter === g ? "bg-white text-violet-700 shadow-sm border border-violet-100" : "text-slate-500 hover:text-violet-600"}`}
+                  >
+                    {g}
+                  </button>
+                ))}
+              </div>
+
+              {devLoading ? <Spin /> : (
+                <div className="space-y-3">
+                  {devAreas.map(area => (
+                    <div key={area.id} className="bg-white rounded-2xl border border-violet-100 shadow-sm overflow-hidden">
+                      <div
+                        className="px-4 py-3.5 flex items-center justify-between gap-3 cursor-pointer hover:bg-violet-50/20 transition-all"
+                        onClick={() => setExpAreaId(expAreaId === area.id ? null : area.id)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="w-3.5 h-3.5 rounded-full"
+                            style={{ backgroundColor: area.color || "#6366f1" }}
+                          />
+                          <div>
+                            <h4 className="font-black text-slate-800 text-base">{area.name}</h4>
+                            {area.description && <p className="text-xs text-slate-400 font-medium mt-0.5">{area.description}</p>}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={e => { e.stopPropagation(); openAddCriteria(area.id); }}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-500 hover:text-white rounded-lg border border-emerald-100 transition-all"
+                          >
+                            <Plus className="w-3 h-3" /> Thêm tiêu chí
+                          </button>
+                          <span className="text-slate-300 ml-1">
+                            {expAreaId === area.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                          </span>
+                        </div>
+                      </div>
+                      {expAreaId === area.id && (
+                        <div className="border-t border-violet-100 p-4 bg-violet-50/10">
+                          {(!area.criteria || area.criteria.length === 0) ? (
+                            <div className="text-center py-6 text-slate-400 font-bold text-xs bg-white rounded-xl border border-dashed border-violet-200">
+                              Chưa có tiêu chí nào cho nhóm tuổi này
+                            </div>
+                          ) : (
+                            <div className="overflow-x-auto bg-white border border-violet-100 rounded-xl shadow-sm">
+                              <table className="w-full text-left">
+                                <thead className="bg-violet-50/50 border-b border-violet-100">
+                                  <tr>
+                                    {["STT", "Mã", "Tên Tiêu Chí", "Nhóm tuổi", "Thao tác"].map(h => (
+                                      <th key={h} className="p-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">{h}</th>
+                                    ))}
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-violet-50">
+                                  {area.criteria.map((crit, idx) => (
+                                    <tr key={crit.id} className="hover:bg-violet-50/30 transition-colors">
+                                      <td className="p-3 text-slate-400 text-xs">{idx + 1}</td>
+                                      <td className="p-3 font-mono text-xs font-bold text-violet-600">{crit.code}</td>
+                                      <td className="p-3 text-sm font-semibold text-slate-700 max-w-[400px] break-words whitespace-normal">{crit.name}</td>
+                                      <td className="p-3"><span className="text-[10px] font-black text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">{crit.ageGroup}</span></td>
+                                      <td className="p-3 text-right">
+                                        <div className="flex gap-1">
+                                          <button
+                                            onClick={() => openEditCriteria(crit)}
+                                            className="p-1.5 text-slate-300 hover:text-violet-600 hover:bg-violet-50 rounded-lg"
+                                          >
+                                            <Edit2 className="w-3.5 h-3.5" />
+                                          </button>
+                                          <button
+                                            onClick={() => setConfirm({ msg: `Xóa tiêu chí "${crit.name}"?`, fn: () => doDeleteCriteria(crit.id) })}
+                                            className="p-1.5 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg"
+                                          >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                          </button>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -946,6 +1325,169 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
           <Field label="Loại" required><select value={cfgForm.categoryType} onChange={e => setCfgForm({...cfgForm, categoryType: e.target.value})} className={inp}><option value="">-- Chọn loại --</option><option value="criteria">Diện KS</option><option value="system">Hệ KS</option></select></Field>
           <Field label="Mã" required><input value={cfgForm.code} onChange={e => setCfgForm({...cfgForm, code: e.target.value})} disabled={!!editCfg} className={inp} placeholder="TUYEN_MOI" /></Field>
           <Field label="Tên" required><input value={cfgForm.name} onChange={e => setCfgForm({...cfgForm, name: e.target.value})} className={inp} placeholder="Tuyển mới" /></Field>
+        </div>
+      </Modal>
+
+      {/* Modal: Đánh giá Phát triển trẻ */}
+      <Modal
+        open={evalModal}
+        onClose={() => setEvalModal(false)}
+        title={`Phiếu đánh giá phát triển: ${evalStudent?.fullName || ""}`}
+        size="xl"
+        footer={(
+          <>
+            <button onClick={() => setEvalModal(false)} className="flex-1 text-xs font-black uppercase text-slate-400 hover:text-slate-600">
+              Đóng
+            </button>
+            <button
+              onClick={saveEvaluation}
+              disabled={savingEval || devLoading}
+              className="flex-1 py-3.5 bg-violet-500 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-violet-100 disabled:opacity-50"
+            >
+              {savingEval ? "Đang lưu..." : "Lưu Đánh Giá"}
+            </button>
+          </>
+        )}
+      >
+        <div className="space-y-4">
+          <div className="bg-violet-50/50 p-4 rounded-2xl border border-violet-100 flex flex-wrap justify-between gap-4">
+            <div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Học sinh</p>
+              <p className="text-base font-black text-slate-800">{evalStudent?.fullName}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Mã bé</p>
+              <p className="text-sm font-bold text-violet-600 font-mono">{evalStudent?.studentCode}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nhóm tuổi</p>
+              <p className="text-sm font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-lg border border-purple-100">{evalStudent?.grade}</p>
+            </div>
+          </div>
+
+          {devLoading ? <Spin /> : devAreas.length === 0 ? (
+            <div className="text-center py-12 text-slate-400 font-bold text-sm bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+              Chưa cấu hình tiêu chí nào cho nhóm tuổi: {evalStudent?.grade}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {devAreas.map(area => (
+                <div key={area.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                  <div className="px-4 py-3 bg-slate-50/50 border-b border-slate-100 flex items-center gap-2.5">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: area.color || "#6366f1" }} />
+                    <h4 className="font-black text-slate-800 text-sm uppercase tracking-wide">{area.name}</h4>
+                  </div>
+                  <div className="divide-y divide-slate-100 p-4 space-y-4">
+                    {area.criteria.map((crit, idx) => (
+                      <div key={crit.id} className="pt-3 first:pt-0">
+                        <p className="text-sm font-bold text-slate-700 flex items-start gap-2">
+                          <span className="font-mono text-xs text-slate-400 font-normal">#{idx+1}</span>
+                          {crit.name}
+                        </p>
+                        
+                        {/* Radio selection */}
+                        <div className="flex flex-wrap gap-4 mt-2">
+                          {[
+                            { key: "CHUA_THE_HIEN", label: "Chưa thể hiện", color: "peer-checked:bg-slate-100 peer-checked:text-slate-700 border-slate-200" },
+                            { key: "DAT", label: "Đạt", color: "peer-checked:bg-emerald-50 peer-checked:text-emerald-700 peer-checked:border-emerald-200 border-slate-200" },
+                            { key: "KHONG_DAT", label: "Không đạt", color: "peer-checked:bg-rose-50 peer-checked:text-rose-700 peer-checked:border-rose-200 border-slate-200" }
+                          ].map(opt => (
+                            <label key={opt.key} className="relative flex items-center cursor-pointer">
+                              <input
+                                type="radio"
+                                name={`crit-${crit.id}`}
+                                checked={studentScores[crit.id]?.result === opt.key}
+                                onChange={() => setStudentScores(prev => ({
+                                  ...prev,
+                                  [crit.id]: {
+                                    result: opt.key,
+                                    note: prev[crit.id]?.note || ""
+                                  }
+                                }))}
+                                className="sr-only peer"
+                              />
+                              <span className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all peer-checked:ring-2 peer-checked:ring-violet-500/20 ${opt.color}`}>
+                                {opt.label}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+
+                        {/* Note input */}
+                        <input
+                          type="text"
+                          value={studentScores[crit.id]?.note || ""}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setStudentScores(prev => ({
+                              ...prev,
+                              [crit.id]: {
+                                result: prev[crit.id]?.result || "CHUA_THE_HIEN",
+                                note: val
+                              }
+                            }));
+                          }}
+                          placeholder="Nhập ghi chú quan sát..."
+                          className="mt-2 w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-1.5 text-xs font-medium outline-none focus:border-violet-400 focus:bg-white transition-all"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </Modal>
+
+      {/* Modal: Criteria */}
+      <Modal
+        open={criteriaModal}
+        onClose={() => setCriteriaModal(false)}
+        title={editCriteria ? "Sửa Tiêu Chí" : "Thêm Tiêu Chí mới"}
+        footer={(
+          <>
+            <button onClick={() => setCriteriaModal(false)} className="flex-1 text-xs font-black uppercase text-slate-400">
+              Hủy
+            </button>
+            <button
+              onClick={saveCriteria}
+              disabled={savingCriteria}
+              className="flex-1 py-3.5 bg-violet-500 text-white rounded-2xl text-xs font-black uppercase tracking-widest"
+            >
+              {savingCriteria ? "Đang lưu..." : "Lưu"}
+            </button>
+          </>
+        )}
+      >
+        <div className="space-y-4">
+          <Field label="Nhóm tuổi" required>
+            <select
+              value={criteriaForm.ageGroup}
+              onChange={e => setCriteriaForm({ ...criteriaForm, ageGroup: e.target.value })}
+              className={inp}
+            >
+              {grades.map(g => <option key={g} value={g}>{g}</option>)}
+            </select>
+          </Field>
+          <Field label="Mã Tiêu chí" required>
+            <input
+              value={criteriaForm.code}
+              onChange={e => setCriteriaForm({ ...criteriaForm, code: e.target.value })}
+              disabled={!!editCriteria}
+              className={inp}
+              placeholder="VD: TC_1824_01"
+            />
+          </Field>
+          <Field label="Nội dung Tiêu chí" required>
+            <textarea
+              value={criteriaForm.name}
+              onChange={e => setCriteriaForm({ ...criteriaForm, name: e.target.value })}
+              className={inp + " resize-none"}
+              rows={3}
+              placeholder="Nhập mô tả chi tiết tiêu chí..."
+            />
+          </Field>
         </div>
       </Modal>
     </div>
