@@ -97,6 +97,41 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   const [devNote, setDevNote] = useState("");
   const [devResult, setDevResult] = useState("");
 
+  const calculateBMI = () => {
+    let height = 0;
+    let weight = 0;
+    for (const area of devAreas) {
+      for (const crit of area.criteria) {
+        if (crit.code.endsWith("_01") || crit.name.toLowerCase().includes("chiều cao")) {
+          const score = studentScores[crit.id];
+          if (score && score.note) {
+            const num = parseFloat(score.note.replace(/[^\d.]/g, ""));
+            if (!isNaN(num) && num > 0) height = num;
+          }
+        }
+        if (crit.code.endsWith("_02") || crit.name.toLowerCase().includes("cân nặng")) {
+          const score = studentScores[crit.id];
+          if (score && score.note) {
+            const num = parseFloat(score.note.replace(/[^\d.]/g, ""));
+            if (!isNaN(num) && num > 0) weight = num;
+          }
+        }
+      }
+    }
+    if (height > 0 && weight > 0) {
+      const heightInMeters = height / 100;
+      return weight / (heightInMeters * heightInMeters);
+    }
+    return null;
+  };
+
+  const getBMIClassification = (bmi: number) => {
+    if (bmi < 13.5) return { label: "Gầy (Thiếu cân)", color: "text-amber-600 bg-amber-50 border-amber-100", dot: "bg-amber-400" };
+    if (bmi <= 17.0) return { label: "Bình thường", color: "text-emerald-600 bg-emerald-50 border-emerald-100", dot: "bg-emerald-400" };
+    if (bmi <= 18.5) return { label: "Thừa cân", color: "text-orange-600 bg-orange-50 border-orange-100", dot: "bg-orange-400" };
+    return { label: "Béo phì", color: "text-rose-600 bg-rose-50 border-rose-100", dot: "bg-rose-400" };
+  };
+
   // Summary scores for students list
   const [studentSummaries, setStudentSummaries] = useState<any[]>([]);
   const [sumLoading, setSumLoading] = useState(false);
@@ -1381,9 +1416,22 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
             <div className="space-y-4">
               {devAreas.map(area => (
                 <div key={area.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                  <div className="px-4 py-3 bg-slate-50/50 border-b border-slate-100 flex items-center gap-2.5">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: area.color || "#6366f1" }} />
-                    <h4 className="font-black text-slate-800 text-sm uppercase tracking-wide">{area.name}</h4>
+                  <div className="px-4 py-3 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between gap-2.5">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: area.color || "#6366f1" }} />
+                      <h4 className="font-black text-slate-800 text-sm uppercase tracking-wide">{area.name}</h4>
+                    </div>
+                    {area.code === "THE_CHAT" && (() => {
+                      const bmiVal = calculateBMI();
+                      const bmiClass = bmiVal ? getBMIClassification(bmiVal) : null;
+                      if (!bmiVal || !bmiClass) return null;
+                      return (
+                        <div className={`flex items-center gap-1.5 px-3 py-1 rounded-xl border text-[11px] font-black uppercase tracking-wider animate-in fade-in zoom-in duration-300 ${bmiClass.color}`}>
+                          <div className={`w-2 h-2 rounded-full animate-pulse ${bmiClass.dot}`} />
+                          <span>BMI: {bmiVal.toFixed(1)} ({bmiClass.label})</span>
+                        </div>
+                      );
+                    })()}
                   </div>
                   <div className="divide-y divide-slate-100 p-4 space-y-4">
                     {area.criteria.map((crit, idx) => (
@@ -1438,6 +1486,19 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                           placeholder="Nhập ghi chú quan sát..."
                           className="mt-2 w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-1.5 text-xs font-medium outline-none focus:border-violet-400 focus:bg-white transition-all"
                         />
+
+                        {/* BMI dynamic indicator */}
+                        {(crit.code?.endsWith("_02") || crit.name?.toLowerCase().includes("cân nặng")) && (() => {
+                          const bmiVal = calculateBMI();
+                          const bmiClass = bmiVal ? getBMIClassification(bmiVal) : null;
+                          if (!bmiVal || !bmiClass) return null;
+                          return (
+                            <div className="mt-2 text-[11px] font-bold text-violet-600 flex items-center gap-1.5 bg-violet-50/50 border border-violet-100 rounded-xl px-3 py-1.5 animate-in slide-in-from-top-1 duration-200">
+                              <Sparkles className="w-3.5 h-3.5 text-violet-500 animate-pulse" />
+                              <span>Chỉ số BMI tự động: <span className="font-mono font-black">{bmiVal.toFixed(2)}</span> ({bmiClass.label})</span>
+                            </div>
+                          );
+                        })()}
                       </div>
                     ))}
                   </div>
