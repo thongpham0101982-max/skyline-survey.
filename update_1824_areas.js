@@ -52,9 +52,10 @@ const newCriteria = [
   { areaCode: 'THE_CHAT', code: 'TC_MGB_03', name: 'Vận động tinh: Xếp chồng/luồn dây. Gập, đan các ngón tay vào nhau.', ageGroup: 'Mẫu giáo bé', sortOrder: 2 },
   { areaCode: 'THE_CHAT', code: 'TC_MGB_04', name: 'Vận động thô: Điều chỉnh được tốc độ khi đi, chạy, nhảy.', ageGroup: 'Mẫu giáo bé', sortOrder: 3 },
   // Mẫu giáo nhỡ
-  { areaCode: 'THE_CHAT', code: 'TC_MGN_01', name: 'Nhảy lò cò được 4–5 bước', ageGroup: 'Mẫu giáo nhỡ', sortOrder: 0 },
-  { areaCode: 'THE_CHAT', code: 'TC_MGN_02', name: 'Cắt theo đường thẳng bằng kéo', ageGroup: 'Mẫu giáo nhỡ', sortOrder: 1 },
-  { areaCode: 'THE_CHAT', code: 'TC_MGN_03', name: 'Tự mặc quần áo, cài cúc', ageGroup: 'Mẫu giáo nhỡ', sortOrder: 2 },
+  { areaCode: 'THE_CHAT', code: 'TC_MGN_01', name: 'Sức khỏe - Chiều cao (cm)', ageGroup: 'Mẫu giáo nhỡ', sortOrder: 0 },
+  { areaCode: 'THE_CHAT', code: 'TC_MGN_02', name: 'Sức khỏe - Cân nặng (Kg)', ageGroup: 'Mẫu giáo nhỡ', sortOrder: 1 },
+  { areaCode: 'THE_CHAT', code: 'TC_MGN_03', name: 'Vận động tinh: Cuộn - xoay tròn cổ tay. Gập, mở, các ngón tay.', ageGroup: 'Mẫu giáo nhỡ', sortOrder: 2 },
+  { areaCode: 'THE_CHAT', code: 'TC_MGN_04', name: 'Vận động thô: Đi, chạy, nhảy, leo trèo nhanh nhẹn.', ageGroup: 'Mẫu giáo nhỡ', sortOrder: 3 },
   // Mẫu giáo lớn
   { areaCode: 'THE_CHAT', code: 'TC_MGL_01', name: 'Chạy nhanh 15m trong 5 giây', ageGroup: 'Mẫu giáo lớn', sortOrder: 0 },
   { areaCode: 'THE_CHAT', code: 'TC_MGL_02', name: 'Viết tên bản thân bằng chữ in hoa', ageGroup: 'Mẫu giáo lớn', sortOrder: 1 },
@@ -76,8 +77,11 @@ const newCriteria = [
   { areaCode: 'NHAN_THUC', code: 'NT_MGB_04', name: 'Nhận ra qui tắc sắp xếp đơn giản.', ageGroup: 'Mẫu giáo bé', sortOrder: 3 },
   { areaCode: 'NHAN_THUC', code: 'NT_MGB_05', name: 'Đếm trên đối tượng trong phạm vi 5 và đếm theo khả năng.', ageGroup: 'Mẫu giáo bé', sortOrder: 4 },
   // Mẫu giáo nhỡ
-  { areaCode: 'NHAN_THUC', code: 'NT_MGN_01', name: 'So sánh cao – thấp, dài – ngắn', ageGroup: 'Mẫu giáo nhỡ', sortOrder: 0 },
-  { areaCode: 'NHAN_THUC', code: 'NT_MGN_02', name: 'Phân loại đồ vật theo 2 dấu hiệu', ageGroup: 'Mẫu giáo nhỡ', sortOrder: 1 },
+  { areaCode: 'NHAN_THUC', code: 'NT_MGN_01', name: 'Nói họ và tên, tuổi, giới tính của bản thân, của bố, mẹ, các thành viên trong gia đình khi được hỏi, trò chuyện.', ageGroup: 'Mẫu giáo nhỡ', sortOrder: 0 },
+  { areaCode: 'NHAN_THUC', code: 'NT_MGN_02', name: 'Phân loại được các đối tượng khác nhau.', ageGroup: 'Mẫu giáo nhỡ', sortOrder: 1 },
+  { areaCode: 'NHAN_THUC', code: 'NT_MGN_03', name: 'Đếm trên đối tượng trong phạm vi 10 và hơn theo khả năng.', ageGroup: 'Mẫu giáo nhỡ', sortOrder: 2 },
+  { areaCode: 'NHAN_THUC', code: 'NT_MGN_04', name: 'Biết sắp xếp theo qui tắc các đối tượng.', ageGroup: 'Mẫu giáo nhỡ', sortOrder: 3 },
+  { areaCode: 'NHAN_THUC', code: 'NT_MGN_05', name: 'Chỉ ra các điểm giống, khác nhau giữa một số hình học.', ageGroup: 'Mẫu giáo nhỡ', sortOrder: 4 },
   // Mẫu giáo lớn
   { areaCode: 'NHAN_THUC', code: 'NT_MGL_01', name: 'Đếm, nhận biết số từ 1 đến 10', ageGroup: 'Mẫu giáo lớn', sortOrder: 0 },
   { areaCode: 'NHAN_THUC', code: 'NT_MGL_02', name: 'Giải bài toán cộng trừ trong phạm vi 5', ageGroup: 'Mẫu giáo lớn', sortOrder: 1 },
@@ -98,8 +102,10 @@ const newCriteria = [
   { areaCode: 'NGON_NGU', code: 'NN_MGB_03', name: 'Diễn đạt rõ ràng trong giao tiếp.', ageGroup: 'Mẫu giáo bé', sortOrder: 2 },
   { areaCode: 'NGON_NGU', code: 'NN_MGB_04', name: 'Thực hiện những việc đơn giản của bản thân có sự giúp đỡ.', ageGroup: 'Mẫu giáo bé', sortOrder: 3 },
   // Mẫu giáo nhỡ
-  { areaCode: 'NGON_NGU', code: 'NN_MGN_01', name: 'Kể lại truyện ngắn đã nghe', ageGroup: 'Mẫu giáo nhỡ', sortOrder: 0 },
-  { areaCode: 'NGON_NGU', code: 'NN_MGN_02', name: 'Nhận biết một số chữ cái', ageGroup: 'Mẫu giáo nhỡ', sortOrder: 1 },
+  { areaCode: 'NGON_NGU', code: 'NN_MGN_01', name: 'Nói rõ để người nghe có thể hiểu được.', ageGroup: 'Mẫu giáo nhỡ', sortOrder: 0 },
+  { areaCode: 'NGON_NGU', code: 'NN_MGN_02', name: 'Thực hiện được 2, 3 yêu cầu liên tiếp.', ageGroup: 'Mẫu giáo nhỡ', sortOrder: 1 },
+  { areaCode: 'NGON_NGU', code: 'NN_MGN_03', name: 'Hiểu nghĩa từ khái quát: rau quả, con vật, đồ chơi...', ageGroup: 'Mẫu giáo nhỡ', sortOrder: 2 },
+  { areaCode: 'NGON_NGU', code: 'NN_MGN_04', name: 'Sử dụng được các từ chỉ sự vật, hoạt động, đặc điểm.', ageGroup: 'Mẫu giáo nhỡ', sortOrder: 3 },
   // Mẫu giáo lớn
   { areaCode: 'NGON_NGU', code: 'NN_MGL_01', name: 'Nhận biết 29 chữ cái tiếng Việt', ageGroup: 'Mẫu giáo lớn', sortOrder: 0 },
   { areaCode: 'NGON_NGU', code: 'NN_MGL_02', name: 'Đọc thơ, kể chuyện diễn cảm', ageGroup: 'Mẫu giáo lớn', sortOrder: 1 },
@@ -125,10 +131,13 @@ const newCriteria = [
   { areaCode: 'TINH_CAM_XH_TM', code: 'TM_MGB_03', name: 'Đưa tay vẽ được trên không các nét thẳng, xiên, ngang...', ageGroup: 'Mẫu giáo bé', sortOrder: 7 },
   { areaCode: 'TINH_CAM_XH_TM', code: 'TM_MGB_04', name: 'Biết đặt tên hoặc nhận xét sự việc.', ageGroup: 'Mẫu giáo bé', sortOrder: 8 },
   // Mẫu giáo nhỡ
-  { areaCode: 'TINH_CAM_XH_TM', code: 'TC_XH_MGN_01', name: 'Tuân thủ nội quy lớp học', ageGroup: 'Mẫu giáo nhỡ', sortOrder: 0 },
-  { areaCode: 'TINH_CAM_XH_TM', code: 'TC_XH_MGN_02', name: 'Chia sẻ đồ chơi với bạn', ageGroup: 'Mẫu giáo nhỡ', sortOrder: 1 },
-  { areaCode: 'TINH_CAM_XH_TM', code: 'TM_MGN_01', name: 'Tô màu không lem ra ngoài', ageGroup: 'Mẫu giáo nhỡ', sortOrder: 2 },
-  { areaCode: 'TINH_CAM_XH_TM', code: 'TM_MGN_02', name: 'Múa vận động nhịp nhàng theo nhạc', ageGroup: 'Mẫu giáo nhỡ', sortOrder: 3 },
+  { areaCode: 'TINH_CAM_XH_TM', code: 'TC_XH_MGN_01', name: 'Nói được điều bé thích, không thích, những việc gì bé có thể làm được.', ageGroup: 'Mẫu giáo nhỡ', sortOrder: 0 },
+  { areaCode: 'TINH_CAM_XH_TM', code: 'TC_XH_MGN_02', name: 'Biết nhận biết cảm xúc vui, buồn, sợ hãi, tức giận, ngạc nhiên qua nét mặt, lời nói, cử chỉ, qua tranh, ảnh.', ageGroup: 'Mẫu giáo nhỡ', sortOrder: 1 },
+  { areaCode: 'TINH_CAM_XH_TM', code: 'TC_XH_MGN_03', name: 'Biết nói cảm ơn, xin lỗi, chào hỏi lễ phép.', ageGroup: 'Mẫu giáo nhỡ', sortOrder: 2 },
+  { areaCode: 'TINH_CAM_XH_TM', code: 'TM_MGN_01', name: 'Hát đúng giai điệu, lời ca, hát rõ lời và thể hiện sắc thái của bài hát qua giọng hát, nét mặt, điệu bộ.', ageGroup: 'Mẫu giáo nhỡ', sortOrder: 3 },
+  { areaCode: 'TINH_CAM_XH_TM', code: 'TM_MGN_02', name: 'Vận động nhịp nhàng theo nhịp điệu các bài hát, bản nhạc với các hình thức (vỗ tay theo nhịp, tiết tấu, múa).', ageGroup: 'Mẫu giáo nhỡ', sortOrder: 4 },
+  { areaCode: 'TINH_CAM_XH_TM', code: 'TM_MGN_03', name: 'Nói lên ý tưởng và tạo ra các sản phẩm tạo hình sáng tạo theo ý thích.', ageGroup: 'Mẫu giáo nhỡ', sortOrder: 5 },
+  { areaCode: 'TINH_CAM_XH_TM', code: 'TM_MGN_04', name: 'Đặt tên cho sản phẩm tạo hình.', ageGroup: 'Mẫu giáo nhỡ', sortOrder: 6 },
   // Mẫu giáo lớn
   { areaCode: 'TINH_CAM_XH_TM', code: 'TC_XH_MGL_01', name: 'Tự giác trong các hoạt động hàng ngày', ageGroup: 'Mẫu giáo lớn', sortOrder: 0 },
   { areaCode: 'TINH_CAM_XH_TM', code: 'TC_XH_MGL_02', name: 'Giải quyết xung đột bằng lời nói', ageGroup: 'Mẫu giáo lớn', sortOrder: 1 },
