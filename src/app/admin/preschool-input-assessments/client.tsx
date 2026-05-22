@@ -9,7 +9,7 @@ import {
 
 interface Period { id: string; code: string; name: string; status: string; startDate?: string; endDate?: string; description?: string; assignedUserId?: string; surveyType?: string; batches: Batch[] }
 interface Batch { id: string; periodId: string; batchNumber: number; name: string; startDate: string; endDate: string; status: string; campusId?: string; assignedUserId?: string }
-interface PreschoolChild { id: string; studentCode: string; fullName: string; dateOfBirth?: string; gender?: string; grade?: string; admissionCriteria?: string; surveyFormType?: string; admissionResult?: string; admissionCampus?: string; periodId: string; batchId?: string; devProfessionalComment?: string; devPsychologyComment?: string; devImportantNote?: string; devAssessmentResult?: string; }
+interface PreschoolChild { id: string; studentCode: string; fullName: string; dateOfBirth?: string; gender?: string; grade?: string; admissionCriteria?: string; surveyFormType?: string; admissionResult?: string; admissionCampus?: string; periodId: string; batchId?: string; devProfessionalComment?: string; devPsychologyComment?: string; devImportantNote?: string; devAssessmentResult?: string; bghApprovalStatus?: string; bghApprovalComment?: string; gdcsApprovalStatus?: string; gdcsApprovalComment?: string; }
 interface Camp { id: string; campusName: string }
 interface AcademicYear { id: string; name: string }
 interface AssessmentConfig { id: string; categoryType: string; code: string; name: string; sortOrder: number }
@@ -76,6 +76,20 @@ function Field({ label, required, children }: any) {
   return <div className="space-y-1.5"><label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest">{label}{required && <span className="text-violet-600 ml-1">*</span>}</label>{children}</div>;
 }
 
+const xetDuyetCols = [
+  { id: "stt", label: "STT", width: "w-12 min-w-[48px] max-w-[48px] sticky left-0 bg-violet-50 z-20" },
+  { id: "name", label: "Thông tin bé", width: "w-[260px] min-w-[260px] max-w-[260px] sticky left-12 bg-violet-50 z-20 border-r border-violet-100/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] whitespace-normal" },
+  { id: "physical", label: "Thể chất", width: "w-[220px] min-w-[220px] whitespace-normal border-r border-violet-50/50" },
+  { id: "cognitive", label: "Nhận thức", width: "w-[280px] min-w-[280px] whitespace-normal border-r border-violet-50/50" },
+  { id: "language", label: "Ngôn ngữ", width: "w-[280px] min-w-[280px] whitespace-normal border-r border-violet-50/50" },
+  { id: "social", label: "Tình cảm - Kỹ năng XH - TM", width: "w-[280px] min-w-[280px] whitespace-normal border-r border-violet-50/50" },
+  { id: "teacher", label: "Giáo viên đánh giá", width: "w-[280px] min-w-[280px] whitespace-normal border-r border-violet-50/50" },
+  { id: "bghApproval", label: "Duyệt BGH MN", width: "w-[220px] min-w-[220px] whitespace-normal border-r border-violet-50/50" },
+  { id: "gdcsApproval", label: "Duyệt GĐCS", width: "w-[220px] min-w-[220px] whitespace-normal border-r border-violet-50/50" },
+  { id: "result", label: "Kết quả Duyệt", width: "w-32 min-w-[128px]" },
+  { id: "actions", label: "Thao tác", width: "w-24 min-w-[96px]" }
+];
+
 export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoVuCSUsers, grades: gradesProp, teachers, departments, currentUser }: { academicYears: AcademicYear[]; campuses: Camp[]; giaoVuCSUsers: any[]; grades: string[]; teachers: any[]; departments: any[]; currentUser: any; }) {
   const grades = gradesProp && gradesProp.length > 0 ? gradesProp : ["18 đến 24 tháng", "24 đến 36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"];
 
@@ -96,6 +110,10 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   const [devPsyComment, setDevPsyComment] = useState("");
   const [devNote, setDevNote] = useState("");
   const [devResult, setDevResult] = useState("");
+  const [bghApprovalStatus, setBghApprovalStatus] = useState("");
+  const [bghApprovalComment, setBghApprovalComment] = useState("");
+  const [gdcsApprovalStatus, setGdcsApprovalStatus] = useState("");
+  const [gdcsApprovalComment, setGdcsApprovalComment] = useState("");
 
   const calculateBMI = () => {
     let height = 0;
@@ -310,6 +328,10 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
     setDevPsyComment(student.devPsychologyComment || "");
     setDevNote(student.devImportantNote || "");
     setDevResult(student.devAssessmentResult || "");
+    setBghApprovalStatus(student.bghApprovalStatus || "");
+    setBghApprovalComment(student.bghApprovalComment || "");
+    setGdcsApprovalStatus(student.gdcsApprovalStatus || "");
+    setGdcsApprovalComment(student.gdcsApprovalComment || "");
     setEvalModal(true);
     setDevLoading(true);
     try {
@@ -347,7 +369,18 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
       const r = await fetch("/api/preschool-dev-scores", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ studentId: evalStudent.id, scores: scoresPayload, devProfessionalComment: devProfComment, devPsychologyComment: devPsyComment, devImportantNote: devNote, devAssessmentResult: devResult })
+        body: JSON.stringify({ 
+          studentId: evalStudent.id, 
+          scores: scoresPayload, 
+          devProfessionalComment: devProfComment, 
+          devPsychologyComment: devPsyComment, 
+          devImportantNote: devNote, 
+          devAssessmentResult: devResult,
+          bghApprovalStatus,
+          bghApprovalComment,
+          gdcsApprovalStatus,
+          gdcsApprovalComment
+        })
       });
       if (r.ok) {
         setEvalModal(false);
@@ -382,7 +415,13 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
           "Ngôn ngữ": s.ngonNguSummary || "Chưa đánh giá",
           "Tình cảm - Kỹ năng XH - TM": s.tinhCamXhTmSummary || "Chưa đánh giá",
           "Giáo viên đánh giá": s.teacherComment || "Chưa có nhận xét",
-          "Đánh giá chung": s.generalResult || "Chưa duyệt"
+          "Duyệt BGH MN": s.bghApprovalStatus 
+            ? `${s.bghApprovalStatus === "DAT" ? "Đạt" : s.bghApprovalStatus === "KHONG_DAT" ? "Không đạt" : "Ý kiến khác"}${s.bghApprovalComment ? ` - Ý kiến: ${s.bghApprovalComment}` : ""}` 
+            : "Chưa duyệt",
+          "Duyệt GĐCS": s.gdcsApprovalStatus 
+            ? `${s.gdcsApprovalStatus === "DAT" ? "Đạt" : s.gdcsApprovalStatus === "KHONG_DAT" ? "Không đạt" : "Ý kiến khác"}${s.gdcsApprovalComment ? ` - Ý kiến: ${s.gdcsApprovalComment}` : ""}` 
+            : "Chưa duyệt",
+          "Kết quả Duyệt": s.generalResult || "Chưa duyệt"
         }));
 
       const ws = XLSX.utils.json_to_sheet(exportData);
@@ -1008,12 +1047,14 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                 {sumLoading ? <Spin /> : studentSummaries.length === 0 ? (
                   <Empty text={cPeriodId ? "Chưa có bé nào" : "Vui lòng chọn Kỳ và bấm Tìm"} sub={cPeriodId ? "Hãy thêm học sinh trước" : ""} />
                 ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left whitespace-nowrap">
-                      <thead className="bg-violet-50 border-b border-violet-100">
+                  <div className="overflow-x-auto relative rounded-xl border border-violet-100/80">
+                    <table className="w-full min-w-max text-left whitespace-nowrap table-auto">
+                      <thead className="bg-violet-50 border-b border-violet-100 sticky top-0 z-30">
                         <tr>
-                          {["STT", "Mã bé", "Họ và tên", "Ngày sinh", "Giới tính", "Nhóm tuổi", "Cơ sở", "Thể chất", "Nhận thức", "Ngôn ngữ", "Tình cảm - Kỹ năng XH - TM", "Giáo viên đánh giá", "Đánh giá chung", "Thao tác"].map(h => (
-                            <th key={h} className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">{h}</th>
+                          {xetDuyetCols.map(col => (
+                            <th key={col.id} className={`p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest ${col.width}`}>
+                              {col.label}
+                            </th>
                           ))}
                         </tr>
                       </thead>
@@ -1063,14 +1104,14 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
 
                             const bmiClass = bmiVal ? getBMIClassification(bmiVal) : null;
 
-                            const renderAreaCell = (areaCode: string) => {
+                            const renderAreaCell = (areaCode: string, tdClass: string) => {
                               const areaScores = s.scores?.filter((sc: any) => sc.criteria?.area?.code === areaCode) || [];
                               if (areaScores.length === 0) {
-                                return <td className="p-4 text-xs font-medium text-slate-300 align-top whitespace-normal border-r border-violet-50/50">—</td>;
+                                return <td className={`p-4 text-xs font-medium text-slate-300 align-top ${tdClass}`}>—</td>;
                               }
                               return (
-                                <td className="p-4 align-top whitespace-normal border-r border-violet-50/50">
-                                  <div className="flex flex-col gap-2 min-w-[220px] max-w-[280px]">
+                                <td className={`p-4 align-top ${tdClass}`}>
+                                  <div className="flex flex-col gap-2 w-full">
                                     {areaScores.map((sc: any) => {
                                       const name = sc.criteria?.name || "";
                                       const isDat = sc.result === "DAT";
@@ -1104,18 +1145,25 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                             };
 
                             return (
-                              <tr key={s.id} className="hover:bg-violet-50/30 transition-colors border-b border-violet-50">
-                                <td className="p-4 text-slate-400 text-sm align-top">{idx + 1}</td>
-                                <td className="p-4 align-top"><span className="font-mono text-xs font-black text-violet-600 bg-violet-50 px-2 py-1 rounded-lg">{s.studentCode}</span></td>
-                                <td className="p-4 font-bold text-slate-800 text-sm align-top">{s.fullName}</td>
-                                <td className="p-4 text-sm text-slate-500 align-top">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
-                                <td className="p-4 text-sm text-slate-600 align-top">{s.gender || "—"}</td>
-                                <td className="p-4 align-top"><span className="text-xs font-bold text-purple-700 bg-purple-50 px-2 py-1 rounded-lg border border-purple-100">{s.grade || "—"}</span></td>
-                                <td className="p-4 text-sm text-slate-600 align-top">{s.admissionCampus || "—"}</td>
+                              <tr key={s.id} className="group hover:bg-violet-50/30 transition-colors border-b border-violet-50">
+                                <td className="w-12 min-w-[48px] max-w-[48px] sticky left-0 bg-white group-hover:bg-[#faf9fe] transition-colors z-10 p-4 text-slate-400 text-sm align-top">{idx + 1}</td>
+                                <td className="w-[260px] min-w-[260px] max-w-[260px] sticky left-12 bg-white group-hover:bg-[#faf9fe] transition-colors z-10 border-r border-violet-100/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] whitespace-normal p-4 align-top">
+                                  <div className="flex flex-col gap-1.5 w-full">
+                                    <div className="font-bold text-slate-800 text-[13px] leading-tight">{s.fullName}</div>
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <span className="font-mono text-[9px] font-black text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded border border-violet-100 leading-none">{s.studentCode}</span>
+                                      {s.grade && <span className="text-[9px] font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-100 leading-none">{s.grade}</span>}
+                                    </div>
+                                    <div className="text-[10px] text-slate-400 font-medium leading-normal space-y-0.5">
+                                      <div>NS: <span className="text-slate-600 font-semibold">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</span> • <span className="text-slate-600 font-medium">{s.gender || "—"}</span></div>
+                                      <div className="truncate" title={s.admissionCampus}>CS: <span className="text-slate-600 font-medium">{s.admissionCampus || "—"}</span></div>
+                                    </div>
+                                  </div>
+                                </td>
                                 
                                 {/* Thể chất */}
-                                <td className="p-4 align-top text-xs whitespace-normal border-r border-violet-50/50">
-                                  <div className="flex flex-col gap-2 min-w-[200px] max-w-[240px]">
+                                <td className="w-[220px] min-w-[220px] whitespace-normal border-r border-violet-50/50 p-4 align-top text-xs">
+                                  <div className="flex flex-col gap-2 w-full">
                                     {hVal || wVal ? (
                                       <div className="flex flex-col gap-1.5">
                                         <div className="grid grid-cols-3 gap-1.5 bg-slate-50 border border-slate-100 rounded-2xl p-2">
@@ -1171,17 +1219,17 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                                 </td>
 
                                 {/* Nhận thức */}
-                                {renderAreaCell("NHAN_THUC")}
+                                {renderAreaCell("NHAN_THUC", "w-[280px] min-w-[280px] whitespace-normal border-r border-violet-50/50")}
 
                                 {/* Ngôn ngữ */}
-                                {renderAreaCell("NGON_NGU")}
+                                {renderAreaCell("NGON_NGU", "w-[280px] min-w-[280px] whitespace-normal border-r border-violet-50/50")}
 
                                 {/* Tình cảm - Kỹ năng XH - TM */}
-                                {renderAreaCell("TINH_CAM_XH_TM")}
+                                {renderAreaCell("TINH_CAM_XH_TM", "w-[280px] min-w-[280px] whitespace-normal border-r border-violet-50/50")}
 
                                 {/* Giáo viên đánh giá */}
-                                <td className="p-4 align-top text-xs max-w-[280px] whitespace-normal border-r border-violet-50/50">
-                                  <div className="flex flex-col gap-2.5 text-slate-700 min-w-[200px]">
+                                <td className="w-[280px] min-w-[280px] whitespace-normal border-r border-violet-50/50 p-4 align-top text-xs">
+                                  <div className="flex flex-col gap-2.5 text-slate-700 w-full">
                                     {s.devProfessionalComment && (
                                       <div className="bg-violet-50/30 border-l-[3px] border-violet-500 rounded-r-xl p-2 flex flex-col gap-0.5 shadow-[0_1px_2px_rgba(0,0,0,0.01)]">
                                         <span className="text-[9px] font-black text-violet-600 uppercase tracking-wider">Chuyên môn</span>
@@ -1206,8 +1254,64 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                                   </div>
                                 </td>
 
-                                <td className="p-4 align-top">{getResultBadge(s.generalResult)}</td>
-                                <td className="p-4 align-top">
+                                {/* Duyệt BGH MN */}
+                                <td className="w-[220px] min-w-[220px] whitespace-normal border-r border-violet-50/50 p-4 align-top text-xs">
+                                  <div className="flex flex-col gap-1.5 w-full">
+                                    {s.bghApprovalStatus ? (
+                                      <>
+                                        <div>
+                                          {s.bghApprovalStatus === "DAT" && (
+                                            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">ĐẠT</span>
+                                          )}
+                                          {s.bghApprovalStatus === "KHONG_DAT" && (
+                                            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-100">KHÔNG ĐẠT</span>
+                                          )}
+                                          {s.bghApprovalStatus === "Y_KIEN_KHAC" && (
+                                            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-100">Ý KIẾN KHÁC</span>
+                                          )}
+                                        </div>
+                                        {s.bghApprovalComment && (
+                                          <div className="text-[11px] leading-relaxed text-slate-600 bg-slate-50 border border-slate-100 rounded-xl p-2 mt-1">
+                                            {s.bghApprovalComment}
+                                          </div>
+                                        )}
+                                      </>
+                                    ) : (
+                                      <span className="text-slate-300 italic block py-1">—</span>
+                                    )}
+                                  </div>
+                                </td>
+
+                                {/* Duyệt GĐCS */}
+                                <td className="w-[220px] min-w-[220px] whitespace-normal border-r border-violet-50/50 p-4 align-top text-xs">
+                                  <div className="flex flex-col gap-1.5 w-full">
+                                    {s.gdcsApprovalStatus ? (
+                                      <>
+                                        <div>
+                                          {s.gdcsApprovalStatus === "DAT" && (
+                                            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">ĐẠT</span>
+                                          )}
+                                          {s.gdcsApprovalStatus === "KHONG_DAT" && (
+                                            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-100">KHÔNG ĐẠT</span>
+                                          )}
+                                          {s.gdcsApprovalStatus === "Y_KIEN_KHAC" && (
+                                            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-100">Ý KIẾN KHÁC</span>
+                                          )}
+                                        </div>
+                                        {s.gdcsApprovalComment && (
+                                          <div className="text-[11px] leading-relaxed text-slate-600 bg-slate-50 border border-slate-100 rounded-xl p-2 mt-1">
+                                            {s.gdcsApprovalComment}
+                                          </div>
+                                        )}
+                                      </>
+                                    ) : (
+                                      <span className="text-slate-300 italic block py-1">—</span>
+                                    )}
+                                  </div>
+                                </td>
+
+                                <td className="w-32 min-w-[128px] p-4 align-top">{getResultBadge(s.generalResult)}</td>
+                                <td className="w-24 min-w-[96px] p-4 align-top">
                                   <button
                                     onClick={() => openEvaluation(s)}
                                     className="flex items-center gap-1 px-3 py-1.5 text-xs font-black text-violet-700 bg-violet-50 hover:bg-violet-500 hover:text-white rounded-lg border border-violet-100 transition-all shadow-sm"
@@ -1974,6 +2078,145 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                   </div>
                 </div>
               </div>
+
+              {/* PHÊ DUYỆT 2 BƯỚC XÉT DUYỆT */}
+              {(() => {
+                const getCalculatedResult = () => {
+                  if (bghApprovalStatus || gdcsApprovalStatus) {
+                    if (bghApprovalStatus === "DAT" && gdcsApprovalStatus === "DAT") {
+                      return "Đạt";
+                    }
+                    if (bghApprovalStatus === "KHONG_DAT" || gdcsApprovalStatus === "KHONG_DAT") {
+                      return "Không đạt";
+                    }
+                    if (bghApprovalStatus === "Y_KIEN_KHAC" || gdcsApprovalStatus === "Y_KIEN_KHAC") {
+                      return "Ý kiến khác";
+                    }
+                    return "Chưa duyệt";
+                  }
+                  
+                  // Fallback
+                  if (devResult === "DAT") return "Đạt";
+                  if (devResult === "KHONG_DAT") return "Không đạt";
+                  if (devResult === "HOC_THU") return "Học thử";
+                  return "Chưa duyệt";
+                };
+
+                const calcRes = getCalculatedResult();
+                
+                const getCalcBadge = (res: string) => {
+                  if (res === "Đạt") {
+                    return <span className="text-xs font-black px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center gap-1">✓ ĐẠT</span>;
+                  }
+                  if (res === "Không đạt") {
+                    return <span className="text-xs font-black px-3 py-1 rounded-full bg-rose-50 text-rose-600 border border-rose-100 flex items-center gap-1">✗ KHÔNG ĐẠT</span>;
+                  }
+                  if (res === "Ý kiến khác") {
+                    return <span className="text-xs font-black px-3 py-1 rounded-full bg-amber-50 text-amber-600 border border-amber-100 flex items-center gap-1">★ Ý KIẾN KHÁC</span>;
+                  }
+                  if (res === "Học thử") {
+                    return <span className="text-xs font-black px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center gap-1">★ HỌC THỬ</span>;
+                  }
+                  return <span className="text-xs font-black px-3 py-1 rounded-full bg-slate-50 text-slate-400 border border-slate-200">CHƯA DUYỆT</span>;
+                };
+
+                return (
+                  <div className="mt-6 rounded-2xl border border-violet-100 bg-gradient-to-br from-violet-50/20 to-fuchsia-50/20 p-5 space-y-5 shadow-sm">
+                    <div className="flex items-center justify-between border-b border-violet-100/50 pb-3">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-violet-500 animate-pulse" />
+                        <h4 className="text-xs font-black text-violet-700 uppercase tracking-widest">PHÊ DUYỆT 2 BƯỚC XÉT DUYỆT</h4>
+                      </div>
+                      <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-violet-100">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Kết quả Duyệt (Dự kiến):</span>
+                        {getCalcBadge(calcRes)}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                      {/* BGH MN Column */}
+                      <div className="space-y-3 bg-white p-4 rounded-xl border border-violet-50">
+                        <div className="flex items-center gap-1.5 border-b border-slate-50 pb-2">
+                          <div className="w-2 h-2 rounded-full bg-violet-400" />
+                          <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider">BAN GIÁM HIỆU MẦM NON</span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {[
+                            { status: "DAT", label: "ĐẠT", color: "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100/50", activeColor: "bg-emerald-500 text-white border-emerald-500 shadow-sm" },
+                            { status: "KHONG_DAT", label: "KHÔNG ĐẠT", color: "bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100/50", activeColor: "bg-rose-500 text-white border-rose-500 shadow-sm" },
+                            { status: "Y_KIEN_KHAC", label: "Ý KIẾN KHÁC", color: "bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100/50", activeColor: "bg-amber-500 text-white border-amber-500 shadow-sm" }
+                          ].map(opt => (
+                            <button
+                              key={opt.status}
+                              type="button"
+                              onClick={() => setBghApprovalStatus(bghApprovalStatus === opt.status ? "" : opt.status)}
+                              className={`px-3 py-1.5 rounded-xl border text-[10px] font-black transition-all ${bghApprovalStatus === opt.status ? opt.activeColor : `${opt.color} text-slate-600 bg-white border-slate-200`}`}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                          {bghApprovalStatus && (
+                            <button
+                              type="button"
+                              onClick={() => setBghApprovalStatus("")}
+                              className="px-2.5 py-1.5 rounded-xl text-[10px] font-black text-rose-600 hover:bg-rose-50 border border-transparent"
+                            >
+                              Bỏ chọn
+                            </button>
+                          )}
+                        </div>
+                        <textarea
+                          value={bghApprovalComment}
+                          onChange={e => setBghApprovalComment(e.target.value)}
+                          rows={2}
+                          placeholder="Ý kiến phê duyệt của BGH..."
+                          className="w-full bg-slate-50 border border-slate-100 focus:border-violet-300 focus:bg-white rounded-xl px-3 py-2 text-xs font-medium outline-none transition-all resize-none placeholder:text-slate-300"
+                        />
+                      </div>
+
+                      {/* GĐCS Column */}
+                      <div className="space-y-3 bg-white p-4 rounded-xl border border-violet-50">
+                        <div className="flex items-center gap-1.5 border-b border-slate-50 pb-2">
+                          <div className="w-2 h-2 rounded-full bg-fuchsia-400" />
+                          <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider">GIÁM ĐỐC CƠ SỞ</span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {[
+                            { status: "DAT", label: "ĐẠT", color: "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100/50", activeColor: "bg-emerald-500 text-white border-emerald-500 shadow-sm" },
+                            { status: "KHONG_DAT", label: "KHÔNG ĐẠT", color: "bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100/50", activeColor: "bg-rose-500 text-white border-rose-500 shadow-sm" },
+                            { status: "Y_KIEN_KHAC", label: "Ý KIẾN KHÁC", color: "bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100/50", activeColor: "bg-amber-500 text-white border-amber-500 shadow-sm" }
+                          ].map(opt => (
+                            <button
+                              key={opt.status}
+                              type="button"
+                              onClick={() => setGdcsApprovalStatus(gdcsApprovalStatus === opt.status ? "" : opt.status)}
+                              className={`px-3 py-1.5 rounded-xl border text-[10px] font-black transition-all ${gdcsApprovalStatus === opt.status ? opt.activeColor : `${opt.color} text-slate-600 bg-white border-slate-200`}`}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                          {gdcsApprovalStatus && (
+                            <button
+                              type="button"
+                              onClick={() => setGdcsApprovalStatus("")}
+                              className="px-2.5 py-1.5 rounded-xl text-[10px] font-black text-rose-600 hover:bg-rose-50 border border-transparent"
+                            >
+                              Bỏ chọn
+                            </button>
+                          )}
+                        </div>
+                        <textarea
+                          value={gdcsApprovalComment}
+                          onChange={e => setGdcsApprovalComment(e.target.value)}
+                          rows={2}
+                          placeholder="Ý kiến phê duyệt của GĐCS..."
+                          className="w-full bg-slate-50 border border-slate-100 focus:border-fuchsia-300 focus:bg-white rounded-xl px-3 py-2 text-xs font-medium outline-none transition-all resize-none placeholder:text-slate-300"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           )}
         </div>

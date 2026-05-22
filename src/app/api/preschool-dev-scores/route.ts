@@ -24,7 +24,25 @@ export async function GET(req: NextRequest) {
 
       const students = await (prisma as any).preschoolInputAssessmentStudent.findMany({
         where,
-        select: { id: true, studentCode: true, fullName: true, grade: true, gender: true, dateOfBirth: true, admissionCampus: true, batchId: true, devProfessionalComment: true, devPsychologyComment: true, devImportantNote: true, devAssessmentResult: true, admissionResult: true }
+        select: { 
+          id: true, 
+          studentCode: true, 
+          fullName: true, 
+          grade: true, 
+          gender: true, 
+          dateOfBirth: true, 
+          admissionCampus: true, 
+          batchId: true, 
+          devProfessionalComment: true, 
+          devPsychologyComment: true, 
+          devImportantNote: true, 
+          devAssessmentResult: true, 
+          admissionResult: true,
+          bghApprovalStatus: true,
+          bghApprovalComment: true,
+          gdcsApprovalStatus: true,
+          gdcsApprovalComment: true
+        }
       })
 
       const studentIds = students.map((s: any) => s.id)
@@ -101,11 +119,16 @@ export async function GET(req: NextRequest) {
           s.devImportantNote ? `Lưu ý: ${s.devImportantNote}` : ""
         ].filter(Boolean).join(". ")
 
-        let generalResult = s.devAssessmentResult
-        if (s.devAssessmentResult === "DAT") generalResult = "Đạt"
-        else if (s.devAssessmentResult === "KHONG_DAT") generalResult = "Không đạt"
-        else if (s.devAssessmentResult === "HOC_THU") generalResult = "Học thử"
-        else if (!generalResult) generalResult = s.admissionResult || "Chưa"
+        let generalResult = "";
+        const hasApproval = !!(s.bghApprovalStatus || s.gdcsApprovalStatus);
+        if (hasApproval) {
+          generalResult = s.admissionResult || "Chưa duyệt";
+        } else {
+          if (s.devAssessmentResult === "DAT") generalResult = "Đạt"
+          else if (s.devAssessmentResult === "KHONG_DAT") generalResult = "Không đạt"
+          else if (s.devAssessmentResult === "HOC_THU") generalResult = "Học thử"
+          else generalResult = s.admissionResult || "Chưa duyệt";
+        }
 
         return {
           ...s,
@@ -149,7 +172,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { studentId, scores, devProfessionalComment, devPsychologyComment, devImportantNote, devAssessmentResult } = body
+    const { studentId, scores, devProfessionalComment, devPsychologyComment, devImportantNote, devAssessmentResult, bghApprovalStatus, bghApprovalComment, gdcsApprovalStatus, gdcsApprovalComment } = body
 
     if (!studentId || !Array.isArray(scores)) {
       return NextResponse.json({ error: "Cần studentId và mảng scores" }, { status: 400 })
@@ -179,18 +202,38 @@ export async function POST(req: NextRequest) {
       results.push(upserted)
     }
 
-    let admissionResult = undefined
-    if (devAssessmentResult === "DAT") {
-      admissionResult = "Đạt"
-    } else if (devAssessmentResult === "KHONG_DAT") {
-      admissionResult = "Không đạt"
-    } else if (devAssessmentResult === "HOC_THU") {
-      admissionResult = "Học thử"
-    } else if (devAssessmentResult === "") {
-      admissionResult = ""
+    let admissionResult = undefined;
+    const hasBghOrGdcsStatus = (bghApprovalStatus !== undefined && bghApprovalStatus !== null && bghApprovalStatus !== "") || 
+                               (gdcsApprovalStatus !== undefined && gdcsApprovalStatus !== null && gdcsApprovalStatus !== "");
+    
+    if (hasBghOrGdcsStatus) {
+      const bgh = bghApprovalStatus || "";
+      const gdcs = gdcsApprovalStatus || "";
+      
+      if (bgh === "DAT" && gdcs === "DAT") {
+        admissionResult = "Đạt";
+      } else if (bgh === "KHONG_DAT" || gdcs === "KHONG_DAT") {
+        admissionResult = "Không đạt";
+      } else if (bgh === "Y_KIEN_KHAC" || gdcs === "Y_KIEN_KHAC") {
+        admissionResult = "Ý kiến khác";
+      } else if (bgh === "DAT" || gdcs === "DAT") {
+        admissionResult = "Chưa duyệt";
+      } else {
+        admissionResult = "Chưa duyệt";
+      }
+    } else {
+      if (devAssessmentResult === "DAT") {
+        admissionResult = "Đạt"
+      } else if (devAssessmentResult === "KHONG_DAT") {
+        admissionResult = "Không đạt"
+      } else if (devAssessmentResult === "HOC_THU") {
+        admissionResult = "Học thử"
+      } else if (devAssessmentResult === "") {
+        admissionResult = ""
+      }
     }
 
-    // Save general comments to student record
+    // Save general comments and approvals to student record
     await (prisma as any).preschoolInputAssessmentStudent.update({
       where: { id: studentId },
       data: {
@@ -199,6 +242,10 @@ export async function POST(req: NextRequest) {
         devImportantNote: devImportantNote !== undefined ? devImportantNote : undefined,
         devAssessmentResult: devAssessmentResult !== undefined ? devAssessmentResult : undefined,
         admissionResult: admissionResult !== undefined ? admissionResult : undefined,
+        bghApprovalStatus: bghApprovalStatus !== undefined ? bghApprovalStatus : undefined,
+        bghApprovalComment: bghApprovalComment !== undefined ? bghApprovalComment : undefined,
+        gdcsApprovalStatus: gdcsApprovalStatus !== undefined ? gdcsApprovalStatus : undefined,
+        gdcsApprovalComment: gdcsApprovalComment !== undefined ? gdcsApprovalComment : undefined,
       }
     })
     return NextResponse.json({ success: true, count: results.length })

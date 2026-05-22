@@ -785,6 +785,10 @@ model PreschoolInputAssessmentStudent {
   devPsychologyComment    String?
   devImportantNote        String?
   devAssessmentResult     String?
+  bghApprovalStatus       String?
+  bghApprovalComment      String?
+  gdcsApprovalStatus      String?
+  gdcsApprovalComment     String?
   batch               PreschoolInputAssessmentBatch?    @relation(fields: [batchId], references: [id])
   period              PreschoolInputAssessmentPeriod    @relation(fields: [periodId], references: [id], onDelete: Cascade)
 
