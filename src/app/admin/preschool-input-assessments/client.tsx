@@ -129,6 +129,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   const [evalStudent, setEvalStudent] = useState<PreschoolChild | null>(null);
   const [evalModal, setEvalModal] = useState(false);
   const [devAreas, setDevAreas] = useState<DevArea[]>([]);
+  const isAssessmentLocked = !!(evalStudent?.bghApprovalStatus === "DAT" && evalStudent?.gdcsApprovalStatus === "DAT");
   const [devLoading, setDevLoading] = useState(false);
   const [studentScores, setStudentScores] = useState<Record<string, { result: string; note: string }>>({});
   const [savingEval, setSavingEval] = useState(false);
@@ -1840,7 +1841,11 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
         onClose={() => setEvalModal(false)}
         title={`Phiếu đánh giá phát triển: ${evalStudent?.fullName || ""}`}
         size="xl"
-        footer={(
+        footer={isAssessmentLocked ? (
+          <button onClick={() => setEvalModal(false)} className="w-full py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-xs font-black uppercase tracking-widest transition-all">
+            Đóng
+          </button>
+        ) : (
           <>
             <button onClick={() => setEvalModal(false)} className="flex-1 text-xs font-black uppercase text-slate-400 hover:text-slate-600">
               Đóng
@@ -1856,6 +1861,16 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
         )}
       >
         <div className="space-y-4">
+          {isAssessmentLocked && (
+            <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-2xl flex items-center gap-3 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300">
+              <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0 animate-bounce" />
+              <div>
+                <p className="text-xs font-black uppercase tracking-wider">Phiếu đánh giá đã hoàn thành</p>
+                <p className="text-[11px] font-semibold text-emerald-600 mt-0.5">Học sinh đã đạt cả hai bước phê duyệt (BGH &amp; GĐCS). Phiếu ở trạng thái chỉ đọc để lưu trữ.</p>
+              </div>
+            </div>
+          )}
+
           <div className="bg-violet-50/50 p-4 rounded-2xl border border-violet-100 flex flex-wrap justify-between gap-4">
             <div>
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Học sinh</p>
@@ -1949,7 +1964,8 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                                     value={numStr}
                                     onChange={e => updatePhysical(e.target.value, rawObs)}
                                     placeholder={isHeight ? "0" : "0.0"}
-                                    className="w-24 text-xl font-black text-slate-800 outline-none bg-transparent text-center px-3 py-2.5 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                    disabled={isAssessmentLocked}
+                                    className="w-24 text-xl font-black text-slate-800 outline-none bg-transparent text-center px-3 py-2.5 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:text-slate-400 disabled:cursor-not-allowed"
                                   />
                                   <div className="px-3.5 py-2.5 bg-violet-50 border-l-2 border-violet-200 text-sm font-black text-violet-600 select-none min-w-[48px] text-center">
                                     {unit}
@@ -1983,7 +1999,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                               {/* Radio buttons */}
                               <div className="flex flex-wrap gap-3 mt-3">
                                 {radioOpts.map(opt => (
-                                  <label key={opt.key} className="relative flex items-center cursor-pointer">
+                                  <label key={opt.key} className={`relative flex items-center ${isAssessmentLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
                                     <input
                                       type="radio"
                                       name={`crit-${crit.id}`}
@@ -1992,6 +2008,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                                         ...prev,
                                         [crit.id]: { result: opt.key, note: prev[crit.id]?.note || "" }
                                       }))}
+                                      disabled={isAssessmentLocked}
                                       className="sr-only peer"
                                     />
                                     <span className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all peer-checked:ring-2 peer-checked:ring-violet-500/20 ${opt.color}`}>
@@ -2006,8 +2023,9 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                                 type="text"
                                 value={rawObs}
                                 onChange={e => updatePhysical(numStr, e.target.value)}
-                                placeholder="Ghi chú quan sát..."
-                                className="mt-2 w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-1.5 text-xs font-medium outline-none focus:border-violet-400 focus:bg-white transition-all"
+                                placeholder={isAssessmentLocked ? "Không có ghi chú" : "Ghi chú quan sát..."}
+                                disabled={isAssessmentLocked}
+                                className="mt-2 w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-1.5 text-xs font-medium outline-none focus:border-violet-400 focus:bg-white transition-all disabled:bg-slate-100/50 disabled:cursor-not-allowed disabled:text-slate-500"
                               />
                             </>
                           ) : (
@@ -2015,7 +2033,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                               {/* Standard radio buttons */}
                               <div className="flex flex-wrap gap-4 mt-2">
                                 {radioOpts.map(opt => (
-                                  <label key={opt.key} className="relative flex items-center cursor-pointer">
+                                  <label key={opt.key} className={`relative flex items-center ${isAssessmentLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
                                     <input
                                       type="radio"
                                       name={`crit-${crit.id}`}
@@ -2024,6 +2042,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                                         ...prev,
                                         [crit.id]: { result: opt.key, note: prev[crit.id]?.note || "" }
                                       }))}
+                                      disabled={isAssessmentLocked}
                                       className="sr-only peer"
                                     />
                                     <span className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all peer-checked:ring-2 peer-checked:ring-violet-500/20 ${opt.color}`}>
@@ -2041,8 +2060,9 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                                   ...prev,
                                   [crit.id]: { result: prev[crit.id]?.result || "CHUA_THE_HIEN", note: e.target.value }
                                 }))}
-                                placeholder="Nhập ghi chú quan sát..."
-                                className="mt-2 w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-1.5 text-xs font-medium outline-none focus:border-violet-400 focus:bg-white transition-all"
+                                placeholder={isAssessmentLocked ? "Không có ghi chú" : "Nhập ghi chú quan sát..."}
+                                disabled={isAssessmentLocked}
+                                className="mt-2 w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-1.5 text-xs font-medium outline-none focus:border-violet-400 focus:bg-white transition-all disabled:bg-slate-100/50 disabled:cursor-not-allowed disabled:text-slate-500"
                               />
                             </>
                           )}
@@ -2066,8 +2086,9 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                     value={devProfComment}
                     onChange={e => setDevProfComment(e.target.value)}
                     rows={3}
-                    placeholder="Nhận xét về sự phát triển chuyên môn của trẻ..."
-                    className="w-full bg-white border border-rose-100 rounded-xl px-4 py-2.5 text-xs font-medium outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100 transition-all resize-none placeholder:text-slate-300"
+                    placeholder={isAssessmentLocked ? "Chưa có nhận xét" : "Nhận xét về sự phát triển chuyên môn của trẻ..."}
+                    disabled={isAssessmentLocked}
+                    className="w-full bg-white border border-rose-100 rounded-xl px-4 py-2.5 text-xs font-medium outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100 transition-all resize-none placeholder:text-slate-300 disabled:bg-slate-100/50 disabled:cursor-not-allowed disabled:text-slate-500 disabled:border-slate-200"
                   />
                 </div>
 
@@ -2077,8 +2098,9 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                     value={devPsyComment}
                     onChange={e => setDevPsyComment(e.target.value)}
                     rows={3}
-                    placeholder="Nhận xét về trạng thái tâm lý, cảm xúc của trẻ..."
-                    className="w-full bg-white border border-rose-100 rounded-xl px-4 py-2.5 text-xs font-medium outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100 transition-all resize-none placeholder:text-slate-300"
+                    placeholder={isAssessmentLocked ? "Chưa có nhận xét" : "Nhận xét về trạng thái tâm lý, cảm xúc của trẻ..."}
+                    disabled={isAssessmentLocked}
+                    className="w-full bg-white border border-rose-100 rounded-xl px-4 py-2.5 text-xs font-medium outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100 transition-all resize-none placeholder:text-slate-300 disabled:bg-slate-100/50 disabled:cursor-not-allowed disabled:text-slate-500 disabled:border-slate-200"
                   />
                 </div>
 
@@ -2088,8 +2110,9 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                     value={devNote}
                     onChange={e => setDevNote(e.target.value)}
                     rows={2}
-                    placeholder="Những điểm cần lưu ý đặc biệt..."
-                    className="w-full bg-white border border-amber-100 rounded-xl px-4 py-2.5 text-xs font-medium outline-none focus:border-amber-300 focus:ring-2 focus:ring-amber-100 transition-all resize-none placeholder:text-slate-300"
+                    placeholder={isAssessmentLocked ? "Không có lưu ý đặc biệt" : "Những điểm cần lưu ý đặc biệt..."}
+                    disabled={isAssessmentLocked}
+                    className="w-full bg-white border border-amber-100 rounded-xl px-4 py-2.5 text-xs font-medium outline-none focus:border-amber-300 focus:ring-2 focus:ring-amber-100 transition-all resize-none placeholder:text-slate-300 disabled:bg-slate-100/50 disabled:cursor-not-allowed disabled:text-slate-500 disabled:border-slate-200"
                   />
                 </div>
 
@@ -2209,18 +2232,18 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                               <button
                                 key={opt.status}
                                 type="button"
-                                disabled={!canApproveBGH}
+                                disabled={!canApproveBGH || isAssessmentLocked}
                                 onClick={() => setBghApprovalStatus(bghApprovalStatus === opt.status ? "" : opt.status)}
                                 className={`px-3 py-1.5 rounded-xl border text-[10px] font-black transition-all ${
                                   bghApprovalStatus === opt.status 
                                     ? opt.activeColor 
                                     : `${opt.color} text-slate-600 bg-white border-slate-200`
-                                } ${!canApproveBGH ? 'cursor-not-allowed opacity-60' : 'hover:scale-[1.02]'}`}
+                                } ${(!canApproveBGH || isAssessmentLocked) ? 'cursor-not-allowed opacity-60' : 'hover:scale-[1.02]'}`}
                               >
                                 {opt.label}
                               </button>
                             ))}
-                            {canApproveBGH && bghApprovalStatus && (
+                            {canApproveBGH && !isAssessmentLocked && bghApprovalStatus && (
                               <button
                                 type="button"
                                 onClick={() => setBghApprovalStatus("")}
@@ -2233,11 +2256,11 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                           <textarea
                             value={bghApprovalComment}
                             onChange={e => setBghApprovalComment(e.target.value)}
-                            disabled={!canApproveBGH}
+                            disabled={!canApproveBGH || isAssessmentLocked}
                             rows={2}
-                            placeholder={canApproveBGH ? "Ý kiến phê duyệt của BGH..." : "Chưa có ý kiến phê duyệt của BGH"}
+                            placeholder={isAssessmentLocked ? "Chưa có ý kiến phê duyệt của BGH" : canApproveBGH ? "Ý kiến phê duyệt của BGH..." : "Chưa có ý kiến phê duyệt của BGH"}
                             className={`w-full border rounded-xl px-3 py-2 text-xs font-medium outline-none transition-all resize-none placeholder:text-slate-300 ${
-                              canApproveBGH 
+                              canApproveBGH && !isAssessmentLocked
                                 ? 'bg-slate-50 border-slate-100 focus:border-violet-300 focus:bg-white' 
                                 : 'bg-slate-100/50 border-slate-200 text-slate-500 cursor-not-allowed'
                             }`}
@@ -2295,18 +2318,18 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                               <button
                                 key={opt.status}
                                 type="button"
-                                disabled={!canApproveGDCS}
+                                disabled={!canApproveGDCS || isAssessmentLocked}
                                 onClick={() => setGdcsApprovalStatus(gdcsApprovalStatus === opt.status ? "" : opt.status)}
                                 className={`px-3 py-1.5 rounded-xl border text-[10px] font-black transition-all ${
                                   gdcsApprovalStatus === opt.status 
                                     ? opt.activeColor 
                                     : `${opt.color} text-slate-600 bg-white border-slate-200`
-                                } ${!canApproveGDCS ? 'cursor-not-allowed opacity-60' : 'hover:scale-[1.02]'}`}
+                                } ${(!canApproveGDCS || isAssessmentLocked) ? 'cursor-not-allowed opacity-60' : 'hover:scale-[1.02]'}`}
                               >
                                 {opt.label}
                               </button>
                             ))}
-                            {canApproveGDCS && gdcsApprovalStatus && (
+                            {canApproveGDCS && !isAssessmentLocked && gdcsApprovalStatus && (
                               <button
                                 type="button"
                                 onClick={() => setGdcsApprovalStatus("")}
@@ -2319,11 +2342,11 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                           <textarea
                             value={gdcsApprovalComment}
                             onChange={e => setGdcsApprovalComment(e.target.value)}
-                            disabled={!canApproveGDCS}
+                            disabled={!canApproveGDCS || isAssessmentLocked}
                             rows={2}
-                            placeholder={canApproveGDCS ? "Ý kiến phê duyệt của GĐCS..." : "Chưa có ý kiến phê duyệt của GĐCS"}
+                            placeholder={isAssessmentLocked ? "Chưa có ý kiến phê duyệt của GĐCS" : canApproveGDCS ? "Ý kiến phê duyệt của GĐCS..." : "Chưa có ý kiến phê duyệt của GĐCS"}
                             className={`w-full border rounded-xl px-3 py-2 text-xs font-medium outline-none transition-all resize-none placeholder:text-slate-300 ${
-                              canApproveGDCS 
+                              canApproveGDCS && !isAssessmentLocked
                                 ? 'bg-slate-50 border-slate-100 focus:border-fuchsia-300 focus:bg-white' 
                                 : 'bg-slate-100/50 border-slate-200 text-slate-500 cursor-not-allowed'
                             }`}
