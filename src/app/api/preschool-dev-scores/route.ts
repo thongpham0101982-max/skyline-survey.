@@ -175,7 +175,7 @@ export async function POST(req: NextRequest) {
     const session = await auth()
     const currentUser = session?.user as any
     const userRole = (currentUser?.role || "").toUpperCase()
-    const isGlobalAdmin = userRole === "ADMIN" || userRole === "KT_DBCL"
+    const isGlobalAdmin = userRole === "ADMIN" || userRole === "KT_DBCL" || userRole === "BGH MN" || userRole === "BGH_MN"
 
     const body = await req.json()
     const { studentId, scores, devProfessionalComment, devPsychologyComment, devImportantNote, devAssessmentResult, bghApprovalStatus, bghApprovalComment, gdcsApprovalStatus, gdcsApprovalComment } = body

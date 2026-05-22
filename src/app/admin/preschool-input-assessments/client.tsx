@@ -95,7 +95,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
 
   const userRole = (currentUser?.role || "").toUpperCase();
   const isSystemAdmin = userRole === "ADMIN";
-  const isBGHUser = userRole === "KT_DBCL";
+  const isBGHUser = userRole === "KT_DBCL" || userRole === "BGH MN" || userRole === "BGH_MN";
   const isGDCSUser = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(userRole);
 
   const showBghSection = true;
