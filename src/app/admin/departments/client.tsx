@@ -10,7 +10,7 @@ export default function DepartmentsClient() {
   
   const [isOpen, setIsOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ code: "", name: "", description: "" });
+  const [form, setForm] = useState({ code: "", name: "", description: "", blockCM: "" });
 
   const fetchDepartments = async () => {
     setLoading(true);
@@ -38,7 +38,7 @@ export default function DepartmentsClient() {
 
   const handleEdit = (d: any) => {
     setEditingId(d.id);
-    setForm({ code: d.code, name: d.name, description: d.description || "" });
+    setForm({ code: d.code, name: d.name, description: d.description || "", blockCM: d.blockCM || "" });
     setIsOpen(true);
   };
 
@@ -67,7 +67,7 @@ export default function DepartmentsClient() {
           </h1>
           <p className="text-slate-500 mt-1 text-sm">Thêm, sửa, xóa danh sách Tổ chuyên môn / Phòng ban</p>
         </div>
-        <button onClick={() => { setEditingId(null); setForm({ code: "", name: "", description: "" }); setIsOpen(true); }} className="px-4 py-2.5 bg-indigo-600 text-white rounded-xl shadow-sm hover:bg-indigo-700 font-semibold flex items-center gap-2"><Plus className="w-5 h-5"/>Thêm Tổ / Phòng</button>
+        <button onClick={() => { setEditingId(null); setForm({ code: "", name: "", description: "", blockCM: "" }); setIsOpen(true); }} className="px-4 py-2.5 bg-indigo-600 text-white rounded-xl shadow-sm hover:bg-indigo-700 font-semibold flex items-center gap-2"><Plus className="w-5 h-5"/>Thêm Tổ / Phòng</button>
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
@@ -84,16 +84,26 @@ export default function DepartmentsClient() {
                 <th className="w-10 px-4 py-3"><input type="checkbox" checked={selectedIds.length === filtered.length && filtered.length > 0} onChange={() => setSelectedIds(selectedIds.length === filtered.length ? [] : filtered.map(d=>d.id))} className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500" /></th>
                 <th className="px-4 py-3">Mã Tổ</th>
                 <th className="px-4 py-3 w-1/3">Tên Tổ Chuyên môn</th>
+                <th className="px-4 py-3">Khối CM</th>
                 <th className="px-4 py-3">Mô tả</th>
                 <th className="px-4 py-3 text-center w-24">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
-              {loading ? <tr><td colSpan={5} className="p-8 text-center text-slate-400">Đang tải...</td></tr> : filtered.length === 0 ? <tr><td colSpan={5} className="p-8 text-center text-slate-400">Chưa có Tổ chuyên môn nào.</td></tr> : filtered.map(d => (
+              {loading ? <tr><td colSpan={6} className="p-8 text-center text-slate-400">Đang tải...</td></tr> : filtered.length === 0 ? <tr><td colSpan={6} className="p-8 text-center text-slate-400">Chưa có Tổ chuyên môn nào.</td></tr> : filtered.map(d => (
                 <tr key={d.id} className="hover:bg-slate-50/80 transition-colors">
                   <td className="px-4 py-3"><input type="checkbox" checked={selectedIds.includes(d.id)} onChange={() => setSelectedIds(p=>p.includes(d.id)?p.filter(x=>x!==d.id):[...p, d.id])} className="w-4 h-4 rounded text-indigo-600" /></td>
                   <td className="px-4 py-3 font-mono font-medium text-indigo-600">{d.code}</td>
                   <td className="px-4 py-3 font-semibold text-slate-800">{d.name}</td>
+                  <td className="px-4 py-3">
+                    {d.blockCM ? (
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold inline-block ${d.blockCM === "Mầm Non" ? "bg-amber-50 text-amber-600 border border-amber-200" : "bg-indigo-50 text-indigo-600 border border-indigo-200"}`}>
+                        {d.blockCM}
+                      </span>
+                    ) : (
+                      <span className="text-slate-400 italic text-xs">Chưa phân loại</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-slate-500">{d.description || "-"}</td>
                   <td className="px-4 py-3 text-center">
                     <div className="flex gap-1 justify-center">
@@ -117,11 +127,19 @@ export default function DepartmentsClient() {
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-semibold mb-1.5 text-slate-700">Mã Tổ *</label>
-                <input required value={form.code} onChange={e=>setForm({...form, code: e.target.value.toUpperCase().replace(/s+/g, '_')})} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-indigo-500 outline-none font-mono" placeholder="VD: TO_TOAN" />
+                <input required value={form.code} onChange={e=>setForm({...form, code: e.target.value.toUpperCase().replace(/\s+/g, '_')})} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-indigo-500 outline-none font-mono" placeholder="VD: TO_TOAN" />
               </div>
               <div>
                 <label className="block text-sm font-semibold mb-1.5 text-slate-700">Tên Tổ *</label>
                 <input required value={form.name} onChange={e=>setForm({...form, name: e.target.value})} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-indigo-500 outline-none" placeholder="Tổ Toán học" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-1.5 text-slate-700">Khối Chuyên Môn</label>
+                <select value={form.blockCM} onChange={e=>setForm({...form, blockCM: e.target.value})} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-indigo-500 outline-none bg-white">
+                  <option value="">Chọn Khối CM (Không bắt buộc)</option>
+                  <option value="Mầm Non">Mầm Non</option>
+                  <option value="Phổ thông">Phổ thông</option>
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-semibold mb-1.5 text-slate-700">Mô tả</label>
