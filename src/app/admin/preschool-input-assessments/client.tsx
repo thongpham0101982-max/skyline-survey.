@@ -1034,34 +1034,175 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                               return <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-slate-50 text-slate-400 border border-slate-200">Chưa duyệt</span>;
                             };
 
-                            const renderCellWithTooltip = (text: string) => {
-                              const isDefault = text === "Chưa đánh giá" || !text;
+                            // Height, Weight, BMI extractors
+                            const heightScore = s.scores?.find((sc: any) => sc.criteria?.code?.endsWith("_01") || sc.criteria?.name?.toLowerCase().includes("chiều cao"));
+                            const weightScore = s.scores?.find((sc: any) => sc.criteria?.code?.endsWith("_02") || sc.criteria?.name?.toLowerCase().includes("cân nặng"));
+
+                            const getHeightVal = (score: any) => {
+                              if (!score || !score.note) return null;
+                              const rawPart = score.note.includes("|") ? score.note.split("|")[0] : score.note;
+                              const num = parseFloat(rawPart.replace(/[^\d.]/g, ""));
+                              return isNaN(num) || num <= 0 ? null : num;
+                            };
+
+                            const getWeightVal = (score: any) => {
+                              if (!score || !score.note) return null;
+                              const rawPart = score.note.includes("|") ? score.note.split("|")[0] : score.note;
+                              const num = parseFloat(rawPart.replace(/[^\d.]/g, ""));
+                              return isNaN(num) || num <= 0 ? null : num;
+                            };
+
+                            const hVal = getHeightVal(heightScore);
+                            const wVal = getWeightVal(weightScore);
+
+                            let bmiVal = null;
+                            if (hVal && wVal) {
+                              const heightInMeters = hVal / 100;
+                              bmiVal = wVal / (heightInMeters * heightInMeters);
+                            }
+
+                            const bmiClass = bmiVal ? getBMIClassification(bmiVal) : null;
+
+                            const renderAreaCell = (areaCode: string) => {
+                              const areaScores = s.scores?.filter((sc: any) => sc.criteria?.area?.code === areaCode) || [];
+                              if (areaScores.length === 0) {
+                                return <td className="p-4 text-xs font-medium text-slate-300 align-top">—</td>;
+                              }
                               return (
-                                <td 
-                                  className={`p-4 text-xs font-medium max-w-[200px] truncate ${isDefault ? 'text-slate-300' : 'text-slate-600'}`} 
-                                  title={text || ""}
-                                >
-                                  {text || "—"}
+                                <td className="p-4 align-top">
+                                  <div className="flex flex-col gap-2 min-w-[200px] max-w-[280px]">
+                                    {areaScores.map((sc: any) => {
+                                      const name = sc.criteria?.name || "";
+                                      const isDat = sc.result === "DAT";
+                                      const isKhongDat = sc.result === "KHONG_DAT";
+                                      const cleanObs = sc.note ? (sc.note.includes("|") ? sc.note.split("|")[1] : sc.note) : "";
+                                      
+                                      return (
+                                        <div key={sc.id} className="text-[11px] leading-relaxed flex items-start gap-1.5 text-slate-600">
+                                          <span className={`font-black text-xs flex-shrink-0 select-none ${isDat ? 'text-emerald-500' : isKhongDat ? 'text-rose-500' : 'text-slate-300'}`}>
+                                            {isDat ? "✓" : isKhongDat ? "✗" : "○"}
+                                          </span>
+                                          <div className="flex flex-col">
+                                            <span className="font-semibold text-slate-700" title={`${name}${cleanObs ? ` (${cleanObs})` : ""}`}>
+                                              {name}
+                                            </span>
+                                            {cleanObs && (
+                                              <span className="text-[10px] font-normal text-violet-500 italic mt-0.5">
+                                                Ghi chú: {cleanObs}
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
                                 </td>
                               );
                             };
 
                             return (
-                              <tr key={s.id} className="hover:bg-violet-50/30 transition-colors">
-                                <td className="p-4 text-slate-400 text-sm">{idx + 1}</td>
-                                <td className="p-4"><span className="font-mono text-xs font-black text-violet-600 bg-violet-50 px-2 py-1 rounded-lg">{s.studentCode}</span></td>
-                                <td className="p-4 font-bold text-slate-800 text-sm">{s.fullName}</td>
-                                <td className="p-4 text-sm text-slate-500">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
-                                <td className="p-4 text-sm text-slate-600">{s.gender || "—"}</td>
-                                <td className="p-4"><span className="text-xs font-bold text-purple-700 bg-purple-50 px-2 py-1 rounded-lg border border-purple-100">{s.grade || "—"}</span></td>
-                                <td className="p-4 text-sm text-slate-600">{s.admissionCampus || "—"}</td>
-                                {renderCellWithTooltip(s.theChatSummary)}
-                                {renderCellWithTooltip(s.nhanThucSummary)}
-                                {renderCellWithTooltip(s.ngonNguSummary)}
-                                {renderCellWithTooltip(s.tinhCamXhTmSummary)}
-                                {renderCellWithTooltip(s.teacherComment)}
-                                <td className="p-4">{getResultBadge(s.generalResult)}</td>
-                                <td className="p-4">
+                              <tr key={s.id} className="hover:bg-violet-50/30 transition-colors border-b border-violet-50">
+                                <td className="p-4 text-slate-400 text-sm align-top">{idx + 1}</td>
+                                <td className="p-4 align-top"><span className="font-mono text-xs font-black text-violet-600 bg-violet-50 px-2 py-1 rounded-lg">{s.studentCode}</span></td>
+                                <td className="p-4 font-bold text-slate-800 text-sm align-top">{s.fullName}</td>
+                                <td className="p-4 text-sm text-slate-500 align-top">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
+                                <td className="p-4 text-sm text-slate-600 align-top">{s.gender || "—"}</td>
+                                <td className="p-4 align-top"><span className="text-xs font-bold text-purple-700 bg-purple-50 px-2 py-1 rounded-lg border border-purple-100">{s.grade || "—"}</span></td>
+                                <td className="p-4 text-sm text-slate-600 align-top">{s.admissionCampus || "—"}</td>
+                                
+                                {/* Thể chất */}
+                                <td className="p-4 align-top text-xs">
+                                  <div className="flex flex-col gap-1.5 min-w-[180px]">
+                                    {hVal || wVal ? (
+                                      <div className="bg-slate-50 border border-slate-100 rounded-xl p-2.5 flex flex-col gap-1">
+                                        {hVal && (
+                                          <div className="flex items-center gap-1.5">
+                                            <span className="font-bold text-slate-400">Chiều cao:</span>
+                                            <span className="font-black text-slate-700">{hVal} cm</span>
+                                          </div>
+                                        )}
+                                        {wVal && (
+                                          <div className="flex items-center gap-1.5">
+                                            <span className="font-bold text-slate-400">Cân nặng:</span>
+                                            <span className="font-black text-slate-700">{wVal} kg</span>
+                                          </div>
+                                        )}
+                                        {bmiVal && bmiClass && (
+                                          <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                                            <span className="font-bold text-slate-400">BMI:</span>
+                                            <span className="font-black text-violet-600 font-mono">{bmiVal.toFixed(1)}</span>
+                                            <span className={`px-1.5 py-0.5 rounded-lg text-[9px] font-black border uppercase tracking-wider ${bmiClass.color}`}>
+                                              {bmiClass.label}
+                                            </span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <span className="text-slate-300 italic">Chưa đo thể chất</span>
+                                    )}
+
+                                    {/* Other physical criteria */}
+                                    {s.scores && s.scores.filter((sc: any) => sc.criteria?.area?.code === "THE_CHAT" && !sc.criteria?.code?.endsWith("_01") && !sc.criteria?.code?.endsWith("_02")).length > 0 && (
+                                      <div className="mt-2 pt-2 border-t border-violet-100 flex flex-col gap-1">
+                                        {s.scores
+                                          .filter((sc: any) => sc.criteria?.area?.code === "THE_CHAT" && !sc.criteria?.code?.endsWith("_01") && !sc.criteria?.code?.endsWith("_02"))
+                                          .map((sc: any) => {
+                                            const name = sc.criteria?.name || "";
+                                            const isDat = sc.result === "DAT";
+                                            const isKhongDat = sc.result === "KHONG_DAT";
+                                            const cleanObs = sc.note ? (sc.note.includes("|") ? sc.note.split("|")[1] : sc.note) : "";
+                                            return (
+                                              <div key={sc.id} className="text-[10px] leading-tight flex items-start gap-1 text-slate-600">
+                                                <span className={`font-black flex-shrink-0 select-none ${isDat ? 'text-emerald-500' : isKhongDat ? 'text-rose-500' : 'text-slate-300'}`}>
+                                                  {isDat ? "✓" : isKhongDat ? "✗" : "○"}
+                                                </span>
+                                                <span className="font-medium" title={`${name}${cleanObs ? ` (${cleanObs})` : ""}`}>
+                                                  {name.length > 30 ? name.substring(0, 30) + "..." : name}
+                                                  {cleanObs && <span className="text-[9px] font-normal text-violet-500 italic block">Ghi chú: {cleanObs}</span>}
+                                                </span>
+                                              </div>
+                                            );
+                                          })}
+                                      </div>
+                                    )}
+                                  </div>
+                                </td>
+
+                                {/* Nhận thức */}
+                                {renderAreaCell("NHAN_THUC")}
+
+                                {/* Ngôn ngữ */}
+                                {renderAreaCell("NGON_NGU")}
+
+                                {/* Tình cảm - Kỹ năng XH - TM */}
+                                {renderAreaCell("TINH_CAM_XH_TM")}
+
+                                {/* Giáo viên đánh giá */}
+                                <td className="p-4 align-top text-xs max-w-[250px] whitespace-normal">
+                                  <div className="flex flex-col gap-2 text-slate-700 min-w-[180px]">
+                                    {s.devProfessionalComment && (
+                                      <div>
+                                        <span className="font-bold text-violet-600">Chuyên môn:</span> {s.devProfessionalComment}
+                                      </div>
+                                    )}
+                                    {s.devPsychologyComment && (
+                                      <div>
+                                        <span className="font-bold text-indigo-600">Tâm lý:</span> {s.devPsychologyComment}
+                                      </div>
+                                    )}
+                                    {s.devImportantNote && (
+                                      <div className="bg-rose-50 border border-rose-100 rounded-xl p-2.5 mt-0.5 text-rose-700 font-medium shadow-sm">
+                                        <span className="font-bold text-rose-600">Lưu ý đặc biệt:</span> {s.devImportantNote}
+                                      </div>
+                                    )}
+                                    {!s.devProfessionalComment && !s.devPsychologyComment && !s.devImportantNote && (
+                                      <span className="text-slate-300 italic">—</span>
+                                    )}
+                                  </div>
+                                </td>
+
+                                <td className="p-4 align-top">{getResultBadge(s.generalResult)}</td>
+                                <td className="p-4 align-top">
                                   <button
                                     onClick={() => openEvaluation(s)}
                                     className="flex items-center gap-1 px-3 py-1.5 text-xs font-black text-violet-700 bg-violet-50 hover:bg-violet-500 hover:text-white rounded-lg border border-violet-100 transition-all shadow-sm"

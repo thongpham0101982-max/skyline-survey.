@@ -115,6 +115,23 @@ export async function GET(req: NextRequest) {
           nhanThucSummary: formatSummary(nhanThucScores),
           ngonNguSummary: formatSummary(ngonNguScores),
           tinhCamXhTmSummary: formatSummary(tinhCamXhTmScores),
+          scores: studentScoresList.map((sc) => ({
+            id: sc.id,
+            criteriaId: sc.criteriaId,
+            result: sc.result,
+            note: sc.note,
+            criteria: sc.criteria ? {
+              id: sc.criteria.id,
+              code: sc.criteria.code,
+              name: sc.criteria.name,
+              ageGroup: sc.criteria.ageGroup,
+              area: sc.criteria.area ? {
+                id: sc.criteria.area.id,
+                code: sc.criteria.area.code,
+                name: sc.criteria.area.name
+              } : null
+            } : null
+          })),
           teacherComment,
           generalResult
         }
