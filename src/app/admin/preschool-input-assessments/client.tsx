@@ -98,8 +98,8 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   const isBGHUser = userRole === "KT_DBCL";
   const isGDCSUser = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(userRole);
 
-  const showBghSection = isSystemAdmin || isBGHUser;
-  const showGdcsSection = isSystemAdmin || isGDCSUser;
+  const showBghSection = true;
+  const showGdcsSection = true;
 
   const getGdcsRoleCode = (campusName: string | undefined) => {
     if (!campusName) return "GĐCS";
