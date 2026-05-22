@@ -93,6 +93,14 @@ const xetDuyetCols = [
 export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoVuCSUsers, grades: gradesProp, teachers, departments, currentUser }: { academicYears: AcademicYear[]; campuses: Camp[]; giaoVuCSUsers: any[]; grades: string[]; teachers: any[]; departments: any[]; currentUser: any; }) {
   const grades = gradesProp && gradesProp.length > 0 ? gradesProp : ["18 đến 24 tháng", "24 đến 36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"];
 
+  const userRole = (currentUser?.role || "").toUpperCase();
+  const isSystemAdmin = userRole === "ADMIN";
+  const isBGHUser = userRole === "KT_DBCL";
+  const isGDCSUser = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(userRole);
+
+  const showBghSection = isSystemAdmin || isBGHUser;
+  const showGdcsSection = isSystemAdmin || isGDCSUser;
+
   const getGdcsRoleCode = (campusName: string | undefined) => {
     if (!campusName) return "GĐCS";
     if (campusName.startsWith("CS")) {
@@ -1069,7 +1077,11 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                     <table className="w-full min-w-max text-left whitespace-nowrap table-auto">
                       <thead className="bg-violet-50 border-b border-violet-100 sticky top-0 z-30">
                         <tr>
-                          {xetDuyetCols.map(col => (
+                          {xetDuyetCols.filter(col => {
+                            if (col.id === "bghApproval") return showBghSection;
+                            if (col.id === "gdcsApproval") return showGdcsSection;
+                            return true;
+                          }).map(col => (
                             <th key={col.id} className={`p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest ${col.width}`}>
                               {col.label}
                             </th>
@@ -1273,68 +1285,72 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                                 </td>
 
                                 {/* Duyệt BGH MN */}
-                                 <td className="w-[220px] min-w-[220px] whitespace-normal border-r border-violet-50/50 p-4 align-top text-xs">
-                                   <div className="flex flex-col gap-1.5 w-full">
-                                     {s.bghApprovalStatus ? (
-                                       <>
-                                         <div>
-                                           {s.bghApprovalStatus === "DAT" && (
-                                             <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">ĐẠT</span>
-                                           )}
-                                           {s.bghApprovalStatus === "KHONG_DAT" && (
-                                             <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-100">KHÔNG ĐẠT</span>
-                                           )}
-                                           {s.bghApprovalStatus === "Y_KIEN_KHAC" && (
-                                             <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-100">Ý KIẾN KHÁC</span>
-                                           )}
-                                         </div>
-                                         {s.bghApprovalComment && (
-                                           <div className="text-[11px] leading-relaxed text-slate-600 bg-slate-50 border border-slate-100 rounded-xl p-2 mt-1">
-                                             {s.bghApprovalComment}
+                                 {showBghSection && (
+                                   <td className="w-[220px] min-w-[220px] whitespace-normal border-r border-violet-50/50 p-4 align-top text-xs">
+                                     <div className="flex flex-col gap-1.5 w-full">
+                                       {s.bghApprovalStatus ? (
+                                         <>
+                                           <div>
+                                             {s.bghApprovalStatus === "DAT" && (
+                                               <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">ĐẠT</span>
+                                             )}
+                                             {s.bghApprovalStatus === "KHONG_DAT" && (
+                                               <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-100">KHÔNG ĐẠT</span>
+                                             )}
+                                             {s.bghApprovalStatus === "Y_KIEN_KHAC" && (
+                                               <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-100">Ý KIẾN KHÁC</span>
+                                             )}
                                            </div>
-                                         )}
-                                       </>
-                                     ) : (
-                                       <div>
-                                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-violet-50/70 text-violet-600 border border-violet-100/50">
-                                           Chờ BGH MN duyệt
-                                         </span>
-                                       </div>
-                                     )}
-                                   </div>
-                                 </td>
+                                           {s.bghApprovalComment && (
+                                             <div className="text-[11px] leading-relaxed text-slate-600 bg-slate-50 border border-slate-100 rounded-xl p-2 mt-1">
+                                               {s.bghApprovalComment}
+                                             </div>
+                                           )}
+                                         </>
+                                       ) : (
+                                         <div>
+                                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-violet-50/70 text-violet-600 border border-violet-100/50">
+                                             Chờ BGH MN duyệt
+                                           </span>
+                                         </div>
+                                       )}
+                                     </div>
+                                   </td>
+                                 )}
 
                                 {/* Duyệt GĐCS */}
-                                 <td className="w-[220px] min-w-[220px] whitespace-normal border-r border-violet-50/50 p-4 align-top text-xs">
-                                   <div className="flex flex-col gap-1.5 w-full">
-                                     {s.gdcsApprovalStatus ? (
-                                       <>
-                                         <div>
-                                           {s.gdcsApprovalStatus === "DAT" && (
-                                             <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">ĐẠT</span>
-                                           )}
-                                           {s.gdcsApprovalStatus === "KHONG_DAT" && (
-                                             <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-100">KHÔNG ĐẠT</span>
-                                           )}
-                                           {s.gdcsApprovalStatus === "Y_KIEN_KHAC" && (
-                                             <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-100">Ý KIẾN KHÁC</span>
-                                           )}
-                                         </div>
-                                         {s.gdcsApprovalComment && (
-                                           <div className="text-[11px] leading-relaxed text-slate-600 bg-slate-50 border border-slate-100 rounded-xl p-2 mt-1">
-                                             {s.gdcsApprovalComment}
+                                 {showGdcsSection && (
+                                   <td className="w-[220px] min-w-[220px] whitespace-normal border-r border-violet-50/50 p-4 align-top text-xs">
+                                     <div className="flex flex-col gap-1.5 w-full">
+                                       {s.gdcsApprovalStatus ? (
+                                         <>
+                                           <div>
+                                             {s.gdcsApprovalStatus === "DAT" && (
+                                               <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">ĐẠT</span>
+                                             )}
+                                             {s.gdcsApprovalStatus === "KHONG_DAT" && (
+                                               <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-100">KHÔNG ĐẠT</span>
+                                             )}
+                                             {s.gdcsApprovalStatus === "Y_KIEN_KHAC" && (
+                                               <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-100">Ý KIẾN KHÁC</span>
+                                             )}
                                            </div>
-                                         )}
-                                       </>
-                                     ) : (
-                                       <div>
-                                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-fuchsia-50/70 text-fuchsia-600 border border-fuchsia-100/50">
-                                           Chờ {getGdcsRoleCode(s.admissionCampus)} duyệt
-                                         </span>
-                                       </div>
-                                     )}
-                                   </div>
-                                 </td>
+                                           {s.gdcsApprovalComment && (
+                                             <div className="text-[11px] leading-relaxed text-slate-600 bg-slate-50 border border-slate-100 rounded-xl p-2 mt-1">
+                                               {s.gdcsApprovalComment}
+                                             </div>
+                                           )}
+                                         </>
+                                       ) : (
+                                         <div>
+                                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-fuchsia-50/70 text-fuchsia-600 border border-fuchsia-100/50">
+                                             Chờ {getGdcsRoleCode(s.admissionCampus)} duyệt
+                                           </span>
+                                         </div>
+                                       )}
+                                     </div>
+                                   </td>
+                                 )}
 
                                 <td className="w-32 min-w-[128px] p-4 align-top">{getResultBadge(s.generalResult)}</td>
                                 <td className="w-24 min-w-[96px] p-4 align-top">
@@ -2107,14 +2123,6 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
 
               {/* PHÊ DUYỆT 2 BƯỚC XÉT DUYỆT */}
               {(() => {
-                const userRole = (currentUser?.role || "").toUpperCase();
-                const isSystemAdmin = userRole === "ADMIN";
-                const isBGHUser = userRole === "KT_DBCL";
-                const isGDCSUser = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(userRole);
-
-                const showBghSection = isSystemAdmin || isBGHUser;
-                const showGdcsSection = isSystemAdmin || isGDCSUser;
-
                 const userCampuses = campuses.filter(c => currentUser?.campusIds?.includes(c.id));
                 const hasCampusMatch = currentUser?.campusIds?.length === 0 || userCampuses.some(c => 
                   c.campusName === evalStudent?.admissionCampus || 
