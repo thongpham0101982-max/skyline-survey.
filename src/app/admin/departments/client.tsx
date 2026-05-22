@@ -97,7 +97,13 @@ export default function DepartmentsClient() {
                   <td className="px-4 py-3 font-semibold text-slate-800">{d.name}</td>
                   <td className="px-4 py-3">
                     {d.blockCM ? (
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold inline-block ${d.blockCM === "Mầm Non" ? "bg-amber-50 text-amber-600 border border-amber-200" : "bg-indigo-50 text-indigo-600 border border-indigo-200"}`}>
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold inline-block ${
+                        d.blockCM === "Mầm Non" ? "bg-amber-50 text-amber-600 border border-amber-200" :
+                        d.blockCM === "Phổ thông" ? "bg-indigo-50 text-indigo-600 border border-indigo-200" :
+                        d.blockCM === "Điều hành" ? "bg-teal-50 text-teal-600 border border-teal-200" :
+                        d.blockCM === "Hỗ trợ người học" ? "bg-rose-50 text-rose-600 border border-rose-200" :
+                        "bg-slate-50 text-slate-600 border border-slate-200"
+                      }`}>
                         {d.blockCM}
                       </span>
                     ) : (
@@ -139,6 +145,8 @@ export default function DepartmentsClient() {
                   <option value="">Chọn Khối CM (Không bắt buộc)</option>
                   <option value="Mầm Non">Mầm Non</option>
                   <option value="Phổ thông">Phổ thông</option>
+                  <option value="Điều hành">Điều hành</option>
+                  <option value="Hỗ trợ người học">Hỗ trợ người học</option>
                 </select>
               </div>
               <div>
