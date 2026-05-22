@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 
-export async function sendEmail({ to, subject, html, attachments }: { to: string; subject: string; html: string; attachments?: any[] }) {
+export async function sendEmail({ to, subject, html, attachments, replyTo }: { to: string; subject: string; html: string; attachments?: any[]; replyTo?: string }) {
   const host = process.env.SMTP_HOST || "smtp.office365.com";
   const port = parseInt(process.env.SMTP_PORT || "587", 10);
   const secure = process.env.SMTP_SECURE === "true";
@@ -30,7 +30,8 @@ export async function sendEmail({ to, subject, html, attachments }: { to: string
     to,
     subject,
     html,
-    attachments
+    attachments,
+    replyTo
   };
 
   const info = await transporter.sendMail(mailOptions);

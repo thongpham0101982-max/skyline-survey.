@@ -237,7 +237,8 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   // Assignments States
   const [aPeriodId, setAPeriodId] = useState(cPeriodId || "");
   const [aBatchId, setABatchId] = useState(cBatchId || "all");
-  const [aGrade, setAGrade] = useState("18 đến 24 tháng");
+  const [aGrades, setAGrades] = useState<string[]>(["18 đến 24 tháng"]);
+  const [aDeptId, setADeptId] = useState("");
   const [aSelectedTeachers, setASelectedTeachers] = useState([]);
   const [aSearchTeacher, setASearchTeacher] = useState("");
   const [assignments, setAssignments] = useState([]);
@@ -360,6 +361,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
     }
   }, [tab, devTab, fetchStudentSummaries]);
 
+  const aGradesStr = aGrades.join(",");
   // Assignments Callbacks & Effects
   const fetchAssignments = useCallback(async () => {
     if (!aPeriodId) return;
@@ -371,8 +373,8 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
       } else if (aBatchId === "all") {
         url += `&batchId=all`;
       }
-      if (aGrade) {
-        url += `&grade=${encodeURIComponent(aGrade)}`;
+      if (aGradesStr) {
+        url += `&grade=${encodeURIComponent(aGradesStr)}`;
       }
       const res = await fetch(url);
       if (res.ok) {
@@ -387,7 +389,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
     } finally {
       setAssignLoading(false);
     }
-  }, [aPeriodId, aBatchId, aGrade]);
+  }, [aPeriodId, aBatchId, aGradesStr]);
 
   useEffect(() => {
     if (tab === "assignments") {
@@ -408,7 +410,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   }, [cBatchId]);
 
   const saveAssignments = async () => {
-    if (!aPeriodId || !aGrade) return notify("Vui lòng chọn đầy đủ Kỳ khảo sát và Nhóm tuổi", "err");
+    if (!aPeriodId || aGrades.length === 0) return notify("Vui lòng chọn đầy đủ Kỳ khảo sát và ít nhất một Nhóm tuổi", "err");
     setASaving(true);
     try {
       const res = await fetch("/api/preschool-input-assessment-assignments", {
@@ -418,7 +420,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
           action: "ASSIGN",
           periodId: aPeriodId,
           batchId: aBatchId,
-          grade: aGrade,
+          grade: aGrades,
           userIds: aSelectedTeachers
         })
       });
@@ -476,7 +478,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
           action: "NOTIFY_ALL",
           periodId: aPeriodId,
           batchId: aBatchId,
-          grade: aGrade
+          grade: aGrades
         })
       });
       if (res.ok) {
@@ -1053,15 +1055,35 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                   </Field>
 
                   <Field label="Nhóm tuổi (Khối)" required>
-                    <select 
-                      value={aGrade} 
-                      onChange={e => setAGrade(e.target.value)} 
-                      className={inp}
-                    >
-                      {grades.map(g => (
-                        <option key={g} value={g}>{g}</option>
-                      ))}
-                    </select>
+                    <div className="grid grid-cols-2 gap-2 mt-1">
+                      {grades.map(g => {
+                        const isChecked = aGrades.includes(g);
+                        return (
+                          <label 
+                            key={g} 
+                            className={`flex items-center gap-2.5 p-3 rounded-2xl border cursor-pointer transition-all ${
+                              isChecked 
+                                ? "bg-violet-50/70 border-violet-300 text-violet-700 font-bold shadow-sm" 
+                                : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300"
+                            }`}
+                          >
+                            <input 
+                              type="checkbox" 
+                              checked={isChecked}
+                              onChange={() => {
+                                setAGrades(prev => 
+                                  isChecked 
+                                    ? prev.filter(item => item !== g)
+                                    : [...prev, g]
+                                );
+                              }}
+                              className="w-4 h-4 rounded text-violet-600 focus:ring-violet-500 focus:ring-offset-0 cursor-pointer"
+                            />
+                            <span className="text-xs">{g}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
                   </Field>
                 </div>
               </div>
@@ -1075,6 +1097,21 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                   <span className="text-[10px] bg-violet-50 text-violet-600 px-2 py-0.5 rounded-lg font-black">
                     Đã chọn {aSelectedTeachers.length}
                   </span>
+                </div>
+
+                {/* Department Selection */}
+                <div className="space-y-1.5">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Lọc theo Tổ Chuyên môn</label>
+                  <select
+                    value={aDeptId}
+                    onChange={e => setADeptId(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-2.5 outline-none focus:bg-white focus:border-violet-400 focus:ring-4 focus:ring-violet-400/10 text-xs font-semibold text-slate-700 transition-all shadow-sm cursor-pointer"
+                  >
+                    <option value="">Tất cả Tổ Chuyên môn</option>
+                    {departments.map(d => (
+                      <option key={d.id} value={d.id}>{d.name}</option>
+                    ))}
+                  </select>
                 </div>
 
                 {/* Search Bar */}
@@ -1102,6 +1139,10 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                   {teachers
                     .filter(t => t.user)
                     .filter(t => {
+                      if (!aDeptId) return true;
+                      return t.departmentId === aDeptId;
+                    })
+                    .filter(t => {
                       if (!aSearchTeacher) return true;
                       const query = aSearchTeacher.toLowerCase();
                       return (t.teacherName || "").toLowerCase().includes(query) || (t.teacherCode || "").toLowerCase().includes(query);
@@ -1126,7 +1167,14 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                               className="w-4.5 h-4.5 rounded-lg border-slate-300 text-violet-600 focus:ring-violet-500 focus:ring-offset-0 cursor-pointer"
                             />
                             <div>
-                              <div className="text-sm font-bold text-slate-800">{t.teacherName}</div>
+                              <div className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                                <span>{t.teacherName}</span>
+                                {t.departmentRel?.name && (
+                                  <span className="text-[9px] font-black uppercase bg-violet-50 text-violet-600 border border-violet-100 px-1.5 py-0.5 rounded-lg tracking-wider">
+                                    {t.departmentRel.name}
+                                  </span>
+                                )}
+                              </div>
                               <div className="text-[10px] text-slate-400 font-semibold uppercase">{t.teacherCode} • {t.email || t.user.email}</div>
                             </div>
                           </div>
@@ -1182,7 +1230,14 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                               {tName.split(" ").slice(-1)[0].charAt(0)}
                             </div>
                             <div>
-                              <div className="text-sm font-black text-slate-800">{tName}</div>
+                              <div className="text-sm font-black text-slate-800 flex items-center gap-2">
+                                <span>{tName}</span>
+                                {t?.departmentRel?.name && (
+                                  <span className="text-[9px] font-black uppercase bg-emerald-50 text-emerald-600 border border-emerald-100 px-1.5 py-0.5 rounded-lg tracking-wider">
+                                    {t.departmentRel.name}
+                                  </span>
+                                )}
+                              </div>
                               <div className="text-[11px] text-slate-400 font-semibold">{tCode} • {tEmail}</div>
                               <div className="flex gap-1.5 mt-1 items-center">
                                 <span className="text-[9px] font-black uppercase bg-violet-50 text-violet-600 border border-violet-100 px-2 py-0.5 rounded-lg tracking-wider">

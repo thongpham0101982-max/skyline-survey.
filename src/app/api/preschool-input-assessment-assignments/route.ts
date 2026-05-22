@@ -27,7 +27,11 @@ export async function GET(req: NextRequest) {
     }
 
     if (grade && grade !== "all") {
-      where.grade = grade;
+      if (grade.includes(",")) {
+        where.grade = { in: grade.split(",") };
+      } else {
+        where.grade = grade;
+      }
     }
 
     const assignments = await (prisma as any).preschoolInputAssessmentTeacherAssignment.findMany({
@@ -65,27 +69,46 @@ export async function POST(req: NextRequest) {
 
       const normalizedBatchId = (batchId && batchId !== "all" && batchId !== "null") ? batchId : null;
 
-      // Find existing assignments for this period, batch, and grade
-      const existing = await (prisma as any).preschoolInputAssessmentTeacherAssignment.findMany({
-        where: { periodId, batchId: normalizedBatchId, grade }
-      });
-      const existingUserIds = existing.map((a: any) => a.userId);
+      const grades = Array.isArray(grade) ? grade : [grade];
+      const transactionOperations = [];
+      let totalCreated = 0;
+      let totalDeleted = 0;
 
-      const toDelete = existing.filter((a: any) => !userIds.includes(a.userId));
-      const toCreate = userIds.filter((id: string) => !existingUserIds.includes(id));
+      for (const g of grades) {
+        // Find existing assignments for this period, batch, and grade
+        const existing = await (prisma as any).preschoolInputAssessmentTeacherAssignment.findMany({
+          where: { periodId, batchId: normalizedBatchId, grade: g }
+        });
+        const existingUserIds = existing.map((a: any) => a.userId);
 
-      await (prisma as any).$transaction([
-        (prisma as any).preschoolInputAssessmentTeacherAssignment.deleteMany({
-          where: { id: { in: toDelete.map((a: any) => a.id) } }
-        }),
-        ...(toCreate.map((userId: string) => (
-          (prisma as any).preschoolInputAssessmentTeacherAssignment.create({
-            data: { periodId, batchId: normalizedBatchId, userId, grade }
-          })
-        )))
-      ]);
+        const toDelete = existing.filter((a: any) => !userIds.includes(a.userId));
+        const toCreate = userIds.filter((id: string) => !existingUserIds.includes(id));
 
-      return NextResponse.json({ success: true, createdCount: toCreate.length, deletedCount: toDelete.length });
+        totalCreated += toCreate.length;
+        totalDeleted += toDelete.length;
+
+        if (toDelete.length > 0) {
+          transactionOperations.push(
+            (prisma as any).preschoolInputAssessmentTeacherAssignment.deleteMany({
+              where: { id: { in: toDelete.map((a: any) => a.id) } }
+            })
+          );
+        }
+
+        for (const userId of toCreate) {
+          transactionOperations.push(
+            (prisma as any).preschoolInputAssessmentTeacherAssignment.create({
+              data: { periodId, batchId: normalizedBatchId, userId, grade: g }
+            })
+          );
+        }
+      }
+
+      if (transactionOperations.length > 0) {
+        await (prisma as any).$transaction(transactionOperations);
+      }
+
+      return NextResponse.json({ success: true, createdCount: totalCreated, deletedCount: totalDeleted });
     }
 
     // --- Action: Notify Single or All ---
@@ -99,7 +122,15 @@ export async function POST(req: NextRequest) {
         const single = await (prisma as any).preschoolInputAssessmentTeacherAssignment.findUnique({
           where: { id: assignmentId },
           include: {
-            user: true,
+            user: {
+              include: {
+                teacher: {
+                  include: {
+                    departmentRel: true
+                  }
+                }
+              }
+            },
             period: true,
             batch: true
           }
@@ -111,10 +142,26 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ error: "Missing periodId or grade" }, { status: 400 });
         }
         const normalizedBatchId = (batchId && batchId !== "all" && batchId !== "null") ? batchId : null;
+        
+        let gradeQuery: any = grade;
+        if (typeof grade === "string" && grade.includes(",")) {
+          gradeQuery = { in: grade.split(",") };
+        } else if (Array.isArray(grade)) {
+          gradeQuery = { in: grade };
+        }
+
         const list = await (prisma as any).preschoolInputAssessmentTeacherAssignment.findMany({
-          where: { periodId, batchId: normalizedBatchId, grade },
+          where: { periodId, batchId: normalizedBatchId, grade: gradeQuery },
           include: {
-            user: true,
+            user: {
+              include: {
+                teacher: {
+                  include: {
+                    departmentRel: true
+                  }
+                }
+              }
+            },
             period: true,
             batch: true
           }
@@ -135,10 +182,13 @@ export async function POST(req: NextRequest) {
       const errors = [];
 
       for (const assign of targetAssignments) {
-        const teacher = assign.user;
-        if (!teacher || !teacher.email || !teacher.email.includes("@")) {
+        const user = assign.user;
+        const teacher = user?.teacher;
+        const targetEmail = teacher?.email || user?.email;
+
+        if (!targetEmail || !targetEmail.includes("@")) {
           failedCount++;
-          errors.push(`Teacher ${teacher?.fullName || "Unknown"} has invalid email: ${teacher?.email || "none"}`);
+          errors.push(`Teacher ${user?.fullName || "Unknown"} has invalid email: ${targetEmail || "none"}`);
           continue;
         }
 
@@ -168,7 +218,7 @@ export async function POST(req: NextRequest) {
                     <!-- Greetings -->
                     <tr>
                       <td style="padding: 30px 30px 15px 30px;">
-                        <p style="margin: 0; font-size: 15px; font-weight: 700; color: #1e293b;">Kính gửi Thầy/Cô ${teacher.fullName},</p>
+                        <p style="margin: 0; font-size: 15px; font-weight: 700; color: #1e293b;">Kính gửi Thầy/Cô ${user.fullName},</p>
                         <p style="margin: 10px 0 0 0; font-size: 14px; color: #475569; line-height: 1.6;">
                           Ban Khảo thí xin thông báo Thầy/Cô đã được phân công thực hiện đánh giá năng lực đầu vào cho các bé bậc Mầm non. Chi tiết thông tin phân công như sau:
                         </p>
@@ -190,6 +240,14 @@ export async function POST(req: NextRequest) {
                               <div style="font-size: 14px; font-weight: bold; color: #1e1b4b; margin-top: 2px;">${batchName}</div>
                             </td>
                           </tr>
+                          ${teacher?.departmentRel?.name ? `
+                          <tr>
+                            <td style="padding: 10px 0; border-bottom: 1px dashed #c084fc;">
+                              <span style="font-size: 11px; font-weight: bold; color: #7c3aed; text-transform: uppercase;">Tổ Chuyên môn</span>
+                              <div style="font-size: 14px; font-weight: bold; color: #1e1b4b; margin-top: 2px;">${teacher.departmentRel.name}</div>
+                            </td>
+                          </tr>
+                          ` : ""}
                           <tr>
                             <td style="padding-top: 10px;">
                               <span style="font-size: 11px; font-weight: bold; color: #7c3aed; text-transform: uppercase;">Nhóm tuổi được phân công</span>
@@ -215,6 +273,7 @@ export async function POST(req: NextRequest) {
                       <td style="background-color: #f8fafc; padding: 24px 30px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 11px; color: #64748b;">
                         <p style="margin: 0;">Email gửi tự động từ Hệ thống Khảo sát Tuyển sinh Sky-Line.</p>
                         <p style="margin: 4px 0 0 0; font-weight: bold; color: #475569;">HỘI ĐỒNG TUYỂN SINH - HỆ THỐNG GIÁO DỤC SKY-LINE</p>
+                        <p style="margin: 8px 0 0 0; color: #7c3aed; font-weight: 600;">Mọi thắc mắc vui lòng liên hệ Ban Khảo thí qua email: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #7c3aed; text-decoration: underline;">bankhaothi@skylineschool.edu.vn</a></p>
                       </td>
                     </tr>
                   </table>
@@ -227,14 +286,15 @@ export async function POST(req: NextRequest) {
 
         try {
           await sendEmail({
-            to: teacher.email,
+            to: targetEmail,
             subject: `[Sky-Line Preschool] Phân công Khảo sát Năng lực Đầu vào - Bé ${gradeLabel}`,
-            html: emailHtml
+            html: emailHtml,
+            replyTo: "bankhaothi@skylineschool.edu.vn"
           });
           sentCount++;
         } catch (err) {
           failedCount++;
-          errors.push(`Failed sending to ${teacher.fullName} (${teacher.email}): ${err.message}`);
+          errors.push(`Failed sending to ${user.fullName} (${targetEmail}): ${err.message}`);
         }
       }
 
