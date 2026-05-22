@@ -4,7 +4,7 @@ import * as XLSX from "xlsx"
 import {
   Baby, Clock, Settings, Users, BarChart3, Calendar,
   Plus, Trash2, Edit2, Search, RefreshCw, ChevronDown, ChevronUp,
-  X, CheckCircle, AlertCircle, Download, Upload, Star, Heart, Sparkles
+  X, CheckCircle, AlertCircle, Download, Upload, Star, Heart, Sparkles, UserCheck
 } from "lucide-react"
 
 interface Period { id: string; code: string; name: string; status: string; startDate?: string; endDate?: string; description?: string; assignedUserId?: string; surveyType?: string; batches: Batch[] }
@@ -234,6 +234,18 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   const [rptPeriodId, setRptPeriodId] = useState("");
   const [rptBatchId, setRptBatchId] = useState("all");
 
+  // Assignments States
+  const [aPeriodId, setAPeriodId] = useState(cPeriodId || "");
+  const [aBatchId, setABatchId] = useState(cBatchId || "all");
+  const [aGrade, setAGrade] = useState("18 đến 24 tháng");
+  const [aSelectedTeachers, setASelectedTeachers] = useState([]);
+  const [aSearchTeacher, setASearchTeacher] = useState("");
+  const [assignments, setAssignments] = useState([]);
+  const [assignLoading, setAssignLoading] = useState(false);
+  const [aSaving, setASaving] = useState(false);
+  const [aNotifyingId, setANotifyingId] = useState(null);
+  const [aNotifyingAll, setANotifyingAll] = useState(false);
+
   // Age & Grade auto-verifier helper
   const getMonthsAndSuggestGrade = useCallback((dobStr: string, batchId: string) => {
     if (!dobStr) return { months: null, suggest: "", surveyDateStr: "" };
@@ -347,6 +359,163 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
       fetchStudentSummaries();
     }
   }, [tab, devTab, fetchStudentSummaries]);
+
+  // Assignments Callbacks & Effects
+  const fetchAssignments = useCallback(async () => {
+    if (!aPeriodId) return;
+    setAssignLoading(true);
+    try {
+      let url = `/api/preschool-input-assessment-assignments?periodId=${aPeriodId}`;
+      if (aBatchId && aBatchId !== "all") {
+        url += `&batchId=${aBatchId}`;
+      } else if (aBatchId === "all") {
+        url += `&batchId=all`;
+      }
+      if (aGrade) {
+        url += `&grade=${encodeURIComponent(aGrade)}`;
+      }
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        setAssignments(data);
+        const assignedUserIds = data.map((a) => a.userId);
+        setASelectedTeachers(assignedUserIds);
+      }
+    } catch (e) {
+      console.error(e);
+      notify("Lỗi khi tải danh sách phân công", "err");
+    } finally {
+      setAssignLoading(false);
+    }
+  }, [aPeriodId, aBatchId, aGrade]);
+
+  useEffect(() => {
+    if (tab === "assignments") {
+      fetchAssignments();
+    }
+  }, [tab, fetchAssignments]);
+
+  useEffect(() => {
+    if (cPeriodId) {
+      setAPeriodId(cPeriodId);
+    }
+  }, [cPeriodId]);
+
+  useEffect(() => {
+    if (cBatchId) {
+      setABatchId(cBatchId);
+    }
+  }, [cBatchId]);
+
+  const saveAssignments = async () => {
+    if (!aPeriodId || !aGrade) return notify("Vui lòng chọn đầy đủ Kỳ khảo sát và Nhóm tuổi", "err");
+    setASaving(true);
+    try {
+      const res = await fetch("/api/preschool-input-assessment-assignments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "ASSIGN",
+          periodId: aPeriodId,
+          batchId: aBatchId,
+          grade: aGrade,
+          userIds: aSelectedTeachers
+        })
+      });
+      if (res.ok) {
+        notify("Lưu phân công giáo viên thành công!");
+        fetchAssignments();
+      } else {
+        notify("Lỗi khi lưu phân công", "err");
+      }
+    } catch (e) {
+      console.error(e);
+      notify("Có lỗi xảy ra", "err");
+    } finally {
+      setASaving(false);
+    }
+  };
+
+  const sendTeacherNotification = async (assignmentId, teacherName) => {
+    setANotifyingId(assignmentId);
+    try {
+      const res = await fetch("/api/preschool-input-assessment-assignments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "NOTIFY_SINGLE",
+          assignmentId
+        })
+      });
+      if (res.ok) {
+        const result = await res.json();
+        if (result.success && result.sentCount > 0) {
+          notify(`Đã gửi email thông báo cho GV ${teacherName}!`);
+        } else {
+          notify(`Lỗi gửi email: ${result.errors?.[0] || "Không gửi được email"}`, "err");
+        }
+      } else {
+        notify("Lỗi kết nối gửi thông báo", "err");
+      }
+    } catch (e) {
+      console.error(e);
+      notify("Lỗi gửi thông báo", "err");
+    } finally {
+      setANotifyingId(null);
+    }
+  };
+
+  const sendAllNotifications = async () => {
+    if (assignments.length === 0) return notify("Không có giáo viên nào để gửi thông báo", "err");
+    setANotifyingAll(true);
+    try {
+      const res = await fetch("/api/preschool-input-assessment-assignments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "NOTIFY_ALL",
+          periodId: aPeriodId,
+          batchId: aBatchId,
+          grade: aGrade
+        })
+      });
+      if (res.ok) {
+        const result = await res.json();
+        if (result.success) {
+          notify(`Đã gửi thông báo thành công cho ${result.sentCount} giáo viên!`);
+          if (result.failedCount > 0) {
+            notify(`Gửi thất bại cho ${result.failedCount} giáo viên`, "err");
+          }
+        } else {
+          notify("Gửi thông báo hàng loạt thất bại", "err");
+        }
+      } else {
+        notify("Lỗi kết nối", "err");
+      }
+    } catch (e) {
+      console.error(e);
+      notify("Lỗi gửi thông báo", "err");
+    } finally {
+      setANotifyingAll(false);
+    }
+  };
+
+  const deleteAssignment = async (id, teacherName) => {
+    try {
+      const res = await fetch(`/api/preschool-input-assessment-assignments?id=${id}`, {
+        method: "DELETE"
+      });
+      if (res.ok) {
+        notify(`Đã hủy phân công cho GV ${teacherName}`);
+        fetchAssignments();
+      } else {
+        notify("Lỗi khi hủy phân công", "err");
+      }
+    } catch (e) {
+      console.error(e);
+      notify("Lỗi", "err");
+    }
+  };
 
   const openEvaluation = async (student: any) => {
     setEvalStudent(student);
@@ -733,6 +902,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
             { id: "periods", label: "Kỳ KS", icon: Clock },
             { id: "categories", label: "Danh mục", icon: Settings },
             { id: "children", label: "DS Trẻ", icon: Users },
+            { id: "assignments", label: "Phân công", icon: UserCheck },
             { id: "devAssess", label: "Đánh giá PT", icon: Star },
             { id: "reports", label: "Tổng hợp KQKS", icon: BarChart3 }
           ].map(t => (
@@ -814,6 +984,256 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Tab: Assignments */}
+      {tab === "assignments" && (
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-black text-slate-600 uppercase tracking-widest flex items-center gap-2">
+              <UserCheck className="w-4 h-4 text-violet-500" /> Phân công Giáo viên Khảo sát
+            </h2>
+            <div className="flex gap-2">
+              <button 
+                onClick={fetchAssignments} 
+                className="p-2 text-slate-400 hover:text-violet-600 hover:bg-violet-50 rounded-xl transition-all"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </button>
+              <button 
+                onClick={sendAllNotifications} 
+                disabled={aNotifyingAll || assignments.length === 0}
+                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-fuchsia-500 to-pink-500 text-white text-[13px] font-black rounded-xl hover:from-fuchsia-600 hover:to-pink-600 transition-all shadow-lg shadow-pink-100 disabled:opacity-50"
+              >
+                {aNotifyingAll ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <Sparkles className="w-4 h-4" />
+                )}
+                Gửi thông báo cho tất cả
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            {/* Filter & Assignment Selector Panel */}
+            <div className="lg:col-span-5 space-y-4">
+              <div className="bg-white rounded-3xl border border-violet-100 shadow-sm p-5 space-y-4">
+                <h3 className="text-[12px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-1.5 pb-2 border-b border-slate-100">
+                  <Settings className="w-4 h-4 text-violet-400" /> Cấu hình Phân công
+                </h3>
+
+                {/* Scope Selection */}
+                <div className="space-y-3">
+                  <Field label="Kỳ Khảo sát" required>
+                    <select 
+                      value={aPeriodId} 
+                      onChange={e => setAPeriodId(e.target.value)} 
+                      className={inp}
+                    >
+                      <option value="">-- Chọn kỳ khảo sát --</option>
+                      {periods.map(p => (
+                        <option key={p.id} value={p.id}>{p.name} ({p.code})</option>
+                      ))}
+                    </select>
+                  </Field>
+
+                  <Field label="Đợt Khảo sát">
+                    <select 
+                      value={aBatchId} 
+                      onChange={e => setABatchId(e.target.value)} 
+                      className={inp}
+                    >
+                      <option value="all">Tất cả các đợt</option>
+                      {periods.find(p => p.id === aPeriodId)?.batches.map(b => (
+                        <option key={b.id} value={b.id}>{b.name}</option>
+                      ))}
+                    </select>
+                  </Field>
+
+                  <Field label="Nhóm tuổi (Khối)" required>
+                    <select 
+                      value={aGrade} 
+                      onChange={e => setAGrade(e.target.value)} 
+                      className={inp}
+                    >
+                      {grades.map(g => (
+                        <option key={g} value={g}>{g}</option>
+                      ))}
+                    </select>
+                  </Field>
+                </div>
+              </div>
+
+              {/* Teacher List Multi-selector */}
+              <div className="bg-white rounded-3xl border border-violet-100 shadow-sm p-5 space-y-4">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                  <h3 className="text-[12px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-1.5">
+                    <Users className="w-4 h-4 text-violet-400" /> Danh sách Giáo viên
+                  </h3>
+                  <span className="text-[10px] bg-violet-50 text-violet-600 px-2 py-0.5 rounded-lg font-black">
+                    Đã chọn {aSelectedTeachers.length}
+                  </span>
+                </div>
+
+                {/* Search Bar */}
+                <div className="relative">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-4.5 top-1/2 -translate-y-1/2" />
+                  <input 
+                    type="text" 
+                    placeholder="Tìm theo tên hoặc mã GV..." 
+                    value={aSearchTeacher}
+                    onChange={e => setASearchTeacher(e.target.value)}
+                    className="w-full bg-slate-50 border-none rounded-2xl pl-11 pr-4 py-3 outline-none text-sm font-medium text-slate-700 placeholder-slate-400 focus:bg-white focus:ring-4 focus:ring-violet-400/10 transition-all shadow-inner"
+                  />
+                  {aSearchTeacher && (
+                    <button 
+                      onClick={() => setASearchTeacher("")} 
+                      className="absolute right-4.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Scrollable Teacher checkboxes list */}
+                <div className="max-h-[300px] overflow-y-auto pr-1 space-y-1.5 custom-scrollbar">
+                  {teachers
+                    .filter(t => t.user)
+                    .filter(t => {
+                      if (!aSearchTeacher) return true;
+                      const query = aSearchTeacher.toLowerCase();
+                      return (t.teacherName || "").toLowerCase().includes(query) || (t.teacherCode || "").toLowerCase().includes(query);
+                    })
+                    .map(t => {
+                      const userId = t.user.id;
+                      const isChecked = aSelectedTeachers.includes(userId);
+                      return (
+                        <label 
+                          key={t.id} 
+                          className={`flex items-center justify-between p-3 rounded-2xl cursor-pointer border transition-all ${isChecked ? "bg-violet-50/50 border-violet-200" : "bg-white border-slate-100 hover:border-slate-200 hover:bg-slate-50/30"}`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <input 
+                              type="checkbox" 
+                              checked={isChecked}
+                              onChange={() => {
+                                setASelectedTeachers(prev => 
+                                  isChecked ? prev.filter(id => id !== userId) : [...prev, userId]
+                                );
+                              }}
+                              className="w-4.5 h-4.5 rounded-lg border-slate-300 text-violet-600 focus:ring-violet-500 focus:ring-offset-0 cursor-pointer"
+                            />
+                            <div>
+                              <div className="text-sm font-bold text-slate-800">{t.teacherName}</div>
+                              <div className="text-[10px] text-slate-400 font-semibold uppercase">{t.teacherCode} • {t.email || t.user.email}</div>
+                            </div>
+                          </div>
+                          {isChecked && <CheckCircle className="w-4.5 h-4.5 text-violet-500 animate-in zoom-in-50 duration-200" />}
+                        </label>
+                      );
+                    })}
+                </div>
+
+                <button 
+                  onClick={saveAssignments} 
+                  disabled={aSaving || !aPeriodId}
+                  className="w-full py-3.5 bg-violet-600 text-white font-black rounded-2xl hover:bg-violet-700 disabled:opacity-50 transition-all shadow-lg shadow-violet-100/50 flex items-center justify-center gap-2 mt-4 hover:scale-[1.01] active:scale-[0.99] duration-150"
+                >
+                  {aSaving ? (
+                    <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <UserCheck className="w-5 h-5" />
+                  )}
+                  Lưu Phân công Giáo viên
+                </button>
+              </div>
+            </div>
+
+            {/* Currently Assigned Teachers List Panel */}
+            <div className="lg:col-span-7">
+              <div className="bg-white rounded-3xl border border-violet-100 shadow-sm p-5 space-y-4 h-full min-h-[500px]">
+                <h3 className="text-[12px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-1.5 pb-2 border-b border-slate-100">
+                  <UserCheck className="w-4 h-4 text-violet-400" /> Giáo viên đang được phân công ({assignments.length})
+                </h3>
+
+                {assignLoading ? (
+                  <Spin />
+                ) : assignments.length === 0 ? (
+                  <Empty text="Chưa có giáo viên nào được phân công" sub="Chọn giáo viên bên trái và bấm Lưu Phân công để bắt đầu" />
+                ) : (
+                  <div className="space-y-3">
+                    {assignments.map((assign) => {
+                      const t = teachers.find(teach => teach.user?.id === assign.userId);
+                      const tName = t?.teacherName || assign.user?.fullName || "Chưa có tên";
+                      const tCode = t?.teacherCode || "GV000";
+                      const tEmail = t?.email || assign.user?.email || "—";
+                      
+                      const isNotifying = aNotifyingId === assign.id;
+
+                      return (
+                        <div 
+                          key={assign.id} 
+                          className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl border border-slate-100 hover:border-violet-200 hover:bg-white hover:shadow-md hover:shadow-violet-50/20 transition-all duration-300 group"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-violet-100 text-violet-600 rounded-xl flex items-center justify-center font-black text-sm">
+                              {tName.split(" ").slice(-1)[0].charAt(0)}
+                            </div>
+                            <div>
+                              <div className="text-sm font-black text-slate-800">{tName}</div>
+                              <div className="text-[11px] text-slate-400 font-semibold">{tCode} • {tEmail}</div>
+                              <div className="flex gap-1.5 mt-1 items-center">
+                                <span className="text-[9px] font-black uppercase bg-violet-50 text-violet-600 border border-violet-100 px-2 py-0.5 rounded-lg tracking-wider">
+                                  {assign.grade}
+                                </span>
+                                {assign.batch && (
+                                  <span className="text-[9px] font-black uppercase bg-fuchsia-50 text-fuchsia-600 border border-fuchsia-100 px-2 py-0.5 rounded-lg tracking-wider max-w-[150px] truncate">
+                                    {assign.batch.name.split(" | ")[0]}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
+                            {/* Notification button */}
+                            <button 
+                              onClick={() => sendTeacherNotification(assign.id, tName)}
+                              disabled={isNotifying}
+                              title="Gửi email thông báo"
+                              className="w-9 h-9 flex items-center justify-center bg-white text-slate-500 hover:text-fuchsia-600 hover:bg-fuchsia-50 rounded-xl border border-slate-100 hover:border-fuchsia-200 transition-all shadow-sm"
+                            >
+                              {isNotifying ? (
+                                <div className="w-4 h-4 border-2 border-fuchsia-500 border-t-transparent rounded-full animate-spin"></div>
+                              ) : (
+                                <Sparkles className="w-4 h-4" />
+                              )}
+                            </button>
+
+                            {/* Delete assignment button */}
+                            <button 
+                              onClick={() => {
+                                setConfirm({
+                                  msg: `Hủy phân công khảo sát cho giáo viên ${tName}?`,
+                                  fn: () => deleteAssignment(assign.id, tName)
+                                });
+                              }}
+                              title="Hủy phân công"
+                              className="w-9 h-9 flex items-center justify-center bg-white text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl border border-slate-100 hover:border-rose-200 transition-all shadow-sm"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

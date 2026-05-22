@@ -5,6 +5,7 @@ import { BookOpen, Users, Save, CheckCircle2, CalendarDays, Layers, X } from "lu
 import PsychologyAssessmentForm from "./PsychologyAssessmentForm";
 import ChildDevStandardForm from "./ChildDevStandardForm";
 import ThinkingSkillsForm from "./ThinkingSkillsForm";
+import PreschoolEvaluationForm from "./PreschoolEvaluationForm";
 
 export default function TeacherAssessmentsClient({ user }: { user: any }) {
     const [assignments, setAssignments] = useState<any[]>([]);
@@ -19,6 +20,8 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     const [isPsychModalOpen, setIsPsychModalOpen] = useState(false);
     const [activePsychStudent, setActivePsychStudent] = useState<any>(null);
     const [isChildDevModalOpen, setIsChildDevModalOpen] = useState(false);
+    const [isPreschoolModalOpen, setIsPreschoolModalOpen] = useState(false);
+    const [activePreschoolStudent, setActivePreschoolStudent] = useState<any>(null);
     const [isThinkingSkillsModalOpen, setIsThinkingSkillsModalOpen] = useState(false);
     const [activeThinkingSkillsStudent, setActiveThinkingSkillsStudent] = useState<any>(null);
     const [activeChildDevStudent, setActiveChildDevStudent] = useState<any>(null);
@@ -123,6 +126,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
             .then(res => res.json())
             .then(data => {
                 const enriched = data.map((st: any) => {
+                    if (st.isPreschool) return st;
                     const sc = st.scores?.[0];
                     return {
                         ...st,
@@ -224,6 +228,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     const subNameNormalized = subName.normalize("NFC");
     const gradeVal = String(currentAssignment?.grade || "").replace("Khối ", "").trim();
     const isPsychSubject = subName.includes("tâm lý") || subCode.includes("tly");
+    const isPreschoolSubject = currentAssignment?.isPreschool || currentAssignment?.subjectId === "preschool";
     const isChildDevSubject = (subNameNormalized.includes("chuẩn phát triển trẻ em") || subNameNormalized.includes("bộ chuẩn phát triển") || subCode.includes("cpt") || subCode.includes("tci")) && gradeVal === "1";
         const isThinkingSkillsSubject = (subNameNormalized.includes("năng lực tư duy") || subCode.includes("nltd")) && gradeVal === "1";
     const hideComments = ["toa", "tvi", "nva"].some(c => subCode.includes(c)) || ["toán", "tiếng việt", "ngữ văn"].some(s => subNameNormalized.includes(s));
@@ -438,7 +443,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
           <th className="px-3 py-4 font-bold text-slate-500 bg-slate-50/50 uppercase tracking-wider text-xs whitespace-nowrap text-center">Ngày sinh</th>
           <th className="px-3 py-4 font-bold text-slate-500 bg-slate-50/50 uppercase tracking-wider text-xs whitespace-nowrap text-center">Hệ Khảo sát</th>
         <th className="px-4 py-4 font-bold text-amber-800 bg-amber-50/50 uppercase tracking-wider text-xs text-center">
-            {isPsychSubject || isChildDevSubject || isThinkingSkillsSubject ? "Form Khảo sát" : (hideComments ? "Chi tiết Điểm" : "Chi tiết Điểm & Nhận xét")}
+            {isPsychSubject || isChildDevSubject || isThinkingSkillsSubject || isPreschoolSubject ? "Form Khảo sát" : (hideComments ? "Chi tiết Điểm" : "Chi tiết Điểm & Nhận xét")}
         </th>
         {(isChildDevSubject || isThinkingSkillsSubject) && (
             <th className="px-4 py-4 font-bold text-amber-800 bg-amber-50/50 uppercase tracking-wider text-xs text-left min-w-[250px]">Nhận xét chung</th>
@@ -476,7 +481,26 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                           </td>
                                         
                                         <td className="px-4 py-4 bg-transparent">
-            {isThinkingSkillsSubject ? (
+            {isPreschoolSubject ? (
+              <div className="flex flex-col items-center justify-center gap-2">
+                  <button 
+                    onClick={() => { setActivePreschoolStudent(st); setIsPreschoolModalOpen(true); }}
+                    className="bg-pink-50 hover:bg-pink-600 text-pink-700 hover:text-white font-bold py-2 px-5 rounded-full shadow-sm flex items-center gap-2 transition-all active:scale-95 text-xs border border-pink-100"
+                  >
+                    <BookOpen className="w-3.5 h-3.5" /> 
+                    Mở Form Đánh giá
+                  </button>
+                  {st.scoredCount > 0 ? (
+                      <div className="flex flex-col gap-1 items-center max-w-xs text-center mt-1">
+                          <span className="text-[10px] font-black text-pink-600 bg-pink-50/50 px-2 py-0.5 rounded-full border border-pink-100 w-fit uppercase tracking-wider">
+                              Tiến độ: {st.scoredCount}/{st.totalCriteria} tiêu chí
+                          </span>
+                      </div>
+                  ) : (
+                      <span className="text-[10px] text-slate-400 font-medium">Chưa đánh giá</span>
+                  )}
+              </div>
+            ) : isThinkingSkillsSubject ? (
               <div className="flex flex-col items-center justify-center gap-2">
                   <button 
                     onClick={() => { setActiveThinkingSkillsStudent(st); setIsThinkingSkillsModalOpen(true); }}
@@ -640,7 +664,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
 <td className="px-2 py-2 md:px-4 md:py-4 text-center bg-transparent md:sticky md:right-0 z-10 md:backdrop-blur-sm">
                                             <button 
                                                 onClick={() => saveStudentScore(st)}
-                                                disabled={isLocked || isPsychSubject || isChildDevSubject || isThinkingSkillsSubject}
+                                                disabled={isLocked || isPsychSubject || isChildDevSubject || isThinkingSkillsSubject || isPreschoolSubject}
                                                 className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-center w-full gap-2 transition-all shadow-sm ${isLocked || isPsychSubject || isChildDevSubject || isThinkingSkillsSubject ? "bg-slate-200 text-slate-400 cursor-not-allowed border-none" : 
                                                     saveStatus[st.id] === "saved" ? "bg-emerald-500 text-white" : 
                                                     saveStatus[st.id] === "saving" ? "bg-slate-200 text-slate-500" :
@@ -729,6 +753,40 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
               setIsThinkingSkillsModalOpen(false);
             }}
             onClose={() => setIsThinkingSkillsModalOpen(false)}
+            isLocked={isLocked}
+          />
+        </div>
+      )}
+      {isPreschoolSubject && activePreschoolStudent && isPreschoolModalOpen && (
+        <div className="fixed inset-0 z-[100] bg-white overflow-y-auto">
+          <PreschoolEvaluationForm 
+            student={activePreschoolStudent}
+            onSave={async (studentId, scores, comments) => {
+              const res = await fetch("/api/preschool-dev-scores", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ studentId, scores, ...comments })
+              });
+              if (res.ok) {
+                setIsPreschoolModalOpen(false);
+                // Refetch student list to update scoredCount and totalCriteria progress
+                const assignment = availableAssignments.find(a => a.id === selectedAssignmentId) || assignments.find(a => a.id === selectedAssignmentId);
+                if (assignment) {
+                  const systemCode = assignment.overrideSystemCode !== undefined ? assignment.overrideSystemCode : (assignment.educationSystem || "");
+                  const grade = assignment.grade || "";
+                  setLoading(true);
+                  const response = await fetch(`/api/teacher-assessments?action=getStudents&periodId=${assignment.periodId}&grade=${grade}&systemCode=${systemCode}&subjectId=${assignment.subjectId}&batchId=${assignment.batchId || ""}`);
+                  if (response.ok) {
+                    const data = await response.json();
+                    setStudents(data);
+                  }
+                  setLoading(false);
+                }
+              } else {
+                throw new Error("Lưu kết quả đánh giá mầm non thất bại");
+              }
+            }}
+            onClose={() => setIsPreschoolModalOpen(false)}
             isLocked={isLocked}
           />
         </div>

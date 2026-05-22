@@ -1,0 +1,277 @@
+// @ts-nocheck
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
+import { auth } from "@/lib/auth";
+import { sendEmail } from "@/lib/mail";
+
+export async function GET(req: NextRequest) {
+  const session = await auth();
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  try {
+    const { searchParams } = new URL(req.url);
+    const periodId = searchParams.get("periodId");
+    const batchId = searchParams.get("batchId");
+    const grade = searchParams.get("grade");
+
+    if (!periodId) {
+      return NextResponse.json({ error: "Missing periodId parameter" }, { status: 400 });
+    }
+
+    const where: any = { periodId };
+    
+    if (batchId && batchId !== "all" && batchId !== "null") {
+      where.batchId = batchId;
+    } else if (batchId === "null") {
+      where.batchId = null;
+    }
+
+    if (grade && grade !== "all") {
+      where.grade = grade;
+    }
+
+    const assignments = await (prisma as any).preschoolInputAssessmentTeacherAssignment.findMany({
+      where,
+      include: {
+        user: {
+          select: { id: true, fullName: true, email: true, role: true }
+        },
+        period: { select: { id: true, name: true, code: true } },
+        batch: { select: { id: true, name: true } }
+      },
+      orderBy: { createdAt: "desc" }
+    });
+
+    return NextResponse.json(assignments);
+  } catch (error) {
+    console.error("Preschool assignments GET error:", error);
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+  }
+}
+
+export async function POST(req: NextRequest) {
+  const session = await auth();
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  try {
+    const body = await req.json();
+    const { action, periodId, batchId, grade, userIds, assignmentId } = body;
+
+    // --- Action: Save Assignments ---
+    if (action === "ASSIGN") {
+      if (!periodId || !grade || !Array.isArray(userIds)) {
+        return NextResponse.json({ error: "Missing required parameters" }, { status: 400 });
+      }
+
+      const normalizedBatchId = (batchId && batchId !== "all" && batchId !== "null") ? batchId : null;
+
+      // Find existing assignments for this period, batch, and grade
+      const existing = await (prisma as any).preschoolInputAssessmentTeacherAssignment.findMany({
+        where: { periodId, batchId: normalizedBatchId, grade }
+      });
+      const existingUserIds = existing.map((a: any) => a.userId);
+
+      const toDelete = existing.filter((a: any) => !userIds.includes(a.userId));
+      const toCreate = userIds.filter((id: string) => !existingUserIds.includes(id));
+
+      await (prisma as any).$transaction([
+        (prisma as any).preschoolInputAssessmentTeacherAssignment.deleteMany({
+          where: { id: { in: toDelete.map((a: any) => a.id) } }
+        }),
+        ...(toCreate.map((userId: string) => (
+          (prisma as any).preschoolInputAssessmentTeacherAssignment.create({
+            data: { periodId, batchId: normalizedBatchId, userId, grade }
+          })
+        )))
+      ]);
+
+      return NextResponse.json({ success: true, createdCount: toCreate.length, deletedCount: toDelete.length });
+    }
+
+    // --- Action: Notify Single or All ---
+    if (action === "NOTIFY_SINGLE" || action === "NOTIFY_ALL") {
+      let targetAssignments = [];
+
+      if (action === "NOTIFY_SINGLE") {
+        if (!assignmentId) {
+          return NextResponse.json({ error: "Missing assignmentId" }, { status: 400 });
+        }
+        const single = await (prisma as any).preschoolInputAssessmentTeacherAssignment.findUnique({
+          where: { id: assignmentId },
+          include: {
+            user: true,
+            period: true,
+            batch: true
+          }
+        });
+        if (single) targetAssignments.push(single);
+      } else {
+        // NOTIFY_ALL
+        if (!periodId || !grade) {
+          return NextResponse.json({ error: "Missing periodId or grade" }, { status: 400 });
+        }
+        const normalizedBatchId = (batchId && batchId !== "all" && batchId !== "null") ? batchId : null;
+        const list = await (prisma as any).preschoolInputAssessmentTeacherAssignment.findMany({
+          where: { periodId, batchId: normalizedBatchId, grade },
+          include: {
+            user: true,
+            period: true,
+            batch: true
+          }
+        });
+        targetAssignments = list;
+      }
+
+      if (targetAssignments.length === 0) {
+        return NextResponse.json({ success: true, sentCount: 0, message: "No assignments found to notify" });
+      }
+
+      const host = req.headers.get("host") || "skyline-survey-rh4k.vercel.app";
+      const protocol = req.headers.get("x-forwarded-proto") || "https";
+      const baseUrl = `${protocol}://${host}`;
+
+      let sentCount = 0;
+      let failedCount = 0;
+      const errors = [];
+
+      for (const assign of targetAssignments) {
+        const teacher = assign.user;
+        if (!teacher || !teacher.email || !teacher.email.includes("@")) {
+          failedCount++;
+          errors.push(`Teacher ${teacher?.fullName || "Unknown"} has invalid email: ${teacher?.email || "none"}`);
+          continue;
+        }
+
+        const periodName = assign.period?.name || "Kỳ khảo sát";
+        const batchName = assign.batch?.name || "Tất cả các đợt";
+        const gradeLabel = assign.grade;
+
+        const emailHtml = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <title>Phân công Khảo sát Năng lực Mầm non</title>
+          </head>
+          <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; color: #334155;">
+            <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; padding: 20px 0;">
+              <tr>
+                <td align="center">
+                  <table width="650" border="0" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); border: 1px solid #e2e8f0;">
+                    <!-- Header -->
+                    <tr>
+                      <td style="background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%); padding: 35px 30px; text-align: center;">
+                        <h1 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: 800; letter-spacing: -0.5px;">THÔNG BÁO PHÂN CÔNG KHẢO SÁT</h1>
+                        <p style="margin: 5px 0 0 0; color: #fdf2f8; font-size: 13px; font-weight: 500; text-transform: uppercase; tracking-wider: 1px;">Bậc Mầm non - Hệ thống Trường Sky-Line</p>
+                      </td>
+                    </tr>
+                    <!-- Greetings -->
+                    <tr>
+                      <td style="padding: 30px 30px 15px 30px;">
+                        <p style="margin: 0; font-size: 15px; font-weight: 700; color: #1e293b;">Kính gửi Thầy/Cô ${teacher.fullName},</p>
+                        <p style="margin: 10px 0 0 0; font-size: 14px; color: #475569; line-height: 1.6;">
+                          Ban Khảo thí xin thông báo Thầy/Cô đã được phân công thực hiện đánh giá năng lực đầu vào cho các bé bậc Mầm non. Chi tiết thông tin phân công như sau:
+                        </p>
+                      </td>
+                    </tr>
+                    <!-- Assignment Card -->
+                    <tr>
+                      <td style="padding: 0 30px;">
+                        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f5f3ff; border-radius: 12px; border: 1px solid #ddd6fe; padding: 20px;">
+                          <tr>
+                            <td style="padding-bottom: 10px; border-bottom: 1px dashed #c084fc;">
+                              <span style="font-size: 11px; font-weight: bold; color: #7c3aed; text-transform: uppercase;">Kỳ Khảo sát</span>
+                              <div style="font-size: 14px; font-weight: bold; color: #1e1b4b; margin-top: 2px;">${periodName}</div>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td style="padding: 10px 0; border-bottom: 1px dashed #c084fc;">
+                              <span style="font-size: 11px; font-weight: bold; color: #7c3aed; text-transform: uppercase;">Đợt Khảo sát</span>
+                              <div style="font-size: 14px; font-weight: bold; color: #1e1b4b; margin-top: 2px;">${batchName}</div>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td style="padding-top: 10px;">
+                              <span style="font-size: 11px; font-weight: bold; color: #7c3aed; text-transform: uppercase;">Nhóm tuổi được phân công</span>
+                              <div style="font-size: 14px; font-weight: bold; color: #1e1b4b; margin-top: 2px;">${gradeLabel}</div>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                    <!-- Action Link -->
+                    <tr>
+                      <td style="padding: 25px 30px; text-align: center;">
+                        <p style="margin: 0 0 15px 0; font-size: 13px; color: #64748b; font-style: italic;">
+                          Vui lòng truy cập cổng thông tin khảo sát để cập nhật điểm và nhận xét cho các bé.
+                        </p>
+                        <a href="${baseUrl}/admin/preschool-input-assessments" style="display: inline-block; padding: 12px 28px; border-radius: 12px; font-size: 14px; font-weight: bold; color: #ffffff; background-color: #7c3aed; text-decoration: none; border: 1px solid #6d28d9; box-shadow: 0 4px 6px -1px rgba(124, 58, 237, 0.2);">
+                          Truy cập Cổng Khảo Sát
+                        </a>
+                      </td>
+                    </tr>
+                    <!-- Footer -->
+                    <tr>
+                      <td style="background-color: #f8fafc; padding: 24px 30px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 11px; color: #64748b;">
+                        <p style="margin: 0;">Email gửi tự động từ Hệ thống Khảo sát Tuyển sinh Sky-Line.</p>
+                        <p style="margin: 4px 0 0 0; font-weight: bold; color: #475569;">HỘI ĐỒNG TUYỂN SINH - HỆ THỐNG GIÁO DỤC SKY-LINE</p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+          </html>
+        `;
+
+        try {
+          await sendEmail({
+            to: teacher.email,
+            subject: `[Sky-Line Preschool] Phân công Khảo sát Năng lực Đầu vào - Bé ${gradeLabel}`,
+            html: emailHtml
+          });
+          sentCount++;
+        } catch (err) {
+          failedCount++;
+          errors.push(`Failed sending to ${teacher.fullName} (${teacher.email}): ${err.message}`);
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        sentCount,
+        failedCount,
+        errors
+      });
+    }
+
+    return NextResponse.json({ error: "Invalid action type" }, { status: 400 });
+  } catch (error) {
+    console.error("Preschool assignments POST error:", error);
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  const session = await auth();
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json({ error: "Missing assignment id" }, { status: 400 });
+    }
+
+    await (prisma as any).preschoolInputAssessmentTeacherAssignment.delete({
+      where: { id }
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Preschool assignments DELETE error:", error);
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+  }
+}

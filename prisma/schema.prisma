@@ -21,6 +21,7 @@ model User {
   preschoolInputAssessmentPeriods  PreschoolInputAssessmentPeriod[]   @relation("PreschoolPeriodAssignee")
   preschoolInputAssessmentBatches  PreschoolInputAssessmentBatch[]    @relation("PreschoolBatchAssignee")
   InputAssessmentTeacherAssignment InputAssessmentTeacherAssignment[]
+  preschoolTeacherAssignments      PreschoolInputAssessmentTeacherAssignment[]
   notifications                    Notification[]
   parent                           Parent?
   taskAttachments                  TaskAttachment[]                   @relation("TaskAttachments")
@@ -741,6 +742,7 @@ model PreschoolInputAssessmentPeriod {
   campus                           Campus?                            @relation(fields: [campusId], references: [id])
   assignedUser                     User?                              @relation("PreschoolPeriodAssignee", fields: [assignedUserId], references: [id])
   students                         PreschoolInputAssessmentStudent[]
+  teacherAssignments               PreschoolInputAssessmentTeacherAssignment[]
 }
 
 model PreschoolInputAssessmentBatch {
@@ -759,6 +761,7 @@ model PreschoolInputAssessmentBatch {
   assignedUser                     User?                              @relation("PreschoolBatchAssignee", fields: [assignedUserId], references: [id])
   period                           PreschoolInputAssessmentPeriod     @relation(fields: [periodId], references: [id], onDelete: Cascade)
   students                         PreschoolInputAssessmentStudent[]
+  teacherAssignments               PreschoolInputAssessmentTeacherAssignment[]
 
   @@unique([periodId, batchNumber])
 }
@@ -854,4 +857,18 @@ model PreschoolDevScore {
   criteria    PreschoolDevCriteria @relation(fields: [criteriaId], references: [id], onDelete: Cascade)
 
   @@unique([studentId, criteriaId])
+}
+
+model PreschoolInputAssessmentTeacherAssignment {
+  id                  String                              @id @default(cuid())
+  periodId            String
+  batchId             String?
+  userId              String
+  grade               String                              // e.g. "18 đến 24 tháng"
+  createdAt           DateTime                            @default(now())
+  user                User                                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  batch               PreschoolInputAssessmentBatch?      @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  period              PreschoolInputAssessmentPeriod      @relation(fields: [periodId], references: [id], onDelete: Cascade)
+
+  @@unique([periodId, batchId, userId, grade])
 }

@@ -20,7 +20,50 @@ export async function GET(req: any) {
                 period: { include: { assignedUser: true } }
             }
         });
-        return NextResponse.json(assignments);
+
+        // Fetch preschool assignments
+        const preschoolAssignments = await (prisma as any).preschoolInputAssessmentTeacherAssignment.findMany({
+            where: { userId: session.user.id },
+            include: {
+                batch: true,
+                period: { include: { assignedUser: true } }
+            }
+        });
+
+        const mappedPreschool = preschoolAssignments.map((a: any) => ({
+            id: a.id,
+            periodId: a.periodId,
+            batchId: a.batchId,
+            userId: a.userId,
+            subjectId: "preschool",
+            grade: a.grade,
+            isPreschool: true,
+            subject: {
+                id: "preschool",
+                name: "Đánh giá Mầm non",
+                code: "PRESCHOOL",
+                scoreColumns: 1,
+                commentColumns: 1,
+            },
+            batch: a.batch ? {
+                id: a.batch.id,
+                name: a.batch.name,
+                status: a.batch.status
+            } : null,
+            period: {
+                id: a.period.id,
+                name: a.period.name,
+                code: a.period.code,
+                status: a.period.status,
+                assignedUser: a.period.assignedUser ? {
+                    id: a.period.assignedUser.id,
+                    fullName: a.period.assignedUser.fullName,
+                    email: a.period.assignedUser.email
+                } : null
+            }
+        }));
+
+        return NextResponse.json([...assignments, ...mappedPreschool]);
     }
     
     if (action === "getStudents") {
@@ -29,6 +72,88 @@ export async function GET(req: any) {
         const systemCode = searchParams.get("systemCode");
         const subjectId = searchParams.get("subjectId");
         const batchId = searchParams.get("batchId");
+
+        if (subjectId === "preschool") {
+            const where: any = { periodId };
+            
+            if (grade && grade !== "Tất cả" && grade !== "all") {
+                where.grade = grade;
+            }
+            
+            if (batchId && batchId !== "all" && batchId !== "null") {
+                where.batchId = batchId;
+            }
+
+            const students = await (prisma as any).preschoolInputAssessmentStudent.findMany({
+                where,
+                select: { 
+                    id: true, 
+                    studentCode: true, 
+                    fullName: true, 
+                    grade: true, 
+                    gender: true, 
+                    dateOfBirth: true, 
+                    admissionCampus: true, 
+                    batchId: true, 
+                    devProfessionalComment: true, 
+                    devPsychologyComment: true, 
+                    devImportantNote: true, 
+                    devAssessmentResult: true, 
+                    admissionResult: true,
+                    bghApprovalStatus: true,
+                    bghApprovalComment: true,
+                    gdcsApprovalStatus: true,
+                    gdcsApprovalComment: true,
+                    surveyFormType: true
+                }
+            });
+
+            const studentIds = students.map((s: any) => s.id);
+            
+            // Fetch all scores for these students
+            const scores = await (prisma as any).preschoolDevScore.findMany({
+                where: { studentId: { in: studentIds } },
+                include: { criteria: { include: { area: true } } }
+            });
+
+            // Count scores per student
+            const scoreCounts = await (prisma as any).preschoolDevScore.groupBy({
+                by: ["studentId"],
+                where: { studentId: { in: studentIds } },
+                _count: { id: true }
+            });
+
+            const scoreMap: Record<string, number> = {};
+            for (const sc of scoreCounts) {
+                scoreMap[sc.studentId] = sc._count.id;
+            }
+
+            // Get total criteria count per ageGroup/grade
+            const criteriaCounts = await (prisma as any).preschoolDevCriteria.groupBy({
+                by: ["ageGroup"],
+                where: { status: "ACTIVE" },
+                _count: { id: true }
+            });
+            const criteriaMap: Record<string, number> = {};
+            for (const cc of criteriaCounts) {
+                criteriaMap[cc.ageGroup] = cc._count.id;
+            }
+
+            const enriched = students.map((s: any) => {
+                const sAgeGroup = s.grade || "18 đến 24 tháng";
+                const totalCriteria = criteriaMap[sAgeGroup] || 0;
+                const scoredCount = scoreMap[s.id] || 0;
+                return {
+                    ...s,
+                    scoredCount,
+                    totalCriteria,
+                    isPreschool: true,
+                    scoreVals: scoredCount > 0 ? Array(scoredCount).fill("3") : []
+                };
+            });
+
+            return NextResponse.json(enriched);
+        }
 
         let systemName = undefined;
         if (systemCode) {
