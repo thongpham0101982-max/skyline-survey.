@@ -2190,7 +2190,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                           {/* Helpful Permission Hint for BGH */}
                           {isBGHUser && !hasCampusMatch && evalStudent?.admissionCampus && (
                             <div className="text-[9px] font-bold text-amber-600 bg-amber-50/70 border border-amber-100 rounded-lg p-2 leading-relaxed animate-in fade-in duration-200">
-                              ⚠️ Cơ sở học sinh: <span className="underline">${evalStudent.admissionCampus}</span>. Cơ sở của bạn: <span className="underline">${userCampusNames || "Chưa gán"}</span>. Bạn không có quyền duyệt phiếu cơ sở này.
+                              ⚠️ Cơ sở học sinh: <span className="underline">{evalStudent.admissionCampus}</span>. Cơ sở của bạn: <span className="underline">{userCampusNames || "Chưa gán"}</span>. Bạn không có quyền duyệt phiếu cơ sở này.
                             </div>
                           )}
 
@@ -2276,7 +2276,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                           {/* Helpful Permission Hint for GĐCS */}
                           {isGDCSUser && !hasCampusMatch && evalStudent?.admissionCampus && (
                             <div className="text-[9px] font-bold text-amber-600 bg-amber-50/70 border border-amber-100 rounded-lg p-2 leading-relaxed animate-in fade-in duration-200">
-                              ⚠️ Cơ sở học sinh: <span className="underline">${evalStudent.admissionCampus}</span>. Cơ sở của bạn: <span className="underline">${userCampusNames || "Chưa gán"}</span>. Bạn không có quyền duyệt phiếu cơ sở này.
+                              ⚠️ Cơ sở học sinh: <span className="underline">{evalStudent.admissionCampus}</span>. Cơ sở của bạn: <span className="underline">{userCampusNames || "Chưa gán"}</span>. Bạn không có quyền duyệt phiếu cơ sở này.
                             </div>
                           )}
 
