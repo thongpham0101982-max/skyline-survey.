@@ -1066,11 +1066,11 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                             const renderAreaCell = (areaCode: string) => {
                               const areaScores = s.scores?.filter((sc: any) => sc.criteria?.area?.code === areaCode) || [];
                               if (areaScores.length === 0) {
-                                return <td className="p-4 text-xs font-medium text-slate-300 align-top">—</td>;
+                                return <td className="p-4 text-xs font-medium text-slate-300 align-top whitespace-normal border-r border-violet-50/50">—</td>;
                               }
                               return (
-                                <td className="p-4 align-top">
-                                  <div className="flex flex-col gap-2 min-w-[200px] max-w-[280px]">
+                                <td className="p-4 align-top whitespace-normal border-r border-violet-50/50">
+                                  <div className="flex flex-col gap-2 min-w-[220px] max-w-[280px]">
                                     {areaScores.map((sc: any) => {
                                       const name = sc.criteria?.name || "";
                                       const isDat = sc.result === "DAT";
@@ -1078,16 +1078,19 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                                       const cleanObs = sc.note ? (sc.note.includes("|") ? sc.note.split("|")[1] : sc.note) : "";
                                       
                                       return (
-                                        <div key={sc.id} className="text-[11px] leading-relaxed flex items-start gap-1.5 text-slate-600">
-                                          <span className={`font-black text-xs flex-shrink-0 select-none ${isDat ? 'text-emerald-500' : isKhongDat ? 'text-rose-500' : 'text-slate-300'}`}>
+                                        <div key={sc.id} className="text-[11px] leading-relaxed flex items-start gap-2 py-1 border-b border-dashed border-slate-50 last:border-b-0">
+                                          <span className={`font-black text-xs flex-shrink-0 select-none mt-0.5 ${isDat ? 'text-emerald-500' : isKhongDat ? 'text-rose-500' : 'text-slate-300'}`}>
                                             {isDat ? "✓" : isKhongDat ? "✗" : "○"}
                                           </span>
                                           <div className="flex flex-col">
-                                            <span className="font-semibold text-slate-700" title={`${name}${cleanObs ? ` (${cleanObs})` : ""}`}>
+                                            <span 
+                                              className={`text-[11px] leading-relaxed ${isDat ? 'font-bold text-slate-700' : isKhongDat ? 'font-semibold text-slate-500' : 'font-normal text-slate-400'}`} 
+                                              title={`${name}${cleanObs ? ` (${cleanObs})` : ""}`}
+                                            >
                                               {name}
                                             </span>
                                             {cleanObs && (
-                                              <span className="text-[10px] font-normal text-violet-500 italic mt-0.5">
+                                              <span className="text-[9px] font-bold text-violet-500 bg-violet-50/80 px-1.5 py-0.5 rounded-md border border-violet-100/50 mt-1 max-w-fit">
                                                 Ghi chú: {cleanObs}
                                               </span>
                                             )}
@@ -1111,39 +1114,36 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                                 <td className="p-4 text-sm text-slate-600 align-top">{s.admissionCampus || "—"}</td>
                                 
                                 {/* Thể chất */}
-                                <td className="p-4 align-top text-xs">
-                                  <div className="flex flex-col gap-1.5 min-w-[180px]">
+                                <td className="p-4 align-top text-xs whitespace-normal border-r border-violet-50/50">
+                                  <div className="flex flex-col gap-2 min-w-[200px] max-w-[240px]">
                                     {hVal || wVal ? (
-                                      <div className="bg-slate-50 border border-slate-100 rounded-xl p-2.5 flex flex-col gap-1">
-                                        {hVal && (
-                                          <div className="flex items-center gap-1.5">
-                                            <span className="font-bold text-slate-400">Chiều cao:</span>
-                                            <span className="font-black text-slate-700">{hVal} cm</span>
+                                      <div className="flex flex-col gap-1.5">
+                                        <div className="grid grid-cols-3 gap-1.5 bg-slate-50 border border-slate-100 rounded-2xl p-2">
+                                          <div className="bg-white border border-slate-100 rounded-xl p-1.5 flex flex-col items-center justify-center text-center shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+                                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">H.Cao</span>
+                                            <span className="font-black text-xs text-slate-700 mt-0.5">{hVal ? `${hVal} cm` : "—"}</span>
                                           </div>
-                                        )}
-                                        {wVal && (
-                                          <div className="flex items-center gap-1.5">
-                                            <span className="font-bold text-slate-400">Cân nặng:</span>
-                                            <span className="font-black text-slate-700">{wVal} kg</span>
+                                          <div className="bg-white border border-slate-100 rounded-xl p-1.5 flex flex-col items-center justify-center text-center shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+                                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">C.Nặng</span>
+                                            <span className="font-black text-xs text-slate-700 mt-0.5">{wVal ? `${wVal} kg` : "—"}</span>
                                           </div>
-                                        )}
+                                          <div className="bg-white border border-slate-100 rounded-xl p-1.5 flex flex-col items-center justify-center text-center shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+                                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">BMI</span>
+                                            <span className="font-black text-xs text-violet-600 mt-0.5">{bmiVal ? bmiVal.toFixed(1) : "—"}</span>
+                                          </div>
+                                        </div>
                                         {bmiVal && bmiClass && (
-                                          <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                                            <span className="font-bold text-slate-400">BMI:</span>
-                                            <span className="font-black text-violet-600 font-mono">{bmiVal.toFixed(1)}</span>
-                                            <span className={`px-1.5 py-0.5 rounded-lg text-[9px] font-black border uppercase tracking-wider ${bmiClass.color}`}>
-                                              {bmiClass.label}
-                                            </span>
+                                          <div className={`px-2.5 py-1 rounded-xl text-[9px] font-black border uppercase tracking-wider text-center flex items-center justify-center gap-1.5 ${bmiClass.color}`}>
+                                            <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${bmiClass.dot}`} />
+                                            {bmiClass.label}
                                           </div>
                                         )}
                                       </div>
                                     ) : (
-                                      <span className="text-slate-300 italic">Chưa đo thể chất</span>
+                                      <span className="text-slate-300 italic block py-1">Chưa đo thể chất</span>
                                     )}
-
-                                    {/* Other physical criteria */}
                                     {s.scores && s.scores.filter((sc: any) => sc.criteria?.area?.code === "THE_CHAT" && !sc.criteria?.code?.endsWith("_01") && !sc.criteria?.code?.endsWith("_02")).length > 0 && (
-                                      <div className="mt-2 pt-2 border-t border-violet-100 flex flex-col gap-1">
+                                      <div className="mt-1 pt-2 border-t border-violet-100/50 flex flex-col gap-1.5">
                                         {s.scores
                                           .filter((sc: any) => sc.criteria?.area?.code === "THE_CHAT" && !sc.criteria?.code?.endsWith("_01") && !sc.criteria?.code?.endsWith("_02"))
                                           .map((sc: any) => {
@@ -1152,14 +1152,16 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                                             const isKhongDat = sc.result === "KHONG_DAT";
                                             const cleanObs = sc.note ? (sc.note.includes("|") ? sc.note.split("|")[1] : sc.note) : "";
                                             return (
-                                              <div key={sc.id} className="text-[10px] leading-tight flex items-start gap-1 text-slate-600">
-                                                <span className={`font-black flex-shrink-0 select-none ${isDat ? 'text-emerald-500' : isKhongDat ? 'text-rose-500' : 'text-slate-300'}`}>
+                                              <div key={sc.id} className="text-[10px] leading-normal flex items-start gap-1.5 py-0.5">
+                                                <span className={`font-black text-[10px] flex-shrink-0 select-none ${isDat ? 'text-emerald-500' : isKhongDat ? 'text-rose-500' : 'text-slate-300'}`}>
                                                   {isDat ? "✓" : isKhongDat ? "✗" : "○"}
                                                 </span>
-                                                <span className="font-medium" title={`${name}${cleanObs ? ` (${cleanObs})` : ""}`}>
-                                                  {name.length > 30 ? name.substring(0, 30) + "..." : name}
-                                                  {cleanObs && <span className="text-[9px] font-normal text-violet-500 italic block">Ghi chú: {cleanObs}</span>}
-                                                </span>
+                                                <div className="flex flex-col">
+                                                  <span className={`text-[10px] leading-normal ${isDat ? 'font-bold text-slate-700' : isKhongDat ? 'font-semibold text-slate-500' : 'font-normal text-slate-400'}`} title={`${name}${cleanObs ? ` (${cleanObs})` : ""}`}>
+                                                    {name}
+                                                  </span>
+                                                  {cleanObs && <span className="text-[9px] font-bold text-violet-500 bg-violet-50/50 px-1 py-0.5 rounded mt-0.5 max-w-fit">Ghi chú: {cleanObs}</span>}
+                                                </div>
                                               </div>
                                             );
                                           })}
@@ -1178,25 +1180,28 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                                 {renderAreaCell("TINH_CAM_XH_TM")}
 
                                 {/* Giáo viên đánh giá */}
-                                <td className="p-4 align-top text-xs max-w-[250px] whitespace-normal">
-                                  <div className="flex flex-col gap-2 text-slate-700 min-w-[180px]">
+                                <td className="p-4 align-top text-xs max-w-[280px] whitespace-normal border-r border-violet-50/50">
+                                  <div className="flex flex-col gap-2.5 text-slate-700 min-w-[200px]">
                                     {s.devProfessionalComment && (
-                                      <div>
-                                        <span className="font-bold text-violet-600">Chuyên môn:</span> {s.devProfessionalComment}
+                                      <div className="bg-violet-50/30 border-l-[3px] border-violet-500 rounded-r-xl p-2 flex flex-col gap-0.5 shadow-[0_1px_2px_rgba(0,0,0,0.01)]">
+                                        <span className="text-[9px] font-black text-violet-600 uppercase tracking-wider">Chuyên môn</span>
+                                        <span className="text-[11px] leading-relaxed text-slate-700 font-medium">{s.devProfessionalComment}</span>
                                       </div>
                                     )}
                                     {s.devPsychologyComment && (
-                                      <div>
-                                        <span className="font-bold text-indigo-600">Tâm lý:</span> {s.devPsychologyComment}
+                                      <div className="bg-indigo-50/30 border-l-[3px] border-indigo-500 rounded-r-xl p-2 flex flex-col gap-0.5 shadow-[0_1px_2px_rgba(0,0,0,0.01)]">
+                                        <span className="text-[9px] font-black text-indigo-600 uppercase tracking-wider">Tâm lý</span>
+                                        <span className="text-[11px] leading-relaxed text-slate-700 font-medium">{s.devPsychologyComment}</span>
                                       </div>
                                     )}
                                     {s.devImportantNote && (
-                                      <div className="bg-rose-50 border border-rose-100 rounded-xl p-2.5 mt-0.5 text-rose-700 font-medium shadow-sm">
-                                        <span className="font-bold text-rose-600">Lưu ý đặc biệt:</span> {s.devImportantNote}
+                                      <div className="bg-rose-50/50 border border-rose-100/80 border-l-[3px] border-l-rose-500 rounded-xl p-2.5 text-rose-700 font-semibold shadow-[0_1px_2px_rgba(244,63,94,0.03)] flex flex-col gap-0.5">
+                                        <span className="text-[9px] font-black text-rose-600 uppercase tracking-wider">Lưu ý đặc biệt</span>
+                                        <span className="text-[11px] leading-relaxed">{s.devImportantNote}</span>
                                       </div>
                                     )}
                                     {!s.devProfessionalComment && !s.devPsychologyComment && !s.devImportantNote && (
-                                      <span className="text-slate-300 italic">—</span>
+                                      <span className="text-slate-300 italic block py-1">—</span>
                                     )}
                                   </div>
                                 </td>
