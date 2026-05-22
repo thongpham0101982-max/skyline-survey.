@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
+import { auth } from "@/lib/auth"
 
 export async function GET(req: NextRequest) {
   try {
@@ -171,6 +172,11 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await auth()
+    const currentUser = session?.user as any
+    const userRole = (currentUser?.role || "").toUpperCase()
+    const isGlobalAdmin = userRole === "ADMIN" || userRole === "KT_DBCL"
+
     const body = await req.json()
     const { studentId, scores, devProfessionalComment, devPsychologyComment, devImportantNote, devAssessmentResult, bghApprovalStatus, bghApprovalComment, gdcsApprovalStatus, gdcsApprovalComment } = body
 
@@ -202,34 +208,78 @@ export async function POST(req: NextRequest) {
       results.push(upserted)
     }
 
-    let admissionResult = undefined;
-    const hasBghOrGdcsStatus = (bghApprovalStatus !== undefined && bghApprovalStatus !== null && bghApprovalStatus !== "") || 
-                               (gdcsApprovalStatus !== undefined && gdcsApprovalStatus !== null && gdcsApprovalStatus !== "");
-    
+    // Fetch student's current record to verify and safeguard permissions
+    const student = await (prisma as any).preschoolInputAssessmentStudent.findUnique({
+      where: { id: studentId }
+    })
+    if (!student) {
+      return NextResponse.json({ error: "Không tìm thấy học sinh" }, { status: 404 })
+    }
+
+    // Fetch user campus assignments to check for campus-bound rules
+    const userAssignments = await prisma.userCampusAssignment.findMany({
+      where: { userId: currentUser?.id || "" },
+      include: { campus: true }
+    });
+
+    const hasCampusMatch = userAssignments.length === 0 || userAssignments.some(ca => 
+      ca.campus.campusName === student.admissionCampus || 
+      ca.campus.campusCode === student.admissionCampus
+    );
+
+    // BGH check: role must be ADMIN or KT_DBCL, AND must have campus match (if assigned to specific campuses)
+    const canApproveBGH = isGlobalAdmin && hasCampusMatch;
+
+    // GDCS check: role must be ADMIN or GDCS roles, AND must have campus match (if assigned to specific campuses)
+    const isGDCSUser = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(userRole);
+    const canApproveGDCS = isGlobalAdmin ? hasCampusMatch : (isGDCSUser && hasCampusMatch);
+
+    // Determine final values with safety protection (if unauthorized, preserve database values)
+    const updatedBghStatus = bghApprovalStatus !== undefined 
+      ? (canApproveBGH ? bghApprovalStatus : student.bghApprovalStatus) 
+      : undefined;
+    const updatedBghComment = bghApprovalComment !== undefined 
+      ? (canApproveBGH ? bghApprovalComment : student.bghApprovalComment) 
+      : undefined;
+
+    const updatedGdcsStatus = gdcsApprovalStatus !== undefined 
+      ? (canApproveGDCS ? gdcsApprovalStatus : student.gdcsApprovalStatus) 
+      : undefined;
+    const updatedGdcsComment = gdcsApprovalComment !== undefined 
+      ? (canApproveGDCS ? gdcsApprovalComment : student.gdcsApprovalComment) 
+      : undefined;
+
+    // Recalculate final admissionResult
+    const finalBgh = updatedBghStatus !== undefined ? updatedBghStatus : student.bghApprovalStatus;
+    const finalGdcs = updatedGdcsStatus !== undefined ? updatedGdcsStatus : student.gdcsApprovalStatus;
+
+    let finalAdmissionResult = undefined;
+    const hasBghOrGdcsStatus = (finalBgh !== undefined && finalBgh !== null && finalBgh !== "") || 
+                               (finalGdcs !== undefined && finalGdcs !== null && finalGdcs !== "");
+
     if (hasBghOrGdcsStatus) {
-      const bgh = bghApprovalStatus || "";
-      const gdcs = gdcsApprovalStatus || "";
-      
+      const bgh = finalBgh || "";
+      const gdcs = finalGdcs || "";
+
       if (bgh === "DAT" && gdcs === "DAT") {
-        admissionResult = "Đạt";
+        finalAdmissionResult = "Đạt";
       } else if (bgh === "KHONG_DAT" || gdcs === "KHONG_DAT") {
-        admissionResult = "Không đạt";
+        finalAdmissionResult = "Không đạt";
       } else if (bgh === "Y_KIEN_KHAC" || gdcs === "Y_KIEN_KHAC") {
-        admissionResult = "Ý kiến khác";
-      } else if (bgh === "DAT" || gdcs === "DAT") {
-        admissionResult = "Chưa duyệt";
+        finalAdmissionResult = "Ý kiến khác";
       } else {
-        admissionResult = "Chưa duyệt";
+        finalAdmissionResult = "Chưa duyệt";
       }
     } else {
-      if (devAssessmentResult === "DAT") {
-        admissionResult = "Đạt"
-      } else if (devAssessmentResult === "KHONG_DAT") {
-        admissionResult = "Không đạt"
-      } else if (devAssessmentResult === "HOC_THU") {
-        admissionResult = "Học thử"
-      } else if (devAssessmentResult === "") {
-        admissionResult = ""
+      const finalDevResult = devAssessmentResult !== undefined ? devAssessmentResult : student.devAssessmentResult;
+      if (finalDevResult === "DAT") {
+        finalAdmissionResult = "Đạt"
+      } else if (finalDevResult === "KHONG_DAT") {
+        finalAdmissionResult = "Không đạt"
+      } else if (finalDevResult === "HOC_THU") {
+        finalAdmissionResult = "Học thử"
+      } else {
+        finalAdmissionResult = ""
       }
     }
 
@@ -241,11 +291,11 @@ export async function POST(req: NextRequest) {
         devPsychologyComment: devPsychologyComment !== undefined ? devPsychologyComment : undefined,
         devImportantNote: devImportantNote !== undefined ? devImportantNote : undefined,
         devAssessmentResult: devAssessmentResult !== undefined ? devAssessmentResult : undefined,
-        admissionResult: admissionResult !== undefined ? admissionResult : undefined,
-        bghApprovalStatus: bghApprovalStatus !== undefined ? bghApprovalStatus : undefined,
-        bghApprovalComment: bghApprovalComment !== undefined ? bghApprovalComment : undefined,
-        gdcsApprovalStatus: gdcsApprovalStatus !== undefined ? gdcsApprovalStatus : undefined,
-        gdcsApprovalComment: gdcsApprovalComment !== undefined ? gdcsApprovalComment : undefined,
+        admissionResult: finalAdmissionResult,
+        bghApprovalStatus: updatedBghStatus,
+        bghApprovalComment: updatedBghComment,
+        gdcsApprovalStatus: updatedGdcsStatus,
+        gdcsApprovalComment: updatedGdcsComment,
       }
     })
     return NextResponse.json({ success: true, count: results.length })

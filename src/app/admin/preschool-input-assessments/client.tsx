@@ -93,6 +93,24 @@ const xetDuyetCols = [
 export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoVuCSUsers, grades: gradesProp, teachers, departments, currentUser }: { academicYears: AcademicYear[]; campuses: Camp[]; giaoVuCSUsers: any[]; grades: string[]; teachers: any[]; departments: any[]; currentUser: any; }) {
   const grades = gradesProp && gradesProp.length > 0 ? gradesProp : ["18 đến 24 tháng", "24 đến 36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"];
 
+  const getGdcsRoleCode = (campusName: string | undefined) => {
+    if (!campusName) return "GĐCS";
+    if (campusName.startsWith("CS")) {
+      const num = campusName.substring(2);
+      return `GĐCS${num}`;
+    }
+    return `GĐCS (${campusName})`;
+  };
+
+  const getGdcsLabel = (campusName: string | undefined) => {
+    if (!campusName) return "GIÁM ĐỐC CƠ SỞ";
+    if (campusName.startsWith("CS")) {
+      const num = campusName.substring(2);
+      return `GIÁM ĐỐC CƠ SỞ ${num} (GĐCS${num})`;
+    }
+    return `GIÁM ĐỐC CƠ SỞ (${campusName})`;
+  };
+
   const [tab, setTab] = useState("periods");
 
   // Đánh giá phát triển
@@ -1255,60 +1273,68 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                                 </td>
 
                                 {/* Duyệt BGH MN */}
-                                <td className="w-[220px] min-w-[220px] whitespace-normal border-r border-violet-50/50 p-4 align-top text-xs">
-                                  <div className="flex flex-col gap-1.5 w-full">
-                                    {s.bghApprovalStatus ? (
-                                      <>
-                                        <div>
-                                          {s.bghApprovalStatus === "DAT" && (
-                                            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">ĐẠT</span>
-                                          )}
-                                          {s.bghApprovalStatus === "KHONG_DAT" && (
-                                            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-100">KHÔNG ĐẠT</span>
-                                          )}
-                                          {s.bghApprovalStatus === "Y_KIEN_KHAC" && (
-                                            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-100">Ý KIẾN KHÁC</span>
-                                          )}
-                                        </div>
-                                        {s.bghApprovalComment && (
-                                          <div className="text-[11px] leading-relaxed text-slate-600 bg-slate-50 border border-slate-100 rounded-xl p-2 mt-1">
-                                            {s.bghApprovalComment}
-                                          </div>
-                                        )}
-                                      </>
-                                    ) : (
-                                      <span className="text-slate-300 italic block py-1">—</span>
-                                    )}
-                                  </div>
-                                </td>
+                                 <td className="w-[220px] min-w-[220px] whitespace-normal border-r border-violet-50/50 p-4 align-top text-xs">
+                                   <div className="flex flex-col gap-1.5 w-full">
+                                     {s.bghApprovalStatus ? (
+                                       <>
+                                         <div>
+                                           {s.bghApprovalStatus === "DAT" && (
+                                             <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">ĐẠT</span>
+                                           )}
+                                           {s.bghApprovalStatus === "KHONG_DAT" && (
+                                             <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-100">KHÔNG ĐẠT</span>
+                                           )}
+                                           {s.bghApprovalStatus === "Y_KIEN_KHAC" && (
+                                             <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-100">Ý KIẾN KHÁC</span>
+                                           )}
+                                         </div>
+                                         {s.bghApprovalComment && (
+                                           <div className="text-[11px] leading-relaxed text-slate-600 bg-slate-50 border border-slate-100 rounded-xl p-2 mt-1">
+                                             {s.bghApprovalComment}
+                                           </div>
+                                         )}
+                                       </>
+                                     ) : (
+                                       <div>
+                                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-violet-50/70 text-violet-600 border border-violet-100/50">
+                                           Chờ BGH MN duyệt
+                                         </span>
+                                       </div>
+                                     )}
+                                   </div>
+                                 </td>
 
                                 {/* Duyệt GĐCS */}
-                                <td className="w-[220px] min-w-[220px] whitespace-normal border-r border-violet-50/50 p-4 align-top text-xs">
-                                  <div className="flex flex-col gap-1.5 w-full">
-                                    {s.gdcsApprovalStatus ? (
-                                      <>
-                                        <div>
-                                          {s.gdcsApprovalStatus === "DAT" && (
-                                            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">ĐẠT</span>
-                                          )}
-                                          {s.gdcsApprovalStatus === "KHONG_DAT" && (
-                                            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-100">KHÔNG ĐẠT</span>
-                                          )}
-                                          {s.gdcsApprovalStatus === "Y_KIEN_KHAC" && (
-                                            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-100">Ý KIẾN KHÁC</span>
-                                          )}
-                                        </div>
-                                        {s.gdcsApprovalComment && (
-                                          <div className="text-[11px] leading-relaxed text-slate-600 bg-slate-50 border border-slate-100 rounded-xl p-2 mt-1">
-                                            {s.gdcsApprovalComment}
-                                          </div>
-                                        )}
-                                      </>
-                                    ) : (
-                                      <span className="text-slate-300 italic block py-1">—</span>
-                                    )}
-                                  </div>
-                                </td>
+                                 <td className="w-[220px] min-w-[220px] whitespace-normal border-r border-violet-50/50 p-4 align-top text-xs">
+                                   <div className="flex flex-col gap-1.5 w-full">
+                                     {s.gdcsApprovalStatus ? (
+                                       <>
+                                         <div>
+                                           {s.gdcsApprovalStatus === "DAT" && (
+                                             <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">ĐẠT</span>
+                                           )}
+                                           {s.gdcsApprovalStatus === "KHONG_DAT" && (
+                                             <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-100">KHÔNG ĐẠT</span>
+                                           )}
+                                           {s.gdcsApprovalStatus === "Y_KIEN_KHAC" && (
+                                             <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-100">Ý KIẾN KHÁC</span>
+                                           )}
+                                         </div>
+                                         {s.gdcsApprovalComment && (
+                                           <div className="text-[11px] leading-relaxed text-slate-600 bg-slate-50 border border-slate-100 rounded-xl p-2 mt-1">
+                                             {s.gdcsApprovalComment}
+                                           </div>
+                                         )}
+                                       </>
+                                     ) : (
+                                       <div>
+                                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-fuchsia-50/70 text-fuchsia-600 border border-fuchsia-100/50">
+                                           Chờ {getGdcsRoleCode(s.admissionCampus)} duyệt
+                                         </span>
+                                       </div>
+                                     )}
+                                   </div>
+                                 </td>
 
                                 <td className="w-32 min-w-[128px] p-4 align-top">{getResultBadge(s.generalResult)}</td>
                                 <td className="w-24 min-w-[96px] p-4 align-top">
@@ -2081,6 +2107,24 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
 
               {/* PHÊ DUYỆT 2 BƯỚC XÉT DUYỆT */}
               {(() => {
+                const userRole = (currentUser?.role || "").toUpperCase();
+                const isSystemAdmin = userRole === "ADMIN";
+                const isBGHUser = userRole === "KT_DBCL";
+                const isGDCSUser = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(userRole);
+
+                const showBghSection = isSystemAdmin || isBGHUser;
+                const showGdcsSection = isSystemAdmin || isGDCSUser;
+
+                const userCampuses = campuses.filter(c => currentUser?.campusIds?.includes(c.id));
+                const hasCampusMatch = currentUser?.campusIds?.length === 0 || userCampuses.some(c => 
+                  c.campusName === evalStudent?.admissionCampus || 
+                  c.campusCode === evalStudent?.admissionCampus
+                );
+
+                const canApproveBGH = (isSystemAdmin || isBGHUser) && hasCampusMatch;
+                const canApproveGDCS = (isSystemAdmin || isGDCSUser) && hasCampusMatch;
+                const userCampusNames = userCampuses.map(c => c.campusName).join(", ");
+
                 const getCalculatedResult = () => {
                   if (bghApprovalStatus || gdcsApprovalStatus) {
                     if (bghApprovalStatus === "DAT" && gdcsApprovalStatus === "DAT") {
@@ -2133,86 +2177,176 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div className={`grid grid-cols-1 ${showBghSection && showGdcsSection ? 'md:grid-cols-2' : 'md:grid-cols-1'} gap-5`}>
                       {/* BGH MN Column */}
-                      <div className="space-y-3 bg-white p-4 rounded-xl border border-violet-50">
-                        <div className="flex items-center gap-1.5 border-b border-slate-50 pb-2">
-                          <div className="w-2 h-2 rounded-full bg-violet-400" />
-                          <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider">BAN GIÁM HIỆU MẦM NON</span>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {[
-                            { status: "DAT", label: "ĐẠT", color: "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100/50", activeColor: "bg-emerald-500 text-white border-emerald-500 shadow-sm" },
-                            { status: "KHONG_DAT", label: "KHÔNG ĐẠT", color: "bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100/50", activeColor: "bg-rose-500 text-white border-rose-500 shadow-sm" },
-                            { status: "Y_KIEN_KHAC", label: "Ý KIẾN KHÁC", color: "bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100/50", activeColor: "bg-amber-500 text-white border-amber-500 shadow-sm" }
-                          ].map(opt => (
-                            <button
-                              key={opt.status}
-                              type="button"
-                              onClick={() => setBghApprovalStatus(bghApprovalStatus === opt.status ? "" : opt.status)}
-                              className={`px-3 py-1.5 rounded-xl border text-[10px] font-black transition-all ${bghApprovalStatus === opt.status ? opt.activeColor : `${opt.color} text-slate-600 bg-white border-slate-200`}`}
-                            >
-                              {opt.label}
-                            </button>
-                          ))}
-                          {bghApprovalStatus && (
-                            <button
-                              type="button"
-                              onClick={() => setBghApprovalStatus("")}
-                              className="px-2.5 py-1.5 rounded-xl text-[10px] font-black text-rose-600 hover:bg-rose-50 border border-transparent"
-                            >
-                              Bỏ chọn
-                            </button>
+                      {showBghSection && (
+                        <div className={`space-y-3 bg-white p-4 rounded-xl border transition-all ${canApproveBGH ? 'border-violet-100' : 'border-slate-100 bg-slate-50/50 opacity-80'}`}>
+                          <div className="flex items-center justify-between border-b border-slate-50 pb-2">
+                            <div className="flex items-center gap-1.5">
+                              <div className={`w-2 h-2 rounded-full ${canApproveBGH ? 'bg-violet-400' : 'bg-slate-300'}`} />
+                              <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider">BAN GIÁM HIỆU MẦM NON</span>
+                            </div>
+                            {!canApproveBGH && (
+                              <span className="text-[9px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md flex items-center gap-1" title={
+                                !evalStudent?.admissionCampus 
+                                  ? "Học sinh chưa có thông tin cơ sở" 
+                                  : isBGHUser 
+                                    ? `Bạn là BGH của cơ sở khác, học sinh thuộc ${evalStudent.admissionCampus}` 
+                                    : "Quyền hạn yêu cầu Ban Giám Hiệu Mầm Non"
+                              }>
+                                🔒 Chỉ đọc (BGH)
+                              </span>
+                            )}
+                            {canApproveBGH && (
+                              <span className="text-[9px] font-bold text-violet-500 bg-violet-50 px-2 py-0.5 rounded-md">
+                                ✍️ Quyền duyệt
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Helpful Permission Hint for BGH */}
+                          {isBGHUser && !hasCampusMatch && evalStudent?.admissionCampus && (
+                            <div className="text-[9px] font-bold text-amber-600 bg-amber-50/70 border border-amber-100 rounded-lg p-2 leading-relaxed animate-in fade-in duration-200">
+                              ⚠️ Cơ sở học sinh: <span className="underline">${evalStudent.admissionCampus}</span>. Cơ sở của bạn: <span className="underline">${userCampusNames || "Chưa gán"}</span>. Bạn không có quyền duyệt phiếu cơ sở này.
+                            </div>
                           )}
+
+                          {!evalStudent?.admissionCampus && !isSystemAdmin && (
+                            <div className="text-[9px] font-bold text-rose-600 bg-rose-50/70 border border-rose-100 rounded-lg p-2 leading-relaxed animate-in fade-in duration-200">
+                              ⚠️ Học sinh chưa được gán Cơ sở. Chỉ Quản trị viên hệ thống có quyền duyệt.
+                            </div>
+                          )}
+
+                          <div className="flex flex-wrap gap-2">
+                            {[
+                              { status: "DAT", label: "ĐẠT", color: "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100/50", activeColor: "bg-emerald-500 text-white border-emerald-500 shadow-sm" },
+                              { status: "KHONG_DAT", label: "KHÔNG ĐẠT", color: "bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100/50", activeColor: "bg-rose-500 text-white border-rose-500 shadow-sm" },
+                              { status: "Y_KIEN_KHAC", label: "Ý KIẾN KHÁC", color: "bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100/50", activeColor: "bg-amber-500 text-white border-amber-500 shadow-sm" }
+                            ].map(opt => (
+                              <button
+                                key={opt.status}
+                                type="button"
+                                disabled={!canApproveBGH}
+                                onClick={() => setBghApprovalStatus(bghApprovalStatus === opt.status ? "" : opt.status)}
+                                className={`px-3 py-1.5 rounded-xl border text-[10px] font-black transition-all ${
+                                  bghApprovalStatus === opt.status 
+                                    ? opt.activeColor 
+                                    : `${opt.color} text-slate-600 bg-white border-slate-200`
+                                } ${!canApproveBGH ? 'cursor-not-allowed opacity-60' : 'hover:scale-[1.02]'}`}
+                              >
+                                {opt.label}
+                              </button>
+                            ))}
+                            {canApproveBGH && bghApprovalStatus && (
+                              <button
+                                type="button"
+                                onClick={() => setBghApprovalStatus("")}
+                                className="px-2.5 py-1.5 rounded-xl text-[10px] font-black text-rose-600 hover:bg-rose-50 border border-transparent"
+                              >
+                                Bỏ chọn
+                              </button>
+                            )}
+                          </div>
+                          <textarea
+                            value={bghApprovalComment}
+                            onChange={e => setBghApprovalComment(e.target.value)}
+                            disabled={!canApproveBGH}
+                            rows={2}
+                            placeholder={canApproveBGH ? "Ý kiến phê duyệt của BGH..." : "Chưa có ý kiến phê duyệt của BGH"}
+                            className={`w-full border rounded-xl px-3 py-2 text-xs font-medium outline-none transition-all resize-none placeholder:text-slate-300 ${
+                              canApproveBGH 
+                                ? 'bg-slate-50 border-slate-100 focus:border-violet-300 focus:bg-white' 
+                                : 'bg-slate-100/50 border-slate-200 text-slate-500 cursor-not-allowed'
+                            }`}
+                          />
                         </div>
-                        <textarea
-                          value={bghApprovalComment}
-                          onChange={e => setBghApprovalComment(e.target.value)}
-                          rows={2}
-                          placeholder="Ý kiến phê duyệt của BGH..."
-                          className="w-full bg-slate-50 border border-slate-100 focus:border-violet-300 focus:bg-white rounded-xl px-3 py-2 text-xs font-medium outline-none transition-all resize-none placeholder:text-slate-300"
-                        />
-                      </div>
+                      )}
 
                       {/* GĐCS Column */}
-                      <div className="space-y-3 bg-white p-4 rounded-xl border border-violet-50">
-                        <div className="flex items-center gap-1.5 border-b border-slate-50 pb-2">
-                          <div className="w-2 h-2 rounded-full bg-fuchsia-400" />
-                          <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider">GIÁM ĐỐC CƠ SỞ</span>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {[
-                            { status: "DAT", label: "ĐẠT", color: "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100/50", activeColor: "bg-emerald-500 text-white border-emerald-500 shadow-sm" },
-                            { status: "KHONG_DAT", label: "KHÔNG ĐẠT", color: "bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100/50", activeColor: "bg-rose-500 text-white border-rose-500 shadow-sm" },
-                            { status: "Y_KIEN_KHAC", label: "Ý KIẾN KHÁC", color: "bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100/50", activeColor: "bg-amber-500 text-white border-amber-500 shadow-sm" }
-                          ].map(opt => (
-                            <button
-                              key={opt.status}
-                              type="button"
-                              onClick={() => setGdcsApprovalStatus(gdcsApprovalStatus === opt.status ? "" : opt.status)}
-                              className={`px-3 py-1.5 rounded-xl border text-[10px] font-black transition-all ${gdcsApprovalStatus === opt.status ? opt.activeColor : `${opt.color} text-slate-600 bg-white border-slate-200`}`}
-                            >
-                              {opt.label}
-                            </button>
-                          ))}
-                          {gdcsApprovalStatus && (
-                            <button
-                              type="button"
-                              onClick={() => setGdcsApprovalStatus("")}
-                              className="px-2.5 py-1.5 rounded-xl text-[10px] font-black text-rose-600 hover:bg-rose-50 border border-transparent"
-                            >
-                              Bỏ chọn
-                            </button>
+                      {showGdcsSection && (
+                        <div className={`space-y-3 bg-white p-4 rounded-xl border transition-all ${canApproveGDCS ? 'border-fuchsia-100' : 'border-slate-100 bg-slate-50/50 opacity-80'}`}>
+                          <div className="flex items-center justify-between border-b border-slate-50 pb-2">
+                            <div className="flex items-center gap-1.5">
+                              <div className={`w-2 h-2 rounded-full ${canApproveGDCS ? 'bg-fuchsia-400' : 'bg-slate-300'}`} />
+                              <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider">
+                                {getGdcsLabel(evalStudent?.admissionCampus)}
+                              </span>
+                            </div>
+                            {!canApproveGDCS && (
+                              <span className="text-[9px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md flex items-center gap-1" title={
+                                !evalStudent?.admissionCampus 
+                                  ? "Học sinh chưa có thông tin cơ sở" 
+                                  : isGDCSUser 
+                                    ? `Bạn là GĐCS của ${userCampusNames || "cơ sở khác"}, học sinh thuộc ${evalStudent.admissionCampus}` 
+                                    : "Quyền hạn yêu cầu Giám đốc Cơ sở"
+                              }>
+                                🔒 Chỉ đọc (GĐCS)
+                              </span>
+                            )}
+                            {canApproveGDCS && (
+                              <span className="text-[9px] font-bold text-fuchsia-500 bg-fuchsia-50 px-2 py-0.5 rounded-md">
+                                ✍️ Quyền duyệt
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Helpful Permission Hint for GĐCS */}
+                          {isGDCSUser && !hasCampusMatch && evalStudent?.admissionCampus && (
+                            <div className="text-[9px] font-bold text-amber-600 bg-amber-50/70 border border-amber-100 rounded-lg p-2 leading-relaxed animate-in fade-in duration-200">
+                              ⚠️ Cơ sở học sinh: <span className="underline">${evalStudent.admissionCampus}</span>. Cơ sở của bạn: <span className="underline">${userCampusNames || "Chưa gán"}</span>. Bạn không có quyền duyệt phiếu cơ sở này.
+                            </div>
                           )}
+
+                          {!evalStudent?.admissionCampus && !isSystemAdmin && (
+                            <div className="text-[9px] font-bold text-rose-600 bg-rose-50/70 border border-rose-100 rounded-lg p-2 leading-relaxed animate-in fade-in duration-200">
+                              ⚠️ Học sinh chưa được gán Cơ sở. Chỉ Quản trị viên hệ thống có quyền duyệt.
+                            </div>
+                          )}
+
+                          <div className="flex flex-wrap gap-2">
+                            {[
+                              { status: "DAT", label: "ĐẠT", color: "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100/50", activeColor: "bg-emerald-500 text-white border-emerald-500 shadow-sm" },
+                              { status: "KHONG_DAT", label: "KHÔNG ĐẠT", color: "bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100/50", activeColor: "bg-rose-500 text-white border-rose-500 shadow-sm" },
+                              { status: "Y_KIEN_KHAC", label: "Ý KIẾN KHÁC", color: "bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100/50", activeColor: "bg-amber-500 text-white border-amber-500 shadow-sm" }
+                            ].map(opt => (
+                              <button
+                                key={opt.status}
+                                type="button"
+                                disabled={!canApproveGDCS}
+                                onClick={() => setGdcsApprovalStatus(gdcsApprovalStatus === opt.status ? "" : opt.status)}
+                                className={`px-3 py-1.5 rounded-xl border text-[10px] font-black transition-all ${
+                                  gdcsApprovalStatus === opt.status 
+                                    ? opt.activeColor 
+                                    : `${opt.color} text-slate-600 bg-white border-slate-200`
+                                } ${!canApproveGDCS ? 'cursor-not-allowed opacity-60' : 'hover:scale-[1.02]'}`}
+                              >
+                                {opt.label}
+                              </button>
+                            ))}
+                            {canApproveGDCS && gdcsApprovalStatus && (
+                              <button
+                                type="button"
+                                onClick={() => setGdcsApprovalStatus("")}
+                                className="px-2.5 py-1.5 rounded-xl text-[10px] font-black text-rose-600 hover:bg-rose-50 border border-transparent"
+                              >
+                                Bỏ chọn
+                              </button>
+                            )}
+                          </div>
+                          <textarea
+                            value={gdcsApprovalComment}
+                            onChange={e => setGdcsApprovalComment(e.target.value)}
+                            disabled={!canApproveGDCS}
+                            rows={2}
+                            placeholder={canApproveGDCS ? "Ý kiến phê duyệt của GĐCS..." : "Chưa có ý kiến phê duyệt của GĐCS"}
+                            className={`w-full border rounded-xl px-3 py-2 text-xs font-medium outline-none transition-all resize-none placeholder:text-slate-300 ${
+                              canApproveGDCS 
+                                ? 'bg-slate-50 border-slate-100 focus:border-fuchsia-300 focus:bg-white' 
+                                : 'bg-slate-100/50 border-slate-200 text-slate-500 cursor-not-allowed'
+                            }`}
+                          />
                         </div>
-                        <textarea
-                          value={gdcsApprovalComment}
-                          onChange={e => setGdcsApprovalComment(e.target.value)}
-                          rows={2}
-                          placeholder="Ý kiến phê duyệt của GĐCS..."
-                          className="w-full bg-slate-50 border border-slate-100 focus:border-fuchsia-300 focus:bg-white rounded-xl px-3 py-2 text-xs font-medium outline-none transition-all resize-none placeholder:text-slate-300"
-                        />
-                      </div>
+                      )}
                     </div>
                   </div>
                 );
