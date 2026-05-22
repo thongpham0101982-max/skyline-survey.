@@ -2093,32 +2093,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                   />
                 </div>
 
-                <div>
-                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">KẾT LUẬN</label>
-                  <div className="flex gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setDevResult(devResult === "DAT" ? "" : "DAT")}
-                      className={`flex-1 py-3 rounded-xl border-2 text-sm font-black transition-all duration-200 ${devResult === "DAT" ? "bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-100" : "border-emerald-200 text-emerald-600 hover:bg-emerald-50"}`}
-                    >
-                      ✓ ĐẠT
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDevResult(devResult === "KHONG_DAT" ? "" : "KHONG_DAT")}
-                      className={`flex-1 py-3 rounded-xl border-2 text-sm font-black transition-all duration-200 ${devResult === "KHONG_DAT" ? "bg-rose-500 border-rose-500 text-white shadow-lg shadow-rose-100" : "border-rose-200 text-rose-600 hover:bg-rose-50"}`}
-                    >
-                      ✗ KHÔNG ĐẠT
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDevResult(devResult === "HOC_THU" ? "" : "HOC_THU")}
-                      className={`flex-1 py-3 rounded-xl border-2 text-sm font-black transition-all duration-200 ${devResult === "HOC_THU" ? "bg-indigo-500 border-indigo-500 text-white shadow-lg shadow-indigo-100" : "border-indigo-200 text-indigo-600 hover:bg-indigo-50"}`}
-                    >
-                      ★ HỌC THỬ
-                    </button>
-                  </div>
-                </div>
+
               </div>
 
               {/* PHÊ DUYỆT 2 BƯỚC XÉT DUYỆT */}
