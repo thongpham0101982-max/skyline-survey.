@@ -207,35 +207,47 @@ export async function POST(req) {
         }
       }
 
-      // Build HTML Table Rows
+      // Build HTML Table Rows (refactored to display compact, eye-catching summary statistics cards)
       let devGridHtml = "";
-      for (const code of Object.keys(groupedData)) {
-        const group = groupedData[code];
-        if (group.items.length === 0) continue;
+      
+      const summaryAreas = [
+        { code: "NHAN_THUC", name: "Nhận thức 🧩", color: "#b45309", bg: "#fef3c7" },
+        { code: "NGON_NGU", name: "Ngôn ngữ 🗣️", color: "#0369a1", bg: "#e0f2fe" },
+        { code: "TINH_CAM_XH_TM", name: "Tình cảm - XH 🎨", color: "#be185d", bg: "#fce7f3" }
+      ];
+
+      for (const area of summaryAreas) {
+        const group = groupedData[area.code];
+        if (!group || group.items.length === 0) continue;
+
+        const total = group.items.length;
+        const dat = group.items.filter(item => item.resultLabel.includes("Đạt")).length;
+        const khongDat = group.items.filter(item => item.resultLabel.includes("Không đạt")).length;
+        const pct = total > 0 ? Math.round((dat / total) * 100) : 0;
 
         devGridHtml += `
-          <tr>
-            <td colspan="3" style="background-color: #f1f5f9; padding: 10px 15px; font-weight: bold; color: #1e293b; font-size: 13px; text-transform: uppercase; border-bottom: 1px solid #e2e8f0;">
-              ${group.areaName}
+          <tr style="border-bottom: 1px solid #f1f5f9;">
+            <td style="padding: 14px 15px; font-size: 13px; font-weight: bold; color: #1e293b;">
+              <span style="display: inline-block; padding: 4px 12px; border-radius: 8px; background-color: ${area.bg}; color: ${area.color}; font-size: 12px; font-weight: 800; border: 1px solid ${area.color}20;">
+                ${area.name}
+              </span>
+            </td>
+            <td align="center" style="padding: 14px 15px; font-size: 13px; font-weight: bold; color: #475569; text-align: center;">
+              ${total}
+            </td>
+            <td align="center" style="padding: 14px 15px; font-size: 13px; font-weight: bold; color: #10b981; text-align: center;">
+              ${dat}
+            </td>
+            <td align="center" style="padding: 14px 15px; font-size: 13px; font-weight: bold; color: #ef4444; text-align: center;">
+              ${khongDat}
+            </td>
+            <td align="center" style="padding: 14px 15px; font-size: 13px; text-align: center;">
+              <span style="display: inline-block; padding: 3px 8px; border-radius: 6px; background-color: #ecfdf5; color: #047857; font-weight: 800; font-size: 11px; border: 1px solid #10b98130;">
+                ${pct}% Đạt
+              </span>
             </td>
           </tr>
         `;
-
-        for (const item of group.items) {
-          devGridHtml += `
-            <tr style="border-bottom: 1px solid #f1f5f9;">
-              <td style="padding: 12px 15px; font-size: 13px; color: #334155; line-height: 1.5; width: 50%;">
-                ${item.criteriaName}
-              </td>
-              <td style="padding: 12px 15px; font-size: 13px; font-weight: bold; color: ${item.resultColor}; width: 20%; text-align: center;">
-                ${item.resultLabel}
-              </td>
-              <td style="padding: 12px 15px; font-size: 13px; color: #475569; width: 30%; line-height: 1.5;">
-                ${item.noteText}
-              </td>
-            </tr>
-          `;
-        }
       }
 
       const proComment = student.devProfessionalComment || "Không có nhận xét.";
@@ -312,7 +324,7 @@ export async function POST(req) {
               <table width="700" border="0" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;">
                 <!-- Header -->
                 <tr>
-                  <td style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); padding: 35px 30px; text-align: center;">
+                  <td style="background: linear-gradient(135deg, #6366f1 0%, #ec4899 60%, #f59e0b 100%); padding: 35px 30px; text-align: center;">
                     <h1 style="margin: 0; color: #ffffff; font-size: 21px; font-weight: 800; letter-spacing: -0.5px; text-transform: uppercase; line-height: 1.3;">KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO</h1>
                     <p style="margin: 6px 0 0 0; color: #e0e7ff; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Bậc Mầm non - Hệ thống Trường Sky-Line</p>
                   </td>
@@ -389,10 +401,12 @@ export async function POST(req) {
                   <td style="padding: 0 30px 20px 30px;">
                     <table width="100%" border="0" cellspacing="0" cellpadding="0" style="border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
                       <thead>
-                        <tr style="background-color: #4f46e5; color: #ffffff;">
-                          <th align="left" style="padding: 12px 15px; font-size: 13px; font-weight: bold; width: 50%;">Nội dung đánh giá</th>
-                          <th align="center" style="padding: 12px 15px; font-size: 13px; font-weight: bold; width: 20%; text-align: center;">Kết quả</th>
-                          <th align="left" style="padding: 12px 15px; font-size: 13px; font-weight: bold; width: 30%;">Quan sát / Đo lường</th>
+                        <tr style="background: linear-gradient(135deg, #6366f1 0%, #ec4899 100%); color: #ffffff;">
+                          <th align="left" style="padding: 12px 15px; font-size: 13px; font-weight: bold; width: 45%;">Lĩnh vực phát triển</th>
+                          <th align="center" style="padding: 12px 15px; font-size: 13px; font-weight: bold; width: 15%; text-align: center;">Tổng tiêu chí</th>
+                          <th align="center" style="padding: 12px 15px; font-size: 13px; font-weight: bold; width: 13%; text-align: center; color: #a7f3d0;">Đạt</th>
+                          <th align="center" style="padding: 12px 15px; font-size: 13px; font-weight: bold; width: 13%; text-align: center; color: #fecdd3;">K.Đạt</th>
+                          <th align="center" style="padding: 12px 15px; font-size: 13px; font-weight: bold; width: 14%; text-align: center;">Kết quả</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -480,7 +494,7 @@ export async function POST(req) {
                     <p style="margin: 0 0 15px 0; font-size: 13px; color: #64748b; font-style: italic; line-height: 1.5;">
                       Báo cáo này được tự động định tuyến đến Tư vấn Tuyển sinh của Cơ sở dựa trên hồ sơ nhập học của bé. Vui lòng liên hệ phụ huynh để thông báo kết quả.
                     </p>
-                    <a href="${baseUrl}/admin/preschool-input-assessments" style="display: inline-block; padding: 12px 28px; border-radius: 12px; font-size: 14px; font-weight: bold; color: #ffffff; background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); text-decoration: none; border: 1px solid #4338ca; box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.3);">
+                    <a href="${baseUrl}/admin/preschool-input-assessments" style="display: inline-block; padding: 12px 28px; border-radius: 12px; font-size: 14px; font-weight: bold; color: #ffffff; background: linear-gradient(135deg, #6366f1 0%, #ec4899 100%); text-decoration: none; border: 1px solid #d946ef; box-shadow: 0 4px 10px -1px rgba(236, 72, 153, 0.35);">
                       Quản lý trên Hệ thống Portal
                     </a>
                   </td>
