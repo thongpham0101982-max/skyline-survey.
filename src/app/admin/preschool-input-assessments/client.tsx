@@ -605,7 +605,8 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
         }
         setStudentScores(scoreMap);
       }
-      const assignRes = await fetch(`/api/preschool-input-assessment-assignments?periodId=${student.periodId}`);
+      const targetPeriodId = student.periodId || cPeriodId;
+      const assignRes = await fetch(`/api/preschool-input-assessment-assignments?periodId=${targetPeriodId}`);
       if (assignRes.ok) {
         setEvalAssignments(await assignRes.json());
       }
@@ -938,7 +939,8 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
     if (devLoading && !evalAssignments.length) return "Đang tải...";
     if (!evalAssignments.length) return "Chưa phân công";
     const matches = evalAssignments.filter(a => {
-      if (a.periodId !== evalStudent.periodId) return false;
+      const studentPeriodId = evalStudent.periodId || cPeriodId;
+      if (a.periodId !== studentPeriodId) return false;
       if (a.grade !== evalStudent.grade) return false;
       return !a.batchId || a.batchId === evalStudent.batchId;
     });

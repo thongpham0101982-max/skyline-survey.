@@ -41,6 +41,8 @@ export async function GET(req: NextRequest) {
           dateOfBirth: true, 
           admissionCampus: true, 
           batchId: true, 
+          periodId: true,
+          periodId: true,
           devProfessionalComment: true, 
           devPsychologyComment: true, 
           devImportantNote: true, 
