@@ -122,7 +122,10 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
         const systemCode = assignment.overrideSystemCode !== undefined ? assignment.overrideSystemCode : (assignment.educationSystem || "");
         const grade = assignment.grade || "";
         
-        fetch(`/api/teacher-assessments?action=getStudents&periodId=${assignment.periodId}&grade=${grade}&systemCode=${systemCode}&subjectId=${assignment.subjectId}&batchId=${assignment.batchId || ""}`)
+        // Dynamic batch parameter based on selected dropdown
+        const batchQueryParam = selectedBatchId === "all" ? "" : selectedBatchId;
+        
+        fetch(`/api/teacher-assessments?action=getStudents&periodId=${assignment.periodId}&grade=${grade}&systemCode=${systemCode}&subjectId=${assignment.subjectId}&batchId=${batchQueryParam}`)
             .then(res => res.json())
             .then(data => {
                 const enriched = data.map((st: any) => {
@@ -137,7 +140,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 setStudents(enriched);
                 setLoading(false);
             });
-    }, [selectedAssignmentId, assignments, availableAssignments]);
+    }, [selectedAssignmentId, assignments, availableAssignments, selectedBatchId]);
 
     const handleScoreChange = (studentId: string, colIndex: number, val: string) => {
         const assignment = assignments.find(a => a.id === selectedAssignmentId);
