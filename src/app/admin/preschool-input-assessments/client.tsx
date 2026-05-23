@@ -129,7 +129,8 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   const [evalStudent, setEvalStudent] = useState<PreschoolChild | null>(null);
   const [evalModal, setEvalModal] = useState(false);
   const [devAreas, setDevAreas] = useState<DevArea[]>([]);
-  const isAssessmentLocked = !!(evalStudent?.bghApprovalStatus === "DAT" && evalStudent?.gdcsApprovalStatus === "DAT");
+  const isApprovedStatus = (s?: string) => s === "DAT" || s === "DAT_MIEN_HOC_THU" || s === "DAT_HOC_THU";
+  const isAssessmentLocked = !!(isApprovedStatus(evalStudent?.bghApprovalStatus) && isApprovedStatus(evalStudent?.gdcsApprovalStatus));
   const [devLoading, setDevLoading] = useState(false);
   const [studentScores, setStudentScores] = useState<Record<string, { result: string; note: string }>>({});
   const [savingEval, setSavingEval] = useState(false);
@@ -669,7 +670,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
           "Tình cảm - Kỹ năng XH - TM": s.tinhCamXhTmSummary || "Chưa đánh giá",
           "Giáo viên đánh giá": s.teacherComment || "Chưa có nhận xét",
           "Duyệt BGH MN": s.bghApprovalStatus 
-            ? `${s.bghApprovalStatus === "DAT" ? "Đạt" : s.bghApprovalStatus === "KHONG_DAT" ? "Không đạt" : "Ý kiến khác"}${s.bghApprovalComment ? ` - Ý kiến: ${s.bghApprovalComment}` : ""}` 
+            ? `${s.bghApprovalStatus === "DAT_MIEN_HOC_THU" ? "Đạt - Miễn Học Thử" : s.bghApprovalStatus === "DAT_HOC_THU" ? "Đạt - Học Thử" : s.bghApprovalStatus === "DAT" ? "Đạt" : s.bghApprovalStatus === "KHONG_DAT" ? "Không đạt" : "Ý kiến khác"}${s.bghApprovalComment ? ` - Ý kiến: ${s.bghApprovalComment}` : ""}` 
             : "Chưa duyệt",
           "Duyệt GĐCS": s.gdcsApprovalStatus 
             ? `${s.gdcsApprovalStatus === "DAT" ? "Đạt" : s.gdcsApprovalStatus === "KHONG_DAT" ? "Không đạt" : "Ý kiến khác"}${s.gdcsApprovalComment ? ` - Ý kiến: ${s.gdcsApprovalComment}` : ""}` 
@@ -1863,6 +1864,12 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                                        {s.bghApprovalStatus ? (
                                          <>
                                            <div>
+                                             {s.bghApprovalStatus === "DAT_MIEN_HOC_THU" && (
+                                               <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-teal-50 text-teal-600 border border-teal-100">ĐẠT - MIỄN HỌC THỬ</span>
+                                             )}
+                                             {s.bghApprovalStatus === "DAT_HOC_THU" && (
+                                               <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100">ĐẠT - HỌC THỬ</span>
+                                             )}
                                              {s.bghApprovalStatus === "DAT" && (
                                                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">ĐẠT</span>
                                              )}
@@ -2742,9 +2749,9 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
 
                   if (bgh || gdcs) {
                     if (isApproved(bgh) && isApproved(gdcs)) {
-                      if (gdcs === "DAT_MIEN_HOC_THU") {
+                      if (bgh === "DAT_MIEN_HOC_THU" || gdcs === "DAT_MIEN_HOC_THU") {
                         return "Đạt - Miễn Học Thử";
-                      } else if (gdcs === "DAT_HOC_THU") {
+                      } else if (bgh === "DAT_HOC_THU" || gdcs === "DAT_HOC_THU") {
                         return "Đạt - Học Thử";
                       } else {
                         return "Đạt";
@@ -2842,7 +2849,8 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
 
                           <div className="flex flex-wrap gap-2">
                             {[
-                              { status: "DAT", label: "ĐẠT", color: "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100/50", activeColor: "bg-emerald-500 text-white border-emerald-500 shadow-sm" },
+                              { status: "DAT_MIEN_HOC_THU", label: "ĐẠT - MIỄN HỌC THỬ", color: "bg-teal-50 text-teal-600 border-teal-100 hover:bg-teal-100/50", activeColor: "bg-teal-600 text-white border-teal-600 shadow-sm" },
+                              { status: "DAT_HOC_THU", label: "ĐẠT - HỌC THỬ", color: "bg-indigo-50 text-indigo-600 border-indigo-100 hover:bg-indigo-100/50", activeColor: "bg-indigo-600 text-white border-indigo-600 shadow-sm" },
                               { status: "KHONG_DAT", label: "KHÔNG ĐẠT", color: "bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100/50", activeColor: "bg-rose-500 text-white border-rose-500 shadow-sm" },
                               { status: "Y_KIEN_KHAC", label: "Ý KIẾN KHÁC", color: "bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100/50", activeColor: "bg-amber-500 text-white border-amber-500 shadow-sm" }
                             ].map(opt => (
