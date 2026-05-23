@@ -101,7 +101,11 @@ export async function POST(req) {
                 batchId: batchId || null
              },
              include: {
-                user: true,
+                user: {
+                   include: {
+                      teacher: true
+                   }
+                },
                 period: true,
                 batch: true,
                 subject: true
@@ -120,7 +124,11 @@ export async function POST(req) {
                 batchId: batchId || null
              },
              include: {
-                user: true,
+                user: {
+                   include: {
+                      teacher: true
+                   }
+                },
                 period: true,
                 batch: true,
                 subject: true
@@ -162,7 +170,8 @@ export async function POST(req) {
        
        for (const [userId, group] of Object.entries(teacherGroups)) {
           const user = group.user;
-          const targetEmail = user?.email;
+          const teacher = user?.teacher;
+          const targetEmail = teacher?.email || user?.email;
           
           if (!targetEmail || !targetEmail.includes("@")) {
              failedCount++;
