@@ -122,7 +122,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   const [tab, setTab] = useState("periods");
 
   // Đánh giá phát triển
-  const [devTab, setDevTab] = useState<"assess" | "xetDuyet" | "manage" | "dgkqHocThu">("assess");
+  const [devTab, setDevTab] = useState<"assess" | "xetDuyet" | "manage" | "dgkqHocThu" | "xuatThuChucMung">("assess");
   const [ageGroupFilter, setAgeGroupFilter] = useState("18 đến 24 tháng");
   
   // Đánh giá học sinh
@@ -628,6 +628,207 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
       setDevLoading(false);
     }
   };
+
+  const printCongratulatoryLetter = (student: any) => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      notify("Vui lòng cho phép mở cửa sổ bật lên (popup) để in thư chúc mừng", "err");
+      return;
+    }
+
+    const dob = student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString("vi-VN") : "—";
+    
+    printWindow.document.write(`
+      <html>
+      <head>
+        <title>Thư Chúc Mừng - ${student.fullName}</title>
+        <style>
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap');
+          body {
+            font-family: 'Inter', sans-serif;
+            background-color: #ffffff;
+            color: #1e293b;
+            margin: 0;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+          }
+          .container {
+            width: 100%;
+            max-width: 800px;
+            border: 4px double #4f46e5;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            background: radial-gradient(circle at top left, #faf5ff 0%, #ffffff 100%);
+            position: relative;
+          }
+          .header {
+            text-align: center;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+          }
+          .logo {
+            font-size: 24px;
+            font-weight: 900;
+            color: #1e1b4b;
+            letter-spacing: -1px;
+            margin-bottom: 5px;
+          }
+          .subtitle {
+            font-size: 10px;
+            font-weight: 800;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+          }
+          .title {
+            text-align: center;
+            font-size: 28px;
+            font-weight: 900;
+            color: #4f46e5;
+            margin: 20px 0;
+            letter-spacing: -0.5px;
+            text-transform: uppercase;
+          }
+          .content {
+            font-size: 15px;
+            line-height: 1.8;
+            color: #334155;
+            margin-bottom: 40px;
+          }
+          .highlight {
+            font-weight: 800;
+            color: #1e293b;
+          }
+          .success-badge {
+            display: inline-block;
+            background-color: #f0fdf4;
+            color: #16a34a;
+            border: 1px solid #bbf7d0;
+            padding: 2px 10px;
+            border-radius: 9999px;
+            font-weight: 800;
+            font-size: 13px;
+          }
+          .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+          }
+          .info-table td {
+            padding: 10px 15px;
+            border: 1px solid #e2e8f0;
+            font-size: 14px;
+          }
+          .info-table td.label {
+            font-weight: 600;
+            color: #64748b;
+            width: 30%;
+            background-color: #f8fafc;
+          }
+          .info-table td.val {
+            font-weight: 700;
+            color: #0f172a;
+          }
+          .signatures {
+            margin-top: 60px;
+            display: flex;
+            justify-content: space-between;
+          }
+          .signature-box {
+            text-align: center;
+            width: 40%;
+          }
+          .signature-title {
+            font-size: 12px;
+            font-weight: 800;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 60px;
+          }
+          .signature-name {
+            font-weight: 800;
+            color: #1e293b;
+            font-size: 14px;
+          }
+          @media print {
+            body {
+              padding: 0;
+            }
+            .container {
+              box-shadow: none;
+              border: 4px double #000000;
+              background: none;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <div class="logo">SKY-LINE SYSTEM</div>
+            <div class="subtitle">Hệ thống Giáo dục Sky-Line</div>
+          </div>
+          <div class="title">Thư Chúc Mừng Nhập Học</div>
+          <div class="content">
+            <p>Kính gửi Quý phụ huynh học sinh <span class="highlight">${student.fullName}</span>,</p>
+            <p>Ban Giám Hiệu Hệ thống Giáo dục Mầm non Sky-Line trân trọng gửi lời chúc mừng nồng nhiệt nhất đến Gia đình và Bé. Dựa trên kết quả Khảo sát phát triển toàn diện của trẻ và kết quả phê duyệt chính thức từ Hội đồng Tuyển sinh, nhà trường trân trọng thông báo:</p>
+            
+            <table class="info-table">
+              <tr>
+                <td class="label">Họ và tên học sinh</td>
+                <td class="val">${student.fullName}</td>
+              </tr>
+              <tr>
+                <td class="label">Mã học sinh</td>
+                <td class="val">${student.studentCode}</td>
+              </tr>
+              <tr>
+                <td class="label">Ngày sinh</td>
+                <td class="val">${dob}</td>
+              </tr>
+              <tr>
+                <td class="label">Nhóm tuổi tuyển sinh</td>
+                <td class="val">${student.grade || "—"}</td>
+              </tr>
+              <tr>
+                <td class="label">Cơ sở đăng ký học</td>
+                <td class="val">${student.admissionCampus || "—"}</td>
+              </tr>
+              <tr>
+                <td class="label">Kết quả xét duyệt</td>
+                <td class="val"><span class="success-badge">ĐẠT - MIỄN HỌC THỬ</span></td>
+              </tr>
+            </table>
+
+            <p>Bé đã chính thức đủ điều kiện nhập học trực tiếp và được <span class="highlight">Miễn thời gian Học thử thực nghiệm</span> tại nhà trường. Đây là một kết quả tuyệt vời, ghi nhận sự phát triển xuất sắc toàn diện về thể chất, nhận thức, ngôn ngữ và kỹ năng xã hội của bé.</p>
+            <p>Nhà trường xin kính mời Quý phụ huynh liên hệ Bộ phận Tuyển sinh tại Cơ sở để hoàn tất thủ tục nhập học chính thức cho bé theo đúng thời gian quy định.</p>
+            <p>Sky-Line rất vinh hạnh được đồng hành cùng Gia đình trên hành trình nâng bước và nuôi dưỡng những năm tháng đầu đời tươi đẹp nhất của bé!</p>
+          </div>
+          <div class="signatures">
+            <div class="signature-box" style="visibility: hidden;">
+              <div class="signature-title">Người lập phiếu</div>
+            </div>
+            <div class="signature-box">
+              <div class="signature-title">HỘI ĐỒNG TUYỂN SINH</div>
+              <div class="signature-name">Đại diện Hội đồng</div>
+            </div>
+          </div>
+        </div>
+        <script>
+          window.onload = function() {
+            window.print();
+          }
+        </script>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
 
   const openProbationary = async (student: any) => {
     setProbStudent(student);
@@ -1590,6 +1791,12 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
             >
               Đánh giá Học thử
             </button>
+            <button
+              onClick={() => setDevTab("xuatThuChucMung")}
+              className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${devTab === "xuatThuChucMung" ? "bg-violet-500 text-white shadow-sm" : "text-slate-500 hover:bg-violet-50"}`}
+            >
+              Xuất thư Chúc mừng
+            </button>
           </div>
 
           {/* Sub-tab: Đánh giá Trẻ */}
@@ -2161,6 +2368,91 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-black text-violet-700 bg-violet-50 hover:bg-violet-500 hover:text-white rounded-xl border border-violet-100 transition-all shadow-sm"
                                   >
                                     <ClipboardList className="w-3.5 h-3.5" /> Đánh giá học thử
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Sub-tab: Xuất thư Chúc mừng */}
+          {devTab === "xuatThuChucMung" && (
+            <div className="space-y-4">
+              <div className="bg-white rounded-2xl border border-violet-100 shadow-sm p-4 flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Kỳ KS:</label>
+                  <select value={cPeriodId} onChange={e => { setCPeriodId(e.target.value); setCBatchId(""); }} className="border border-violet-100 rounded-xl p-2 text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-violet-300 min-w-[160px]">
+                    <option value="">-- Chọn Kỳ --</option>
+                    {periods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Đợt:</label>
+                  <select value={cBatchId} onChange={e => setCBatchId(e.target.value)} className="border border-violet-100 rounded-xl p-2 text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-violet-300 min-w-[140px]" disabled={!cPeriodId}>
+                    <option value="">Tất cả đợt</option>
+                    {selPeriod?.batches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                  </select>
+                </div>
+                <button onClick={fetchStudentSummaries} className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-violet-600 bg-violet-50 hover:bg-violet-100 rounded-xl border border-violet-100"><Search className="w-4 h-4" /> Tìm</button>
+                <div className="ml-auto relative"><Search className="w-4 h-4 text-slate-300 absolute left-3 top-1/2 -translate-y-1/2" /><input value={cSearch} onChange={e => setCSearch(e.target.value)} placeholder="Tìm bé..." className="pl-9 pr-4 py-2 border border-violet-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-violet-300 min-w-[200px]" /></div>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-violet-100 shadow-sm overflow-hidden">
+                {sumLoading ? (
+                  <div className="flex justify-center p-12">
+                    <span className="text-violet-600 font-bold animate-pulse text-sm">Đang tải danh sách...</span>
+                  </div>
+                ) : studentSummaries.filter(s => {
+                  const result = (s.admissionResult || "").toUpperCase();
+                  return result.includes("MIỄN HỌC THỬ") || result.includes("MIEN_HOC_THU");
+                }).length === 0 ? (
+                  <div className="text-center py-12 text-slate-400 font-bold text-sm bg-slate-50 rounded-2xl border border-dashed border-slate-200 m-4">
+                    {cPeriodId ? "Không có học sinh nào được duyệt Miễn học thử" : "Vui lòng chọn Kỳ và bấm Tìm"}
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left whitespace-nowrap">
+                      <thead className="bg-violet-50 border-b border-violet-100">
+                        <tr>
+                          {["STT", "Mã bé", "Họ và tên", "Ngày sinh", "Nhóm tuổi", "Cơ sở", "Kết quả duyệt", "Thao tác"].map(h => (
+                            <th key={h} className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-violet-50">
+                        {studentSummaries
+                          .filter(s => {
+                            const result = (s.admissionResult || "").toUpperCase();
+                            return result.includes("MIỄN HỌC THỬ") || result.includes("MIEN_HOC_THU");
+                          })
+                          .filter(s => !cSearch || s.studentCode.toLowerCase().includes(cSearch.toLowerCase()) || s.fullName.toLowerCase().includes(cSearch.toLowerCase()))
+                          .map((s, idx) => {
+                            const resultBadge = () => {
+                              return <span className="text-[10px] font-black text-teal-700 bg-teal-50 px-2.5 py-1 rounded-full border border-teal-100">✓ ĐẠT - MIỄN HỌC THỬ</span>;
+                            };
+
+                            return (
+                              <tr key={s.id} className="hover:bg-violet-50/30 transition-colors">
+                                <td className="p-4 text-slate-400 text-sm">{idx + 1}</td>
+                                <td className="p-4"><span className="font-mono text-xs font-black text-violet-600 bg-violet-50 px-2 py-1 rounded-lg">{s.studentCode}</span></td>
+                                <td className="p-4 font-bold text-slate-800 text-sm">{s.fullName}</td>
+                                <td className="p-4 text-sm text-slate-500">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
+                                <td className="p-4"><span className="text-xs font-bold text-purple-700 bg-purple-50 px-2 py-1 rounded-lg border border-purple-100">{s.grade || "—"}</span></td>
+                                <td className="p-4 text-slate-600 text-sm">{s.admissionCampus || "—"}</td>
+                                <td className="p-4">{resultBadge()}</td>
+                                <td className="p-4">
+                                  <button
+                                    onClick={() => printCongratulatoryLetter(s)}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-500 hover:text-white rounded-xl border border-emerald-100 transition-all shadow-sm"
+                                  >
+                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                                    Xuất thư Chúc mừng
                                   </button>
                                 </td>
                               </tr>
@@ -2996,7 +3288,9 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                         <h4 className="text-xs font-black text-violet-700 uppercase tracking-widest">PHÊ DUYỆT 2 BƯỚC XÉT DUYỆT</h4>
                       </div>
                       <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-violet-100">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Kết quả Duyệt (Dự kiến):</span>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                          {bghApprovalStatus && gdcsApprovalStatus ? "Kết quả Duyệt:" : "Kết quả Duyệt (Dự kiến):"}
+                        </span>
                         {getCalcBadge(calcRes)}
                       </div>
                     </div>
