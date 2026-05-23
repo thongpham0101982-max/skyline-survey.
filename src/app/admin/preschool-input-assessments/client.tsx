@@ -4,7 +4,7 @@ import * as XLSX from "xlsx"
 import {
   Baby, Clock, Settings, Users, BarChart3, Calendar,
   Plus, Trash2, Edit2, Search, RefreshCw, ChevronDown, ChevronUp,
-  X, CheckCircle, AlertCircle, Download, Upload, Star, Heart, Sparkles, UserCheck, Eye, Send
+  X, CheckCircle, AlertCircle, Download, Upload, Star, Heart, Sparkles, UserCheck, Eye, Send, ClipboardList
 } from "lucide-react"
 
 interface Period { id: string; code: string; name: string; status: string; startDate?: string; endDate?: string; description?: string; assignedUserId?: string; surveyType?: string; batches: Batch[] }
@@ -122,7 +122,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   const [tab, setTab] = useState("periods");
 
   // Đánh giá phát triển
-  const [devTab, setDevTab] = useState<"assess" | "xetDuyet" | "manage">("assess");
+  const [devTab, setDevTab] = useState<"assess" | "xetDuyet" | "manage" | "dgkqHocThu">("assess");
   const [ageGroupFilter, setAgeGroupFilter] = useState("18 đến 24 tháng");
   
   // Đánh giá học sinh
@@ -248,6 +248,17 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   const [aNotifyingId, setANotifyingId] = useState(null);
   const [aNotifyingAll, setANotifyingAll] = useState(false);
   const [evalAssignments, setEvalAssignments] = useState<any[]>([]);
+
+  // Probationary Assessment States
+  const [probModal, setProbModal] = useState(false);
+  const [probStudent, setProbStudent] = useState<any | null>(null);
+  const [probScores, setProbScores] = useState<Record<string, { result: string; note: string }>>({});
+  const [probPeriod, setProbPeriod] = useState("");
+  const [probClass, setProbClass] = useState("");
+  const [probTeacher, setProbTeacher] = useState("");
+  const [probResult, setProbResult] = useState("");
+  const [probComment, setProbComment] = useState("");
+  const [savingProb, setSavingProb] = useState(false);
 
   // Age & Grade auto-verifier helper
   const getMonthsAndSuggestGrade = useCallback((dobStr: string, batchId: string) => {
@@ -615,6 +626,70 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
       notify("Lỗi khi tải thông tin đánh giá", "err");
     } finally {
       setDevLoading(false);
+    }
+  };
+
+  const openProbationary = async (student: any) => {
+    setProbStudent(student);
+    setProbScores({});
+    setProbPeriod(student.probationaryPeriod || "");
+    setProbClass(student.probationaryClass || "");
+    setProbTeacher(student.probationaryTeacher || "");
+    setProbResult(student.probationaryResult || "");
+    setProbComment(student.probationaryComment || "");
+    setProbModal(true);
+    setDevLoading(true);
+    try {
+      const ageGroup = student.grade || "18 đến 24 tháng";
+      const areasRes = await fetch(`/api/preschool-dev-areas?ageGroup=${encodeURIComponent(ageGroup)}`);
+      if (areasRes.ok) {
+        setDevAreas(await areasRes.json());
+      }
+      if (student.probationaryScoreText) {
+        try {
+          const parsed = JSON.parse(student.probationaryScoreText);
+          setProbScores(parsed);
+        } catch (e) {
+          console.error("Error parsing probationaryScoreText:", e);
+        }
+      }
+    } catch (e) {
+      console.error(e);
+      notify("Lỗi khi tải thông tin đánh giá học thử", "err");
+    } finally {
+      setDevLoading(false);
+    }
+  };
+
+  const saveProbationary = async () => {
+    if (!probStudent) return;
+    setSavingProb(true);
+    try {
+      const r = await fetch("/api/preschool-probationary-assessment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId: probStudent.id,
+          probationaryScoreText: JSON.stringify(probScores),
+          probationaryResult: probResult,
+          probationaryComment: probComment,
+          probationaryPeriod: probPeriod,
+          probationaryClass: probClass,
+          probationaryTeacher: probTeacher
+        })
+      });
+      if (r.ok) {
+        setProbModal(false);
+        fetchStudentSummaries();
+        notify("Đã lưu kết quả đánh giá học thử");
+      } else {
+        notify("Lỗi khi lưu kết quả đánh giá học thử", "err");
+      }
+    } catch (e) {
+      console.error(e);
+      notify("Lỗi hệ thống", "err");
+    } finally {
+      setSavingProb(false);
     }
   };
 
@@ -1508,6 +1583,12 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
               className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${devTab === "manage" ? "bg-violet-500 text-white shadow-sm" : "text-slate-500 hover:bg-violet-50"}`}
             >
               Quản lý Tiêu chí & Lĩnh vực
+            </button>
+            <button
+              onClick={() => setDevTab("dgkqHocThu")}
+              className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${devTab === "dgkqHocThu" ? "bg-violet-500 text-white shadow-sm" : "text-slate-500 hover:bg-violet-50"}`}
+            >
+              ĐGKQ Học thử
             </button>
           </div>
 
@@ -3013,6 +3094,234 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
           )}
         </div>
       </Modal>
+
+      {/* Modal: ĐGKQ Học thử */}
+      <Modal
+        open={probModal}
+        onClose={() => setProbModal(false)}
+        title={`Đánh giá kết quả Học thử: ${probStudent?.fullName || ""}`}
+        size="xl"
+        footer={
+          <>
+            <button onClick={() => setProbModal(false)} className="flex-1 text-xs font-black uppercase text-slate-400 hover:text-slate-600">
+              Đóng
+            </button>
+            <button
+              onClick={saveProbationary}
+              disabled={savingProb || devLoading}
+              className="flex-1 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-100 disabled:opacity-50 transition-all"
+            >
+              {savingProb ? "Đang lưu..." : "Lưu Kết Quả Học Thử"}
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          {/* Child Details Card */}
+          <div className="bg-violet-50/50 p-4 rounded-2xl border border-violet-100 flex flex-wrap justify-between gap-4">
+            <div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Học sinh</p>
+              <p className="text-base font-black text-slate-800">{probStudent?.fullName}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Mã bé</p>
+              <p className="text-sm font-bold text-violet-600 font-mono">{probStudent?.studentCode}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nhóm tuổi</p>
+              <p className="text-sm font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-lg border border-purple-100">{probStudent?.grade}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cơ sở</p>
+              <p className="text-sm font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-lg border border-indigo-100">{probStudent?.admissionCampus || "—"}</p>
+            </div>
+          </div>
+
+          {/* Probationary Inputs */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+            <div>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Thời gian học thử</label>
+              <input
+                type="text"
+                value={probPeriod}
+                onChange={e => setProbPeriod(e.target.value)}
+                placeholder="Ví dụ: 20/05/2026 ~ 03/06/2026"
+                className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-violet-300 bg-white"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Lớp học thử</label>
+              <input
+                type="text"
+                value={probClass}
+                onChange={e => setProbClass(e.target.value)}
+                placeholder="Ví dụ: Jerry 1"
+                className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-violet-300 bg-white"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Giáo viên học thử</label>
+              <input
+                type="text"
+                value={probTeacher}
+                onChange={e => setProbTeacher(e.target.value)}
+                placeholder="Ví dụ: Cô Mai, Cô Hằng"
+                className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-violet-300 bg-white"
+              />
+            </div>
+          </div>
+
+          {/* Criteria & Rating Table */}
+          {devLoading ? (
+            <div className="flex justify-center p-8">
+              <span className="text-violet-600 font-bold animate-pulse text-sm">Đang tải tiêu chí...</span>
+            </div>
+          ) : devAreas.length === 0 ? (
+            <div className="text-center py-12 text-slate-400 font-bold text-sm bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+              Chưa cấu hình tiêu chí nào cho nhóm tuổi: {probStudent?.grade}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {devAreas.map(area => (
+                <div key={area.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                  <div className="px-4 py-3 bg-slate-50/50 border-b border-slate-100 flex items-center gap-2.5">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: area.color || "#6366f1" }} />
+                    <h4 className="font-black text-slate-800 text-sm uppercase tracking-wide">{area.name}</h4>
+                  </div>
+                  
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left whitespace-nowrap table-fixed">
+                      <thead className="bg-slate-50/50 border-b border-slate-100">
+                        <tr>
+                          <th className="p-3 text-[9px] font-black text-slate-400 uppercase tracking-wider w-[40%]">Tiêu chí</th>
+                          <th className="p-3 text-[9px] font-black text-slate-400 uppercase tracking-wider text-center w-[15%]">Chưa thể hiện</th>
+                          <th className="p-3 text-[9px] font-black text-slate-400 uppercase tracking-wider text-center w-[15%]">Bắt đầu thể hiện</th>
+                          <th className="p-3 text-[9px] font-black text-slate-400 uppercase tracking-wider text-center w-[15%]">Thể hiện tốt</th>
+                          <th className="p-3 text-[9px] font-black text-slate-400 uppercase tracking-wider w-[15%]">Ghi chú</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {area.criteria?.map(crit => {
+                          const currentScore = probScores[crit.id] || { result: "", note: "" };
+                          
+                          const setScoreResult = (res) => {
+                            setProbScores({
+                              ...probScores,
+                              [crit.id]: { ...currentScore, result: res }
+                            });
+                          };
+
+                          const setScoreNote = (noteText) => {
+                            setProbScores({
+                              ...probScores,
+                              [crit.id]: { ...currentScore, note: noteText }
+                            });
+                          };
+
+                          return (
+                            <tr key={crit.id} className="hover:bg-slate-50/30 transition-colors">
+                              <td className="p-3 text-slate-700 text-xs font-semibold whitespace-normal break-words leading-relaxed">{crit.name}</td>
+                              <td className="p-3 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() => setScoreResult(currentScore.result === "CHUA_THE_HIEN" ? "" : "CHUA_THE_HIEN")}
+                                  className={`w-5 h-5 rounded-full border transition-all ${
+                                    currentScore.result === "CHUA_THE_HIEN"
+                                      ? "bg-amber-500 border-amber-500 shadow-sm text-white flex items-center justify-center text-[10px] font-bold mx-auto"
+                                      : "border-slate-300 hover:border-slate-400 bg-white mx-auto block"
+                                  }`}
+                                >
+                                  {currentScore.result === "CHUA_THE_HIEN" && "✓"}
+                                </button>
+                              </td>
+                              <td className="p-3 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() => setScoreResult(currentScore.result === "BAT_DAU_THE_HIEN" ? "" : "BAT_DAU_THE_HIEN")}
+                                  className={`w-5 h-5 rounded-full border transition-all ${
+                                    currentScore.result === "BAT_DAU_THE_HIEN"
+                                      ? "bg-indigo-500 border-indigo-500 shadow-sm text-white flex items-center justify-center text-[10px] font-bold mx-auto"
+                                      : "border-slate-300 hover:border-slate-400 bg-white mx-auto block"
+                                  }`}
+                                >
+                                  {currentScore.result === "BAT_DAU_THE_HIEN" && "✓"}
+                                </button>
+                              </td>
+                              <td className="p-3 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() => setScoreResult(currentScore.result === "THE_HIEN_TOT" ? "" : "THE_HIEN_TOT")}
+                                  className={`w-5 h-5 rounded-full border transition-all ${
+                                    currentScore.result === "THE_HIEN_TOT"
+                                      ? "bg-emerald-500 border-emerald-500 shadow-sm text-white flex items-center justify-center text-[10px] font-bold mx-auto"
+                                      : "border-slate-300 hover:border-slate-400 bg-white mx-auto block"
+                                  }`}
+                                >
+                                  {currentScore.result === "THE_HIEN_TOT" && "✓"}
+                                </button>
+                              </td>
+                              <td className="p-3">
+                                <input
+                                  type="text"
+                                  value={currentScore.note || ""}
+                                  onChange={e => setScoreNote(e.target.value)}
+                                  placeholder="Ghi chú..."
+                                  className="w-full px-2.5 py-1 border border-slate-200 rounded-lg text-xs font-medium outline-none focus:ring-1 focus:ring-violet-300 bg-white"
+                                />
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Probationary Final Results */}
+          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h4 className="text-xs font-black text-slate-700 uppercase tracking-wider">Kết luận sau thời gian học thử</h4>
+                <p className="text-[11px] font-semibold text-slate-400 mt-0.5">Quyết định kết quả thực nghiệm học tập thử của bé</p>
+              </div>
+              <div className="flex gap-2">
+                {[
+                  { status: "DAT", label: "ĐẠT", color: "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100/50", activeColor: "bg-emerald-500 text-white border-emerald-500 shadow-sm" },
+                  { status: "CHUA_DAT", label: "CHƯA ĐẠT", color: "bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100/50", activeColor: "bg-rose-500 text-white border-rose-500 shadow-sm" }
+                ].map(opt => (
+                  <button
+                    key={opt.status}
+                    type="button"
+                    onClick={() => setProbResult(probResult === opt.status ? "" : opt.status)}
+                    className={`px-4 py-2 rounded-xl border text-xs font-black transition-all ${
+                      probResult === opt.status 
+                        ? opt.activeColor 
+                        : `${opt.color} text-slate-600 bg-white border-slate-200 hover:scale-[1.02]`
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Ý kiến / Ghi chú thêm</label>
+              <textarea
+                value={probComment}
+                onChange={e => setProbComment(e.target.value)}
+                placeholder="Nhập ý kiến đánh giá chung, lý do đạt/chưa đạt hoặc hướng phát triển..."
+                rows={3}
+                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-violet-300 bg-white"
+              />
+            </div>
+          </div>
+        </div>
+      </Modal>
+
 
       {/* Modal: Criteria */}
       <Modal
