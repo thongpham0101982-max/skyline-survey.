@@ -610,49 +610,51 @@ export async function POST(req) {
             }
           });
           notificationCount++;
-
-          // Send Email Alert
-          if (u.email && u.email.includes("@")) {
-            const emailBody = `
-              <!DOCTYPE html>
-              <html>
-              <head>
-                <meta charset="utf-8">
-              </head>
-              <body style="margin: 0; padding: 20px; font-family: 'Segoe UI', sans-serif; background-color: #f1f5f9; color: #1e293b;">
-                <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; padding: 25px;">
-                  <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 20px; border-radius: 12px; text-align: center; color: #ffffff; margin-bottom: 20px;">
-                     <h2 style="margin: 0; font-size: 18px; text-transform: uppercase;">Yêu Cầu Phê Duyệt Khảo Sát</h2>
-                     <p style="margin: 4px 0 0 0; font-size: 12px; opacity: 0.9;">Bậc Mầm non - Hệ thống Trường Sky-Line</p>
-                  </div>
-                  <p style="font-size: 14px; line-height: 1.6;">Kính gửi thầy/cô <strong>${u.fullName}</strong>,</p>
-                  <p style="font-size: 14px; line-height: 1.6;">Học sinh <strong>${student.fullName}</strong> (Mã HS: <strong>${student.studentCode}</strong>) thuộc <strong>Cơ sở ${campusName}</strong> đã hoàn thành các bài khảo sát năng lực đầu vào và nhận xét từ giáo viên chuyên môn.</p>
-                  <p style="font-size: 14px; line-height: 1.6; color: #d97706; font-weight: bold; background-color: #fffbeb; padding: 10px; border-radius: 8px; border-left: 4px solid #f59e0b;">
-                     ⚠️ Kính đề xuất Ban Giám Hiệu và Giám Đốc Cơ sở tiến hành xem xét phê duyệt trực tuyến để Tuyển sinh có thể xuất báo cáo kết quả gửi phụ huynh.
-                  </p>
-                  <div style="text-align: center; margin: 25px 0;">
-                    <a href="${baseUrl}/admin/preschool-input-assessments" style="display: inline-block; padding: 12px 28px; border-radius: 10px; font-size: 14px; font-weight: bold; color: #ffffff; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); text-decoration: none; box-shadow: 0 4px 6px rgba(245, 158, 11, 0.3);">
-                      Đi tới phê duyệt trên Portal
-                    </a>
-                  </div>
-                  <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 20px 0;">
-                  <p style="font-size: 11px; color: #64748b; margin: 0; text-align: center;">Email được gửi tự động từ Hệ thống Khảo sát Tuyển sinh Sky-Line.</p>
-                </div>
-              </body>
-              </html>
-            `;
-
-            await sendEmail({
-              to: u.email,
-              subject: `[Preschool-Approval] Yêu cầu duyệt kết quả khảo sát đầu vào - Bé ${student.fullName} (${campusName})`,
-              html: emailBody,
-              replyTo: "bankhaothi@skylineschool.edu.vn"
-            });
-            emailSentCount++;
-          }
         } catch (err) {
-          console.error("Lỗi khi gửi thông báo tới user:", u.id, err);
+          console.error("Lỗi khi tạo thông báo in-app cho user:", u.id, err);
         }
+      }
+
+      // Send a single, beautiful Email Alert directly to bankhaothi@skylineschool.edu.vn
+      try {
+        const emailBody = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+          </head>
+          <body style="margin: 0; padding: 20px; font-family: 'Segoe UI', sans-serif; background-color: #f1f5f9; color: #1e293b;">
+            <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; padding: 25px;">
+              <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 20px; border-radius: 12px; text-align: center; color: #ffffff; margin-bottom: 20px;">
+                 <h2 style="margin: 0; font-size: 18px; text-transform: uppercase;">Yêu Cầu Phê Duyệt Khảo Sát</h2>
+                 <p style="margin: 4px 0 0 0; font-size: 12px; opacity: 0.9;">Bậc Mầm non - Hệ thống Trường Sky-Line</p>
+              </div>
+              <p style="font-size: 14px; line-height: 1.6;">Kính gửi Ban Giám Hiệu, Giám Đốc Cơ Sở và Ban Khảo Thí,</p>
+              <p style="font-size: 14px; line-height: 1.6;">Học sinh <strong>${student.fullName}</strong> (Mã HS: <strong>${student.studentCode}</strong>) thuộc <strong>Cơ sở ${campusName}</strong> đã hoàn thành các bài khảo sát năng lực đầu vào và nhận xét từ giáo viên chuyên môn.</p>
+              <p style="font-size: 14px; line-height: 1.6; color: #d97706; font-weight: bold; background-color: #fffbeb; padding: 10px; border-radius: 8px; border-left: 4px solid #f59e0b;">
+                 ⚠️ Kính đề xuất Ban Giám Hiệu và Giám Đốc Cơ sở tiến hành xem xét phê duyệt trực tuyến để Tuyển sinh có thể xuất báo cáo kết quả gửi phụ huynh.
+              </p>
+              <div style="text-align: center; margin: 25px 0;">
+                <a href="${baseUrl}/admin/preschool-input-assessments" style="display: inline-block; padding: 12px 28px; border-radius: 10px; font-size: 14px; font-weight: bold; color: #ffffff; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); text-decoration: none; box-shadow: 0 4px 6px rgba(245, 158, 11, 0.3);">
+                  Đi tới phê duyệt trên Portal
+                </a>
+              </div>
+              <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 20px 0;">
+              <p style="font-size: 11px; color: #64748b; margin: 0; text-align: center;">Email được gửi tự động từ Hệ thống Khảo sát Tuyển sinh Sky-Line.</p>
+            </div>
+          </body>
+          </html>
+        `;
+
+        await sendEmail({
+          to: "bankhaothi@skylineschool.edu.vn",
+          subject: `[Preschool-Approval] Yêu cầu duyệt kết quả khảo sát đầu vào - Bé ${student.fullName} (${campusName})`,
+          html: emailBody,
+          replyTo: "bankhaothi@skylineschool.edu.vn"
+        });
+        emailSentCount = 1;
+      } catch (err) {
+        console.error("Lỗi khi gửi email thông báo tới bankhaothi:", err);
       }
 
       return NextResponse.json({
