@@ -81,7 +81,10 @@ export async function GET(req: any) {
             }
             
             if (batchId && batchId !== "all" && batchId !== "null") {
-                where.batchId = batchId;
+                where.OR = [
+                    { batchId: batchId },
+                    { batchId: null }
+                ];
             }
 
             const students = await (prisma as any).preschoolInputAssessmentStudent.findMany({
