@@ -4,7 +4,7 @@ import * as XLSX from "xlsx"
 import {
   Baby, Clock, Settings, Users, BarChart3, Calendar,
   Plus, Trash2, Edit2, Search, RefreshCw, ChevronDown, ChevronUp,
-  X, CheckCircle, AlertCircle, Download, Upload, Star, Heart, Sparkles, UserCheck
+  X, CheckCircle, AlertCircle, Download, Upload, Star, Heart, Sparkles, UserCheck, Eye
 } from "lucide-react"
 
 interface Period { id: string; code: string; name: string; status: string; startDate?: string; endDate?: string; description?: string; assignedUserId?: string; surveyType?: string; batches: Batch[] }
@@ -87,7 +87,7 @@ const xetDuyetCols = [
   { id: "bghApproval", label: "Duyệt BGH MN", width: "w-[220px] min-w-[220px] whitespace-normal border-r border-violet-50/50" },
   { id: "gdcsApproval", label: "Duyệt GĐCS", width: "w-[220px] min-w-[220px] whitespace-normal border-r border-violet-50/50" },
   { id: "result", label: "Kết quả Duyệt", width: "w-32 min-w-[128px]" },
-  { id: "actions", label: "Thao tác", width: "w-[180px] min-w-[180px]" }
+  { id: "actions", label: "Thao tác", width: "w-[240px] min-w-[240px]" }
 ];
 
 export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoVuCSUsers, grades: gradesProp, teachers, departments, currentUser }: { academicYears: AcademicYear[]; campuses: Camp[]; giaoVuCSUsers: any[]; grades: string[]; teachers: any[]; departments: any[]; currentUser: any; }) {
@@ -1528,9 +1528,9 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                                 <td className="p-4">
                                   <button
                                     onClick={() => openEvaluation(s)}
-                                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-black text-violet-700 bg-violet-50 hover:bg-violet-500 hover:text-white rounded-lg border border-violet-100 transition-all shadow-sm"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-black text-violet-700 bg-violet-50 hover:bg-violet-500 hover:text-white rounded-xl border border-violet-100 transition-all shadow-sm"
                                   >
-                                    <Star className="w-3.5 h-3.5" /> Đánh giá
+                                    <Eye className="w-3.5 h-3.5" /> Xem kết quả
                                   </button>
                                 </td>
                               </tr>
@@ -1649,36 +1649,49 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                               if (areaScores.length === 0) {
                                 return <td className={`p-4 text-xs font-medium text-slate-300 align-top ${tdClass}`}>—</td>;
                               }
+                              
+                              const datCount = areaScores.filter((sc: any) => sc.result === "DAT").length;
+                              const khongDatCount = areaScores.filter((sc: any) => sc.result === "KHONG_DAT").length;
+                              const chuaDanhGiaCount = areaScores.length - datCount - khongDatCount;
+
                               return (
                                 <td className={`p-4 align-top ${tdClass}`}>
                                   <div className="flex flex-col gap-2 w-full">
-                                    {areaScores.map((sc: any) => {
-                                      const name = sc.criteria?.name || "";
-                                      const isDat = sc.result === "DAT";
-                                      const isKhongDat = sc.result === "KHONG_DAT";
-                                      const cleanObs = sc.note ? (sc.note.includes("|") ? sc.note.split("|")[1] : sc.note) : "";
-                                      
-                                      return (
-                                        <div key={sc.id} className="text-[11px] leading-relaxed flex items-start gap-2 py-1 border-b border-dashed border-slate-50 last:border-b-0">
-                                          <span className={`font-black text-xs flex-shrink-0 select-none mt-0.5 ${isDat ? 'text-emerald-500' : isKhongDat ? 'text-rose-500' : 'text-slate-300'}`}>
-                                            {isDat ? "✓" : isKhongDat ? "✗" : "○"}
+                                    <div className="flex flex-col gap-1.5">
+                                      <div className="bg-slate-50 border border-slate-100/70 rounded-2xl p-2.5 space-y-2">
+                                        <div className="flex items-center justify-between text-[10px] font-black text-slate-400 uppercase tracking-wider pb-1.5 border-b border-slate-100">
+                                          <span>Tiêu chí (${areaScores.length})</span>
+                                          <span className="text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded-md border border-violet-100 leading-none font-bold">
+                                            {areaScores.length > 0 ? Math.round((datCount / areaScores.length) * 100) : 0}% Đạt
                                           </span>
-                                          <div className="flex flex-col">
-                                            <span 
-                                              className={`text-[11px] leading-relaxed ${isDat ? 'font-bold text-slate-700' : isKhongDat ? 'font-semibold text-slate-500' : 'font-normal text-slate-400'}`} 
-                                              title={`${name}${cleanObs ? ` (${cleanObs})` : ""}`}
-                                            >
-                                              {name}
-                                            </span>
-                                            {cleanObs && (
-                                              <span className="text-[9px] font-bold text-violet-500 bg-violet-50/80 px-1.5 py-0.5 rounded-md border border-violet-100/50 mt-1 max-w-fit">
-                                                Ghi chú: {cleanObs}
-                                              </span>
-                                            )}
-                                          </div>
                                         </div>
-                                      );
-                                    })}
+                                        <div className="flex flex-col gap-1">
+                                          <div className="flex items-center justify-between bg-white border border-slate-100 rounded-xl px-2.5 py-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.01)] text-xs">
+                                            <div className="flex items-center gap-1.5 font-bold text-emerald-600">
+                                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                              Đạt
+                                            </div>
+                                            <span className="font-black text-slate-700">${datCount} tiêu chí</span>
+                                          </div>
+                                          <div className="flex items-center justify-between bg-white border border-slate-100 rounded-xl px-2.5 py-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.01)] text-xs">
+                                            <div className="flex items-center gap-1.5 font-bold text-rose-500">
+                                              <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+                                              Không đạt
+                                            </div>
+                                            <span className="font-black text-slate-700">${khongDatCount} tiêu chí</span>
+                                          </div>
+                                          {chuaDanhGiaCount > 0 && (
+                                            <div className="flex items-center justify-between bg-white border border-slate-100 rounded-xl px-2.5 py-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.01)] text-xs">
+                                              <div className="flex items-center gap-1.5 font-semibold text-slate-400">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+                                                Chưa đánh giá
+                                              </div>
+                                              <span className="font-black text-slate-500">${chuaDanhGiaCount} tiêu chí</span>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
                                   </div>
                                 </td>
                               );
@@ -1730,32 +1743,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                                     ) : (
                                       <span className="text-slate-300 italic block py-1">Chưa đo thể chất</span>
                                     )}
-                                    {s.scores && s.scores.filter((sc: any) => sc.criteria?.area?.code === "THE_CHAT" && !sc.criteria?.code?.endsWith("_01") && !sc.criteria?.code?.endsWith("_02")).length > 0 && (
-                                      <div className="mt-1 pt-2 border-t border-violet-100/50 flex flex-col gap-1.5">
-                                        {s.scores
-                                          .filter((sc: any) => sc.criteria?.area?.code === "THE_CHAT" && !sc.criteria?.code?.endsWith("_01") && !sc.criteria?.code?.endsWith("_02"))
-                                          .map((sc: any) => {
-                                            const name = sc.criteria?.name || "";
-                                            const isDat = sc.result === "DAT";
-                                            const isKhongDat = sc.result === "KHONG_DAT";
-                                            const cleanObs = sc.note ? (sc.note.includes("|") ? sc.note.split("|")[1] : sc.note) : "";
-                                            return (
-                                              <div key={sc.id} className="text-[10px] leading-normal flex items-start gap-1.5 py-0.5">
-                                                <span className={`font-black text-[10px] flex-shrink-0 select-none ${isDat ? 'text-emerald-500' : isKhongDat ? 'text-rose-500' : 'text-slate-300'}`}>
-                                                  {isDat ? "✓" : isKhongDat ? "✗" : "○"}
-                                                </span>
-                                                <div className="flex flex-col">
-                                                  <span className={`text-[10px] leading-normal ${isDat ? 'font-bold text-slate-700' : isKhongDat ? 'font-semibold text-slate-500' : 'font-normal text-slate-400'}`} title={`${name}${cleanObs ? ` (${cleanObs})` : ""}`}>
-                                                    {name}
-                                                  </span>
-                                                  {cleanObs && <span className="text-[9px] font-bold text-violet-500 bg-violet-50/50 px-1 py-0.5 rounded mt-0.5 max-w-fit">Ghi chú: {cleanObs}</span>}
-                                                </div>
-                                              </div>
-                                            );
-                                          })}
-                                      </div>
-                                    )}
-                                  </div>
+                                        {/* Physical details hidden for summary view */}                                  </div>
                                 </td>
 
                                 {/* Nhận thức */}
@@ -1869,7 +1857,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                                  )}
 
                                 <td className="w-32 min-w-[128px] p-4 align-top">{getResultBadge(s.generalResult)}</td>
-                                <td className="w-[180px] min-w-[180px] p-4 align-top">
+                                <td className="w-[240px] min-w-[240px] p-4 align-top">
                                   <div className="flex items-center gap-2">
                                     <button
                                       disabled={sendingEmailId === s.id}
@@ -1885,10 +1873,10 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                                     </button>
                                     <button
                                       onClick={() => openEvaluation(s)}
-                                      className="flex items-center justify-center p-1.5 text-slate-400 hover:text-violet-600 hover:bg-violet-50 rounded-lg border border-transparent hover:border-violet-100 transition-all"
-                                      title="Phê duyệt / Đánh giá"
+                                      className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-black text-violet-700 bg-violet-50 hover:bg-violet-600 hover:text-white rounded-xl border border-violet-100 transition-all shadow-sm"
+                                      title="Xem kết quả"
                                     >
-                                      <Star className="w-4 h-4 fill-current" />
+                                      <Eye className="w-3.5 h-3.5" /> Xem kết quả
                                     </button>
                                   </div>
                                 </td>
