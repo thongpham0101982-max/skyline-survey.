@@ -3539,8 +3539,8 @@ return {
                                  <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.kqRenLuyen || "-"}</span></td>
                                <td className="p-5 text-right">
                                 <div className="flex items-center justify-end gap-1 ">
-                                   <button onClick={()=>openEditStudent(s)} className="p-2.5 text-slate-300 hover:text-indigo-600"><Edit2 className="w-4 h-4"/></button>
-                                   <button onClick={()=>setConfirm({msg:`Xóa học sinh này?`,fn:()=>doDeleteStudent(s.id)})} className="p-2.5 text-slate-300 hover:text-rose-600"><Trash2 className="w-4 h-4"/></button>
+                                   <button onClick={()=>openEditStudent(s)} className="p-2 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all" title="Sửa học sinh"><Edit2 className="w-4 h-4"/></button>
+                                   <button onClick={()=>setConfirm({msg:`Xóa học sinh này?`,fn:()=>doDeleteStudent(s.id)})} className="p-2 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all" title="Xóa học sinh"><Trash2 className="w-4 h-4"/></button>
                                 </div>
                              </td>
                           </tr>
