@@ -916,7 +916,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   };
 
   const filtChildren = useMemo(() => children.filter(c => !cSearch || c.studentCode.toLowerCase().includes(cSearch.toLowerCase()) || c.fullName.toLowerCase().includes(cSearch.toLowerCase())), [children, cSearch]);
-  const reportChildren = useMemo(() => { let all = children; if (rptBatchId !== "all") all = all.filter(c => c.batchId === rptBatchId); return all; }, [children, rptBatchId]);
+  const reportChildren = useMemo(() => { let all = children; if (rptBatchId !== "all") all = all.filter(c => c.batchId === rptBatchId || c.batchId === null || c.batchId === ""); return all; }, [children, rptBatchId]);
   const rptStats = useMemo(() => {
     const total = reportChildren.length;
     const passed = reportChildren.filter(c => c.admissionResult && (c.admissionResult.toUpperCase().includes("ĐẠT") || c.admissionResult === "Học thử")).length;

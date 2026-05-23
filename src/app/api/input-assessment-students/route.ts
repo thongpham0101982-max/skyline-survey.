@@ -28,7 +28,14 @@ export async function GET(req) {
     }
     
     const where: any = periodId ? { periodId } : {};
-    if (batchId) where.batchId = batchId;
+    if (batchId && batchId !== "all" && batchId !== "null") {
+      where.OR = [
+        { batchId: batchId },
+        { batchId: null }
+      ];
+    } else if (batchId === "null") {
+      where.batchId = null;
+    }
     
     const students = await (prisma as any).inputAssessmentStudent.findMany({
       where,

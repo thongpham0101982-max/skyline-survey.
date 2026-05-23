@@ -1939,7 +1939,7 @@ ${reportForm.directorNote}`;
 
   const filteredReportStudents = useMemo(() => {
     if (!Array.isArray(reportStudents)) return [];
-    return reportStudents.filter(s => reportBatchId === "all" || s.batchId === reportBatchId);
+    return reportStudents.filter(s => reportBatchId === "all" || s.batchId === reportBatchId || s.batchId === null || s.batchId === "");
   }, [reportStudents, reportBatchId]);
 
   const selectedReportStudent = useMemo(() => {
@@ -2416,6 +2416,7 @@ ${reportForm.directorNote}`;
   const [asLoading, setAsLoading] = useState(false)
   const [asPeriodId, setAsPeriodId] = useState("")
   const [asBatchId, setAsBatchId] = useState("")
+  const [asFilterBatchId, setAsFilterBatchId] = useState("")
   const [asDeptId, setAsDeptId] = useState("")
   const [asTeacherId, setAsTeacherId] = useState("")
   const [asSelSubjects, setAsSelSubjects] = useState<string[]>([])
@@ -2528,6 +2529,16 @@ ${reportForm.directorNote}`;
   useEffect(() => { if (tab === "students") fetchStudents() }, [tab, fetchStudents])
   useEffect(() => { if (tab === "categories") fetchConfigs() }, [tab, fetchConfigs])
   useEffect(() => { if (tab === "assignments") fetchAssignments() }, [tab, fetchAssignments])
+
+  useEffect(() => {
+    setAsFilterBatchId("");
+  }, [asPeriodId]);
+
+  useEffect(() => {
+    if (asBatchId) {
+      setAsFilterBatchId(asBatchId);
+    }
+  }, [asBatchId]);
 
   // ───────── ACTIONS ─────────
   const openAddPeriod = () => { setEditP(null); setPForm({ code:"", name:"", assignedUserId:"", startDate:"", endDate:"", description:"", status:"ACTIVE" }); setPModal(true) }
@@ -2764,8 +2775,8 @@ return {
   }, [teachers, asDeptId])
 
   const submitAssignment = async () => {
-    if (!asPeriodId || !asTeacherId || !asSelSubjects.length || !asSelGrades.length || !asSelSystems.length) {
-      return notify("Vui lòng chọn đầy đủ Kỳ, GV, Môn, Khối và Hệ học", "err")
+    if (!asPeriodId || !asBatchId || !asTeacherId || !asSelSubjects.length || !asSelGrades.length || !asSelSystems.length) {
+      return notify("Vui lòng chọn đầy đủ Kỳ, Đợt, GV, Môn, Khối và Hệ học", "err")
     }
     setAsSubmitting(true)
     try {
@@ -2808,7 +2819,8 @@ return {
   
   const groupedAssignments = useMemo(() => {
     const groups: Record<string, any> = {};
-    assignments.forEach(a => {
+    const targetAssignments = assignments.filter(a => !asFilterBatchId || a.batchId === asFilterBatchId);
+    targetAssignments.forEach(a => {
         const key = `${a.userId}_${a.batchId}`;
         if (!groups[key]) {
             groups[key] = {
@@ -2836,7 +2848,7 @@ return {
         }
     });
     return Object.values(groups);
-  }, [assignments]);
+  }, [assignments, asFilterBatchId]);
 
   const openEditAssignment = (a: any) => {
     if (a.periodId) setAsPeriodId(a.periodId);
@@ -2960,9 +2972,9 @@ return {
                       </select>
                     </Field>
 
-                    <Field label="Đợt khảo sát (Không bắt buộc)">
+                    <Field label="Đợt khảo sát" required>
                       <select value={asBatchId} onChange={e=>setAsBatchId(e.target.value)} className={inp} disabled={!asPeriodId}>
-                         <option value="">-- Tất cả đợt --</option>
+                         <option value="">-- Chọn Đợt --</option>
                          {visiblePeriods.find(p=>p.id===asPeriodId)?.batches?.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
                       </select>
                     </Field>
@@ -3076,9 +3088,25 @@ return {
 
           {/* List of existing assignments */}
           <div className="space-y-4">
-             <div className="flex items-center justify-between px-2">
-                <h3 className="text-base font-black text-slate-800 flex items-center gap-2"><Search className="w-5 h-5 text-indigo-500"/> Danh sách đã Phân công</h3>
-                <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs font-black">{groupedAssignments.length} nhóm phân công</span>
+             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-2">
+                <div className="flex items-center gap-3">
+                   <h3 className="text-base font-black text-slate-800 flex items-center gap-2"><Search className="w-5 h-5 text-indigo-500"/> Danh sách đã Phân công</h3>
+                   <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs font-black">{groupedAssignments.length} nhóm phân công</span>
+                </div>
+                {asPeriodId && (
+                   <div className="flex items-center gap-2 self-end sm:self-auto bg-slate-50 border border-slate-100 rounded-2xl px-4 py-2">
+                      <Filter className="w-4 h-4 text-indigo-500" />
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Lọc đợt:</span>
+                      <select 
+                         value={asFilterBatchId} 
+                         onChange={e=>setAsFilterBatchId(e.target.value)} 
+                         className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 transition-all shadow-sm cursor-pointer min-w-[150px]"
+                      >
+                         <option value="">-- Tất cả đợt --</option>
+                         {asSelPeriod?.batches?.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
+                      </select>
+                   </div>
+                )}
              </div>
 
              <div className="bg-white border border-slate-200 rounded-[2rem] shadow-sm overflow-hidden">
