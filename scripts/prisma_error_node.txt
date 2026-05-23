@@ -1,0 +1,17 @@
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+\n
+Error: Prisma schema validation - (validate wasm)
+Error code: P1012
+[1;91merror[0m: [1mError validating field `academicYear` in model `StudentAchievement`: The relation field `academicYear` on model `StudentAchievement` is missing an opposite relation field on the model `AcademicYear`. Either run `prisma format` or add it manually.[0m
+  [1;94m-->[0m  [4mprisma\schema.prisma:394[0m
+[1;94m   | [0m
+[1;94m393 | [0m  updatedAt         DateTime     @updatedAt
+[1;94m394 | [0m  [1;91macademicYear      AcademicYear @relation(fields: [academicYearId], references: [id])[0m
+[1;94m395 | [0m}
+[1;94m   | [0m
+
+Validation Error Count: 1
+[Context: validate]
+
+Prisma CLI Version : 5.20.0

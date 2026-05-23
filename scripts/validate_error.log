@@ -1,0 +1,17 @@
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+
+Error: Prisma schema validation - (validate wasm)
+Error code: P1012
+[1;91merror[0m: [1mError validating field `teacher` in model `TeachingAssignment`: The relation field `teacher` on model `TeachingAssignment` is missing an opposite relation field on the model `Teacher`. Either run `prisma format` or add it manually.[0m
+  [1;94m-->[0m  [4mprisma\schema.prisma:322[0m
+[1;94m   | [0m
+[1;94m321 | [0m
+[1;94m322 | [0m  [1;91mteacher      Teacher      @relation(fields: [teacherId], references: [id])[0m
+[1;94m323 | [0m  class        Class        @relation(fields: [classId], references: [id])
+[1;94m   | [0m
+
+Validation Error Count: 1
+[Context: validate]
+
+Prisma CLI Version : 5.20.0

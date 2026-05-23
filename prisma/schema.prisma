@@ -564,6 +564,8 @@ model InputAssessmentStudent {
   scores              StudentAssessmentScore[]
 
   @@unique([studentCode, periodId])
+  @@index([periodId])
+  @@index([batchId])
 }
 
 model AssessmentGrade {
@@ -653,6 +655,7 @@ model InputAssessmentTeacherAssignment {
   period              InputAssessmentPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
 
   @@unique([periodId, batchId, userId, subjectId, grade, educationSystem])
+  @@index([userId])
 }
 
 model Department {
@@ -797,6 +800,8 @@ model PreschoolInputAssessmentStudent {
   period              PreschoolInputAssessmentPeriod    @relation(fields: [periodId], references: [id], onDelete: Cascade)
 
   @@unique([studentCode, periodId])
+  @@index([periodId])
+  @@index([batchId])
 }
 
 
@@ -872,4 +877,5 @@ model PreschoolInputAssessmentTeacherAssignment {
   period              PreschoolInputAssessmentPeriod      @relation(fields: [periodId], references: [id], onDelete: Cascade)
 
   @@unique([periodId, batchId, userId, grade])
+  @@index([userId])
 }
