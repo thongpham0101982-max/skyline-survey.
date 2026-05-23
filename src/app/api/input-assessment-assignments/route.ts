@@ -150,15 +150,27 @@ export async function POST(req) {
                 user: a.user,
                 periodName: a.period?.name || "Kỳ khảo sát",
                 batchName: a.batch?.name || "Tất cả các đợt",
-                items: []
-             };
-          }
-          teacherGroups[key].items.push({
-             subjectName: a.subject?.name || "Môn khảo sát",
-             grade: a.grade,
-             system: a.educationSystem
-          });
-       }
+                items: {}
+              };
+           }
+           
+           const subjectName = a.subject?.name || "Môn khảo sát";
+           const grade = a.grade;
+           const system = a.educationSystem;
+           const itemKey = `${subjectName}_${grade}`;
+           
+           if (!teacherGroups[key].items[itemKey]) {
+              teacherGroups[key].items[itemKey] = {
+                 subjectName,
+                 grade,
+                 systems: []
+              };
+           }
+           
+           if (!teacherGroups[key].items[itemKey].systems.includes(system)) {
+              teacherGroups[key].items[itemKey].systems.push(system);
+           }
+        }
 
        const host = req.headers.get("host") || "skyline-survey.vercel.app";
        const protocol = req.headers.get("x-forwarded-proto") || "https";
@@ -179,13 +191,17 @@ export async function POST(req) {
              continue;
           }
           
-          const itemsHtml = group.items.map(item => `
-             <tr style="border-bottom: 1px solid #e2e8f0;">
-                <td style="padding: 10px; font-size: 14px; color: #1e293b; font-weight: 600;">${item.subjectName}</td>
-                <td style="padding: 10px; font-size: 14px; color: #475569; text-align: center;">Khối ${item.grade}</td>
-                <td style="padding: 10px; font-size: 14px; text-align: center;"><span style="display: inline-block; padding: 2px 8px; background-color: #fef3c7; color: #d97706; border-radius: 6px; font-size: 11px; font-weight: bold; text-transform: uppercase;">${item.system}</span></td>
-             </tr>
-          `).join("");
+          const itemsArray = Object.values(group.items);
+          const itemsHtml = itemsArray.map(item => {
+             const systemsStr = item.systems.join(", ");
+             return `
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                   <td style="padding: 10px; font-size: 14px; color: #1e293b; font-weight: 600;">${item.subjectName}</td>
+                   <td style="padding: 10px; font-size: 14px; color: #475569; text-align: center;">Khối ${item.grade}</td>
+                   <td style="padding: 10px; font-size: 14px; text-align: center;"><span style="display: inline-block; padding: 2px 8px; background-color: #fef3c7; color: #d97706; border-radius: 6px; font-size: 11px; font-weight: bold; text-transform: uppercase;">${systemsStr}</span></td>
+                </tr>
+             `;
+          }).join("");
           
           const emailHtml = `
             <!DOCTYPE html>

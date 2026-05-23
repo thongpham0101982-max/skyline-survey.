@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
+import { sendEmail } from "@/lib/mail"
 
 export async function GET(req) {
   const session = await auth();
@@ -145,6 +146,191 @@ export async function POST(req) {
         }
       }
       return NextResponse.json({ success: true, created: results.length, errors });
+    }
+
+    if (action === "SEND_APPROVAL_REQUEST") {
+      const { studentId, gdcsEmail } = data;
+      if (!studentId || !gdcsEmail) {
+        return NextResponse.json({ error: "Missing studentId or gdcsEmail" }, { status: 400 });
+      }
+
+      // Fetch the student with scores and period/batch details
+      const student = await (prisma as any).inputAssessmentStudent.findUnique({
+        where: { id: studentId },
+        include: {
+          period: true,
+          batch: true
+        }
+      });
+
+      if (!student) {
+        return NextResponse.json({ error: "Student not found" }, { status: 404 });
+      }
+
+      // Fetch the student's scores/results from teacher assignments
+      const scores = await (prisma as any).studentAssessmentScore.findMany({
+        where: { studentId },
+        include: {
+          subject: true
+        }
+      });
+
+      // Prepare scores summary for email
+      const scoresList = scores.map((sc) => {
+        const subject = sc.subject || {};
+        const sName = subject.name || "Môn học";
+        const sCode = (subject.code || "").toLowerCase();
+        let val = "—";
+        try {
+          if (sc.scores) {
+            const parsed = JSON.parse(sc.scores);
+            const vArr = Array.isArray(parsed) ? parsed : [parsed];
+            if (sCode.includes("tly")) {
+               const scNum = parseFloat(vArr[6] || vArr[20] || "0");
+               let lvl = "Bình thường";
+               if (scNum > 15 && scNum <= 31) lvl = "Dấu hiệu nhẹ";
+               else if (scNum > 31 && scNum <= 47) lvl = "Dấu hiệu vừa";
+               else if (scNum > 47 && scNum <= 63) lvl = "Nguy cơ cao";
+               else if (scNum > 63) lvl = "Nguy cơ rất cao";
+               val = `${lvl} (${scNum} đ)`;
+            }
+            else if (sCode.includes("tci") || sCode.includes("cpt")) val = vArr.filter(x => x === "3").length + " Đ";
+            else if (sCode.includes("nltd")) val = vArr[4] ? vArr[4] + "%" : "—";
+            else val = vArr.find(x => x !== undefined && x !== "" && x !== null) || "—";
+          }
+        } catch { val = sc.scores || "—"; }
+        return { name: sName, val };
+      });
+
+      const host = req.headers.get("host") || "skyline-survey.vercel.app";
+      const protocol = req.headers.get("x-forwarded-proto") || "https";
+      const baseUrl = `${protocol}://${host}`;
+
+      const campusName = student.admissionCampus || student.batch?.name?.split("|")[1]?.trim() || "Cơ sở Sky-Line";
+
+      // Prepare email html body
+      const scoresRowsHtml = scoresList.map(s => `
+        <tr style="border-bottom: 1px solid #e2e8f0;">
+          <td style="padding: 10px; font-size: 14px; color: #1e293b; font-weight: 600;">${s.name}</td>
+          <td style="padding: 10px; font-size: 14px; color: #475569; font-weight: bold; text-align: right;">${s.val}</td>
+        </tr>
+      `).join("");
+
+      const dateOfBirthStr = student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString("vi-VN") : "—";
+
+      const emailHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Yêu cầu phê duyệt kết quả khảo sát</title>
+        </head>
+        <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; color: #334155;">
+          <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; padding: 20px 0;">
+            <tr>
+              <td align="center">
+                <table width="650" border="0" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); border: 1px solid #e2e8f0;">
+                  <!-- Header -->
+                  <tr>
+                    <td style="background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%); padding: 35px 30px; text-align: center;">
+                      <h1 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: 800; letter-spacing: -0.5px;">YÊU CẦU PHÊ DUYỆT KHẢO SÁT</h1>
+                      <p style="margin: 5px 0 0 0; color: #e0f7fa; font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px;">Hệ Phổ thông - Hệ thống Trường Sky-Line</p>
+                    </td>
+                  </tr>
+                  <!-- Greetings -->
+                  <tr>
+                    <td style="padding: 30px 30px 15px 30px;">
+                      <p style="margin: 0; font-size: 15px; font-weight: 700; color: #1e293b;">Kính gửi thầy/cô Giám đốc Cơ sở,</p>
+                      <p style="margin: 10px 0 0 0; font-size: 14px; color: #475569; line-height: 1.6;">
+                        Hội đồng Tuyển sinh kính gửi yêu cầu phê duyệt kết quả khảo sát năng lực đầu vào cho học sinh sau:
+                      </p>
+                    </td>
+                  </tr>
+                  <!-- Student Details Card -->
+                  <tr>
+                    <td style="padding: 0 30px;">
+                      <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f1f5f9; border-radius: 12px; border: 1px solid #e2e8f0; padding: 15px; margin-bottom: 20px;">
+                        <tr>
+                          <td style="padding-bottom: 8px; width: 40%; font-size: 12px; font-weight: bold; color: #4f46e5; text-transform: uppercase;">Họ và tên học sinh:</td>
+                          <td style="padding-bottom: 8px; font-size: 14px; font-weight: bold; color: #1e293b;">${student.fullName}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding-bottom: 8px; font-size: 12px; font-weight: bold; color: #4f46e5; text-transform: uppercase;">Mã HS khảo sát:</td>
+                          <td style="padding-bottom: 8px; font-size: 14px; font-weight: bold; color: #1e293b;">${student.studentCode}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding-bottom: 8px; font-size: 12px; font-weight: bold; color: #4f46e5; text-transform: uppercase;">Ngày sinh:</td>
+                          <td style="padding-bottom: 8px; font-size: 14px; font-weight: bold; color: #1e293b;">${dateOfBirthStr}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding-bottom: 8px; font-size: 12px; font-weight: bold; color: #4f46e5; text-transform: uppercase;">Khối lớp / Hệ học:</td>
+                          <td style="padding-bottom: 8px; font-size: 14px; font-weight: bold; color: #1e293b;">Khối ${student.grade || "—"} / Hệ ${student.surveyFormType || "—"}</td>
+                        </tr>
+                        <tr>
+                          <td style="font-size: 12px; font-weight: bold; color: #4f46e5; text-transform: uppercase;">Cơ sở tuyển sinh:</td>
+                          <td style="font-size: 14px; font-weight: bold; color: #1e293b;">${campusName}</td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  <!-- Scores Table -->
+                  ${scoresList.length > 0 ? `
+                  <tr>
+                    <td style="padding: 0 30px 15px 30px;">
+                      <h4 style="margin: 0 0 10px 0; font-size: 13px; font-weight: bold; color: #1e293b; text-transform: uppercase; letter-spacing: 0.5px;">Bảng điểm khảo sát các môn</h4>
+                      <table width="100%" border="0" cellspacing="0" cellpadding="0" style="border-collapse: collapse; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+                        <thead>
+                          <tr style="background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                            <th style="padding: 12px 10px; text-align: left; font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase;">Môn học</th>
+                            <th style="padding: 12px 10px; text-align: right; font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase; width: 35%;">Kết quả</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          ${scoresRowsHtml}
+                        </tbody>
+                      </table>
+                    </td>
+                  </tr>
+                  ` : ""}
+                  <!-- Action Link -->
+                  <tr>
+                    <td style="padding: 15px 30px 30px 30px; text-align: center;">
+                      <p style="margin: 0 0 15px 0; font-size: 13px; color: #64748b; font-style: italic;">
+                        ⚠️ Kính đề xuất Giám Đốc Cơ sở truy cập Portal để xem chi tiết nhận xét của các giáo viên và thực hiện phê duyệt kết quả tuyển sinh.
+                      </p>
+                      <a href="${baseUrl}/admin/input-assessments" style="display: inline-block; padding: 12px 28px; border-radius: 12px; font-size: 14px; font-weight: bold; color: #ffffff; background-color: #4f46e5; text-decoration: none; border: 1px solid #4338ca; box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);">
+                        Phê duyệt trên Portal
+                      </a>
+                    </td>
+                  </tr>
+                  <!-- Footer -->
+                  <tr>
+                    <td style="background-color: #f8fafc; padding: 24px 30px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 11px; color: #64748b;">
+                      <p style="margin: 0;">Email gửi tự động từ Hệ thống Khảo sát Tuyển sinh Sky-Line.</p>
+                      <p style="margin: 4px 0 0 0; font-weight: bold; color: #475569;">HỘI ĐỒNG TUYỂN SINH - HỆ THỐNG GIÁO DỤC SKY-LINE</p>
+                      <p style="margin: 8px 0 0 0; color: #4f46e5; font-weight: 600;">Mọi thắc mắc vui lòng liên hệ Ban Khảo thí qua email: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #4f46e5; text-decoration: underline;">bankhaothi@skylineschool.edu.vn</a></p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `;
+
+      try {
+        await sendEmail({
+          to: gdcsEmail,
+          subject: `[Sky-Line-Approval] Yêu cầu duyệt kết quả khảo sát đầu vào - Học sinh ${student.fullName} (${campusName})`,
+          html: emailHtml,
+          replyTo: "bankhaothi@skylineschool.edu.vn"
+        });
+        return NextResponse.json({ success: true });
+      } catch(err) {
+        console.error("GDCS send email err", err);
+        return NextResponse.json({ error: "Lỗi khi gửi email: " + err.message }, { status: 500 });
+      }
     }
 
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });

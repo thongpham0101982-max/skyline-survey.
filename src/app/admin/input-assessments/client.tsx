@@ -1808,6 +1808,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
   });
 
   const [saveReportLoading, setSaveReportLoading] = useState(false);
+  const [sendingApproval, setSendingApproval] = useState(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [isInvitation, setIsInvitation] = useState(false);
   const [isCommitment, setIsCommitment] = useState(false);
@@ -1875,6 +1876,52 @@ ${reportForm.directorNote}`;
       notify("Lỗi hệ thống", "err");
     }
     setSaveReportLoading(false);
+  };
+
+  const handleSendGdcsApprovalRequest = async () => {
+    if (!selectedReportStudent) return;
+    setSendingApproval(true);
+    try {
+      // Resolve GDCS email
+      let csCode = resolvedStudentCampusObj?.campusCode;
+      
+      // If we don't have campusCode, try to match from campusName or admissionCampus
+      if (!csCode) {
+        const campusName = selectedReportStudent.admissionCampus || reportForm.admissionCampus || "";
+        if (campusName.includes("CS1") || campusName.includes("Cơ sở 1")) csCode = "CS1";
+        else if (campusName.includes("CS2") || campusName.includes("Cơ sở 2")) csCode = "CS2";
+        else if (campusName.includes("CS3") || campusName.includes("Cơ sở 3")) csCode = "CS3";
+        else if (campusName.includes("CS4") || campusName.includes("Cơ sở 4")) csCode = "CS4";
+        else if (campusName.includes("CS5") || campusName.includes("Cơ sở 5")) csCode = "CS5";
+      }
+
+      // Default to CS1 if not resolved, or look up in EMAIL_MAP.gdcs
+      const gdcsEmail = (csCode && EMAIL_MAP.gdcs[csCode as keyof typeof EMAIL_MAP.gdcs]) 
+        || EMAIL_MAP.gdcs.CS1;
+
+      const res = await fetch("/api/input-assessment-students", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "SEND_APPROVAL_REQUEST",
+          data: {
+            studentId: selectedReportStudent.id,
+            gdcsEmail: gdcsEmail
+          }
+        })
+      });
+
+      const result = await res.json();
+      if (res.ok && result.success) {
+        notify(`Đã gửi yêu cầu phê duyệt thành công đến email GĐCS: ${gdcsEmail}!`);
+      } else {
+        notify(result.error || "Gửi yêu cầu phê duyệt thất bại", "err");
+      }
+    } catch (err) {
+      notify("Có lỗi xảy ra khi gửi yêu cầu phê duyệt", "err");
+    } finally {
+      setSendingApproval(false);
+    }
   };
 
   const fetchReportData = useCallback(async (pId: string) => {
@@ -5067,6 +5114,17 @@ return {
                     {saveReportLoading ? <Loader2 className="w-4 h-4 animate-spin"/> : <Check className="w-4 h-4"/>}
                     Lưu kết quả tổng hợp
                   </button>
+
+                  {!selectedReportStudent.admissionResult && (
+                    <button
+                      onClick={handleSendGdcsApprovalRequest}
+                      disabled={sendingApproval || !canApprove}
+                      className="w-full mt-3 py-3.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg shadow-orange-100 hover:shadow-orange-200 active:scale-[0.98] disabled:opacity-50 disabled:scale-100 transition-all flex justify-center items-center gap-2"
+                    >
+                      {sendingApproval ? <Loader2 className="w-4 h-4 animate-spin"/> : <Mail className="w-4 h-4"/>}
+                      Gửi yêu cầu Phê duyệt đến GĐCS
+                    </button>
+                  )}
                 </div>
               </div>
 
