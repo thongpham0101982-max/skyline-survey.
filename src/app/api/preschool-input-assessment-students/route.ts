@@ -529,6 +529,140 @@ export async function POST(req) {
       }
     }
 
+    if (action === "SEND_APPROVAL_NOTIFICATION") {
+      const { studentId } = body;
+      if (!studentId) {
+        return NextResponse.json({ error: "Missing studentId" }, { status: 400 });
+      }
+
+      // Fetch student details
+      const student = await (prisma as any).preschoolInputAssessmentStudent.findUnique({
+        where: { id: studentId },
+        include: { period: true }
+      });
+      if (!student) {
+        return NextResponse.json({ error: "Student not found" }, { status: 404 });
+      }
+
+      const campusName = student.admissionCampus;
+      if (!campusName) {
+        return NextResponse.json({ error: "Học sinh chưa được gán Cơ sở để định tuyến phê duyệt!" }, { status: 400 });
+      }
+
+      // Find campus record in database
+      const campus = await (prisma as any).campus.findFirst({
+        where: {
+          OR: [
+            { campusName: campusName },
+            { campusCode: campusName }
+          ]
+        }
+      });
+
+      let resolvedUsers = [];
+
+      if (campus) {
+        // Find all users assigned to this campus
+        const assignments = await (prisma as any).userCampusAssignment.findMany({
+          where: { campusId: campus.id },
+          include: { user: true }
+        });
+
+        const assignedUsers = assignments.map((a: any) => a.user);
+
+        // Filter users by BGH or GDCS roles
+        resolvedUsers = assignedUsers.filter((u: any) => {
+          const role = (u.role || "").toUpperCase();
+          const isBgh = ["KT_DBCL", "BGH MN", "BGH_MN", "ADMIN"].includes(role);
+          const isGdcs = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS", "ADMIN"].includes(role);
+          return isBgh || isGdcs;
+        });
+      }
+
+      // If no specific campus assignments found, fallback to system admins and BGH users
+      if (resolvedUsers.length === 0) {
+        const allUsers = await (prisma as any).user.findMany();
+        resolvedUsers = allUsers.filter((u: any) => {
+          const role = (u.role || "").toUpperCase();
+          return ["ADMIN", "KT_DBCL", "BGH MN", "BGH_MN"].includes(role);
+        });
+      }
+
+      // Create Notification records and Send Alert Emails in parallel
+      let notificationCount = 0;
+      let emailSentCount = 0;
+
+      const title = `[Preschool-Survey] Yêu cầu phê duyệt kết quả đầu vào - Bé ${student.fullName}`;
+      const message = `Kính gửi thầy/cô, học sinh ${student.fullName} (${student.studentCode}) thuộc Cơ sở ${campusName} đã hoàn thành khảo sát đầu vào. Kính đề xuất thầy/cô truy cập hệ thống để tiến hành phê duyệt học thử cho bé.`;
+
+      const host = req.headers.get("host") || "skyline-survey-rh4k.vercel.app";
+      const protocol = req.headers.get("x-forwarded-proto") || "https";
+      const baseUrl = `${protocol}://${host}`;
+
+      for (const u of resolvedUsers) {
+        try {
+          // Insert in-app Notification
+          await (prisma as any).notification.create({
+            data: {
+              userId: u.id,
+              title,
+              message
+            }
+          });
+          notificationCount++;
+
+          // Send Email Alert
+          if (u.email && u.email.includes("@")) {
+            const emailBody = `
+              <!DOCTYPE html>
+              <html>
+              <head>
+                <meta charset="utf-8">
+              </head>
+              <body style="margin: 0; padding: 20px; font-family: 'Segoe UI', sans-serif; background-color: #f1f5f9; color: #1e293b;">
+                <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; padding: 25px;">
+                  <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 20px; border-radius: 12px; text-align: center; color: #ffffff; margin-bottom: 20px;">
+                     <h2 style="margin: 0; font-size: 18px; text-transform: uppercase;">Yêu Cầu Phê Duyệt Khảo Sát</h2>
+                     <p style="margin: 4px 0 0 0; font-size: 12px; opacity: 0.9;">Bậc Mầm non - Hệ thống Trường Sky-Line</p>
+                  </div>
+                  <p style="font-size: 14px; line-height: 1.6;">Kính gửi thầy/cô <strong>${u.fullName}</strong>,</p>
+                  <p style="font-size: 14px; line-height: 1.6;">Học sinh <strong>${student.fullName}</strong> (Mã HS: <strong>${student.studentCode}</strong>) thuộc <strong>Cơ sở ${campusName}</strong> đã hoàn thành các bài khảo sát năng lực đầu vào và nhận xét từ giáo viên chuyên môn.</p>
+                  <p style="font-size: 14px; line-height: 1.6; color: #d97706; font-weight: bold; background-color: #fffbeb; padding: 10px; border-radius: 8px; border-left: 4px solid #f59e0b;">
+                     ⚠️ Kính đề xuất Ban Giám Hiệu và Giám Đốc Cơ sở tiến hành xem xét phê duyệt trực tuyến để Tuyển sinh có thể xuất báo cáo kết quả gửi phụ huynh.
+                  </p>
+                  <div style="text-align: center; margin: 25px 0;">
+                    <a href="${baseUrl}/admin/preschool-input-assessments" style="display: inline-block; padding: 12px 28px; border-radius: 10px; font-size: 14px; font-weight: bold; color: #ffffff; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); text-decoration: none; box-shadow: 0 4px 6px rgba(245, 158, 11, 0.3);">
+                      Đi tới phê duyệt trên Portal
+                    </a>
+                  </div>
+                  <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 20px 0;">
+                  <p style="font-size: 11px; color: #64748b; margin: 0; text-align: center;">Email được gửi tự động từ Hệ thống Khảo sát Tuyển sinh Sky-Line.</p>
+                </div>
+              </body>
+              </html>
+            `;
+
+            await sendEmail({
+              to: u.email,
+              subject: `[Preschool-Approval] Yêu cầu duyệt kết quả khảo sát đầu vào - Bé ${student.fullName} (${campusName})`,
+              html: emailBody,
+              replyTo: "bankhaothi@skylineschool.edu.vn"
+            });
+            emailSentCount++;
+          }
+        } catch (err) {
+          console.error("Lỗi khi gửi thông báo tới user:", u.id, err);
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        notificationsSent: notificationCount,
+        emailsSent: emailSentCount,
+        campus: campusName
+      });
+    }
+
     if (action === "CREATE") {
       const result = await (prisma as any).preschoolInputAssessmentStudent.create({
         data: {

@@ -4,7 +4,7 @@ import * as XLSX from "xlsx"
 import {
   Baby, Clock, Settings, Users, BarChart3, Calendar,
   Plus, Trash2, Edit2, Search, RefreshCw, ChevronDown, ChevronUp,
-  X, CheckCircle, AlertCircle, Download, Upload, Star, Heart, Sparkles, UserCheck, Eye
+  X, CheckCircle, AlertCircle, Download, Upload, Star, Heart, Sparkles, UserCheck, Eye, Send
 } from "lucide-react"
 
 interface Period { id: string; code: string; name: string; status: string; startDate?: string; endDate?: string; description?: string; assignedUserId?: string; surveyType?: string; batches: Batch[] }
@@ -87,7 +87,7 @@ const xetDuyetCols = [
   { id: "bghApproval", label: "Duyệt BGH MN", width: "w-[220px] min-w-[220px] whitespace-normal border-r border-violet-50/50" },
   { id: "gdcsApproval", label: "Duyệt GĐCS", width: "w-[220px] min-w-[220px] whitespace-normal border-r border-violet-50/50" },
   { id: "result", label: "Kết quả Duyệt", width: "w-32 min-w-[128px]" },
-  { id: "actions", label: "Thao tác", width: "w-[240px] min-w-[240px]" }
+  { id: "actions", label: "Thao tác", width: "w-[350px] min-w-[350px]" }
 ];
 
 export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoVuCSUsers, grades: gradesProp, teachers, departments, currentUser }: { academicYears: AcademicYear[]; campuses: Camp[]; giaoVuCSUsers: any[]; grades: string[]; teachers: any[]; departments: any[]; currentUser: any; }) {
@@ -520,6 +520,33 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   };
 
   const [sendingEmailId, setSendingEmailId] = useState<string | null>(null);
+  const [sendingNotifyId, setSendingNotifyId] = useState<string | null>(null);
+
+  const sendApprovalNotification = async (studentId: string) => {
+    setSendingNotifyId(studentId);
+    try {
+      const res = await fetch("/api/preschool-input-assessment-students", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "SEND_APPROVAL_NOTIFICATION",
+          studentId
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        notify(`Đã gửi yêu cầu duyệt tới BGH & GĐCS của cơ sở ${data.campus || "học sinh"} thành công!`);
+      } else {
+        const errorData = await res.json();
+        notify(errorData.error || "Gửi yêu cầu thất bại", "err");
+      }
+    } catch (e) {
+      console.error(e);
+      notify("Có lỗi xảy ra khi gửi yêu cầu", "err");
+    } finally {
+      setSendingNotifyId(null);
+    }
+  };
 
   const sendTuVanEmail = async (studentId: string) => {
     setSendingEmailId(studentId);
@@ -1904,29 +1931,41 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                                  )}
 
                                 <td className="w-32 min-w-[128px] p-4 align-top">{getResultBadge(s.generalResult)}</td>
-                                <td className="w-[240px] min-w-[240px] p-4 align-top">
-                                  <div className="flex items-center gap-2">
-                                    <button
-                                      disabled={sendingEmailId === s.id}
-                                      onClick={() => sendTuVanEmail(s.id)}
-                                      className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-600 hover:text-white rounded-xl border border-emerald-100 disabled:opacity-50 transition-all shadow-sm"
-                                    >
-                                      {sendingEmailId === s.id ? (
-                                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                                      ) : (
-                                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                                      )}
-                                      Email TVCS
-                                    </button>
-                                    <button
-                                      onClick={() => openEvaluation(s)}
-                                      className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-black text-violet-700 bg-violet-50 hover:bg-violet-600 hover:text-white rounded-xl border border-violet-100 transition-all shadow-sm"
-                                      title="Xem kết quả"
-                                    >
-                                      <Eye className="w-3.5 h-3.5" /> Xem kết quả
-                                    </button>
-                                  </div>
-                                </td>
+                                <td className="w-[350px] min-w-[350px] p-4 align-top">
+                                   <div className="flex items-center gap-2">
+                                     <button
+                                       disabled={sendingNotifyId === s.id}
+                                       onClick={() => sendApprovalNotification(s.id)}
+                                       className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-black text-amber-700 bg-amber-50 hover:bg-amber-600 hover:text-white rounded-xl border border-amber-100 disabled:opacity-50 transition-all shadow-sm"
+                                     >
+                                       {sendingNotifyId === s.id ? (
+                                         <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                       ) : (
+                                         <Send className="w-3.5 h-3.5" />
+                                       )}
+                                       Yêu cầu Duyệt
+                                     </button>
+                                     <button
+                                       onClick={() => openEvaluation(s)}
+                                       className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-black text-violet-700 bg-violet-50 hover:bg-violet-600 hover:text-white rounded-xl border border-violet-100 transition-all shadow-sm"
+                                       title="Xem kết quả"
+                                     >
+                                       <Eye className="w-3.5 h-3.5" /> Xem kết quả
+                                     </button>
+                                     <button
+                                       disabled={sendingEmailId === s.id}
+                                       onClick={() => sendTuVanEmail(s.id)}
+                                       className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-600 hover:text-white rounded-xl border border-emerald-100 disabled:opacity-50 transition-all shadow-sm"
+                                     >
+                                       {sendingEmailId === s.id ? (
+                                         <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                       ) : (
+                                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                                       )}
+                                       Email TVCS
+                                     </button>
+                                   </div>
+                                 </td>
                               </tr>
                             );
                           })}
