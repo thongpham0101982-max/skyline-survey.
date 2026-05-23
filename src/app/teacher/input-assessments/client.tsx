@@ -72,7 +72,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
 
     const availableAssignments = useMemo(() => {
         if (!Array.isArray(assignments)) return [];
-        const filtered = assignments.filter(a => a.periodId === selectedPeriodId && (selectedBatchId === "all" || a.batchId === selectedBatchId));
+        const filtered = assignments.filter(a => a.periodId === selectedPeriodId && (selectedBatchId === "all" || !a.batchId || a.batchId === selectedBatchId));
         
         // Deduplicate and modify label for Child Dev Grade 1
         const unique = new Map();
@@ -96,8 +96,11 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
         
         const list = Array.from(unique.values());
         
-        // Inject a virtual "Tất cả các khối" consolidated option for Preschool teachers if they have multiple assignments
         const preschoolList = list.filter(a => a.isPreschool);
+        const nonPreschool = list.filter(a => !a.isPreschool);
+        
+        // Inject a virtual "Tất cả các khối" consolidated option for Preschool teachers if they have multiple assignments
+        let finalPreschoolList = [...preschoolList];
         if (preschoolList.length > 1) {
             const firstPre = preschoolList[0];
             const virtualAll = {
@@ -110,11 +113,36 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                     name: "Đánh giá Mầm non"
                 }
             };
-            const nonPreschool = list.filter(a => !a.isPreschool);
-            return [virtualAll, ...preschoolList, ...nonPreschool];
+            finalPreschoolList = [virtualAll, ...preschoolList];
         }
         
-        return list;
+        // Group non-preschool assignments by subjectId to inject consolidated options
+        const hsGroups = {};
+        nonPreschool.forEach(a => {
+            if (!hsGroups[a.subjectId]) {
+                hsGroups[a.subjectId] = [];
+            }
+            hsGroups[a.subjectId].push(a);
+        });
+        
+        const finalNonPreschoolList = [];
+        Object.entries(hsGroups).forEach(([subjectId, group]) => {
+            if (group.length > 1) {
+                const firstAssign = group[0];
+                const virtualAll = {
+                    ...firstAssign,
+                    id: `hs-all-grades-${subjectId}`,
+                    grade: "Tất cả",
+                    overrideSystemLabel: "Tất cả các hệ",
+                    overrideSystemCode: ""
+                };
+                finalNonPreschoolList.push(virtualAll, ...group);
+            } else {
+                finalNonPreschoolList.push(...group);
+            }
+        });
+        
+        return [...finalPreschoolList, ...finalNonPreschoolList];
     }, [assignments, selectedPeriodId, selectedBatchId]);
 
     useEffect(() => {
@@ -163,7 +191,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     }, [selectedAssignmentId, assignments, availableAssignments, selectedBatchId]);
 
     const handleScoreChange = (studentId: string, colIndex: number, val: string) => {
-        const assignment = assignments.find(a => a.id === selectedAssignmentId);
+        const assignment = availableAssignments.find(a => a.id === selectedAssignmentId) || assignments.find(a => a.id === selectedAssignmentId);
         if (assignment) {
             const subName = (assignment.subject?.name || "").toLowerCase();
             const numVal = parseFloat(val);
@@ -202,7 +230,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
 
     
       const saveStudentScore = async (st: any, customScores?: any[], customComments?: any[]) => {
-        const assignment = assignments.find(a => a.id === selectedAssignmentId);
+        const assignment = availableAssignments.find(a => a.id === selectedAssignmentId) || assignments.find(a => a.id === selectedAssignmentId);
         if (!assignment) return;
 
         setSaveStatus(prev => ({ ...prev, [st.id]: "saving" }));
@@ -243,7 +271,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
 
     if (loading && assignments.length === 0) return <div className="p-8 text-center text-slate-500">Đang tải...</div>;
 
-    const currentAssignment = assignments.find(a => a.id === selectedAssignmentId);
+    const currentAssignment = availableAssignments.find(a => a.id === selectedAssignmentId) || assignments.find(a => a.id === selectedAssignmentId);
     
     // Detection logic for Psychology Grades 1-5
     const subName = (currentAssignment?.subject?.name || "").toLowerCase();
@@ -252,8 +280,8 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     const gradeVal = String(currentAssignment?.grade || "").replace("Khối ", "").trim();
     const isPsychSubject = subName.includes("tâm lý") || subCode.includes("tly");
     const isPreschoolSubject = currentAssignment?.isPreschool || currentAssignment?.subjectId === "preschool";
-    const isChildDevSubject = (subNameNormalized.includes("chuẩn phát triển trẻ em") || subNameNormalized.includes("bộ chuẩn phát triển") || subCode.includes("cpt") || subCode.includes("tci")) && gradeVal === "1";
-        const isThinkingSkillsSubject = (subNameNormalized.includes("năng lực tư duy") || subCode.includes("nltd")) && gradeVal === "1";
+    const isChildDevSubject = (subNameNormalized.includes("chuẩn phát triển trẻ em") || subNameNormalized.includes("bộ chuẩn phát triển") || subCode.includes("cpt") || subCode.includes("tci")) && (gradeVal === "1" || gradeVal === "Tất cả");
+        const isThinkingSkillsSubject = (subNameNormalized.includes("năng lực tư duy") || subCode.includes("nltd")) && (gradeVal === "1" || gradeVal === "Tất cả");
     const hideComments = ["toa", "tvi", "nva"].some(c => subCode.includes(c)) || ["toán", "tiếng việt", "ngữ văn"].some(s => subNameNormalized.includes(s));
 
     // English grouping logic for tabs
