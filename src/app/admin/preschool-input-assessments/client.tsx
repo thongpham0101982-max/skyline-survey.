@@ -1654,26 +1654,66 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                               const khongDatCount = areaScores.filter((sc: any) => sc.result === "KHONG_DAT").length;
                               const chuaDanhGiaCount = areaScores.length - datCount - khongDatCount;
 
+                              // Custom preschool theme styling per developmental area (warm, harmonious international preschool palettes)
+                              let cardClass = "bg-slate-50 border-slate-100/70 text-slate-700";
+                              let progressBg = "bg-violet-500";
+                              let progressTrack = "bg-violet-100";
+                              let pillClass = "text-violet-600 bg-violet-50 border-violet-100";
+                              let headerIcon = "🧠";
+                              let areaName = "Lĩnh vực";
+
+                              if (areaCode === "NHAN_THUC") {
+                                cardClass = "bg-gradient-to-br from-amber-50/70 to-orange-50/30 border-amber-100/70 text-amber-900 shadow-[0_4px_12px_rgba(245,158,11,0.03)]";
+                                progressBg = "bg-gradient-to-r from-amber-400 to-orange-500";
+                                progressTrack = "bg-amber-100/60";
+                                pillClass = "text-amber-700 bg-amber-100/80 border-amber-200/50";
+                                headerIcon = "🧩";
+                                areaName = "Nhận thức";
+                              } else if (areaCode === "NGON_NGU") {
+                                cardClass = "bg-gradient-to-br from-sky-50/70 to-indigo-50/30 border-sky-100/70 text-sky-900 shadow-[0_4px_12px_rgba(14,165,233,0.03)]";
+                                progressBg = "bg-gradient-to-r from-sky-400 to-indigo-500";
+                                progressTrack = "bg-sky-100/60";
+                                pillClass = "text-sky-700 bg-sky-100/80 border-sky-200/50";
+                                headerIcon = "🗣️";
+                                areaName = "Ngôn ngữ";
+                              } else if (areaCode === "TINH_CAM_XH_TM") {
+                                cardClass = "bg-gradient-to-br from-rose-50/70 to-fuchsia-50/30 border-rose-100/70 text-rose-900 shadow-[0_4px_12px_rgba(244,63,94,0.03)]";
+                                progressBg = "bg-gradient-to-r from-rose-400 to-fuchsia-500";
+                                progressTrack = "bg-rose-100/60";
+                                pillClass = "text-rose-700 bg-rose-100/80 border-rose-200/50";
+                                headerIcon = "🎨";
+                                areaName = "Tình cảm - XH";
+                              }
+
                               return (
                                 <td className={`p-4 align-top ${tdClass}`}>
                                   <div className="flex flex-col gap-2 w-full">
                                     <div className="flex flex-col gap-1.5">
-                                      <div className="bg-slate-50 border border-slate-100/70 rounded-2xl p-2.5 space-y-2">
-                                        <div className="flex items-center justify-between text-[10px] font-black text-slate-400 uppercase tracking-wider pb-1.5 border-b border-slate-100">
-                                          <span>Tiêu chí (${areaScores.length})</span>
-                                          <span className="text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded-md border border-violet-100 leading-none font-bold">
+                                      <div className={`border rounded-2xl p-2.5 space-y-2.5 transition-all hover:scale-[1.01] hover:shadow-md ${cardClass}`}>
+                                        <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-wider pb-1.5 border-b border-white/60">
+                                          <span className="flex items-center gap-1">
+                                            <span>{headerIcon}</span>
+                                            <span>{areaName} (${areaScores.length})</span>
+                                          </span>
+                                          <span className={`px-1.5 py-0.5 rounded-md border leading-none font-bold ${pillClass}`}>
                                             {areaScores.length > 0 ? Math.round((datCount / areaScores.length) * 100) : 0}% Đạt
                                           </span>
                                         </div>
-                                        <div className="flex flex-col gap-1">
-                                          <div className="flex items-center justify-between bg-white border border-slate-100 rounded-xl px-2.5 py-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.01)] text-xs">
+                                        
+                                        {/* Premium HSL Progress Bar */}
+                                        <div className={`w-full h-1.5 rounded-full overflow-hidden ${progressTrack}`}>
+                                          <div className={`h-full rounded-full ${progressBg}`} style={{ width: `${areaScores.length > 0 ? Math.round((datCount / areaScores.length) * 100) : 0}%` }} />
+                                        </div>
+
+                                        <div className="flex flex-col gap-1 mt-1">
+                                          <div className="flex items-center justify-between bg-white/90 backdrop-blur-sm border border-slate-100/80 rounded-xl px-2.5 py-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.01)] text-xs">
                                             <div className="flex items-center gap-1.5 font-bold text-emerald-600">
                                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                                               Đạt
                                             </div>
                                             <span className="font-black text-slate-700">${datCount} tiêu chí</span>
                                           </div>
-                                          <div className="flex items-center justify-between bg-white border border-slate-100 rounded-xl px-2.5 py-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.01)] text-xs">
+                                          <div className="flex items-center justify-between bg-white/90 backdrop-blur-sm border border-slate-100/80 rounded-xl px-2.5 py-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.01)] text-xs">
                                             <div className="flex items-center gap-1.5 font-bold text-rose-500">
                                               <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
                                               Không đạt
@@ -1681,7 +1721,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                                             <span className="font-black text-slate-700">${khongDatCount} tiêu chí</span>
                                           </div>
                                           {chuaDanhGiaCount > 0 && (
-                                            <div className="flex items-center justify-between bg-white border border-slate-100 rounded-xl px-2.5 py-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.01)] text-xs">
+                                            <div className="flex items-center justify-between bg-white/90 backdrop-blur-sm border border-slate-100/80 rounded-xl px-2.5 py-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.01)] text-xs">
                                               <div className="flex items-center gap-1.5 font-semibold text-slate-400">
                                                 <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
                                                 Chưa đánh giá
@@ -1718,23 +1758,29 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                                 <td className="w-[220px] min-w-[220px] whitespace-normal border-r border-violet-50/50 p-4 align-top text-xs">
                                   <div className="flex flex-col gap-2 w-full">
                                     {hVal || wVal ? (
-                                      <div className="flex flex-col gap-1.5">
-                                        <div className="grid grid-cols-3 gap-1.5 bg-slate-50 border border-slate-100 rounded-2xl p-2">
-                                          <div className="bg-white border border-slate-100 rounded-xl p-1.5 flex flex-col items-center justify-center text-center shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-                                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">H.Cao</span>
-                                            <span className="font-black text-xs text-slate-700 mt-0.5">{hVal ? `${hVal} cm` : "—"}</span>
+                                      <div className="flex flex-col gap-2">
+                                        <div className="bg-gradient-to-br from-emerald-50/70 to-teal-50/30 border border-emerald-100/70 rounded-2xl p-2.5 shadow-[0_4px_12px_rgba(16,185,129,0.03)] transition-all hover:scale-[1.01] hover:shadow-md">
+                                          <div className="flex items-center gap-1 text-[10px] font-black text-emerald-800 uppercase tracking-wider pb-1.5 border-b border-white/60 mb-2">
+                                            <span>🏃‍♂️</span>
+                                            <span>Thể chất</span>
                                           </div>
-                                          <div className="bg-white border border-slate-100 rounded-xl p-1.5 flex flex-col items-center justify-center text-center shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-                                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">C.Nặng</span>
-                                            <span className="font-black text-xs text-slate-700 mt-0.5">{wVal ? `${wVal} kg` : "—"}</span>
-                                          </div>
-                                          <div className="bg-white border border-slate-100 rounded-xl p-1.5 flex flex-col items-center justify-center text-center shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-                                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">BMI</span>
-                                            <span className="font-black text-xs text-violet-600 mt-0.5">{bmiVal ? bmiVal.toFixed(1) : "—"}</span>
+                                          <div className="grid grid-cols-3 gap-1 bg-white/80 backdrop-blur-sm border border-emerald-100/50 rounded-xl p-1 shadow-[0_1px_2px_rgba(0,0,0,0.01)]">
+                                            <div className="p-1 flex flex-col items-center justify-center text-center">
+                                              <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">H.Cao</span>
+                                              <span className="font-black text-[11px] text-slate-700 mt-0.5">{hVal ? `${hVal}cm` : "—"}</span>
+                                            </div>
+                                            <div className="p-1 border-l border-r border-slate-100 flex flex-col items-center justify-center text-center">
+                                              <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">C.Nặng</span>
+                                              <span className="font-black text-[11px] text-slate-700 mt-0.5">{wVal ? `${wVal}kg` : "—"}</span>
+                                            </div>
+                                            <div className="p-1 flex flex-col items-center justify-center text-center">
+                                              <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">BMI</span>
+                                              <span className="font-black text-[11px] text-violet-600 mt-0.5">{bmiVal ? bmiVal.toFixed(1) : "—"}</span>
+                                            </div>
                                           </div>
                                         </div>
                                         {bmiVal && bmiClass && (
-                                          <div className={`px-2.5 py-1 rounded-xl text-[9px] font-black border uppercase tracking-wider text-center flex items-center justify-center gap-1.5 ${bmiClass.color}`}>
+                                          <div className={`px-2.5 py-1.5 rounded-xl text-[9px] font-black border uppercase tracking-wider text-center flex items-center justify-center gap-1.5 shadow-[0_2px_4px_rgba(0,0,0,0.02)] ${bmiClass.color}`}>
                                             <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${bmiClass.dot}`} />
                                             {bmiClass.label}
                                           </div>
@@ -1743,7 +1789,8 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                                     ) : (
                                       <span className="text-slate-300 italic block py-1">Chưa đo thể chất</span>
                                     )}
-                                        {/* Physical details hidden for summary view */}                                  </div>
+                                    {/* Physical details hidden for summary view */}
+                                  </div>
                                 </td>
 
                                 {/* Nhận thức */}
