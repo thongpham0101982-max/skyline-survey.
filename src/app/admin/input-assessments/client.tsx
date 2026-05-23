@@ -2417,6 +2417,8 @@ ${reportForm.directorNote}`;
   const [asPeriodId, setAsPeriodId] = useState("")
   const [asBatchId, setAsBatchId] = useState("")
   const [asFilterBatchId, setAsFilterBatchId] = useState("")
+  const [asNotifyingId, setAsNotifyingId] = useState(null)
+  const [asNotifyingAll, setAsNotifyingAll] = useState(false)
   const [asDeptId, setAsDeptId] = useState("")
   const [asTeacherId, setAsTeacherId] = useState("")
   const [asSelSubjects, setAsSelSubjects] = useState<string[]>([])
@@ -2817,6 +2819,72 @@ return {
   }
 
   
+  const sendTeacherNotification = async (a) => {
+    if (!a.userId || !asPeriodId) return;
+    setAsNotifyingId(a.id);
+    try {
+      const res = await fetch("/api/input-assessment-assignments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "NOTIFY_SINGLE",
+          userId: a.userId,
+          periodId: asPeriodId,
+          batchId: a.batchId || null
+        })
+      });
+      if (res.ok) {
+        const result = await res.json();
+        if (result.success && result.sentCount > 0) {
+          notify(`Đã gửi email thông báo phân công cho GV ${a.user?.fullName || ""}!`);
+        } else {
+          notify(`Gửi email thất bại: ${result.errors?.[0] || "Không gửi được email"}`, "err");
+        }
+      } else {
+        notify("Lỗi khi kết nối gửi thông báo", "err");
+      }
+    } catch (e) {
+      console.error(e);
+      notify("Có lỗi xảy ra", "err");
+    } finally {
+      setAsNotifyingId(null);
+    }
+  };
+
+  const sendAllNotifications = async () => {
+    if (groupedAssignments.length === 0) return notify("Không có phân công nào để gửi thông báo", "err");
+    setAsNotifyingAll(true);
+    try {
+      const res = await fetch("/api/input-assessment-assignments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "NOTIFY_ALL",
+          periodId: asPeriodId,
+          batchId: asFilterBatchId || null
+        })
+      });
+      if (res.ok) {
+        const result = await res.json();
+        if (result.success) {
+          notify(`Đã gửi thông báo thành công cho ${result.sentCount} giáo viên!`);
+          if (result.failedCount > 0) {
+            notify(`Gửi thất bại cho ${result.failedCount} giáo viên`, "err");
+          }
+        } else {
+          notify("Gửi thông báo hàng loạt thất bại", "err");
+        }
+      } else {
+        notify("Lỗi kết nối", "err");
+      }
+    } catch (e) {
+      console.error(e);
+      notify("Có lỗi xảy ra", "err");
+    } finally {
+      setAsNotifyingAll(false);
+    }
+  };
+
   const groupedAssignments = useMemo(() => {
     const groups: Record<string, any> = {};
     const targetAssignments = assignments.filter(a => !asFilterBatchId || a.batchId === asFilterBatchId);
@@ -3094,17 +3162,28 @@ return {
                    <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs font-black">{groupedAssignments.length} nhóm phân công</span>
                 </div>
                 {asPeriodId && (
-                   <div className="flex items-center gap-2 self-end sm:self-auto bg-slate-50 border border-slate-100 rounded-2xl px-4 py-2">
-                      <Filter className="w-4 h-4 text-indigo-500" />
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Lọc đợt:</span>
-                      <select 
-                         value={asFilterBatchId} 
-                         onChange={e=>setAsFilterBatchId(e.target.value)} 
-                         className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 transition-all shadow-sm cursor-pointer min-w-[150px]"
+                   <div className="flex flex-wrap items-center gap-3 self-end sm:self-auto bg-slate-50 border border-slate-100 rounded-2xl px-4 py-2">
+                      <div className="flex items-center gap-2">
+                         <Filter className="w-4 h-4 text-indigo-500" />
+                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Lọc đợt:</span>
+                         <select 
+                            value={asFilterBatchId} 
+                            onChange={e=>setAsFilterBatchId(e.target.value)} 
+                            className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 transition-all shadow-sm cursor-pointer min-w-[150px]"
+                         >
+                            <option value="">-- Tất cả đợt --</option>
+                            {asSelPeriod?.batches?.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
+                         </select>
+                      </div>
+                      <button
+                         onClick={sendAllNotifications}
+                         disabled={asNotifyingAll || groupedAssignments.length === 0}
+                         className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-xl text-xs font-black hover:bg-indigo-700 transition-all shadow-sm disabled:opacity-50"
+                         title="Gửi email thông báo phân công cho tất cả giáo viên trong danh sách"
                       >
-                         <option value="">-- Tất cả đợt --</option>
-                         {asSelPeriod?.batches?.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
-                      </select>
+                         {asNotifyingAll ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
+                         Gửi email hàng loạt
+                      </button>
                    </div>
                 )}
              </div>
@@ -3160,6 +3239,14 @@ return {
                                 </div>
                               </td>
                             <td className="p-5 text-right flex items-center justify-end">
+                               <button 
+                                 onClick={() => sendTeacherNotification(a)}
+                                 disabled={asNotifyingId === a.id}
+                                 className="p-2.5 text-slate-300 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all mr-1 disabled:opacity-30"
+                                 title="Gửi email thông báo phân công"
+                               >
+                                 {asNotifyingId === a.id ? <Loader2 className="w-4 h-4 animate-spin"/> : <Mail className="w-4 h-4"/>}
+                               </button>
                                <button 
                                  onClick={() => openEditAssignment(a)}
                                  className="p-2.5 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all mr-1"
