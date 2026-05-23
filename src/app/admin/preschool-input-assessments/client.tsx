@@ -1588,7 +1588,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
               onClick={() => setDevTab("dgkqHocThu")}
               className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${devTab === "dgkqHocThu" ? "bg-violet-500 text-white shadow-sm" : "text-slate-500 hover:bg-violet-50"}`}
             >
-              ĐGKQ Học thử
+              Đánh giá Học thử
             </button>
           </div>
 
@@ -3095,7 +3095,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
         </div>
       </Modal>
 
-      {/* Modal: ĐGKQ Học thử */}
+      {/* Modal: Đánh giá Học thử */}
       <Modal
         open={probModal}
         onClose={() => setProbModal(false)}
