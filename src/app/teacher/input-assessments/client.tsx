@@ -94,7 +94,27 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
             }
         });
         
-        return Array.from(unique.values());
+        const list = Array.from(unique.values());
+        
+        // Inject a virtual "Tất cả các khối" consolidated option for Preschool teachers if they have multiple assignments
+        const preschoolList = list.filter(a => a.isPreschool);
+        if (preschoolList.length > 1) {
+            const firstPre = preschoolList[0];
+            const virtualAll = {
+                ...firstPre,
+                id: "preschool-all-grades",
+                grade: "Tất cả",
+                overrideSystemLabel: "Tất cả",
+                subject: {
+                    ...firstPre.subject,
+                    name: "Đánh giá Mầm non"
+                }
+            };
+            const nonPreschool = list.filter(a => !a.isPreschool);
+            return [virtualAll, ...preschoolList, ...nonPreschool];
+        }
+        
+        return list;
     }, [assignments, selectedPeriodId, selectedBatchId]);
 
     useEffect(() => {
@@ -778,7 +798,8 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                   const systemCode = assignment.overrideSystemCode !== undefined ? assignment.overrideSystemCode : (assignment.educationSystem || "");
                   const grade = assignment.grade || "";
                   setLoading(true);
-                  const response = await fetch(`/api/teacher-assessments?action=getStudents&periodId=${assignment.periodId}&grade=${grade}&systemCode=${systemCode}&subjectId=${assignment.subjectId}&batchId=${assignment.batchId || ""}`);
+                  const batchQueryParam = selectedBatchId === "all" ? "" : selectedBatchId;
+                  const response = await fetch(`/api/teacher-assessments?action=getStudents&periodId=${assignment.periodId}&grade=${grade}&systemCode=${systemCode}&subjectId=${assignment.subjectId}&batchId=${batchQueryParam}`);
                   if (response.ok) {
                     const data = await response.json();
                     setStudents(data);
