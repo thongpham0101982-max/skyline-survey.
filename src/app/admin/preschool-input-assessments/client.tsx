@@ -87,7 +87,7 @@ const xetDuyetCols = [
   { id: "bghApproval", label: "Duyệt BGH MN", width: "w-[220px] min-w-[220px] whitespace-normal border-r border-violet-50/50" },
   { id: "gdcsApproval", label: "Duyệt GĐCS", width: "w-[220px] min-w-[220px] whitespace-normal border-r border-violet-50/50" },
   { id: "result", label: "Kết quả Duyệt", width: "w-32 min-w-[128px]" },
-  { id: "actions", label: "Thao tác", width: "w-24 min-w-[96px]" }
+  { id: "actions", label: "Thao tác", width: "w-[180px] min-w-[180px]" }
 ];
 
 export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoVuCSUsers, grades: gradesProp, teachers, departments, currentUser }: { academicYears: AcademicYear[]; campuses: Camp[]; giaoVuCSUsers: any[]; grades: string[]; teachers: any[]; departments: any[]; currentUser: any; }) {
@@ -516,6 +516,34 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
     } catch (e) {
       console.error(e);
       notify("Lỗi", "err");
+    }
+  };
+
+  const [sendingEmailId, setSendingEmailId] = useState<string | null>(null);
+
+  const sendTuVanEmail = async (studentId: string) => {
+    setSendingEmailId(studentId);
+    try {
+      const res = await fetch("/api/preschool-input-assessment-students", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "SEND_REPORT_EMAIL",
+          studentId
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        notify(`Đã gửi báo cáo thành công tới ${data.email || "Tư vấn tuyển sinh cơ sở"}!`);
+      } else {
+        const errorData = await res.json();
+        notify(errorData.error || "Gửi email thất bại", "err");
+      }
+    } catch (e) {
+      console.error(e);
+      notify("Có lỗi xảy ra khi gửi email", "err");
+    } finally {
+      setSendingEmailId(null);
     }
   };
 
@@ -1569,14 +1597,20 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                           .filter(s => !cSearch || s.studentCode.toLowerCase().includes(cSearch.toLowerCase()) || s.fullName.toLowerCase().includes(cSearch.toLowerCase()))
                           .map((s, idx) => {
                             const getResultBadge = (res: string) => {
+                              if (res === "Đạt - Miễn Học Thử" || res === "DAT_MIEN_HOC_THU") {
+                                return <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-teal-50 text-teal-600 border border-teal-200">✓ ĐẠT - MIỄN HỌC THỬ</span>;
+                              }
+                              if (res === "Đạt - Học Thử" || res === "DAT_HOC_THU" || res === "Học thử" || res === "HOC_THU") {
+                                return <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-200">★ ĐẠT - HỌC THỬ</span>;
+                              }
                               if (res === "Đạt" || res === "DAT") {
-                                return <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">✓ ĐẠT</span>;
+                                return <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200">✓ ĐẠT</span>;
                               }
                               if (res === "Không đạt" || res === "KHONG_DAT") {
-                                return <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-rose-50 text-rose-600 border border-rose-100">✗ KHÔNG ĐẠT</span>;
+                                return <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-rose-50 text-rose-600 border border-rose-200">✗ KHÔNG ĐẠT</span>;
                               }
-                              if (res === "Học thử" || res === "HOC_THU") {
-                                return <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100">★ HỌC THỬ</span>;
+                              if (res === "Ý kiến khác" || res === "Y_KIEN_KHAC") {
+                                return <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-amber-50 text-amber-600 border border-amber-200">★ Ý KIẾN KHÁC</span>;
                               }
                               return <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-slate-50 text-slate-400 border border-slate-200">Chưa duyệt</span>;
                             };
@@ -1801,6 +1835,12 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                                        {s.gdcsApprovalStatus ? (
                                          <>
                                            <div>
+                                             {s.gdcsApprovalStatus === "DAT_MIEN_HOC_THU" && (
+                                               <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-teal-50 text-teal-600 border border-teal-100">ĐẠT - MIỄN HỌC THỬ</span>
+                                             )}
+                                             {s.gdcsApprovalStatus === "DAT_HOC_THU" && (
+                                               <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100">ĐẠT - HỌC THỬ</span>
+                                             )}
                                              {s.gdcsApprovalStatus === "DAT" && (
                                                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">ĐẠT</span>
                                              )}
@@ -1829,13 +1869,28 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                                  )}
 
                                 <td className="w-32 min-w-[128px] p-4 align-top">{getResultBadge(s.generalResult)}</td>
-                                <td className="w-24 min-w-[96px] p-4 align-top">
-                                  <button
-                                    onClick={() => openEvaluation(s)}
-                                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-black text-violet-700 bg-violet-50 hover:bg-violet-500 hover:text-white rounded-lg border border-violet-100 transition-all shadow-sm"
-                                  >
-                                    <Star className="w-3.5 h-3.5" /> Đánh giá
-                                  </button>
+                                <td className="w-[180px] min-w-[180px] p-4 align-top">
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      disabled={sendingEmailId === s.id}
+                                      onClick={() => sendTuVanEmail(s.id)}
+                                      className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-600 hover:text-white rounded-xl border border-emerald-100 disabled:opacity-50 transition-all shadow-sm"
+                                    >
+                                      {sendingEmailId === s.id ? (
+                                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                      ) : (
+                                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                                      )}
+                                      Email TVCS
+                                    </button>
+                                    <button
+                                      onClick={() => openEvaluation(s)}
+                                      className="flex items-center justify-center p-1.5 text-slate-400 hover:text-violet-600 hover:bg-violet-50 rounded-lg border border-transparent hover:border-violet-100 transition-all"
+                                      title="Phê duyệt / Đánh giá"
+                                    >
+                                      <Star className="w-4 h-4 fill-current" />
+                                    </button>
+                                  </div>
                                 </td>
                               </tr>
                             );
@@ -2607,14 +2662,24 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                 const userCampusNames = userCampuses.map(c => c.campusName).join(", ");
 
                 const getCalculatedResult = () => {
-                  if (bghApprovalStatus || gdcsApprovalStatus) {
-                    if (bghApprovalStatus === "DAT" && gdcsApprovalStatus === "DAT") {
-                      return "Đạt";
+                  const bgh = bghApprovalStatus || "";
+                  const gdcs = gdcsApprovalStatus || "";
+                  const isApproved = (s: string) => s === "DAT" || s === "DAT_MIEN_HOC_THU" || s === "DAT_HOC_THU";
+
+                  if (bgh || gdcs) {
+                    if (isApproved(bgh) && isApproved(gdcs)) {
+                      if (gdcs === "DAT_MIEN_HOC_THU") {
+                        return "Đạt - Miễn Học Thử";
+                      } else if (gdcs === "DAT_HOC_THU") {
+                        return "Đạt - Học Thử";
+                      } else {
+                        return "Đạt";
+                      }
                     }
-                    if (bghApprovalStatus === "KHONG_DAT" || gdcsApprovalStatus === "KHONG_DAT") {
+                    if (bgh === "KHONG_DAT" || gdcs === "KHONG_DAT") {
                       return "Không đạt";
                     }
-                    if (bghApprovalStatus === "Y_KIEN_KHAC" || gdcsApprovalStatus === "Y_KIEN_KHAC") {
+                    if (bgh === "Y_KIEN_KHAC" || gdcs === "Y_KIEN_KHAC") {
                       return "Ý kiến khác";
                     }
                     return "Chưa duyệt";
@@ -2630,6 +2695,12 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                 const calcRes = getCalculatedResult();
                 
                 const getCalcBadge = (res: string) => {
+                  if (res === "Đạt - Miễn Học Thử") {
+                    return <span className="text-xs font-black px-3 py-1 rounded-full bg-teal-50 text-teal-600 border border-teal-100 flex items-center gap-1">✓ ĐẠT - MIỄN HỌC THỬ</span>;
+                  }
+                  if (res === "Đạt - Học Thử" || res === "Học thử") {
+                    return <span className="text-xs font-black px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center gap-1">★ ĐẠT - HỌC THỬ</span>;
+                  }
                   if (res === "Đạt") {
                     return <span className="text-xs font-black px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center gap-1">✓ ĐẠT</span>;
                   }
@@ -2638,9 +2709,6 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                   }
                   if (res === "Ý kiến khác") {
                     return <span className="text-xs font-black px-3 py-1 rounded-full bg-amber-50 text-amber-600 border border-amber-100 flex items-center gap-1">★ Ý KIẾN KHÁC</span>;
-                  }
-                  if (res === "Học thử") {
-                    return <span className="text-xs font-black px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center gap-1">★ HỌC THỬ</span>;
                   }
                   return <span className="text-xs font-black px-3 py-1 rounded-full bg-slate-50 text-slate-400 border border-slate-200">CHƯA DUYỆT</span>;
                 };
@@ -2786,7 +2854,8 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
 
                           <div className="flex flex-wrap gap-2">
                             {[
-                              { status: "DAT", label: "ĐẠT", color: "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100/50", activeColor: "bg-emerald-500 text-white border-emerald-500 shadow-sm" },
+                              { status: "DAT_MIEN_HOC_THU", label: "ĐẠT - MIỄN HỌC THỬ", color: "bg-teal-50 text-teal-600 border-teal-100 hover:bg-teal-100/50", activeColor: "bg-teal-600 text-white border-teal-600 shadow-sm" },
+                              { status: "DAT_HOC_THU", label: "ĐẠT - HỌC THỬ", color: "bg-indigo-50 text-indigo-600 border-indigo-100 hover:bg-indigo-100/50", activeColor: "bg-indigo-600 text-white border-indigo-600 shadow-sm" },
                               { status: "KHONG_DAT", label: "KHÔNG ĐẠT", color: "bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100/50", activeColor: "bg-rose-500 text-white border-rose-500 shadow-sm" },
                               { status: "Y_KIEN_KHAC", label: "Ý KIẾN KHÁC", color: "bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100/50", activeColor: "bg-amber-500 text-white border-amber-500 shadow-sm" }
                             ].map(opt => (

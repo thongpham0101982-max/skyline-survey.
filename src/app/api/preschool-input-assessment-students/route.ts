@@ -1,3 +1,50 @@
+import { sendEmail } from "@/lib/mail"
+
+function getTuVanEmail(campusName: string | null | undefined): string {
+  if (!campusName) return "bankhaothi@skylineschool.edu.vn";
+  const campus = campusName.toUpperCase().trim();
+  
+  if (campus.includes("CS5") || campus.includes("CƠ SỞ 5") || campus.includes("CO SO 5") || campus.includes("GALAXY") || campus.includes("LƯ GIANG") || campus.includes("LU GIANG") || campus.includes("LIÊN CHIỂU") || campus.includes("LIEN CHIEU")) {
+    return "tuyensinh.cs5@skylineschool.edu.vn";
+  }
+  if (campus.includes("CS4") || campus.includes("CƠ SỞ 4") || campus.includes("CO SO 4") || campus.includes("BEACH")) {
+    return "tuyensinh.cs4@skylineschool.edu.vn";
+  }
+  if (campus.includes("CS3") || campus.includes("CƠ SỞ 3") || campus.includes("CO SO 3") || campus.includes("HILL") || campus.includes("LÂM HOÀNH") || campus.includes("LAM HOANH") || campus.includes("QUẬN 3") || campus.includes("QUAN 3")) {
+    return "tuyensinh.cs3@skylineschool.edu.vn";
+  }
+  if (campus.includes("CS2") || campus.includes("CƠ SỞ 2") || campus.includes("CO SO 2") || campus.includes("BẠCH ĐẰNG") || campus.includes("BACH DANG")) {
+    return "tuyensinh.cs2@skylineschool.edu.vn";
+  }
+  if (campus.includes("CS1") || campus.includes("CƠ SỞ 1") || campus.includes("CO SO 1") || campus.includes("CENTRAL") || campus.includes("RIVERSIDE")) {
+    return "tuyensinh.cs1@skylineschool.edu.vn";
+  }
+  
+  return "bankhaothi@skylineschool.edu.vn";
+}
+
+function parseMetricValue(note: string | null | undefined): number | null {
+  if (!note) return null;
+  const mainPart = note.includes("|") ? note.split("|")[0] : note;
+  const match = mainPart.match(/(\d+(?:\.\d+)?)/);
+  if (match) {
+    const val = parseFloat(match[1]);
+    return isNaN(val) ? null : val;
+  }
+  return null;
+}
+
+function getBmiClassification(bmi: number): { text: string; bg: string; color: string } {
+  if (bmi < 13.5) {
+    return { text: "Gầy", bg: "#fef3c7", color: "#b45309" }; // Amber
+  } else if (bmi < 17.0) {
+    return { text: "Bình thường", bg: "#d1fae5", color: "#065f46" }; // Emerald
+  } else if (bmi < 18.5) {
+    return { text: "Thừa cân", bg: "#ffedd5", color: "#c2410c" }; // Orange
+  } else {
+    return { text: "Béo phì", bg: "#fee2e2", color: "#991b1b" }; // Rose
+  }
+}
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
@@ -45,6 +92,429 @@ export async function POST(req) {
     const body = await req.json();
     const { action, data } = body;
     
+    if (action === "SEND_REPORT_EMAIL") {
+      const { studentId } = body;
+      if (!studentId) {
+        return NextResponse.json({ error: "Missing studentId" }, { status: 400 });
+      }
+
+      // Fetch student details
+      const student = await (prisma as any).preschoolInputAssessmentStudent.findUnique({
+        where: { id: studentId },
+        include: {
+          batch: true,
+          period: true
+        }
+      });
+      if (!student) {
+        return NextResponse.json({ error: "Student not found" }, { status: 404 });
+      }
+
+      // Fetch student's scores
+      const scores = await (prisma as any).preschoolDevScore.findMany({
+        where: { studentId },
+        include: {
+          criteria: {
+            include: { area: true }
+          }
+        }
+      });
+
+      // Fetch active criteria for this grade to ensure completeness
+      const criteriaList = await (prisma as any).preschoolDevCriteria.findMany({
+        where: { ageGroup: student.grade || "", status: "ACTIVE" },
+        include: { area: true },
+        orderBy: { sortOrder: "asc" }
+      });
+
+      // 1. Resolve Admissions Consultant Email
+      const resolvedEmail = getTuVanEmail(student.admissionCampus);
+
+      // 2. Parse physical measurements & BMI
+      let heightVal: number | null = null;
+      let weightVal: number | null = null;
+      let heightStr = "Chưa đo";
+      let weightStr = "Chưa đo";
+
+      const heightCrit = scores.find(s => s.criteria.code.endsWith("_01") || s.criteria.name.toLowerCase().includes("chiều cao"));
+      const weightCrit = scores.find(s => s.criteria.code.endsWith("_02") || s.criteria.name.toLowerCase().includes("cân nặng"));
+
+      if (heightCrit) {
+        heightVal = parseMetricValue(heightCrit.note);
+        heightStr = heightCrit.note || "Chưa đo";
+      }
+      if (weightCrit) {
+        weightVal = parseMetricValue(weightCrit.note);
+        weightStr = weightCrit.note || "Chưa đo";
+      }
+
+      let bmiVal: number | null = null;
+      let bmiBadgeHtml = "";
+
+      if (heightVal && weightVal) {
+        const heightM = heightVal / 100;
+        bmiVal = parseFloat((weightVal / (heightM * heightM)).toFixed(2));
+        const classification = getBmiClassification(bmiVal);
+        bmiBadgeHtml = `<span style="background-color: ${classification.bg}; color: ${classification.color}; padding: 3px 10px; border-radius: 9999px; font-weight: bold; font-size: 12px; border: 1px solid ${classification.color}30; display: inline-block;">${classification.text}</span>`;
+      } else {
+        bmiBadgeHtml = `<span style="background-color: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 9999px; font-weight: bold; font-size: 12px; display: inline-block;">Chưa tính</span>`;
+      }
+
+      // Group criteria and scores by developmental area
+      const groupedData: Record<string, { areaName: string; items: any[] }> = {
+        THE_CHAT: { areaName: "Thể chất", items: [] },
+        NHAN_THUC: { areaName: "Nhận thức", items: [] },
+        NGON_NGU: { areaName: "Ngôn ngữ", items: [] },
+        TINH_CAM_XH_TM: { areaName: "Tình cảm - Kỹ năng XH & Thẩm mỹ", items: [] }
+      };
+
+      for (const crit of criteriaList) {
+        const areaCode = crit.area.code;
+        const studentScore = scores.find(s => s.criteriaId === crit.id);
+        
+        let resultLabel = "Chưa đánh giá";
+        let resultColor = "#64748b";
+        let noteText = "";
+
+        if (studentScore) {
+          if (studentScore.result === "DAT") {
+            resultLabel = "✓ Đạt";
+            resultColor = "#10b981";
+          } else if (studentScore.result === "KHONG_DAT") {
+            resultLabel = "✗ Không đạt";
+            resultColor = "#ef4444";
+          } else {
+            resultLabel = "Chưa thể hiện";
+            resultColor = "#f59e0b";
+          }
+
+          if (studentScore.note) {
+            noteText = studentScore.note.includes("|") ? studentScore.note.split("|")[1]?.trim() || studentScore.note.split("|")[0]?.trim() : studentScore.note;
+          }
+        }
+
+        const item = {
+          criteriaName: crit.name,
+          resultLabel,
+          resultColor,
+          noteText: noteText || "-"
+        };
+
+        if (groupedData[areaCode]) {
+          groupedData[areaCode].items.push(item);
+        } else {
+          groupedData[areaCode] = { areaName: crit.area.name, items: [item] };
+        }
+      }
+
+      // Build HTML Table Rows
+      let devGridHtml = "";
+      for (const code of Object.keys(groupedData)) {
+        const group = groupedData[code];
+        if (group.items.length === 0) continue;
+
+        devGridHtml += `
+          <tr>
+            <td colspan="3" style="background-color: #f1f5f9; padding: 10px 15px; font-weight: bold; color: #1e293b; font-size: 13px; text-transform: uppercase; border-bottom: 1px solid #e2e8f0;">
+              ${group.areaName}
+            </td>
+          </tr>
+        `;
+
+        for (const item of group.items) {
+          devGridHtml += `
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 12px 15px; font-size: 13px; color: #334155; line-height: 1.5; width: 50%;">
+                ${item.criteriaName}
+              </td>
+              <td style="padding: 12px 15px; font-size: 13px; font-weight: bold; color: ${item.resultColor}; width: 20%; text-align: center;">
+                ${item.resultLabel}
+              </td>
+              <td style="padding: 12px 15px; font-size: 13px; color: #475569; width: 30%; line-height: 1.5;">
+                ${item.noteText}
+              </td>
+            </tr>
+          `;
+        }
+      }
+
+      const proComment = student.devProfessionalComment || "Không có nhận xét.";
+      const psyComment = student.devPsychologyComment || "Không có nhận xét.";
+      const impNote = student.devImportantNote || "Không có lưu ý đặc biệt.";
+
+      const bghStatus = student.bghApprovalStatus;
+      const bghComment = student.bghApprovalComment || "-";
+      const gdcsStatus = student.gdcsApprovalStatus;
+      const gdcsComment = student.gdcsApprovalComment || "-";
+
+      let bghBadge = `<span style="background-color: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 9999px; font-weight: bold; font-size: 11px;">CHƯA DUYỆT</span>`;
+      if (bghStatus === "DAT") {
+        bghBadge = `<span style="background-color: #d1fae5; color: #065f46; padding: 3px 10px; border-radius: 9999px; font-weight: bold; font-size: 11px; border: 1px solid #04785730;">ĐẠT</span>`;
+      } else if (bghStatus === "KHONG_DAT") {
+        bghBadge = `<span style="background-color: #fee2e2; color: #991b1b; padding: 3px 10px; border-radius: 9999px; font-weight: bold; font-size: 11px; border: 1px solid #b91c1c30;">KHÔNG ĐẠT</span>`;
+      } else if (bghStatus === "Y_KIEN_KHAC") {
+        bghBadge = `<span style="background-color: #fef3c7; color: #92400e; padding: 3px 10px; border-radius: 9999px; font-weight: bold; font-size: 11px; border: 1px solid #b4530930;">Ý KIẾN KHÁC</span>`;
+      }
+
+      let gdcsBadge = `<span style="background-color: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 9999px; font-weight: bold; font-size: 11px;">CHƯA DUYỆT</span>`;
+      if (gdcsStatus === "DAT" || gdcsStatus === "DAT_HOC_THU" || gdcsStatus === "DAT_MIEN_HOC_THU") {
+        let label = "ĐẠT";
+        let color = "#065f46";
+        let bg = "#d1fae5";
+        if (gdcsStatus === "DAT_HOC_THU") {
+          label = "ĐẠT - HỌC THỬ";
+          color = "#3730a3";
+          bg = "#e0e7ff";
+        } else if (gdcsStatus === "DAT_MIEN_HOC_THU") {
+          label = "ĐẠT - MIỄN HỌC THỬ";
+          color = "#0f766e";
+          bg = "#ccfbf1";
+        }
+        gdcsBadge = `<span style="background-color: ${bg}; color: ${color}; padding: 3px 10px; border-radius: 9999px; font-weight: bold; font-size: 11px; border: 1px solid ${color}30;">${label}</span>`;
+      } else if (gdcsStatus === "KHONG_DAT") {
+        gdcsBadge = `<span style="background-color: #fee2e2; color: #991b1b; padding: 3px 10px; border-radius: 9999px; font-weight: bold; font-size: 11px; border: 1px solid #b91c1c30;">KHÔNG ĐẠT</span>`;
+      } else if (gdcsStatus === "Y_KIEN_KHAC") {
+        gdcsBadge = `<span style="background-color: #fef3c7; color: #92400e; padding: 3px 10px; border-radius: 9999px; font-weight: bold; font-size: 11px; border: 1px solid #b4530930;">Ý KIẾN KHÁC</span>`;
+      }
+
+      const admissionRes = student.admissionResult || "Chưa duyệt";
+      let finalResultBadgeHtml = "";
+      if (admissionRes.includes("Miễn Học Thử")) {
+        finalResultBadgeHtml = `<span style="background-color: #ccfbf1; color: #0f766e; padding: 6px 18px; border-radius: 12px; font-weight: 800; font-size: 15px; border: 2px solid #0f766e; text-transform: uppercase; display: inline-block; letter-spacing: 0.5px;">ĐẠT - MIỄN HỌC THỬ</span>`;
+      } else if (admissionRes.includes("Học Thử")) {
+        finalResultBadgeHtml = `<span style="background-color: #e0e7ff; color: #3730a3; padding: 6px 18px; border-radius: 12px; font-weight: 800; font-size: 15px; border: 2px solid #3730a3; text-transform: uppercase; display: inline-block; letter-spacing: 0.5px;">ĐẠT - HỌC THỬ</span>`;
+      } else if (admissionRes.includes("Đạt") || admissionRes === "DAT") {
+        finalResultBadgeHtml = `<span style="background-color: #d1fae5; color: #065f46; padding: 6px 18px; border-radius: 12px; font-weight: 800; font-size: 15px; border: 2px solid #065f46; text-transform: uppercase; display: inline-block; letter-spacing: 0.5px;">ĐẠT</span>`;
+      } else if (admissionRes.includes("Không đạt") || admissionRes === "KHONG_DAT") {
+        finalResultBadgeHtml = `<span style="background-color: #fee2e2; color: #991b1b; padding: 6px 18px; border-radius: 12px; font-weight: 800; font-size: 15px; border: 2px solid #991b1b; text-transform: uppercase; display: inline-block; letter-spacing: 0.5px;">KHÔNG ĐẠT</span>`;
+      } else {
+        finalResultBadgeHtml = `<span style="background-color: #f1f5f9; color: #475569; padding: 6px 18px; border-radius: 12px; font-weight: 800; font-size: 15px; border: 2px solid #475569; text-transform: uppercase; display: inline-block; letter-spacing: 0.5px;">CHƯA DUYỆT / Ý KIẾN KHÁC</span>`;
+      }
+
+      const dobStr = student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString("vi-VN") : "-";
+      const genderStr = student.gender === "MALE" ? "Nam" : student.gender === "FEMALE" ? "Nữ" : "-";
+
+      const host = req.headers.get("host") || "skyline-survey-rh4k.vercel.app";
+      const protocol = req.headers.get("x-forwarded-proto") || "https";
+      const baseUrl = `${protocol}://${host}`;
+
+      const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Kết Quả Khảo Sát Năng Lực Đầu Vào Mầm Non</title>
+      </head>
+      <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f1f5f9; color: #1e293b;">
+        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f1f5f9; padding: 25px 0;">
+          <tr>
+            <td align="center">
+              <table width="700" border="0" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;">
+                <!-- Header -->
+                <tr>
+                  <td style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); padding: 35px 30px; text-align: center;">
+                    <h1 style="margin: 0; color: #ffffff; font-size: 21px; font-weight: 800; letter-spacing: -0.5px; text-transform: uppercase; line-height: 1.3;">KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO</h1>
+                    <p style="margin: 6px 0 0 0; color: #e0e7ff; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Bậc Mầm non - Hệ thống Trường Sky-Line</p>
+                  </td>
+                </tr>
+                
+                <!-- Intro -->
+                <tr>
+                  <td style="padding: 25px 30px 15px 30px;">
+                    <p style="margin: 0; font-size: 15px; line-height: 1.5; color: #334155;">
+                      Kính gửi bộ phận Tuyển sinh,
+                    </p>
+                    <p style="margin: 8px 0 0 0; font-size: 14px; line-height: 1.6; color: #475569;">
+                      Hội đồng tuyển sinh xin gửi báo cáo kết quả khảo sát năng lực đầu vào mầm non của học sinh <strong>${student.fullName}</strong>. Chi tiết báo cáo như sau:
+                    </p>
+                  </td>
+                </tr>
+                
+                <!-- Student Profile Table -->
+                <tr>
+                  <td style="padding: 0 30px 15px 30px;">
+                    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+                      <tr style="background-color: #f8fafc;">
+                        <td colspan="4" style="padding: 10px 15px; font-weight: bold; font-size: 13px; color: #4f46e5; border-bottom: 1px solid #e2e8f0; text-transform: uppercase;">
+                          Thông tin học sinh
+                        </td>
+                      </tr>
+                      <tr>
+                        <td width="20%" style="padding: 12px 15px; font-size: 13px; font-weight: 600; color: #64748b; border-bottom: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9;">Mã học sinh:</td>
+                        <td width="30%" style="padding: 12px 15px; font-size: 13px; color: #1e293b; font-weight: bold; border-bottom: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9;">${student.studentCode}</td>
+                        <td width="20%" style="padding: 12px 15px; font-size: 13px; font-weight: 600; color: #64748b; border-bottom: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9;">Họ và tên:</td>
+                        <td width="30%" style="padding: 12px 15px; font-size: 13px; color: #1e293b; font-weight: bold; border-bottom: 1px solid #f1f5f9;">${student.fullName}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 12px 15px; font-size: 13px; font-weight: 600; color: #64748b; border-bottom: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9;">Ngày sinh:</td>
+                        <td style="padding: 12px 15px; font-size: 13px; color: #1e293b; border-bottom: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9;">${dobStr}</td>
+                        <td style="padding: 12px 15px; font-size: 13px; font-weight: 600; color: #64748b; border-bottom: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9;">Giới tính:</td>
+                        <td style="padding: 12px 15px; font-size: 13px; color: #1e293b; border-bottom: 1px solid #f1f5f9;">${genderStr}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 12px 15px; font-size: 13px; font-weight: 600; color: #64748b; border-right: 1px solid #f1f5f9;">Lớp/Nhóm tuổi:</td>
+                        <td style="padding: 12px 15px; font-size: 13px; color: #1e293b; border-right: 1px solid #f1f5f9;">${student.grade || "-"}</td>
+                        <td style="padding: 12px 15px; font-size: 13px; font-weight: 600; color: #64748b; border-right: 1px solid #f1f5f9;">Cơ sở đăng ký:</td>
+                        <td style="padding: 12px 15px; font-size: 13px; color: #1e293b; font-weight: 600;">${student.admissionCampus || "-"}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <!-- Physical Measurements and BMI Card -->
+                <tr>
+                  <td style="padding: 0 30px 20px 30px;">
+                    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; padding: 15px;">
+                      <tr>
+                        <td width="33%" style="text-align: center; border-right: 1px solid #e2e8f0; padding: 5px 0;">
+                          <div style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase;">Chiều cao</div>
+                          <div style="font-size: 16px; font-weight: 800; color: #1e293b; margin-top: 4px;">${heightStr}</div>
+                        </td>
+                        <td width="33%" style="text-align: center; border-right: 1px solid #e2e8f0; padding: 5px 0;">
+                          <div style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase;">Cân nặng</div>
+                          <div style="font-size: 16px; font-weight: 800; color: #1e293b; margin-top: 4px;">${weightStr}</div>
+                        </td>
+                        <td width="34%" style="text-align: center; padding: 5px 0;">
+                          <div style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase; margin-bottom: 2px;">Chỉ số BMI</div>
+                          <div style="font-size: 16px; font-weight: bold; color: #1e293b; margin-bottom: 4px;">${bmiVal ? bmiVal : "-"}</div>
+                          ${bmiBadgeHtml}
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <!-- Developmental Criteria Table -->
+                <tr>
+                  <td style="padding: 0 30px 20px 30px;">
+                    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+                      <thead>
+                        <tr style="background-color: #4f46e5; color: #ffffff;">
+                          <th align="left" style="padding: 12px 15px; font-size: 13px; font-weight: bold; width: 50%;">Nội dung đánh giá</th>
+                          <th align="center" style="padding: 12px 15px; font-size: 13px; font-weight: bold; width: 20%; text-align: center;">Kết quả</th>
+                          <th align="left" style="padding: 12px 15px; font-size: 13px; font-weight: bold; width: 30%;">Quan sát / Đo lường</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${devGridHtml}
+                      </tbody>
+                    </table>
+                  </td>
+                </tr>
+
+                <!-- Comments Segment -->
+                <tr>
+                  <td style="padding: 0 30px 20px 30px;">
+                    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+                      <tr style="background-color: #f8fafc;">
+                        <td style="padding: 10px 15px; font-weight: bold; font-size: 13px; color: #4f46e5; border-bottom: 1px solid #e2e8f0; text-transform: uppercase;">
+                          Nhận xét của Giáo viên khảo sát
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 15px; font-size: 13px; color: #334155; line-height: 1.6;">
+                          <div style="margin-bottom: 10px;">
+                            <strong style="color: #1e293b;">• Nhận xét Chuyên môn:</strong>
+                            <div style="margin-top: 3px; color: #475569; padding-left: 10px; border-left: 2px solid #e2e8f0;">${proComment}</div>
+                          </div>
+                          <div style="margin-bottom: 10px;">
+                            <strong style="color: #1e293b;">• Nhận xét Tâm lý:</strong>
+                            <div style="margin-top: 3px; color: #475569; padding-left: 10px; border-left: 2px solid #e2e8f0;">${psyComment}</div>
+                          </div>
+                          <div>
+                            <strong style="color: #1e293b;">• Lưu ý đặc biệt:</strong>
+                            <div style="margin-top: 3px; color: #b45309; font-weight: 500; padding-left: 10px; border-left: 2px solid #f59e0b;">${impNote}</div>
+                          </div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <!-- 2-Step Approval Segment -->
+                <tr>
+                  <td style="padding: 0 30px 20px 30px;">
+                    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+                      <tr style="background-color: #f8fafc;">
+                        <td colspan="2" style="padding: 10px 15px; font-weight: bold; font-size: 13px; color: #4f46e5; border-bottom: 1px solid #e2e8f0; text-transform: uppercase;">
+                          Ý kiến Phê duyệt &amp; Đề xuất
+                        </td>
+                      </tr>
+                      <tr>
+                        <td width="50%" valign="top" style="padding: 15px; font-size: 13px; color: #334155; border-right: 1px solid #e2e8f0; line-height: 1.6;">
+                          <div style="margin-bottom: 8px;">
+                            <strong style="color: #1e293b;">Ban Giám hiệu Mầm non:</strong>
+                          </div>
+                          <div style="margin-bottom: 8px;">
+                            ${bghBadge}
+                          </div>
+                          <div>
+                            <span style="font-size: 12px; color: #64748b; font-style: italic;">Ý kiến:</span>
+                            <div style="margin-top: 2px; color: #475569; font-size: 13px;">${bghComment}</div>
+                          </div>
+                        </td>
+                        <td width="50%" valign="top" style="padding: 15px; font-size: 13px; color: #334155; line-height: 1.6;">
+                          <div style="margin-bottom: 8px;">
+                            <strong style="color: #1e293b;">Giám đốc Cơ sở:</strong>
+                          </div>
+                          <div style="margin-bottom: 8px;">
+                            ${gdcsBadge}
+                          </div>
+                          <div>
+                            <span style="font-size: 12px; color: #64748b; font-style: italic;">Ý kiến:</span>
+                            <div style="margin-top: 2px; color: #475569; font-size: 13px;">${gdcsComment}</div>
+                          </div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <!-- Final Result & Call to Action -->
+                <tr>
+                  <td style="padding: 10px 30px 35px 30px; text-align: center; border-bottom: 1px solid #f1f5f9;">
+                    <div style="font-size: 12px; font-weight: bold; color: #64748b; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">KẾT LUẬN CUỐI CÙNG</div>
+                    <div style="margin-bottom: 25px;">
+                      ${finalResultBadgeHtml}
+                    </div>
+                    <p style="margin: 0 0 15px 0; font-size: 13px; color: #64748b; font-style: italic; line-height: 1.5;">
+                      Báo cáo này được tự động định tuyến đến Tư vấn Tuyển sinh của Cơ sở dựa trên hồ sơ nhập học của bé. Vui lòng liên hệ phụ huynh để thông báo kết quả.
+                    </p>
+                    <a href="${baseUrl}/admin/preschool-input-assessments" style="display: inline-block; padding: 12px 28px; border-radius: 12px; font-size: 14px; font-weight: bold; color: #ffffff; background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); text-decoration: none; border: 1px solid #4338ca; box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.3);">
+                      Quản lý trên Hệ thống Portal
+                    </a>
+                  </td>
+                </tr>
+                
+                <!-- Footer -->
+                <tr>
+                  <td style="background-color: #f8fafc; padding: 24px 30px; text-align: center; font-size: 11px; color: #64748b;">
+                    <p style="margin: 0;">Email gửi tự động từ Hệ thống Khảo sát Tuyển sinh Sky-Line.</p>
+                    <p style="margin: 4px 0 0 0; font-weight: bold; color: #334155;">HỘI ĐỒNG TUYỂN SINH - HỆ THỐNG GIÁO DỤC SKY-LINE</p>
+                    <p style="margin: 8px 0 0 0; color: #4f46e5; font-weight: 600;">Mọi thắc mắc vui lòng liên hệ Ban Khảo thí qua email: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #4f46e5; text-decoration: underline;">bankhaothi@skylineschool.edu.vn</a></p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+      `;
+
+      try {
+        await sendEmail({
+          to: resolvedEmail,
+          subject: `[Preschool-Survey] Báo cáo kết quả khảo sát năng lực đầu vào - Bé ${student.fullName} (${student.studentCode})`,
+          html: emailHtml,
+          replyTo: "bankhaothi@skylineschool.edu.vn"
+        });
+        return NextResponse.json({ success: true, email: resolvedEmail });
+      } catch (err) {
+        return NextResponse.json({ error: "Gửi email thất bại: " + err.message }, { status: 500 });
+      }
+    }
+
     if (action === "CREATE") {
       const result = await (prisma as any).preschoolInputAssessmentStudent.create({
         data: {
