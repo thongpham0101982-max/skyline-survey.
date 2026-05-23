@@ -247,6 +247,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   const [aSaving, setASaving] = useState(false);
   const [aNotifyingId, setANotifyingId] = useState(null);
   const [aNotifyingAll, setANotifyingAll] = useState(false);
+  const [evalAssignments, setEvalAssignments] = useState<any[]>([]);
 
   // Age & Grade auto-verifier helper
   const getMonthsAndSuggestGrade = useCallback((dobStr: string, batchId: string) => {
@@ -578,6 +579,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   const openEvaluation = async (student: any) => {
     setEvalStudent(student);
     setStudentScores({});
+    setEvalAssignments([]);
     setDevProfComment(student.devProfessionalComment || "");
     setDevPsyComment(student.devPsychologyComment || "");
     setDevNote(student.devImportantNote || "");
@@ -602,6 +604,10 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
           scoreMap[sc.criteriaId] = { result: sc.result, note: sc.note || "" };
         }
         setStudentScores(scoreMap);
+      }
+      const assignRes = await fetch(`/api/preschool-input-assessment-assignments?periodId=${student.periodId}`);
+      if (assignRes.ok) {
+        setEvalAssignments(await assignRes.json());
       }
     } catch (e) {
       console.error(e);
@@ -926,6 +932,20 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
     const gradeStats = grades.map(g => ({ grade: g, count: reportChildren.filter(c => c.grade === g).length }));
     return { total, passed, pending, failed, gradeStats };
   }, [reportChildren, grades]);
+
+  const assignedTeachers = useMemo(() => {
+    if (!evalStudent) return "";
+    if (devLoading && !evalAssignments.length) return "Đang tải...";
+    if (!evalAssignments.length) return "Chưa phân công";
+    const matches = evalAssignments.filter(a => {
+      if (a.periodId !== evalStudent.periodId) return false;
+      if (a.grade !== evalStudent.grade) return false;
+      return !a.batchId || a.batchId === evalStudent.batchId;
+    });
+    if (matches.length === 0) return "Chưa phân công";
+    const names = Array.from(new Set(matches.map(m => m.user?.fullName || "Chưa rõ"))).filter(Boolean);
+    return names.length > 0 ? names.join(", ") : "Chưa phân công";
+  }, [evalStudent, evalAssignments, devLoading]);
 
   const selPeriod = periods.find(p => p.id === cPeriodId);
 
@@ -2494,6 +2514,10 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
             <div>
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nhóm tuổi</p>
               <p className="text-sm font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-lg border border-purple-100">{evalStudent?.grade}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">GV Thực hiện khảo sát</p>
+              <p className="text-sm font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-lg border border-indigo-100">{assignedTeachers}</p>
             </div>
           </div>
 
