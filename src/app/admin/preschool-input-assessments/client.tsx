@@ -830,6 +830,208 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   };
 
 
+  const printProbationaryAssessment = async (student: any) => {
+    notify("Đang chuẩn bị phiếu in...", "info");
+    try {
+      const ageGroup = student.grade || "18 đến 24 tháng";
+      const areasRes = await fetch(`/api/preschool-dev-areas?ageGroup=${encodeURIComponent(ageGroup)}`);
+      let loadedAreas: any[] = [];
+      if (areasRes.ok) {
+        loadedAreas = await areasRes.json();
+      }
+      
+      let scores: Record<string, any> = {};
+      if (student.probationaryScoreText) {
+        try {
+          scores = JSON.parse(student.probationaryScoreText);
+        } catch (e) {
+          console.error(e);
+        }
+      } else if (probStudent && probStudent.id === student.id) {
+        scores = probScores;
+      }
+      
+      const probPeriodVal = student.probationaryPeriod || (probStudent && probStudent.id === student.id ? probPeriod : "") || "";
+      const probClassVal = student.probationaryClass || (probStudent && probStudent.id === student.id ? probClass : "") || "";
+      const probTeacherVal = student.probationaryTeacher || (probStudent && probStudent.id === student.id ? probTeacher : "") || "";
+      const probResultVal = student.probationaryResult || (probStudent && probStudent.id === student.id ? probResult : "") || "";
+      const probCommentVal = student.probationaryComment || (probStudent && probStudent.id === student.id ? probComment : "") || "";
+
+      const dob = student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString("vi-VN") : "—";
+      
+      const printWindow = window.open("", "_blank");
+      if (!printWindow) {
+        notify("Vui lòng cho phép mở cửa sổ bật lên (popup) để in phiếu", "err");
+        return;
+      }
+      
+      let tableRowsHtml = "";
+      loadedAreas.forEach(area => {
+        if (!area.criteria || area.criteria.length === 0) return;
+        
+        area.criteria.forEach((crit, critIdx) => {
+          const score = scores[crit.id] || { result: "", note: "" };
+          const check1 = score.result === "CHUA_THE_HIEN" ? "✓" : "";
+          const check2 = score.result === "BAT_DAU_THE_HIEN" ? "✓" : "";
+          const check3 = score.result === "THE_HIEN_TOT" ? "✓" : "";
+          const noteText = score.note || "";
+          
+          tableRowsHtml += "<tr>";
+          if (critIdx === 0) {
+            tableRowsHtml += `<td class="area-cell" rowspan="${area.criteria.length}">${area.name}</td>`;
+          }
+          tableRowsHtml += `<td class="crit-cell">${crit.name}</td>`;
+          tableRowsHtml += `<td class="check-cell">${check1}</td>`;
+          tableRowsHtml += `<td class="check-cell">${check2}</td>`;
+          tableRowsHtml += `<td class="check-cell">${check3}</td>`;
+          tableRowsHtml += `<td class="note-cell">${noteText}</td>`;
+          tableRowsHtml += "</tr>";
+        });
+      });
+
+      if (!tableRowsHtml) {
+        tableRowsHtml = `<tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 20px;">Chưa có dữ liệu tiêu chí đánh giá cho nhóm tuổi này.</td></tr>`;
+      }
+
+      const conclusionText = probResultVal === "DAT" ? "Đạt" : probResultVal === "CHUA_DAT" ? "Chưa đạt" : "";
+      const dotLines = `................................................................................................................................................................................................<br/>................................................................................................................................................................................................<br/>................................................................................................................................................................................................`;
+
+      printWindow.document.write(`
+        <html>
+        <head>
+          <title>Phiếu Đánh Giá Học Thử - ${student.fullName}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Times+New+Roman:wght@400;700&display=swap');
+            body {
+              font-family: 'Times New Roman', Times, serif;
+              color: #000;
+              margin: 0;
+              padding: 40px;
+              font-size: 14px;
+              line-height: 1.5;
+            }
+            .print-container {
+              max-width: 800px;
+              margin: 0 auto;
+              background: #ffffff;
+            }
+            .doc-title {
+              text-align: center;
+              font-size: 18px;
+              font-weight: bold;
+              margin-bottom: 5px;
+            }
+            .doc-subtitle {
+              text-align: center;
+              font-size: 14px;
+              margin-bottom: 25px;
+            }
+            .student-info {
+              margin-bottom: 20px;
+              line-height: 2.2;
+            }
+            .assessment-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 30px;
+            }
+            .assessment-table th, .assessment-table td {
+              border: 1px solid #000;
+              padding: 8px;
+              vertical-align: middle;
+            }
+            .assessment-table th {
+              background-color: #0da176;
+              color: white;
+              font-weight: bold;
+              text-align: center;
+              font-size: 14px;
+            }
+            .assessment-table td.area-cell {
+              font-weight: bold;
+              text-align: center;
+              text-transform: uppercase;
+              width: 15%;
+            }
+            .assessment-table td.crit-cell {
+              width: 35%;
+            }
+            .assessment-table td.check-cell {
+              text-align: center;
+              font-weight: bold;
+              width: 12%;
+            }
+            .assessment-table td.note-cell {
+              width: 14%;
+            }
+            @media print {
+              body { padding: 0; }
+              .print-container { max-width: 100%; }
+              .assessment-table th {
+                background-color: #0da176 !important;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+                color: white !important;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="print-container">
+            <div class="doc-title">PHIẾU ĐÁNH GIÁ HỌC THỬ</div>
+            <div class="doc-subtitle">(Dành cho ${student.grade || "nhà trẻ 18 đến 24 tháng"})</div>
+
+            <div class="student-info">
+              Họ và tên trẻ: <span style="display:inline-block; width: 220px; border-bottom: 1px dotted #000; padding-left: 5px;">${student.fullName}</span> 
+              Thời gian học thử: <span style="display:inline-block; width: 230px; border-bottom: 1px dotted #000; padding-left: 5px;">${probPeriodVal || ''}</span>
+              <br/>
+              Lớp học thử : <span style="display:inline-block; width: 220px; border-bottom: 1px dotted #000; padding-left: 5px;">${probClassVal || ''}</span> 
+              Giáo viên: <span style="display:inline-block; width: 230px; border-bottom: 1px dotted #000; padding-left: 5px;">${probTeacherVal || ''}</span>
+            </div>
+
+            <table class="assessment-table">
+              <thead>
+                <tr>
+                  <th colspan="2">NỘI DUNG ĐÁNH GIÁ</th>
+                  <th colspan="3">KẾT QUẢ</th>
+                  <th rowspan="2">GHI CHÚ</th>
+                </tr>
+                <tr>
+                  <th>LĨNH VỰC</th>
+                  <th>TIÊU CHÍ</th>
+                  <th>Chưa<br/>thể hiện</th>
+                  <th>Bắt đầu<br/>thể hiện</th>
+                  <th>Thể hiện<br/>tốt</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${tableRowsHtml}
+              </tbody>
+            </table>
+
+            <div style="font-weight: bold; margin-bottom: 5px;">
+              KẾT LUẬN SAU THỜI GIAN HỌC THỬ: <span style="font-weight: normal;">(Đạt / Chưa đạt; Ghi chú thêm):</span>
+              <span style="font-weight: normal; margin-left: 10px;">${conclusionText}</span>
+            </div>
+            <div style="line-height: 2; margin-bottom: 30px;">
+              ${probCommentVal ? probCommentVal.replace(/\n/g, '<br/>') : dotLines}
+            </div>
+          </div>
+          <script>
+            window.onload = function() {
+              window.print();
+            }
+          </script>
+        </body>
+        </html>
+      `);
+      printWindow.document.close();
+    } catch (e) {
+      console.error(e);
+      notify("Lỗi hệ thống khi tải phiếu in", "err");
+    }
+  };
+
   const openProbationary = async (student: any) => {
     setProbStudent(student);
     setProbScores({});
@@ -2362,12 +2564,19 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                                 <td className="p-4 text-slate-600 text-sm">{s.probationaryClass || "—"}</td>
                                 <td className="p-4 text-slate-600 text-sm">{s.probationaryTeacher || "—"}</td>
                                 <td className="p-4">{resultBadge()}</td>
-                                <td className="p-4">
+                                <td className="p-4 flex gap-1.5">
                                   <button
                                     onClick={() => openProbationary(s)}
                                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-black text-violet-700 bg-violet-50 hover:bg-violet-500 hover:text-white rounded-xl border border-violet-100 transition-all shadow-sm"
                                   >
                                     <ClipboardList className="w-3.5 h-3.5" /> Đánh giá học thử
+                                  </button>
+                                  <button
+                                    onClick={() => printProbationaryAssessment(s)}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-500 hover:text-white rounded-xl border border-emerald-100 transition-all shadow-sm"
+                                  >
+                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                                    In phiếu
                                   </button>
                                 </td>
                               </tr>
@@ -3484,9 +3693,18 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
         size="xl"
         footer={
           <>
-            <button onClick={() => setProbModal(false)} className="flex-1 text-xs font-black uppercase text-slate-400 hover:text-slate-600">
+            <button onClick={() => setProbModal(false)} className="px-4 text-xs font-black uppercase text-slate-400 hover:text-slate-600">
               Đóng
             </button>
+            {probStudent && (
+              <button
+                onClick={() => printProbationaryAssessment(probStudent)}
+                className="px-6 py-3.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-100 rounded-2xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 shadow-sm"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                In Phiếu
+              </button>
+            )}
             <button
               onClick={saveProbationary}
               disabled={savingProb || devLoading}
