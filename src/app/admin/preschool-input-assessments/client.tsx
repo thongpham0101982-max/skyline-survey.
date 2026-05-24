@@ -1045,7 +1045,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
     setDevLoading(true);
     try {
       const ageGroup = student.grade || "18 đến 24 tháng";
-      const areasRes = await fetch(`/api/preschool-dev-areas?ageGroup=${encodeURIComponent(ageGroup)}`);
+      const areasRes = await fetch(`/api/preschool-dev-areas?type=PROBATION&ageGroup=${encodeURIComponent(ageGroup)}`);
       if (areasRes.ok) {
         setDevAreas(await areasRes.json());
       }
