@@ -2679,6 +2679,20 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
           {/* Sub-tab: Quản lý Tiêu chí & Lĩnh vực */}
           {devTab === "manage" && (
             <div className="space-y-4">
+              <div className="flex gap-2 p-1 bg-slate-100 rounded-xl w-fit mb-2">
+                <button
+                  onClick={() => setDevType("INPUT")}
+                  className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${devType === "INPUT" ? "bg-white text-violet-600 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+                >
+                  Tiêu chí Khảo sát (Đầu vào)
+                </button>
+                <button
+                  onClick={() => setDevType("PROBATION")}
+                  className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${devType === "PROBATION" ? "bg-white text-emerald-600 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+                >
+                  Tiêu chí Học thử (Probation)
+                </button>
+              </div>
               <div className="flex flex-wrap gap-1.5 bg-violet-50/50 p-1.5 rounded-2xl border border-violet-100 max-w-fit">
                 {grades.map(g => (
                   <button
