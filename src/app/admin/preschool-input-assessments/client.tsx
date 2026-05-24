@@ -342,11 +342,12 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   useEffect(() => { fetchConfigs(); }, [fetchConfigs]);
 
   // Dev Assess fetches & actions
-  const fetchDevAreas = useCallback(async (ageGroup?: string) => {
+  const fetchDevAreas = useCallback(async (ageGroup?: string, t?: string) => {
     setDevLoading(true);
     try {
-      let url = "/api/preschool-dev-areas";
-      if (ageGroup) url += `?ageGroup=${encodeURIComponent(ageGroup)}`;
+      const currentType = t || devType || "INPUT";
+      let url = `/api/preschool-dev-areas?type=${currentType}`;
+      if (ageGroup) url += `&ageGroup=${encodeURIComponent(ageGroup)}`;
       const r = await fetch(url);
       if (r.ok) setDevAreas(await r.json());
     } finally { setDevLoading(false); }
@@ -354,9 +355,9 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
 
   useEffect(() => {
     if (tab === "devAssess" && devTab === "manage") {
-      fetchDevAreas(ageGroupFilter);
+      fetchDevAreas(ageGroupFilter, devType);
     }
-  }, [tab, devTab, ageGroupFilter, fetchDevAreas]);
+  }, [tab, devTab, ageGroupFilter, fetchDevAreas, devType]);
 
   const fetchStudentSummaries = useCallback(async () => {
     if (!cPeriodId) return;
