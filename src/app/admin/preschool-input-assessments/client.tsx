@@ -129,6 +129,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   const [evalStudent, setEvalStudent] = useState<PreschoolChild | null>(null);
   const [evalModal, setEvalModal] = useState(false);
   const [devAreas, setDevAreas] = useState<DevArea[]>([]);
+  const [devType, setDevType] = useState<"INPUT"|"PROBATION">("INPUT");
   const isApprovedStatus = (s?: string) => s === "DAT" || s === "DAT_MIEN_HOC_THU" || s === "DAT_HOC_THU";
   const isAssessmentLocked = !!(isApprovedStatus(evalStudent?.bghApprovalStatus) && isApprovedStatus(evalStudent?.gdcsApprovalStatus));
   const [devLoading, setDevLoading] = useState(false);

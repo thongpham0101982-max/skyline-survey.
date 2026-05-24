@@ -838,6 +838,7 @@ model PreschoolDevArea {
   sortOrder   Int                    @default(0)
   status      String                 @default("ACTIVE")
   color       String?
+  type        String                 @default("INPUT") // "INPUT" or "PROBATION"
   createdAt   DateTime               @default(now())
   criteria    PreschoolDevCriteria[]
 }

@@ -5,9 +5,10 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
     const ageGroup = searchParams.get("ageGroup")
+    const type = searchParams.get("type") || "INPUT"
     
     const areas = await (prisma as any).preschoolDevArea.findMany({
-      where: { status: "ACTIVE" },
+      where: { status: "ACTIVE", type },
       include: {
         criteria: {
           where: {
@@ -31,11 +32,11 @@ export async function POST(req: NextRequest) {
     const { action } = body
 
     if (action === "CREATE_AREA") {
-      const { code, name, description, color } = body
+      const { code, name, description, color, type } = body
       if (!code || !name) return NextResponse.json({ error: "Cần nhập Mã và Tên" }, { status: 400 })
-      const count = await (prisma as any).preschoolDevArea.count()
+      const count = await (prisma as any).preschoolDevArea.count({ where: { type: type || "INPUT" } })
       const area = await (prisma as any).preschoolDevArea.create({
-        data: { code, name, description: description || null, color: color || null, sortOrder: count }
+        data: { code, name, description: description || null, color: color || null, type: type || "INPUT", sortOrder: count }
       })
       return NextResponse.json(area)
     }
