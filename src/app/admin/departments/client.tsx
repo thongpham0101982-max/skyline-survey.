@@ -6,6 +6,7 @@ export default function DepartmentsClient() {
   const [departments, setDepartments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [filterBlock, setFilterBlock] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   
   const [isOpen, setIsOpen] = useState(false);
@@ -55,7 +56,16 @@ export default function DepartmentsClient() {
     fetchDepartments();
   };
 
-  const filtered = departments.filter(d => d.name.toLowerCase().includes(search.toLowerCase()) || d.code.toLowerCase().includes(search.toLowerCase()));
+  const filtered = departments.filter(d => {
+    let match = true;
+    if (search) {
+      match = match && (d.name.toLowerCase().includes(search.toLowerCase()) || d.code.toLowerCase().includes(search.toLowerCase()));
+    }
+    if (filterBlock) {
+      match = match && d.blockCM === filterBlock;
+    }
+    return match;
+  });
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -71,10 +81,19 @@ export default function DepartmentsClient() {
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-          <div className="relative w-80">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Tìm theo mã hoặc tên..." className="w-full pl-9 pr-4 py-2 rounded-xl text-sm border focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all" />
+        <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-wrap gap-3 justify-between items-center">
+          <div className="flex flex-wrap gap-3 items-center">
+            <div className="relative w-80">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Tìm theo mã hoặc tên..." className="w-full pl-9 pr-4 py-2 rounded-xl text-sm border focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all" />
+            </div>
+            <select value={filterBlock} onChange={e => setFilterBlock(e.target.value)} className="w-48 px-4 py-2 rounded-xl text-sm border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all bg-white cursor-pointer text-slate-600 font-medium">
+              <option value="">-- Tất cả Khối CM --</option>
+              <option value="Mầm Non">Mầm Non</option>
+              <option value="Phổ thông">Phổ thông</option>
+              <option value="Điều hành">Điều hành</option>
+              <option value="Hỗ trợ người học">Hỗ trợ người học</option>
+            </select>
           </div>
           {selectedIds.length > 0 && <button onClick={handleDeleteMany} className="px-4 py-2 bg-red-500 text-white rounded-xl font-semibold text-sm flex items-center gap-2 hover:bg-red-600"><Trash2 className="w-4 h-4"/> Xóa {selectedIds.length} đã chọn</button>}
         </div>
