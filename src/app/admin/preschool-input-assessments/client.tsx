@@ -120,6 +120,10 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   };
 
   const [tab, setTab] = useState("periods");
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [isInvitation, setIsInvitation] = useState(true);
+  const [selectedReportStudent, setSelectedReportStudent] = useState<any>(null);
+  const [mockPreviewStudent, setMockPreviewStudent] = useState<any>(null);
 
   // Đánh giá phát triển
   const [devTab, setDevTab] = useState<"assess" | "xetDuyet" | "manage" | "dgkqHocThu" | "xuatThuChucMung">("assess");
@@ -2472,6 +2476,13 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                                        title="Xem kết quả"
                                      >
                                        <Eye className="w-3.5 h-3.5" /> Xem kết quả
+                                     </button>
+                                     <button
+                                       onClick={() => { setSelectedReportStudent(s); setIsInvitation(true); setIsPrintModalOpen(true); }}
+                                       className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-black text-indigo-700 bg-indigo-50 hover:bg-indigo-600 hover:text-white rounded-xl border border-indigo-100 transition-all shadow-sm"
+                                       title="Xuất Thư mời"
+                                     >
+                                       <Mail className="w-3.5 h-3.5" /> Xuất Thư mời
                                      </button>
                                      <button
                                        disabled={sendingEmailId === s.id}
