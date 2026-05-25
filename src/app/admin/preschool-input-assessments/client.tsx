@@ -382,7 +382,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   }, [cPeriodId, cBatchId]);
 
   useEffect(() => {
-    if (tab === "devAssess" && (devTab === "assess" || devTab === "xetDuyet")) {
+    if (tab === "devAssess" && (devTab === "assess" || devTab === "xetDuyet" || devTab === "dgkqHocThu")) {
       fetchStudentSummaries();
     }
   }, [tab, devTab, fetchStudentSummaries]);
