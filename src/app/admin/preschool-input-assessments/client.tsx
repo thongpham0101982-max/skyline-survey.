@@ -5,7 +5,7 @@ import {
   Baby, Clock, Settings, Users, BarChart3, Calendar,
   Plus, Trash2, Edit2, Search, RefreshCw, ChevronDown, ChevronUp,
   X, CheckCircle, AlertCircle, Download, Upload, Star, Heart, Sparkles, UserCheck, Eye, Send, ClipboardList
-} from "lucide-react"
+, Mail} from "lucide-react"
 
 interface Period { id: string; code: string; name: string; status: string; startDate?: string; endDate?: string; description?: string; assignedUserId?: string; surveyType?: string; batches: Batch[] }
 interface Batch { id: string; periodId: string; batchNumber: number; name: string; startDate: string; endDate: string; status: string; campusId?: string; assignedUserId?: string }
@@ -3143,6 +3143,1470 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
           </Field>
         </div>
       </Modal>
+
+      {/* PRINT MODAL */}
+      {isPrintModalOpen && selectedReportStudent && (
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setIsPrintModalOpen(false);
+              setMockPreviewStudent(null);
+            }
+          }}
+          className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto no-print-backdrop cursor-pointer"
+        >
+<style>{`
+
+              /* html2canvas grid/flex gap polyfill */
+              .print-page .flex-col > div {
+                margin-bottom: 6px !important;
+              }
+              .print-page .flex-col > div:last-child {
+                margin-bottom: 0 !important;
+              }
+              .print-page .flex-row > div {
+                padding-right: 16px !important;
+              }
+              .print-page .flex-row > div:last-child {
+                padding-right: 0 !important;
+              }
+
+
+              .print-watermark {
+                    display: block !important;
+                    position: absolute !important;
+                    top: 22% !important;
+                    left: 10% !important;
+                    transform: none !important;
+                    width: 80% !important;
+                    height: auto !important;
+                    opacity: 0.08 !important;
+                    z-index: 0 !important;
+                    pointer-events: none !important;
+              }
+
+            /* FORCE EXPLICIT A4 PORTRAIT CONFIGURATION */
+            @page { 
+              size: A4 portrait; 
+              margin: 0mm; 
+            }
+            
+            .print-page::before {
+              content: "";
+              position: absolute;
+              pointer-events: none;
+              background-image: url('${null || "data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\" fill=\"%23007A87\"><path d=\"M10,80 Q50,40 90,20 Q60,50 10,80 Z\"/><path d=\"M30,80 Q60,55 90,35 Q65,60 30,80 Z\"/></svg>"}');
+              background-repeat: no-repeat;
+              background-position: center;
+              background-size: contain;
+              opacity: ${null ? '0.45' : '0.2'};
+              top: 50%;
+              left: 50%;
+              width: 80%;
+              height: 80%;
+              transform: translate(-50%, -50%) ${null ? '' : 'rotate(-15deg)'};
+            }
+
+            /* SCREEN SIMULATION ONLY */
+            @media screen {
+              /* Anchor scrolling at the top to prevent Chrome Flexbox negative overflow cutoff */
+              #print-body-scroll-wrapper {
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                justify-content: flex-start !important;
+              }
+              
+              /* Zoom out the simulated pages so they fit completely on screen without scrolling */
+              #print-main-container {
+                zoom: 0.65;
+                -moz-transform: scale(0.65);
+                -moz-transform-origin: top center;
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                gap: 32px !important;
+                width: 100% !important;
+                margin: 0 auto !important;
+              }
+              
+              #print-letter-area, .print-page {
+                width: 210mm !important;
+                height: 297mm !important; /* Locked exact physical A4 height on screen! */
+                min-height: 297mm !important;
+                max-height: 297mm !important;
+                margin: 0 auto !important;
+                padding: 12.7mm 15mm 48mm 15mm !important; /* Reserved 28mm bottom zone for pinned absolute footer! */
+                flex-shrink: 0 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: flex-start !important; /* Flex content flows naturally to the reserved zone */
+                overflow: hidden !important;
+                box-sizing: border-box !important;
+                background: white !important;
+                font-family: "Times New Roman", Times, serif !important;
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+                position: relative !important;
+              }
+              
+              /* DEFINITIVE ABSOLUTE FOOTER ANCHOR FOR SCREEN AND PRINT */
+              .print-footer {
+                position: absolute !important;
+                bottom: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                padding-left: 15mm !important;
+                padding-right: 15mm !important;
+                box-sizing: border-box !important;
+                height: 28mm !important;
+                margin-bottom: 0 !important;
+                margin-top: 0 !important;
+                box-sizing: border-box !important;
+                background: transparent !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+                z-index: 9999 !important;
+              }
+              
+              /* Sync typographic rendering to match high-fidelity print view on screen */
+              .print-page p, #print-letter-area p {
+                font-size: 15px !important;
+                line-height: 1.85 !important;
+                text-align: justify !important;
+                text-justify: inter-word !important;
+              }
+              .print-page h2, #print-letter-area h2 {
+                font-size: 22px !important;
+                text-align: center !important;
+                margin-top: 16px !important;
+                margin-bottom: 16px !important;
+              }
+              .print-page img[alt="Logo"] {
+                max-height: 40px !important;
+                object-fit: contain !important;
+              }
+              .print-page img[alt="Signature"] {
+                max-height: 64px !important;
+                object-fit: contain !important;
+              }
+              .print-page img[alt="Footer Print"] {
+                width: 100% !important;
+                max-height: 100px !important;
+                object-fit: contain !important;
+              }
+              .print-page .grid-cols-12 p, .print-page .grid p {
+                font-size: 10px !important;
+              }
+              .print-page .grid-cols-12 .font-bold {
+                font-size: 10.5px !important;
+              }
+            }
+
+            /* PRINT OUTPUT CONSTRAINTS */
+            @media print {
+              /* ----------------- NATIVE PRINT FIXES ----------------- */
+              #print-main-container {
+                zoom: 1 !important;
+                -moz-transform: none !important;
+                transform: none !important;
+                display: block !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                position: relative !important;
+              }
+              
+              .print-page {
+                width: 210mm !important;
+                height: 297mm !important;
+                min-height: 297mm !important;
+                max-height: 297mm !important;
+                margin: 0 !important; /* MUST BE 0 to avoid Chrome auto-centering */
+                padding: 15mm 15mm 30mm 20mm !important;
+                box-shadow: none !important;
+                border: none !important;
+                display: block !important;
+                position: relative !important;
+                page-break-after: always !important;
+                break-after: page !important;
+                background: white !important;
+              }
+              
+              /* Force all footers to anchor to the very bottom of the page */
+              .print-footer {
+                position: absolute !important;
+                bottom: 8mm !important;
+                left: 0 !important;
+                right: 0 !important;
+                width: 100% !important;
+                padding-left: 15mm !important;
+                padding-right: 15mm !important;
+                box-sizing: border-box !important;
+              }
+              
+              /* Watermark */
+              
+              
+              
+              .print-page:last-child {
+                page-break-after: auto !important;
+                break-after: auto !important;
+              }
+
+
+              @page {
+                size: A4 portrait;
+                margin: 0mm;
+              }
+              /* USER MANDATED HTML/BODY RESET WITH ZERO FIXED HEIGHTS & FIT TO PRINT BOUNDS */
+              html, body {
+                width: 100% !important;
+                height: auto !important;
+                 overflow: visible !important;
+                min-height: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                font-family: "Times New Roman", Times, serif !important;
+                background: white !important;
+                overflow: visible !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
+              }
+              
+              /* 1. DISABLE ALL ANIMATIONS AND UNIFY FONT TYPE */
+              *, *::before, *::after {
+                animation: none !important;
+                transition: none !important;
+                animation-duration: 0s !important;
+                transition-duration: 0s !important;
+                box-sizing: border-box !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
+                font-family: "Times New Roman", Times, serif !important;
+              }
+              
+              body * {
+                visibility: hidden !important;
+              }
+              
+              /* 2. NEUTRALIZE LAYOUT ANCESTORS TO UNBLOCK MULTI-PAGE FLOW & ENFORCE (0,0) ANCHORING */
+              html, body, body *:has(.no-print-backdrop) {
+                position: static !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: auto !important;
+                transform: none !important;
+                overflow: visible !important;
+                height: auto !important;
+                max-height: none !important;
+              }
+              
+              /* 2. TELEPORT TO TOP TO ENSURE ZERO-OFFSET ANCHORING */
+              .no-print-backdrop {
+                visibility: visible !important;
+                opacity: 1 !important;
+                transform: none !important;
+                overflow: visible !important;
+                max-height: none !important;
+                max-width: none !important;
+                box-shadow: none !important;
+                border: none !important;
+                position: absolute !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100% !important;
+                display: block !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                z-index: 999999999 !important;
+                background: transparent !important;
+                backdrop-filter: none !important;
+              }
+              .no-print-backdrop > div {
+                visibility: visible !important;
+                opacity: 1 !important;
+                transform: none !important;
+                overflow: visible !important;
+                max-height: none !important;
+                max-width: none !important;
+                box-shadow: none !important;
+                border: none !important;
+                position: relative !important;
+                display: block !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: transparent !important;
+              }
+              
+              /* Ensure descendants that ARE NOT manually excluded also become visible */
+              #print-main-container, #print-main-container * {
+                visibility: visible !important;
+              }
+              
+              /* 4. HIDE THE HEADER CONTROLS MANUALLY */
+              .no-print-backdrop .no-print, .no-print-backdrop .no-print * {
+                display: none !important;
+                visibility: hidden !important;
+              }
+              
+              /* 4.5 UNCLOG WRAPPER ELEMENT HIERARCHIES */
+              #print-modal-inner-wrapper {
+                display: block !important;
+                width: 100% !important;
+                max-width: none !important;
+                height: auto !important;
+                max-height: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: visible !important;
+                transform: none !important;
+                animation: none !important;
+                box-shadow: none !important;
+                border: none !important;
+                background: transparent !important;
+              }
+              #print-body-scroll-wrapper {
+                display: block !important;
+                width: 100% !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                max-height: none !important;
+                height: auto !important;
+                overflow: visible !important;
+                background: transparent !important;
+                box-shadow: none !important;
+              }
+              
+              /* 5. RESTORE SEQUENTIAL FLOW: STACK MULTIPLE PAGES VERTICALLY WITHOUT OVERLAP */
+              #print-main-container {
+                position: relative !important;
+                display: block !important;
+                width: 100% !important;
+                height: auto !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                z-index: 999999999 !important;
+                background: transparent !important;
+                transform: none !important;
+              }
+              
+              /* USER MANDATED FLEX CONTAINER WITHOUT ANY HEIGHTS */
+              .print-page, #print-letter-area {
+                width: 100% !important; /* FLUID FULL BLEED PAPER WIDTH - REMOVES SIDE GAPS */
+                height: 297mm !important; /* PRESERVE A4 TALL CONSTRICTOR */
+                min-height: 297mm !important;
+                max-height: 297mm !important;
+                margin: 0 !important;    /* STRICT 0 OFFSET BOUNDS */
+                box-shadow: none !important;
+                border: none !important;
+                /* PHYSICAL PADDING: Top: 12.7mm for Header, Right: 15mm, Bottom Safety: 48mm, Left: 15mm */
+                padding: 12.7mm 15mm 48mm 15mm !important; 
+                overflow: hidden !important;
+                box-sizing: border-box !important;
+                
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: flex-start !important;
+                
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                page-break-after: avoid !important;
+                break-after: avoid !important;
+                position: relative !important;
+                background: white !important;
+              }
+              
+              /* DEFINITIVE ABSOLUTE PRINT FOOTER PIN FOR 297mm A4 SHEETS */
+              .print-page .print-footer, #print-letter-area .print-footer {
+                position: absolute !important;
+                bottom: 0 !important;     /* ABSOLUTE GROUND ZERO - ZERO GAPS AT THE BOTTOM */
+                left: 0 !important;        /* ABSOLUTE LEFT BOUND */
+                right: 0 !important;       /* ABSOLUTE RIGHT BOUND */
+                height: 38mm !important;   /* Slightly taller bounds including buffer */
+                
+                /* Safety buffer for interior text elements while supporting full bleed checkmark */
+                padding-left: 15mm !important; 
+                padding-right: 15mm !important;
+                padding-bottom: 8mm !important; /* Internal physical buffer from absolute paper edge */
+                
+                margin-top: 0 !important;
+                margin-bottom: 0 !important;
+                box-sizing: border-box !important;
+                background: transparent !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: flex-end !important; /* Push elements to bottom buffer */
+                z-index: 9999 !important;
+              }
+              
+              /* USER MANDATED CONTENT TYPOGRAPHY RULES */
+              .print-page p, #print-letter-area p, .print-page .space-y-2\.5 p, .print-page .space-y-3 p, .print-page .space-y-6 p {
+                text-align: justify !important;
+                text-justify: inter-word !important;
+                line-height: 1.45 !important; /* Admin Standards: 1.45 */
+                font-size: 13.5pt !important; /* Admin Standards: 13.5pt */
+                font-family: "Times New Roman", Times, serif !important;
+                word-wrap: break-word !important;
+                overflow-wrap: break-word !important;
+              }
+              
+              .print-page h2, #print-letter-area h2 {
+                text-align: center !important;
+                text-transform: uppercase !important;
+                color: #0f172a !important;
+                font-family: "Times New Roman", Times, serif !important;
+                font-size: 22px !important; /* Stand-out centered title size */
+                font-weight: bold !important;
+                margin-top: 16px !important;
+                margin-bottom: 16px !important;
+                letter-spacing: 0.5px !important;
+              }
+              
+              .print-page:last-child {
+                page-break-after: avoid !important;
+                break-after: auto !important;
+              }
+              
+              /* Guarantee Page 2 starts on a fresh physical sheet during print, WITHOUT blank first page */
+              .print-page + .print-page {
+                page-break-before: always !important;
+                break-before: page !important;
+              }
+              
+              /* Enforce scaling and aesthetics dynamically for elements */
+              .print-page img[alt="Logo"] {
+                max-height: 40px !important; /* Increased for high clarity */
+                object-fit: contain !important;
+              }
+              
+              .print-page img[alt="Signature"] {
+                max-height: 64px !important; /* Large balanced signature */
+                object-fit: contain !important;
+              }
+              
+              .print-page img[alt="Footer Print"] {
+                width: 100% !important;
+                max-height: 100px !important; /* Highly legible footer image */
+                object-fit: contain !important;
+              }
+              
+              /* Custom styling for nested manual footer text content to make it highly readable */
+              .print-page .grid-cols-12 p, .print-page .grid p {
+                font-size: 10px !important;
+                line-height: 1.4 !important;
+              }
+              .print-page .grid-cols-12 .font-bold {
+                font-size: 10.5px !important;
+              }
+              
+              .no-print {
+                display: none !important;
+              }
+            }
+          `}</style>
+          
+          <div 
+            id="print-modal-inner-wrapper" 
+            onClick={(e) => e.stopPropagation()}
+            className="relative bg-white rounded-3xl shadow-2xl flex flex-col w-[210mm] shrink-0 max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 cursor-default"
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50 no-print">
+              <div className="flex items-center gap-2">
+                {isInvitation ? <Mail className="w-5 h-5 text-indigo-600"/> : <GraduationCap className="w-5 h-5 text-indigo-600"/>}
+                <h3 className="text-base font-black text-slate-800">{isInvitation ? "Mẫu Thư mời khảo sát" : false ? "Bản Cam kết học tập" : "Mẫu Thư Chúc mừng"}</h3>
+              </div>
+              <div className="flex items-center gap-4">
+                <button 
+                  id="export-pdf-btn"
+                  onClick={async () => {
+                    const printArea = document.getElementById('print-main-container');
+                    if (!printArea) return;
+                    
+                    const academicYearStr = selectedReportStudent?.academicYear?.substring(0, 4) || new Date().getFullYear().toString();
+                    const monthStr = "T" + String(new Date().getMonth() + 1).padStart(2, '0');
+                    const studentName = (selectedReportStudent?.fullName || "").replace(/\s+/g, '_');
+                    const prefix = isInvitation ? "Thu_Moi_Khao_Sat" : false ? "Ban_Cam_Ket" : "Thu_Chuc_Mung";
+                    const pdfFileName = prefix + "_" + studentName + ".pdf";
+                    
+                    const btn = document.getElementById('export-pdf-btn') as HTMLButtonElement | null;
+                    if(btn) {
+                      btn.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Đang tạo PDF...';
+                      btn.disabled = true;
+                    }
+
+                                        try {
+                      // THE ULTIMATE ROBUST SOLUTION: Native Chrome Print with our pixel-perfect A4 CSS Overrides!
+                      // This completely avoids html2pdf.js memory leaks, crashes on modern colors (lab/oklch), CORS issues, and page deformation!
+                      const originalTitle = document.title;
+                      // Clean up filename for PDF naming
+                      document.title = pdfFileName.replace(/\.pdf$/, '');
+                      
+                      const savedScrollY = window.scrollY;
+                      window.scrollTo(0, 0);
+                      
+                      // Allow a microtask for rendering before print
+                      setTimeout(() => {
+                        window.print();
+                        window.scrollTo(0, savedScrollY);
+                        // Restore original title shortly after
+                        setTimeout(() => {
+                          document.title = originalTitle;
+                        }, 1000);
+                      }, 100);
+                    } catch (err: any) {
+                      alert('Lỗi khi gọi lệnh in: ' + (err.message || err));
+                      console.error(err);
+                    } finally {
+                      if(btn) {
+                        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download w-4 h-4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Lưu File (PDF)';
+                        btn.disabled = false;
+                      }
+                    }
+                  }}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md shadow-emerald-100 flex items-center gap-2 transition-all"
+                >
+                  <Download className="w-4 h-4" />
+                  Lưu File (PDF)
+                </button>
+                
+                <button type="button"
+                  onClick={() => { setIsPrintModalOpen(false); setMockPreviewStudent(null); }}
+                  className="w-8 h-8 flex items-center justify-center rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 shadow-sm transition-all cursor-pointer"
+                >
+                  <X className="w-4 h-4 pointer-events-none"/>
+                </button>
+              </div>
+            </div>
+            
+            {/* Modal Body / Paper Container */}
+            <div id="print-body-scroll-wrapper" className="overflow-y-auto p-4 bg-slate-100 flex justify-center max-h-[80vh]">
+              <div id="print-main-container" className="block relative bg-slate-200">
+                <div 
+                  id="print-letter-area" 
+                  className="bg-white shadow-lg border border-slate-200 relative text-slate-800 text-sm leading-relaxed print-page"
+                  style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "297mm", padding: "12.7mm 15mm 48mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "block", overflow: "hidden" }}
+              >
+                {/* Print Watermark */}
+                <img crossOrigin={(null || "").startsWith("data:") ? undefined : "anonymous"}  className="print-watermark" src={null || ""} alt="Watermark" style={{ display: "block", position: "absolute", top: "22%", left: "10%", transform: "none", width: "80%", height: "auto", opacity: 0.08, zIndex: 0, pointerEvents: "none" }} />
+                {/* Top Logo and Header */}
+                <div className="flex flex-col relative z-10 w-full">
+                  <div className="flex flex-col gap-1 border-b pb-2 mb-3">
+                    <div className="flex items-center justify-between">
+                      {null ? (
+                        <img crossOrigin={({}).logo?.startsWith("data:") ? undefined : "anonymous"}  src={({}).logo} alt="Logo" className="h-12 object-contain" />
+                      ) : (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-2xl font-black tracking-tight text-teal-600" style={{ fontFamily: "Arial, sans-serif" }}>SKY-LINE</span>
+                          <svg className="w-6 h-6 text-teal-500" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-left">
+                      <h4 className="font-extrabold text-sm uppercase tracking-wider text-slate-800" style={{ fontFamily: "Arial, sans-serif" }}>{"HỆ THỐNG GIÁO DỤC SKY-LINE"}</h4>
+                    </div>
+                  </div>
+
+                  {/* Letter Title */}
+                  <div className="text-center my-4">
+                    <h2 className="text-2xl font-black tracking-widest text-indigo-950 uppercase mb-2" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+                      {isInvitation ? (null || "THƯ MỜI") : false ? (null || "BẢN CAM KẾT HỌC TẬP") : (null || "THƯ CHÚC MỪNG")}
+                    </h2>
+                  </div>
+
+                  {/* Greeting */}
+                  <p className="text-[16px] italic mb-3 text-slate-800">
+                    {isInvitation ? (
+                      <>Kính gửi Quý Phụ huynh và em <strong className="font-black not-italic text-slate-900">{selectedReportStudent.fullName}</strong>,</>
+                    ) : (
+                      <>Thân gửi em <strong className="font-black not-italic text-slate-900">{selectedReportStudent.fullName}</strong>,</>
+                    )}
+                  </p>
+
+                  {/* Body Paragraphs */}
+                  {isInvitation ? (
+                    null ? (
+                      <div className="space-y-3 text-justify text-slate-800 font-serif" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: "13.5pt", lineHeight: "1.45", textAlign: "justify" }}>
+                        {(()=>"")(({}).content, selectedReportStudent || selectedReportStudent).split('\n').filter(Boolean).map((para, idx) => (
+                          <p key={idx} className="" style={{ textIndent: "1cm" }}>{para}</p>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="space-y-6 text-justify text-[15px] leading-relaxed">
+                        <p className="" style={{ textIndent: "1cm" }}>
+                          Hội đồng Tuyển sinh Hệ thống Giáo dục Sky-Line trân trọng gửi lời chào và lời chúc sức khỏe, an khang đến Quý phụ huynh cùng gia đình.
+                        </p>
+                        
+                        <p className="" style={{ textIndent: "1cm" }}>
+                          Nhằm tạo điều kiện tốt nhất để nhà trường hiểu rõ hơn về năng lực tư duy, ngôn ngữ cũng như thiên hướng phát triển tự nhiên của học sinh, qua đó xây dựng lộ trình rèn luyện tối ưu nhất, chúng tôi trân trọng kính mời Quý phụ huynh cùng học sinh tham gia buổi <strong className="font-bold">Khảo sát Năng lực Đầu vào</strong> hệ <strong className="font-bold">{selectedReportStudent.surveyFormType || "Hội nhập Global"}</strong> năm học <strong className="font-bold">2026-2027</strong>.
+                        </p>
+                        
+                        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-2 text-sm text-slate-700 ml-4 font-sans leading-relaxed shadow-inner">
+                          <p><strong>• Thời gian khảo sát:</strong> Theo lịch hẹn cụ thể được sắp xếp từ Ban Tuyển sinh.</p>
+                          
+                          <p><strong>• Nội dung khảo sát:</strong> Đánh giá tư duy ngôn ngữ, tư duy logic tự nhiên và khả năng tương tác xã hội phù hợp theo độ tuổi.</p>
+                        </div>
+                        
+                        <p className="" style={{ textIndent: "1cm" }}>
+                          Sự hiện diện và đồng hành của Quý phụ huynh cùng học sinh là niềm hân hạnh lớn cho Sky-Line, giúp nhà trường có sự chuẩn bị chu đáo nhất đón chào các em gia nhập mái trường hạnh phúc của chúng ta.
+                        </p>
+                        
+                        <p className="italic text-slate-600">
+                          Trân trọng kính mời Quý phụ huynh và các em học sinh!
+                        </p>
+                      </div>
+                    )
+                  ) : false ? (
+                    <div className="space-y-3 text-justify text-slate-800 font-serif" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: "13.5pt", lineHeight: "1.45", textAlign: "justify" }}>
+                      {(()=>"")(
+                        null || (()=>"")("cam_ket_hoc_tap"),
+                        selectedReportStudent
+                      ).split('\n').filter(Boolean).map((para, idx) => {
+                        const isList = /^[\d•\-*]+/.test(para.trim());
+                        return (
+                          <p key={idx} className={isList ? "pl-4" : ""} style={isList ? {} : { textIndent: "1cm" }}>
+                            {para}
+                          </p>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="space-y-3 text-justify text-slate-800 font-serif" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: "13.5pt", lineHeight: "1.45", textAlign: "justify" }}>
+                      {(()=>"")(
+                        null || (()=>"")("thu_chuc_mung"),
+                        selectedReportStudent
+                      ).split('\n').filter(Boolean).map((para, idx) => (
+                        <p key={idx} className="" style={{ textIndent: "1cm" }}>
+                          {para}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+
+
+                {/* Bottom Signature Area */}
+                {false ? (
+                  <div className="grid grid-cols-2 gap-8 mt-6 text-center">
+                    <div className="flex flex-col items-center">
+                      <p className="font-bold uppercase text-slate-700 text-xs tracking-wider">ĐẠI DIỆN GIA ĐÌNH</p>
+                      <p className="italic text-[10px] text-slate-400 mt-1">(Ký và ghi rõ họ tên)</p>
+                      <div className="h-16 flex items-end justify-center">
+                        <span className="text-slate-300 italic text-xs">Ký tên</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-col items-center">
+                      <p className="italic text-slate-500 mb-1 text-xs">{""}</p>
+                      <p className="font-bold uppercase text-indigo-950 text-xs tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
+                      <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-4">GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {""}</p>
+                      
+                      <div className="h-16 flex items-center justify-center">
+                        {null ? (
+                          <img crossOrigin={({}).signature?.startsWith("data:") ? undefined : "anonymous"}  src={({}).signature} alt="Signature" className="max-h-full object-contain" />
+                        ) : (
+                          <span className="font-serif italic text-xl text-slate-400 font-light tracking-widest opacity-60" style={{ fontFamily: "'Brush Script MT', cursive, sans-serif" }}>
+                            {selectedReportStudent?.signatureName || null || "Đỗ Quang Trung"}
+                          </span>
+                        )}
+                      </div>
+                      
+                      <p className="font-bold text-slate-700 mt-2 text-sm">
+                        {selectedReportStudent?.signatureName || null || "Đỗ Quang Trung"}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-end mt-8 pr-4">
+                    <div className="flex flex-col items-center text-center" style={{ minWidth: "240px" }}>
+                      <p className="italic text-slate-500 mb-1">{""}</p>
+                      <p className="font-bold uppercase text-indigo-950 text-xs tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
+                      {isInvitation && !null ? (
+                        <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-6">TRƯỞNG BAN TUYỂN SINH SKY-LINE</p>
+                      ) : (
+                        <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-6">GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {""}</p>
+                      )}
+                      
+                      <div className="h-16 flex items-center justify-center">
+                        {null ? (
+                          <img crossOrigin="anonymous"  src={({}).signature} alt="Signature" className="max-h-full object-contain" />
+                        ) : isInvitation ? (
+                          <span className="font-serif italic text-xl text-slate-400 font-light tracking-widest opacity-60" style={{ fontFamily: "'Brush Script MT', cursive, sans-serif" }}>
+                            Ban Tuyển sinh
+                          </span>
+                        ) : (
+                          <span className="font-serif italic text-xl text-slate-400 font-light tracking-widest opacity-60" style={{ fontFamily: "'Brush Script MT', cursive, sans-serif" }}>
+                            {selectedReportStudent?.signatureName || null || "Đỗ Quang Trung"}
+                          </span>
+                        )}
+                      </div>
+                      
+                      <p className="font-bold text-slate-700 mt-2 text-sm">
+                        {selectedReportStudent?.signatureName || null || (isInvitation ? "Ban Tuyển sinh" : "Đỗ Quang Trung")}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                </div>
+
+                
+                
+                {/* Footer Contact */}
+                {null ? (
+                  <div className="border-t border-slate-200 pt-3 absolute z-10 w-full print-footer" style={{ bottom: "8mm", left: "0", right: "0", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box" }}>
+                    <img crossOrigin={({}).footer?.startsWith("data:") ? undefined : "anonymous"}  src={({}).footer} alt="Footer Print" className="w-full" style={{ maxHeight: "100px", objectFit: "contain" }} />
+                  </div>
+                ) : (
+                  <div className="w-full pt-1 mt-4 absolute z-10 print-footer" style={{ bottom: "8mm", left: "0", right: "0", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}>
+                    {/* High-fidelity Header Title & Line */}
+                    <div className="flex items-center gap-2 mb-2.5 w-full">
+                      <span className="font-bold text-[#00A6A9] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
+                      <div className="flex-grow border-t border-[#00A6A9]/70 h-0 mt-0.5"></div>
+                      <span className="font-semibold text-[#00A6A9] whitespace-nowrap lowercase text-[11px]">www.skylineschool.edu.vn</span>
+                    </div>
+                    
+                    {/* Information Grid */}
+                    <div className="flex flex-row justify-between w-full relative text-[9px]">
+                      {/* Left Column (3 branches) */}
+                      <div className="w-[30%] flex flex-col gap-1.5 text-left">
+                        <div>
+                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">SKY-LINE Riverside</p>
+                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Lô A2.4 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>
+                        </div>
+                        <div>
+                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">SKY-LINE Central</p>
+                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
+                        </div>
+                        <div>
+                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">SKY-LINE Global</p>
+                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Lô A2 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>
+                        </div>
+                      </div>
+
+                      {/* Middle Column (3 branches) */}
+                      <div className="w-[30%] flex flex-col gap-1.5 text-left">
+                        <div>
+                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">SKY-LINE Beach</p>
+                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 199 Trần Anh Tông, P. Thanh Khê, TP. Đà Nẵng</p>
+                        </div>
+                        <div>
+                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">SKY-LINE Hill</p>
+                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Khối Hà My Đông A, P. Điện Bàn Đông, TP. Đà Nẵng</p>
+                        </div>
+                        <div>
+                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">Trung tâm sống thành công - SLS</p>
+                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
+                        </div>
+                      </div>
+
+                      {/* Right Column (Contacts) */}
+                      <div className="w-[30%] flex items-center justify-end gap-2 text-right self-center">
+                        <div className="w-4.5 h-4.5 rounded-full border border-slate-800 flex items-center justify-center flex-shrink-0 p-[3.5px] scale-[0.85]">
+                          <Phone className="w-full h-full text-slate-800" fill="currentColor" />
+                        </div>
+                        <div className="flex flex-col text-[8.5px] font-semibold text-slate-800 tracking-tight leading-tight">
+                          <p>(+84.236) 378 7777</p>
+                          <p>(+84.236) 356 8777</p>
+                          <p>(+84.236) 378 7779</p>
+                          <p>(+84.235) 375 1777</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* The Large Elegant Teal Checkmark Vector positioned absolute over the right corner */}
+                    <div className="absolute right-[-5px] top-[2px] w-16 h-12 opacity-100 pointer-events-none flex items-center justify-center text-[#00A6A9]">
+                      <svg viewBox="0 0 120 60" className="w-full h-full fill-current" style={{ filter: "drop-shadow(0px 1px 1px rgba(0,166,169,0.1))" }}>
+                        <path d="M 8 26 C 24 32, 50 52, 62 60 C 78 36, 102 16, 118 3 C 95 16, 76 44, 62 62 C 48 46, 25 32, 8 26 Z" />
+                      </svg>
+                    </div>
+                  </div>
+                )}
+              
+
+                </div>
+                {([]) && ([]).length > 0 && (
+                  <div 
+                    className="bg-white shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed print-page mt-8"
+                    style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "297mm", padding: "12.7mm 15mm 48mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "block", overflow: "hidden" }}
+                  >
+                    <div className="flex flex-col relative z-10 w-full">
+                {/* Print Watermark */}
+                <img crossOrigin="anonymous"  className="print-watermark" src={null || ""} alt="Watermark" style={{ display: "block", position: "absolute", top: "22%", left: "10%", transform: "none", width: "80%", height: "auto", opacity: 0.08, zIndex: 0, pointerEvents: "none" }} />
+                {/* Top Logo and Header (Synchronized perfectly with Page 1) */}
+                      <div className="flex flex-col gap-1 border-b pb-2 mb-3">
+                        <div className="flex items-center justify-between">
+                          {null ? (
+                            <img crossOrigin={({}).logo?.startsWith("data:") ? undefined : "anonymous"}  src={({}).logo} alt="Logo" className="h-12 object-contain" />
+                          ) : (
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-2xl font-black tracking-tight text-teal-600" style={{ fontFamily: "Arial, sans-serif" }}>SKY-LINE</span>
+                              <svg className="w-6 h-6 text-teal-500" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                              </svg>
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-left">
+                          <h4 className="font-extrabold text-sm uppercase tracking-wider text-slate-800" style={{ fontFamily: "Arial, sans-serif" }}>{"HỆ THỐNG GIÁO DỤC SKY-LINE"}</h4>
+                        </div>
+                      </div>
+
+                      {/* Page Title */}
+                      <div className="text-center my-6">
+                        <h2 className="text-xl font-bold tracking-widest text-indigo-950 uppercase mb-4" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+                          DANH MỤC HỒ SƠ NHẬP HỌC
+                        </h2>
+                      </div>
+
+                      {/* Checklist Table (Redesigned 2-Column, Sharp Dark Borders) */}
+                      <div className="mt-4 overflow-hidden border border-slate-950">
+                        <table className="w-full border-collapse text-left text-[13px] text-slate-900" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+                          <thead>
+                            <tr className="bg-white border-b border-slate-950">
+                              <th className="px-3 py-2.5 font-bold border-r border-slate-950 text-center uppercase text-slate-950 w-16" style={{ borderRightWidth: '1px', borderColor: '#000' }}>STT</th>
+                              <th className="px-5 py-2.5 font-bold border-r border-slate-950 text-center uppercase text-slate-950" style={{ borderRightWidth: '1px', borderColor: '#000' }}>Tên hồ sơ</th>
+                              <th className="px-5 py-2.5 font-bold text-center uppercase text-slate-950 w-32">Số lượng</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {([]).map((item, idx) => (
+                              <tr key={item.id} className="border-b border-slate-950 last:border-b-0">
+                                <td className="px-3 py-2.5 border-r border-slate-950 text-center text-slate-900" style={{ borderRightWidth: '1px', borderColor: '#000' }}>{idx + 1}</td>
+                                <td className="px-5 py-2.5 border-r border-slate-950 font-medium text-slate-900" style={{ borderRightWidth: '1px', borderColor: '#000' }}>{item.name}</td>
+                                <td className="px-5 py-2.5 text-center text-slate-950 font-bold">{item.qty}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      <p className="mt-8 text-[13px] text-slate-950 font-bold text-left leading-relaxed" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+                        Quý phụ huynh vui lòng bổ sung hồ sơ thiếu (nếu có) trong vòng 10 ngày kể từ ngày nộp Hồ sơ.
+                      </p>
+                    </div>
+
+                    
+                    
+                    {/* Footer Contact */}
+                    {null ? (
+                      <div className="border-t border-slate-200 pt-3 absolute z-10 w-full print-footer" style={{ bottom: "8mm", left: "0", right: "0", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box" }}>
+                        <img crossOrigin={({}).footer?.startsWith("data:") ? undefined : "anonymous"}  src={({}).footer} alt="Footer Print" className="w-full" style={{ maxHeight: "100px", objectFit: "contain" }} />
+                      </div>
+                    ) : (
+                      <div className="w-full pt-1 mt-4 absolute z-10 print-footer" style={{ bottom: "8mm", left: "0", right: "0", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}>
+                    {/* High-fidelity Header Title & Line */}
+                    <div className="flex items-center gap-2 mb-2.5 w-full">
+                      <span className="font-bold text-[#00A6A9] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
+                      <div className="flex-grow border-t border-[#00A6A9]/70 h-0 mt-0.5"></div>
+                      <span className="font-semibold text-[#00A6A9] whitespace-nowrap lowercase text-[11px]">www.skylineschool.edu.vn</span>
+                    </div>
+                    
+                    {/* Information Grid */}
+                    <div className="flex flex-row justify-between w-full relative text-[9px]">
+                      {/* Left Column (3 branches) */}
+                      <div className="w-[30%] flex flex-col gap-1.5 text-left">
+                        <div>
+                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">SKY-LINE Riverside</p>
+                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Lô A2.4 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>
+                        </div>
+                        <div>
+                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">SKY-LINE Central</p>
+                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
+                        </div>
+                        <div>
+                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">SKY-LINE Global</p>
+                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Lô A2 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>
+                        </div>
+                      </div>
+
+                      {/* Middle Column (3 branches) */}
+                      <div className="w-[30%] flex flex-col gap-1.5 text-left">
+                        <div>
+                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">SKY-LINE Beach</p>
+                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 199 Trần Anh Tông, P. Thanh Khê, TP. Đà Nẵng</p>
+                        </div>
+                        <div>
+                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">SKY-LINE Hill</p>
+                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Khối Hà My Đông A, P. Điện Bàn Đông, TP. Đà Nẵng</p>
+                        </div>
+                        <div>
+                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">Trung tâm sống thành công - SLS</p>
+                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
+                        </div>
+                      </div>
+
+                      {/* Right Column (Contacts) */}
+                      <div className="w-[30%] flex items-center justify-end gap-2 text-right self-center">
+                        <div className="w-4.5 h-4.5 rounded-full border border-slate-800 flex items-center justify-center flex-shrink-0 p-[3.5px] scale-[0.85]">
+                          <Phone className="w-full h-full text-slate-800" fill="currentColor" />
+                        </div>
+                        <div className="flex flex-col text-[8.5px] font-semibold text-slate-800 tracking-tight leading-tight">
+                          <p>(+84.236) 378 7777</p>
+                          <p>(+84.236) 356 8777</p>
+                          <p>(+84.236) 378 7779</p>
+                          <p>(+84.235) 375 1777</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* The Large Elegant Teal Checkmark Vector positioned absolute over the right corner */}
+                    <div className="absolute right-[-5px] top-[2px] w-16 h-12 opacity-100 pointer-events-none flex items-center justify-center text-[#00A6A9]">
+                      <svg viewBox="0 0 120 60" className="w-full h-full fill-current" style={{ filter: "drop-shadow(0px 1px 1px rgba(0,166,169,0.1))" }}>
+                        <path d="M 8 26 C 24 32, 50 52, 62 60 C 78 36, 102 16, 118 3 C 95 16, 76 44, 62 62 C 48 46, 25 32, 8 26 Z" />
+                      </svg>
+                    </div>
+                  </div>
+                )}
+
+                {/* PAGE 3+: ASSESSMENT DETAILS (Specific for Child Development Standard) */}
+                {selectedReportStudent.scores && selectedReportStudent.scores.map((sc) => {
+                  const subject = sc.subject || {};
+                  const subName = (subject.name || "").toLowerCase().normalize("NFC");
+                  const subCode = (subject.code || "").toLowerCase();
+                  const isChildDev = subName.includes("chuẩn phát triển") || subCode.includes("cpt") || subCode.includes("tci");
+                  
+                  if (!isChildDev) return null;
+
+                  let scoreVals = [];
+                  try { if (sc.scores) { const parsed = JSON.parse(sc.scores); scoreVals = Array.isArray(parsed) ? parsed : [parsed]; } } catch { scoreVals = [sc.scores]; }
+                  
+                  let parsedCols = { scores: [] };
+                  try { if (subject.columnNames) { const parsed = JSON.parse(subject.columnNames); parsedCols = { scores: Array.isArray(parsed.scores) ? parsed.scores : [] }; } } catch {}
+
+                  const failedCriteria = scoreVals.map((v, idx) => v === "2" ? (parsedCols.scores[idx] || (isChildDev ? [
+    "Chỉ số 65. Có thói quen chào hỏi, cảm ơn, xin phép và xưng hô lễ phép với người lớn",
+    "Chỉ số 74. Tập trung chú ý thực hiện nhiệm vụ và hoạt động.",
+    "Chỉ số 16. Nhận biết về tên gọi, đặc điểm bên ngoài, giới tính, sở thích, điểm mạnh, điểm yếu của bản thân.",
+    "Chỉ số 14. Nhận ra tình huống nguy hiểm và biết cách xử lý phù hợp.",
+    "Chỉ số 33. Sử dụng lời nói, hành vi lịch sự trong giao tiếp.",
+    "Chỉ số 31. Nghe và phản hồi thông tin đơn giản.",
+    "Chỉ số 48. Gọi tên các ngày trong tuần theo thứ tự.",
+    "Chỉ số 47. Xác định được vị trí (trong, ngoài, trên, dưới, sau, phải, trái) của một vật so với một vật khác.",
+    "Chỉ số 51. Phân loại một số sự vật thành nhóm theo đặc điểm chung và gọi tên nhóm.",
+    "Chỉ số 45. Xác định một số hình phẳng và hình khối đơn giản trong cuộc sống xung quanh.",
+    "Chỉ số 42,43. Tách, gộp số lượng trong phạm vi 10; so sánh, thêm bớt số lượng trong phạm vi 10.",
+    "Chỉ số 38. Nhận biết và gọi tên chữ cái trong bảng chữ cái Tiếng Việt.",
+    "Chỉ số 41. Bắt chước hành vi “viết”",
+    "Chỉ số 9. Thực hiện các việc tự phục vụ không cần sự giúp đỡ.",
+    "Chỉ số 60. Thể hiện ý tưởng, cảm xúc của bản thân thông qua hát, vận động theo nhạc.",
+    "Chỉ số 61. Tô màu kín, không chờm ra ngoài đường viền các hình có chi tiết nhỏ."
+][idx] : ("Tiêu chí " + (idx + 1)))) : null).filter(Boolean);
+                  const skippedCriteria = scoreVals.map((v, idx) => v === "1" ? (parsedCols.scores[idx] || (isChildDev ? [
+    "Chỉ số 65. Có thói quen chào hỏi, cảm ơn, xin phép và xưng hô lễ phép với người lớn",
+    "Chỉ số 74. Tập trung chú ý thực hiện nhiệm vụ và hoạt động.",
+    "Chỉ số 16. Nhận biết về tên gọi, đặc điểm bên ngoài, giới tính, sở thích, điểm mạnh, điểm yếu của bản thân.",
+    "Chỉ số 14. Nhận ra tình huống nguy hiểm và biết cách xử lý phù hợp.",
+    "Chỉ số 33. Sử dụng lời nói, hành vi lịch sự trong giao tiếp.",
+    "Chỉ số 31. Nghe và phản hồi thông tin đơn giản.",
+    "Chỉ số 48. Gọi tên các ngày trong tuần theo thứ tự.",
+    "Chỉ số 47. Xác định được vị trí (trong, ngoài, trên, dưới, sau, phải, trái) của một vật so với một vật khác.",
+    "Chỉ số 51. Phân loại một số sự vật thành nhóm theo đặc điểm chung và gọi tên nhóm.",
+    "Chỉ số 45. Xác định một số hình phẳng và hình khối đơn giản trong cuộc sống xung quanh.",
+    "Chỉ số 42,43. Tách, gộp số lượng trong phạm vi 10; so sánh, thêm bớt số lượng trong phạm vi 10.",
+    "Chỉ số 38. Nhận biết và gọi tên chữ cái trong bảng chữ cái Tiếng Việt.",
+    "Chỉ số 41. Bắt chước hành vi “viết”",
+    "Chỉ số 9. Thực hiện các việc tự phục vụ không cần sự giúp đỡ.",
+    "Chỉ số 60. Thể hiện ý tưởng, cảm xúc của bản thân thông qua hát, vận động theo nhạc.",
+    "Chỉ số 61. Tô màu kín, không chờm ra ngoài đường viền các hình có chi tiết nhỏ."
+][idx] : ("Tiêu chí " + (idx + 1)))) : null).filter(Boolean);
+
+                  if (failedCriteria.length === 0 && skippedCriteria.length === 0) return null;
+
+                  return (
+                    <div 
+                      key={"assessment_page_" + sc.id}
+                      className="bg-white shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed print-page mt-8"
+                      style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "297mm", padding: "12.7mm 15mm 48mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "block", overflow: "hidden" }}
+                    >
+                      <div className="flex flex-col relative z-10 w-full">
+                        {/* Print Watermark */}
+                        <img crossOrigin={(null || "").startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={null || ""} alt="Watermark" style={{ display: "block", position: "absolute", top: "22%", left: "10%", transform: "none", width: "80%", height: "auto", opacity: 0.08, zIndex: 0, pointerEvents: "none" }} />
+                        
+                        {/* Top Logo and Header */}
+                        <div className="flex flex-col gap-1 border-b pb-2 mb-3">
+                          <div className="flex items-center justify-between">
+                            {null ? (
+                              <img crossOrigin={({}).logo?.startsWith("data:") ? undefined : "anonymous"} src={({}).logo} alt="Logo" className="h-12 object-contain" />
+                            ) : (
+                              <span className="text-2xl font-black tracking-tight text-teal-600" style={{ fontFamily: "Arial, sans-serif" }}>SKY-LINE</span>
+                            )}
+                          </div>
+                          <div className="text-left">
+                            <h4 className="font-extrabold text-sm uppercase tracking-wider text-slate-800" style={{ fontFamily: "Arial, sans-serif" }}>{"HỆ THỐNG GIÁO DỤC SKY-LINE"}</h4>
+                          </div>
+                        </div>
+
+                        <div className="text-center my-6">
+                          <h2 className="text-xl font-bold tracking-widest text-indigo-950 uppercase mb-2">CHI TIẾT ĐÁNH GIÁ</h2>
+                          <h3 className="text-lg font-bold text-slate-700 uppercase">{subject.name}</h3>
+                        </div>
+
+                        <div className="space-y-8 mt-4">
+                          {failedCriteria.length > 0 && (
+                            <div className="space-y-3">
+                              <h4 className="text-base font-bold text-rose-700 border-b border-rose-200 pb-1 uppercase tracking-wide">Các tiêu chí chưa đạt</h4>
+                              <ul className="space-y-2 list-none">
+                                {failedCriteria.map((name, i) => (
+                                  <li key={i} className="flex items-start gap-3 text-[14px]">
+                                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0"></span>
+                                    {name}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+
+                          {skippedCriteria.length > 0 && (
+                            <div className="space-y-3">
+                              <h4 className="text-base font-bold text-slate-600 border-b border-slate-200 pb-1 uppercase tracking-wide">Các tiêu chí chưa thực hiện</h4>
+                              <ul className="space-y-2 list-none">
+                                {skippedCriteria.map((name, i) => (
+                                  <li key={i} className="flex items-start gap-3 text-[14px]">
+                                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0"></span>
+                                    {name}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Footer Contact */}
+                      {null ? (
+                        <div className="border-t border-slate-200 pt-3 absolute z-10 w-full print-footer" style={{ bottom: "8mm", left: "0", right: "0", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box" }}>
+                          <img crossOrigin={({}).footer?.startsWith("data:") ? undefined : "anonymous"} src={({}).footer} alt="Footer Print" className="w-full" style={{ maxHeight: "100px", objectFit: "contain" }} />
+                        </div>
+                      ) : (
+                        <div className="w-full pt-1 mt-4 absolute z-10 print-footer" style={{ bottom: "8mm", left: "0", right: "0", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}>
+                          <div className="flex items-center gap-2 mb-2.5 w-full">
+                            <span className="font-bold text-[#00A6A9] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
+                            <div className="flex-grow border-t border-[#00A6A9]/70 h-0 mt-0.5"></div>
+                          </div>
+                          <div className="flex flex-row justify-between w-full relative text-[9px]">
+                            <div className="w-full text-center">
+                              <p className="text-[#555555] text-[8.5px]">www.skylineschool.edu.vn | Hotline: (+84.236) 378 7777</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+      {/* Email Modal Overlay */}
+                  {isEmailModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex justify-center items-center z-[150] p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-slate-200 animate-in fade-in zoom-in-95 duration-300">
+            {/* Header */}
+            <div className="bg-[#0c363f] p-6 text-white shrink-0 relative overflow-hidden border-b border-[#14b8a6]/10">
+              <div className="absolute top-0 right-0 p-8 opacity-10">
+                <Mail className="w-32 h-32 text-white" />
+              </div>
+              <div className="relative z-10 flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-emerald-400 shadow-inner">
+                    <Mail className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-black tracking-wide flex items-center gap-2 text-white">
+                      Gửi Báo cáo nhanh qua Email
+                    </h2>
+                    <p className="text-slate-300 text-xs mt-0.5 font-medium">Gửi trực tiếp danh sách kết quả khảo sát qua hệ thống email</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setIsEmailModalOpen(false)} 
+                  className="p-2 hover:bg-white/10 rounded-xl transition-colors text-white/80 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 custom-scrollbar bg-[#f8fafc]">
+              
+              {/* Recipient Checkbox Configuration Panel */}
+              <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <div>
+                    <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest block">
+                      THIẾT LẬP CHECK EMAIL NHẬN
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-semibold mt-0.5 block">
+                      Chọn nhanh nhóm nhận thư tự động dựa trên Cơ sở (CS)
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        const targetCS = ['CS1', 'CS2', 'CS3', 'CS4'];
+                        const newChecked = {
+                          tuvan: [...targetCS],
+                          giaovu: [...targetCS],
+                          gdcs: [...targetCS],
+                          cc: true
+                        };
+                        setCheckedEmails(newChecked);
+                        
+                        const selectedEmails = [];
+                        newChecked.tuvan.forEach(c => selectedEmails.push(EMAIL_MAP.tuvan[c]));
+                        newChecked.giaovu.forEach(c => selectedEmails.push(EMAIL_MAP.giaovu[c]));
+                        newChecked.gdcs.forEach(c => selectedEmails.push(EMAIL_MAP.gdcs[c]));
+                        if (newChecked.cc) selectedEmails.push(EMAIL_MAP.cc);
+                        
+                        const currentEmails = recipientEmail.split(',').map(e => e.trim()).filter(Boolean);
+                        const manualEmails = currentEmails.filter(e => !allMapEmails.includes(e));
+                        setRecipientEmail([...manualEmails, ...selectedEmails].join(', '));
+                      }}
+                      className="px-3 py-1.5 bg-[#0c363f]/5 hover:bg-[#0c363f]/10 text-[#0c363f] font-bold text-[10px] rounded-lg transition-colors cursor-pointer select-none"
+                    >
+                      Chọn nhanh CS1-CS4
+                    </button>
+                    <button
+                      onClick={() => {
+                        const newChecked = { tuvan: [], giaovu: [], gdcs: [], cc: false };
+                        setCheckedEmails(newChecked);
+                        const currentEmails = recipientEmail.split(',').map(e => e.trim()).filter(Boolean);
+                        const manualEmails = currentEmails.filter(e => !allMapEmails.includes(e));
+                        setRecipientEmail(manualEmails.join(', ') || (currentUser?.email || "bankhaothi@skylineschool.edu.vn"));
+                      }}
+                      className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-[10px] rounded-lg transition-colors cursor-pointer select-none"
+                    >
+                      Xóa chọn
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="divide-y divide-slate-50 text-xs">
+                  {/* Row 1: Tư vấn */}
+                  <div className="grid grid-cols-1 md:grid-cols-6 items-center gap-2 py-3">
+                    <span className="text-[11px] font-bold text-slate-500 md:col-span-1 tracking-wider uppercase">Tư vấn:</span>
+                    <div className="md:col-span-5 flex flex-wrap gap-x-6 gap-y-3">
+                      {['CS1', 'CS2', 'CS3', 'CS4', 'CS5'].map(cs => (
+                        <label key={`tuvan-${cs}`} className="inline-flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-600 hover:text-[#0c363f] transition-colors select-none">
+                          <input
+                            type="checkbox"
+                            checked={checkedEmails.tuvan.includes(cs)}
+                            onChange={() => handleCheckboxChange('tuvan', cs)}
+                            className="rounded border-slate-300 text-[#0c363f] focus:ring-[#0c363f] w-4.5 h-4.5 cursor-pointer accent-[#0c363f] transition-colors"
+                          />
+                          <span>{cs}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Row 2: Giáo vụ */}
+                  <div className="grid grid-cols-1 md:grid-cols-6 items-center gap-2 py-3">
+                    <span className="text-[11px] font-bold text-slate-500 md:col-span-1 tracking-wider uppercase">Giáo vụ:</span>
+                    <div className="md:col-span-5 flex flex-wrap gap-x-6 gap-y-3">
+                      {['CS1', 'CS2', 'CS3', 'CS4', 'CS5'].map(cs => (
+                        <label key={`giaovu-${cs}`} className="inline-flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-600 hover:text-[#0c363f] transition-colors select-none">
+                          <input
+                            type="checkbox"
+                            checked={checkedEmails.giaovu.includes(cs)}
+                            onChange={() => handleCheckboxChange('giaovu', cs)}
+                            className="rounded border-slate-300 text-[#0c363f] focus:ring-[#0c363f] w-4.5 h-4.5 cursor-pointer accent-[#0c363f] transition-colors"
+                          />
+                          <span>{cs}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Row 3: GĐCS */}
+                  <div className="grid grid-cols-1 md:grid-cols-6 items-center gap-2 py-3">
+                    <span className="text-[11px] font-bold text-slate-500 md:col-span-1 tracking-wider uppercase">GĐCS:</span>
+                    <div className="md:col-span-5 flex flex-wrap gap-x-6 gap-y-3">
+                      {['CS1', 'CS2', 'CS3', 'CS4', 'CS5'].map(cs => (
+                        <label key={`gdcs-${cs}`} className="inline-flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-600 hover:text-[#0c363f] transition-colors select-none">
+                          <input
+                            type="checkbox"
+                            checked={checkedEmails.gdcs.includes(cs)}
+                            onChange={() => handleCheckboxChange('gdcs', cs)}
+                            className="rounded border-slate-300 text-[#0c363f] focus:ring-[#0c363f] w-4.5 h-4.5 cursor-pointer accent-[#0c363f] transition-colors"
+                          />
+                          <span>{cs}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Row 4: CC */}
+                  <div className="grid grid-cols-1 md:grid-cols-6 items-center gap-2 py-3">
+                    <span className="text-[11px] font-bold text-slate-500 md:col-span-1 tracking-wider uppercase">CC:</span>
+                    <div className="md:col-span-5">
+                      <label className="inline-flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-600 hover:text-[#0c363f] transition-colors select-none">
+                        <input
+                          type="checkbox"
+                          checked={checkedEmails.cc}
+                          onChange={() => handleCheckboxChange('cc', 'cc')}
+                          className="rounded border-slate-300 text-[#0c363f] focus:ring-[#0c363f] w-4.5 h-4.5 cursor-pointer accent-[#0c363f] transition-colors"
+                        />
+                        <span className="text-slate-500">cc@skylineschool.edu.vn</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Form Config Card */}
+              <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="flex flex-col gap-2">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                    NGƯỜI NHẬN (EMAIL)
+                  </label>
+                  <input
+                    type="text"
+                    value={recipientEmail}
+                    onChange={e => handleRecipientEmailChange(e.target.value)}
+                    className="w-full bg-[#f8fafc] border border-slate-200/80 rounded-2xl px-4.5 py-3.5 text-sm font-semibold text-slate-700 outline-none focus:bg-white focus:border-[#0c363f] focus:ring-4 focus:ring-[#0c363f]/5 transition-all shadow-sm placeholder:text-slate-300"
+                    placeholder="Nhập địa chỉ email người nhận..."
+                  />
+                  <p className="text-[10px] text-slate-400 font-semibold mt-0.5 ml-1">
+                    Có thể nhập nhiều email, phân cách bằng dấu phẩy ( , )
+                  </p>
+                </div>
+                
+                <div className="flex flex-col gap-2">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                    TIÊU ĐỀ THƯ
+                  </label>
+                  <input
+                    type="text"
+                    value={emailSubject}
+                    onChange={e => setEmailSubject(e.target.value)}
+                    className="w-full bg-[#f8fafc] border border-slate-200/80 rounded-2xl px-4.5 py-3.5 text-sm font-semibold text-slate-700 outline-none focus:bg-white focus:border-[#0c363f] focus:ring-4 focus:ring-[#0c363f]/5 transition-all shadow-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Attach Letters Option Switch */}
+              <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm flex items-center justify-between transition-all hover:shadow-md">
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-xs font-black text-slate-800 uppercase tracking-widest">Có đính kèm File PDF (Thư chúc mừng & Bản cam kết)</span>
+                  <span className="text-[11px] text-slate-400 font-semibold leading-relaxed">Tự động tạo và đính kèm liên kết tệp PDF Thư chúc mừng / Bản cam kết cho từng học sinh đạt yêu cầu</span>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={attachLetters}
+                    onChange={e => setAttachLetters(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0c363f]"></div>
+                </label>
+              </div>
+
+              {/* Table Card */}
+              <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col">
+                <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-white">
+                  <span className="text-xs font-black text-slate-800 uppercase tracking-widest">
+                    DANH SÁCH HỌC SINH GỬI ĐI ({emailStudents.length} HỌC SINH)
+                  </span>
+                  <span className="text-[10px] font-black text-[#14b8a6] bg-[#14b8a6]/10 px-3 py-1 rounded-full">
+                    Bản xem trước
+                  </span>
+                </div>
+                
+                {/* Table Preview */}
+                <div className="overflow-x-auto max-h-[300px] custom-scrollbar">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead className="bg-[#f8fafc] sticky top-0 border-b border-slate-100 z-10">
+                      <tr>
+                        <th className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">STT</th>
+                        <th className="p-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">HỌ VÀ TÊN</th>
+                        <th className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">KHỐI</th>
+                        <th className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">PHÁI</th>
+                        <th className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">NGÀY SINH</th>
+                        <th className="p-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">HỆ KHẢO SÁT</th>
+                        <th className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">KẾT QUẢ</th>
+                        <th className="p-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">CƠ SỞ NHẬN</th>
+                        {attachLetters && (
+                          <th className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">HỒ SƠ ĐÍNH KÈM</th>
+                        )}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 bg-white">
+                      {emailStudents.map((s, idx) => (
+                        <tr key={s.id} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="p-4 text-center text-slate-400 font-semibold">{idx + 1}</td>
+                          <td className="p-4 font-bold text-slate-700">{s.fullName}</td>
+                          <td className="p-4 text-center font-bold text-slate-600">K{s.grade}</td>
+                          <td className="p-4 text-center font-medium text-slate-500">{s.gender === "M" || s.gender === "Nam" ? "Nam" : s.gender === "F" || s.gender === "Nữ" ? "Nữ" : s.gender || "—"}</td>
+                          <td className="p-4 text-center text-slate-500">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
+                          <td className="p-4 text-slate-600 font-medium">{s.surveyFormType || s.surveySystem || "—"}</td>
+                          <td className="p-4 text-center">
+                            <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-black ${
+                              s.admissionResult === "Đạt" ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
+                              s.admissionResult === "Đạt cam kết" ? "bg-amber-50 text-amber-600 border border-amber-100" :
+                              s.admissionResult === "Không đạt" ? "bg-rose-50 text-rose-600 border border-rose-100" :
+                              s.admissionResult === "Học thử" ? "bg-indigo-50 text-indigo-600 border border-indigo-100" :
+                              "bg-slate-50 text-slate-500"
+                            }`}>
+                              {s.admissionResult || "Chưa duyệt"}
+                            </span>
+                          </td>
+                          <td className="p-4 font-bold text-slate-600">{s.admissionCampus || "—"}</td>
+                          {attachLetters && (
+                            <td className="p-4 text-center">
+                              <div className="flex flex-col gap-1 items-center justify-center">
+                                {s.admissionResult === "Đạt" && (
+                                  <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] font-black rounded border border-emerald-100">
+                                    Thư chúc mừng
+                                  </span>
+                                )}
+                                {s.admissionResult === "Đạt cam kết" && (
+                                  <>
+                                    <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] font-black rounded border border-emerald-100 mb-0.5">
+                                      Thư chúc mừng
+                                    </span>
+                                    <span className="px-2.5 py-0.5 bg-amber-50 text-amber-600 text-[10px] font-black rounded border border-amber-100">
+                                      Bản cam kết
+                                    </span>
+                                  </>
+                                )}
+                                {s.admissionResult !== "Đạt" && s.admissionResult !== "Đạt cam kết" && (
+                                  <span className="text-slate-400">—</span>
+                                )}
+                              </div>
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                      {emailStudents.length === 0 && (
+                        <tr>
+                          <td colSpan={attachLetters ? 9 : 8} className="p-8 text-center text-slate-400 font-bold bg-slate-50/30">Không có học sinh nào có kết quả xét duyệt dưới đợt/kỳ này.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Fallback & Custom Display Preview Block */}
+              {emailResult && (
+                <div className={`p-5 rounded-2xl border animate-in fade-in slide-in-from-top-4 duration-300 ${
+                  emailResult.sent 
+                    ? "bg-emerald-50 border-emerald-100 text-emerald-800" 
+                    : "bg-amber-50 border-amber-100 text-amber-900"
+                }`}>
+                  <div className="flex items-start gap-3">
+                    <div className="pt-0.5">
+                      {emailResult.sent ? (
+                        <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                      ) : (
+                        <AlertCircle className="w-5 h-5 text-amber-600" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-bold text-sm mb-1">
+                        {emailResult.sent ? "Gửi Email Thành công!" : "Hệ thống SMTP không phản hồi (Bản xem trước sẵn sàng)"}
+                      </h4>
+                      <p className="text-xs leading-relaxed opacity-90">
+                        {emailResult.sent 
+                          ? `Báo cáo nhanh đã được gửi trực tiếp tới hòm thư ${recipientEmail}. Báo cáo đính kèm bản cam kết học tập.`
+                          : `Máy chủ SMTP không thể gửi thư trực tiếp (Lỗi: ${emailResult.error || "Timeout"}). Tuy nhiên, Skyline đã tạo sẵn mã HTML email chuyên nghiệp phía dưới cho thầy cô.`}
+                      </p>
+                      
+                      {/* Live Iframe Preview if SMTP failed */}
+                      {!emailResult.sent && emailResult.html && (
+                        <div className="mt-4 space-y-3">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 bg-white/60 px-2 py-1 rounded border">Xem trước Thư & Sao chép:</span>
+                          <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-inner">
+                            <iframe 
+                              srcDoc={emailResult.html}
+                              className="w-full h-80 border-0"
+                              title="Email Live Preview"
+                            />
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(emailResult.html || "");
+                                alert("Đã sao chép nội dung HTML! Bạn có thể dán trực tiếp vào Outlook/Gmail để gửi.");
+                              }}
+                              className="bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-bold text-xs px-4 py-2 rounded-xl transition-all cursor-pointer"
+                            >
+                              📋 Sao chép HTML Email
+                            </button>
+                            <a
+                              href={`mailto:${recipientEmail}?subject=${encodeURIComponent(emailSubject)}&body=Xin mời xem bảng HTML báo cáo khảo sát đính kèm.`}
+                              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all"
+                            >
+                              📧 Mở Hòm thư Outlook/Gmail
+                            </a>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 bg-white border-t border-slate-100 flex justify-end items-center gap-3 shrink-0">
+              <button 
+                onClick={() => setIsEmailModalOpen(false)} 
+                className="px-5 py-2.5 rounded-xl hover:bg-slate-100 font-bold text-slate-700 text-xs transition-colors"
+              >
+                Đóng lại
+              </button>
+              <button
+                onClick={handleExportDirectPDFs}
+                disabled={emailSending || emailStudents.length === 0}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              >
+                {emailSending && emailSendingStatus.includes("tải") ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>{emailSendingStatus || "Đang tải..."}</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4" />
+                    Xuất & Tải trực tiếp PDF
+                  </>
+                )}
+              </button>
+              <button
+                onClick={handleSendQuickEmailSubmit}
+                disabled={emailSending || emailStudents.length === 0}
+                className="bg-[#0c363f] hover:bg-[#08262c] text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              >
+                {emailSending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>{emailSendingStatus || "Đang gửi..."}</span>
+                  </>
+                ) : (
+                  <>
+                    <Mail className="w-4 h-4" />
+                    Xác nhận & Gửi Email
+                  </>
+                )}
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
 
       {/* Modal: Config */}
       <Modal open={cfgModal} onClose={() => setCfgModal(false)} title={editCfg ? "Sửa danh mục" : "Thêm danh mục"} footer={<><button onClick={() => setCfgModal(false)} className="flex-1 text-xs font-black uppercase text-slate-400">Hủy</button><button onClick={saveCfg} className="flex-1 py-3.5 bg-violet-500 text-white rounded-2xl text-xs font-black uppercase tracking-widest">Lưu</button></>}>
