@@ -2545,7 +2545,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                   </div>
                 ) : studentSummaries.filter(s => {
                   const result = (s.admissionResult || "").toUpperCase();
-                  return result.includes("HỌC THỬ") || result.includes("HOC_THU");
+                  return result.includes("HỌC THỬ") || result.includes("HOC_THU") || s.probationaryResult || s.probationaryClass;
                 }).length === 0 ? (
                   <div className="text-center py-12 text-slate-400 font-bold text-sm bg-slate-50 rounded-2xl border border-dashed border-slate-200 m-4">
                     {cPeriodId ? "Không có học sinh nào đang ở trạng thái học thử" : "Vui lòng chọn Kỳ và bấm Tìm"}
@@ -2564,7 +2564,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                         {studentSummaries
                           .filter(s => {
                             const result = (s.admissionResult || "").toUpperCase();
-                            return result.includes("HỌC THỬ") || result.includes("HOC_THU");
+                            return result.includes("HỌC THỬ") || result.includes("HOC_THU") || s.probationaryResult || s.probationaryClass;
                           })
                           .filter(s => !cSearch || s.studentCode.toLowerCase().includes(cSearch.toLowerCase()) || s.fullName.toLowerCase().includes(cSearch.toLowerCase()))
                           .map((s, idx) => {

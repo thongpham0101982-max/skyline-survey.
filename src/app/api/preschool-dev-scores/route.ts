@@ -51,7 +51,9 @@ export async function GET(req: NextRequest) {
           bghApprovalStatus: true,
           bghApprovalComment: true,
           gdcsApprovalStatus: true,
-          gdcsApprovalComment: true
+          gdcsApprovalComment: true,
+          probationaryResult: true,
+          probationaryClass: true
         }
       })
 
