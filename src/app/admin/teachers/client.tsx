@@ -21,6 +21,8 @@ export function TeacherManagerClient({
 }) {
   const [teachers, setTeachers] = useState(initialTeachers)
   const [search, setSearch] = useState("")
+  const [filterDepartment, setFilterDepartment] = useState("")
+  const [filterSubject, setFilterSubject] = useState("")
   const [editingId, setEditingId] = useState(null)
   const [editForm, setEditForm] = useState(EMPTY_EDIT)
   const [showAddForm, setShowAddForm] = useState(false)
@@ -39,14 +41,22 @@ export function TeacherManagerClient({
   const fileInputRef = useRef(null)
 
   const displayed = teachers.filter(t => {
-    if (!search) return true
-    const q = search.toLowerCase()
-    return (
-      t.teacherName.toLowerCase().includes(q) ||
-      t.teacherCode.toLowerCase().includes(q) ||
-      (t.department || "").toLowerCase().includes(q) ||
-      (t.campus || "").toLowerCase().includes(q)
-    )
+    let match = true;
+    if (search) {
+      const q = search.toLowerCase();
+      match = match && (
+        t.teacherName.toLowerCase().includes(q) ||
+        t.teacherCode.toLowerCase().includes(q) ||
+        (t.campus || "").toLowerCase().includes(q)
+      );
+    }
+    if (filterDepartment) {
+      match = match && t.department === filterDepartment;
+    }
+    if (filterSubject) {
+      match = match && t.mainSubject === filterSubject;
+    }
+    return match;
   })
 
   const handleCreate = async () => {
@@ -200,12 +210,30 @@ export function TeacherManagerClient({
       </div>
 
       {/* Thanh công cụ */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input type="text" placeholder="Tìm theo tên, mã GV, cơ sở..."
-            value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 outline-none transition-all" />
+      <div className="flex flex-col xl:flex-row items-start xl:items-center gap-3">
+        <div className="flex flex-1 flex-wrap sm:flex-nowrap items-center gap-3 w-full">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input type="text" placeholder="Tìm theo tên, mã GV, cơ sở..."
+              value={search} onChange={e => setSearch(e.target.value)}
+              className="w-full pl-9 pr-4 py-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 outline-none transition-all" />
+          </div>
+          <select 
+            value={filterDepartment} 
+            onChange={e => setFilterDepartment(e.target.value)}
+            className="border border-slate-200 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none bg-white font-medium text-slate-600 max-w-[200px] cursor-pointer"
+          >
+            <option value="">-- Tất cả Tổ CM --</option>
+            {(departments || []).map(d => <option key={d.id} value={d.name}>{d.name}</option>)}
+          </select>
+          <select 
+            value={filterSubject} 
+            onChange={e => setFilterSubject(e.target.value)}
+            className="border border-slate-200 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none bg-white font-medium text-slate-600 max-w-[200px] cursor-pointer"
+          >
+            <option value="">-- Tất cả Môn dạy --</option>
+            {(subjects || []).map(s => <option key={s.id} value={s.subjectName}>{s.subjectName}</option>)}
+          </select>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <button onClick={downloadTemplate}
