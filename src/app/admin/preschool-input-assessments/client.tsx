@@ -382,7 +382,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   }, [cPeriodId, cBatchId]);
 
   useEffect(() => {
-    if (tab === "devAssess" && (devTab === "assess" || devTab === "xetDuyet" || devTab === "dgkqHocThu")) {
+    if (tab === "devAssess" && (devTab === "assess" || devTab === "xetDuyet" || devTab === "dgkqHocThu" || devTab === "xuatThuChucMung")) {
       fetchStudentSummaries();
     }
   }, [tab, devTab, fetchStudentSummaries]);
@@ -650,6 +650,11 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
     }
 
     const dob = student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString("vi-VN") : "—";
+    const isProbationPass = student.probationaryResult === "DAT";
+    const resultLabel = isProbationPass ? "ĐẠT - SAU HỌC THỬ" : "ĐẠT - MIỄN HỌC THỬ";
+    const descText = isProbationPass 
+      ? `Bé đã hoàn thành xuất sắc thời gian học thử thực nghiệm và chính thức đủ điều kiện nhập học tại nhà trường. Đây là một kết quả tuyệt vời, ghi nhận sự phát triển và thích nghi xuất sắc toàn diện về thể chất, nhận thức, ngôn ngữ và kỹ năng xã hội của bé.`
+      : `Bé đã chính thức đủ điều kiện nhập học trực tiếp và được <span class="highlight">Miễn thời gian Học thử thực nghiệm</span> tại nhà trường. Đây là một kết quả tuyệt vời, ghi nhận sự phát triển xuất sắc toàn diện về thể chất, nhận thức, ngôn ngữ và kỹ năng xã hội của bé.`;
     
     printWindow.document.write(`
       <html>
@@ -813,11 +818,11 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
               </tr>
               <tr>
                 <td class="label">Kết quả xét duyệt</td>
-                <td class="val"><span class="success-badge">ĐẠT - MIỄN HỌC THỬ</span></td>
+                <td class="val"><span class="success-badge">${resultLabel}</span></td>
               </tr>
             </table>
 
-            <p>Bé đã chính thức đủ điều kiện nhập học trực tiếp và được <span class="highlight">Miễn thời gian Học thử thực nghiệm</span> tại nhà trường. Đây là một kết quả tuyệt vời, ghi nhận sự phát triển xuất sắc toàn diện về thể chất, nhận thức, ngôn ngữ và kỹ năng xã hội của bé.</p>
+            <p>${descText}</p>
             <p>Nhà trường xin kính mời Quý phụ huynh liên hệ Bộ phận Tuyển sinh tại Cơ sở để hoàn tất thủ tục nhập học chính thức cho bé theo đúng thời gian quy định.</p>
             <p>Sky-Line rất vinh hạnh được đồng hành cùng Gia đình trên hành trình nâng bước và nuôi dưỡng những năm tháng đầu đời tươi đẹp nhất của bé!</p>
           </div>
@@ -2639,7 +2644,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                   </div>
                 ) : studentSummaries.filter(s => {
                   const result = (s.admissionResult || "").toUpperCase();
-                  return result.includes("MIỄN HỌC THỬ") || result.includes("MIEN_HOC_THU");
+                  return result.includes("MIỄN HỌC THỬ") || result.includes("MIEN_HOC_THU") || s.probationaryResult === "DAT";
                 }).length === 0 ? (
                   <div className="text-center py-12 text-slate-400 font-bold text-sm bg-slate-50 rounded-2xl border border-dashed border-slate-200 m-4">
                     {cPeriodId ? "Không có học sinh nào được duyệt Miễn học thử" : "Vui lòng chọn Kỳ và bấm Tìm"}
@@ -2658,11 +2663,14 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                         {studentSummaries
                           .filter(s => {
                             const result = (s.admissionResult || "").toUpperCase();
-                            return result.includes("MIỄN HỌC THỬ") || result.includes("MIEN_HOC_THU");
+                            return result.includes("MIỄN HỌC THỬ") || result.includes("MIEN_HOC_THU") || s.probationaryResult === "DAT";
                           })
                           .filter(s => !cSearch || s.studentCode.toLowerCase().includes(cSearch.toLowerCase()) || s.fullName.toLowerCase().includes(cSearch.toLowerCase()))
                           .map((s, idx) => {
                             const resultBadge = () => {
+                              if (s.probationaryResult === "DAT") {
+                                return <span className="text-[10px] font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">✓ ĐẠT - SAU HỌC THỬ</span>;
+                              }
                               return <span className="text-[10px] font-black text-teal-700 bg-teal-50 px-2.5 py-1 rounded-full border border-teal-100">✓ ĐẠT - MIỄN HỌC THỬ</span>;
                             };
 
