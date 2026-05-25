@@ -70,16 +70,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Student not found" }, { status: 404 })
     }
 
+    const dataToUpdate: any = {
+      probationaryScoreText: probationaryScoreText !== undefined ? probationaryScoreText : undefined,
+      probationaryResult: probationaryResult !== undefined ? probationaryResult : undefined,
+      probationaryComment: probationaryComment !== undefined ? probationaryComment : undefined,
+      probationaryPeriod: probationaryPeriod !== undefined ? probationaryPeriod : undefined,
+      probationaryClass: probationaryClass !== undefined ? probationaryClass : undefined,
+      probationaryTeacher: probationaryTeacher !== undefined ? probationaryTeacher : undefined
+    }
+
+    if (probationaryResult === "DAT") {
+      dataToUpdate.admissionResult = "Đạt"
+    } else if (probationaryResult === "CHUA_DAT") {
+      dataToUpdate.admissionResult = "Không đạt"
+    }
+
     const updated = await (prisma as any).preschoolInputAssessmentStudent.update({
       where: { id: studentId },
-      data: {
-        probationaryScoreText: probationaryScoreText !== undefined ? probationaryScoreText : undefined,
-        probationaryResult: probationaryResult !== undefined ? probationaryResult : undefined,
-        probationaryComment: probationaryComment !== undefined ? probationaryComment : undefined,
-        probationaryPeriod: probationaryPeriod !== undefined ? probationaryPeriod : undefined,
-        probationaryClass: probationaryClass !== undefined ? probationaryClass : undefined,
-        probationaryTeacher: probationaryTeacher !== undefined ? probationaryTeacher : undefined
-      }
+      data: dataToUpdate
     })
 
     return NextResponse.json({ success: true, studentId: updated.id })
