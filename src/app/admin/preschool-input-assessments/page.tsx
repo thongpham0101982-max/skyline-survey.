@@ -28,6 +28,9 @@ export default async function PreschoolInputAssessmentsPage() {
     if (p.academicYear) academicYears = await p.academicYear.findMany({ orderBy: { startDate: "desc" } }).catch(() => []);
     if (p.campus) campuses = await p.campus.findMany({ 
       where: isGDCS ? { id: { in: allowedCampusIds } } : { status: "ACTIVE" }, 
+      include: { 
+        manager: true
+      },
       orderBy: { campusName: "asc" } 
     }).catch(() => []);
     if (p.user) giaoVuCSUsers = await p.user.findMany({ 

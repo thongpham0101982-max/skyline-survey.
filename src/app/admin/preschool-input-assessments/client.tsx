@@ -56,10 +56,10 @@ const getCampusFullName = (codeOrName: string) => {
 const getCampusDefaultManager = (campusCodeOrName: string) => {
   const clean = (campusCodeOrName || "").toUpperCase();
   if (clean.includes("CS1") || clean.includes("RIVERSIDE")) return "Tống Thiên Long";
-  if (clean.includes("CS2") || clean.includes("CENTRAL")) return "Lê Anh Tuấn";
+  if (clean.includes("CS2") || clean.includes("CENTRAL")) return "Lê Thị Hoàng Yến";
   if (clean.includes("CS3") || clean.includes("GLOBAL")) return "Trần Thị Thanh";
-  if (clean.includes("CS4") || clean.includes("HILL")) return "Đỗ Quang Trung";
-  if (clean.includes("CS5") || clean.includes("BEACH")) return "Nguyễn Thị Kim Anh";
+  if (clean.includes("CS4") || clean.includes("HILL")) return "Cao Thanh Trung";
+  if (clean.includes("CS5") || clean.includes("BEACH")) return "Đỗ Quang Trung";
   return "Trần Thị Thanh";
 };
 
