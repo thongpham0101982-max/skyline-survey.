@@ -18,6 +18,8 @@ interface DevArea { id: string; code: string; name: string; description?: string
 interface DevCriteria { id: string; areaId: string; code: string; name: string; ageGroup: string; sortOrder: number; status: string }
 interface DevScore { id: string; studentId: string; criteriaId: string; result: string; note?: string; assessorId?: string }
 
+const DEFAULT_WATERMARK_SVG = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='%23007A87'><path d='M10,80 Q50,40 90,20 Q60,50 10,80 Z'/><path d='M30,80 Q60,55 90,35 Q65,60 30,80 Z'/></svg>";
+
 const inp = "w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-400/10 text-sm font-medium text-slate-700 transition-all shadow-sm";
 
 function Toast({ msg, type }: { msg: string; type: string }) {
@@ -3272,7 +3274,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-lg flex flex-col w-full aspect-[210/297] relative overflow-hidden">
               {/* Background Watermark */}
               <div className="absolute pointer-events-none" style={{
-                backgroundImage: `url('${rcBackground || "/img/watermark.svg"}')`,
+                backgroundImage: `url('${rcBackground || DEFAULT_WATERMARK_SVG}')`,
                 backgroundRepeat: 'no-repeat', backgroundPosition: 'center', backgroundSize: 'contain',
                 opacity: 0.08, top: '10%', left: '10%', width: '80%', height: '80%'
               }} />
@@ -4208,7 +4210,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "297mm", padding: "12.7mm 15mm 48mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "block", overflow: "hidden" }}
               >
                 {/* Print Watermark */}
-                <img crossOrigin={(studentCampusConfig?.background || "").startsWith("data:") ? undefined : "anonymous"}  className="print-watermark" src={studentCampusConfig?.background || "/img/watermark.svg"} alt="Watermark" style={{ display: "block", position: "absolute", top: "22%", left: "10%", transform: "none", width: "80%", height: "auto", opacity: 0.08, zIndex: 0, pointerEvents: "none" }} />
+                <img crossOrigin={(studentCampusConfig?.background || "").startsWith("data:") ? undefined : "anonymous"}  className="print-watermark" src={studentCampusConfig?.background || DEFAULT_WATERMARK_SVG} alt="Watermark" style={{ display: "block", position: "absolute", top: "22%", left: "10%", transform: "none", width: "80%", height: "auto", opacity: 0.08, zIndex: 0, pointerEvents: "none" }} />
                 {/* Top Logo and Header */}
                 <div className="flex flex-col relative z-10 w-full">
                   <div className="flex flex-col gap-1 border-b pb-2 mb-3">
