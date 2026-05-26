@@ -683,8 +683,10 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
       // Decoupled: Master branding assets (Logo, Background, Footer) persist across selections.
       setRcContent(globalData.content || getDefaultContent(rcReportType));
       
-      setRcSignature(campusData.signature || "");
-      setRcDirectorName(campusData.directorName || defaultManagerName);
+      const savedSignature = localStorage.getItem('report_config_signature_' + rcCampusId) || campusData.signature || "";
+      const savedDirector = localStorage.getItem('report_config_director_' + rcCampusId) || campusData.directorName || defaultManagerName;
+      setRcSignature(savedSignature);
+      setRcDirectorName(savedDirector);
     }
   }, [rcCampusId, rcReportType, rcTargetGroup, campuses])
 
@@ -753,6 +755,8 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     localStorage.setItem('report_config_master_logo', rcLogo || "")
     localStorage.setItem('report_config_master_background', rcBackground || "")
     localStorage.setItem('report_config_master_footer', rcFooter || "")
+    localStorage.setItem('report_config_signature_' + rcCampusId, rcSignature || "")
+    localStorage.setItem('report_config_director_' + rcCampusId, rcDirectorName || "")
     
     // Save Campus-specific parts (applies only to current campus)
     const campusData = {
@@ -1066,14 +1070,16 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
       const mergedContent = globalData.content || campusData.content || "";
       const mergedFooter = mFooter ? mFooter : (globalData.footer || campusData.footer || "");
       
+      const campusSig = localStorage.getItem('report_config_signature_' + targetCampus.id) || campusData.signature || "";
+      const campusDir = localStorage.getItem('report_config_director_' + targetCampus.id) || campusData.directorName || targetCampus.manager?.fullName || "";
       return {
         title: mergedTitle,
         logo: mergedLogo,
         background: mergedBackground,
         content: mergedContent,
         footer: mergedFooter,
-        signature: campusData.signature || "",
-        directorName: campusData.directorName || targetCampus.manager?.fullName || ""
+        signature: campusSig,
+        directorName: campusDir
       };
     }
     return null;

@@ -405,14 +405,16 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       const mergedContent = globalData.content || campusData.content || "";
       const mergedFooter = mFooter ? mFooter : (globalData.footer || campusData.footer || "");
       
+      const campusSig = localStorage.getItem('report_config_signature_' + targetCampus.id) || campusData.signature || mSig || "";
+      const campusDir = localStorage.getItem('report_config_director_' + targetCampus.id) || campusData.directorName || targetCampus.manager?.fullName || (targetCampus ? getCampusDefaultManager(targetCampus.campusName || targetCampus.campusCode || "") : "Trần Thị Thanh");
       return {
         title: mergedTitle,
         logo: mergedLogo,
         background: mergedBackground,
         content: mergedContent,
         footer: mergedFooter,
-        signature: campusData.signature || mSig || "",
-        directorName: campusData.directorName || targetCampus.manager?.fullName || (targetCampus ? getCampusDefaultManager(targetCampus.campusName || targetCampus.campusCode || "") : "Trần Thị Thanh")
+        signature: campusSig,
+        directorName: campusDir
       };
     }
     return null;
@@ -1490,9 +1492,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       setRcTitle(globalData.title || campusData.title || (rcReportType === "thu_moi" ? "THƯ MỜI" : "THƯ CHÚC MỪNG"));
       const defaultText = rcReportType === "thu_moi" ? defaultPreschoolInvitation : defaultPreschoolCongratulations;
       setRcContent(globalData.content || campusData.content || defaultText);
-      const mSig = localStorage.getItem('report_config_master_signature');
-      setRcSignature(campusData.signature || mSig || "");
-      setRcDirectorName(campusData.directorName || defaultManagerName);
+      const savedSignature = localStorage.getItem('report_config_signature_' + rcCampusId) || campusData.signature || localStorage.getItem('report_config_master_signature') || "";
+      const savedDirector = localStorage.getItem('report_config_director_' + rcCampusId) || campusData.directorName || defaultManagerName;
+      setRcSignature(savedSignature);
+      setRcDirectorName(savedDirector);
     }
   }, [rcCampusId, rcReportType, campuses]);
 
@@ -1523,6 +1526,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     localStorage.setItem('report_config_master_background', rcBackground || "");
     localStorage.setItem('report_config_master_footer', rcFooter || "");
     localStorage.setItem('report_config_master_signature', rcSignature || "");
+    localStorage.setItem('report_config_signature_' + rcCampusId, rcSignature || "");
+    localStorage.setItem('report_config_director_' + rcCampusId, rcDirectorName || "");
     const campusData = { signature: rcSignature, directorName: rcDirectorName, title: rcTitle, logo: rcLogo, background: rcBackground, content: rcContent, footer: rcFooter };
     localStorage.setItem('report_config_' + rcCampusId + '_' + typeKey, JSON.stringify(campusData));
     notify("Đã lưu cấu hình báo cáo Mầm non thành công!");
