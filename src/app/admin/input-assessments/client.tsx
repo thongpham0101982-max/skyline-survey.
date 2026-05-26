@@ -3869,7 +3869,7 @@ return {
               </div>
               <div>
                 <h3 className="text-base font-black text-slate-800">Cấu hình Báo cáo</h3>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-0.5">Thiết lập Logo và chữ ký Giám đốc Cơ sở</p>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-0.5">Thiết lập Logo và chữ ký Giám đốc Điều hành</p>
               </div>
             </div>
 
@@ -3917,8 +3917,8 @@ return {
               </p>
             </Field>
 
-            <Field label="Họ tên Giám đốc Cơ sở" required>
-              <input value={rcDirectorName} onChange={e => setRcDirectorName(e.target.value)} placeholder="Nhập họ tên GĐCS..." className={inp} />
+            <Field label="Họ tên Giám đốc Điều hành" required>
+              <input value={rcDirectorName} onChange={e => setRcDirectorName(e.target.value)} placeholder="Nhập họ tên Giám đốc Điều hành..." className={inp} />
             </Field>
 
             <div className="space-y-4 pt-2">
@@ -3948,7 +3948,7 @@ return {
 
               {/* Signature Upload */}
               <div className="space-y-2">
-                <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Upload Chữ ký Giám đốc Cơ sở</label>
+                <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Upload Chữ ký Giám đốc Điều hành</label>
                 <div className="flex items-center gap-4">
                   {rcSignature ? (
                     <div className="relative w-16 h-16 rounded-xl border border-slate-200 bg-white p-1 flex items-center justify-center group">

@@ -3206,7 +3206,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
             <div>
               <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Họ tên Giám đốc Điều hành</label>
-              <input value={rcDirectorName} onChange={e => setRcDirectorName(e.target.value)} placeholder="Nhập họ tên GĐCS..." className={inp} />
+              <input value={rcDirectorName} onChange={e => setRcDirectorName(e.target.value)} placeholder="Nhập họ tên Giám đốc Điều hành..." className={inp} />
             </div>
 
             <div className="space-y-4 pt-2">
@@ -4321,7 +4321,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
 
                                 {/* Bottom Signature Area */}
-                {isInvitation ? (
+                {isInvitation && !studentCampusConfig?.signature ? (
                   <div className="flex flex-col items-end mt-8 pr-4">
                     <div className="flex flex-col items-center text-center" style={{ minWidth: "240px" }}>
                       <p className="italic text-slate-500 mb-1">{formattedLetterDate}</p>
