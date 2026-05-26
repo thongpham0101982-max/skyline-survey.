@@ -430,6 +430,19 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     return "GLOBAL";
   }, [selectedReportStudent]);
 
+  // Suffix tên cơ sở từ dropdown "Chọn cơ sở áp dụng" trong config panel
+  const rcCampusTitleSuffix = useMemo(() => {
+    if (!rcCampusId) return "";
+    const campus = campuses?.find(c => c.id === rcCampusId);
+    const name = (campus?.campusName || campus?.campusCode || "").toUpperCase();
+    if (name.includes("CS1") || name.includes("RIVERSIDE")) return "RIVERSIDE";
+    if (name.includes("CS2") || name.includes("CENTRAL")) return "CENTRAL";
+    if (name.includes("CS3") || name.includes("GLOBAL")) return "GLOBAL";
+    if (name.includes("CS4") || name.includes("HILL")) return "HILL";
+    if (name.includes("CS5") || name.includes("BEACH")) return "BEACH";
+    return name.replace("SKY-LINE", "").replace("SKYLINE", "").trim() || "";
+  }, [rcCampusId, campuses]);
+
   const studentSchoolName = useMemo(() => {
     if (!selectedReportStudent) return "TRƯỜNG MẦM NON SKY-LINE";
     const effCampus = selectedReportStudent.admissionCampus || "";
@@ -3192,7 +3205,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             </div>
 
             <div>
-              <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Họ tên Giám đốc Cơ sở</label>
+              <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Họ tên Giám đốc Điều hành</label>
               <input value={rcDirectorName} onChange={e => setRcDirectorName(e.target.value)} placeholder="Nhập họ tên GĐCS..." className={inp} />
             </div>
 
@@ -3221,7 +3234,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
               {/* Signature Upload */}
               <div className="space-y-2">
-                <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Upload Chữ ký Giám đốc Cơ sở</label>
+                <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Upload Chữ ký Giám đốc Điều hành</label>
                 <div className="flex items-center gap-4">
                   {rcSignature ? (
                     <div className="relative w-16 h-16 rounded-xl border border-slate-200 bg-white p-1 flex items-center justify-center">
@@ -3363,7 +3376,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 {/* Signature */}
                 <div className="flex justify-end pt-3">
                   <div className="text-center space-y-1 min-w-[140px]">
-                    <p className="text-[7px] font-bold text-slate-500 uppercase tracking-wider">GIÁM ĐỐC CƠ SỞ</p>
+                    <p className="text-[7px] font-bold text-slate-500 uppercase tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
+                    <p className="text-[6px] text-slate-400 uppercase tracking-wider">GIÁM ĐỐC ĐIỀU HÀNH{rcCampusTitleSuffix ? " SKY-LINE " + rcCampusTitleSuffix : ""}</p>
                     <div className="h-10 flex items-center justify-center">
                       {rcSignature ? (
                         <img crossOrigin={rcSignature?.startsWith("data:") ? undefined : "anonymous"} src={rcSignature} alt="Chữ ký" className="max-h-full object-contain" />
