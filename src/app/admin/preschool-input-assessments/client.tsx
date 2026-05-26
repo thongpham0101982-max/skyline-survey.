@@ -152,7 +152,7 @@ Chúc con có những năm tháng học tập đầy ý nghĩa và trải nghi�
     return ay ? ay.name : "2025-2026";
   }, [academicYears, yearId]);
 
-    const renderPreschoolTemplate = (template: string, student: any) => {
+      const renderPreschoolTemplate = (template: string, student: any) => {
     if (!template) return "";
     const rawGrade = student?.grade || "";
     const cleanCampus = (student?.admissionCampus || "").replace("Cơ sở ", "");
@@ -161,7 +161,9 @@ Chúc con có những năm tháng học tập đầy ý nghĩa và trải nghi�
       .replace(/\{\{grade\}\}/g, rawGrade)
       .replace(/\{\{surveyFormType\}\}/g, student?.surveyFormType || "Chất lượng cao")
       .replace(/\{\{admissionCampus\}\}/g, cleanCampus)
-      .replace(/\{\{academicYear\}\}/g, currentAcademicYearName);
+      .replace(/\{\{academicYear\}\}/g, currentAcademicYearName)
+      .replace(/\{\{hocKy\}\}/g, student?.hocKy || "1")
+      .replace(/\{\{signatureName\}\}/g, student?.signatureName || "");
   };
 
   const studentCampusConfig = useMemo(() => {
@@ -211,11 +213,7 @@ Chúc con có những năm tháng học tập đầy ý nghĩa và trải nghi�
 
       const mergedLogo = mLogo ? mLogo : (globalData.logo || campusData.logo || "");
       const mergedBackground = mBg ? mBg : (globalData.background || campusData.background || "");
-      // CRITICAL FALLBACK PROTECTION: Only inherit content text if it is explicitly preschool-configured
-      const isPreschoolSpecific = typeKey === (baseKey + '_' + studentGroup);
-      const mergedContent = isPreschoolSpecific 
-        ? (globalData.content || campusData.content || "") 
-        : "";
+      const mergedContent = globalData.content || campusData.content || "";
       const mergedFooter = mFooter ? mFooter : (globalData.footer || campusData.footer || "");
       
       return {
