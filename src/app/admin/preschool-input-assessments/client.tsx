@@ -3293,24 +3293,26 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             <span className="text-[10px] font-black text-violet-500 uppercase tracking-widest mb-5">Xem trước mẫu thiết kế thực tế</span>
             <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-lg flex flex-col w-full aspect-[210/297] relative overflow-hidden">
               {/* Background Watermark */}
-              <img 
-                crossOrigin={(rcBackground || "").startsWith("data:") ? undefined : "anonymous"} 
-                src={rcBackground || DEFAULT_WATERMARK_SVG} 
-                alt="Watermark" 
-                className="absolute pointer-events-none select-none" 
-                style={{ 
-                  display: "block", 
-                  position: "absolute", 
-                  top: "10%", 
-                  left: "10%", 
-                  width: "80%", 
-                  height: "80%", 
-                  objectFit: "contain", 
-                  opacity: rcBackground ? 0.45 : 0.08, 
-                  zIndex: 0, 
-                  pointerEvents: "none" 
-                }} 
-              />
+              {rcBackground && (
+                <img 
+                  crossOrigin={(rcBackground || "").startsWith("data:") ? undefined : "anonymous"} 
+                  src={rcBackground} 
+                  alt="Watermark" 
+                  className="absolute pointer-events-none select-none" 
+                  style={{ 
+                    display: "block", 
+                    position: "absolute", 
+                    top: "10%", 
+                    left: "10%", 
+                    width: "80%", 
+                    height: "80%", 
+                    objectFit: "contain", 
+                    opacity: 0.45, 
+                    zIndex: 0, 
+                    pointerEvents: "none" 
+                  }} 
+                />
+              )}
 
               {/* Content */}
               <div className="relative z-10 flex flex-col h-full">
@@ -4231,7 +4233,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "297mm", padding: "12.7mm 15mm 48mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "block", overflow: "hidden" }}
               >
                 {/* Print Watermark */}
-                <img crossOrigin={(studentCampusConfig?.background || "").startsWith("data:") ? undefined : "anonymous"}  className="print-watermark" src={studentCampusConfig?.background || DEFAULT_WATERMARK_SVG} alt="Watermark" style={{ display: "block", position: "absolute", top: "22%", left: "10%", transform: "none", width: "80%", height: "auto", opacity: studentCampusConfig?.background ? 0.45 : 0.08, zIndex: 0, pointerEvents: "none" }} />
+                {studentCampusConfig?.background && (
+                  <img crossOrigin={(studentCampusConfig.background || "").startsWith("data:") ? undefined : "anonymous"}  className="print-watermark" src={studentCampusConfig.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "22%", left: "10%", transform: "none", width: "80%", height: "auto", opacity: 0.45, zIndex: 0, pointerEvents: "none" }} />
+                )}
                 {/* Top Logo and Header */}
                 <div className="flex flex-col relative z-10 w-full">
                   <div className="flex flex-col gap-1 border-b pb-2 mb-3">
@@ -4439,7 +4443,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   >
                     <div className="flex flex-col relative z-10 w-full">
                 {/* Print Watermark */}
-                <img crossOrigin={(studentCampusConfig?.background || "").startsWith("data:") ? undefined : "anonymous"}  className="print-watermark" src={studentCampusConfig?.background || DEFAULT_WATERMARK_SVG} alt="Watermark" style={{ display: "block", position: "absolute", top: "22%", left: "10%", transform: "none", width: "80%", height: "auto", opacity: studentCampusConfig?.background ? 0.45 : 0.08, zIndex: 0, pointerEvents: "none" }} />
+                {studentCampusConfig?.background && (
+                  <img crossOrigin={(studentCampusConfig.background || "").startsWith("data:") ? undefined : "anonymous"}  className="print-watermark" src={studentCampusConfig.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "22%", left: "10%", transform: "none", width: "80%", height: "auto", opacity: 0.45, zIndex: 0, pointerEvents: "none" }} />
+                )}
                 {/* Top Logo and Header (Synchronized perfectly with Page 1) */}
                       <div className="flex flex-col gap-1 border-b pb-2 mb-3">
                         <div className="flex items-center justify-between">
@@ -4628,7 +4634,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     >
                       <div className="flex flex-col relative z-10 w-full">
                         {/* Print Watermark */}
-                        <img crossOrigin={(studentCampusConfig?.background || "").startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig?.background || DEFAULT_WATERMARK_SVG} alt="Watermark" style={{ display: "block", position: "absolute", top: "22%", left: "10%", transform: "none", width: "80%", height: "auto", opacity: studentCampusConfig?.background ? 0.45 : 0.08, zIndex: 0, pointerEvents: "none" }} />
+                        {studentCampusConfig?.background && (
+                          <img crossOrigin={(studentCampusConfig.background || "").startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "22%", left: "10%", transform: "none", width: "80%", height: "auto", opacity: 0.45, zIndex: 0, pointerEvents: "none" }} />
+                        )}
                         
                         {/* Top Logo and Header */}
                         <div className="flex flex-col gap-1 border-b pb-2 mb-3">
