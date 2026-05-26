@@ -357,17 +357,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     }
     
     if (targetCampus) {
-      const baseKey = isInvitation ? 'thu_moi' : 'thu_chuc_mung';
-      const studentGroup = "preschool";
-      const candidateKeys = [baseKey + '_' + studentGroup, baseKey];
-      let typeKey = baseKey;
-      
-      const matchingKey = candidateKeys.find(k => {
-        return localStorage.getItem('report_config_' + targetCampus.id + '_' + k) || localStorage.getItem('report_config_global_' + k);
-      });
-      if (matchingKey) {
-        typeKey = matchingKey;
-      }
+      const typeKey = (isInvitation ? 'thu_moi' : 'thu_chuc_mung') + '_preschool';
       const savedCampus = localStorage.getItem('report_config_' + targetCampus.id + '_' + typeKey);
       const savedGlobal = localStorage.getItem('report_config_global_' + typeKey);
       
