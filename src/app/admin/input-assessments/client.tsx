@@ -5875,8 +5875,6 @@ return {
                 display: flex !important;
                 flex-direction: column !important;
                 position: relative !important;
-                page-break-after: always !important;
-                break-after: page !important;
                 background: white !important;
                 overflow: visible !important;
               }
