@@ -292,6 +292,17 @@ Nhà trường hy vọng rằng, với sự nhanh nhẹn và đáng yêu của m
 
 Chúc con có những năm tháng học tập đầy ý nghĩa và trải nghiệm thú vị tại Sky-Line. Hãy luôn giữ vững niềm đam mê học hỏi và khát khao khám phá thế giới xung quanh con nhé!`;
 
+    const defaultPreschoolInvitation = `Hội đồng Tuyển sinh Hệ thống Giáo dục Sky-Line trân trọng gửi lời chào và lời chúc sức khỏe, an khang đến Quý phụ huynh cùng gia đình.
+
+Nhằm tạo điều kiện tốt nhất để nhà trường hiểu rõ hơn về năng lực tư duy, ngôn ngữ cũng như thiên hướng phát triển tự nhiên của học sinh, qua đó xây dựng lộ trình rèn luyện tối ưu nhất, chúng tôi trân trọng kính mời Quý phụ huynh cùng học sinh tham gia buổi Khảo sát Năng lực Đầu vào hệ {{surveyFormType}} năm học {{academicYear}}.
+
+• Thời gian khảo sát: Theo lịch hẹn cụ thể được sắp xếp từ Ban Tuyển sinh.
+• Nội dung khảo sát: Đánh giá tư duy ngôn ngữ, tư duy logic tự nhiên và khả năng tương tác xã hội phù hợp theo độ tuổi.
+
+Sự hiện diện và đồng hành của Quý phụ huynh cùng học sinh là niềm hân hạnh lớn cho Sky-Line, giúp nhà trường có sự chuẩn bị chu đáo nhất đón chào các em gia nhập mái trường hạnh phúc của chúng ta.
+
+Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
+
   const currentAcademicYearName = useMemo(() => {
     const ay = academicYears.find(a => a.id === yearId);
     return ay ? ay.name : "2025-2026";
@@ -1430,7 +1441,8 @@ Chúc con có những năm tháng học tập đầy ý nghĩa và trải nghi�
       else if (globalData.footer || campusData.footer) setRcFooter(globalData.footer || campusData.footer || "");
       
       setRcTitle(globalData.title || campusData.title || (rcReportType === "thu_moi" ? "THƯ MỜI" : "THƯ CHÚC MỪNG"));
-      setRcContent(globalData.content || campusData.content || "");
+      const defaultText = rcReportType === "thu_moi" ? defaultPreschoolInvitation : defaultPreschoolCongratulations;
+      setRcContent(globalData.content || campusData.content || defaultText);
       setRcSignature(campusData.signature || "");
       setRcDirectorName(campusData.directorName || defaultManagerName);
     }
@@ -3117,7 +3129,20 @@ Chúc con có những năm tháng học tập đầy ý nghĩa và trải nghi�
             </div>
 
             <div>
-              <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Nội dung (Mẫu)</label>
+              <div className="flex items-center justify-between mb-1.5 ml-1">
+                <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest">Nội dung (Mẫu)</label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const defaultText = rcReportType === "thu_moi" ? defaultPreschoolInvitation : defaultPreschoolCongratulations;
+                    setRcContent(defaultText);
+                    notify("Đã tải mẫu nội dung mặc định!", "ok");
+                  }}
+                  className="text-[10px] font-extrabold text-violet-600 hover:text-violet-700 bg-violet-50 hover:bg-violet-100 px-2 py-0.5 rounded-lg transition-all"
+                >
+                  Khôi phục mẫu mặc định
+                </button>
+              </div>
               <textarea
                 value={rcContent}
                 onChange={e => setRcContent(e.target.value)}
@@ -3266,10 +3291,24 @@ Chúc con có những năm tháng học tập đầy ý nghĩa và trải nghi�
                 </p>
 
                 {/* Content */}
-                <div className="flex-1 space-y-1.5 text-[9px] leading-relaxed text-slate-600 text-justify overflow-hidden">
-                  {(rcContent || "Nội dung thư sẽ được hiển thị tại đây. Bạn có thể nhập nội dung mẫu ở bên trái và xem trước trực tiếp tại đây.").split('\n').filter(Boolean).slice(0, 8).map((para, idx) => (
-                    <p key={idx} style={{ textIndent: "1cm" }}>{para}</p>
-                  ))}
+                <div className="flex-1 space-y-1.5 text-[9px] leading-relaxed text-slate-600 text-justify overflow-hidden font-serif">
+                  {renderPreschoolTemplate(
+                    rcContent || (rcReportType === "thu_moi" ? defaultPreschoolInvitation : defaultPreschoolCongratulations),
+                    {
+                      fullName: "Nguyễn Minh An",
+                      grade: "18 đến 24 tháng",
+                      surveyFormType: "Chất lượng cao",
+                      admissionCampus: "Cơ sở Global",
+                      academicYear: "2025-2026",
+                      hocKy: "1",
+                      signatureName: rcDirectorName || "Trần Thị Thanh"
+                    }
+                  ).split('\n').filter(Boolean).slice(0, 10).map((para, idx) => {
+                    const isList = /^\s*[\d•\-*]+/.test(para);
+                    return (
+                      <p key={idx} className={isList ? "pl-4 font-semibold text-slate-700" : ""} style={isList ? {} : { textIndent: "1cm" }}>{para}</p>
+                    );
+                  })}
                 </div>
 
                 {/* Signature */}
@@ -4199,37 +4238,19 @@ Chúc con có những năm tháng học tập đầy ý nghĩa và trải nghi�
 
                   {/* Body Paragraphs */}
                   {isInvitation ? (
-                    studentCampusConfig?.content ? (
-                      <div className="space-y-3 text-justify text-slate-800 font-serif" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: "13.5pt", lineHeight: "1.45", textAlign: "justify" }}>
-                        {renderPreschoolTemplate(studentCampusConfig?.content || "", selectedReportStudent).split('\n').filter(Boolean).map((para, idx) => (
-                          <p key={idx} className="" style={{ textIndent: "1cm" }}>{para}</p>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="space-y-6 text-justify text-[15px] leading-relaxed">
-                        <p className="" style={{ textIndent: "1cm" }}>
-                          Hội đồng Tuyển sinh Hệ thống Giáo dục Sky-Line trân trọng gửi lời chào và lời chúc sức khỏe, an khang đến Quý phụ huynh cùng gia đình.
-                        </p>
-                        
-                        <p className="" style={{ textIndent: "1cm" }}>
-                          Nhằm tạo điều kiện tốt nhất để nhà trường hiểu rõ hơn về năng lực tư duy, ngôn ngữ cũng như thiên hướng phát triển tự nhiên của học sinh, qua đó xây dựng lộ trình rèn luyện tối ưu nhất, chúng tôi trân trọng kính mời Quý phụ huynh cùng học sinh tham gia buổi <strong className="font-bold">Khảo sát Năng lực Đầu vào</strong> hệ <strong className="font-bold">{selectedReportStudent.surveyFormType || "Hội nhập Global"}</strong> năm học <strong className="font-bold">2026-2027</strong>.
-                        </p>
-                        
-                        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-2 text-sm text-slate-700 ml-4 font-sans leading-relaxed shadow-inner">
-                          <p><strong>• Thời gian khảo sát:</strong> Theo lịch hẹn cụ thể được sắp xếp từ Ban Tuyển sinh.</p>
-                          
-                          <p><strong>• Nội dung khảo sát:</strong> Đánh giá tư duy ngôn ngữ, tư duy logic tự nhiên và khả năng tương tác xã hội phù hợp theo độ tuổi.</p>
-                        </div>
-                        
-                        <p className="" style={{ textIndent: "1cm" }}>
-                          Sự hiện diện và đồng hành của Quý phụ huynh cùng học sinh là niềm hân hạnh lớn cho Sky-Line, giúp nhà trường có sự chuẩn bị chu đáo nhất đón chào các em gia nhập mái trường hạnh phúc của chúng ta.
-                        </p>
-                        
-                        <p className="italic text-slate-600">
-                          Trân trọng kính mời Quý phụ huynh và các em học sinh!
-                        </p>
-                      </div>
-                    )
+                    <div className="space-y-3 text-justify text-slate-800 font-serif" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: "13.5pt", lineHeight: "1.45", textAlign: "justify" }}>
+                      {renderPreschoolTemplate(
+                        studentCampusConfig?.content || defaultPreschoolInvitation,
+                        selectedReportStudent
+                      ).split('\n').filter(Boolean).map((para, idx) => {
+                        const isList = /^\s*[\d•\-*]+/.test(para);
+                        return (
+                          <p key={idx} className={isList ? "pl-6 font-semibold text-slate-700 my-1" : ""} style={isList ? {} : { textIndent: "1.2cm", margin: "0 0 12px 0" }}>
+                            {para}
+                          </p>
+                        );
+                      })}
+                    </div>
                   ) : false ? (
                     <div className="space-y-3 text-justify text-slate-800 font-serif" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: "13.5pt", lineHeight: "1.45", textAlign: "justify" }}>
                       {(()=>"")(
