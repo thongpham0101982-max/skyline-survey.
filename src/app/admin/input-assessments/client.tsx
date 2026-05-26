@@ -6363,11 +6363,7 @@ return {
                     <div className="flex flex-col items-center text-center" style={{ minWidth: "240px" }}>
                       <p className="italic text-slate-500 mb-1">{formattedLetterDate}</p>
                       <p className="font-bold uppercase text-indigo-950 text-xs tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
-                      {isInvitation && !studentCampusConfig?.signature ? (
-                        <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-6">TRƯỞNG BAN TUYỂN SINH SKY-LINE</p>
-                      ) : (
-                        <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-6">GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}</p>
-                      )}
+                      <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-6">GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}</p>
                       
                       <div className="h-16 flex items-center justify-center">
                         {studentCampusConfig?.signature ? (
@@ -6376,7 +6372,7 @@ return {
                       </div>
                       
                       <p className="font-bold text-slate-700 mt-2 text-sm">
-                        {mergedStudent?.signatureName || studentCampusConfig?.directorName || (isInvitation ? "Ban Tuyển sinh" : "Đỗ Quang Trung")}
+                        {mergedStudent?.signatureName || studentCampusConfig?.directorName || "Đỗ Quang Trung"}
                       </p>
                     </div>
                   </div>

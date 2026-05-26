@@ -4321,23 +4321,6 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
 
                                 {/* Bottom Signature Area */}
-                {isInvitation && !studentCampusConfig?.signature ? (
-                  <div className="flex flex-col items-end mt-8 pr-4">
-                    <div className="flex flex-col items-center text-center" style={{ minWidth: "240px" }}>
-                      <p className="italic text-slate-500 mb-1">{formattedLetterDate}</p>
-                      <p className="font-bold uppercase text-indigo-950 text-xs tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
-                      <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-6">TRƯỞNG BAN TUYỂN SINH SKY-LINE</p>
-                      
-                      <div className="h-16 flex items-center justify-center">
-                        {/* No cursive signature */}
-                      </div>
-                      
-                      <p className="font-bold text-slate-700 mt-2 text-sm">
-                        Ban Tuyển sinh
-                      </p>
-                    </div>
-                  </div>
-                ) : (
                   <div className="flex flex-col items-end mt-8 pr-4">
                     <div className="flex flex-col items-center text-center" style={{ minWidth: "240px" }}>
                       <p className="italic text-slate-500 mb-1 text-[11px] font-medium">{formattedLetterDate}</p>
@@ -4357,7 +4340,6 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       </p>
                     </div>
                   </div>
-                )}
                 </div>
 
                 
