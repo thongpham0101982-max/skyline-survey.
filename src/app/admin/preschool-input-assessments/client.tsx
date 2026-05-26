@@ -3779,7 +3779,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 min-height: 297mm !important;
                 max-height: 297mm !important;
                 margin: 0 auto !important;
-                padding: 12.7mm 15mm 48mm 15mm !important; /* Reserved 28mm bottom zone for pinned absolute footer! */
+                padding: 12.7mm 15mm 5mm 15mm !important; /* Footer managed by flex margin-top:auto */
                 flex-shrink: 0 !important;
                 display: flex !important;
                 flex-direction: column !important;
@@ -3792,21 +3792,17 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 position: relative !important;
               }
               
-              /* DEFINITIVE ABSOLUTE FOOTER ANCHOR FOR SCREEN AND PRINT */
+              /* FLEX FOOTER — margin-top:auto pushes to absolute bottom of flex column */
               .print-footer {
-                position: absolute !important;
-                bottom: 0 !important;
-                left: 0 !important;
-                right: 0 !important;
+                margin-top: auto !important;
                 padding-left: 15mm !important;
                 padding-right: 15mm !important;
                 box-sizing: border-box !important;
-                height: auto !important;
-                margin-bottom: 0 !important;
-                margin-top: 0 !important;
+                width: 100% !important;
                 background: transparent !important;
                 display: block !important;
                 z-index: 9999 !important;
+                flex-shrink: 0 !important;
               }
               
               /* Sync typographic rendering to match high-fidelity print view on screen */
@@ -3863,26 +3859,26 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 min-height: 297mm !important;
                 max-height: 297mm !important;
                 margin: 0 !important; /* MUST BE 0 to avoid Chrome auto-centering */
-                padding: 15mm 15mm 30mm 20mm !important;
+                padding: 12.7mm 15mm 5mm 15mm !important;
                 box-shadow: none !important;
                 border: none !important;
-                display: block !important;
+                display: flex !important;
+                flex-direction: column !important;
                 position: relative !important;
                 page-break-after: always !important;
                 break-after: page !important;
                 background: white !important;
+                overflow: hidden !important;
               }
               
               /* Force all footers to anchor to the very bottom of the page */
               .print-footer {
-                position: absolute !important;
-                bottom: 0mm !important;
-                left: 0 !important;
-                right: 0 !important;
+                margin-top: auto !important;
                 width: 100% !important;
                 padding-left: 15mm !important;
                 padding-right: 15mm !important;
                 box-sizing: border-box !important;
+                flex-shrink: 0 !important;
               }
               
               /* Watermark */
@@ -4037,15 +4033,15 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               
               /* USER MANDATED FLEX CONTAINER WITHOUT ANY HEIGHTS */
               .print-page, #print-letter-area {
-                width: 100% !important; /* FLUID FULL BLEED PAPER WIDTH - REMOVES SIDE GAPS */
-                height: 297mm !important; /* PRESERVE A4 TALL CONSTRICTOR */
+                width: 100% !important;
+                height: 297mm !important;
                 min-height: 297mm !important;
                 max-height: 297mm !important;
-                margin: 0 !important;    /* STRICT 0 OFFSET BOUNDS */
+                margin: 0 !important;
                 box-shadow: none !important;
                 border: none !important;
-                /* PHYSICAL PADDING: Top: 12.7mm for Header, Right: 15mm, Bottom Safety: 48mm, Left: 15mm */
-                padding: 12.7mm 15mm 48mm 15mm !important; 
+                /* PHYSICAL PADDING: Top 12.7mm, Sides 15mm, Bottom 5mm (footer handled by flex) */
+                padding: 12.7mm 15mm 5mm 15mm !important; 
                 overflow: hidden !important;
                 box-sizing: border-box !important;
                 
@@ -4063,23 +4059,20 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               
               /* DEFINITIVE ABSOLUTE PRINT FOOTER PIN FOR 297mm A4 SHEETS */
               .print-page .print-footer, #print-letter-area .print-footer {
-                position: absolute !important;
-                bottom: 0mm !important;    /* FORCE ABSOLUTE BOTTOM BOUNDS */
-                left: 0 !important;        /* ABSOLUTE LEFT BOUND */
-                right: 0 !important;       /* ABSOLUTE RIGHT BOUND */
-                height: auto !important;   /* REMOVE HARDCODED HIGH BUFFER HEIGHT */
+                margin-top: auto !important; /* PUSH TO BOTTOM OF FLEX COLUMN */
+                height: auto !important;
                 
-                /* Safety buffer for interior text elements while supporting full bleed checkmark */
                 padding-left: 15mm !important; 
                 padding-right: 15mm !important;
-                padding-bottom: 0 !important; /* Internal physical buffer from absolute paper edge */
+                padding-bottom: 0 !important;
                 
-                margin-top: 0 !important;
                 margin-bottom: 0 !important;
                 box-sizing: border-box !important;
                 background: transparent !important;
-                display: block !important; /* Standard block */
+                display: block !important;
                 z-index: 9999 !important;
+                flex-shrink: 0 !important;
+                width: 100% !important;
               }
               
               /* USER MANDATED CONTENT TYPOGRAPHY RULES */
@@ -4228,14 +4221,14 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 <div 
                   id="print-letter-area" 
                   className="bg-white shadow-lg border border-slate-200 relative text-slate-800 text-sm leading-relaxed print-page"
-                  style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "297mm", padding: "12.7mm 15mm 48mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "block", overflow: "hidden" }}
+                  style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "297mm", padding: "12.7mm 15mm 5mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "flex", flexDirection: "column", overflow: "hidden" }}
               >
                 {/* Print Watermark */}
                 {studentCampusConfig?.background && (
                   <img crossOrigin={(studentCampusConfig.background || "").startsWith("data:") ? undefined : "anonymous"}  className="print-watermark" src={studentCampusConfig.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "22%", left: "10%", transform: "none", width: "80%", height: "auto", opacity: 0.45, zIndex: 0, pointerEvents: "none" }} />
                 )}
                 {/* Top Logo and Header */}
-                <div className="flex flex-col relative z-10 w-full">
+                <div className="flex flex-col relative z-10 w-full" style={{ flex: "1 1 auto", minHeight: 0, overflow: "hidden" }}>
                   <div className="flex flex-col gap-1 border-b pb-2 mb-3">
                     <div className="flex items-center justify-between">
                       {studentCampusConfig?.logo ? (
@@ -4363,11 +4356,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 
                 {/* Footer Contact */}
                 {studentCampusConfig?.footer ? (
-                  <div className="border-t border-slate-200 pt-3 absolute z-10 w-full print-footer" style={{ bottom: "0mm", left: "0", right: "0", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box" }}>
+                  <div className="border-t border-slate-200 pt-3 z-10 w-full print-footer" style={{ marginTop: "auto", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box" }}>
                     <img crossOrigin={studentCampusConfig?.footer?.startsWith("data:") ? undefined : "anonymous"}  src={studentCampusConfig?.footer} alt="Footer Print" className="w-full" style={{ maxHeight: "100px", objectFit: "contain" }} />
                   </div>
                 ) : (
-                  <div className="w-full pt-1 mt-4 absolute z-10 print-footer" style={{ bottom: "0mm", left: "0", right: "0", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}>
+                  <div className="w-full pt-1 z-10 print-footer" style={{ marginTop: "auto", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}>
                     {/* High-fidelity Header Title & Line */}
                     <div className="flex items-center gap-2 mb-2.5 w-full">
                       <span className="font-bold text-[#00A6A9] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
@@ -4436,10 +4429,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 </div>
                 {([]) && ([]).length > 0 && (
                   <div 
-                    className="bg-white shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed print-page mt-8"
-                    style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "297mm", padding: "12.7mm 15mm 48mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "block", overflow: "hidden" }}
+                    className="bg-white shadow-lg border border-slate-200 relative text-slate-800 text-sm leading-relaxed print-page mt-8"
+                    style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "297mm", padding: "12.7mm 15mm 5mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "flex", flexDirection: "column", overflow: "hidden" }}
                   >
-                    <div className="flex flex-col relative z-10 w-full">
+                    <div className="flex flex-col relative z-10 w-full" style={{ flex: "1 1 auto", minHeight: 0, overflow: "hidden" }}>
                 {/* Print Watermark */}
                 {studentCampusConfig?.background && (
                   <img crossOrigin={(studentCampusConfig.background || "").startsWith("data:") ? undefined : "anonymous"}  className="print-watermark" src={studentCampusConfig.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "22%", left: "10%", transform: "none", width: "80%", height: "auto", opacity: 0.45, zIndex: 0, pointerEvents: "none" }} />
@@ -4501,11 +4494,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     
                     {/* Footer Contact */}
                     {studentCampusConfig?.footer ? (
-                      <div className="border-t border-slate-200 pt-3 absolute z-10 w-full print-footer" style={{ bottom: "0mm", left: "0", right: "0", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box" }}>
+                      <div className="border-t border-slate-200 pt-3 z-10 w-full print-footer" style={{ marginTop: "auto", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box" }}>
                         <img crossOrigin={studentCampusConfig.footer.startsWith("data:") ? undefined : "anonymous"}  src={studentCampusConfig.footer} alt="Footer Print" className="w-full" style={{ maxHeight: "100px", objectFit: "contain" }} />
                       </div>
                     ) : (
-                      <div className="w-full pt-1 mt-4 absolute z-10 print-footer" style={{ bottom: "0mm", left: "0", right: "0", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}>
+                      <div className="w-full pt-1 z-10 print-footer" style={{ marginTop: "auto", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}>
                     {/* High-fidelity Header Title & Line */}
                     <div className="flex items-center gap-2 mb-2.5 w-full">
                       <span className="font-bold text-[#00A6A9] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
@@ -4627,10 +4620,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   return (
                     <div 
                       key={"assessment_page_" + sc.id}
-                      className="bg-white shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed print-page mt-8"
-                      style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "297mm", padding: "12.7mm 15mm 48mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "block", overflow: "hidden" }}
+                      className="bg-white shadow-lg border border-slate-200 relative text-slate-800 text-sm leading-relaxed print-page mt-8"
+                      style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "297mm", padding: "12.7mm 15mm 5mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "flex", flexDirection: "column", overflow: "hidden" }}
                     >
-                      <div className="flex flex-col relative z-10 w-full">
+                      <div className="flex flex-col relative z-10 w-full" style={{ flex: "1 1 auto", minHeight: 0, overflow: "hidden" }}>
                         {/* Print Watermark */}
                         {studentCampusConfig?.background && (
                           <img crossOrigin={(studentCampusConfig.background || "").startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "22%", left: "10%", transform: "none", width: "80%", height: "auto", opacity: 0.45, zIndex: 0, pointerEvents: "none" }} />
@@ -4688,11 +4681,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
                       {/* Footer Contact */}
                       {null ? (
-                        <div className="border-t border-slate-200 pt-3 absolute z-10 w-full print-footer" style={{ bottom: "0mm", left: "0", right: "0", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box" }}>
+                        <div className="border-t border-slate-200 pt-3 z-10 w-full print-footer" style={{ marginTop: "auto", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box" }}>
                           <img crossOrigin={({}).footer?.startsWith("data:") ? undefined : "anonymous"} src={({}).footer} alt="Footer Print" className="w-full" style={{ maxHeight: "100px", objectFit: "contain" }} />
                         </div>
                       ) : (
-                        <div className="w-full pt-1 mt-4 absolute z-10 print-footer" style={{ bottom: "0mm", left: "0", right: "0", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}>
+                        <div className="w-full pt-1 z-10 print-footer" style={{ marginTop: "auto", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}>
                           <div className="flex items-center gap-2 mb-2.5 w-full">
                             <span className="font-bold text-[#00A6A9] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
                             <div className="flex-grow border-t border-[#00A6A9]/70 h-0 mt-0.5"></div>
