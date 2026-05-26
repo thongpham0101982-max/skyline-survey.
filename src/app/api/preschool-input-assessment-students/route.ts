@@ -716,6 +716,206 @@ export async function POST(req) {
       });
     }
 
+    if (action === "SEND_BATCH_CONGRATS_EMAIL") {
+      const { studentIds, roles, additionalNote } = body;
+      if (!studentIds || !Array.isArray(studentIds) || studentIds.length === 0 || !roles || !Array.isArray(roles) || roles.length === 0) {
+        return NextResponse.json({ error: "Missing studentIds or roles" }, { status: 400 });
+      }
+
+      const students = await (prisma as any).preschoolInputAssessmentStudent.findMany({
+        where: { id: { in: studentIds } }
+      });
+
+      let totalSentCount = 0;
+      const errors = [];
+
+      for (const student of students) {
+        const campusName = student.admissionCampus;
+        const campus = campusName ? await (prisma as any).campus.findFirst({
+          where: {
+            OR: [
+              { campusName: campusName },
+              { campusCode: campusName }
+            ]
+          }
+        }) : null;
+
+        const recipients = [];
+
+        // 1. Add Default Tư vấn tuyển sinh
+        if (roles.includes("Tư vấn")) {
+          const tuVanEmail = getTuVanEmail(campusName);
+          recipients.push(tuVanEmail);
+        }
+
+        // 2. Add Default Ban Khảo thí
+        if (roles.includes("BGH")) {
+          recipients.push("bankhaothi@skylineschool.edu.vn");
+        }
+
+        if (campus) {
+          if (roles.includes("GĐCS")) {
+            const campusWithManager = await (prisma as any).campus.findUnique({
+              where: { id: campus.id },
+              include: { manager: true }
+            });
+            if (campusWithManager?.manager) {
+              const m = campusWithManager.manager;
+              if (m.email && m.email.includes("@")) {
+                recipients.push(m.email);
+              }
+            }
+          }
+
+          const assignments = await (prisma as any).userCampusAssignment.findMany({
+            where: { campusId: campus.id },
+            include: { user: true }
+          });
+          const assignedUsers = assignments.map((a: any) => a.user);
+
+          for (const u of assignedUsers) {
+            if (!u.email || !u.email.includes("@")) continue;
+            if (recipients.some(r => r.toLowerCase() === u.email.toLowerCase())) continue;
+
+            const role = (u.role || "").toUpperCase();
+            let resolvedRole = "";
+            
+            if (["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAM_DOC_CS"].includes(role)) {
+              resolvedRole = "GĐCS";
+            } else if (["KT_DBCL", "BGH MN", "BGH_MN", "BGH", "BAN_GIAM_HIEU", "ADMIN"].includes(role)) {
+              resolvedRole = "BGH";
+            } else if (["GIAO_VU", "GIAO_VU_CS", "GVCS"].includes(role)) {
+              resolvedRole = "Giáo vụ";
+            } else if (["TU_VAN", "TU_VAN_CS", "TVCS", "TU_VAN_TS"].includes(role)) {
+              resolvedRole = "Tư vấn";
+            }
+
+            if (resolvedRole && roles.includes(resolvedRole)) {
+              recipients.push(u.email);
+            }
+          }
+        }
+
+        if (recipients.length === 0) continue;
+
+        const campusSuffix = campusName && (campusName.toUpperCase().includes("CS1") || campusName.toUpperCase().includes("RIVERSIDE")) ? "RIVERSIDE" :
+                             campusName && (campusName.toUpperCase().includes("CS2") || campusName.toUpperCase().includes("CENTRAL")) ? "CENTRAL" :
+                             campusName && (campusName.toUpperCase().includes("CS3") || campusName.toUpperCase().includes("GLOBAL")) ? "GLOBAL" :
+                             campusName && (campusName.toUpperCase().includes("CS4") || campusName.toUpperCase().includes("HILL")) ? "HILL" :
+                             campusName && (campusName.toUpperCase().includes("CS5") || campusName.toUpperCase().includes("BEACH")) ? "BEACH" : "RIVERSIDE";
+        
+        const directorName = campusName && (campusName.toUpperCase().includes("CS1") || campusName.toUpperCase().includes("RIVERSIDE")) ? "Tống Thiên Long" :
+                             campusName && (campusName.toUpperCase().includes("CS2") || campusName.toUpperCase().includes("CENTRAL")) ? "Lê Thị Hoàng Yến" :
+                             campusName && (campusName.toUpperCase().includes("CS3") || campusName.toUpperCase().includes("GLOBAL")) ? "Trần Thị Thanh" :
+                             campusName && (campusName.toUpperCase().includes("CS4") || campusName.toUpperCase().includes("HILL")) ? "Cao Thanh Trung" :
+                             campusName && (campusName.toUpperCase().includes("CS5") || campusName.toUpperCase().includes("BEACH")) ? "Đỗ Quang Trung" : "Trần Thị Thanh";
+
+        const host = req.headers.get("host") || "skyline-survey-rh4k.vercel.app";
+        const protocol = req.headers.get("x-forwarded-proto") || "https";
+        const baseUrl = `${protocol}://${host}`;
+
+        const congratsTemplate = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+        </head>
+        <body style="margin: 0; padding: 0; font-family: 'Times New Roman', Times, serif; background-color: #f8fafc; color: #1e293b;">
+          <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; padding: 30px 0;">
+            <tr>
+              <td align="center">
+                <table width="680" border="0" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; padding: 40px 30px;">
+                  <tr>
+                    <td align="left" style="border-bottom: 2px solid #00A6A9; padding-bottom: 15px; margin-bottom: 20px;">
+                      <div style="font-family: Arial, sans-serif; font-size: 22px; font-weight: 900; color: #00A6A9; letter-spacing: -0.5px;">SKY-LINE SYSTEM</div>
+                      <div style="font-family: Arial, sans-serif; font-size: 12px; font-weight: bold; color: #475569; text-transform: uppercase; margin-top: 3px;">Hệ thống Giáo dục Sky-Line</div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td align="center" style="padding: 25px 0;">
+                      <h2 style="font-size: 24px; font-weight: bold; color: #1e1b4b; text-transform: uppercase; margin: 0; letter-spacing: 1px; font-family: 'Times New Roman', Times, serif;">
+                        THƯ CHÚC MỪNG NHẬP HỌC
+                      </h2>
+                    </td>
+                  </tr>
+                  \${additionalNote ? \`
+                  <tr>
+                    <td style="padding: 12px 15px; background-color: #f0fdfa; border-left: 4px solid #00A6A9; border-radius: 6px; font-family: Arial, sans-serif; font-size: 13px; color: #0f766e; margin-bottom: 20px; line-height: 1.5;">
+                      <strong>Lời nhắn từ Tuyển sinh:</strong> \${additionalNote}
+                    </td>
+                  </tr>
+                  <tr style="height: 20px;"><td></td></tr>
+                  \` : ''}
+                  <tr>
+                    <td style="font-size: 16px; line-height: 1.6; color: #334155; text-align: justify;">
+                      <p style="margin: 0 0 15px 0; font-style: italic;">Kính gửi Quý Phụ huynh và em <strong>\${student.fullName}</strong>,</p>
+                      <p style="margin: 0 0 15px 0; text-indent: 1.2cm;">
+                        Ban Giám Hiệu Hệ thống Giáo dục Mầm non Sky-Line trân trọng gửi lời chúc mừng nồng nhiệt nhất đến Gia đình và Bé. Dựa trên kết quả Khảo sát phát triển toàn diện của trẻ và kết quả phê duyệt chính thức từ Hội đồng Tuyển sinh, Nhà trường trân trọng gửi đến Quý phụ huynh <strong>Thư chúc mừng nhập học</strong> chính thức dành cho bé tại Cơ sở <strong>\${student.admissionCampus || ""}</strong>.
+                      </p>
+                      <p style="margin: 0 0 15px 0; text-indent: 1.2cm;">
+                        Nhà trường hy vọng rằng, với sự chăm sóc tận tình và tình yêu thương vô bờ bến từ tập thể giáo viên và nhân viên Sky-Line, con sẽ nhanh chóng hòa nhập, có những trải nghiệm tuổi thơ tuyệt vời, được vui chơi thỏa thích và phát huy tối đa các năng lực bẩm sinh của mình.
+                      </p>
+                      <p style="margin: 0 0 15px 0; text-indent: 1.2cm;">
+                        Chúc con luôn giữ vững niềm vui thích học hỏi, luôn tràn đầy năng lượng khám phá thế giới xung quanh con nhé!
+                      </p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td align="right" style="padding-top: 30px; padding-right: 20px;">
+                      <table border="0" cellspacing="0" cellpadding="0" style="text-align: center; min-width: 240px; font-family: Arial, sans-serif;">
+                        <tr>
+                          <td style="font-size: 11px; font-style: italic; color: #64748b; padding-bottom: 5px;">Đà Nẵng, ngày \${new Date().getDate()} tháng \${new Date().getMonth() + 1} năm \${new Date().getFullYear()}</td>
+                        </tr>
+                        <tr>
+                          <td style="font-size: 12px; font-weight: bold; color: #1e1b4b; text-transform: uppercase;">TM. HỘI ĐỒNG TUYỂN SINH</td>
+                        </tr>
+                        <tr>
+                          <td style="font-size: 10px; font-weight: bold; color: #4338ca; text-transform: uppercase; padding-bottom: 40px;">GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE \${campusSuffix}</td>
+                        </tr>
+                        <tr>
+                          <td style="font-size: 14px; font-weight: bold; color: #334155; padding-top: 10px;">\${directorName}</td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td align="center" style="padding-top: 35px; border-top: 1px solid #e2e8f0; margin-top: 30px;">
+                      <p style="font-size: 12px; color: #64748b; margin-bottom: 12px;">Bạn có thể xem chi tiết hồ sơ học sinh trên hệ thống Portal Tuyển sinh.</p>
+                      <a href="\${baseUrl}/admin/preschool-input-assessments" style="display: inline-block; padding: 10px 24px; border-radius: 8px; font-size: 13px; font-weight: bold; color: #ffffff; background-color: #00A6A9; text-decoration: none; border: 1px solid #008f91;">
+                        Xem chi tiết trên Portal
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+        `;
+
+        for (const email of recipients) {
+          try {
+            if (email && email.includes("@")) {
+              await sendEmail({
+                to: email,
+                subject: `[Preschool-Congrats] Thư chúc mừng nhập học - Học sinh \${student.fullName} (\${student.studentCode})`,
+                html: congratsTemplate,
+                replyTo: "bankhaothi@skylineschool.edu.vn"
+              });
+              totalSentCount++;
+            }
+          } catch (err) {
+            console.error(`Lỗi khi gửi email hàng loạt tới \${email} cho học sinh \${student.fullName}:`, err);
+            errors.push(`\${student.fullName} (\${email}): \${(err as Error).message}`);
+          }
+        }
+      }
+
+      return NextResponse.json({ success: true, sentCount: totalSentCount, errors });
+    }
+
+
     if (action === "GET_CAMPUS_RECIPIENTS") {
       const { studentId } = body;
       if (!studentId) {

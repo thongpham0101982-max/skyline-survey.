@@ -245,6 +245,80 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
     setEmailCongratsRecipients(updated);
   };
 
+  // States for Batch Email Congrats modal
+  const [isBatchEmailCongratsModalOpen, setIsBatchEmailCongratsModalOpen] = useState(false);
+  const [batchEmailCongratsStudents, setBatchEmailCongratsStudents] = useState<any[]>([]);
+  const [batchEmailCongratsRoles, setBatchEmailCongratsRoles] = useState<string[]>(["Tư vấn", "Giáo vụ", "GĐCS", "BGH"]);
+  const [batchEmailCongratsAdditionalNote, setBatchEmailCongratsAdditionalNote] = useState("");
+  const [batchEmailCongratsSending, setBatchEmailCongratsSending] = useState(false);
+
+  const openBatchEmailCongratsModal = () => {
+    const eligible = studentSummaries.filter((s: any) => {
+      const result = (s.admissionResult || "").toUpperCase();
+      return result.includes("MIỄN HỌC THỬ") || result.includes("MIEN_HOC_THU") || s.probationaryResult === "DAT";
+    });
+
+    if (eligible.length === 0) {
+      alert("Không có học sinh nào đạt yêu cầu nhập học để gửi thư chúc mừng trong danh sách hiện tại.");
+      return;
+    }
+
+    setBatchEmailCongratsStudents(eligible.map(s => ({ ...s, checked: true })));
+    setBatchEmailCongratsRoles(["Tư vấn", "Giáo vụ", "GĐCS", "BGH"]);
+    setBatchEmailCongratsAdditionalNote("");
+    setIsBatchEmailCongratsModalOpen(true);
+  };
+
+  const handleSendBatchCongratsEmail = async () => {
+    const selectedStudentIds = batchEmailCongratsStudents
+      .filter((s: any) => s.checked)
+      .map((s: any) => s.id);
+
+    if (selectedStudentIds.length === 0) {
+      alert("Vui lòng chọn ít nhất một học sinh để gửi email.");
+      return;
+    }
+
+    if (batchEmailCongratsRoles.length === 0) {
+      alert("Vui lòng chọn ít nhất một vai trò nhận thư chúc mừng.");
+      return;
+    }
+
+    setBatchEmailCongratsSending(true);
+    try {
+      const res = await fetch("/api/preschool-input-assessment-students", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "SEND_BATCH_CONGRATS_EMAIL",
+          studentIds: selectedStudentIds,
+          roles: batchEmailCongratsRoles,
+          additionalNote: batchEmailCongratsAdditionalNote
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`Gửi email chúc mừng hàng loạt thành công! Đã gửi ${data.sentCount} email.`);
+        setIsBatchEmailCongratsModalOpen(false);
+      } else {
+        alert("Gửi email hàng loạt thất bại: " + (data.error || "Lỗi không xác định"));
+      }
+    } catch (err: any) {
+      alert("Lỗi kết nối: " + err.message);
+    } finally {
+      setBatchEmailCongratsSending(false);
+    }
+  };
+
+  const toggleBatchCongratsRole = (role: string) => {
+    if (batchEmailCongratsRoles.includes(role)) {
+      setBatchEmailCongratsRoles(batchEmailCongratsRoles.filter(r => r !== role));
+    } else {
+      setBatchEmailCongratsRoles([...batchEmailCongratsRoles, role]);
+    }
+  };
+
+
   const [mockPreviewStudent, setMockPreviewStudent] = useState<any>(null);
   const [emailStudents, setEmailStudents] = useState<any[]>([]);
   const [emailSending, setEmailSending] = useState(false);
@@ -2391,6 +2465,18 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   </select>
                 </div>
                 <button onClick={fetchStudentSummaries} className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-violet-600 bg-violet-50 hover:bg-violet-100 rounded-xl border border-violet-100"><Search className="w-4 h-4" /> Tìm</button>
+                {studentSummaries.filter(s => {
+                  const result = (s.admissionResult || "").toUpperCase();
+                  return result.includes("MIỄN HỌC THỬ") || result.includes("MIEN_HOC_THU") || s.probationaryResult === "DAT";
+                }).length > 0 && (
+                  <button 
+                    onClick={openBatchEmailCongratsModal}
+                    className="flex items-center gap-1.5 px-4 py-2 text-sm font-black text-white bg-violet-600 hover:bg-violet-700 rounded-xl transition-all shadow-md shadow-violet-100 hover:shadow-violet-200 cursor-pointer"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                    Gửi Email theo Đợt
+                  </button>
+                )}
                 <div className="ml-auto relative"><Search className="w-4 h-4 text-slate-300 absolute left-3 top-1/2 -translate-y-1/2" /><input value={cSearch} onChange={e => setCSearch(e.target.value)} placeholder="Tìm bé..." className="pl-9 pr-4 py-2 border border-violet-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-violet-300 min-w-[200px]" /></div>
               </div>
 
@@ -2473,6 +2559,18 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   </select>
                 </div>
                 <button onClick={fetchStudentSummaries} className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-violet-600 bg-violet-50 hover:bg-violet-100 rounded-xl border border-violet-100"><Search className="w-4 h-4" /> Tìm</button>
+                {studentSummaries.filter(s => {
+                  const result = (s.admissionResult || "").toUpperCase();
+                  return result.includes("MIỄN HỌC THỬ") || result.includes("MIEN_HOC_THU") || s.probationaryResult === "DAT";
+                }).length > 0 && (
+                  <button 
+                    onClick={openBatchEmailCongratsModal}
+                    className="flex items-center gap-1.5 px-4 py-2 text-sm font-black text-white bg-violet-600 hover:bg-violet-700 rounded-xl transition-all shadow-md shadow-violet-100 hover:shadow-violet-200 cursor-pointer"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                    Gửi Email theo Đợt
+                  </button>
+                )}
                 <button
                   onClick={exportDevExcel}
                   disabled={studentSummaries.length === 0}
@@ -2892,6 +2990,18 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   </select>
                 </div>
                 <button onClick={fetchStudentSummaries} className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-violet-600 bg-violet-50 hover:bg-violet-100 rounded-xl border border-violet-100"><Search className="w-4 h-4" /> Tìm</button>
+                {studentSummaries.filter(s => {
+                  const result = (s.admissionResult || "").toUpperCase();
+                  return result.includes("MIỄN HỌC THỬ") || result.includes("MIEN_HOC_THU") || s.probationaryResult === "DAT";
+                }).length > 0 && (
+                  <button 
+                    onClick={openBatchEmailCongratsModal}
+                    className="flex items-center gap-1.5 px-4 py-2 text-sm font-black text-white bg-violet-600 hover:bg-violet-700 rounded-xl transition-all shadow-md shadow-violet-100 hover:shadow-violet-200 cursor-pointer"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                    Gửi Email theo Đợt
+                  </button>
+                )}
                 <div className="ml-auto relative"><Search className="w-4 h-4 text-slate-300 absolute left-3 top-1/2 -translate-y-1/2" /><input value={cSearch} onChange={e => setCSearch(e.target.value)} placeholder="Tìm bé..." className="pl-9 pr-4 py-2 border border-violet-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-violet-300 min-w-[200px]" /></div>
               </div>
 
@@ -2986,6 +3096,18 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   </select>
                 </div>
                 <button onClick={fetchStudentSummaries} className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-violet-600 bg-violet-50 hover:bg-violet-100 rounded-xl border border-violet-100"><Search className="w-4 h-4" /> Tìm</button>
+                {studentSummaries.filter(s => {
+                  const result = (s.admissionResult || "").toUpperCase();
+                  return result.includes("MIỄN HỌC THỬ") || result.includes("MIEN_HOC_THU") || s.probationaryResult === "DAT";
+                }).length > 0 && (
+                  <button 
+                    onClick={openBatchEmailCongratsModal}
+                    className="flex items-center gap-1.5 px-4 py-2 text-sm font-black text-white bg-violet-600 hover:bg-violet-700 rounded-xl transition-all shadow-md shadow-violet-100 hover:shadow-violet-200 cursor-pointer"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                    Gửi Email theo Đợt
+                  </button>
+                )}
                 <div className="ml-auto relative"><Search className="w-4 h-4 text-slate-300 absolute left-3 top-1/2 -translate-y-1/2" /><input value={cSearch} onChange={e => setCSearch(e.target.value)} placeholder="Tìm bé..." className="pl-9 pr-4 py-2 border border-violet-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-violet-300 min-w-[200px]" /></div>
               </div>
 
@@ -3944,6 +4066,181 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   <>
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
                     Xác nhận gửi email
+                  </>
+                )}
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+
+      {isBatchEmailCongratsModalOpen && (
+        <div className="fixed inset-0 z-550 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl border border-violet-100 shadow-2xl max-w-3xl w-full overflow-hidden flex flex-col max-h-[90vh] animate-scale-up">
+            
+            {/* Header */}
+            <div className="bg-gradient-to-r from-violet-600 to-indigo-700 p-6 text-white relative">
+              <button 
+                onClick={() => setIsBatchEmailCongratsModalOpen(false)}
+                className="absolute right-6 top-6 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 p-1.5 rounded-full transition-all cursor-pointer"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+              <h3 className="text-lg font-black tracking-wide uppercase">Gửi thư chúc mừng hàng loạt theo đợt</h3>
+              <p className="text-xs text-white/80 mt-1 font-medium">Gửi email chúc mừng đồng thời cho nhiều học sinh được duyệt đạt của Đợt hiện tại.</p>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 overflow-y-auto flex-1 space-y-5">
+              
+              {/* Target Roles Checklist */}
+              <div className="space-y-2">
+                <label className="block text-xs font-black text-slate-500 uppercase tracking-wider">1. Gửi thư chúc mừng đến các vai trò sau (theo Cơ sở):</label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {[
+                    { id: "Tư vấn", label: "Tư vấn Tuyển sinh", desc: "Mặc định theo Cơ sở", color: "amber" },
+                    { id: "Giáo vụ", label: "Giáo vụ Cơ sở", desc: "Tất cả Giáo vụ cơ sở", color: "violet" },
+                    { id: "GĐCS", label: "Giám đốc Cơ sở", desc: "Manager & users GĐCS", color: "emerald" },
+                    { id: "BGH", label: "BGH / Khảo thí", desc: "Ban Khảo thí Hệ thống", color: "indigo" }
+                  ].map((role) => {
+                    const isChecked = batchEmailCongratsRoles.includes(role.id);
+                    return (
+                      <label 
+                        key={role.id}
+                        className={`flex flex-col p-3 rounded-2xl border transition-all cursor-pointer select-none text-xs ${
+                          isChecked 
+                            ? "bg-violet-50/50 border-violet-200 text-violet-900 shadow-sm font-bold" 
+                            : "bg-white border-slate-100 text-slate-400 font-semibold hover:bg-slate-50"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => toggleBatchCongratsRole(role.id)}
+                            className="rounded text-violet-600 focus:ring-violet-400 border-slate-300 w-4 h-4 cursor-pointer"
+                          />
+                          <span className="truncate">{role.label}</span>
+                        </div>
+                        <span className="text-[10px] text-slate-400 font-medium ml-6">{role.desc}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Additional Note */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-black text-slate-500 uppercase tracking-wider">2. Lời nhắn/Ghi chú thêm gửi kèm email (Không bắt buộc):</label>
+                <textarea
+                  value={batchEmailCongratsAdditionalNote}
+                  onChange={(e) => setBatchEmailCongratsAdditionalNote(e.target.value)}
+                  placeholder="Nhập lời chúc chung hoặc lời nhắn đặc biệt từ Bộ phận Tuyển sinh gửi kèm trong tất cả thư chúc mừng..."
+                  rows={2}
+                  className="w-full border border-violet-100 rounded-2xl p-3 text-sm outline-none focus:ring-2 focus:ring-violet-300 focus:border-violet-400 transition-all text-slate-700 resize-none shadow-inner bg-slate-50/50"
+                />
+              </div>
+
+              {/* Students Checklist */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-black text-slate-500 uppercase tracking-wider">3. Chọn danh sách học sinh nhận thư chúc mừng ({batchEmailCongratsStudents.filter(s => s.checked).length}/{batchEmailCongratsStudents.length} bé):</label>
+                  <div className="flex gap-2 text-[10px] font-bold">
+                    <button 
+                      onClick={() => setBatchEmailCongratsStudents(prev => prev.map(s => ({ ...s, checked: true })))}
+                      className="text-violet-600 hover:text-violet-800 bg-violet-50 px-2.5 py-1 rounded-lg border border-violet-100 transition-colors cursor-pointer"
+                    >
+                      Chọn tất cả
+                    </button>
+                    <button 
+                      onClick={() => setBatchEmailCongratsStudents(prev => prev.map(s => ({ ...s, checked: false })))}
+                      className="text-slate-500 hover:text-slate-700 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200 transition-colors cursor-pointer"
+                    >
+                      Bỏ chọn tất cả
+                    </button>
+                  </div>
+                </div>
+
+                <div className="border border-violet-100 rounded-2xl overflow-hidden bg-slate-50/30 max-h-[220px] overflow-y-auto">
+                  <table className="w-full text-left whitespace-nowrap text-xs">
+                    <thead className="bg-slate-50 border-b border-slate-100 sticky top-0 font-bold text-slate-500">
+                      <tr>
+                        <th className="p-3 w-10 text-center">Gửi</th>
+                        <th className="p-3">Mã học sinh</th>
+                        <th className="p-3">Họ và tên</th>
+                        <th className="p-3">Cơ sở</th>
+                        <th className="p-3">Kết quả</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-violet-50 bg-white">
+                      {batchEmailCongratsStudents.map((s, idx) => (
+                        <tr 
+                          key={s.id} 
+                          onClick={() => {
+                            const updated = [...batchEmailCongratsStudents];
+                            updated[idx].checked = !updated[idx].checked;
+                            setBatchEmailCongratsStudents(updated);
+                          }}
+                          className={`hover:bg-violet-50/30 transition-colors cursor-pointer ${
+                            s.checked ? "bg-violet-50/10 font-semibold" : "text-slate-400"
+                          }`}
+                        >
+                          <td className="p-3 text-center" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="checkbox"
+                              checked={s.checked}
+                              onChange={(e) => {
+                                const updated = [...batchEmailCongratsStudents];
+                                updated[idx].checked = e.target.checked;
+                                setBatchEmailCongratsStudents(updated);
+                              }}
+                              className="rounded text-violet-600 focus:ring-violet-400 border-slate-300 w-3.5 h-3.5 cursor-pointer"
+                            />
+                          </td>
+                          <td className="p-3 font-mono text-[11px]">{s.studentCode}</td>
+                          <td className="p-3 font-bold text-slate-800">{s.fullName}</td>
+                          <td className="p-3">{s.admissionCampus || "—"}</td>
+                          <td className="p-3">
+                            <span className="text-[10px] font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                              {s.probationaryResult === "DAT" ? "ĐẠT - SAU HỌC THỬ" : "✓ ĐẠT - MIỄN HỌC THỬ"}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Footer */}
+            <div className="bg-slate-50 p-4 border-t border-slate-100 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setIsBatchEmailCongratsModalOpen(false)}
+                className="px-5 py-2 text-xs font-black text-slate-500 bg-white hover:bg-slate-100 rounded-xl border border-slate-200 transition-all cursor-pointer"
+                disabled={batchEmailCongratsSending}
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={handleSendBatchCongratsEmail}
+                className="flex items-center gap-1.5 px-6 py-2 text-xs font-black text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 rounded-xl transition-all shadow-md shadow-violet-100 hover:shadow-violet-200 cursor-pointer"
+                disabled={batchEmailCongratsSending}
+              >
+                {batchEmailCongratsSending ? (
+                  <>
+                    <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Đang gửi hàng loạt...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                    Xác nhận gửi đợt ({batchEmailCongratsStudents.filter(s => s.checked).length} học sinh)
                   </>
                 )}
               </button>
