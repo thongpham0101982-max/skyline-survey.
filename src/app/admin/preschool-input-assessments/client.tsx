@@ -20,6 +20,30 @@ interface DevScore { id: string; studentId: string; criteriaId: string; result: 
 
 const DEFAULT_WATERMARK_SVG = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='%23007A87'><path d='M10,80 Q50,40 90,20 Q60,50 10,80 Z'/><path d='M30,80 Q60,55 90,35 Q65,60 30,80 Z'/></svg>";
 
+const isPreschoolCampusMatch = (effCampus: string | null | undefined, cCode: string | null | undefined, cName: string | null | undefined): boolean => {
+  if (!effCampus) return false;
+  const normEff = effCampus.toUpperCase();
+  const normCode = (cCode || "").toUpperCase();
+  const normName = (cName || "").toUpperCase();
+  if (normEff === normCode || normEff === normName) return true;
+  if (normEff.includes("CS1") || normEff.includes("RIVERSIDE")) {
+    return normCode.includes("CS1") || normCode.includes("RIVERSIDE") || normName.includes("CS1") || normName.includes("RIVERSIDE");
+  }
+  if (normEff.includes("CS2") || normEff.includes("CENTRAL")) {
+    return normCode.includes("CS2") || normCode.includes("CENTRAL") || normName.includes("CS2") || normName.includes("CENTRAL");
+  }
+  if (normEff.includes("CS3") || normEff.includes("GLOBAL")) {
+    return normCode.includes("CS3") || normCode.includes("GLOBAL") || normName.includes("CS3") || normName.includes("GLOBAL");
+  }
+  if (normEff.includes("CS4") || normEff.includes("HILL")) {
+    return normCode.includes("CS4") || normCode.includes("HILL") || normName.includes("CS4") || normName.includes("HILL");
+  }
+  if (normEff.includes("CS5") || normEff.includes("BEACH")) {
+    return normCode.includes("CS5") || normCode.includes("BEACH") || normName.includes("CS5") || normName.includes("BEACH");
+  }
+  return normEff.includes(normCode) || normEff.includes(normName) || normCode.includes(normEff) || normName.includes(normEff);
+};
+
 const inp = "w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-400/10 text-sm font-medium text-slate-700 transition-all shadow-sm";
 
 function Toast({ msg, type }: { msg: string; type: string }) {
@@ -348,11 +372,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     if (typeof window === "undefined" || !selectedReportStudent) return null;
 
     const effCampus = selectedReportStudent.admissionCampus;
-    let targetCampus = campuses.find(c => 
-      c.campusName === effCampus ||
-      effCampus?.includes(c.campusCode) ||
-      effCampus?.includes(c.campusName)
-    );
+    let targetCampus = campuses.find(c => isPreschoolCampusMatch(effCampus, c.campusCode, c.campusName));
     
     if (!targetCampus && campuses.length > 0) {
       targetCampus = campuses[0];
@@ -5002,8 +5022,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               {(() => {
                 const userCampuses = campuses.filter(c => currentUser?.campusIds?.includes(c.id));
                 const hasCampusMatch = currentUser?.campusIds?.length === 0 || userCampuses.some(c => 
-                  c.campusName === evalStudent?.admissionCampus || 
-                  c.campusCode === evalStudent?.admissionCampus
+                  isPreschoolCampusMatch(evalStudent?.admissionCampus, c.campusCode, c.campusName)
                 );
 
                 const canApproveBGH = (isSystemAdmin || isBGHUser) && hasCampusMatch;
