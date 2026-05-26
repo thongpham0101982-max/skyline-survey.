@@ -3273,11 +3273,24 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             <span className="text-[10px] font-black text-violet-500 uppercase tracking-widest mb-5">Xem trước mẫu thiết kế thực tế</span>
             <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-lg flex flex-col w-full aspect-[210/297] relative overflow-hidden">
               {/* Background Watermark */}
-              <div className="absolute pointer-events-none" style={{
-                backgroundImage: `url('${rcBackground || DEFAULT_WATERMARK_SVG}')`,
-                backgroundRepeat: 'no-repeat', backgroundPosition: 'center', backgroundSize: 'contain',
-                opacity: 0.08, top: '10%', left: '10%', width: '80%', height: '80%'
-              }} />
+              <img 
+                crossOrigin={(rcBackground || "").startsWith("data:") ? undefined : "anonymous"} 
+                src={rcBackground || DEFAULT_WATERMARK_SVG} 
+                alt="Watermark" 
+                className="absolute pointer-events-none select-none" 
+                style={{ 
+                  display: "block", 
+                  position: "absolute", 
+                  top: "10%", 
+                  left: "10%", 
+                  width: "80%", 
+                  height: "80%", 
+                  objectFit: "contain", 
+                  opacity: 0.08, 
+                  zIndex: 0, 
+                  pointerEvents: "none" 
+                }} 
+              />
 
               {/* Content */}
               <div className="relative z-10 flex flex-col h-full">
