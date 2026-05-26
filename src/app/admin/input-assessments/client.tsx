@@ -6233,7 +6233,7 @@ return {
                 <div 
                   id="print-letter-area" 
                   className="bg-white shadow-lg border border-slate-200 relative text-slate-800 text-sm leading-relaxed print-page"
-                  style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "297mm", padding: "12.7mm 15mm 48mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "block", overflow: "hidden" }}
+                  style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "auto", padding: "12.7mm 15mm 15mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "block", overflow: "hidden" }}
               >
                 {/* Print Watermark */}
                 <img crossOrigin={(rcBackground || DEFAULT_WATERMARK_SVG).startsWith("data:") ? undefined : "anonymous"}  className="print-watermark" src={rcBackground || DEFAULT_WATERMARK_SVG} alt="Watermark" style={{ display: "block", position: "absolute", top: "22%", left: "10%", transform: "none", width: "80%", height: "auto", opacity: 0.08, zIndex: 0, pointerEvents: "none" }} />
@@ -6460,7 +6460,7 @@ return {
                 {modalDocList && modalDocList.length > 0 && (
                   <div 
                     className="bg-white shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed print-page mt-8"
-                    style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "297mm", padding: "12.7mm 15mm 48mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "block", overflow: "hidden" }}
+                    style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "auto", padding: "12.7mm 15mm 15mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "block", overflow: "hidden" }}
                   >
                     <div className="flex flex-col relative z-10 w-full">
                 {/* Print Watermark */}
@@ -6649,7 +6649,7 @@ return {
                     <div 
                       key={"assessment_page_" + sc.id}
                       className="bg-white shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed print-page mt-8"
-                      style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "297mm", padding: "12.7mm 15mm 48mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "block", overflow: "hidden" }}
+                      style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "auto", padding: "12.7mm 15mm 15mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "block", overflow: "hidden" }}
                     >
                       <div className="flex flex-col relative z-10 w-full">
                         {/* Print Watermark */}

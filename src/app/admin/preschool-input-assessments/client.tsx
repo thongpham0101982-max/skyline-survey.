@@ -4239,7 +4239,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 <div 
                   id="print-letter-area" 
                   className="bg-white shadow-lg border border-slate-200 relative text-slate-800 text-sm leading-relaxed print-page"
-                  style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "297mm", padding: "12.7mm 15mm 5mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "flex", flexDirection: "column", overflow: "hidden" }}
+                  style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "auto", padding: "12.7mm 15mm 15mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "flex", flexDirection: "column", overflow: "hidden" }}
               >
                 {/* Print Watermark */}
                 {studentCampusConfig?.background && (
@@ -4424,7 +4424,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 {([]) && ([]).length > 0 && (
                   <div 
                     className="bg-white shadow-lg border border-slate-200 relative text-slate-800 text-sm leading-relaxed print-page mt-8"
-                    style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "297mm", padding: "12.7mm 15mm 5mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "flex", flexDirection: "column", overflow: "hidden" }}
+                    style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "auto", padding: "12.7mm 15mm 15mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "flex", flexDirection: "column", overflow: "hidden" }}
                   >
                     <div className="flex flex-col relative z-10 w-full" style={{ flex: "1 1 auto", minHeight: 0, overflow: "hidden" }}>
                 {/* Print Watermark */}
@@ -4615,7 +4615,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <div 
                       key={"assessment_page_" + sc.id}
                       className="bg-white shadow-lg border border-slate-200 relative text-slate-800 text-sm leading-relaxed print-page mt-8"
-                      style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "297mm", padding: "12.7mm 15mm 5mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "flex", flexDirection: "column", overflow: "hidden" }}
+                      style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "auto", padding: "12.7mm 15mm 15mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "flex", flexDirection: "column", overflow: "hidden" }}
                     >
                       <div className="flex flex-col relative z-10 w-full" style={{ flex: "1 1 auto", minHeight: 0, overflow: "hidden" }}>
                         {/* Print Watermark */}
