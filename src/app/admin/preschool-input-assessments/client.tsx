@@ -445,6 +445,8 @@ Chúc con có những năm tháng học tập đầy ý nghĩa và trải nghi�
     try {
       const r = await fetch(`/api/preschool-input-assessments?academicYearId=${yearId}`);
       if (r.ok) { const d: Period[] = await r.json(); setPeriods(d); if (!cPeriodId && d.length > 0) { setCPeriodId(d[0].id); setRptPeriodId(d[0].id); } }
+    } catch (e) {
+      console.error("fetchPeriods error:", e);
     } finally { setPLoading(false); }
   }, [yearId, cPeriodId]);
 
@@ -458,6 +460,8 @@ Chúc con có những năm tháng học tập đầy ý nghĩa và trải nghi�
       if (cBatchId) url += `&batchId=${cBatchId}`;
       const r = await fetch(url);
       if (r.ok) setChildren(await r.json());
+    } catch (e) {
+      console.error("fetchChildren error:", e);
     } finally { setCLoading(false); }
   }, [cPeriodId, cBatchId]);
 
@@ -466,7 +470,7 @@ Chúc con có những năm tháng học tập đầy ý nghĩa và trải nghi�
   const fetchConfigs = useCallback(async () => {
     setCfgLoading(true);
     setCfgSelected([]);
-    try { const r = await fetch("/api/preschool-assessment-configs"); if (r.ok) setConfigs(await r.json()); } finally { setCfgLoading(false); }
+    try { const r = await fetch("/api/preschool-assessment-configs"); if (r.ok) setConfigs(await r.json()); } catch (e) { console.error("fetchConfigs error:", e); } finally { setCfgLoading(false); }
   }, []);
 
   useEffect(() => { fetchConfigs(); }, [fetchConfigs]);
@@ -480,6 +484,8 @@ Chúc con có những năm tháng học tập đầy ý nghĩa và trải nghi�
       if (ageGroup) url += `&ageGroup=${encodeURIComponent(ageGroup)}`;
       const r = await fetch(url);
       if (r.ok) setDevAreas(await r.json());
+    } catch (e) {
+      console.error("fetchDevAreas error:", e);
     } finally { setDevLoading(false); }
   }, []);
 
@@ -497,6 +503,8 @@ Chúc con có những năm tháng học tập đầy ý nghĩa và trải nghi�
       if (cBatchId) url += `&batchId=${cBatchId}`;
       const r = await fetch(url);
       if (r.ok) setStudentSummaries(await r.json());
+    } catch (e) {
+      console.error("fetchStudentSummaries error:", e);
     } finally { setSumLoading(false); }
   }, [cPeriodId, cBatchId]);
 
@@ -3844,7 +3852,7 @@ Chúc con có những năm tháng học tập đầy ý nghĩa và trải nghi�
                   <div className="flex flex-col gap-1 border-b pb-2 mb-3">
                     <div className="flex items-center justify-between">
                       {studentCampusConfig?.logo ? (
-                        <img crossOrigin={studentCampusConfig.logo.startsWith("data:") ? undefined : "anonymous"}  src={studentCampusConfig.logo} alt="Logo" className="h-12 object-contain" />
+                        <img crossOrigin={studentCampusConfig?.logo?.startsWith("data:") ? undefined : "anonymous"}  src={studentCampusConfig?.logo} alt="Logo" className="h-12 object-contain" />
                       ) : (
                         <div className="flex items-center gap-1.5">
                           <span className="text-2xl font-black tracking-tight text-teal-600" style={{ fontFamily: "Arial, sans-serif" }}>SKY-LINE</span>
@@ -3879,7 +3887,7 @@ Chúc con có những năm tháng học tập đầy ý nghĩa và trải nghi�
                   {isInvitation ? (
                     studentCampusConfig?.content ? (
                       <div className="space-y-3 text-justify text-slate-800 font-serif" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: "13.5pt", lineHeight: "1.45", textAlign: "justify" }}>
-                        {renderPreschoolTemplate(studentCampusConfig.content, selectedReportStudent).split('\n').filter(Boolean).map((para, idx) => (
+                        {renderPreschoolTemplate(studentCampusConfig?.content || "", selectedReportStudent).split('\n').filter(Boolean).map((para, idx) => (
                           <p key={idx} className="" style={{ textIndent: "1cm" }}>{para}</p>
                         ))}
                       </div>
@@ -3970,7 +3978,7 @@ Chúc con có những năm tháng học tập đầy ý nghĩa và trải nghi�
                       
                       <div className="h-16 flex items-center justify-center">
                         {studentCampusConfig?.signature ? (
-                          <img crossOrigin="anonymous" src={studentCampusConfig.signature} alt="Signature" className="max-h-full object-contain" />
+                          <img crossOrigin="anonymous" src={studentCampusConfig?.signature} alt="Signature" className="max-h-full object-contain" />
                         ) : (
                           <span className="font-serif italic text-xl text-slate-400 font-light tracking-widest opacity-60" style={{ fontFamily: "'Brush Script MT', cursive, sans-serif" }}>
                             {selectedReportStudent?.signatureName || studentCampusConfig?.directorName || "Trần Thị Thanh"}
@@ -3991,7 +3999,7 @@ Chúc con có những năm tháng học tập đầy ý nghĩa và trải nghi�
                 {/* Footer Contact */}
                 {studentCampusConfig?.footer ? (
                   <div className="border-t border-slate-200 pt-3 absolute z-10 w-full print-footer" style={{ bottom: "8mm", left: "0", right: "0", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box" }}>
-                    <img crossOrigin={studentCampusConfig.footer.startsWith("data:") ? undefined : "anonymous"}  src={studentCampusConfig.footer} alt="Footer Print" className="w-full" style={{ maxHeight: "100px", objectFit: "contain" }} />
+                    <img crossOrigin={studentCampusConfig?.footer?.startsWith("data:") ? undefined : "anonymous"}  src={studentCampusConfig?.footer} alt="Footer Print" className="w-full" style={{ maxHeight: "100px", objectFit: "contain" }} />
                   </div>
                 ) : (
                   <div className="w-full pt-1 mt-4 absolute z-10 print-footer" style={{ bottom: "8mm", left: "0", right: "0", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}>
