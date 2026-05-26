@@ -4291,49 +4291,26 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
 
                                 {/* Bottom Signature Area */}
-                {isInvitation ? (
-                  <div className="flex flex-col items-end mt-8 pr-4">
-                    <div className="flex flex-col items-center text-center" style={{ minWidth: "240px" }}>
-                      <p className="italic text-slate-500 mb-1">{formattedLetterDate}</p>
-                      <p className="font-bold uppercase text-indigo-950 text-xs tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
-                      <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-6">TRƯỞNG BAN TUYỂN SINH SKY-LINE</p>
-                      
-                      <div className="h-16 flex items-center justify-center">
+                <div className="flex flex-col items-end mt-8 pr-4">
+                  <div className="flex flex-col items-center text-center" style={{ minWidth: "240px" }}>
+                    <p className="italic text-slate-500 mb-1 text-[11px] font-medium">{formattedLetterDate}</p>
+                    <p className="font-bold uppercase text-indigo-950 text-xs tracking-wider">GIÁM ĐỐC CƠ SỞ</p>
+                    
+                    <div className="h-16 flex items-center justify-center">
+                      {studentCampusConfig?.signature ? (
+                        <img crossOrigin="anonymous" src={studentCampusConfig?.signature} alt="Signature" className="max-h-full object-contain" />
+                      ) : (
                         <span className="font-serif italic text-xl text-slate-400 font-light tracking-widest opacity-60" style={{ fontFamily: "'Brush Script MT', cursive, sans-serif" }}>
-                          Ban Tuyển sinh
+                          {studentCampusConfig?.directorName || "Trần Thị Thanh"}
                         </span>
-                      </div>
-                      
-                      <p className="font-bold text-slate-700 mt-2 text-sm">
-                        Ban Tuyển sinh
-                      </p>
+                      )}
                     </div>
+                    
+                    <p className="font-bold text-slate-700 mt-2 text-sm">
+                      {studentCampusConfig?.directorName || "Trần Thị Thanh"}
+                    </p>
                   </div>
-                ) : (
-                  <div className="flex flex-col items-end mt-8 pr-4">
-                    <div className="flex flex-col items-center text-center" style={{ minWidth: "240px" }}>
-                      <p className="italic text-slate-500 mb-1 text-[11px] font-medium">{formattedLetterDate}</p>
-                      <p className="font-bold uppercase text-indigo-950 text-xs tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
-                      <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-4">
-                        GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}
-                      </p>
-                      
-                      <div className="h-16 flex items-center justify-center">
-                        {studentCampusConfig?.signature ? (
-                          <img crossOrigin="anonymous" src={studentCampusConfig?.signature} alt="Signature" className="max-h-full object-contain" />
-                        ) : (
-                          <span className="font-serif italic text-xl text-slate-400 font-light tracking-widest opacity-60" style={{ fontFamily: "'Brush Script MT', cursive, sans-serif" }}>
-                            {selectedReportStudent?.signatureName || studentCampusConfig?.directorName || "Trần Thị Thanh"}
-                          </span>
-                        )}
-                      </div>
-                      
-                      <p className="font-bold text-slate-700 mt-2 text-sm">
-                        {selectedReportStudent?.signatureName || studentCampusConfig?.directorName || "Trần Thị Thanh"}
-                      </p>
-                    </div>
-                  </div>
-                )}
+                </div>
                 </div>
 
                 
