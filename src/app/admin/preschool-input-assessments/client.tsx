@@ -139,124 +139,6 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   // Đánh giá học sinh
   const [evalStudent, setEvalStudent] = useState<PreschoolChild | null>(null);
 
-    const defaultPreschoolCongratulations = `Chúc mừng con đã vượt qua kỳ khảo sát đầu vào lớp {{grade}} hệ {{surveyFormType}} năm học {{academicYear}}. Con đã chính thức đặt bước chân đầu tiên trên con đường trở thành học sinh của Trường Mầm non Sky-Line (Cơ sở {{admissionCampus}}) – một cột mốc quan trọng trong hành trình phát triển của con.
-
-Thầy cô tại Sky-Line vui mừng chào đón con đến với ngôi trường hạnh phúc, nơi không chỉ cung cấp kiến thức mà còn giúp con phát triển toàn diện cả về năng lực và nhân cách. Chúng tôi tin rằng, con sẽ có những trải nghiệm thật tuyệt vời và đáng nhớ trong những năm học sắp tới.
-
-Nhà trường hy vọng rằng, với sự nhanh nhẹn và đáng yêu của mình, con sẽ là một mảnh ghép sắc màu góp phần làm phong phú thêm bức tranh học đường tại Sky-Line. Nơi đây, con sẽ được học hỏi những điều mới lạ, được chơi đùa cùng các bạn và được các cô giáo yêu thương chăm sóc.
-
-Chúc con có những năm tháng học tập đầy ý nghĩa và trải nghiệm thú vị tại Sky-Line. Hãy luôn giữ vững niềm đam mê học hỏi và khát khao khám phá thế giới xung quanh con nhé!`;
-
-  const currentAcademicYearName = useMemo(() => {
-    const ay = academicYears.find(a => a.id === yearId);
-    return ay ? ay.name : "2025-2026";
-  }, [academicYears, yearId]);
-
-      const renderPreschoolTemplate = (template: string, student: any) => {
-    if (!template) return "";
-    const rawGrade = student?.grade || "";
-    const cleanCampus = (student?.admissionCampus || "").replace("Cơ sở ", "");
-    return template
-      .replace(/\{\{fullName\}\}/g, student?.fullName || "")
-      .replace(/\{\{grade\}\}/g, rawGrade)
-      .replace(/\{\{surveyFormType\}\}/g, student?.surveyFormType || "Chất lượng cao")
-      .replace(/\{\{admissionCampus\}\}/g, cleanCampus)
-      .replace(/\{\{academicYear\}\}/g, currentAcademicYearName)
-      .replace(/\{\{hocKy\}\}/g, student?.hocKy || "1")
-      .replace(/\{\{signatureName\}\}/g, student?.signatureName || "");
-  };
-
-  const studentCampusConfig = useMemo(() => {
-    if (typeof window === "undefined" || !selectedReportStudent) return null;
-
-    const effCampus = selectedReportStudent.admissionCampus;
-    let targetCampus = campuses.find(c => 
-      c.campusName === effCampus ||
-      effCampus?.includes(c.campusCode) ||
-      effCampus?.includes(c.campusName)
-    );
-    
-    if (!targetCampus && campuses.length > 0) {
-      targetCampus = campuses[0];
-    }
-    
-    if (targetCampus) {
-      const baseKey = isInvitation ? 'thu_moi' : 'thu_chuc_mung';
-      const studentGroup = "preschool";
-      const candidateKeys = [baseKey + '_' + studentGroup, baseKey];
-      let typeKey = baseKey;
-      
-      const matchingKey = candidateKeys.find(k => {
-        return localStorage.getItem('report_config_' + targetCampus.id + '_' + k) || localStorage.getItem('report_config_global_' + k);
-      });
-      if (matchingKey) {
-        typeKey = matchingKey;
-      }
-      const savedCampus = localStorage.getItem('report_config_' + targetCampus.id + '_' + typeKey);
-      const savedGlobal = localStorage.getItem('report_config_global_' + typeKey);
-      
-      let campusData: any = {};
-      let globalData: any = {};
-      
-      if (savedCampus) {
-        try { campusData = JSON.parse(savedCampus); } catch (e) {}
-      }
-      if (savedGlobal) {
-        try { globalData = JSON.parse(savedGlobal); } catch (e) {}
-      }
-      
-      const mergedTitle = globalData.title || campusData.title || (isInvitation ? "THƯ MỜI" : "THƯ CHÚC MỪNG");
-      
-      const mLogo = localStorage.getItem('report_config_master_logo');
-      const mBg = localStorage.getItem('report_config_master_background');
-      const mFooter = localStorage.getItem('report_config_master_footer');
-
-      const mergedLogo = mLogo ? mLogo : (globalData.logo || campusData.logo || "");
-      const mergedBackground = mBg ? mBg : (globalData.background || campusData.background || "");
-      const mergedContent = globalData.content || campusData.content || "";
-      const mergedFooter = mFooter ? mFooter : (globalData.footer || campusData.footer || "");
-      
-      return {
-        title: mergedTitle,
-        logo: mergedLogo,
-        background: mergedBackground,
-        content: mergedContent,
-        footer: mergedFooter,
-        signature: campusData.signature || "",
-        directorName: campusData.directorName || targetCampus.manager?.fullName || ""
-      };
-    }
-    return null;
-  }, [selectedReportStudent, campuses, isInvitation]);
-
-    const campusTitleSuffix = useMemo(() => {
-    if (!selectedReportStudent) return "GLOBAL";
-    const effCampus = selectedReportStudent.admissionCampus || "";
-    const clean = effCampus.toUpperCase();
-    if (clean.includes("HILL")) return "HILL";
-    if (clean.includes("RIVERSIDE")) return "RIVERSIDE";
-    if (clean.includes("CENTRAL")) return "CENTRAL";
-    if (clean.includes("BEACH")) return "BEACH";
-    return "GLOBAL";
-  }, [selectedReportStudent]);
-
-  const studentSchoolName = useMemo(() => {
-    if (!selectedReportStudent) return "TRƯỜNG MẦM NON SKY-LINE";
-    const effCampus = selectedReportStudent.admissionCampus || "";
-    const clean = effCampus.toUpperCase();
-    if (clean.includes("HILL")) {
-      return "TRƯỜNG MẦM NON SKY-LINE HILL";
-    }
-    return "TRƯỜNG MẦM NON SKY-LINE";
-  }, [selectedReportStudent]);
-
-  const formattedLetterDate = useMemo(() => {
-    const d = new Date();
-    const day = String(d.getDate()).padStart(2, "0");
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    const year = d.getFullYear();
-    return `Đà Nẵng, ngày ${day} tháng ${month} năm ${year}`;
-  }, []);
   const [evalModal, setEvalModal] = useState(false);
   const [devAreas, setDevAreas] = useState<DevArea[]>([]);
   const [devType, setDevType] = useState<"INPUT"|"PROBATION">("INPUT");
@@ -390,6 +272,125 @@ Chúc con có những năm tháng học tập đầy ý nghĩa và trải nghi�
   const [probResult, setProbResult] = useState("");
   const [probComment, setProbComment] = useState("");
   const [savingProb, setSavingProb] = useState(false);
+
+    const defaultPreschoolCongratulations = `Chúc mừng con đã vượt qua kỳ khảo sát đầu vào lớp {{grade}} hệ {{surveyFormType}} năm học {{academicYear}}. Con đã chính thức đặt bước chân đầu tiên trên con đường trở thành học sinh của Trường Mầm non Sky-Line (Cơ sở {{admissionCampus}}) – một cột mốc quan trọng trong hành trình phát triển của con.
+
+Thầy cô tại Sky-Line vui mừng chào đón con đến với ngôi trường hạnh phúc, nơi không chỉ cung cấp kiến thức mà còn giúp con phát triển toàn diện cả về năng lực và nhân cách. Chúng tôi tin rằng, con sẽ có những trải nghiệm thật tuyệt vời và đáng nhớ trong những năm học sắp tới.
+
+Nhà trường hy vọng rằng, với sự nhanh nhẹn và đáng yêu của mình, con sẽ là một mảnh ghép sắc màu góp phần làm phong phú thêm bức tranh học đường tại Sky-Line. Nơi đây, con sẽ được học hỏi những điều mới lạ, được chơi đùa cùng các bạn và được các cô giáo yêu thương chăm sóc.
+
+Chúc con có những năm tháng học tập đầy ý nghĩa và trải nghiệm thú vị tại Sky-Line. Hãy luôn giữ vững niềm đam mê học hỏi và khát khao khám phá thế giới xung quanh con nhé!`;
+
+  const currentAcademicYearName = useMemo(() => {
+    const ay = academicYears.find(a => a.id === yearId);
+    return ay ? ay.name : "2025-2026";
+  }, [academicYears, yearId]);
+
+      const renderPreschoolTemplate = (template: string, student: any) => {
+    if (!template) return "";
+    const rawGrade = student?.grade || "";
+    const cleanCampus = (student?.admissionCampus || "").replace("Cơ sở ", "");
+    return template
+      .replace(/\{\{fullName\}\}/g, student?.fullName || "")
+      .replace(/\{\{grade\}\}/g, rawGrade)
+      .replace(/\{\{surveyFormType\}\}/g, student?.surveyFormType || "Chất lượng cao")
+      .replace(/\{\{admissionCampus\}\}/g, cleanCampus)
+      .replace(/\{\{academicYear\}\}/g, currentAcademicYearName)
+      .replace(/\{\{hocKy\}\}/g, student?.hocKy || "1")
+      .replace(/\{\{signatureName\}\}/g, student?.signatureName || "");
+  };
+
+  const studentCampusConfig = useMemo(() => {
+    if (typeof window === "undefined" || !selectedReportStudent) return null;
+
+    const effCampus = selectedReportStudent.admissionCampus;
+    let targetCampus = campuses.find(c => 
+      c.campusName === effCampus ||
+      effCampus?.includes(c.campusCode) ||
+      effCampus?.includes(c.campusName)
+    );
+    
+    if (!targetCampus && campuses.length > 0) {
+      targetCampus = campuses[0];
+    }
+    
+    if (targetCampus) {
+      const baseKey = isInvitation ? 'thu_moi' : 'thu_chuc_mung';
+      const studentGroup = "preschool";
+      const candidateKeys = [baseKey + '_' + studentGroup, baseKey];
+      let typeKey = baseKey;
+      
+      const matchingKey = candidateKeys.find(k => {
+        return localStorage.getItem('report_config_' + targetCampus.id + '_' + k) || localStorage.getItem('report_config_global_' + k);
+      });
+      if (matchingKey) {
+        typeKey = matchingKey;
+      }
+      const savedCampus = localStorage.getItem('report_config_' + targetCampus.id + '_' + typeKey);
+      const savedGlobal = localStorage.getItem('report_config_global_' + typeKey);
+      
+      let campusData: any = {};
+      let globalData: any = {};
+      
+      if (savedCampus) {
+        try { campusData = JSON.parse(savedCampus); } catch (e) {}
+      }
+      if (savedGlobal) {
+        try { globalData = JSON.parse(savedGlobal); } catch (e) {}
+      }
+      
+      const mergedTitle = globalData.title || campusData.title || (isInvitation ? "THƯ MỜI" : "THƯ CHÚC MỪNG");
+      
+      const mLogo = localStorage.getItem('report_config_master_logo');
+      const mBg = localStorage.getItem('report_config_master_background');
+      const mFooter = localStorage.getItem('report_config_master_footer');
+
+      const mergedLogo = mLogo ? mLogo : (globalData.logo || campusData.logo || "");
+      const mergedBackground = mBg ? mBg : (globalData.background || campusData.background || "");
+      const mergedContent = globalData.content || campusData.content || "";
+      const mergedFooter = mFooter ? mFooter : (globalData.footer || campusData.footer || "");
+      
+      return {
+        title: mergedTitle,
+        logo: mergedLogo,
+        background: mergedBackground,
+        content: mergedContent,
+        footer: mergedFooter,
+        signature: campusData.signature || "",
+        directorName: campusData.directorName || targetCampus.manager?.fullName || ""
+      };
+    }
+    return null;
+  }, [selectedReportStudent, campuses, isInvitation]);
+
+    const campusTitleSuffix = useMemo(() => {
+    if (!selectedReportStudent) return "GLOBAL";
+    const effCampus = selectedReportStudent.admissionCampus || "";
+    const clean = effCampus.toUpperCase();
+    if (clean.includes("HILL")) return "HILL";
+    if (clean.includes("RIVERSIDE")) return "RIVERSIDE";
+    if (clean.includes("CENTRAL")) return "CENTRAL";
+    if (clean.includes("BEACH")) return "BEACH";
+    return "GLOBAL";
+  }, [selectedReportStudent]);
+
+  const studentSchoolName = useMemo(() => {
+    if (!selectedReportStudent) return "TRƯỜNG MẦM NON SKY-LINE";
+    const effCampus = selectedReportStudent.admissionCampus || "";
+    const clean = effCampus.toUpperCase();
+    if (clean.includes("HILL")) {
+      return "TRƯỜNG MẦM NON SKY-LINE HILL";
+    }
+    return "TRƯỜNG MẦM NON SKY-LINE";
+  }, [selectedReportStudent]);
+
+  const formattedLetterDate = useMemo(() => {
+    const d = new Date();
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    return `Đà Nẵng, ngày ${day} tháng ${month} năm ${year}`;
+  }, []);
 
   // Age & Grade auto-verifier helper
   const getMonthsAndSuggestGrade = useCallback((dobStr: string, batchId: string) => {
