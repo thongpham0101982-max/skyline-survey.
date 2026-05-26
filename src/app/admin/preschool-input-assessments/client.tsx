@@ -3874,11 +3874,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               
               .print-page {
                 width: 210mm !important;
-                height: 297mm !important;
-                min-height: 297mm !important;
-                max-height: 297mm !important;
+                height: auto !important;
+                min-height: auto !important;
+                max-height: none !important;
                 margin: 0 !important; /* MUST BE 0 to avoid Chrome auto-centering */
-                padding: 12.7mm 15mm 5mm 15mm !important;
+                padding: 12.7mm 15mm 15mm 15mm !important;
                 box-shadow: none !important;
                 border: none !important;
                 display: flex !important;
@@ -3887,12 +3887,14 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 page-break-after: always !important;
                 break-after: page !important;
                 background: white !important;
-                overflow: hidden !important;
+                overflow: visible !important;
               }
               
               /* Force all footers to anchor to the very bottom of the page */
               .print-footer {
-                margin-top: auto !important;
+                position: relative !important;
+                margin-top: 40px !important;
+                bottom: auto !important;
                 width: 100% !important;
                 padding-left: 15mm !important;
                 padding-right: 15mm !important;
@@ -4077,6 +4079,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               
               /* DEFINITIVE ABSOLUTE PRINT FOOTER PIN FOR 297mm A4 SHEETS */
               .print-page .print-footer, #print-letter-area .print-footer {
+                position: relative !important;
                 margin-top: 40px !important; /* Natural spacing below content */
                 height: auto !important;
                 
@@ -4091,6 +4094,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 z-index: 9999 !important;
                 flex-shrink: 0 !important;
                 width: 100% !important;
+              }
+              .print-page > div {
+                flex: none !important;
               }
               
               /* USER MANDATED CONTENT TYPOGRAPHY RULES */
@@ -4488,11 +4494,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     
                     {/* Footer Contact */}
                     {studentCampusConfig?.footer ? (
-                      <div className="border-t border-slate-200 pt-3 z-10 w-full print-footer" style={{ marginTop: "auto", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box" }}>
+                      <div className="border-t border-slate-200 pt-3 z-10 w-full print-footer" style={{ marginTop: "40px", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box" }}>
                         <img crossOrigin={studentCampusConfig.footer.startsWith("data:") ? undefined : "anonymous"}  src={studentCampusConfig.footer} alt="Footer Print" className="w-full" style={{ maxHeight: "100px", objectFit: "contain" }} />
                       </div>
                     ) : (
-                      <div className="w-full pt-1 z-10 print-footer" style={{ marginTop: "auto", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}>
+                      <div className="w-full pt-1 z-10 print-footer" style={{ marginTop: "40px", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}>
                     {/* High-fidelity Header Title & Line */}
                     <div className="flex items-center gap-2 mb-2.5 w-full">
                       <span className="font-bold text-[#00A6A9] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
@@ -4675,11 +4681,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
                       {/* Footer Contact */}
                       {null ? (
-                        <div className="border-t border-slate-200 pt-3 z-10 w-full print-footer" style={{ marginTop: "auto", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box" }}>
+                        <div className="border-t border-slate-200 pt-3 z-10 w-full print-footer" style={{ marginTop: "40px", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box" }}>
                           <img crossOrigin={({}).footer?.startsWith("data:") ? undefined : "anonymous"} src={({}).footer} alt="Footer Print" className="w-full" style={{ maxHeight: "100px", objectFit: "contain" }} />
                         </div>
                       ) : (
-                        <div className="w-full pt-1 z-10 print-footer" style={{ marginTop: "auto", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}>
+                        <div className="w-full pt-1 z-10 print-footer" style={{ marginTop: "40px", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}>
                           <div className="flex items-center gap-2 mb-2.5 w-full">
                             <span className="font-bold text-[#00A6A9] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
                             <div className="flex-grow border-t border-[#00A6A9]/70 h-0 mt-0.5"></div>

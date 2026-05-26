@@ -5865,30 +5865,32 @@ return {
               
               .print-page {
                 width: 210mm !important;
-                height: 297mm !important;
-                min-height: 297mm !important;
-                max-height: 297mm !important;
+                height: auto !important;
+                min-height: auto !important;
+                max-height: none !important;
                 margin: 0 !important; /* MUST BE 0 to avoid Chrome auto-centering */
-                padding: 15mm 15mm 30mm 20mm !important;
+                padding: 12.7mm 15mm 15mm 15mm !important;
                 box-shadow: none !important;
                 border: none !important;
-                display: block !important;
+                display: flex !important;
+                flex-direction: column !important;
                 position: relative !important;
                 page-break-after: always !important;
                 break-after: page !important;
                 background: white !important;
+                overflow: visible !important;
               }
               
               /* Force all footers to anchor to the very bottom of the page */
               .print-footer {
-                position: absolute !important;
-                bottom: 8mm !important;
-                left: 0 !important;
-                right: 0 !important;
+                position: relative !important;
+                margin-top: 40px !important;
+                bottom: auto !important;
                 width: 100% !important;
                 padding-left: 15mm !important;
                 padding-right: 15mm !important;
                 box-sizing: border-box !important;
+                flex-shrink: 0 !important;
               }
               
               /* Watermark */
@@ -6075,16 +6077,18 @@ return {
                 /* Safety buffer for interior text elements while supporting full bleed checkmark */
                 padding-left: 15mm !important; 
                 padding-right: 15mm !important;
-                padding-bottom: 8mm !important; /* Internal physical buffer from absolute paper edge */
+                padding-bottom: 0 !important;
                 
-                margin-top: 0 !important;
                 margin-bottom: 0 !important;
                 box-sizing: border-box !important;
                 background: transparent !important;
-                display: flex !important;
-                flex-direction: column !important;
-                justify-content: flex-end !important; /* Push elements to bottom buffer */
+                display: block !important;
                 z-index: 9999 !important;
+                flex-shrink: 0 !important;
+                width: 100% !important;
+              }
+              .print-page > div {
+                flex: none !important;
               }
               
               /* USER MANDATED CONTENT TYPOGRAPHY RULES */
@@ -6459,7 +6463,7 @@ return {
                 </div>
                 {modalDocList && modalDocList.length > 0 && (
                   <div 
-                    className="bg-white shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed print-page mt-8"
+                    className="bg-white shadow-lg border border-slate-200 relative text-slate-800 text-sm leading-relaxed print-page mt-8"
                     style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "auto", padding: "12.7mm 15mm 15mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "block", overflow: "hidden" }}
                   >
                     <div className="flex flex-col relative z-10 w-full">
@@ -6648,7 +6652,7 @@ return {
                   return (
                     <div 
                       key={"assessment_page_" + sc.id}
-                      className="bg-white shadow-lg border border-slate-200 relative flex flex-col justify-between text-slate-800 text-sm leading-relaxed print-page mt-8"
+                      className="bg-white shadow-lg border border-slate-200 relative text-slate-800 text-sm leading-relaxed print-page mt-8"
                       style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "auto", padding: "12.7mm 15mm 15mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "block", overflow: "hidden" }}
                     >
                       <div className="flex flex-col relative z-10 w-full">
@@ -6707,11 +6711,11 @@ return {
 
                       {/* Footer Contact */}
                       {studentCampusConfig?.footer ? (
-                        <div className="border-t border-slate-200 pt-3 absolute z-10 w-full print-footer" style={{ bottom: "8mm", left: "0", right: "0", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box" }}>
+                        <div className="border-t border-slate-200 pt-3 z-10 w-full print-footer" style={{ marginTop: "40px", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box" }}>
                           <img crossOrigin={studentCampusConfig.footer?.startsWith("data:") ? undefined : "anonymous"} src={studentCampusConfig.footer} alt="Footer Print" className="w-full" style={{ maxHeight: "100px", objectFit: "contain" }} />
                         </div>
                       ) : (
-                        <div className="w-full pt-1 mt-4 absolute z-10 print-footer" style={{ bottom: "8mm", left: "0", right: "0", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}>
+                        <div className="w-full pt-1 mt-4 z-10 print-footer" style={{ marginTop: "40px", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}>
                           <div className="flex items-center gap-2 mb-2.5 w-full">
                             <span className="font-bold text-[#00A6A9] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
                             <div className="flex-grow border-t border-[#00A6A9]/70 h-0 mt-0.5"></div>
