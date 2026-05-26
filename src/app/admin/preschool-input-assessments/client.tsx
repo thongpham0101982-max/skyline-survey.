@@ -169,6 +169,82 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [isInvitation, setIsInvitation] = useState(true);
   const [selectedReportStudent, setSelectedReportStudent] = useState<any>(null);
+
+  // States for Email Congrats Checklist modal
+  const [isEmailCongratsModalOpen, setIsEmailCongratsModalOpen] = useState(false);
+  const [emailCongratsStudent, setEmailCongratsStudent] = useState<any>(null);
+  const [emailCongratsRecipients, setEmailCongratsRecipients] = useState<any[]>([]);
+  const [emailCongratsLoading, setEmailCongratsLoading] = useState(false);
+  const [emailCongratsSending, setEmailCongratsSending] = useState(false);
+  const [emailCongratsAdditionalNote, setEmailCongratsAdditionalNote] = useState("");
+
+  const openEmailCongratsModal = async (student: any) => {
+    setEmailCongratsStudent(student);
+    setIsEmailCongratsModalOpen(true);
+    setEmailCongratsLoading(true);
+    setEmailCongratsAdditionalNote("");
+    setEmailCongratsRecipients([]);
+    try {
+      const res = await fetch("/api/preschool-input-assessment-students", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "GET_CAMPUS_RECIPIENTS", studentId: student.id })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setEmailCongratsRecipients(data.recipients || []);
+      } else {
+        alert("Không thể tải danh sách người nhận: " + (data.error || "Lỗi không xác định"));
+      }
+    } catch (err: any) {
+      alert("Lỗi kết nối: " + err.message);
+    } finally {
+      setEmailCongratsLoading(false);
+    }
+  };
+
+  const handleSendCongratsEmail = async () => {
+    const selectedEmails = emailCongratsRecipients
+      .filter((r: any) => r.checked)
+      .map((r: any) => r.email);
+
+    if (selectedEmails.length === 0) {
+      alert("Vui lòng chọn ít nhất một người nhận email.");
+      return;
+    }
+
+    setEmailCongratsSending(true);
+    try {
+      const res = await fetch("/api/preschool-input-assessment-students", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "SEND_CONGRATS_EMAIL",
+          studentId: emailCongratsStudent.id,
+          recipients: selectedEmails,
+          additionalNote: emailCongratsAdditionalNote
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`Gửi email chúc mừng thành công tới ${data.sentCount} người nhận!`);
+        setIsEmailCongratsModalOpen(false);
+      } else {
+        alert("Gửi email thất bại: " + (data.error || "Lỗi không xác định"));
+      }
+    } catch (err: any) {
+      alert("Lỗi kết nối: " + err.message);
+    } finally {
+      setEmailCongratsSending(false);
+    }
+  };
+
+  const handleRecipientCheckChange = (index: number, checked: boolean) => {
+    const updated = [...emailCongratsRecipients];
+    updated[index].checked = checked;
+    setEmailCongratsRecipients(updated);
+  };
+
   const [mockPreviewStudent, setMockPreviewStudent] = useState<any>(null);
   const [emailStudents, setEmailStudents] = useState<any[]>([]);
   const [emailSending, setEmailSending] = useState(false);
@@ -2960,13 +3036,22 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 <td className="p-4 text-slate-600 text-sm">{s.admissionCampus || "—"}</td>
                                 <td className="p-4">{resultBadge()}</td>
                                 <td className="p-4">
-                                  <button
-                                    onClick={() => { setSelectedReportStudent(s); setIsInvitation(false); setIsPrintModalOpen(true); }}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-500 hover:text-white rounded-xl border border-emerald-100 transition-all shadow-sm"
-                                  >
-                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                                    Xuất thư Chúc mừng
-                                  </button>
+                                  <div className="flex gap-2">
+                                    <button
+                                      onClick={() => { setSelectedReportStudent(s); setIsInvitation(false); setIsPrintModalOpen(true); }}
+                                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-500 hover:text-white rounded-xl border border-emerald-100 transition-all shadow-sm whitespace-nowrap"
+                                    >
+                                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                                      Xuất thư Chúc mừng
+                                    </button>
+                                    <button
+                                      onClick={() => openEmailCongratsModal(s)}
+                                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-black text-violet-700 bg-violet-50 hover:bg-violet-500 hover:text-white rounded-xl border border-violet-100 transition-all shadow-sm whitespace-nowrap cursor-pointer"
+                                    >
+                                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                                      Gửi Email
+                                    </button>
+                                  </div>
                                 </td>
                               </tr>
                             );
@@ -3717,6 +3802,157 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           </Field>
         </div>
       </Modal>
+
+      {isEmailCongratsModalOpen && emailCongratsStudent && (
+        <div className="fixed inset-0 z-550 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl border border-violet-100 shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col max-h-[90vh] animate-scale-up">
+            
+            {/* Header */}
+            <div className="bg-gradient-to-r from-violet-600 to-indigo-700 p-6 text-white relative">
+              <button 
+                onClick={() => setIsEmailCongratsModalOpen(false)}
+                className="absolute right-6 top-6 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 p-1.5 rounded-full transition-all cursor-pointer"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+              <h3 className="text-lg font-black tracking-wide uppercase">Gửi Thư chúc mừng nhập học</h3>
+              <p className="text-xs text-white/80 mt-1 font-medium">Học sinh: <strong className="text-white text-sm font-black">{emailCongratsStudent.fullName}</strong> ({emailCongratsStudent.studentCode}) • Cơ sở: <span className="bg-white/20 px-2 py-0.5 rounded-md font-bold text-[11px]">{emailCongratsStudent.admissionCampus || "—"}</span></p>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 overflow-y-auto flex-1 space-y-5">
+              {emailCongratsLoading ? (
+                <div className="flex flex-col items-center justify-center py-12 space-y-3">
+                  <div className="w-8 h-8 border-4 border-violet-500 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="text-sm font-bold text-violet-600 animate-pulse">Đang tải danh sách người nhận theo Cơ sở...</span>
+                </div>
+              ) : (
+                <>
+                  {/* Additional Note */}
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-black text-slate-500 uppercase tracking-wider">Lời nhắn/Ghi chú thêm gửi kèm email (Không bắt buộc):</label>
+                    <textarea
+                      value={emailCongratsAdditionalNote}
+                      onChange={(e) => setEmailCongratsAdditionalNote(e.target.value)}
+                      placeholder="Nhập lời chúc riêng hoặc lời nhắn đặc biệt từ Bộ phận Tuyển sinh..."
+                      rows={3}
+                      className="w-full border border-violet-100 rounded-2xl p-3.5 text-sm outline-none focus:ring-2 focus:ring-violet-300 focus:border-violet-400 transition-all text-slate-700 resize-none shadow-inner bg-slate-50/50"
+                    />
+                  </div>
+
+                  {/* Recipients List */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs font-black text-slate-500 uppercase tracking-wider">Danh sách người nhận thư chúc mừng:</label>
+                      <div className="flex gap-2 text-[10px] font-bold">
+                        <button 
+                          onClick={() => setEmailCongratsRecipients(prev => prev.map(r => ({ ...r, checked: true })))}
+                          className="text-violet-600 hover:text-violet-800 bg-violet-50 px-2.5 py-1 rounded-lg border border-violet-100 transition-colors cursor-pointer"
+                        >
+                          Chọn tất cả
+                        </button>
+                        <button 
+                          onClick={() => setEmailCongratsRecipients(prev => prev.map(r => ({ ...r, checked: false })))}
+                          className="text-slate-500 hover:text-slate-700 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200 transition-colors cursor-pointer"
+                        >
+                          Bỏ chọn tất cả
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="border border-violet-100 rounded-2xl overflow-hidden divide-y divide-violet-50 bg-slate-50/30">
+                      {["Tư vấn", "Giáo vụ", "GĐCS", "BGH"].map((role) => {
+                        const roleRecipients = emailCongratsRecipients.filter(r => r.role === role);
+                        if (roleRecipients.length === 0) return null;
+
+                        return (
+                          <div key={role} className="p-4 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full tracking-wider ${
+                                role === "GĐCS" ? "bg-emerald-50 text-emerald-700 border border-emerald-100" :
+                                role === "BGH" ? "bg-indigo-50 text-indigo-700 border border-indigo-100" :
+                                role === "Giáo vụ" ? "bg-violet-50 text-violet-700 border border-violet-100" :
+                                "bg-amber-50 text-amber-700 border border-amber-100"
+                              }`}>
+                                {role === "GĐCS" ? "GIÁM ĐỐC CƠ SỞ" : role}
+                              </span>
+                              <span className="text-[10px] text-slate-400 font-bold">{roleRecipients.length} người</span>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-1">
+                              {emailCongratsRecipients.map((r, idx) => {
+                                if (r.role !== role) return null;
+                                return (
+                                  <label 
+                                    key={idx} 
+                                    className={`flex items-start gap-2.5 p-2 rounded-xl border transition-all cursor-pointer select-none text-xs font-semibold ${
+                                      r.checked 
+                                        ? "bg-violet-50/50 border-violet-200 text-violet-900 shadow-sm" 
+                                        : "bg-white border-slate-100 text-slate-500 hover:bg-slate-50"
+                                    }`}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={r.checked}
+                                      onChange={(e) => handleRecipientCheckChange(idx, e.target.checked)}
+                                      className="mt-0.5 rounded text-violet-600 focus:ring-violet-400 border-slate-300 w-3.5 h-3.5"
+                                    />
+                                    <div className="flex-1 min-w-0">
+                                      <div className="font-bold truncate">{r.name}</div>
+                                      <div className="text-[10px] text-slate-400 truncate mt-0.5">{r.email}</div>
+                                    </div>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {emailCongratsRecipients.length === 0 && (
+                        <div className="p-8 text-center text-slate-400 text-xs font-bold">
+                          Không tìm thấy người nhận nào phù hợp với Cơ sở này.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="bg-slate-50 p-4 border-t border-slate-100 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setIsEmailCongratsModalOpen(false)}
+                className="px-5 py-2 text-xs font-black text-slate-500 bg-white hover:bg-slate-100 rounded-xl border border-slate-200 transition-all cursor-pointer"
+                disabled={emailCongratsSending}
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={handleSendCongratsEmail}
+                className="flex items-center gap-1.5 px-6 py-2 text-xs font-black text-white bg-violet-600 hover:bg-violet-700 rounded-xl transition-all shadow-md shadow-violet-100 hover:shadow-violet-200 cursor-pointer"
+                disabled={emailCongratsSending || emailCongratsLoading}
+              >
+                {emailCongratsSending ? (
+                  <>
+                    <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Đang gửi...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                    Xác nhận gửi email
+                  </>
+                )}
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
 
       {/* PRINT MODAL */}
       {isPrintModalOpen && selectedReportStudent && (
