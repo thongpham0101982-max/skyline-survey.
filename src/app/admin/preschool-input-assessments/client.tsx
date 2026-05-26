@@ -4329,9 +4329,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-6">TRƯỞNG BAN TUYỂN SINH SKY-LINE</p>
                       
                       <div className="h-16 flex items-center justify-center">
-                        <span className="font-serif italic text-xl text-slate-400 font-light tracking-widest opacity-60" style={{ fontFamily: "'Brush Script MT', cursive, sans-serif" }}>
-                          Ban Tuyển sinh
-                        </span>
+                        {/* No cursive signature */}
                       </div>
                       
                       <p className="font-bold text-slate-700 mt-2 text-sm">
@@ -4351,11 +4349,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       <div className="h-16 flex items-center justify-center">
                         {studentCampusConfig?.signature ? (
                           <img crossOrigin={studentCampusConfig?.signature?.startsWith("data:") ? undefined : "anonymous"} src={studentCampusConfig?.signature} alt="Signature" className="max-h-full object-contain" />
-                        ) : (
-                          <span className="font-serif italic text-xl text-slate-400 font-light tracking-widest opacity-60" style={{ fontFamily: "'Brush Script MT', cursive, sans-serif" }}>
-                            {selectedReportStudent?.signatureName || studentCampusConfig?.directorName || "Trần Thị Thanh"}
-                          </span>
-                        )}
+                        ) : null}
                       </div>
                       
                       <p className="font-bold text-slate-700 mt-2 text-sm">

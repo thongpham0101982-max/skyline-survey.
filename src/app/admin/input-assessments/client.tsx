@@ -1477,7 +1477,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
               '<div class="signature-title" style="font-size: 12px; font-weight: bold; color: #1e1b4b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">' + titleText + '</div>' +
               '<div style="font-size: 10px; font-weight: bold; color: #312e81; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px;">' + subTitleText + '</div>' +
               '<div class="signature-img-container" style="height: 64px; display: flex; justify-content: center; align-items: center; margin-bottom: 8px;">' +
-                (config.signature ? signatureHtml : '<span style="font-family: \'Brush Script MT\', cursive, sans-serif; font-size: 20px; color: #94a3b8; font-style: italic; opacity: 0.6; letter-spacing: 2px;">' + signName + '</span>') +
+                (config.signature ? signatureHtml : '') +
               '</div>' +
               '<div class="signature-name" style="font-size: 14px; font-weight: bold; color: #1e293b;">' + signName + '</div>' +
             '</div>' +
@@ -6350,11 +6350,7 @@ return {
                       <div className="h-16 flex items-center justify-center">
                         {studentCampusConfig?.signature ? (
                           <img crossOrigin={studentCampusConfig.signature?.startsWith("data:") ? undefined : "anonymous"}  src={studentCampusConfig.signature} alt="Signature" className="max-h-full object-contain" />
-                        ) : (
-                          <span className="font-serif italic text-xl text-slate-400 font-light tracking-widest opacity-60" style={{ fontFamily: "'Brush Script MT', cursive, sans-serif" }}>
-                            {mergedStudent?.signatureName || studentCampusConfig?.directorName || "Đỗ Quang Trung"}
-                          </span>
-                        )}
+                        ) : null}
                       </div>
                       
                       <p className="font-bold text-slate-700 mt-2 text-sm">
@@ -6376,15 +6372,7 @@ return {
                       <div className="h-16 flex items-center justify-center">
                         {studentCampusConfig?.signature ? (
                           <img crossOrigin="anonymous"  src={studentCampusConfig.signature} alt="Signature" className="max-h-full object-contain" />
-                        ) : isInvitation ? (
-                          <span className="font-serif italic text-xl text-slate-400 font-light tracking-widest opacity-60" style={{ fontFamily: "'Brush Script MT', cursive, sans-serif" }}>
-                            Ban Tuyển sinh
-                          </span>
-                        ) : (
-                          <span className="font-serif italic text-xl text-slate-400 font-light tracking-widest opacity-60" style={{ fontFamily: "'Brush Script MT', cursive, sans-serif" }}>
-                            {mergedStudent?.signatureName || studentCampusConfig?.directorName || "Đỗ Quang Trung"}
-                          </span>
-                        )}
+                        ) : null}
                       </div>
                       
                       <p className="font-bold text-slate-700 mt-2 text-sm">
