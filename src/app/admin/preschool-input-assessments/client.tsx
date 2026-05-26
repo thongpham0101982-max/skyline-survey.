@@ -398,6 +398,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       const mLogo = localStorage.getItem('report_config_master_logo');
       const mBg = localStorage.getItem('report_config_master_background');
       const mFooter = localStorage.getItem('report_config_master_footer');
+      const mSig = localStorage.getItem('report_config_master_signature');
 
       const mergedLogo = mLogo ? mLogo : (globalData.logo || campusData.logo || "");
       const mergedBackground = mBg ? mBg : (globalData.background || campusData.background || "");
@@ -410,7 +411,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
         background: mergedBackground,
         content: mergedContent,
         footer: mergedFooter,
-        signature: campusData.signature || "",
+        signature: campusData.signature || mSig || "",
         directorName: campusData.directorName || targetCampus.manager?.fullName || (targetCampus ? getCampusDefaultManager(targetCampus.campusName || targetCampus.campusCode || "") : "Trần Thị Thanh")
       };
     }
@@ -1476,7 +1477,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       setRcTitle(globalData.title || campusData.title || (rcReportType === "thu_moi" ? "THƯ MỜI" : "THƯ CHÚC MỪNG"));
       const defaultText = rcReportType === "thu_moi" ? defaultPreschoolInvitation : defaultPreschoolCongratulations;
       setRcContent(globalData.content || campusData.content || defaultText);
-      setRcSignature(campusData.signature || "");
+      const mSig = localStorage.getItem('report_config_master_signature');
+      setRcSignature(campusData.signature || mSig || "");
       setRcDirectorName(campusData.directorName || defaultManagerName);
     }
   }, [rcCampusId, rcReportType, campuses]);
@@ -1507,6 +1509,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     localStorage.setItem('report_config_master_logo', rcLogo || "");
     localStorage.setItem('report_config_master_background', rcBackground || "");
     localStorage.setItem('report_config_master_footer', rcFooter || "");
+    localStorage.setItem('report_config_master_signature', rcSignature || "");
     const campusData = { signature: rcSignature, directorName: rcDirectorName, title: rcTitle, logo: rcLogo, background: rcBackground, content: rcContent, footer: rcFooter };
     localStorage.setItem('report_config_' + rcCampusId + '_' + typeKey, JSON.stringify(campusData));
     notify("Đã lưu cấu hình báo cáo Mầm non thành công!");
@@ -3876,7 +3879,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               /* Force all footers to anchor to the very bottom of the page */
               .print-footer {
                 position: absolute !important;
-                bottom: 8mm !important;
+                bottom: 2mm !important;
                 left: 0 !important;
                 right: 0 !important;
                 width: 100% !important;
