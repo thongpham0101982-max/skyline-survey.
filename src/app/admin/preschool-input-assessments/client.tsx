@@ -138,6 +138,127 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   
   // Đánh giá học sinh
   const [evalStudent, setEvalStudent] = useState<PreschoolChild | null>(null);
+
+    const defaultPreschoolCongratulations = `Chúc mừng con đã vượt qua kỳ khảo sát đầu vào lớp {{grade}} hệ {{surveyFormType}} năm học {{academicYear}}. Con đã chính thức đặt bước chân đầu tiên trên con đường trở thành học sinh của Trường Mầm non Sky-Line (Cơ sở {{admissionCampus}}) – một cột mốc quan trọng trong hành trình phát triển của con.
+
+Thầy cô tại Sky-Line vui mừng chào đón con đến với ngôi trường hạnh phúc, nơi không chỉ cung cấp kiến thức mà còn giúp con phát triển toàn diện cả về năng lực và nhân cách. Chúng tôi tin rằng, con sẽ có những trải nghiệm thật tuyệt vời và đáng nhớ trong những năm học sắp tới.
+
+Nhà trường hy vọng rằng, với sự nhanh nhẹn và đáng yêu của mình, con sẽ là một mảnh ghép sắc màu góp phần làm phong phú thêm bức tranh học đường tại Sky-Line. Nơi đây, con sẽ được học hỏi những điều mới lạ, được chơi đùa cùng các bạn và được các cô giáo yêu thương chăm sóc.
+
+Chúc con có những năm tháng học tập đầy ý nghĩa và trải nghiệm thú vị tại Sky-Line. Hãy luôn giữ vững niềm đam mê học hỏi và khát khao khám phá thế giới xung quanh con nhé!`;
+
+  const currentAcademicYearName = useMemo(() => {
+    const ay = academicYears.find(a => a.id === yearId);
+    return ay ? ay.name : "2025-2026";
+  }, [academicYears, yearId]);
+
+    const renderPreschoolTemplate = (template: string, student: any) => {
+    if (!template) return "";
+    const rawGrade = student?.grade || "";
+    const cleanCampus = (student?.admissionCampus || "").replace("Cơ sở ", "");
+    return template
+      .replace(/\{\{fullName\}\}/g, student?.fullName || "")
+      .replace(/\{\{grade\}\}/g, rawGrade)
+      .replace(/\{\{surveyFormType\}\}/g, student?.surveyFormType || "Chất lượng cao")
+      .replace(/\{\{admissionCampus\}\}/g, cleanCampus)
+      .replace(/\{\{academicYear\}\}/g, currentAcademicYearName);
+  };
+
+  const studentCampusConfig = useMemo(() => {
+    if (typeof window === "undefined" || !selectedReportStudent) return null;
+
+    const effCampus = selectedReportStudent.admissionCampus;
+    let targetCampus = campuses.find(c => 
+      c.campusName === effCampus ||
+      effCampus?.includes(c.campusCode) ||
+      effCampus?.includes(c.campusName)
+    );
+    
+    if (!targetCampus && campuses.length > 0) {
+      targetCampus = campuses[0];
+    }
+    
+    if (targetCampus) {
+      const baseKey = isInvitation ? 'thu_moi' : 'thu_chuc_mung';
+      const studentGroup = "preschool";
+      const candidateKeys = [baseKey + '_' + studentGroup, baseKey];
+      let typeKey = baseKey;
+      
+      const matchingKey = candidateKeys.find(k => {
+        return localStorage.getItem('report_config_' + targetCampus.id + '_' + k) || localStorage.getItem('report_config_global_' + k);
+      });
+      if (matchingKey) {
+        typeKey = matchingKey;
+      }
+      const savedCampus = localStorage.getItem('report_config_' + targetCampus.id + '_' + typeKey);
+      const savedGlobal = localStorage.getItem('report_config_global_' + typeKey);
+      
+      let campusData: any = {};
+      let globalData: any = {};
+      
+      if (savedCampus) {
+        try { campusData = JSON.parse(savedCampus); } catch (e) {}
+      }
+      if (savedGlobal) {
+        try { globalData = JSON.parse(savedGlobal); } catch (e) {}
+      }
+      
+      const mergedTitle = globalData.title || campusData.title || (isInvitation ? "THƯ MỜI" : "THƯ CHÚC MỪNG");
+      
+      const mLogo = localStorage.getItem('report_config_master_logo');
+      const mBg = localStorage.getItem('report_config_master_background');
+      const mFooter = localStorage.getItem('report_config_master_footer');
+
+      const mergedLogo = mLogo ? mLogo : (globalData.logo || campusData.logo || "");
+      const mergedBackground = mBg ? mBg : (globalData.background || campusData.background || "");
+      // CRITICAL FALLBACK PROTECTION: Only inherit content text if it is explicitly preschool-configured
+      const isPreschoolSpecific = typeKey === (baseKey + '_' + studentGroup);
+      const mergedContent = isPreschoolSpecific 
+        ? (globalData.content || campusData.content || "") 
+        : "";
+      const mergedFooter = mFooter ? mFooter : (globalData.footer || campusData.footer || "");
+      
+      return {
+        title: mergedTitle,
+        logo: mergedLogo,
+        background: mergedBackground,
+        content: mergedContent,
+        footer: mergedFooter,
+        signature: campusData.signature || "",
+        directorName: campusData.directorName || targetCampus.manager?.fullName || ""
+      };
+    }
+    return null;
+  }, [selectedReportStudent, campuses, isInvitation]);
+
+    const campusTitleSuffix = useMemo(() => {
+    if (!selectedReportStudent) return "GLOBAL";
+    const effCampus = selectedReportStudent.admissionCampus || "";
+    const clean = effCampus.toUpperCase();
+    if (clean.includes("HILL")) return "HILL";
+    if (clean.includes("RIVERSIDE")) return "RIVERSIDE";
+    if (clean.includes("CENTRAL")) return "CENTRAL";
+    if (clean.includes("BEACH")) return "BEACH";
+    return "GLOBAL";
+  }, [selectedReportStudent]);
+
+  const studentSchoolName = useMemo(() => {
+    if (!selectedReportStudent) return "TRƯỜNG MẦM NON SKY-LINE";
+    const effCampus = selectedReportStudent.admissionCampus || "";
+    const clean = effCampus.toUpperCase();
+    if (clean.includes("HILL")) {
+      return "TRƯỜNG MẦM NON SKY-LINE HILL";
+    }
+    return "TRƯỜNG MẦM NON SKY-LINE";
+  }, [selectedReportStudent]);
+
+  const formattedLetterDate = useMemo(() => {
+    const d = new Date();
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    return `Đà Nẵng, ngày ${day} tháng ${month} năm ${year}`;
+  }, []);
   const [evalModal, setEvalModal] = useState(false);
   const [devAreas, setDevAreas] = useState<DevArea[]>([]);
   const [devType, setDevType] = useState<"INPUT"|"PROBATION">("INPUT");
@@ -2685,7 +2806,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                                 <td className="p-4">{resultBadge()}</td>
                                 <td className="p-4">
                                   <button
-                                    onClick={() => printCongratulatoryLetter(s)}
+                                    onClick={() => { setSelectedReportStudent(s); setIsInvitation(false); setIsPrintModalOpen(true); }}
                                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-500 hover:text-white rounded-xl border border-emerald-100 transition-all shadow-sm"
                                   >
                                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
@@ -3719,13 +3840,13 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                   style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "297mm", padding: "12.7mm 15mm 48mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "block", overflow: "hidden" }}
               >
                 {/* Print Watermark */}
-                <img crossOrigin={(null || "").startsWith("data:") ? undefined : "anonymous"}  className="print-watermark" src={null || ""} alt="Watermark" style={{ display: "block", position: "absolute", top: "22%", left: "10%", transform: "none", width: "80%", height: "auto", opacity: 0.08, zIndex: 0, pointerEvents: "none" }} />
+                <img crossOrigin={(studentCampusConfig?.background || "").startsWith("data:") ? undefined : "anonymous"}  className="print-watermark" src={studentCampusConfig?.background || "/img/watermark.svg"} alt="Watermark" style={{ display: "block", position: "absolute", top: "22%", left: "10%", transform: "none", width: "80%", height: "auto", opacity: 0.08, zIndex: 0, pointerEvents: "none" }} />
                 {/* Top Logo and Header */}
                 <div className="flex flex-col relative z-10 w-full">
                   <div className="flex flex-col gap-1 border-b pb-2 mb-3">
                     <div className="flex items-center justify-between">
-                      {null ? (
-                        <img crossOrigin={({}).logo?.startsWith("data:") ? undefined : "anonymous"}  src={({}).logo} alt="Logo" className="h-12 object-contain" />
+                      {studentCampusConfig?.logo ? (
+                        <img crossOrigin={studentCampusConfig.logo.startsWith("data:") ? undefined : "anonymous"}  src={studentCampusConfig.logo} alt="Logo" className="h-12 object-contain" />
                       ) : (
                         <div className="flex items-center gap-1.5">
                           <span className="text-2xl font-black tracking-tight text-teal-600" style={{ fontFamily: "Arial, sans-serif" }}>SKY-LINE</span>
@@ -3736,14 +3857,14 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                       )}
                     </div>
                     <div className="text-left">
-                      <h4 className="font-extrabold text-sm uppercase tracking-wider text-slate-800" style={{ fontFamily: "Arial, sans-serif" }}>{"HỆ THỐNG GIÁO DỤC SKY-LINE"}</h4>
+                      <h4 className="font-extrabold text-sm uppercase tracking-wider text-slate-800" style={{ fontFamily: "Arial, sans-serif" }}>{studentSchoolName}</h4>
                     </div>
                   </div>
 
                   {/* Letter Title */}
                   <div className="text-center my-4">
                     <h2 className="text-2xl font-black tracking-widest text-indigo-950 uppercase mb-2" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
-                      {isInvitation ? (null || "THƯ MỜI") : false ? (null || "BẢN CAM KẾT HỌC TẬP") : (null || "THƯ CHÚC MỪNG")}
+                      {isInvitation ? (studentCampusConfig?.title || "THƯ MỜI") : (studentCampusConfig?.title || "THƯ CHÚC MỪNG")}
                     </h2>
                   </div>
 
@@ -3752,15 +3873,15 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                     {isInvitation ? (
                       <>Kính gửi Quý Phụ huynh và em <strong className="font-black not-italic text-slate-900">{selectedReportStudent.fullName}</strong>,</>
                     ) : (
-                      <>Thân gửi em <strong className="font-black not-italic text-slate-900">{selectedReportStudent.fullName}</strong>,</>
+                      <>Thân gửi con <strong className="font-black not-italic text-slate-900">{selectedReportStudent.fullName}</strong>,</>
                     )}
                   </p>
 
                   {/* Body Paragraphs */}
                   {isInvitation ? (
-                    null ? (
+                    studentCampusConfig?.content ? (
                       <div className="space-y-3 text-justify text-slate-800 font-serif" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: "13.5pt", lineHeight: "1.45", textAlign: "justify" }}>
-                        {(()=>"")(({}).content, selectedReportStudent || selectedReportStudent).split('\n').filter(Boolean).map((para, idx) => (
+                        {renderPreschoolTemplate(studentCampusConfig.content, selectedReportStudent).split('\n').filter(Boolean).map((para, idx) => (
                           <p key={idx} className="" style={{ textIndent: "1cm" }}>{para}</p>
                         ))}
                       </div>
@@ -3805,11 +3926,11 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                     </div>
                   ) : (
                     <div className="space-y-3 text-justify text-slate-800 font-serif" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: "13.5pt", lineHeight: "1.45", textAlign: "justify" }}>
-                      {(()=>"")(
-                        null || (()=>"")("thu_chuc_mung"),
+                      {renderPreschoolTemplate(
+                        studentCampusConfig?.content || defaultPreschoolCongratulations,
                         selectedReportStudent
                       ).split('\n').filter(Boolean).map((para, idx) => (
-                        <p key={idx} className="" style={{ textIndent: "1cm" }}>
+                        <p key={idx} className="" style={{ textIndent: "1.2cm", margin: "0 0 12px 0" }}>
                           {para}
                         </p>
                       ))}
@@ -3817,64 +3938,50 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                   )}
 
 
-                {/* Bottom Signature Area */}
-                {false ? (
-                  <div className="grid grid-cols-2 gap-8 mt-6 text-center">
-                    <div className="flex flex-col items-center">
-                      <p className="font-bold uppercase text-slate-700 text-xs tracking-wider">ĐẠI DIỆN GIA ĐÌNH</p>
-                      <p className="italic text-[10px] text-slate-400 mt-1">(Ký và ghi rõ họ tên)</p>
-                      <div className="h-16 flex items-end justify-center">
-                        <span className="text-slate-300 italic text-xs">Ký tên</span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex flex-col items-center">
-                      <p className="italic text-slate-500 mb-1 text-xs">{""}</p>
+                                {/* Bottom Signature Area */}
+                {isInvitation ? (
+                  <div className="flex flex-col items-end mt-8 pr-4">
+                    <div className="flex flex-col items-center text-center" style={{ minWidth: "240px" }}>
+                      <p className="italic text-slate-500 mb-1">{formattedLetterDate}</p>
                       <p className="font-bold uppercase text-indigo-950 text-xs tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
-                      <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-4">GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {""}</p>
+                      <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-6">TRƯỞNG BAN TUYỂN SINH SKY-LINE</p>
                       
                       <div className="h-16 flex items-center justify-center">
-                        {null ? (
-                          <img crossOrigin={({}).signature?.startsWith("data:") ? undefined : "anonymous"}  src={({}).signature} alt="Signature" className="max-h-full object-contain" />
-                        ) : (
-                          <span className="font-serif italic text-xl text-slate-400 font-light tracking-widest opacity-60" style={{ fontFamily: "'Brush Script MT', cursive, sans-serif" }}>
-                            {selectedReportStudent?.signatureName || null || "Đỗ Quang Trung"}
-                          </span>
-                        )}
+                        <span className="font-serif italic text-xl text-slate-400 font-light tracking-widest opacity-60" style={{ fontFamily: "'Brush Script MT', cursive, sans-serif" }}>
+                          Ban Tuyển sinh
+                        </span>
                       </div>
                       
                       <p className="font-bold text-slate-700 mt-2 text-sm">
-                        {selectedReportStudent?.signatureName || null || "Đỗ Quang Trung"}
+                        Ban Tuyển sinh
                       </p>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-end mt-8 pr-4">
-                    <div className="flex flex-col items-center text-center" style={{ minWidth: "240px" }}>
-                      <p className="italic text-slate-500 mb-1">{""}</p>
+                  <div className="grid grid-cols-2 mt-6 border border-dashed border-slate-400 p-4 text-center min-h-[140px]">
+                    <div className="flex flex-col items-center border-r border-dashed border-slate-400">
+                      {/* Empty left column */}
+                    </div>
+                    
+                    <div className="flex flex-col items-center">
+                      <p className="italic text-slate-500 mb-1 text-[11px] font-medium">{formattedLetterDate}</p>
                       <p className="font-bold uppercase text-indigo-950 text-xs tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
-                      {isInvitation && !null ? (
-                        <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-6">TRƯỞNG BAN TUYỂN SINH SKY-LINE</p>
-                      ) : (
-                        <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-6">GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {""}</p>
-                      )}
+                      <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-4">
+                        GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}
+                      </p>
                       
                       <div className="h-16 flex items-center justify-center">
-                        {null ? (
-                          <img crossOrigin="anonymous"  src={({}).signature} alt="Signature" className="max-h-full object-contain" />
-                        ) : isInvitation ? (
-                          <span className="font-serif italic text-xl text-slate-400 font-light tracking-widest opacity-60" style={{ fontFamily: "'Brush Script MT', cursive, sans-serif" }}>
-                            Ban Tuyển sinh
-                          </span>
+                        {studentCampusConfig?.signature ? (
+                          <img crossOrigin="anonymous" src={studentCampusConfig.signature} alt="Signature" className="max-h-full object-contain" />
                         ) : (
                           <span className="font-serif italic text-xl text-slate-400 font-light tracking-widest opacity-60" style={{ fontFamily: "'Brush Script MT', cursive, sans-serif" }}>
-                            {selectedReportStudent?.signatureName || null || "Đỗ Quang Trung"}
+                            {selectedReportStudent?.signatureName || studentCampusConfig?.directorName || "Trần Thị Thanh"}
                           </span>
                         )}
                       </div>
                       
                       <p className="font-bold text-slate-700 mt-2 text-sm">
-                        {selectedReportStudent?.signatureName || null || (isInvitation ? "Ban Tuyển sinh" : "Đỗ Quang Trung")}
+                        {selectedReportStudent?.signatureName || studentCampusConfig?.directorName || "Trần Thị Thanh"}
                       </p>
                     </div>
                   </div>
@@ -3884,9 +3991,9 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                 
                 
                 {/* Footer Contact */}
-                {null ? (
+                {studentCampusConfig?.footer ? (
                   <div className="border-t border-slate-200 pt-3 absolute z-10 w-full print-footer" style={{ bottom: "8mm", left: "0", right: "0", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box" }}>
-                    <img crossOrigin={({}).footer?.startsWith("data:") ? undefined : "anonymous"}  src={({}).footer} alt="Footer Print" className="w-full" style={{ maxHeight: "100px", objectFit: "contain" }} />
+                    <img crossOrigin={studentCampusConfig.footer.startsWith("data:") ? undefined : "anonymous"}  src={studentCampusConfig.footer} alt="Footer Print" className="w-full" style={{ maxHeight: "100px", objectFit: "contain" }} />
                   </div>
                 ) : (
                   <div className="w-full pt-1 mt-4 absolute z-10 print-footer" style={{ bottom: "8mm", left: "0", right: "0", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}>
@@ -3979,7 +4086,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
                           )}
                         </div>
                         <div className="text-left">
-                          <h4 className="font-extrabold text-sm uppercase tracking-wider text-slate-800" style={{ fontFamily: "Arial, sans-serif" }}>{"HỆ THỐNG GIÁO DỤC SKY-LINE"}</h4>
+                          <h4 className="font-extrabold text-sm uppercase tracking-wider text-slate-800" style={{ fontFamily: "Arial, sans-serif" }}>{studentSchoolName}</h4>
                         </div>
                       </div>
 

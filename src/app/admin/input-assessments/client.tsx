@@ -3893,6 +3893,7 @@ return {
              <Field label="Áp dụng cho Đối tượng / Khối" required>
                <select value={rcTargetGroup} onChange={e => setRcTargetGroup(e.target.value)} className={inp}>
                  <option value="all">Tất cả các khối (Mặc định)</option>
+                 <option value="preschool">Khối Mầm non (Preschool)</option>
                  {docGroups.map(g => (
                    <option key={g.id} value={g.id}>{g.label}</option>
                  ))}

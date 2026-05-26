@@ -42,7 +42,6 @@ export async function GET(req: NextRequest) {
           admissionCampus: true, 
           batchId: true, 
           periodId: true,
-          periodId: true,
           devProfessionalComment: true, 
           devPsychologyComment: true, 
           devImportantNote: true, 
