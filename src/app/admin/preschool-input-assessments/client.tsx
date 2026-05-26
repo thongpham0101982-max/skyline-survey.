@@ -3982,7 +3982,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     </div>
 
                     <div className="border border-violet-100 rounded-2xl overflow-hidden divide-y divide-violet-50 bg-slate-50/30">
-                      {["Tư vấn", "Giáo vụ", "Tổ/Môn", "GĐCS", "BGH"].map((role) => {
+                      {["Tư vấn", "Giáo vụ", "Tổ/Môn", "GĐCS", "BGH", "Giáo viên"].map((role) => {
                         const roleRecipients = emailCongratsRecipients.filter(r => r.role === role);
                         if (roleRecipients.length === 0) return null;
 
@@ -3994,9 +3994,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 role === "BGH" ? "bg-indigo-50 text-indigo-700 border border-indigo-100" :
                                 role === "Giáo vụ" ? "bg-violet-50 text-violet-700 border border-violet-100" :
                                 role === "Tổ/Môn" ? "bg-cyan-50 text-cyan-700 border border-cyan-100" :
+                                role === "Giáo viên" ? "bg-teal-50 text-teal-700 border border-teal-100" :
                                 "bg-amber-50 text-amber-700 border border-amber-100"
                               }`}>
-                                {role === "GĐCS" ? "GIÁM ĐỐC CƠ SỞ" : role === "Tổ/Môn" ? "TỔ / MÔN DẠY" : role}
+                                {role === "GĐCS" ? "GIÁM ĐỐC CƠ SỞ" : role === "Tổ/Môn" ? "TỔ / MÔN DẠY" : role === "Giáo viên" ? "GIÁO VIÊN TỔ / MÔN DẠY" : role}
                               </span>
                               <span className="text-[10px] text-slate-400 font-bold">{roleRecipients.length} người</span>
                             </div>
@@ -4022,6 +4023,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                     <div className="flex-1 min-w-0">
                                       <div className="font-bold truncate">{r.name}</div>
                                       <div className="text-[10px] text-slate-400 truncate mt-0.5">{r.email}</div>
+                                      {r.info && <div className="text-[10px] text-teal-600 font-semibold truncate mt-0.5">🏫 {r.info}</div>}
                                     </div>
                                   </label>
                                 );

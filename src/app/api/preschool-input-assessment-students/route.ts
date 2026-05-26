@@ -758,37 +758,36 @@ export async function POST(req) {
         checked: true
       });
 
-      // 3. Add Tổ / Môn dạy (Teacher department)
-      const teacherName = student.probationaryTeacher;
-      if (teacherName) {
-        const teacher = await (prisma as any).teacher.findFirst({
-          where: { teacherName: teacherName },
-          include: { departmentRel: true }
+            // 3. Add all active teachers from the same campus (Email nhận thông báo)
+      if (campus) {
+        const campusTeachers = await (prisma as any).teacher.findMany({
+          where: {
+            campusId: campus.id,
+            status: "ACTIVE",
+            email: { not: null }
+          },
+          include: {
+            departmentRel: true,
+            mainSubjectRel: true
+          },
+          orderBy: { teacherName: "asc" }
         });
-        if (teacher) {
-          if (teacher.email && teacher.email.includes("@")) {
-            recipients.push({
-              name: teacher.teacherName + " (Giáo viên đánh giá)",
-              email: teacher.email,
-              role: "Tổ/Môn",
-              checked: true
-            });
-          }
-          if (teacher.departmentId) {
-            const deptTeachers = await (prisma as any).teacher.findMany({
-              where: { departmentId: teacher.departmentId }
-            });
-            for (const dt of deptTeachers) {
-              if (dt.email && dt.email.includes("@") && dt.id !== teacher.id) {
-                recipients.push({
-                  name: dt.teacherName + " (" + (teacher.departmentRel?.name || "Tổ chuyên môn") + ")",
-                  email: dt.email,
-                  role: "Tổ/Môn",
-                  checked: true
-                });
-              }
-            }
-          }
+
+        for (const t of campusTeachers) {
+          if (!t.email || !t.email.includes("@")) continue;
+          if (recipients.some((r: any) => r.email.toLowerCase() === t.email.toLowerCase())) continue;
+
+          const deptLabel = t.departmentRel?.name || null;
+          const subjectLabel = t.mainSubjectRel?.subjectName || null;
+          const infoLabel = [deptLabel, subjectLabel].filter(Boolean).join(" | ");
+
+          recipients.push({
+            name: t.teacherName,
+            email: t.email,
+            role: "Giáo viên",
+            info: infoLabel || undefined,
+            checked: false
+          });
         }
       }
 
