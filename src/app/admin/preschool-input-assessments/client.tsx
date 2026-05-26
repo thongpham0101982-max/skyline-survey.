@@ -178,6 +178,13 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   const [emailCongratsSending, setEmailCongratsSending] = useState(false);
   const [emailCongratsAdditionalNote, setEmailCongratsAdditionalNote] = useState("");
 
+  // States for Batch Email Congrats modal
+  const [isBatchEmailCongratsModalOpen, setIsBatchEmailCongratsModalOpen] = useState(false);
+  const [batchEmailCongratsStudents, setBatchEmailCongratsStudents] = useState<any[]>([]);
+  const [batchEmailCongratsRoles, setBatchEmailCongratsRoles] = useState<string[]>(["Tư vấn", "Giáo vụ", "Tổ/Môn", "GĐCS", "BGH"]);
+  const [batchEmailCongratsAdditionalNote, setBatchEmailCongratsAdditionalNote] = useState("");
+  const [batchEmailCongratsSending, setBatchEmailCongratsSending] = useState(false);
+
   const openEmailCongratsModal = async (student: any) => {
     setEmailCongratsStudent(student);
     setIsEmailCongratsModalOpen(true);
@@ -245,13 +252,6 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
     setEmailCongratsRecipients(updated);
   };
 
-  // States for Batch Email Congrats modal
-  const [isBatchEmailCongratsModalOpen, setIsBatchEmailCongratsModalOpen] = useState(false);
-  const [batchEmailCongratsStudents, setBatchEmailCongratsStudents] = useState<any[]>([]);
-  const [batchEmailCongratsRoles, setBatchEmailCongratsRoles] = useState<string[]>(["Tư vấn", "Giáo vụ", "GĐCS", "BGH"]);
-  const [batchEmailCongratsAdditionalNote, setBatchEmailCongratsAdditionalNote] = useState("");
-  const [batchEmailCongratsSending, setBatchEmailCongratsSending] = useState(false);
-
   const openBatchEmailCongratsModal = () => {
     const eligible = studentSummaries.filter((s: any) => {
       const result = (s.admissionResult || "").toUpperCase();
@@ -264,7 +264,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
     }
 
     setBatchEmailCongratsStudents(eligible.map(s => ({ ...s, checked: true })));
-    setBatchEmailCongratsRoles(["Tư vấn", "Giáo vụ", "GĐCS", "BGH"]);
+    setBatchEmailCongratsRoles(["Tư vấn", "Giáo vụ", "Tổ/Môn", "GĐCS", "BGH"]);
     setBatchEmailCongratsAdditionalNote("");
     setIsBatchEmailCongratsModalOpen(true);
   };
@@ -317,7 +317,6 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
       setBatchEmailCongratsRoles([...batchEmailCongratsRoles, role]);
     }
   };
-
 
   const [mockPreviewStudent, setMockPreviewStudent] = useState<any>(null);
   const [emailStudents, setEmailStudents] = useState<any[]>([]);
@@ -3983,7 +3982,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     </div>
 
                     <div className="border border-violet-100 rounded-2xl overflow-hidden divide-y divide-violet-50 bg-slate-50/30">
-                      {["Tư vấn", "Giáo vụ", "GĐCS", "BGH"].map((role) => {
+                      {["Tư vấn", "Giáo vụ", "Tổ/Môn", "GĐCS", "BGH"].map((role) => {
                         const roleRecipients = emailCongratsRecipients.filter(r => r.role === role);
                         if (roleRecipients.length === 0) return null;
 
@@ -3994,9 +3993,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 role === "GĐCS" ? "bg-emerald-50 text-emerald-700 border border-emerald-100" :
                                 role === "BGH" ? "bg-indigo-50 text-indigo-700 border border-indigo-100" :
                                 role === "Giáo vụ" ? "bg-violet-50 text-violet-700 border border-violet-100" :
+                                role === "Tổ/Môn" ? "bg-cyan-50 text-cyan-700 border border-cyan-100" :
                                 "bg-amber-50 text-amber-700 border border-amber-100"
                               }`}>
-                                {role === "GĐCS" ? "GIÁM ĐỐC CƠ SỞ" : role}
+                                {role === "GĐCS" ? "GIÁM ĐỐC CƠ SỞ" : role === "Tổ/Môn" ? "TỔ / MÔN DẠY" : role}
                               </span>
                               <span className="text-[10px] text-slate-400 font-bold">{roleRecipients.length} người</span>
                             </div>
@@ -4098,10 +4098,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               {/* Target Roles Checklist */}
               <div className="space-y-2">
                 <label className="block text-xs font-black text-slate-500 uppercase tracking-wider">1. Gửi thư chúc mừng đến các vai trò sau (theo Cơ sở):</label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
                   {[
                     { id: "Tư vấn", label: "Tư vấn Tuyển sinh", desc: "Mặc định theo Cơ sở", color: "amber" },
                     { id: "Giáo vụ", label: "Giáo vụ Cơ sở", desc: "Tất cả Giáo vụ cơ sở", color: "violet" },
+                    { id: "Tổ/Môn", label: "Tổ / Môn dạy", desc: "Tổ chuyên môn GV", color: "cyan" },
                     { id: "GĐCS", label: "Giám đốc Cơ sở", desc: "Manager & users GĐCS", color: "emerald" },
                     { id: "BGH", label: "BGH / Khảo thí", desc: "Ban Khảo thí Hệ thống", color: "indigo" }
                   ].map((role) => {
@@ -4115,16 +4116,16 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                             : "bg-white border-slate-100 text-slate-400 font-semibold hover:bg-slate-50"
                         }`}
                       >
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-1.5 mb-1">
                           <input
                             type="checkbox"
                             checked={isChecked}
                             onChange={() => toggleBatchCongratsRole(role.id)}
-                            className="rounded text-violet-600 focus:ring-violet-400 border-slate-300 w-4 h-4 cursor-pointer"
+                            className="rounded text-violet-600 focus:ring-violet-400 border-slate-300 w-3.5 h-3.5 cursor-pointer"
                           />
-                          <span className="truncate">{role.label}</span>
+                          <span className="truncate text-[11px]">{role.label}</span>
                         </div>
-                        <span className="text-[10px] text-slate-400 font-medium ml-6">{role.desc}</span>
+                        <span className="text-[9px] text-slate-400 font-medium ml-5 truncate">{role.desc}</span>
                       </label>
                     );
                   })}
