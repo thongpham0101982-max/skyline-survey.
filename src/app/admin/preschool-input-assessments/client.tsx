@@ -43,6 +43,26 @@ function TypeBadge({ t }: { t: string }) {
   };
   return <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-lg border border-blue-200 bg-blue-50 text-blue-700">{label[t] || t}</span>;
 }
+const getCampusFullName = (codeOrName: string) => {
+  const clean = (codeOrName || "").toUpperCase();
+  if (clean.includes("CS1") || clean.includes("RIVERSIDE")) return "Sky-Line Riverside";
+  if (clean.includes("CS2") || clean.includes("CENTRAL")) return "Sky-Line Central";
+  if (clean.includes("CS3") || clean.includes("GLOBAL")) return "Sky-Line Global";
+  if (clean.includes("CS4") || clean.includes("HILL")) return "Sky-Line Hill";
+  if (clean.includes("CS5") || clean.includes("BEACH")) return "Sky-Line Beach";
+  return codeOrName;
+};
+
+const getCampusDefaultManager = (campusCodeOrName: string) => {
+  const clean = (campusCodeOrName || "").toUpperCase();
+  if (clean.includes("CS1") || clean.includes("RIVERSIDE")) return "Tống Thiên Long";
+  if (clean.includes("CS2") || clean.includes("CENTRAL")) return "Lê Anh Tuấn";
+  if (clean.includes("CS3") || clean.includes("GLOBAL")) return "Trần Thị Thanh";
+  if (clean.includes("CS4") || clean.includes("HILL")) return "Đỗ Quang Trung";
+  if (clean.includes("CS5") || clean.includes("BEACH")) return "Nguyễn Thị Kim Anh";
+  return "Trần Thị Thanh";
+};
+
 
 function Badge({ s }: { s: string }) {
   const map: Record<string, string> = { ACTIVE: "bg-emerald-100 text-emerald-700 border border-emerald-200", INACTIVE: "bg-slate-100 text-slate-500", LOCKED: "bg-rose-100 text-rose-700", CLOSED: "bg-slate-100 text-slate-500" };
@@ -379,7 +399,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
         content: mergedContent,
         footer: mergedFooter,
         signature: campusData.signature || "",
-        directorName: campusData.directorName || targetCampus.manager?.fullName || ""
+        directorName: campusData.directorName || targetCampus.manager?.fullName || (targetCampus ? getCampusDefaultManager(targetCampus.campusName || targetCampus.campusCode || "") : "Trần Thị Thanh")
       };
     }
     return null;
@@ -389,10 +409,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     if (!selectedReportStudent) return "GLOBAL";
     const effCampus = selectedReportStudent.admissionCampus || "";
     const clean = effCampus.toUpperCase();
-    if (clean.includes("HILL")) return "HILL";
-    if (clean.includes("RIVERSIDE")) return "RIVERSIDE";
-    if (clean.includes("CENTRAL")) return "CENTRAL";
-    if (clean.includes("BEACH")) return "BEACH";
+    if (clean.includes("CS1") || clean.includes("RIVERSIDE")) return "RIVERSIDE";
+    if (clean.includes("CS2") || clean.includes("CENTRAL")) return "CENTRAL";
+    if (clean.includes("CS3") || clean.includes("GLOBAL")) return "GLOBAL";
+    if (clean.includes("CS4") || clean.includes("HILL")) return "HILL";
+    if (clean.includes("CS5") || clean.includes("BEACH")) return "BEACH";
     return "GLOBAL";
   }, [selectedReportStudent]);
 
@@ -1418,7 +1439,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
   useEffect(() => {
     if (typeof window !== "undefined" && rcCampusId && rcReportType) {
       const selectedCampus = campuses.find(c => c.id === rcCampusId);
-      const defaultManagerName = selectedCampus?.manager?.fullName || "";
+      const defaultManagerName = selectedCampus?.manager?.fullName || (selectedCampus ? getCampusDefaultManager(selectedCampus.campusName || selectedCampus.campusCode || "") : "");
       const typeKey = rcReportType + "_preschool";
       const savedCampus = localStorage.getItem('report_config_' + rcCampusId + '_' + typeKey);
       const savedGlobal = localStorage.getItem('report_config_global_' + typeKey);
@@ -3110,7 +3131,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               <select value={rcCampusId} onChange={e => setRcCampusId(e.target.value)} className={inp}>
                 <option value="">-- Chọn Cơ sở --</option>
                 {campuses.map(c => (
-                  <option key={c.id} value={c.id}>{c.campusName}</option>
+                  <option key={c.id} value={c.id}>{getCampusFullName(c.campusName || c.campusCode || "")}</option>
                 ))}
               </select>
             </div>
@@ -3342,7 +3363,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             {/* Info note */}
             <div className="mt-4 bg-violet-50 border border-violet-100 rounded-xl p-3">
               <p className="text-[11px] font-bold text-violet-700">💡 Lưu ý:</p>
-              <p className="text-[10px] text-violet-600 mt-1">Cấu hình sẽ tự động được áp dụng khi xuất thư cho trẻ thuộc cơ sở <strong>{campuses.find(c => c.id === rcCampusId)?.campusName || "đã chọn"}</strong>. Mỗi cơ sở có thể có cấu hình riêng.</p>
+              <p className="text-[10px] text-violet-600 mt-1">Cấu hình sẽ tự động được áp dụng khi xuất thư cho trẻ thuộc cơ sở <strong>{getCampusFullName(campuses.find(c => c.id === rcCampusId)?.campusName || "")}</strong>. Mỗi cơ sở có thể có cấu hình riêng.</p>
             </div>
           </div>
         </div>
