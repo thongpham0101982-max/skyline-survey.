@@ -4299,12 +4299,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     </div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 mt-6 border border-dashed border-slate-400 p-4 text-center min-h-[140px]">
-                    <div className="flex flex-col items-center border-r border-dashed border-slate-400">
-                      {/* Empty left column */}
-                    </div>
-                    
-                    <div className="flex flex-col items-center">
+                  <div className="flex flex-col items-end mt-8 pr-4">
+                    <div className="flex flex-col items-center text-center" style={{ minWidth: "240px" }}>
                       <p className="italic text-slate-500 mb-1 text-[11px] font-medium">{formattedLetterDate}</p>
                       <p className="font-bold uppercase text-indigo-950 text-xs tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
                       <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-4">
