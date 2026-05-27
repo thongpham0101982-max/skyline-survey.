@@ -6143,10 +6143,20 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       const savedScrollY = window.scrollY;
                       window.scrollTo(0, 0);
                       
+                      // Fix Chrome print viewport scroll bug on overflow-y-auto elements
+                      const scrollWrapper = document.getElementById('print-body-scroll-wrapper');
+                      const savedWrapperScrollTop = scrollWrapper ? scrollWrapper.scrollTop : 0;
+                      if (scrollWrapper) {
+                        scrollWrapper.scrollTop = 0;
+                      }
+                      
                       // Allow a microtask for rendering before print
                       setTimeout(() => {
                         window.print();
                         window.scrollTo(0, savedScrollY);
+                        if (scrollWrapper) {
+                          scrollWrapper.scrollTop = savedWrapperScrollTop;
+                        }
                         // Restore original title shortly after
                         setTimeout(() => {
                           document.title = originalTitle;
