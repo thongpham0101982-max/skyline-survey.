@@ -42,6 +42,8 @@ Chúc con luôn giữ vững niềm vui thích học hỏi, luôn tràn đầy n
   const signatureHtml = config?.signature ? getImgTag(config.signature, "signature-img", "max-height: 60px; object-fit: contain; margin: 8px 0;", "Signature") : "";
   
   const effCampus = student.admissionCampus || "";
+  const clean = effCampus.toUpperCase();
+  const studentSchoolName = clean.includes("HILL") ? "TRƯỜNG MẦM NON SKY-LINE HILL" : "TRƯỜNG MẦM NON SKY-LINE";
   const d = new Date();
   const day = String(d.getDate()).padStart(2, "0");
   const month = String(d.getMonth() + 1).padStart(2, "0");
