@@ -1,5 +1,238 @@
 import { sendEmail } from "@/lib/mail"
 
+function buildPreschoolLetterHtmlServer(student: any, config: any, isInvitationFlag: boolean = false) {
+  const rawGrade = student?.grade || "Nát";
+  const defaultCongrats = `Chúc mừng con đã vượt qua kỳ khảo sát đầu vào lớp {{grade}} hệ {{surveyFormType}} năm học {{academicYear}}. Con đã chính thức đặt bước chân đầu tiên trên con đường trở thành học sinh của Trường Mầm non Sky-Line (Cơ sở {{admissionCampus}}) – một cột mốc quan trọng trong hành trình phát triển của con.
+Thầy cô tại Sky-Line vui mừng chào đón con đến với ngôi trường hạnh phúc, nơi không chỉ cung cấp kiến thức mà còn giúp con phát triển toàn diện cả về năng lực và nhân cách. Chúng tôi tin rằng, con sẽ có những trải nghiệm thật tuyệt vời và đáng nhớ trong những năm học sắp tới.
+Nhà trường hy vọng rằng, với sự nhanh nhẹn và đáng yêu của mình, con sẽ là một mảnh ghép sắc màu góp phần làm phong phú thêm bức tranh học đường tại Sky-Line. Nơi đây, con sẽ được học hỏi những điều mới lạ, được chơi đùa cùng các bạn và được các cô giáo yêu thương chăm sóc.
+Chúc con có những năm tháng học tập đầy ý nghĩa và trải nghiệm thú vị tại Sky-Line. Hãy luôn giữ vững niềm vui thích học hỏi và khát khao khám phá thế giới xung quanh con nhé!`;
+
+  const defaultInvitation = `Hội đồng Tuyển sinh Hệ thống Giáo dục Sky-Line trân trọng gửi lời chúc mừng nồng nhiệt nhất đến Gia đình và Bé. Dựa trên kết quả Khảo sát phát triển toàn diện của trẻ và kết quả phê duyệt chính thức từ Hội đồng Tuyển sinh, Nhà trường trân trọng gửi đến Quý phụ huynh Thư chúc mừng nhập học chính thức dành cho bé tại Cơ sở {{admissionCampus}}.
+Nhà trường hy vọng rằng, với sự chăm sóc tận tình và tình yêu thương vô bờ bến từ tập thể giáo viên và nhân viên Sky-Line, con sẽ nhanh chóng hòa nhập, có những trải nghiệm tuổi thơ tuyệt vời, được vui chơi thỏa thích và phát huy tối đa các năng lực bẩm sinh của mình.
+Chúc con luôn giữ vững niềm vui thích học hỏi, luôn tràn đầy năng lượng khám phá thế giới xung quanh con nhé!`;
+
+  const rawContent = config?.content || (isInvitationFlag ? defaultInvitation : defaultCongrats);
+  const renderedContent = rawContent
+    .replace(/\{\{fullName\}\}/g, student?.fullName || "")
+    .replace(/\{\{grade\}\}/g, rawGrade)
+    .replace(/\{\{admissionCampus\}\}/g, student?.admissionCampus || "")
+    .replace(/\{\{signatureName\}\}/g, student?.signatureName || config?.directorName || "Trần Thị Thanh")
+    .replace(/\{\{academicYear\}\}/g, student?.academicYear || "2025-2026");
+
+  const paragraphs = renderedContent.split("\n").filter(Boolean);
+  const bodyHtml = paragraphs.map((para) => {
+    const isList = /^\s*[\d•\-*]+/.test(para);
+    return isList 
+      ? '<p style="padding-left: 24px; font-weight: bold; color: #374151; margin: 4px 0;">' + para + '</p>' 
+      : '<p style="text-indent: 1.2cm; margin: 0 0 6pt 0; text-align: justify; text-justify: inter-word; line-height: 1.45; font-size: 13.5pt;">' + para + '</p>';
+  }).join("");
+
+  const greetingHtml = isInvitationFlag 
+    ? 'Kính gửi Quý Phụ huynh và em <strong style="font-weight: 900; font-style: normal; color: #0f172a;">' + student.fullName + '</strong>,'
+    : 'Thân gửi con <strong style="font-weight: 900; font-style: normal; color: #0f172a;">' + student.fullName + '</strong>,';
+
+  const getImgTag = (src: string, className: string, style: string = "", alt: string = "") => {
+    if (!src) return "";
+    const styleAttr = style ? ' style="' + style + '"' : "";
+    const altAttr = alt ? ' alt="' + alt + '"' : "";
+    return '<img class="' + className + '" src="' + src + '"' + styleAttr + altAttr + ' />';
+  };
+
+  const logoHtml = config?.logo ? getImgTag(config.logo, "logo-img", "height: 20mm; object-fit: contain;", "Logo") : "";
+  const signatureHtml = config?.signature ? getImgTag(config.signature, "signature-img", "max-height: 60px; object-fit: contain; margin: 8px 0;", "Signature") : "";
+  
+  const effCampus = student.admissionCampus || "";
+  const d = new Date();
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const year = d.getFullYear();
+  const formattedLetterDateStr = `Đà Nẵng, ngày ${day} tháng ${month} năm ${year}`;
+
+  const campusTitleSuffixStr = effCampus.toUpperCase().includes("CS1") || effCampus.toUpperCase().includes("RIVERSIDE") ? "RIVERSIDE"
+    : effCampus.toUpperCase().includes("CS2") || effCampus.toUpperCase().includes("CENTRAL") ? "CENTRAL"
+    : effCampus.toUpperCase().includes("CS3") || effCampus.toUpperCase().includes("GLOBAL") ? "GLOBAL"
+    : effCampus.toUpperCase().includes("CS4") || effCampus.toUpperCase().includes("HILL") ? "HILL"
+    : effCampus.toUpperCase().includes("CS5") || effCampus.toUpperCase().includes("BEACH") ? "BEACH" : "GLOBAL";
+
+  const directorName = student?.signatureName || config?.directorName || 
+    (effCampus.toUpperCase().includes("CS1") || effCampus.toUpperCase().includes("RIVERSIDE") ? "Tống Thiên Long" :
+     effCampus.toUpperCase().includes("CS2") || effCampus.toUpperCase().includes("CENTRAL") ? "Lê Thị Hoàng Yến" :
+     effCampus.toUpperCase().includes("CS3") || effCampus.toUpperCase().includes("GLOBAL") ? "Trần Thị Thanh" :
+     effCampus.toUpperCase().includes("CS4") || effCampus.toUpperCase().includes("HILL") ? "Cao Thanh Trung" :
+     effCampus.toUpperCase().includes("CS5") || effCampus.toUpperCase().includes("BEACH") ? "Đỗ Quang Trung" : "Trần Thị Thanh");
+
+  const subTitleTextStr = `GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE ${campusTitleSuffixStr}`;
+
+  const customFooterHtml = config?.footer ? getImgTag(config.footer, "footer-img", "width: 100%; max-height: 100px; object-fit: contain;", "Footer") :
+    '<div style="width: 100%; font-family: Arial, sans-serif; box-sizing: border-box; text-align: left;">' +
+      '<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; width: 100%;">' +
+        '<span style="font-weight: bold; color: #00A6A9; white-space: nowrap; text-transform: uppercase; font-size: 11.5px; letter-spacing: 0.5px;">HỆ THỐNG GIÁO DỤC SKY-LINE</span>' +
+        '<div style="flex-grow: 1; border-top: 1px solid rgba(0, 166, 169, 0.7); height: 0; margin-top: 2px;"></div>' +
+        '<span style="font-weight: 600; color: #00A6A9; whitespace-nowrap: nowrap; text-transform: lowercase; font-size: 11px;">www.skylineschool.edu.vn</span>' +
+      '</div>' +
+      '<div style="display: flex; justify-content: space-between; font-size: 9px; position: relative; width: 100%;">' +
+        '<div style="width: 32%; display: flex; flex-direction: column; gap: 4px;">' +
+          '<div>' +
+            '<p style="font-weight: bold; color: #00A6A9; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Riverside</p>' +
+            '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Lô A2.4 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>' +
+          '</div>' +
+          '<div>' +
+            '<p style="font-weight: bold; color: #00A6A9; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Central</p>' +
+            '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>' +
+          '</div>' +
+          '<div>' +
+            '<p style="font-weight: bold; color: #00A6A9; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Global</p>' +
+            '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Lô A2 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>' +
+          '</div>' +
+        '</div>' +
+        '<div style="width: 32%; display: flex; flex-direction: column; gap: 4px;">' +
+          '<div>' +
+            '<p style="font-weight: bold; color: #00A6A9; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Beach</p>' +
+            '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Số 199 Trần Anh Tông, P. Thanh Khê, TP. Đà Nẵng</p>' +
+          '</div>' +
+          '<div>' +
+            '<p style="font-weight: bold; color: #00A6A9; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Hill</p>' +
+            '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Khối Hà My Đông A, P. Điện Bàn Đông, TP. Đà Nẵng</p>' +
+          '</div>' +
+          '<div>' +
+            '<p style="font-weight: bold; color: #00A6A9; margin: 0; font-size: 9.5px; line-height: 1.2;">Trung tâm sống thành công - SLS</p>' +
+            '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>' +
+          '</div>' +
+        '</div>' +
+        '<div style="width: 32%; display: flex; align-items: center; justify-content: flex-end; text-align: right; gap: 6px; font-size: 8.5px; font-weight: 600; color: #1e293b;">' +
+          '<div style="display: flex; flex-direction: column; line-height: 1.3;">' +
+            '<p style="margin: 0;">(+84.236) 378 7777</p>' +
+            '<p style="margin: 0;">(+84.236) 356 8777</p>' +
+            '<p style="margin: 0;">(+84.236) 378 7779</p>' +
+            '<p style="margin: 0;">(+84.235) 375 1777</p>' +
+          '</div>' +
+        '</div>' +
+        '<div style="position: absolute; right: -5px; top: 2px; width: 64px; height: 48px; pointer-events: none; display: flex; align-items: center; justify-content: center; color: #00A6A9;">' +
+          '<svg viewBox="0 0 120 60" style="width: 100%; height: 100%; fill: currentColor;">' +
+            '<path d="M 8 26 C 24 32, 50 52, 62 60 C 78 36, 102 16, 118 3 C 95 16, 76 44, 62 62 C 48 46, 25 32, 8 26 Z" />' +
+          '</svg>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+
+  return '<!DOCTYPE html>' +
+    '<html>' +
+    '<head>' +
+      '<meta charset="utf-8">' +
+      '<title>' + (config?.title || "Tài liệu") + '</title>' +
+      '<style>' +
+        '@page {' +
+          'size: A4;' +
+          'margin: 0;' +
+        '}' +
+        'body {' +
+          'margin: 0;' +
+          'padding: 0;' +
+          'background-color: #ffffff;' +
+          '-webkit-print-color-adjust: exact !important;' +
+          'print-color-adjust: exact !important;' +
+          'color-adjust: exact !important;' +
+        '}' +
+        '.print-page {' +
+          'width: 210mm;' +
+          'height: 297mm;' +
+          'padding: 20mm 20mm 45mm 30mm;' +
+          'box-sizing: border-box;' +
+          'position: relative;' +
+          'page-break-after: always;' +
+          'font-family: "Times New Roman", Times, serif;' +
+          'display: flex;' +
+          'flex-direction: column;' +
+        '}' +
+        '.print-page:last-child {' +
+          'page-break-after: avoid;' +
+        '}' +
+        '.print-watermark {' +
+          'display: block;' +
+          'position: absolute;' +
+          'top: 22%;' +
+          'left: 10%;' +
+          'width: 80%;' +
+          'height: auto;' +
+          'opacity: 0.08;' +
+          'z-index: 0;' +
+          'pointer-events: none;' +
+        '}' +
+        'p {' +
+          'font-size: 13.5pt;' +
+          'line-height: 1.45;' +
+          'color: #1f2937;' +
+          'margin: 0 0 6pt 0;' +
+          'text-align: justify;' +
+        '}' +
+        'h2 {' +
+          'text-align: center;' +
+          'font-size: 18pt;' +
+          'font-weight: bold;' +
+          'color: #0f172a;' +
+          'text-transform: uppercase;' +
+          'margin: 15px 0;' +
+        '}' +
+        '.footer-container {' +
+          'position: absolute !important;' +
+          'bottom: 0 !important;' +
+          'left: 0 !important;' +
+          'width: 100% !important;' +
+          'margin: 0 !important;' +
+          'box-sizing: border-box !important;' +
+          'z-index: 9999 !important;' +
+        '}' +
+        '.footer-container:has(img) {' +
+          'padding: 0 !important;' +
+          'border: none !important;' +
+        '}' +
+        '.footer-container:not(:has(img)) {' +
+          'padding: 0 20mm 10mm 30mm !important;' +
+        '}' +
+      '</style>' +
+    '</head>' +
+    '<body>' +
+      '<div class="print-page">' +
+        (config?.background ? getImgTag(config.background, "print-watermark", "", "Watermark") : "") +
+        '<div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #cbd5e1; padding-bottom: 12px; margin-bottom: 15px; height: 22mm;">' +
+          '<div style="display: flex; align-items: center; gap: 15px;">' +
+            logoHtml +
+            '<div style="display: flex; flex-direction: column; justify-content: center;">' +
+              '<h4 style="font-family: Arial, sans-serif; font-size: 13pt; font-weight: bold; text-transform: uppercase; color: #1e293b; margin: 0; letter-spacing: 0.5px;">HỆ THỐNG GIÁO DỤC SKY-LINE</h4>' +
+              '<p style="font-family: Arial, sans-serif; font-size: 11pt; font-weight: bold; text-transform: uppercase; color: #0d9488; margin: 2px 0 0 0;">' + (student.admissionCampus || "TRƯỜNG MẦM NON SKY-LINE") + '</p>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        
+        '<h2>' + (config?.title || "THƯ CHÚC MỪNG") + '</h2>' +
+        
+        '<p style="font-size: 16px; font-style: italic; margin-bottom: 15px;">' + greetingHtml + '</p>' +
+        
+        '<div style="flex-grow: 1; font-family: \'Times New Roman\', Times, serif;">' +
+          bodyHtml +
+        '</div>' +
+        
+        '<div style="display: flex; flex-direction: column; align-items: flex-end; margin-top: 30px; page-break-inside: avoid;">' +
+          '<div style="text-align: center; min-width: 260px; font-family: \'Times New Roman\', Times, serif;">' +
+            '<p style="font-size: 13px; font-style: italic; margin-bottom: 4px; text-align: center;">' + formattedLetterDateStr + '</p>' +
+            '<p style="font-size: 13px; font-weight: bold; text-transform: uppercase; margin: 0 0 2px 0; text-align: center;">TM. HỘI ĐỒNG TUYỂN SINH</p>' +
+            '<p style="font-size: 11px; font-weight: bold; text-transform: uppercase; color: #475569; margin: 0 0 10px 0; text-align: center;">' + subTitleTextStr + '</p>' +
+            '<div style="height: 60px; display: flex; align-items: center; justify-content: center;">' +
+              signatureHtml +
+            '</div>' +
+            '<p style="font-size: 13px; font-weight: bold; margin: 8px 0 0 0; text-align: center;">' + directorName + '</p>' +
+          '</div>' +
+        '</div>' +
+        
+        '<div class="footer-container">' +
+          customFooterHtml +
+        '</div>' +
+      '</div>' +
+    '</body>' +
+    '</html>';
+}
+
+
 function getTuVanEmail(campusName: string | null | undefined): string {
   if (!campusName) return "bankhaothi@skylineschool.edu.vn";
   const campus = campusName.toUpperCase().trim();
@@ -1002,13 +1235,31 @@ export async function POST(req) {
       let pdfBuffer = null;
       if (puppeteer) {
         try {
+          const campusObj = student.admissionCampus ? await (prisma as any).campus.findFirst({
+            where: {
+              OR: [
+                { campusName: student.admissionCampus },
+                { campusCode: student.admissionCampus }
+              ]
+            }
+          }) : null;
+
+          const targetConfig = await (prisma as any).preschoolAssessmentConfig.findFirst({
+            where: {
+              campusId: campusObj?.id || "",
+              type: "thu_chuc_mung_preschool"
+            }
+          });
+
+          const docHtml = buildPreschoolLetterHtmlServer(student, targetConfig, false);
+
           const browser = await puppeteer.launch({
             headless: true,
             args: ["--no-sandbox", "--disable-setuid-sandbox"]
           });
           const page = await browser.newPage();
           await page.emulateMediaType("screen");
-          await page.setContent(congratsTemplate, { waitUntil: "networkidle0", timeout: 15000 });
+          await page.setContent(docHtml, { waitUntil: "networkidle0", timeout: 15000 });
           pdfBuffer = await page.pdf({
             format: "A4",
             printBackground: true,
@@ -1283,9 +1534,18 @@ export async function POST(req) {
         let pdfBuffer = null;
         if (browser) {
           try {
+            const targetConfig = await (prisma as any).preschoolAssessmentConfig.findFirst({
+              where: {
+                campusId: campus?.id || "",
+                type: "thu_chuc_mung_preschool"
+              }
+            });
+
+            const docHtml = buildPreschoolLetterHtmlServer(student, targetConfig, false);
+
             const page = await browser.newPage();
             await page.emulateMediaType("screen");
-            await page.setContent(congratsTemplate, { waitUntil: "networkidle0", timeout: 15000 });
+            await page.setContent(docHtml, { waitUntil: "networkidle0", timeout: 15000 });
             pdfBuffer = await page.pdf({
               format: "A4",
               printBackground: true,
