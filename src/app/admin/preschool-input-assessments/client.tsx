@@ -6363,15 +6363,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   <img crossOrigin={(studentCampusConfig.background || "").startsWith("data:") ? undefined : "anonymous"}  className="print-watermark" src={studentCampusConfig.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "22%", left: "10%", transform: "none", width: "80%", height: "auto", opacity: 0.45, zIndex: 0, pointerEvents: "none" }} />
                 )}
                 {/* Top Logo and Header (Synchronized perfectly with Page 1) */}
-                      <div className="flex items-center justify-between border-b pb-3 mb-4" style={{ height: "22mm" }}>
-                        <div className="flex items-center" style={{ gap: "15px" }}>
+                      <div className="flex flex-col gap-1 border-b pb-2 mb-3">
+                        <div className="flex items-center justify-between">
                           {studentCampusConfig?.logo ? (
-                            <img 
-                              crossOrigin={studentCampusConfig?.logo?.startsWith("data:") ? undefined : "anonymous"}  
-                              src={studentCampusConfig?.logo} 
-                              alt="Logo" 
-                              style={{ height: "20mm", objectFit: "contain" }} 
-                            />
+                            <img crossOrigin={studentCampusConfig.logo?.startsWith("data:") ? undefined : "anonymous"} src={studentCampusConfig.logo} alt="Logo" className="h-12 object-contain" />
                           ) : (
                             <div className="flex items-center gap-1.5">
                               <span className="text-2xl font-black tracking-tight text-teal-600" style={{ fontFamily: "Arial, sans-serif" }}>SKY-LINE</span>
@@ -6380,14 +6375,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               </svg>
                             </div>
                           )}
-                          <div className="flex flex-col justify-center">
-                            <h4 className="font-extrabold uppercase text-left tracking-wide text-slate-800" style={{ fontFamily: "Arial, sans-serif", fontSize: "13pt", lineHeight: "1.2" }}>
-                              HỆ THỐNG GIÁO DỤC SKY-LINE
-                            </h4>
-                            <p className="font-bold text-teal-600 uppercase text-left mt-0.5" style={{ fontFamily: "Arial, sans-serif", fontSize: "11pt", lineHeight: "1.2" }}>
-                              {studentSchoolName || "TRƯỜNG MẦM NON SKY-LINE"}
-                            </p>
-                          </div>
+                        </div>
+                        <div className="text-left">
+                          <h4 className="font-extrabold text-sm uppercase tracking-wider text-slate-800" style={{ fontFamily: "Arial, sans-serif" }}>{studentSchoolName || "TRƯỜNG MẦM NON SKY-LINE"}</h4>
                         </div>
                       </div>
 
@@ -6556,7 +6546,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <div 
                       key={"assessment_page_" + sc.id}
                       className="bg-white shadow-lg border border-slate-200 relative text-slate-800 text-sm leading-relaxed print-page mt-8"
-                      style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "297mm", padding: "20mm 20mm 45mm 30mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "flex", flexDirection: "column", overflow: "hidden" }}
+                      style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "auto", padding: "12.7mm 15mm 15mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "block", overflow: "hidden" }}
                     >
                       <div className="flex flex-col relative z-10 w-full" style={{ flex: "1 1 auto", minHeight: 0, overflow: "hidden" }}>
                         {/* Print Watermark */}
@@ -6565,15 +6555,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         )}
                         
                         {/* Top Logo and Header */}
-                        <div className="flex items-center justify-between border-b pb-3 mb-4" style={{ height: "22mm" }}>
-                          <div className="flex items-center" style={{ gap: "15px" }}>
+                        <div className="flex flex-col gap-1 border-b pb-2 mb-3">
+                          <div className="flex items-center justify-between">
                             {studentCampusConfig?.logo ? (
-                              <img 
-                                crossOrigin={studentCampusConfig?.logo?.startsWith("data:") ? undefined : "anonymous"}  
-                                src={studentCampusConfig?.logo} 
-                                alt="Logo" 
-                                style={{ height: "20mm", objectFit: "contain" }} 
-                              />
+                              <img crossOrigin={studentCampusConfig.logo?.startsWith("data:") ? undefined : "anonymous"} src={studentCampusConfig.logo} alt="Logo" className="h-12 object-contain" />
                             ) : (
                               <div className="flex items-center gap-1.5">
                                 <span className="text-2xl font-black tracking-tight text-teal-600" style={{ fontFamily: "Arial, sans-serif" }}>SKY-LINE</span>
@@ -6582,14 +6567,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 </svg>
                               </div>
                             )}
-                            <div className="flex flex-col justify-center">
-                              <h4 className="font-extrabold uppercase text-left tracking-wide text-slate-800" style={{ fontFamily: "Arial, sans-serif", fontSize: "13pt", lineHeight: "1.2" }}>
-                                HỆ THỐNG GIÁO DỤC SKY-LINE
-                              </h4>
-                              <p className="font-bold text-teal-600 uppercase text-left mt-0.5" style={{ fontFamily: "Arial, sans-serif", fontSize: "11pt", lineHeight: "1.2" }}>
-                                {studentSchoolName || "TRƯỜNG MẦM NON SKY-LINE"}
-                              </p>
-                            </div>
+                          </div>
+                          <div className="text-left">
+                            <h4 className="font-extrabold text-sm uppercase tracking-wider text-slate-800" style={{ fontFamily: "Arial, sans-serif" }}>{studentSchoolName || "TRƯỜNG MẦM NON SKY-LINE"}</h4>
                           </div>
                         </div>
 
