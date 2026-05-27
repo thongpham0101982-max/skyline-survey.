@@ -584,7 +584,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
           '.print-page {' +
             'width: 210mm;' +
             'height: 297mm;' +
-            'padding: 20mm 20mm 20mm 30mm;' +
+            'padding: 20mm 20mm 10mm 30mm;' +
             'box-sizing: border-box;' +
             'position: relative;' +
             'page-break-after: always;' +
@@ -5701,7 +5701,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 min-height: auto !important;
                 max-height: none !important;
                 margin: 0 auto !important;
-                padding: 20mm 20mm 20mm 30mm !important;
+                padding: 20mm 20mm 10mm 30mm !important;
                 flex-shrink: 0 !important;
                 display: flex !important;
                 flex-direction: column !important;
@@ -5781,7 +5781,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 min-height: auto !important;
                 max-height: none !important;
                 margin: 0 !important; /* MUST BE 0 to avoid Chrome auto-centering */
-                padding: 20mm 20mm 20mm 30mm !important;
+                padding: 20mm 20mm 10mm 30mm !important;
                 box-shadow: none !important;
                 border: none !important;
                 display: flex !important;
@@ -5962,7 +5962,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 margin: 0 !important;
                 box-shadow: none !important;
                 border: none !important;
-                padding: 20mm 20mm 20mm 30mm !important; 
+                padding: 20mm 20mm 10mm 30mm !important; 
                 overflow: visible !important;
                 box-sizing: border-box !important;
                 
@@ -6146,7 +6146,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 <div 
                   id="print-letter-area" 
                   className="bg-white shadow-lg border border-slate-200 relative text-slate-800 text-sm leading-relaxed print-page"
-                  style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "auto", padding: "20mm 20mm 20mm 30mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "flex", flexDirection: "column", overflow: "hidden" }}
+                  style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "auto", padding: "20mm 20mm 10mm 30mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "flex", flexDirection: "column", overflow: "hidden" }}
               >
                 {/* Print Watermark */}
                 {studentCampusConfig?.background && (
@@ -6341,7 +6341,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 {([]) && ([]).length > 0 && (
                   <div 
                     className="bg-white shadow-lg border border-slate-200 relative text-slate-800 text-sm leading-relaxed print-page mt-8"
-                    style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "auto", padding: "20mm 20mm 20mm 30mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "flex", flexDirection: "column", overflow: "hidden" }}
+                    style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "auto", padding: "20mm 20mm 10mm 30mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "flex", flexDirection: "column", overflow: "hidden" }}
                   >
                     <div className="flex flex-col relative z-10 w-full" style={{ flex: "1 1 auto", minHeight: 0, overflow: "hidden" }}>
                 {/* Print Watermark */}
@@ -6542,7 +6542,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <div 
                       key={"assessment_page_" + sc.id}
                       className="bg-white shadow-lg border border-slate-200 relative text-slate-800 text-sm leading-relaxed print-page mt-8"
-                      style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "auto", padding: "20mm 20mm 20mm 30mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "flex", flexDirection: "column", overflow: "hidden" }}
+                      style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "auto", padding: "20mm 20mm 10mm 30mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "flex", flexDirection: "column", overflow: "hidden" }}
                     >
                       <div className="flex flex-col relative z-10 w-full" style={{ flex: "1 1 auto", minHeight: 0, overflow: "hidden" }}>
                         {/* Print Watermark */}
