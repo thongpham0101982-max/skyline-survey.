@@ -635,7 +635,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
             'border: none !important;' +
           '}' +
           '.footer-container:not(:has(img)) {' +
-            'padding: 0 15mm 10mm 15mm !important;' +
+            'padding: 0 15mm 2mm 15mm !important;' +
           '}' +
         '</style>' +
       '</head>' +
@@ -5746,7 +5746,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               }
               
               .print-footer:not(:has(img)), .footer-container:not(:has(img)) {
-                padding: 0 15mm 10mm 15mm !important;
+                padding: 0 15mm 2mm 15mm !important;
               }
               
               /* Sync typographic rendering to match high-fidelity print view on screen */
@@ -5833,7 +5833,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               }
               
               .print-footer:not(:has(img)), .footer-container:not(:has(img)) {
-                padding: 0 15mm 10mm 15mm !important;
+                padding: 0 15mm 2mm 15mm !important;
               }
               
               /* Watermark */
@@ -6031,7 +6031,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               }
               
               .print-page .print-footer:not(:has(img)), #print-letter-area .print-footer:not(:has(img)) {
-                padding: 0 15mm 10mm 15mm !important;
+                padding: 0 15mm 2mm 15mm !important;
               }
               .print-page > div {
                 flex: none !important;
