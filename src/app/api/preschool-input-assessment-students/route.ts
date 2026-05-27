@@ -134,24 +134,25 @@ Chúc con luôn giữ vững niềm vui thích học hỏi, luôn tràn đầy n
           'color-adjust: exact !important;' +
         '}' +
         '.print-page {' +
+          'font-family: "Times New Roman", Times, serif;' +
           'width: 210mm;' +
-          'height: 297mm;' +
-          'padding: 20mm 20mm 45mm 30mm;' +
+          'height: 296.8mm;' +
+          'padding: 12.7mm 15mm 48mm 15mm;' +
           'box-sizing: border-box;' +
           'position: relative;' +
-          'page-break-after: always;' +
-          'font-family: "Times New Roman", Times, serif;' +
-          'display: flex;' +
-          'flex-direction: column;' +
+          'overflow: hidden;' +
+          'background-color: #ffffff;' +
         '}' +
-        '.print-page:last-child {' +
-          'page-break-after: avoid;' +
+        '.print-page + .print-page {' +
+          'page-break-before: always !important;' +
+          'break-before: page !important;' +
         '}' +
         '.print-watermark {' +
           'display: block;' +
           'position: absolute;' +
           'top: 22%;' +
           'left: 10%;' +
+          'transform: none;' +
           'width: 80%;' +
           'height: auto;' +
           'opacity: 0.08;' +
@@ -174,20 +175,15 @@ Chúc con luôn giữ vững niềm vui thích học hỏi, luôn tràn đầy n
           'margin: 15px 0;' +
         '}' +
         '.footer-container {' +
-          'position: absolute !important;' +
-          'bottom: 0 !important;' +
-          'left: 0 !important;' +
-          'width: 100% !important;' +
-          'margin: 0 !important;' +
-          'box-sizing: border-box !important;' +
-          'z-index: 9999 !important;' +
-        '}' +
-        '.footer-container:has(img) {' +
-          'padding: 0 !important;' +
-          'border: none !important;' +
-        '}' +
-        '.footer-container:not(:has(img)) {' +
-          'padding: 0 20mm 10mm 30mm !important;' +
+          'position: absolute;' +
+          'bottom: 8mm;' +
+          'left: 0;' +
+          'right: 0;' +
+          'width: 100%;' +
+          'padding-left: 15mm;' +
+          'padding-right: 15mm;' +
+          'box-sizing: border-box;' +
+          'z-index: 10;' +
         '}' +
       '</style>' +
     '</head>' +
