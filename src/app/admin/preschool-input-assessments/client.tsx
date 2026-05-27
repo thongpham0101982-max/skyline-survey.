@@ -488,7 +488,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
       return '<img class="' + className + '"' + cors + ' src="' + src + '"' + styleAttr + altAttr + ' />';
     };
 
-    const logoHtml = config.logo ? getImgTag(config.logo, "logo-img", "height: 20mm; object-fit: contain;", "Logo") : "";
+    const logoHtml = config.logo ? getImgTag(config.logo, "logo-img", "max-height: 48px; object-fit: contain;", "Logo") : "";
     const signatureHtml = config.signature ? getImgTag(config.signature, "signature-img", "max-height: 60px; object-fit: contain; margin: 8px 0;", "Signature") : "";
     
     const effCampus = student.admissionCampus;
@@ -638,13 +638,12 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
       '<body>' +
         '<div class="print-page">' +
           (config.background ? getImgTag(config.background, "print-watermark", "", "Watermark") : "") +
-          '<div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #cbd5e1; padding-bottom: 12px; margin-bottom: 15px; height: 22mm;">' +
-            '<div style="display: flex; align-items: center; gap: 15px;">' +
+          '<div class="header-container" style="display: flex; flex-direction: column; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; margin-bottom: 12px; position: relative; z-index: 10;">' +
+            '<div style="display: flex; align-items: center; justify-content: space-between;">' +
               logoHtml +
-              '<div style="display: flex; flex-direction: column; justify-content: center;">' +
-                '<h4 style="font-family: Arial, sans-serif; font-size: 13pt; font-weight: bold; text-transform: uppercase; color: #1e293b; margin: 0; letter-spacing: 0.5px;">HỆ THỐNG GIÁO DỤC SKY-LINE</h4>' +
-                '<p style="font-family: Arial, sans-serif; font-size: 11pt; font-weight: bold; text-transform: uppercase; color: #0d9488; margin: 2px 0 0 0;">' + (student.admissionCampus || "TRƯỜNG MẦM NON SKY-LINE") + '</p>' +
-              '</div>' +
+            '</div>' +
+            '<div style="text-align: left; margin-top: 4px;">' +
+              '<h4 style="font-family: Arial, sans-serif; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #1e293b; margin: 0;">' + (studentSchoolName || "TRƯỜNG MẦM NON SKY-LINE") + '</h4>' +
             '</div>' +
           '</div>' +
           
@@ -6178,16 +6177,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   <img crossOrigin={(studentCampusConfig.background || "").startsWith("data:") ? undefined : "anonymous"}  className="print-watermark" src={studentCampusConfig.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "22%", left: "10%", transform: "none", width: "80%", height: "auto", opacity: 0.45, zIndex: 0, pointerEvents: "none" }} />
                 )}
                 {/* Top Logo and Header */}
-                <div className="flex flex-col relative z-10 w-full" style={{ flex: "1 1 auto", minHeight: 0, overflow: "hidden" }}>
-                  <div className="flex items-center justify-between border-b pb-3 mb-4" style={{ height: "22mm" }}>
-                    <div className="flex items-center" style={{ gap: "15px" }}>
+                <div className="flex flex-col relative z-10 w-full">
+                  <div className="flex flex-col gap-1 border-b pb-2 mb-3">
+                    <div className="flex items-center justify-between">
                       {studentCampusConfig?.logo ? (
-                        <img 
-                          crossOrigin={studentCampusConfig?.logo?.startsWith("data:") ? undefined : "anonymous"}  
-                          src={studentCampusConfig?.logo} 
-                          alt="Logo" 
-                          style={{ height: "20mm", objectFit: "contain" }} 
-                        />
+                        <img crossOrigin={studentCampusConfig.logo?.startsWith("data:") ? undefined : "anonymous"} src={studentCampusConfig.logo} alt="Logo" className="h-12 object-contain" />
                       ) : (
                         <div className="flex items-center gap-1.5">
                           <span className="text-2xl font-black tracking-tight text-teal-600" style={{ fontFamily: "Arial, sans-serif" }}>SKY-LINE</span>
@@ -6196,14 +6190,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                           </svg>
                         </div>
                       )}
-                      <div className="flex flex-col justify-center">
-                        <h4 className="font-extrabold uppercase text-left tracking-wide text-slate-800" style={{ fontFamily: "Arial, sans-serif", fontSize: "13pt", lineHeight: "1.2" }}>
-                          HỆ THỐNG GIÁO DỤC SKY-LINE
-                        </h4>
-                        <p className="font-bold text-teal-600 uppercase text-left mt-0.5" style={{ fontFamily: "Arial, sans-serif", fontSize: "11pt", lineHeight: "1.2" }}>
-                          {studentSchoolName || "TRƯỜNG MẦM NON SKY-LINE"}
-                        </p>
-                      </div>
+                    </div>
+                    <div className="text-left">
+                      <h4 className="font-extrabold text-sm uppercase tracking-wider text-slate-800" style={{ fontFamily: "Arial, sans-serif" }}>{studentSchoolName || "TRƯỜNG MẦM NON SKY-LINE"}</h4>
                     </div>
                   </div>
 
@@ -6232,7 +6221,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       ).split('\n').filter(Boolean).map((para, idx) => {
                         const isList = /^\s*[\d•\-*]+/.test(para);
                         return (
-                          <p key={idx} className={isList ? "pl-6 font-semibold text-slate-700 my-1" : ""} style={isList ? {} : { textIndent: "1.2cm", margin: "0 0 12px 0" }}>
+                          <p key={idx} className={isList ? "pl-6 font-semibold text-slate-700 my-1" : ""} style={isList ? {} : { textIndent: "1cm" }}>
                             {para}
                           </p>
                         );
@@ -6258,7 +6247,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         studentCampusConfig?.content || defaultPreschoolCongratulations,
                         selectedReportStudent
                       ).split('\n').filter(Boolean).map((para, idx) => (
-                        <p key={idx} className="" style={{ textIndent: "1.2cm", margin: "0 0 6pt 0", textAlign: "justify", textJustify: "inter-word", lineHeight: "1.45" }}>
+                        <p key={idx} className="" style={{ textIndent: "1cm" }}>
                           {para}
                         </p>
                       ))}

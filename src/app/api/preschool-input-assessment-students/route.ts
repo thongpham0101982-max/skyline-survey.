@@ -38,7 +38,7 @@ Chúc con luôn giữ vững niềm vui thích học hỏi, luôn tràn đầy n
     return '<img class="' + className + '" src="' + src + '"' + styleAttr + altAttr + ' />';
   };
 
-  const logoHtml = config?.logo ? getImgTag(config.logo, "logo-img", "height: 20mm; object-fit: contain;", "Logo") : "";
+  const logoHtml = config?.logo ? getImgTag(config.logo, "logo-img", "max-height: 48px; object-fit: contain;", "Logo") : "";
   const signatureHtml = config?.signature ? getImgTag(config.signature, "signature-img", "max-height: 60px; object-fit: contain; margin: 8px 0;", "Signature") : "";
   
   const effCampus = student.admissionCampus || "";
@@ -190,13 +190,12 @@ Chúc con luôn giữ vững niềm vui thích học hỏi, luôn tràn đầy n
     '<body>' +
       '<div class="print-page">' +
         (config?.background ? getImgTag(config.background, "print-watermark", "", "Watermark") : "") +
-        '<div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #cbd5e1; padding-bottom: 12px; margin-bottom: 15px; height: 22mm;">' +
-          '<div style="display: flex; align-items: center; gap: 15px;">' +
+        '<div class="header-container" style="display: flex; flex-direction: column; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; margin-bottom: 12px; position: relative; z-index: 10;">' +
+          '<div style="display: flex; align-items: center; justify-content: space-between;">' +
             logoHtml +
-            '<div style="display: flex; flex-direction: column; justify-content: center;">' +
-              '<h4 style="font-family: Arial, sans-serif; font-size: 13pt; font-weight: bold; text-transform: uppercase; color: #1e293b; margin: 0; letter-spacing: 0.5px;">HỆ THỐNG GIÁO DỤC SKY-LINE</h4>' +
-              '<p style="font-family: Arial, sans-serif; font-size: 11pt; font-weight: bold; text-transform: uppercase; color: #0d9488; margin: 2px 0 0 0;">' + (student.admissionCampus || "TRƯỜNG MẦM NON SKY-LINE") + '</p>' +
-            '</div>' +
+          '</div>' +
+          '<div style="text-align: left; margin-top: 4px;">' +
+            '<h4 style="font-family: Arial, sans-serif; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #1e293b; margin: 0;">' + (studentSchoolName || "TRƯỜNG MẦM NON SKY-LINE") + '</h4>' +
           '</div>' +
         '</div>' +
         
