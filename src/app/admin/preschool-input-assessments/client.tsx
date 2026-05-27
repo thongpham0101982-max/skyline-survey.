@@ -4334,7 +4334,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 min-height: auto !important;
                 max-height: none !important;
                 margin: 0 auto !important;
-                padding: 12.7mm 15mm 15mm 15mm !important;
+                padding: 20mm 20mm 20mm 30mm !important;
                 flex-shrink: 0 !important;
                 display: flex !important;
                 flex-direction: column !important;
@@ -4368,7 +4368,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 text-justify: inter-word !important;
               }
               .print-page h2, #print-letter-area h2 {
-                font-size: 22px !important;
+                font-size: 18pt !important;
                 text-align: center !important;
                 margin-top: 16px !important;
                 margin-bottom: 16px !important;
@@ -4414,7 +4414,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 min-height: auto !important;
                 max-height: none !important;
                 margin: 0 !important; /* MUST BE 0 to avoid Chrome auto-centering */
-                padding: 12.7mm 15mm 15mm 15mm !important;
+                padding: 20mm 20mm 20mm 30mm !important;
                 box-shadow: none !important;
                 border: none !important;
                 display: flex !important;
@@ -4595,7 +4595,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 margin: 0 !important;
                 box-shadow: none !important;
                 border: none !important;
-                padding: 12.7mm 15mm 15mm 15mm !important; 
+                padding: 20mm 20mm 20mm 30mm !important; 
                 overflow: visible !important;
                 box-sizing: border-box !important;
                 
@@ -4779,7 +4779,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 <div 
                   id="print-letter-area" 
                   className="bg-white shadow-lg border border-slate-200 relative text-slate-800 text-sm leading-relaxed print-page"
-                  style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "auto", padding: "12.7mm 15mm 15mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "flex", flexDirection: "column", overflow: "hidden" }}
+                  style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "auto", padding: "20mm 20mm 20mm 30mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "flex", flexDirection: "column", overflow: "hidden" }}
               >
                 {/* Print Watermark */}
                 {studentCampusConfig?.background && (
@@ -4787,10 +4787,15 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 )}
                 {/* Top Logo and Header */}
                 <div className="flex flex-col relative z-10 w-full" style={{ flex: "1 1 auto", minHeight: 0, overflow: "hidden" }}>
-                  <div className="flex flex-col gap-1 border-b pb-2 mb-3">
-                    <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between border-b pb-3 mb-4" style={{ height: "22mm" }}>
+                    <div className="flex items-center" style={{ gap: "15px" }}>
                       {studentCampusConfig?.logo ? (
-                        <img crossOrigin={studentCampusConfig?.logo?.startsWith("data:") ? undefined : "anonymous"}  src={studentCampusConfig?.logo} alt="Logo" className="h-12 object-contain" />
+                        <img 
+                          crossOrigin={studentCampusConfig?.logo?.startsWith("data:") ? undefined : "anonymous"}  
+                          src={studentCampusConfig?.logo} 
+                          alt="Logo" 
+                          style={{ height: "20mm", objectFit: "contain" }} 
+                        />
                       ) : (
                         <div className="flex items-center gap-1.5">
                           <span className="text-2xl font-black tracking-tight text-teal-600" style={{ fontFamily: "Arial, sans-serif" }}>SKY-LINE</span>
@@ -4799,15 +4804,20 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                           </svg>
                         </div>
                       )}
-                    </div>
-                    <div className="text-left">
-                      <h4 className="font-extrabold text-sm uppercase tracking-wider text-slate-800" style={{ fontFamily: "Arial, sans-serif" }}>{studentSchoolName}</h4>
+                      <div className="flex flex-col justify-center">
+                        <h4 className="font-extrabold uppercase text-left tracking-wide text-slate-800" style={{ fontFamily: "Arial, sans-serif", fontSize: "13pt", lineHeight: "1.2" }}>
+                          HỆ THỐNG GIÁO DỤC SKY-LINE
+                        </h4>
+                        <p className="font-bold text-teal-600 uppercase text-left mt-0.5" style={{ fontFamily: "Arial, sans-serif", fontSize: "11pt", lineHeight: "1.2" }}>
+                          {studentSchoolName || "TRƯỜNG MẦM NON SKY-LINE"}
+                        </p>
+                      </div>
                     </div>
                   </div>
 
                   {/* Letter Title */}
                   <div className="text-center my-4">
-                    <h2 className="text-2xl font-black tracking-widest text-indigo-950 uppercase mb-2" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+                    <h2 className="text-indigo-950 uppercase mb-2" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: "18pt", fontWeight: "bold", letterSpacing: "1px" }}>
                       {isInvitation ? (studentCampusConfig?.title || "THƯ MỜI") : (studentCampusConfig?.title || "THƯ CHÚC MỪNG")}
                     </h2>
                   </div>
@@ -4856,7 +4866,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         studentCampusConfig?.content || defaultPreschoolCongratulations,
                         selectedReportStudent
                       ).split('\n').filter(Boolean).map((para, idx) => (
-                        <p key={idx} className="" style={{ textIndent: "1.2cm", margin: "0 0 12px 0" }}>
+                        <p key={idx} className="" style={{ textIndent: "1.2cm", margin: "0 0 6pt 0", textAlign: "justify", textJustify: "inter-word", lineHeight: "1.45" }}>
                           {para}
                         </p>
                       ))}
@@ -4865,21 +4875,21 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
 
                                 {/* Bottom Signature Area */}
-                  <div className="flex flex-col items-end mt-8 pr-4">
-                    <div className="flex flex-col items-center text-center" style={{ minWidth: "240px" }}>
-                      <p className="italic text-slate-500 mb-1 text-[11px] font-medium">{formattedLetterDate}</p>
-                      <p className="font-bold uppercase text-indigo-950 text-xs tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
-                      <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-4">
+                  <div className="flex flex-col items-end mt-8 pr-4" style={{ pageBreakInside: "avoid" }}>
+                    <div className="flex flex-col items-center text-center" style={{ minWidth: "260px" }}>
+                      <p className="italic text-slate-500 mb-1 text-[13px]">{formattedLetterDate}</p>
+                      <p className="font-bold uppercase text-indigo-950 text-[13px]">TM. HỘI ĐỒNG TUYỂN SINH</p>
+                      <p className="font-bold uppercase text-indigo-900/80 text-[11px] mt-0.5">
                         GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}
                       </p>
                       
-                      <div className="h-16 flex items-center justify-center">
+                      <div className="h-16 flex items-center justify-center my-2">
                         {studentCampusConfig?.signature ? (
                           <img crossOrigin={studentCampusConfig?.signature?.startsWith("data:") ? undefined : "anonymous"} src={studentCampusConfig?.signature} alt="Signature" className="max-h-full object-contain" />
                         ) : null}
                       </div>
                       
-                      <p className="font-bold text-slate-700 mt-2 text-sm">
+                      <p className="font-bold text-slate-800 text-[13px] mt-2">
                         {selectedReportStudent?.signatureName || studentCampusConfig?.directorName || "Trần Thị Thanh"}
                       </p>
                     </div>
@@ -4964,7 +4974,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 {([]) && ([]).length > 0 && (
                   <div 
                     className="bg-white shadow-lg border border-slate-200 relative text-slate-800 text-sm leading-relaxed print-page mt-8"
-                    style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "auto", padding: "12.7mm 15mm 15mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "flex", flexDirection: "column", overflow: "hidden" }}
+                    style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "auto", padding: "20mm 20mm 20mm 30mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "flex", flexDirection: "column", overflow: "hidden" }}
                   >
                     <div className="flex flex-col relative z-10 w-full" style={{ flex: "1 1 auto", minHeight: 0, overflow: "hidden" }}>
                 {/* Print Watermark */}
@@ -4972,10 +4982,15 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   <img crossOrigin={(studentCampusConfig.background || "").startsWith("data:") ? undefined : "anonymous"}  className="print-watermark" src={studentCampusConfig.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "22%", left: "10%", transform: "none", width: "80%", height: "auto", opacity: 0.45, zIndex: 0, pointerEvents: "none" }} />
                 )}
                 {/* Top Logo and Header (Synchronized perfectly with Page 1) */}
-                      <div className="flex flex-col gap-1 border-b pb-2 mb-3">
-                        <div className="flex items-center justify-between">
-                          {null ? (
-                            <img crossOrigin={({}).logo?.startsWith("data:") ? undefined : "anonymous"}  src={({}).logo} alt="Logo" className="h-12 object-contain" />
+                      <div className="flex items-center justify-between border-b pb-3 mb-4" style={{ height: "22mm" }}>
+                        <div className="flex items-center" style={{ gap: "15px" }}>
+                          {studentCampusConfig?.logo ? (
+                            <img 
+                              crossOrigin={studentCampusConfig?.logo?.startsWith("data:") ? undefined : "anonymous"}  
+                              src={studentCampusConfig?.logo} 
+                              alt="Logo" 
+                              style={{ height: "20mm", objectFit: "contain" }} 
+                            />
                           ) : (
                             <div className="flex items-center gap-1.5">
                               <span className="text-2xl font-black tracking-tight text-teal-600" style={{ fontFamily: "Arial, sans-serif" }}>SKY-LINE</span>
@@ -4984,15 +4999,20 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               </svg>
                             </div>
                           )}
-                        </div>
-                        <div className="text-left">
-                          <h4 className="font-extrabold text-sm uppercase tracking-wider text-slate-800" style={{ fontFamily: "Arial, sans-serif" }}>{studentSchoolName}</h4>
+                          <div className="flex flex-col justify-center">
+                            <h4 className="font-extrabold uppercase text-left tracking-wide text-slate-800" style={{ fontFamily: "Arial, sans-serif", fontSize: "13pt", lineHeight: "1.2" }}>
+                              HỆ THỐNG GIÁO DỤC SKY-LINE
+                            </h4>
+                            <p className="font-bold text-teal-600 uppercase text-left mt-0.5" style={{ fontFamily: "Arial, sans-serif", fontSize: "11pt", lineHeight: "1.2" }}>
+                              {studentSchoolName || "TRƯỜNG MẦM NON SKY-LINE"}
+                            </p>
+                          </div>
                         </div>
                       </div>
 
                       {/* Page Title */}
                       <div className="text-center my-6">
-                        <h2 className="text-xl font-bold tracking-widest text-indigo-950 uppercase mb-4" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+                        <h2 className="text-indigo-950 uppercase mb-4" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: "18pt", fontWeight: "bold", letterSpacing: "1px" }}>
                           DANH MỤC HỒ SƠ NHẬP HỌC
                         </h2>
                       </div>
@@ -5155,7 +5175,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <div 
                       key={"assessment_page_" + sc.id}
                       className="bg-white shadow-lg border border-slate-200 relative text-slate-800 text-sm leading-relaxed print-page mt-8"
-                      style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "auto", padding: "12.7mm 15mm 15mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "flex", flexDirection: "column", overflow: "hidden" }}
+                      style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "auto", padding: "20mm 20mm 20mm 30mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "flex", flexDirection: "column", overflow: "hidden" }}
                     >
                       <div className="flex flex-col relative z-10 w-full" style={{ flex: "1 1 auto", minHeight: 0, overflow: "hidden" }}>
                         {/* Print Watermark */}
@@ -5164,21 +5184,36 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         )}
                         
                         {/* Top Logo and Header */}
-                        <div className="flex flex-col gap-1 border-b pb-2 mb-3">
-                          <div className="flex items-center justify-between">
-                            {null ? (
-                              <img crossOrigin={({}).logo?.startsWith("data:") ? undefined : "anonymous"} src={({}).logo} alt="Logo" className="h-12 object-contain" />
+                        <div className="flex items-center justify-between border-b pb-3 mb-4" style={{ height: "22mm" }}>
+                          <div className="flex items-center" style={{ gap: "15px" }}>
+                            {studentCampusConfig?.logo ? (
+                              <img 
+                                crossOrigin={studentCampusConfig?.logo?.startsWith("data:") ? undefined : "anonymous"}  
+                                src={studentCampusConfig?.logo} 
+                                alt="Logo" 
+                                style={{ height: "20mm", objectFit: "contain" }} 
+                              />
                             ) : (
-                              <span className="text-2xl font-black tracking-tight text-teal-600" style={{ fontFamily: "Arial, sans-serif" }}>SKY-LINE</span>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-2xl font-black tracking-tight text-teal-600" style={{ fontFamily: "Arial, sans-serif" }}>SKY-LINE</span>
+                                <svg className="w-6 h-6 text-teal-500" viewBox="0 0 24 24" fill="currentColor">
+                                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                </svg>
+                              </div>
                             )}
-                          </div>
-                          <div className="text-left">
-                            <h4 className="font-extrabold text-sm uppercase tracking-wider text-slate-800" style={{ fontFamily: "Arial, sans-serif" }}>{"HỆ THỐNG GIÁO DỤC SKY-LINE"}</h4>
+                            <div className="flex flex-col justify-center">
+                              <h4 className="font-extrabold uppercase text-left tracking-wide text-slate-800" style={{ fontFamily: "Arial, sans-serif", fontSize: "13pt", lineHeight: "1.2" }}>
+                                HỆ THỐNG GIÁO DỤC SKY-LINE
+                              </h4>
+                              <p className="font-bold text-teal-600 uppercase text-left mt-0.5" style={{ fontFamily: "Arial, sans-serif", fontSize: "11pt", lineHeight: "1.2" }}>
+                                {studentSchoolName || "TRƯỜNG MẦM NON SKY-LINE"}
+                              </p>
+                            </div>
                           </div>
                         </div>
 
                         <div className="text-center my-6">
-                          <h2 className="text-xl font-bold tracking-widest text-indigo-950 uppercase mb-2">CHI TIẾT ĐÁNH GIÁ</h2>
+                          <h2 className="text-indigo-950 uppercase mb-2" style={{ fontSize: "18pt", fontWeight: "bold", letterSpacing: "1px" }}>CHI TIẾT ĐÁNH GIÁ</h2>
                           <h3 className="text-lg font-bold text-slate-700 uppercase">{subject.name}</h3>
                         </div>
 
