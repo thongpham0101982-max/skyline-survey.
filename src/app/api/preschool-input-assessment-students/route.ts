@@ -7,9 +7,12 @@ Thầy cô tại Sky-Line vui mừng chào đón con đến với ngôi trườn
 Nhà trường hy vọng rằng, với sự nhanh nhẹn và đáng yêu của mình, con sẽ là một mảnh ghép sắc màu góp phần làm phong phú thêm bức tranh học đường tại Sky-Line. Nơi đây, con sẽ được học hỏi những điều mới lạ, được chơi đùa cùng các bạn và được các cô giáo yêu thương chăm sóc.
 Chúc con có những năm tháng học tập đầy ý nghĩa và trải nghiệm thú vị tại Sky-Line. Hãy luôn giữ vững niềm vui thích học hỏi và khát khao khám phá thế giới xung quanh con nhé!`;
 
-  const defaultInvitation = `Hội đồng Tuyển sinh Hệ thống Giáo dục Sky-Line trân trọng gửi lời chúc mừng nồng nhiệt nhất đến Gia đình và Bé. Dựa trên kết quả Khảo sát phát triển toàn diện của trẻ và kết quả phê duyệt chính thức từ Hội đồng Tuyển sinh, Nhà trường trân trọng gửi đến Quý phụ huynh Thư chúc mừng nhập học chính thức dành cho bé tại Cơ sở {{admissionCampus}}.
-Nhà trường hy vọng rằng, với sự chăm sóc tận tình và tình yêu thương vô bờ bến từ tập thể giáo viên và nhân viên Sky-Line, con sẽ nhanh chóng hòa nhập, có những trải nghiệm tuổi thơ tuyệt vời, được vui chơi thỏa thích và phát huy tối đa các năng lực bẩm sinh của mình.
-Chúc con luôn giữ vững niềm vui thích học hỏi, luôn tràn đầy năng lượng khám phá thế giới xung quanh con nhé!`;
+  const defaultInvitation = `Hội đồng Tuyển sinh Hệ thống Giáo dục Sky-Line trân trọng gửi lời chào và lời chúc sức khỏe, an khang đến Quý phụ huynh cùng gia đình.
+Nhằm tạo điều kiện tốt nhất để nhà trường hiểu rõ hơn về năng lực tư duy, ngôn ngữ cũng như thiên hướng phát triển tự nhiên của học sinh, qua đó xây dựng lộ trình rèn luyện tối ưu nhất, chúng tôi trân trọng kính mời Quý phụ huynh cùng học sinh tham gia buổi Khảo sát Năng lực Đầu vào hệ {{surveyFormType}} năm học {{academicYear}}.
+• Thời gian khảo sát: Theo lịch hẹn cụ thể được sắp xếp từ Ban Tuyển sinh.
+• Nội dung khảo sát: Đánh giá tư duy ngôn ngữ, tư duy logic tự nhiên và khả năng tương tác xã hội phù hợp theo độ tuổi.
+Sự hiện diện và đồng hành của Quý phụ huynh cùng học sinh là niềm hân hạnh lớn cho Sky-Line, giúp nhà trường có sự chuẩn bị chu đáo nhất đón chào các em gia nhập mái trường hạnh phúc của chúng ta.
+Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
   const rawContent = config?.content || (isInvitationFlag ? defaultInvitation : defaultCongrats);
   const renderedContent = rawContent
@@ -24,12 +27,12 @@ Chúc con luôn giữ vững niềm vui thích học hỏi, luôn tràn đầy n
     const isList = /^\s*[\d•\-*]+/.test(para);
     return isList 
       ? '<p style="padding-left: 24px; font-weight: bold; color: #374151; margin: 4px 0;">' + para + '</p>' 
-      : '<p style="text-indent: 1.2cm; margin: 0 0 6pt 0; text-align: justify; text-justify: inter-word; line-height: 1.45; font-size: 13.5pt;">' + para + '</p>';
+      : '<p style="text-indent: 10mm; margin: 0 0 14px 0; text-align: justify; text-justify: inter-word; line-height: 1.6; font-size: 13.5pt;">' + para + '</p>';
   }).join("");
 
   const greetingHtml = isInvitationFlag 
-    ? 'Kính gửi Quý Phụ huynh và em <strong style="font-weight: 900; font-style: normal; color: #0f172a;">' + student.fullName + '</strong>,'
-    : 'Thân gửi con <strong style="font-weight: 900; font-style: normal; color: #0f172a;">' + student.fullName + '</strong>,';
+    ? 'Kính gửi Quý Phụ huynh và em <strong style="font-weight: bold; color: #0f172a;">' + student.fullName + '</strong>,'
+    : 'Thân gửi con <strong style="font-weight: bold; color: #0f172a;">' + student.fullName + '</strong>,';
 
   const getImgTag = (src: string, className: string, style: string = "", alt: string = "") => {
     if (!src) return "";
@@ -38,8 +41,13 @@ Chúc con luôn giữ vững niềm vui thích học hỏi, luôn tràn đầy n
     return '<img class="' + className + '" src="' + src + '"' + styleAttr + altAttr + ' />';
   };
 
-  const logoHtml = config?.logo ? getImgTag(config.logo, "logo-img", "max-height: 48px; object-fit: contain;", "Logo") : "";
-  const signatureHtml = config?.signature ? getImgTag(config.signature, "signature-img", "max-height: 60px; object-fit: contain; margin: 8px 0;", "Signature") : "";
+  const logoHtml = config?.logo 
+    ? getImgTag(config.logo, "logo-img", "max-height: 48px; object-fit: contain;", "Logo") 
+    : '<svg class="logo-svg" style="height: 48px; fill: #00A6A9;" viewBox="0 0 260 50"><text x="0" y="38" font-family="Arial, sans-serif" font-weight="900" font-size="34" letter-spacing="-1">SKY-LINE</text><circle cx="178" cy="26" r="6" /></svg>';
+
+  const signatureHtml = config?.signature 
+    ? getImgTag(config.signature, "signature-img", "max-height: 60px; object-fit: contain; margin: 8px 0;", "Signature") 
+    : '<svg style="height: 60px; max-height: 60px;" viewBox="0 0 100 40" width="120"><path d="M10,25 Q30,5 50,20 T90,15 M30,12 Q45,28 60,8" fill="none" stroke="#0f172a" stroke-width="2" stroke-linecap="round"/></svg>';
   
   const effCampus = student.admissionCampus || "";
   const clean = effCampus.toUpperCase();
@@ -68,54 +76,52 @@ Chúc con luôn giữ vững niềm vui thích học hỏi, luôn tràn đầy n
   const customFooterHtml = config?.footer ? getImgTag(config.footer, "footer-img", "width: 100%; max-height: 100px; object-fit: contain;", "Footer") :
     '<div style="width: 100%; font-family: Arial, sans-serif; box-sizing: border-box; text-align: left;">' +
       '<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; width: 100%;">' +
-        '<span style="font-weight: bold; color: #00A6A9; white-space: nowrap; text-transform: uppercase; font-size: 11.5px; letter-spacing: 0.5px;">HỆ THỐNG GIÁO DỤC SKY-LINE</span>' +
+        '<span style="font-weight: bold; color: #00A6A9; white-space: nowrap; text-transform: uppercase; font-size: 9.5pt; letter-spacing: 0.5px;">HỆ THỐNG GIÁO DỤC SKY-LINE</span>' +
         '<div style="flex-grow: 1; border-top: 1px solid rgba(0, 166, 169, 0.7); height: 0; margin-top: 2px;"></div>' +
-        '<span style="font-weight: 600; color: #00A6A9; whitespace-nowrap: nowrap; text-transform: lowercase; font-size: 11px;">www.skylineschool.edu.vn</span>' +
+        '<span style="font-weight: 600; color: #00A6A9; white-space: nowrap; text-transform: lowercase; font-size: 9pt;">www.skylineschool.edu.vn</span>' +
       '</div>' +
-      '<div style="display: flex; justify-content: space-between; font-size: 9px; position: relative; width: 100%;">' +
+      '<div style="display: flex; justify-content: space-between; font-size: 7.5pt; color: #555555; position: relative; width: 100%;">' +
         '<div style="width: 32%; display: flex; flex-direction: column; gap: 4px;">' +
           '<div>' +
-            '<p style="font-weight: bold; color: #00A6A9; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Riverside</p>' +
-            '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Lô A2.4 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>' +
+            '<p style="font-weight: bold; color: #00A6A9; margin: 0; font-size: 8pt; line-height: 1.25;">SKY-LINE Riverside</p>' +
+            '<p style="color: #555555; margin: 2px 0 0 0; line-height: 1.25;">Lô A2.4 Trần Đăng Ninh, Q. Hải Châu, TP. Đà Nẵng</p>' +
           '</div>' +
           '<div>' +
-            '<p style="font-weight: bold; color: #00A6A9; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Central</p>' +
-            '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>' +
-          '</div>' +
-          '<div>' +
-            '<p style="font-weight: bold; color: #00A6A9; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Global</p>' +
-            '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Lô A2 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>' +
+            '<p style="font-weight: bold; color: #00A6A9; margin: 0; font-size: 8pt; line-height: 1.25;">SKY-LINE Central</p>' +
+            '<p style="color: #555555; margin: 2px 0 0 0; line-height: 1.25;">Số 48 Nguyễn Du, Q. Hải Châu, TP. Đà Nẵng</p>' +
           '</div>' +
         '</div>' +
         '<div style="width: 32%; display: flex; flex-direction: column; gap: 4px;">' +
           '<div>' +
-            '<p style="font-weight: bold; color: #00A6A9; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Beach</p>' +
-            '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Số 199 Trần Anh Tông, P. Thanh Khê, TP. Đà Nẵng</p>' +
+            '<p style="font-weight: bold; color: #00A6A9; margin: 0; font-size: 8pt; line-height: 1.25;">SKY-LINE Global</p>' +
+            '<p style="color: #555555; margin: 2px 0 0 0; line-height: 1.25;">Lô A2 Trần Đăng Ninh, Q. Hải Châu, TP. Đà Nẵng</p>' +
           '</div>' +
           '<div>' +
-            '<p style="font-weight: bold; color: #00A6A9; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Hill</p>' +
-            '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Khối Hà My Đông A, P. Điện Bàn Đông, TP. Đà Nẵng</p>' +
-          '</div>' +
-          '<div>' +
-            '<p style="font-weight: bold; color: #00A6A9; margin: 0; font-size: 9.5px; line-height: 1.2;">Trung tâm sống thành công - SLS</p>' +
-            '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>' +
+            '<p style="font-weight: bold; color: #00A6A9; margin: 0; font-size: 8pt; line-height: 1.25;">SKY-LINE Beach</p>' +
+            '<p style="color: #555555; margin: 2px 0 0 0; line-height: 1.25;">Số 199 Trần Anh Tông, Q. Thanh Khê, TP. Đà Nẵng</p>' +
           '</div>' +
         '</div>' +
-        '<div style="width: 32%; display: flex; align-items: center; justify-content: flex-end; text-align: right; gap: 6px; font-size: 8.5px; font-weight: 600; color: #1e293b;">' +
-          '<div style="display: flex; flex-direction: column; line-height: 1.3;">' +
+        '<div style="width: 32%; display: flex; flex-direction: column; gap: 4px;">' +
+          '<div>' +
+            '<p style="font-weight: bold; color: #00A6A9; margin: 0; font-size: 8pt; line-height: 1.25;">SKY-LINE Hill</p>' +
+            '<p style="color: #555555; margin: 2px 0 0 0; line-height: 1.25;">Khối Hà My Đông A, Điện Bàn, Quảng Nam</p>' +
+          '</div>' +
+          '<div style="display: flex; flex-direction: column; line-height: 1.35; font-weight: 600; color: #1e293b;">' +
             '<p style="margin: 0;">(+84.236) 378 7777</p>' +
             '<p style="margin: 0;">(+84.236) 356 8777</p>' +
-            '<p style="margin: 0;">(+84.236) 378 7779</p>' +
-            '<p style="margin: 0;">(+84.235) 375 1777</p>' +
           '</div>' +
         '</div>' +
-        '<div style="position: absolute; right: -5px; top: 2px; width: 64px; height: 48px; pointer-events: none; display: flex; align-items: center; justify-content: center; color: #00A6A9;">' +
+        '<div style="position: absolute; right: -4px; top: -4px; width: 50px; height: 38px; pointer-events: none; display: flex; align-items: center; justify-content: center; color: #00A6A9;">' +
           '<svg viewBox="0 0 120 60" style="width: 100%; height: 100%; fill: currentColor;">' +
             '<path d="M 8 26 C 24 32, 50 52, 62 60 C 78 36, 102 16, 118 3 C 95 16, 76 44, 62 62 C 48 46, 25 32, 8 26 Z" />' +
           '</svg>' +
         '</div>' +
       '</div>' +
     '</div>';
+
+  const bgHtml = config.background 
+    ? getImgTag(config.background, "print-watermark", "", "Watermark") 
+    : '<svg class="print-watermark" style="display: block; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 110mm; height: auto; opacity: 0.04; z-index: 1; pointer-events: none;" viewBox="0 0 100 100"><path fill="#00A6A9" d="M10,80 Q50,40 90,20 Q60,50 10,80 Z" /><path fill="#00A6A9" d="M30,80 Q60,55 90,35 Q65,60 30,80 Z" /></svg>';
 
   return '<!DOCTYPE html>' +
     '<html>' +
@@ -124,8 +130,8 @@ Chúc con luôn giữ vững niềm vui thích học hỏi, luôn tràn đầy n
       '<title>' + (config?.title || "Tài liệu") + '</title>' +
       '<style>' +
         '@page {' +
-          'size: A4;' +
-          'margin: 0;' +
+          'size: A4 portrait;' +
+          'margin: 20mm;' +
         '}' +
         'body {' +
           'margin: 0;' +
@@ -135,89 +141,73 @@ Chúc con luôn giữ vững niềm vui thích học hỏi, luôn tràn đầy n
           'print-color-adjust: exact !important;' +
           'color-adjust: exact !important;' +
         '}' +
-        '.print-page {' +
+        '.a4-page {' +
           'font-family: "Times New Roman", Times, serif;' +
-          'width: 210mm;' +
-          'height: 296.8mm;' +
-          'padding: 12.7mm 15mm 48mm 15mm;' +
-          'box-sizing: border-box;' +
+          'width: 170mm;' +
+          'height: 257mm;' +
           'position: relative;' +
-          'overflow: hidden;' +
+          'display: flex;' +
+          'flex-direction: column;' +
+          'justify-content: space-between;' +
           'background-color: #ffffff;' +
+          'overflow: hidden;' +
         '}' +
-        '.print-page + .print-page {' +
+        '.a4-page + .a4-page {' +
           'page-break-before: always !important;' +
           'break-before: page !important;' +
         '}' +
-        '.print-watermark {' +
-          'display: block;' +
-          'position: absolute;' +
-          'top: 22%;' +
-          'left: 10%;' +
-          'transform: none;' +
-          'width: 80%;' +
-          'height: auto;' +
-          'opacity: 0.08;' +
-          'z-index: 0;' +
-          'pointer-events: none;' +
-        '}' +
         'p {' +
           'font-size: 13.5pt;' +
-          'line-height: 1.45;' +
-          'color: #1f2937;' +
-          'margin: 0 0 6pt 0;' +
+          'line-height: 1.6;' +
+          'color: #333333;' +
+          'margin: 0 0 14px 0;' +
           'text-align: justify;' +
         '}' +
         'h2 {' +
           'text-align: center;' +
-          'font-size: 18pt;' +
+          'font-size: 22pt;' +
           'font-weight: bold;' +
           'color: #0f172a;' +
           'text-transform: uppercase;' +
-          'margin: 15px 0;' +
+          'letter-spacing: 2px;' +
+          'margin: 16px 0 24px 0;' +
         '}' +
         '.footer-container {' +
-          'position: absolute;' +
-          'bottom: 8mm;' +
-          'left: 0;' +
-          'right: 0;' +
           'width: 100%;' +
-          'padding-left: 15mm;' +
-          'padding-right: 15mm;' +
-          'box-sizing: border-box;' +
+          'margin-top: 20px;' +
           'z-index: 10;' +
         '}' +
       '</style>' +
     '</head>' +
     '<body>' +
-      '<div class="print-page">' +
-        (config?.background ? getImgTag(config.background, "print-watermark", "", "Watermark") : "") +
-        '<div class="header-container" style="display: flex; flex-direction: column; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; margin-bottom: 12px; position: relative; z-index: 10;">' +
-          '<div style="display: flex; align-items: center; justify-content: space-between;">' +
-            logoHtml +
+      '<div class="a4-page">' +
+        bgHtml +
+        '<div style="position: relative; z-index: 10; display: flex; flex-direction: column; flex-grow: 1;">' +
+          '<div class="header-container" style="display: flex; flex-direction: column; border-bottom: 1.5px solid #00A6A9; padding-bottom: 8px; margin-bottom: 24px;">' +
+            '<div style="display: flex; align-items: center; justify-content: space-between;">' +
+              logoHtml +
+            '</div>' +
+            '<div style="text-align: left; margin-top: 4px;">' +
+              '<h4 style="font-family: Arial, sans-serif; font-size: 11pt; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #1e293b; margin: 0;">' + (studentSchoolName || "TRƯỜNG MẦM NON SKY-LINE") + '</h4>' +
+            '</div>' +
           '</div>' +
-          '<div style="text-align: left; margin-top: 4px;">' +
-            '<h4 style="font-family: Arial, sans-serif; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #1e293b; margin: 0;">' + (studentSchoolName || "TRƯỜNG MẦM NON SKY-LINE") + '</h4>' +
+          
+          '<h2>' + (config?.title || "THƯ CHÚC MỪNG") + '</h2>' +
+          
+          '<p style="font-size: 14pt; font-style: italic; margin-bottom: 12px; color: #1e293b; text-indent: 0;">' + greetingHtml + '</p>' +
+          
+          '<div style="flex-grow: 1; font-family: \'Times New Roman\', Times, serif;">' +
+            bodyHtml +
           '</div>' +
-        '</div>' +
-        
-        '<h2>' + (config?.title || "THƯ CHÚC MỪNG") + '</h2>' +
-        
-        '<p style="font-size: 16px; font-style: italic; margin-bottom: 15px;">' + greetingHtml + '</p>' +
-        
-        '<div style="flex-grow: 1; font-family: \'Times New Roman\', Times, serif;">' +
-          bodyHtml +
-        '</div>' +
-        
-        '<div style="display: flex; flex-direction: column; align-items: flex-end; margin-top: 30px; page-break-inside: avoid;">' +
-          '<div style="text-align: center; min-width: 260px; font-family: \'Times New Roman\', Times, serif;">' +
-            '<p style="font-size: 13px; font-style: italic; margin-bottom: 4px; text-align: center;">' + formattedLetterDateStr + '</p>' +
-            '<p style="font-size: 13px; font-weight: bold; text-transform: uppercase; margin: 0 0 2px 0; text-align: center;">TM. HỘI ĐỒNG TUYỂN SINH</p>' +
-            '<p style="font-size: 11px; font-weight: bold; text-transform: uppercase; color: #475569; margin: 0 0 10px 0; text-align: center;">' + subTitleTextStr + '</p>' +
-            '<div style="height: 60px; display: flex; align-items: center; justify-content: center;">' +
+          
+          '<div style="align-self: flex-end; display: flex; flex-direction: column; align-items: center; text-align: center; min-width: 70mm; margin-top: auto; padding-top: 20px; page-break-inside: avoid; break-inside: avoid;">' +
+            '<p style="font-size: 12pt; font-style: italic; color: #555555; margin-bottom: 4px; text-align: center; text-indent: 0;">' + formattedLetterDateStr + '</p>' +
+            '<p style="font-size: 12pt; font-weight: bold; text-transform: uppercase; margin: 0; text-align: center; text-indent: 0; color: #0f172a;">TM. HỘI ĐỒNG TUYỂN SINH</p>' +
+            '<p style="font-size: 10pt; font-weight: bold; text-transform: uppercase; color: #475569; margin: 2px 0 0 0; text-align: center; text-indent: 0;">' + subTitleTextStr + '</p>' +
+            '<div style="height: 60px; display: flex; align-items: center; justify-content: center; margin: 8px 0;">' +
               signatureHtml +
             '</div>' +
-            '<p style="font-size: 13px; font-weight: bold; margin: 8px 0 0 0; text-align: center;">' + directorName + '</p>' +
+            '<p style="font-size: 13pt; font-weight: bold; margin: 0; text-align: center; text-indent: 0; color: #1e293b;">' + directorName + '</p>' +
           '</div>' +
         '</div>' +
         
@@ -228,6 +218,7 @@ Chúc con luôn giữ vững niềm vui thích học hỏi, luôn tràn đầy n
     '</body>' +
     '</html>';
 }
+
 
 
 function getTuVanEmail(campusName: string | null | undefined): string {

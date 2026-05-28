@@ -473,12 +473,12 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
       const isList = /^\s*[\d•\-*]+/.test(para);
       return isList 
         ? '<p style="padding-left: 24px; font-weight: bold; color: #374151; margin: 4px 0;">' + para + '</p>' 
-        : '<p style="text-indent: 1.2cm; margin: 0 0 6pt 0; text-align: justify; text-justify: inter-word; line-height: 1.45; font-size: 13.5pt;">' + para + '</p>';
+        : '<p style="text-indent: 10mm; margin: 0 0 14px 0; text-align: justify; text-justify: inter-word; line-height: 1.6; font-size: 13.5pt;">' + para + '</p>';
     }).join("");
 
     const greetingHtml = isInvitationFlag 
-      ? 'Kính gửi Quý Phụ huynh và em <strong style="font-weight: 900; font-style: normal; color: #0f172a;">' + student.fullName + '</strong>,'
-      : 'Thân gửi con <strong style="font-weight: 900; font-style: normal; color: #0f172a;">' + student.fullName + '</strong>,';
+      ? 'Kính gửi Quý Phụ huynh và em <strong style="font-weight: bold; color: #0f172a;">' + student.fullName + '</strong>,'
+      : 'Thân gửi con <strong style="font-weight: bold; color: #0f172a;">' + student.fullName + '</strong>,';
 
     const getImgTag = (src: string, className: string, style: string = "", alt: string = "") => {
       if (!src) return "";
@@ -488,12 +488,18 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
       return '<img class="' + className + '"' + cors + ' src="' + src + '"' + styleAttr + altAttr + ' />';
     };
 
-    const logoHtml = config.logo ? getImgTag(config.logo, "logo-img", "max-height: 48px; object-fit: contain;", "Logo") : "";
-    const signatureHtml = config.signature ? getImgTag(config.signature, "signature-img", "max-height: 60px; object-fit: contain; margin: 8px 0;", "Signature") : "";
+    const logoHtml = config.logo 
+      ? getImgTag(config.logo, "logo-img", "max-height: 48px; object-fit: contain;", "Logo") 
+      : '<svg class="logo-svg" style="height: 48px; fill: #00A6A9;" viewBox="0 0 260 50"><text x="0" y="38" font-family="Arial, sans-serif" font-weight="900" font-size="34" letter-spacing="-1">SKY-LINE</text><circle cx="178" cy="26" r="6" /></svg>';
+
+    const signatureHtml = config.signature 
+      ? getImgTag(config.signature, "signature-img", "max-height: 60px; object-fit: contain; margin: 8px 0;", "Signature") 
+      : '<svg style="height: 60px; max-height: 60px;" viewBox="0 0 100 40" width="120"><path d="M10,25 Q30,5 50,20 T90,15 M30,12 Q45,28 60,8" fill="none" stroke="#0f172a" stroke-width="2" stroke-linecap="round"/></svg>';
     
     const effCampus = student.admissionCampus;
     const campusObj = campuses.find((c: any) => c.id === effCampus || c.campusName === effCampus || c.campusCode === effCampus);
     const campusCodeStr = (campusObj ? campusObj.campusCode || campusObj.campusName : effCampus || "").toUpperCase();
+    const studentSchoolNameLocal = campusCodeStr.includes("HILL") ? "TRƯỜNG MẦM NON SKY-LINE HILL" : "TRƯỜNG MẦM NON SKY-LINE";
     
     const d = new Date();
     const day = String(d.getDate()).padStart(2, "0");
@@ -514,54 +520,52 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
     const customFooterHtml = config.footer ? getImgTag(config.footer, "footer-img", "width: 100%; max-height: 100px; object-fit: contain;", "Footer") :
       '<div style="width: 100%; font-family: Arial, sans-serif; box-sizing: border-box; text-align: left;">' +
         '<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; width: 100%;">' +
-          '<span style="font-weight: bold; color: #00A6A9; white-space: nowrap; text-transform: uppercase; font-size: 11.5px; letter-spacing: 0.5px;">HỆ THỐNG GIÁO DỤC SKY-LINE</span>' +
+          '<span style="font-weight: bold; color: #00A6A9; white-space: nowrap; text-transform: uppercase; font-size: 9.5pt; letter-spacing: 0.5px;">HỆ THỐNG GIÁO DỤC SKY-LINE</span>' +
           '<div style="flex-grow: 1; border-top: 1px solid rgba(0, 166, 169, 0.7); height: 0; margin-top: 2px;"></div>' +
-          '<span style="font-weight: 600; color: #00A6A9; white-space: nowrap; text-transform: lowercase; font-size: 11px;">www.skylineschool.edu.vn</span>' +
+          '<span style="font-weight: 600; color: #00A6A9; white-space: nowrap; text-transform: lowercase; font-size: 9pt;">www.skylineschool.edu.vn</span>' +
         '</div>' +
-        '<div style="display: flex; justify-content: space-between; font-size: 9px; position: relative; width: 100%;">' +
+        '<div style="display: flex; justify-content: space-between; font-size: 7.5pt; color: #555555; position: relative; width: 100%;">' +
           '<div style="width: 32%; display: flex; flex-direction: column; gap: 4px;">' +
             '<div>' +
-              '<p style="font-weight: bold; color: #00A6A9; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Riverside</p>' +
-              '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Lô A2.4 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>' +
+              '<p style="font-weight: bold; color: #00A6A9; margin: 0; font-size: 8pt; line-height: 1.25;">SKY-LINE Riverside</p>' +
+              '<p style="color: #555555; margin: 2px 0 0 0; line-height: 1.25;">Lô A2.4 Trần Đăng Ninh, Q. Hải Châu, TP. Đà Nẵng</p>' +
             '</div>' +
             '<div>' +
-              '<p style="font-weight: bold; color: #00A6A9; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Central</p>' +
-              '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>' +
-            '</div>' +
-            '<div>' +
-              '<p style="font-weight: bold; color: #00A6A9; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Global</p>' +
-              '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Lô A2 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>' +
+              '<p style="font-weight: bold; color: #00A6A9; margin: 0; font-size: 8pt; line-height: 1.25;">SKY-LINE Central</p>' +
+              '<p style="color: #555555; margin: 2px 0 0 0; line-height: 1.25;">Số 48 Nguyễn Du, Q. Hải Châu, TP. Đà Nẵng</p>' +
             '</div>' +
           '</div>' +
           '<div style="width: 32%; display: flex; flex-direction: column; gap: 4px;">' +
             '<div>' +
-              '<p style="font-weight: bold; color: #00A6A9; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Beach</p>' +
-              '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Số 199 Trần Anh Tông, P. Thanh Khê, TP. Đà Nẵng</p>' +
+              '<p style="font-weight: bold; color: #00A6A9; margin: 0; font-size: 8pt; line-height: 1.25;">SKY-LINE Global</p>' +
+              '<p style="color: #555555; margin: 2px 0 0 0; line-height: 1.25;">Lô A2 Trần Đăng Ninh, Q. Hải Châu, TP. Đà Nẵng</p>' +
             '</div>' +
             '<div>' +
-              '<p style="font-weight: bold; color: #00A6A9; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Hill</p>' +
-              '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Khối Hà My Đông A, P. Điện Bàn Đông, TP. Đà Nẵng</p>' +
-            '</div>' +
-            '<div>' +
-              '<p style="font-weight: bold; color: #00A6A9; margin: 0; font-size: 9.5px; line-height: 1.2;">Trung tâm sống thành công - SLS</p>' +
-              '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>' +
+              '<p style="font-weight: bold; color: #00A6A9; margin: 0; font-size: 8pt; line-height: 1.25;">SKY-LINE Beach</p>' +
+              '<p style="color: #555555; margin: 2px 0 0 0; line-height: 1.25;">Số 199 Trần Anh Tông, Q. Thanh Khê, TP. Đà Nẵng</p>' +
             '</div>' +
           '</div>' +
-          '<div style="width: 32%; display: flex; align-items: center; justify-content: flex-end; text-align: right; gap: 6px; font-size: 8.5px; font-weight: 600; color: #1e293b;">' +
-            '<div style="display: flex; flex-direction: column; line-height: 1.3;">' +
+          '<div style="width: 32%; display: flex; flex-direction: column; gap: 4px;">' +
+            '<div>' +
+              '<p style="font-weight: bold; color: #00A6A9; margin: 0; font-size: 8pt; line-height: 1.25;">SKY-LINE Hill</p>' +
+              '<p style="color: #555555; margin: 2px 0 0 0; line-height: 1.25;">Khối Hà My Đông A, Điện Bàn, Quảng Nam</p>' +
+            '</div>' +
+            '<div style="display: flex; flex-direction: column; line-height: 1.35; font-weight: 600; color: #1e293b;">' +
               '<p style="margin: 0;">(+84.236) 378 7777</p>' +
               '<p style="margin: 0;">(+84.236) 356 8777</p>' +
-              '<p style="margin: 0;">(+84.236) 378 7779</p>' +
-              '<p style="margin: 0;">(+84.235) 375 1777</p>' +
             '</div>' +
           '</div>' +
-          '<div style="position: absolute; right: -5px; top: 2px; width: 64px; height: 48px; pointer-events: none; display: flex; align-items: center; justify-content: center; color: #00A6A9;">' +
+          '<div style="position: absolute; right: -4px; top: -4px; width: 50px; height: 38px; pointer-events: none; display: flex; align-items: center; justify-content: center; color: #00A6A9;">' +
             '<svg viewBox="0 0 120 60" style="width: 100%; height: 100%; fill: currentColor;">' +
               '<path d="M 8 26 C 24 32, 50 52, 62 60 C 78 36, 102 16, 118 3 C 95 16, 76 44, 62 62 C 48 46, 25 32, 8 26 Z" />' +
             '</svg>' +
           '</div>' +
         '</div>' +
       '</div>';
+
+    const bgHtml = config.background 
+      ? getImgTag(config.background, "print-watermark", "", "Watermark") 
+      : '<svg class="print-watermark" style="display: block; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 110mm; height: auto; opacity: 0.04; z-index: 1; pointer-events: none;" viewBox="0 0 100 100"><path fill="#00A6A9" d="M10,80 Q50,40 90,20 Q60,50 10,80 Z" /><path fill="#00A6A9" d="M30,80 Q60,55 90,35 Q65,60 30,80 Z" /></svg>';
 
     return '<!DOCTYPE html>' +
       '<html>' +
@@ -570,8 +574,8 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
         '<title>' + (config.title || "Tài liệu") + '</title>' +
         '<style>' +
           '@page {' +
-            'size: A4;' +
-            'margin: 0;' +
+            'size: A4 portrait;' +
+            'margin: 20mm;' +
           '}' +
           'body {' +
             'margin: 0;' +
@@ -581,89 +585,73 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
             'print-color-adjust: exact !important;' +
             'color-adjust: exact !important;' +
           '}' +
-          '.print-page {' +
+          '.a4-page {' +
             'font-family: "Times New Roman", Times, serif;' +
-            'width: 210mm;' +
-            'height: 296.8mm;' +
-            'padding: 12.7mm 15mm 48mm 15mm;' +
-            'box-sizing: border-box;' +
+            'width: 170mm;' +
+            'height: 257mm;' +
             'position: relative;' +
-            'overflow: hidden;' +
+            'display: flex;' +
+            'flex-direction: column;' +
+            'justify-content: space-between;' +
             'background-color: #ffffff;' +
+            'overflow: hidden;' +
           '}' +
-          '.print-page + .print-page {' +
+          '.a4-page + .a4-page {' +
             'page-break-before: always !important;' +
             'break-before: page !important;' +
           '}' +
-          '.print-watermark {' +
-            'display: block;' +
-            'position: absolute;' +
-            'top: 22%;' +
-            'left: 10%;' +
-            'transform: none;' +
-            'width: 80%;' +
-            'height: auto;' +
-            'opacity: 0.08;' +
-            'z-index: 0;' +
-            'pointer-events: none;' +
-          '}' +
           'p {' +
             'font-size: 13.5pt;' +
-            'line-height: 1.45;' +
-            'color: #1f2937;' +
-            'margin: 0 0 6pt 0;' +
+            'line-height: 1.6;' +
+            'color: #333333;' +
+            'margin: 0 0 14px 0;' +
             'text-align: justify;' +
           '}' +
           'h2 {' +
             'text-align: center;' +
-            'font-size: 18pt;' +
+            'font-size: 22pt;' +
             'font-weight: bold;' +
             'color: #0f172a;' +
             'text-transform: uppercase;' +
-            'margin: 15px 0;' +
+            'letter-spacing: 2px;' +
+            'margin: 16px 0 24px 0;' +
           '}' +
           '.footer-container {' +
-            'position: absolute;' +
-            'bottom: 8mm;' +
-            'left: 0;' +
-            'right: 0;' +
             'width: 100%;' +
-            'padding-left: 15mm;' +
-            'padding-right: 15mm;' +
-            'box-sizing: border-box;' +
+            'margin-top: 20px;' +
             'z-index: 10;' +
           '}' +
         '</style>' +
       '</head>' +
       '<body>' +
-        '<div class="print-page">' +
-          (config.background ? getImgTag(config.background, "print-watermark", "", "Watermark") : "") +
-          '<div class="header-container" style="display: flex; flex-direction: column; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; margin-bottom: 12px; position: relative; z-index: 10;">' +
-            '<div style="display: flex; align-items: center; justify-content: space-between;">' +
-              logoHtml +
+        '<div class="a4-page">' +
+          bgHtml +
+          '<div style="position: relative; z-index: 10; display: flex; flex-direction: column; flex-grow: 1;">' +
+            '<div class="header-container" style="display: flex; flex-direction: column; border-bottom: 1.5px solid #00A6A9; padding-bottom: 8px; margin-bottom: 24px;">' +
+              '<div style="display: flex; align-items: center; justify-content: space-between;">' +
+                logoHtml +
+              '</div>' +
+              '<div style="text-align: left; margin-top: 4px;">' +
+                '<h4 style="font-family: Arial, sans-serif; font-size: 11pt; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #1e293b; margin: 0;">' + (studentSchoolNameLocal || "TRƯỜNG MẦM NON SKY-LINE") + '</h4>' +
+              '</div>' +
             '</div>' +
-            '<div style="text-align: left; margin-top: 4px;">' +
-              '<h4 style="font-family: Arial, sans-serif; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #1e293b; margin: 0;">' + (studentSchoolName || "TRƯỜNG MẦM NON SKY-LINE") + '</h4>' +
+            
+            '<h2>' + (config.title || "THƯ CHÚC MỪNG") + '</h2>' +
+            
+            '<p style="font-size: 14pt; font-style: italic; margin-bottom: 12px; color: #1e293b; text-indent: 0;">' + greetingHtml + '</p>' +
+            
+            '<div style="flex-grow: 1; font-family: \'Times New Roman\', Times, serif;">' +
+              bodyHtml +
             '</div>' +
-          '</div>' +
-          
-          '<h2>' + (config.title || "THƯ CHÚC MỪNG") + '</h2>' +
-          
-          '<p style="font-size: 16px; font-style: italic; margin-bottom: 15px;">' + greetingHtml + '</p>' +
-          
-          '<div style="flex-grow: 1; font-family: \'Times New Roman\', Times, serif;">' +
-            bodyHtml +
-          '</div>' +
-          
-          '<div style="display: flex; flex-direction: column; align-items: flex-end; margin-top: 30px; page-break-inside: avoid;">' +
-            '<div style="text-align: center; min-width: 260px; font-family: \'Times New Roman\', Times, serif;">' +
-              '<p style="font-size: 13px; font-style: italic; margin-bottom: 4px; text-align: center;">' + formattedLetterDateStr + '</p>' +
-              '<p style="font-size: 13px; font-weight: bold; text-transform: uppercase; margin: 0 0 2px 0; text-align: center;">TM. HỘI ĐỒNG TUYỂN SINH</p>' +
-              '<p style="font-size: 11px; font-weight: bold; text-transform: uppercase; color: #475569; margin: 0 0 10px 0; text-align: center;">' + subTitleTextStr + '</p>' +
-              '<div style="height: 60px; display: flex; align-items: center; justify-content: center;">' +
+            
+            '<div style="align-self: flex-end; display: flex; flex-direction: column; align-items: center; text-align: center; min-width: 70mm; margin-top: auto; padding-top: 20px; page-break-inside: avoid; break-inside: avoid;">' +
+              '<p style="font-size: 12pt; font-style: italic; color: #555555; margin-bottom: 4px; text-align: center; text-indent: 0;">' + formattedLetterDateStr + '</p>' +
+              '<p style="font-size: 12pt; font-weight: bold; text-transform: uppercase; margin: 0; text-align: center; text-indent: 0; color: #0f172a;">TM. HỘI ĐỒNG TUYỂN SINH</p>' +
+              '<p style="font-size: 10pt; font-weight: bold; text-transform: uppercase; color: #475569; margin: 2px 0 0 0; text-align: center; text-indent: 0;">' + subTitleTextStr + '</p>' +
+              '<div style="height: 60px; display: flex; align-items: center; justify-content: center; margin: 8px 0;">' +
                 signatureHtml +
               '</div>' +
-              '<p style="font-size: 13px; font-weight: bold; margin: 8px 0 0 0; text-align: center;">' + directorName + '</p>' +
+              '<p style="font-size: 13pt; font-weight: bold; margin: 0; text-align: center; text-indent: 0; color: #1e293b;">' + directorName + '</p>' +
             '</div>' +
           '</div>' +
           
@@ -674,6 +662,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
       '</body>' +
       '</html>';
   };
+
 
   const handleSendQuickEmailSubmit = async () => {
     if (!recipientEmail.trim()) {
@@ -5708,11 +5697,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 min-height: 297mm !important;
                 max-height: 297mm !important;
                 margin: 0 auto !important;
-                padding: 12.7mm 15mm 48mm 15mm !important; /* Reserved 28mm bottom zone for pinned absolute footer! */
+                padding: 20mm !important; /* 20mm simulated padding of the A4 page margins */
                 flex-shrink: 0 !important;
                 display: flex !important;
                 flex-direction: column !important;
-                justify-content: flex-start !important; /* Flex content flows naturally to the reserved zone */
+                justify-content: space-between !important; /* Elegant spacing pushes footer to bottom */
                 overflow: hidden !important;
                 box-sizing: border-box !important;
                 background: white !important;
@@ -5721,24 +5710,16 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 position: relative !important;
               }
               
-              /* DEFINITIVE ABSOLUTE FOOTER ANCHOR FOR SCREEN AND PRINT */
+              /* DEFINITIVE FLEX AND RELATIVE FOOTER FLOW FOR MASTER DESIGN */
               .print-footer, .footer-container {
-                position: absolute !important;
-                bottom: 0 !important;
-                left: 0 !important;
-                right: 0 !important;
-                padding-left: 15mm !important;
-                padding-right: 15mm !important;
-                box-sizing: border-box !important;
-                height: 28mm !important;
-                margin-bottom: 0 !important;
-                margin-top: 0 !important;
+                position: relative !important;
+                width: 100% !important;
+                margin-top: auto !important;
                 background: transparent !important;
-                display: flex !important;
-                flex-direction: column !important;
-                justify-content: center !important;
+                display: block !important;
                 z-index: 9999 !important;
               }
+
               
               /* Sync typographic rendering to match high-fidelity print view on screen */
               .print-page p, #print-letter-area p {
@@ -5789,36 +5770,33 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               }
               
               .print-page {
-                width: 210mm !important;
-                height: auto !important;
-                min-height: auto !important;
-                max-height: none !important;
+                width: 170mm !important;
+                height: 257mm !important;
+                min-height: 257mm !important;
+                max-height: 257mm !important;
                 margin: 0 !important; /* MUST BE 0 to avoid Chrome auto-centering */
-                padding: 12.7mm 15mm 15mm 15mm !important;
+                padding: 0 !important; /* 0 padding because margin 20mm is set on @page */
                 box-shadow: none !important;
                 border: none !important;
                 display: flex !important;
                 flex-direction: column !important;
+                justify-content: space-between !important;
                 position: relative !important;
                 background: white !important;
-                overflow: visible !important;
+                overflow: hidden !important;
               }
               
               /* Force all footers to anchor to the very bottom of the page */
               .print-footer, .footer-container {
                 position: relative !important;
-                margin-top: 40px !important;
+                margin-top: auto !important;
                 bottom: auto !important;
                 width: 100% !important;
-                padding-left: 15mm !important;
-                padding-right: 15mm !important;
+                padding: 0 !important;
                 box-sizing: border-box !important;
                 flex-shrink: 0 !important;
               }
-              
-              /* Watermark */
-              
-              
+
               
               .print-page:last-child {
                 page-break-after: auto !important;
@@ -5828,8 +5806,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
               @page {
                 size: A4 portrait;
-                margin: 0mm;
+                margin: 20mm !important;
               }
+
               /* USER MANDATED HTML/BODY RESET WITH ZERO FIXED HEIGHTS & FIT TO PRINT BOUNDS */
               html, body {
                 width: 100% !important;
@@ -6018,12 +5997,13 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               .print-page p, #print-letter-area p, .print-page .space-y-2\.5 p, .print-page .space-y-3 p, .print-page .space-y-6 p {
                 text-align: justify !important;
                 text-justify: inter-word !important;
-                line-height: 1.45 !important; /* Admin Standards: 1.45 */
-                font-size: 13.5pt !important; /* Admin Standards: 13.5pt */
+                line-height: 1.6 !important; /* High-fidelity line height: 1.6 */
+                font-size: 13.5pt !important; /* Standard font size: 13.5pt */
                 font-family: "Times New Roman", Times, serif !important;
                 word-wrap: break-word !important;
                 overflow-wrap: break-word !important;
               }
+
               
               .print-page h2, #print-letter-area h2 {
                 text-align: center !important;
@@ -6170,14 +6150,22 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 <div 
                   id="print-letter-area" 
                   className="bg-white shadow-lg border border-slate-200 relative text-slate-800 text-sm leading-relaxed print-page"
-                  style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "auto", padding: "12.7mm 15mm 15mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "block", overflow: "hidden" }}
+                  style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "297mm", padding: "20mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: "space-between", overflow: "hidden" }}
               >
+
                 {/* Print Watermark */}
-                {studentCampusConfig?.background && (
-                  <img crossOrigin={(studentCampusConfig.background || "").startsWith("data:") ? undefined : "anonymous"}  className="print-watermark" src={studentCampusConfig.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "22%", left: "10%", transform: "none", width: "80%", height: "auto", opacity: 0.45, zIndex: 0, pointerEvents: "none" }} />
+                {studentCampusConfig?.background ? (
+                  <img crossOrigin={(studentCampusConfig.background || "").startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "110mm", height: "auto", opacity: 0.04, zIndex: 0, pointerEvents: "none" }} />
+                ) : (
+                  <svg className="print-watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "110mm", height: "auto", opacity: 0.04, zIndex: 0, pointerEvents: "none" }} viewBox="0 0 100 100">
+                    <path fill="#00A6A9" d="M10,80 Q50,40 90,20 Q60,50 10,80 Z" />
+                    <path fill="#00A6A9" d="M30,80 Q60,55 90,35 Q65,60 30,80 Z" />
+                  </svg>
                 )}
+
                 {/* Top Logo and Header */}
-                <div className="flex flex-col relative z-10 w-full">
+                <div className="flex flex-col relative z-10 w-full" style={{ display: "flex", flexDirection: "column", flexGrow: 1 }}>
+
                   <div className="flex flex-col gap-1 border-b pb-2 mb-3">
                     <div className="flex items-center justify-between">
                       {studentCampusConfig?.logo ? (
@@ -6256,101 +6244,94 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
 
                                 {/* Bottom Signature Area */}
-                  <div className="flex flex-col items-end mt-8 pr-4" style={{ pageBreakInside: "avoid" }}>
-                    <div className="flex flex-col items-center text-center" style={{ minWidth: "260px" }}>
-                      <p className="italic text-slate-500 mb-1 text-[13px]">{formattedLetterDate}</p>
-                      <p className="font-bold uppercase text-indigo-950 text-[13px]">TM. HỘI ĐỒNG TUYỂN SINH</p>
-                      <p className="font-bold uppercase text-indigo-900/80 text-[11px] mt-0.5">
+                  <div className="flex flex-col items-end mt-auto pr-4" style={{ pageBreakInside: "avoid", marginTop: "auto", paddingTop: "20px" }}>
+                    <div className="flex flex-col items-center text-center" style={{ minWidth: "70mm" }}>
+                      <p className="italic text-slate-500 mb-1 text-[12pt]">{formattedLetterDate}</p>
+                      <p className="font-bold uppercase text-[#0f172a] text-[12pt]">TM. HỘI ĐỒNG TUYỂN SINH</p>
+                      <p className="font-bold uppercase text-[#475569] text-[10pt] mt-0.5">
                         GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}
                       </p>
                       
-                      <div className="h-16 flex items-center justify-center my-2">
+                      <div className="h-[60px] flex items-center justify-center my-2" style={{ height: "60px" }}>
                         {studentCampusConfig?.signature ? (
                           <img crossOrigin={studentCampusConfig?.signature?.startsWith("data:") ? undefined : "anonymous"} src={studentCampusConfig?.signature} alt="Signature" className="max-h-full object-contain" />
-                        ) : null}
+                        ) : (
+                          <svg style={{ height: "60px", maxHeight: "60px" }} viewBox="0 0 100 40" width="120">
+                            <path d="M10,25 Q30,5 50,20 T90,15 M30,12 Q45,28 60,8" fill="none" stroke="#0f172a" strokeWidth="2" strokeLinecap="round"/>
+                          </svg>
+                        )}
                       </div>
                       
-                      <p className="font-bold text-slate-800 text-[13px] mt-2">
+                      <p className="font-bold text-[#1e293b] text-[13pt] mt-0">
                         {selectedReportStudent?.signatureName || studentCampusConfig?.directorName || "Trần Thị Thanh"}
                       </p>
                     </div>
                   </div>
-                </div>
 
-                
-                
-                {/* Footer Contact */}
+                                {/* Footer Contact */}
                 {studentCampusConfig?.footer ? (
-                  <div className="border-t border-slate-200 pt-3 z-10 w-full print-footer" style={{ marginTop: "40px", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box" }}>
-                    <img crossOrigin={studentCampusConfig?.footer?.startsWith("data:") ? undefined : "anonymous"}  src={studentCampusConfig?.footer} alt="Footer Print" className="w-full" style={{ maxHeight: "100px", objectFit: "contain" }} />
+                  <div className="border-t border-slate-200 pt-3 z-10 w-full print-footer" style={{ marginTop: "auto", width: "100%", paddingLeft: "0", paddingRight: "0", boxSizing: "border-box" }}>
+                    <img crossOrigin={studentCampusConfig?.footer?.startsWith("data:") ? undefined : "anonymous"} src={studentCampusConfig?.footer} alt="Footer Print" className="w-full" style={{ maxHeight: "100px", objectFit: "contain" }} />
                   </div>
                 ) : (
-                  <div className="w-full pt-1 z-10 print-footer" style={{ marginTop: "40px", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}>
-                    {/* High-fidelity Header Title & Line */}
-                    <div className="flex items-center gap-2 mb-2.5 w-full">
-                      <span className="font-bold text-[#00A6A9] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
+                  <div className="w-full pt-2 z-10 print-footer" style={{ marginTop: "auto", width: "100%", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}>
+                    {/* Dividing brand line */}
+                    <div className="flex items-center gap-2 mb-2 w-full">
+                      <span className="font-bold text-[#00A6A9] whitespace-nowrap uppercase text-[9.5pt] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
                       <div className="flex-grow border-t border-[#00A6A9]/70 h-0 mt-0.5"></div>
-                      <span className="font-semibold text-[#00A6A9] whitespace-nowrap lowercase text-[11px]">www.skylineschool.edu.vn</span>
+                      <span className="font-semibold text-[#00A6A9] whitespace-nowrap lowercase text-[9pt]">www.skylineschool.edu.vn</span>
                     </div>
                     
                     {/* Information Grid */}
-                    <div className="flex flex-row justify-between w-full relative text-[9px]">
-                      {/* Left Column (3 branches) */}
-                      <div className="w-[30%] flex flex-col gap-1.5 text-left">
+                    <div className="flex flex-row justify-between w-full relative text-[7.5pt] text-slate-500 leading-tight">
+                      {/* Column 1 */}
+                      <div className="w-[32%] flex flex-col gap-1 text-left">
                         <div>
-                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">SKY-LINE Riverside</p>
-                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Lô A2.4 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>
+                          <p className="font-bold text-[#00A6A9] text-[8pt]">SKY-LINE Riverside</p>
+                          <p className="mt-0.5">Lô A2.4 Trần Đăng Ninh, Q. Hải Châu, TP. Đà Nẵng</p>
                         </div>
                         <div>
-                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">SKY-LINE Central</p>
-                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
-                        </div>
-                        <div>
-                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">SKY-LINE Global</p>
-                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Lô A2 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>
+                          <p className="font-bold text-[#00A6A9] text-[8pt]">SKY-LINE Central</p>
+                          <p className="mt-0.5">Số 48 Nguyễn Du, Q. Hải Châu, TP. Đà Nẵng</p>
                         </div>
                       </div>
-
-                      {/* Middle Column (3 branches) */}
-                      <div className="w-[30%] flex flex-col gap-1.5 text-left">
+                      
+                      {/* Column 2 */}
+                      <div className="w-[32%] flex flex-col gap-1 text-left">
                         <div>
-                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">SKY-LINE Beach</p>
-                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 199 Trần Anh Tông, P. Thanh Khê, TP. Đà Nẵng</p>
+                          <p className="font-bold text-[#00A6A9] text-[8pt]">SKY-LINE Global</p>
+                          <p className="mt-0.5">Lô A2 Trần Đăng Ninh, Q. Hải Châu, TP. Đà Nẵng</p>
                         </div>
                         <div>
-                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">SKY-LINE Hill</p>
-                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Khối Hà My Đông A, P. Điện Bàn Đông, TP. Đà Nẵng</p>
-                        </div>
-                        <div>
-                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">Trung tâm sống thành công - SLS</p>
-                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
+                          <p className="font-bold text-[#00A6A9] text-[8pt]">SKY-LINE Beach</p>
+                          <p className="mt-0.5">Số 199 Trần Anh Tông, Q. Thanh Khê, TP. Đà Nẵng</p>
                         </div>
                       </div>
-
-                      {/* Right Column (Contacts) */}
-                      <div className="w-[30%] flex items-center justify-end gap-2 text-right self-center">
-                        <div className="w-4.5 h-4.5 rounded-full border border-slate-800 flex items-center justify-center flex-shrink-0 p-[3.5px] scale-[0.85]">
-                          <Phone className="w-full h-full text-slate-800" fill="currentColor" />
+                      
+                      {/* Column 3 */}
+                      <div className="w-[32%] flex flex-col gap-1 text-left">
+                        <div>
+                          <p className="font-bold text-[#00A6A9] text-[8pt]">SKY-LINE Hill</p>
+                          <p className="mt-0.5">Khối Hà My Đông A, Điện Bàn, Quảng Nam</p>
                         </div>
-                        <div className="flex flex-col text-[8.5px] font-semibold text-slate-800 tracking-tight leading-tight">
+                        <div className="flex flex-col font-semibold text-slate-700 mt-1">
                           <p>(+84.236) 378 7777</p>
                           <p>(+84.236) 356 8777</p>
-                          <p>(+84.236) 378 7779</p>
-                          <p>(+84.235) 375 1777</p>
                         </div>
                       </div>
-                    </div>
 
-                    {/* The Large Elegant Teal Checkmark Vector positioned absolute over the right corner */}
-                    <div className="absolute right-[-5px] top-[2px] w-16 h-12 opacity-100 pointer-events-none flex items-center justify-center text-[#00A6A9]">
-                      <svg viewBox="0 0 120 60" className="w-full h-full fill-current" style={{ filter: "drop-shadow(0px 1px 1px rgba(0,166,169,0.1))" }}>
-                        <path d="M 8 26 C 24 32, 50 52, 62 60 C 78 36, 102 16, 118 3 C 95 16, 76 44, 62 62 C 48 46, 25 32, 8 26 Z" />
-                      </svg>
+                      {/* Brand checkmark vector */}
+                      <div className="absolute right-[-4px] top-[-4px] w-[50px] h-[38px] opacity-100 pointer-events-none flex items-center justify-center text-[#00A6A9]">
+                        <svg viewBox="0 0 120 60" className="w-full h-full fill-current">
+                          <path d="M 8 26 C 24 32, 50 52, 62 60 C 78 36, 102 16, 118 3 C 95 16, 76 44, 62 62 C 48 46, 25 32, 8 26 Z" fill="currentColor" />
+                        </svg>
+                      </div>
                     </div>
                   </div>
                 )}
-              
 
+
+                </div>
                 </div>
                 {([]) && ([]).length > 0 && (
                   <div 
