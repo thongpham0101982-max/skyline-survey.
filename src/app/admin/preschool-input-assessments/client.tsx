@@ -575,7 +575,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
         '<style>' +
           '@page {' +
             'size: A4 portrait;' +
-            'margin: 20mm;' +
+            'margin: 0mm !important;' +
           '}' +
           'body {' +
             'margin: 0;' +
@@ -587,8 +587,10 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
           '}' +
           '.a4-page {' +
             'font-family: "Times New Roman", Times, serif;' +
-            'width: 170mm;' +
-            'height: 257mm;' +
+            'width: 210mm;' +
+            'height: 297mm;' +
+            'padding: 20mm 20mm 15mm 20mm;' +
+            'box-sizing: border-box;' +
             'position: relative;' +
             'display: flex;' +
             'flex-direction: column;' +
@@ -618,7 +620,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
           '}' +
           '.footer-container {' +
             'width: 100%;' +
-            'margin-top: 20px;' +
+            'margin-top: auto;' +
             'z-index: 10;' +
           '}' +
         '</style>' +
@@ -5697,7 +5699,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 min-height: 297mm !important;
                 max-height: 297mm !important;
                 margin: 0 auto !important;
-                padding: 20mm !important; /* 20mm simulated padding of the A4 page margins */
+                padding: 20mm 20mm 15mm 20mm !important; /* Premium page margins */
                 flex-shrink: 0 !important;
                 display: flex !important;
                 flex-direction: column !important;
@@ -5770,12 +5772,12 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               }
               
               .print-page {
-                width: 170mm !important;
-                height: 257mm !important;
-                min-height: 257mm !important;
-                max-height: 257mm !important;
+                width: 210mm !important;
+                height: 297mm !important;
+                min-height: 297mm !important;
+                max-height: 297mm !important;
                 margin: 0 !important; /* MUST BE 0 to avoid Chrome auto-centering */
-                padding: 0 !important; /* 0 padding because margin 20mm is set on @page */
+                padding: 20mm 20mm 15mm 20mm !important; /* Standard padding margins */
                 box-shadow: none !important;
                 border: none !important;
                 display: flex !important;
@@ -5806,7 +5808,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
               @page {
                 size: A4 portrait;
-                margin: 20mm !important;
+                margin: 0mm !important;
               }
 
               /* USER MANDATED HTML/BODY RESET WITH ZERO FIXED HEIGHTS & FIT TO PRINT BOUNDS */
@@ -5945,22 +5947,22 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 transform: none !important;
               }
               
-              /* USER MANDATED FLEX CONTAINER WITHOUT ANY HEIGHTS */
+              /* USER MANDATED FLEX CONTAINER FOR NATIVE 20mm PAGE MARGIN PRINTING */
               .print-page, #print-letter-area {
-                width: 100% !important; /* FLUID FULL BLEED PAPER WIDTH - REMOVES SIDE GAPS */
-                height: auto !important;
-                min-height: auto !important;
-                max-height: none !important;
+                width: 210mm !important;
+                height: 297mm !important;
+                min-height: 297mm !important;
+                max-height: 297mm !important;
                 margin: 0 !important;
                 box-shadow: none !important;
                 border: none !important;
-                padding: 12.7mm 15mm 15mm 15mm !important; 
-                overflow: visible !important;
+                padding: 20mm 20mm 15mm 20mm !important; 
+                overflow: hidden !important;
                 box-sizing: border-box !important;
                 
                 display: flex !important;
                 flex-direction: column !important;
-                justify-content: flex-start !important;
+                justify-content: space-between !important;
                 
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
@@ -5973,14 +5975,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               /* DEFINITIVE ABSOLUTE PRINT FOOTER PIN FOR 297mm A4 SHEETS */
               .print-page .print-footer, #print-letter-area .print-footer {
                 position: relative !important;
-                margin-top: 40px !important;
+                margin-top: auto !important;
                 height: auto !important;
-                
-                /* Safety buffer for interior text elements while supporting full bleed checkmark */
-                padding-left: 15mm !important; 
-                padding-right: 15mm !important;
-                padding-bottom: 0 !important;
-                
+                padding: 0 !important;
                 margin-bottom: 0 !important;
                 box-sizing: border-box !important;
                 background: transparent !important;
@@ -5989,10 +5986,16 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 flex-shrink: 0 !important;
                 width: 100% !important;
               }
+              
               .print-page > div {
                 flex: none !important;
               }
               
+              .print-page > div:first-of-type {
+                flex: 1 1 auto !important;
+              }
+
+
               /* USER MANDATED CONTENT TYPOGRAPHY RULES */
               .print-page p, #print-letter-area p, .print-page .space-y-2\.5 p, .print-page .space-y-3 p, .print-page .space-y-6 p {
                 text-align: justify !important;
@@ -6150,7 +6153,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 <div 
                   id="print-letter-area" 
                   className="bg-white shadow-lg border border-slate-200 relative text-slate-800 text-sm leading-relaxed print-page"
-                  style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "297mm", padding: "20mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: "space-between", overflow: "hidden" }}
+                  style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "297mm", padding: "20mm 20mm 15mm 20mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: "space-between", overflow: "hidden" }}
               >
 
                 {/* Print Watermark */}

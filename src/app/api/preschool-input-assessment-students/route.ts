@@ -131,7 +131,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       '<style>' +
         '@page {' +
           'size: A4 portrait;' +
-          'margin: 20mm;' +
+          'margin: 0mm !important;' +
         '}' +
         'body {' +
           'margin: 0;' +
@@ -143,8 +143,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
         '}' +
         '.a4-page {' +
           'font-family: "Times New Roman", Times, serif;' +
-          'width: 170mm;' +
-          'height: 257mm;' +
+          'width: 210mm;' +
+          'height: 297mm;' +
+          'padding: 20mm 20mm 15mm 20mm;' +
+          'box-sizing: border-box;' +
           'position: relative;' +
           'display: flex;' +
           'flex-direction: column;' +
@@ -174,7 +176,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
         '}' +
         '.footer-container {' +
           'width: 100%;' +
-          'margin-top: 20px;' +
+          'margin-top: auto;' +
           'z-index: 10;' +
         '}' +
       '</style>' +
