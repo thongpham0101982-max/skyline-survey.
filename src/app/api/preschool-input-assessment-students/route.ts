@@ -145,7 +145,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           'font-family: "Times New Roman", Times, serif;' +
           'width: 210mm;' +
           'height: 297mm;' +
-          'padding: 20mm 20mm 45mm 20mm;' +
+          'padding: 20mm 20mm 35mm 20mm;' +
           'box-sizing: border-box;' +
           'position: relative;' +
           'display: flex;' +
@@ -166,7 +166,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
         '}' +
         'p {' +
           'font-size: 13.5pt;' +
-          'line-height: 1.6;' +
+          'line-height: 1.45;' +
           'color: #333333;' +
           'margin: 0 0 14px 0;' +
           'text-align: justify;' +
@@ -182,7 +182,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
         '}' +
         '.footer-container {' +
           'position: absolute !important;' +
-          'bottom: 15mm !important;' +
+          'bottom: 8mm !important;' +
           'left: 20mm !important;' +
           'right: 20mm !important;' +
           'width: auto !important;' +

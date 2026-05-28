@@ -589,7 +589,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
             'font-family: "Times New Roman", Times, serif;' +
             'width: 210mm;' +
             'height: 297mm;' +
-            'padding: 20mm 20mm 45mm 20mm;' +
+            'padding: 20mm 20mm 35mm 20mm;' +
             'box-sizing: border-box;' +
             'position: relative;' +
             'display: flex;' +
@@ -610,7 +610,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
           '}' +
           'p {' +
             'font-size: 13.5pt;' +
-            'line-height: 1.6;' +
+            'line-height: 1.45;' +
             'color: #333333;' +
             'margin: 0 0 14px 0;' +
             'text-align: justify;' +
@@ -626,7 +626,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
           '}' +
           '.footer-container {' +
             'position: absolute !important;' +
-            'bottom: 15mm !important;' +
+            'bottom: 8mm !important;' +
             'left: 20mm !important;' +
             'right: 20mm !important;' +
             'width: auto !important;' +
@@ -5710,7 +5710,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 min-height: 297mm !important;
                 max-height: 297mm !important;
                 margin: 0 auto !important;
-                padding: 20mm 20mm 45mm 20mm !important; /* Reserved 45mm bottom zone for pinned absolute footer */
+                padding: 20mm 20mm 35mm 20mm !important; /* Reserved 35mm bottom zone for absolute footer */
                 flex-shrink: 0 !important;
                 display: flex !important;
                 flex-direction: column !important;
@@ -5726,7 +5726,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               /* DEFINITIVE ABSOLUTE FOOTER PINNING FOR PREMIUM PRESENTATION */
               .print-footer, .footer-container {
                 position: absolute !important;
-                bottom: 15mm !important;
+                bottom: 8mm !important;
                 left: 20mm !important;
                 right: 20mm !important;
                 width: auto !important;
@@ -5740,8 +5740,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               
               /* Sync typographic rendering to match high-fidelity print view on screen */
               .print-page p, #print-letter-area p {
-                font-size: 15px !important;
-                line-height: 1.85 !important;
+                font-size: 14.5px !important;
+                line-height: 1.5 !important;
                 text-align: justify !important;
                 text-justify: inter-word !important;
               }
@@ -5792,7 +5792,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 min-height: 297mm !important;
                 max-height: 297mm !important;
                 margin: 0 !important; /* MUST BE 0 to avoid Chrome auto-centering */
-                padding: 20mm 20mm 45mm 20mm !important; /* Premium margins reserving 45mm at bottom */
+                padding: 20mm 20mm 35mm 20mm !important; /* Premium margins reserving 35mm at bottom */
                 box-shadow: none !important;
                 border: none !important;
                 display: flex !important;
@@ -5806,7 +5806,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               /* Force all footers to anchor to the very bottom of the page */
               .print-footer, .footer-container, .print-page .print-footer, #print-letter-area .print-footer {
                 position: absolute !important;
-                bottom: 15mm !important;
+                bottom: 8mm !important;
                 left: 20mm !important;
                 right: 20mm !important;
                 width: auto !important;
@@ -5983,7 +5983,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               .print-page p, #print-letter-area p, .print-page .space-y-2\.5 p, .print-page .space-y-3 p, .print-page .space-y-6 p {
                 text-align: justify !important;
                 text-justify: inter-word !important;
-                line-height: 1.6 !important; /* High-fidelity line height: 1.6 */
+                line-height: 1.45 !important; /* Premium unified line height: 1.45 */
                 font-size: 13.5pt !important; /* Standard font size: 13.5pt */
                 font-family: "Times New Roman", Times, serif !important;
                 word-wrap: break-word !important;
@@ -6136,7 +6136,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 <div 
                   id="print-letter-area" 
                   className="bg-white shadow-lg border border-slate-200 relative text-slate-800 text-sm leading-relaxed print-page"
-                  style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "297mm", padding: "20mm 20mm 45mm 20mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: "flex-start", overflow: "hidden", position: "relative" }}
+                  style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "297mm", padding: "20mm 20mm 35mm 20mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: "flex-start", overflow: "hidden", position: "relative" }}
               >
 
                 {/* Print Watermark */}
