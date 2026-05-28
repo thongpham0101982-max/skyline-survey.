@@ -145,18 +145,24 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           'font-family: "Times New Roman", Times, serif;' +
           'width: 210mm;' +
           'height: 297mm;' +
-          'padding: 20mm 20mm 15mm 20mm;' +
+          'padding: 20mm 20mm 45mm 20mm;' +
           'box-sizing: border-box;' +
           'position: relative;' +
           'display: flex;' +
           'flex-direction: column;' +
-          'justify-content: space-between;' +
+          'justify-content: flex-start;' +
           'background-color: #ffffff;' +
           'overflow: hidden;' +
         '}' +
         '.a4-page + .a4-page {' +
           'page-break-before: always !important;' +
           'break-before: page !important;' +
+        '}' +
+        '.a4-page > div:first-of-type {' +
+          'flex: 1 1 auto !important;' +
+          'display: flex !important;' +
+          'flex-direction: column !important;' +
+          'height: auto !important;' +
         '}' +
         'p {' +
           'font-size: 13.5pt;' +
@@ -175,8 +181,13 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           'margin: 16px 0 24px 0;' +
         '}' +
         '.footer-container {' +
-          'width: 100%;' +
-          'margin-top: auto;' +
+          'position: absolute !important;' +
+          'bottom: 15mm !important;' +
+          'left: 20mm !important;' +
+          'right: 20mm !important;' +
+          'width: auto !important;' +
+          'margin: 0 !important;' +
+          'padding: 0 !important;' +
           'z-index: 10;' +
         '}' +
       '</style>' +
