@@ -1,7 +1,8 @@
 import { sendEmail } from "@/lib/mail"
 
-function buildPreschoolLetterHtmlServer(student: any, config: any, isInvitationFlag: boolean = false) {
+function buildPreschoolLetterHtmlServer(student: any, config: any, isCommitmentFlag: boolean = false, isInvitationFlag: boolean = false) {
   const rawGrade = student?.grade || "Nát";
+  const defaultCommitment = `Hệ thống Giáo dục Sky-Line chúc mừng con đã vượt qua kỳ khảo sát đầu vào lớp {{grade}} hệ {{surveyFormType}} năm học {{academicYear}}. Để tạo điều kiện tốt nhất cho hành trình phát triển toàn diện của học sinh tại trường, Nhà trường và Gia đình cùng thống nhất ký kết Bản Cam kết rèn luyện này.\nGia đình cam kết thực hiện đầy đủ các nội dung sau:\n1. Đồng hành cùng con trong các hoạt động rèn luyện thói quen tự lập, nề nếp sinh hoạt và kỹ năng tự phục vụ cơ bản phù hợp với độ tuổi mầm non.\n2. Phối hợp chặt chẽ với giáo viên chủ nhiệm trong việc theo dõi sức khỏe, tâm lý của con và tích cực trao đổi thông tin thường xuyên.\n3. Tham gia đầy đủ các chương trình hội thảo, hoạt động trải nghiệm dành cho Phụ huynh và học sinh do nhà trường tổ chức.\nBản cam kết được thực hiện dưới sự đồng thuận của cả hai bên và có giá trị kể từ ngày ký.`;
   const defaultCongrats = `Chúc mừng con đã vượt qua kỳ khảo sát đầu vào lớp {{grade}} hệ {{surveyFormType}} năm học {{academicYear}}. Con đã chính thức đặt bước chân đầu tiên trên con đường trở thành học sinh của Trường Mầm non Sky-Line (Cơ sở {{admissionCampus}}) – một cột mốc quan trọng trong hành trình phát triển của con.
 Thầy cô tại Sky-Line vui mừng chào đón con đến với ngôi trường hạnh phúc, nơi không chỉ cung cấp kiến thức mà còn giúp con phát triển toàn diện cả về năng lực và nhân cách. Chúng tôi tin rằng, con sẽ có những trải nghiệm thật tuyệt vời và đáng nhớ trong những năm học sắp tới.
 Nhà trường hy vọng rằng, với sự nhanh nhẹn và đáng yêu của mình, con sẽ là một mảnh ghép sắc màu góp phần làm phong phú thêm bức tranh học đường tại Sky-Line. Nơi đây, con sẽ được học hỏi những điều mới lạ, được chơi đùa cùng các bạn và được các cô giáo yêu thương chăm sóc.
@@ -14,7 +15,7 @@ Nhằm tạo điều kiện tốt nhất để nhà trường hiểu rõ hơn v�
 Sự hiện diện và đồng hành của Quý phụ huynh cùng học sinh là niềm hân hạnh lớn cho Sky-Line, giúp nhà trường có sự chuẩn bị chu đáo nhất đón chào các em gia nhập mái trường hạnh phúc của chúng ta.
 Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
-  const rawContent = config?.content || (isInvitationFlag ? defaultInvitation : defaultCongrats);
+  const rawContent = config?.content || (isInvitationFlag ? defaultInvitation : isCommitmentFlag ? defaultCommitment : defaultCongrats);
   const renderedContent = rawContent
     .replace(/\{\{fullName\}\}/g, student?.fullName || "")
     .replace(/\{\{grade\}\}/g, rawGrade)
@@ -213,15 +214,36 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             bodyHtml +
           '</div>' +
           
-          '<div style="align-self: flex-end; display: flex; flex-direction: column; align-items: center; text-align: center; min-width: 70mm; margin-top: auto; padding-top: 20px; page-break-inside: avoid; break-inside: avoid;">' +
-            '<p style="font-size: 12pt; font-style: italic; color: #555555; margin-bottom: 4px; text-align: center; text-indent: 0;">' + formattedLetterDateStr + '</p>' +
-            '<p style="font-size: 12pt; font-weight: bold; text-transform: uppercase; margin: 0; text-align: center; text-indent: 0; color: #0f172a;">TM. HỘI ĐỒNG TUYỂN SINH</p>' +
-            '<p style="font-size: 10pt; font-weight: bold; text-transform: uppercase; color: #475569; margin: 2px 0 0 0; text-align: center; text-indent: 0;">' + subTitleTextStr + '</p>' +
-            '<div style="height: 60px; display: flex; align-items: center; justify-content: center; margin: 8px 0;">' +
-              signatureHtml +
-            '</div>' +
-            '<p style="font-size: 13pt; font-weight: bold; margin: 0; text-align: center; text-indent: 0; color: #1e293b;">' + directorName + '</p>' +
-          '</div>' +
+          (isCommitmentFlag ? 
+            '<div style="width: 100%; display: flex; justify-content: space-between; margin-top: auto; padding-top: 20px; page-break-inside: avoid; break-inside: avoid;">' +
+              '<div style="display: flex; flex-direction: column; align-items: center; text-align: center; width: 45%;">' +
+                '<p style="font-size: 11pt; font-weight: bold; text-transform: uppercase; margin: 0; text-align: center; text-indent: 0; color: #475569;">ĐẠI DIỆN GIA ĐÌNH</p>' +
+                '<p style="font-size: 9pt; font-style: italic; color: #64748b; margin-top: 4px; text-indent: 0;">(Ký và ghi rõ họ tên)</p>' +
+                '<div style="height: 60px; display: flex; align-items: flex-end; justify-content: center; margin: 8px 0;">' +
+                  '<span style="font-size: 10pt; color: #cbd5e1; font-style: italic;">Ký tên</span>' +
+                '</div>' +
+              '</div>' +
+              '<div style="display: flex; flex-direction: column; align-items: center; text-align: center; width: 45%;">' +
+                '<p style="font-size: 12pt; font-style: italic; color: #555555; margin-bottom: 4px; text-align: center; text-indent: 0;">' + formattedLetterDateStr + '</p>' +
+                '<p style="font-size: 11pt; font-weight: bold; text-transform: uppercase; margin: 0; text-align: center; text-indent: 0; color: #0f172a;">TM. HỘI ĐỒNG TUYỂN SINH</p>' +
+                '<p style="font-size: 9pt; font-weight: bold; text-transform: uppercase; color: #475569; margin: 2px 0 0 0; text-align: center; text-indent: 0;">' + subTitleTextStr + '</p>' +
+                '<div style="height: 60px; display: flex; align-items: center; justify-content: center; margin: 8px 0;">' +
+                  signatureHtml +
+                '</div>' +
+                '<p style="font-size: 12pt; font-weight: bold; margin: 0; text-align: center; text-indent: 0; color: #1e293b;">' + directorName + '</p>' +
+              '</div>' +
+            '</div>'
+          :
+            '<div style="align-self: flex-end; display: flex; flex-direction: column; align-items: center; text-align: center; min-width: 70mm; margin-top: auto; padding-top: 20px; page-break-inside: avoid; break-inside: avoid;">' +
+              '<p style="font-size: 12pt; font-style: italic; color: #555555; margin-bottom: 4px; text-align: center; text-indent: 0;">' + formattedLetterDateStr + '</p>' +
+              '<p style="font-size: 12pt; font-weight: bold; text-transform: uppercase; margin: 0; text-align: center; text-indent: 0; color: #0f172a;">TM. HỘI ĐỒNG TUYỂN SINH</p>' +
+              '<p style="font-size: 10pt; font-weight: bold; text-transform: uppercase; color: #475569; margin: 2px 0 0 0; text-align: center; text-indent: 0;">' + subTitleTextStr + '</p>' +
+              '<div style="height: 60px; display: flex; align-items: center; justify-content: center; margin: 8px 0;">' +
+                signatureHtml +
+              '</div>' +
+              '<p style="font-size: 13pt; font-weight: bold; margin: 0; text-align: center; text-indent: 0; color: #1e293b;">' + directorName + '</p>' +
+            '</div>'
+          ) +
         '</div>' +
         
         '<div class="footer-container">' +

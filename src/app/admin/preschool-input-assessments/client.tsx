@@ -168,6 +168,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   const [tab, setTab] = useState("periods");
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [isInvitation, setIsInvitation] = useState(true);
+  const [isCommitment, setIsCommitment] = useState(false);
   const [selectedReportStudent, setSelectedReportStudent] = useState<any>(null);
 
   // States for Email Congrats Checklist modal
@@ -460,9 +461,9 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
     }
   };
 
-  const buildPreschoolLetterHtml = (student: any, config: any, isInvitationFlag: boolean = false) => {
+  const buildPreschoolLetterHtml = (student: any, config: any, isCommitmentFlag: boolean = false, isInvitationFlag: boolean = false) => {
     const rawGrade = student?.grade || "Nát";
-    const renderedContent = (config.content || (isInvitationFlag ? defaultPreschoolInvitation : defaultPreschoolCongratulations))
+    const renderedContent = (config.content || (isInvitationFlag ? defaultPreschoolInvitation : isCommitmentFlag ? defaultPreschoolCommitment : defaultPreschoolCongratulations))
       .replace(/\{\{fullName\}\}/g, student?.fullName || "")
       .replace(/\{\{grade\}\}/g, rawGrade)
       .replace(/\{\{admissionCampus\}\}/g, student?.admissionCampus || "")
@@ -657,15 +658,36 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
               bodyHtml +
             '</div>' +
             
-            '<div style="align-self: flex-end; display: flex; flex-direction: column; align-items: center; text-align: center; min-width: 70mm; margin-top: auto; padding-top: 20px; page-break-inside: avoid; break-inside: avoid;">' +
-              '<p style="font-size: 12pt; font-style: italic; color: #555555; margin-bottom: 4px; text-align: center; text-indent: 0;">' + formattedLetterDateStr + '</p>' +
-              '<p style="font-size: 12pt; font-weight: bold; text-transform: uppercase; margin: 0; text-align: center; text-indent: 0; color: #0f172a;">TM. HỘI ĐỒNG TUYỂN SINH</p>' +
-              '<p style="font-size: 10pt; font-weight: bold; text-transform: uppercase; color: #475569; margin: 2px 0 0 0; text-align: center; text-indent: 0;">' + subTitleTextStr + '</p>' +
-              '<div style="height: 60px; display: flex; align-items: center; justify-content: center; margin: 8px 0;">' +
-                signatureHtml +
-              '</div>' +
-              '<p style="font-size: 13pt; font-weight: bold; margin: 0; text-align: center; text-indent: 0; color: #1e293b;">' + directorName + '</p>' +
-            '</div>' +
+            (isCommitmentFlag ? 
+              '<div style="width: 100%; display: flex; justify-content: space-between; margin-top: auto; padding-top: 20px; page-break-inside: avoid; break-inside: avoid;">' +
+                '<div style="display: flex; flex-direction: column; align-items: center; text-align: center; width: 45%;">' +
+                  '<p style="font-size: 11pt; font-weight: bold; text-transform: uppercase; margin: 0; text-align: center; text-indent: 0; color: #475569;">ĐẠI DIỆN GIA ĐÌNH</p>' +
+                  '<p style="font-size: 9pt; font-style: italic; color: #64748b; margin-top: 4px; text-indent: 0;">(Ký và ghi rõ họ tên)</p>' +
+                  '<div style="height: 60px; display: flex; align-items: flex-end; justify-content: center; margin: 8px 0;">' +
+                    '<span style="font-size: 10pt; color: #cbd5e1; font-style: italic;">Ký tên</span>' +
+                  '</div>' +
+                '</div>' +
+                '<div style="display: flex; flex-direction: column; align-items: center; text-align: center; width: 45%;">' +
+                  '<p style="font-size: 12pt; font-style: italic; color: #555555; margin-bottom: 4px; text-align: center; text-indent: 0;">' + formattedLetterDateStr + '</p>' +
+                  '<p style="font-size: 11pt; font-weight: bold; text-transform: uppercase; margin: 0; text-align: center; text-indent: 0; color: #0f172a;">TM. HỘI ĐỒNG TUYỂN SINH</p>' +
+                  '<p style="font-size: 9pt; font-weight: bold; text-transform: uppercase; color: #475569; margin: 2px 0 0 0; text-align: center; text-indent: 0;">' + subTitleTextStr + '</p>' +
+                  '<div style="height: 60px; display: flex; align-items: center; justify-content: center; margin: 8px 0;">' +
+                    signatureHtml +
+                  '</div>' +
+                  '<p style="font-size: 12pt; font-weight: bold; margin: 0; text-align: center; text-indent: 0; color: #1e293b;">' + directorName + '</p>' +
+                '</div>' +
+              '</div>'
+            :
+              '<div style="align-self: flex-end; display: flex; flex-direction: column; align-items: center; text-align: center; min-width: 70mm; margin-top: auto; padding-top: 20px; page-break-inside: avoid; break-inside: avoid;">' +
+                '<p style="font-size: 12pt; font-style: italic; color: #555555; margin-bottom: 4px; text-align: center; text-indent: 0;">' + formattedLetterDateStr + '</p>' +
+                '<p style="font-size: 12pt; font-weight: bold; text-transform: uppercase; margin: 0; text-align: center; text-indent: 0; color: #0f172a;">TM. HỘI ĐỒNG TUYỂN SINH</p>' +
+                '<p style="font-size: 10pt; font-weight: bold; text-transform: uppercase; color: #475569; margin: 2px 0 0 0; text-align: center; text-indent: 0;">' + subTitleTextStr + '</p>' +
+                '<div style="height: 60px; display: flex; align-items: center; justify-content: center; margin: 8px 0;">' +
+                  signatureHtml +
+                '</div>' +
+                '<p style="font-size: 13pt; font-weight: bold; margin: 0; text-align: center; text-indent: 0; color: #1e293b;">' + directorName + '</p>' +
+              '</div>'
+            ) +
           '</div>' +
           
           '<div class="footer-container">' +
@@ -702,7 +724,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
             if (config) {
               currentPdfCount++;
               setEmailSendingStatus(`Đang tạo PDF (${currentPdfCount}/${totalPdfs}): Thư chúc mừng - ${s.fullName}`);
-              const docHtml = buildPreschoolLetterHtml(s, config, false);
+              const docHtml = buildPreschoolLetterHtml(s, config, false, false);
               const filename = `Thu_Chuc_Mung_${s.fullName.replace(/\s+/g, '_')}.pdf`;
 
               const opt = {
@@ -787,7 +809,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
           if (config) {
             count++;
             setEmailSendingStatus(`Đang tải (${count}/${totalPdfs}): Thư chúc mừng - ${s.fullName.split(' ').pop()}`);
-            const docHtml = buildPreschoolLetterHtml(s, config, false);
+            const docHtml = buildPreschoolLetterHtml(s, config, false, false);
             const filename = `Thu_Chuc_Mung_${s.fullName.replace(/\s+/g, '_')}.pdf`;
             const opt = {
               margin: 0,
@@ -1088,6 +1110,8 @@ Sự hiện diện và đồng hành của Quý phụ huynh cùng học sinh là
 
 Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
+    const defaultPreschoolCommitment = `Hệ thống Giáo dục Sky-Line chúc mừng con đã vượt qua kỳ khảo sát đầu vào lớp {{grade}} hệ {{surveyFormType}} năm học {{academicYear}}. Để tạo điều kiện tốt nhất cho hành trình phát triển toàn diện của học sinh tại trường, Nhà trường và Gia đình cùng thống nhất ký kết Bản Cam kết rèn luyện này.\n\nGia đình cam kết thực hiện đầy đủ các nội dung sau:\n1. Đồng hành cùng con trong các hoạt động rèn luyện thói quen tự lập, nề nếp sinh hoạt và kỹ năng tự phục vụ cơ bản phù hợp với độ tuổi mầm non.\n2. Phối hợp chặt chẽ với giáo viên chủ nhiệm trong việc theo dõi sức khỏe, tâm lý của con và tích cực trao đổi thông tin thường xuyên.\n3. Tham gia đầy đủ các chương trình hội thảo, hoạt động trải nghiệm dành cho Phụ huynh và học sinh do nhà trường tổ chức.\n\nBản cam kết được thực hiện dưới sự đồng thuận của cả hai bên và có giá trị kể từ ngày ký.`;
+
   const currentAcademicYearName = useMemo(() => {
     const ay = academicYears.find(a => a.id === yearId);
     return ay ? ay.name : "2025-2026";
@@ -1118,7 +1142,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     }
     
     if (targetCampus) {
-      const typeKey = (isInvitation ? 'thu_moi' : 'thu_chuc_mung') + '_preschool';
+      const typeKey = (isInvitation ? 'thu_moi' : isCommitment ? 'cam_ket_hoc_tap' : 'thu_chuc_mung') + '_preschool';
       const savedCampus = localStorage.getItem('report_config_' + targetCampus.id + '_' + typeKey);
       const savedGlobal = localStorage.getItem('report_config_global_' + typeKey);
       
@@ -1132,7 +1156,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
         try { globalData = JSON.parse(savedGlobal); } catch (e) {}
       }
       
-      const mergedTitle = globalData.title || campusData.title || (isInvitation ? "THƯ MỜI" : "THƯ CHÚC MỪNG");
+      const mergedTitle = globalData.title || campusData.title || (isInvitation ? "THƯ MỜI" : isCommitment ? "BẢN CAM KẾT HỌC TẬP" : "THƯ CHÚC MỪNG");
       
       const mLogo = localStorage.getItem('report_config_master_logo');
       const mBg = localStorage.getItem('report_config_master_background');
@@ -1157,7 +1181,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       };
     }
     return null;
-  }, [selectedReportStudent, campuses, isInvitation]);
+  }, [selectedReportStudent, campuses, isInvitation, isCommitment]);
 
     const campusTitleSuffix = useMemo(() => {
     if (!selectedReportStudent) return "GLOBAL";
@@ -2228,8 +2252,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       if (mFooter !== null && mFooter !== undefined) setRcFooter(mFooter);
       else if (globalData.footer || campusData.footer) setRcFooter(globalData.footer || campusData.footer || "");
       
-      setRcTitle(globalData.title || campusData.title || (rcReportType === "thu_moi" ? "THƯ MỜI" : "THƯ CHÚC MỪNG"));
-      const defaultText = rcReportType === "thu_moi" ? defaultPreschoolInvitation : defaultPreschoolCongratulations;
+      setRcTitle(globalData.title || campusData.title || (rcReportType === "thu_moi" ? "THƯ MỜI" : rcReportType === "cam_ket_hoc_tap" ? "BẢN CAM KẾT HỌC TẬP" : "THƯ CHÚC MỪNG"));
+      const defaultText = rcReportType === "thu_moi" ? defaultPreschoolInvitation : rcReportType === "cam_ket_hoc_tap" ? defaultPreschoolCommitment : defaultPreschoolCongratulations;
       setRcContent(globalData.content || campusData.content || defaultText);
       const savedSignature = localStorage.getItem('report_config_signature_' + rcCampusId) || campusData.signature || localStorage.getItem('report_config_master_signature') || "";
       const savedDirector = localStorage.getItem('report_config_director_' + rcCampusId) || campusData.directorName || defaultManagerName;
@@ -3545,7 +3569,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                        <Eye className="w-3.5 h-3.5" /> Xem kết quả
                                      </button>
                                      <button
-                                       onClick={() => { setSelectedReportStudent(s); setIsInvitation(true); setIsPrintModalOpen(true); }}
+                                       onClick={() => { setSelectedReportStudent(s); setIsInvitation(true); setIsCommitment(false); setIsPrintModalOpen(true); }}
                                        className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-black text-indigo-700 bg-indigo-50 hover:bg-indigo-600 hover:text-white rounded-xl border border-indigo-100 transition-all shadow-sm"
                                        title="Xuất Thư mời"
                                      >
@@ -3773,11 +3797,18 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 <td className="p-4">
                                   <div className="flex gap-2">
                                     <button
-                                      onClick={() => { setSelectedReportStudent(s); setIsInvitation(false); setIsPrintModalOpen(true); }}
+                                      onClick={() => { setSelectedReportStudent(s); setIsInvitation(false); setIsCommitment(false); setIsPrintModalOpen(true); }}
                                       className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-500 hover:text-white rounded-xl border border-emerald-100 transition-all shadow-sm whitespace-nowrap"
                                     >
                                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                                       Xuất thư Chúc mừng
+                                    </button>
+                                    <button
+                                      onClick={() => { setSelectedReportStudent(s); setIsInvitation(false); setIsCommitment(true); setIsPrintModalOpen(true); }}
+                                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-black text-amber-700 bg-amber-50 hover:bg-amber-500 hover:text-white rounded-xl border border-amber-100 transition-all shadow-sm whitespace-nowrap"
+                                    >
+                                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                                      Bản Cam kết
                                     </button>
                                     <button
                                       onClick={() => openEmailCongratsModal(s)}
@@ -3994,6 +4025,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               <select value={rcReportType} onChange={e => setRcReportType(e.target.value)} className={inp}>
                 <option value="thu_moi">Thư mời</option>
                 <option value="thu_chuc_mung">Thư chúc mừng</option>
+                <option value="cam_ket_hoc_tap">Cam kết học tập</option>
               </select>
             </div>
 
@@ -4008,7 +4040,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 <button
                   type="button"
                   onClick={() => {
-                    const defaultText = rcReportType === "thu_moi" ? defaultPreschoolInvitation : defaultPreschoolCongratulations;
+                    const defaultText = rcReportType === "thu_moi" ? defaultPreschoolInvitation : rcReportType === "cam_ket_hoc_tap" ? defaultPreschoolCommitment : defaultPreschoolCongratulations;
                     setRcContent(defaultText);
                     notify("Đã tải mẫu nội dung mặc định!", "ok");
                   }}
@@ -4169,7 +4201,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
                 {/* Title */}
                 <div className="text-center mb-3">
-                  <h2 className="text-[11px] font-black tracking-widest text-slate-800 uppercase">{rcTitle || (rcReportType === "thu_moi" ? "THƯ MỜI" : "THƯ CHÚC MỪNG")}</h2>
+                  <h2 className="text-[11px] font-black tracking-widest text-slate-800 uppercase">{rcTitle || (rcReportType === "thu_moi" ? "THƯ MỜI" : rcReportType === "cam_ket_hoc_tap" ? "BẢN CAM KẾT HỌC TẬP" : "THƯ CHÚC MỪNG")}</h2>
                 </div>
 
                 {/* Greeting */}
@@ -4180,7 +4212,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 {/* Content */}
                 <div className="flex-1 space-y-1.5 text-[9px] leading-relaxed text-slate-600 text-justify overflow-hidden font-serif">
                   {renderPreschoolTemplate(
-                    rcContent || (rcReportType === "thu_moi" ? defaultPreschoolInvitation : defaultPreschoolCongratulations),
+                    rcContent || (rcReportType === "thu_moi" ? defaultPreschoolInvitation : rcReportType === "cam_ket_hoc_tap" ? defaultPreschoolCommitment : defaultPreschoolCongratulations),
                     {
                       fullName: "Nguyễn Minh An",
                       grade: "18 đến 24 tháng",
@@ -4199,20 +4231,42 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 </div>
 
                 {/* Signature */}
-                <div className="flex justify-end pt-3">
-                  <div className="text-center space-y-1 min-w-[140px]">
-                    <p className="text-[7px] font-bold text-slate-500 uppercase tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
-                    <p className="text-[6px] text-slate-400 uppercase tracking-wider">GIÁM ĐỐC ĐIỀU HÀNH{rcCampusTitleSuffix ? " SKY-LINE " + rcCampusTitleSuffix : ""}</p>
-                    <div className="h-10 flex items-center justify-center">
-                      {rcSignature ? (
-                        <img crossOrigin={rcSignature?.startsWith("data:") ? undefined : "anonymous"} src={rcSignature} alt="Chữ ký" className="max-h-full object-contain" />
-                      ) : (
-                        <div className="text-[7px] text-slate-300 italic">Chưa upload chữ ký</div>
-                      )}
+                {rcReportType === "cam_ket_hoc_tap" ? (
+                  <div className="grid grid-cols-2 gap-4 pt-3 text-center">
+                    <div className="space-y-1">
+                      <p className="text-[7px] font-bold text-slate-500 uppercase tracking-wider">ĐẠI DIỆN GIA ĐÌNH</p>
+                      <div className="h-10 flex items-end justify-center">
+                        <span className="text-[7px] text-slate-300 italic">Ký tên</span>
+                      </div>
                     </div>
-                    <p className="text-[9px] font-black text-slate-700">{rcDirectorName || "-- Họ tên --"}</p>
+                    <div className="space-y-1 min-w-[70px]">
+                      <p className="text-[7px] font-bold text-slate-500 uppercase tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
+                      <div className="h-10 flex items-center justify-center">
+                        {rcSignature ? (
+                          <img crossOrigin={rcSignature?.startsWith("data:") ? undefined : "anonymous"} src={rcSignature} alt="Chữ ký" className="max-h-full object-contain" />
+                        ) : (
+                          <div className="text-[7px] text-slate-300 italic">Chưa upload</div>
+                        )}
+                      </div>
+                      <p className="text-[9px] font-black text-slate-700">{rcDirectorName || "-- Họ tên --"}</p>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="flex justify-end pt-3">
+                    <div className="text-center space-y-1 min-w-[140px]">
+                      <p className="text-[7px] font-bold text-slate-500 uppercase tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
+                      <p className="text-[6px] text-slate-400 uppercase tracking-wider">GIÁM ĐỐC ĐIỀU HÀNH{rcCampusTitleSuffix ? " SKY-LINE " + rcCampusTitleSuffix : ""}</p>
+                      <div className="h-10 flex items-center justify-center">
+                        {rcSignature ? (
+                          <img crossOrigin={rcSignature?.startsWith("data:") ? undefined : "anonymous"} src={rcSignature} alt="Chữ ký" className="max-h-full object-contain" />
+                        ) : (
+                          <div className="text-[7px] text-slate-300 italic">Chưa upload chữ ký</div>
+                        )}
+                      </div>
+                      <p className="text-[9px] font-black text-slate-700">{rcDirectorName || "-- Họ tên --"}</p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Footer */}
                 {rcFooter ? (
@@ -6055,7 +6109,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50 no-print">
               <div className="flex items-center gap-2">
                 {isInvitation ? <Mail className="w-5 h-5 text-indigo-600"/> : <GraduationCap className="w-5 h-5 text-indigo-600"/>}
-                <h3 className="text-base font-black text-slate-800">{isInvitation ? "Mẫu Thư mời khảo sát" : false ? "Bản Cam kết học tập" : "Mẫu Thư Chúc mừng"}</h3>
+                <h3 className="text-base font-black text-slate-800">{isInvitation ? "Mẫu Thư mời khảo sát" : isCommitment ? "Bản Cam kết học tập" : "Mẫu Thư Chúc mừng"}</h3>
               </div>
               <div className="flex items-center gap-4">
                 <button 
@@ -6067,7 +6121,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     const academicYearStr = selectedReportStudent?.academicYear?.substring(0, 4) || new Date().getFullYear().toString();
                     const monthStr = "T" + String(new Date().getMonth() + 1).padStart(2, '0');
                     const studentName = (selectedReportStudent?.fullName || "").replace(/\s+/g, '_');
-                    const prefix = isInvitation ? "Thu_Moi_Khao_Sat" : false ? "Ban_Cam_Ket" : "Thu_Chuc_Mung";
+                    const prefix = isInvitation ? "Thu_Moi_Khao_Sat" : isCommitment ? "Ban_Cam_Ket" : "Thu_Chuc_Mung";
                     const pdfFileName = prefix + "_" + studentName + ".pdf";
                     
                     const btn = document.getElementById('export-pdf-btn') as HTMLButtonElement | null;
@@ -6173,7 +6227,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   {/* Letter Title */}
                   <div className="text-center my-4">
                     <h2 className="text-indigo-950 uppercase mb-2" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: "18pt", fontWeight: "bold", letterSpacing: "1px" }}>
-                      {isInvitation ? (studentCampusConfig?.title || "THƯ MỜI") : (studentCampusConfig?.title || "THƯ CHÚC MỪNG")}
+                      {isInvitation ? (studentCampusConfig?.title || "THƯ MỜI") : isCommitment ? (studentCampusConfig?.title || "BẢN CAM KẾT HỌC TẬP") : (studentCampusConfig?.title || "THƯ CHÚC MỪNG")}
                     </h2>
                   </div>
 
@@ -6201,15 +6255,15 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         );
                       })}
                     </div>
-                  ) : false ? (
+                  ) : isCommitment ? (
                     <div className="space-y-3 text-justify text-slate-800 font-serif" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: "13.5pt", lineHeight: "1.45", textAlign: "justify" }}>
-                      {(()=>"")(
-                        null || (()=>"")("cam_ket_hoc_tap"),
+                      {renderPreschoolTemplate(
+                        studentCampusConfig?.content || defaultPreschoolCommitment,
                         selectedReportStudent
                       ).split('\n').filter(Boolean).map((para, idx) => {
                         const isList = /^[\d•\-*]+/.test(para.trim());
                         return (
-                          <p key={idx} className={isList ? "pl-4" : ""} style={isList ? {} : { textIndent: "1cm" }}>
+                          <p key={idx} className={isList ? "pl-6 font-semibold text-slate-700 my-1" : ""} style={isList ? {} : { textIndent: "1cm" }}>
                             {para}
                           </p>
                         );
@@ -6230,29 +6284,64 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
 
                                 {/* Bottom Signature Area */}
-                  <div className="flex flex-col items-end mt-auto pr-4" style={{ pageBreakInside: "avoid", marginTop: "auto", paddingTop: "20px" }}>
-                    <div className="flex flex-col items-center text-center" style={{ minWidth: "70mm" }}>
-                      <p className="italic text-slate-500 mb-1 text-[12pt]">{formattedLetterDate}</p>
-                      <p className="font-bold uppercase text-[#0f172a] text-[12pt]">TM. HỘI ĐỒNG TUYỂN SINH</p>
-                      <p className="font-bold uppercase text-[#475569] text-[10pt] mt-0.5">
-                        GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}
-                      </p>
-                      
-                      <div className="h-[60px] flex items-center justify-center my-2" style={{ height: "60px" }}>
-                        {studentCampusConfig?.signature ? (
-                          <img crossOrigin={studentCampusConfig?.signature?.startsWith("data:") ? undefined : "anonymous"} src={studentCampusConfig?.signature} alt="Signature" className="max-h-full object-contain" />
-                        ) : (
-                          <svg style={{ height: "60px", maxHeight: "60px" }} viewBox="0 0 100 40" width="120">
-                            <path d="M10,25 Q30,5 50,20 T90,15 M30,12 Q45,28 60,8" fill="none" stroke="#0f172a" strokeWidth="2" strokeLinecap="round"/>
-                          </svg>
-                        )}
+                                {/* Bottom Signature Area */}
+                  {isCommitment ? (
+                    <div className="grid grid-cols-2 gap-8 mt-auto w-full text-center" style={{ pageBreakInside: "avoid", marginTop: "auto", paddingTop: "20px" }}>
+                      <div className="flex flex-col items-center">
+                        <p className="font-bold uppercase text-slate-700 text-[11pt] tracking-wider">ĐẠI DIỆN GIA ĐÌNH</p>
+                        <p className="italic text-[9pt] text-slate-400 mt-1">(Ký và ghi rõ họ tên)</p>
+                        <div className="h-[60px] flex items-end justify-center my-2">
+                          <span className="text-slate-300 italic text-xs">Ký tên</span>
+                        </div>
                       </div>
                       
-                      <p className="font-bold text-[#1e293b] text-[13pt] mt-0">
-                        {selectedReportStudent?.signatureName || studentCampusConfig?.directorName || "Trần Thị Thanh"}
-                      </p>
+                      <div className="flex flex-col items-center">
+                        <p className="italic text-slate-500 mb-1 text-[11pt]">{formattedLetterDate}</p>
+                        <p className="font-bold uppercase text-[#0f172a] text-[11pt]">TM. HỘI ĐỒNG TUYỂN SINH</p>
+                        <p className="font-bold uppercase text-[#475569] text-[9pt] mt-0.5">
+                          GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}
+                        </p>
+                        
+                        <div className="h-[60px] flex items-center justify-center my-2" style={{ height: "60px" }}>
+                          {studentCampusConfig?.signature ? (
+                            <img crossOrigin={studentCampusConfig?.signature?.startsWith("data:") ? undefined : "anonymous"} src={studentCampusConfig?.signature} alt="Signature" className="max-h-full object-contain" />
+                          ) : (
+                            <svg style={{ height: "60px", maxHeight: "60px" }} viewBox="0 0 100 40" width="120">
+                              <path d="M10,25 Q30,5 50,20 T90,15 M30,12 Q45,28 60,8" fill="none" stroke="#0f172a" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                          )}
+                        </div>
+                        
+                        <p className="font-bold text-[#1e293b] text-[12pt] mt-0">
+                          {selectedReportStudent?.signatureName || studentCampusConfig?.directorName || "Trần Thị Thanh"}
+                        </p>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="flex flex-col items-end mt-auto pr-4" style={{ pageBreakInside: "avoid", marginTop: "auto", paddingTop: "20px" }}>
+                      <div className="flex flex-col items-center text-center" style={{ minWidth: "70mm" }}>
+                        <p className="italic text-slate-500 mb-1 text-[12pt]">{formattedLetterDate}</p>
+                        <p className="font-bold uppercase text-[#0f172a] text-[12pt]">TM. HỘI ĐỒNG TUYỂN SINH</p>
+                        <p className="font-bold uppercase text-[#475569] text-[10pt] mt-0.5">
+                          GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}
+                        </p>
+                        
+                        <div className="h-[60px] flex items-center justify-center my-2" style={{ height: "60px" }}>
+                          {studentCampusConfig?.signature ? (
+                            <img crossOrigin={studentCampusConfig?.signature?.startsWith("data:") ? undefined : "anonymous"} src={studentCampusConfig?.signature} alt="Signature" className="max-h-full object-contain" />
+                          ) : (
+                            <svg style={{ height: "60px", maxHeight: "60px" }} viewBox="0 0 100 40" width="120">
+                              <path d="M10,25 Q30,5 50,20 T90,15 M30,12 Q45,28 60,8" fill="none" stroke="#0f172a" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                          )}
+                        </div>
+                        
+                        <p className="font-bold text-[#1e293b] text-[13pt] mt-0">
+                          {selectedReportStudent?.signatureName || studentCampusConfig?.directorName || "Trần Thị Thanh"}
+                        </p>
+                      </div>
+                    </div>
+                  )}
 
                                 {/* Footer Contact */}
                 {studentCampusConfig?.footer ? (
