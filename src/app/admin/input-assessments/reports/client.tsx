@@ -1396,7 +1396,8 @@ export function ReportsClient({
                   </div>
                 </div>
 
-                {/* Bottom Signatures dual-mode support */}
+                {/* Bottom Signatures dual-mode support with flexible spacer */}
+                <div style={{ flex: "1 1 auto", minHeight: "20px", maxHeight: "80px" }} />
                 {isCommitment ? (
                   <div style={{ width: "100%", display: "flex", justifyContent: "space-between", marginTop: "24px", paddingTop: "12px", pageBreakInside: "avoid", breakInside: "avoid" }}>
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", width: "45%" }}>
@@ -1435,21 +1436,21 @@ export function ReportsClient({
                     <p style={{ fontSize: "13pt", fontWeight: "bold", margin: 0, textAlign: "center", textIndent: 0, color: "#1e293b" }}>{selectedReportStudent?.signatureName || studentCampusConfig?.directorName || "Trần Thị Thanh"}</p>
                   </div>
                 )}
+              </div>
 
-                {/* Footer Banner */}
-                <div className="footer-container" style={{ position: "absolute", bottom: "8mm", left: "20mm", right: "20mm", width: "auto", zIndex: 10 }}>
-                  {studentCampusConfig?.footer ? (
-                    <img src={studentCampusConfig?.footer} alt="Footer" style={{ width: "100%", maxHeight: "100px", objectFit: "contain" }} />
-                  ) : (
-                    <div style={{ width: "100%", fontFamily: "Arial, sans-serif", boxSizing: "border-box", textAlign: "left" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", width: "100%" }}>
-                        <span style={{ fontWeight: "bold", color: "#00A6A9", whiteSpace: "nowrap", textTransform: "uppercase", fontSize: "9.5pt", letterSpacing: "0.5px" }}>HỆ THỐNG GIÁO DỤC SKY-LINE</span>
-                        <div style={{ flexGrow: 1, borderTop: "1px solid rgba(0, 166, 169, 0.7)", height: 0, marginTop: "2px" }}></div>
-                        <span style={{ fontWeight: "600", color: "#00A6A9", whiteSpace: "nowrap", textTransform: "lowercase", fontSize: "9pt" }}>www.skylineschool.edu.vn</span>
-                      </div>
+              {/* Footer Banner - Moved outside inner container to anchor to actual A4 bottom */}
+              <div className="footer-container" style={{ position: "absolute", bottom: "12mm", left: "20mm", right: "20mm", width: "auto", zIndex: 10 }}>
+                {studentCampusConfig?.footer ? (
+                  <img src={studentCampusConfig?.footer} alt="Footer" style={{ width: "100%", maxHeight: "100px", objectFit: "contain" }} />
+                ) : (
+                  <div style={{ width: "100%", fontFamily: "Arial, sans-serif", boxSizing: "border-box", textAlign: "left" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", width: "100%" }}>
+                      <span style={{ fontWeight: "bold", color: "#00A6A9", whiteSpace: "nowrap", textTransform: "uppercase", fontSize: "9.5pt", letterSpacing: "0.5px" }}>HỆ THỐNG GIÁO DỤC SKY-LINE</span>
+                      <div style={{ flexGrow: 1, borderTop: "1px solid rgba(0, 166, 169, 0.7)", height: 0, marginTop: "2px" }}></div>
+                      <span style={{ fontWeight: "600", color: "#00A6A9", whiteSpace: "nowrap", textTransform: "lowercase", fontSize: "9pt" }}>www.skylineschool.edu.vn</span>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
 
             </div>
@@ -1463,7 +1464,7 @@ export function ReportsClient({
                   <img crossOrigin={(studentCampusConfig?.background || "").startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig?.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "110mm", height: "auto", opacity: 0.04, zIndex: 0, pointerEvents: "none" }} />
                 )}
 
-                <div className="relative z-10 flex flex-col h-full justify-between">
+                <div className="relative z-10 flex flex-col h-full justify-start">
                   <div>
                     {/* Header logo */}
                     <div className="header-container" style={{ display: "flex", flexDirection: "column", borderBottom: "1.5px solid #00A6A9", paddingBottom: "8px", marginBottom: "16px" }}>
@@ -1512,21 +1513,21 @@ export function ReportsClient({
                       * Quý phụ huynh vui lòng hoàn thiện và nộp đầy đủ các giấy tờ nêu trên trong vòng 10 ngày kể từ ngày nhận được thông báo trúng tuyển.
                     </p>
                   </div>
+                </div>
 
-                  {/* Footer Banner */}
-                  <div className="footer-container" style={{ position: "absolute", bottom: "8mm", left: "20mm", right: "20mm", width: "auto", zIndex: 10 }}>
-                    {studentCampusConfig?.footer ? (
-                      <img src={studentCampusConfig?.footer} alt="Footer" style={{ width: "100%", maxHeight: "100px", objectFit: "contain" }} />
-                    ) : (
-                      <div style={{ width: "100%", fontFamily: "Arial, sans-serif", boxSizing: "border-box", textAlign: "left" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", width: "100%" }}>
-                          <span style={{ fontWeight: "bold", color: "#00A6A9", whiteSpace: "nowrap", textTransform: "uppercase", fontSize: "9.5pt", letterSpacing: "0.5px" }}>HỆ THỐNG GIÁO DỤC SKY-LINE</span>
-                          <div style={{ flexGrow: 1, borderTop: "1px solid rgba(0, 166, 169, 0.7)", height: 0, marginTop: "2px" }}></div>
-                          <span style={{ fontWeight: "600", color: "#00A6A9", whiteSpace: "nowrap", textTransform: "lowercase", fontSize: "9pt" }}>www.skylineschool.edu.vn</span>
-                        </div>
+                {/* Footer Banner - Moved outside inner container to anchor to actual A4 bottom */}
+                <div className="footer-container" style={{ position: "absolute", bottom: "12mm", left: "20mm", right: "20mm", width: "auto", zIndex: 10 }}>
+                  {studentCampusConfig?.footer ? (
+                    <img src={studentCampusConfig?.footer} alt="Footer" style={{ width: "100%", maxHeight: "100px", objectFit: "contain" }} />
+                  ) : (
+                    <div style={{ width: "100%", fontFamily: "Arial, sans-serif", boxSizing: "border-box", textAlign: "left" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", width: "100%" }}>
+                        <span style={{ fontWeight: "bold", color: "#00A6A9", whiteSpace: "nowrap", textTransform: "uppercase", fontSize: "9.5pt", letterSpacing: "0.5px" }}>HỆ THỐNG GIÁO DỤC SKY-LINE</span>
+                        <div style={{ flexGrow: 1, borderTop: "1px solid rgba(0, 166, 169, 0.7)", height: 0, marginTop: "2px" }}></div>
+                        <span style={{ fontWeight: "600", color: "#00A6A9", whiteSpace: "nowrap", textTransform: "lowercase", fontSize: "9pt" }}>www.skylineschool.edu.vn</span>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
