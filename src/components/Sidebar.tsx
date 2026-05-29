@@ -3,7 +3,18 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
-import { LogOut, LayoutDashboard, Layers, FileText, PieChart, MessageSquare, ClipboardCheck, Menu, X } from "lucide-react"
+import { 
+  LogOut, 
+  LayoutDashboard, 
+  Layers, 
+  FileText, 
+  PieChart, 
+  MessageSquare, 
+  ClipboardCheck, 
+  Menu, 
+  X,
+  ChevronDown
+} from "lucide-react"
 import { APP_CATEGORIES } from "@/config/modules"
 
 interface SidebarProps {
@@ -98,38 +109,60 @@ export function Sidebar({ role, permissionModules, actualRole, taskCount = 0 }: 
             const visibleModules = cat.modules.filter((m) => checkPermission(m.code, m.requiresAdmin))
             if (visibleModules.length === 0) return null
 
+            // Detect if any module in this category is currently active
+            const hasActiveChild = visibleModules.some((m) => pathname === m.href)
+
             return (
-              <div key={cat.id} className="pt-4 first:pt-0">
-                <div className="px-3 py-2 cursor-default select-none group">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.1em] group-hover:text-slate-400 transition-colors">
+              <div 
+                key={cat.id} 
+                className="pt-2 group/cat border-b border-slate-800/10 pb-2 transition-all duration-300"
+              >
+                {/* Category Header */}
+                <div className="px-3 py-2.5 cursor-pointer select-none flex items-center justify-between text-slate-500 hover:text-slate-300 transition-colors group">
+                  <span className="text-[10.5px] font-bold uppercase tracking-[0.12em] group-hover:text-slate-300 transition-colors">
                     {cat.name}
                   </span>
+                  <ChevronDown 
+                    className={`w-3.5 h-3.5 text-slate-600 group-hover/cat:text-slate-400 transition-transform duration-300 ${
+                      hasActiveChild ? 'rotate-180 text-[#1E8B87]' : 'group-hover/cat:rotate-180'
+                    }`} 
+                  />
                 </div>
-                {visibleModules.map((m) => {
-                  const isActive = pathname === m.href
-                  return (
-                    <Link 
-                      key={m.code} 
-                      href={m.href}
-                      onClick={() => setIsOpen(false)}
-                      className={`group flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${
-                        isActive 
-                          ? "bg-[#135E5B]/20 text-white border border-[#135E5B]/30 shadow-[0_0_15px_-3px_rgba(19,94,91,0.2)]" 
-                          : "text-slate-400 hover:text-white hover:bg-slate-800"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <m.icon className={`w-4 h-4 ${isActive ? "text-[#1E8B87]" : "text-slate-500 group-hover:text-[#1E8B87] transition-colors"}`} />
-                        <span>{m.name}</span>
-                      </div>
-                      {m.code === "TASKS" && taskCount > 0 && (
-                        <span className="px-1.5 py-0.5 text-[9px] font-black bg-red-500 text-white rounded-full min-w-[18px] text-center shadow-lg shadow-red-500/40">
-                          {taskCount}
-                        </span>
-                      )}
-                    </Link>
-                  )
-                })}
+
+                {/* Sub-items Container (Expanded on Hover, or if it has an Active Child) */}
+                <div 
+                  className={`overflow-hidden transition-all duration-350 ease-in-out space-y-0.5 pl-1.5 ${
+                    hasActiveChild 
+                      ? "max-h-[500px] opacity-100 visible" 
+                      : "max-h-0 opacity-0 invisible group-hover/cat:max-h-[500px] group-hover/cat:opacity-100 group-hover/cat:visible"
+                  }`}
+                >
+                  {visibleModules.map((m) => {
+                    const isActive = pathname === m.href
+                    return (
+                      <Link 
+                        key={m.code} 
+                        href={m.href}
+                        onClick={() => setIsOpen(false)}
+                        className={`group/item flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${
+                          isActive 
+                            ? "bg-[#135E5B]/20 text-white border border-[#135E5B]/30 shadow-[0_0_15px_-3px_rgba(19,94,91,0.2)] font-semibold" 
+                            : "text-slate-400 hover:text-white hover:bg-slate-800/60"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <m.icon className={`w-4 h-4 ${isActive ? "text-[#1E8B87]" : "text-slate-500 group-item-hover:text-[#1E8B87] transition-colors"}`} />
+                          <span>{m.name}</span>
+                        </div>
+                        {m.code === "TASKS" && taskCount > 0 && (
+                          <span className="px-1.5 py-0.5 text-[9px] font-black bg-red-500 text-white rounded-full min-w-[18px] text-center shadow-lg shadow-red-500/40">
+                            {taskCount}
+                          </span>
+                        )}
+                      </Link>
+                    )
+                  })}
+                </div>
               </div>
             )
           })}
