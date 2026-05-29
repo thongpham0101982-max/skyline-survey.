@@ -1309,6 +1309,116 @@ export function ReportsClient({
               </div>
             </div>
 
+            {/* Association checkboxes */}
+            <div className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100 space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <span className="block text-[10px] font-bold tracking-wider uppercase text-slate-400 ml-1">
+                  Áp dụng cho Đối tượng Tuyển sinh (từ Danh mục):
+                </span>
+                <button
+                  onClick={() => {
+                    localStorage.setItem('admission_doc_targets', JSON.stringify(docGroupTargets));
+                    notify("Đã lưu cấu hình áp dụng đối tượng tuyển sinh thành công!");
+                  }}
+                  className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow-md shadow-emerald-100 cursor-pointer"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  Lưu cấu hình áp dụng
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                {configs.filter((c) => c.categoryType === "DOI_TUONG_TS").map((c) => {
+                  const isChecked = (docGroupTargets[selectedDocGroup] || []).includes(c.name);
+                  return (
+                    <label key={c.id} className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-slate-200/60 shadow-sm cursor-pointer hover:bg-indigo-50/20 hover:border-indigo-200 transition-all select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={isChecked}
+                        onChange={(e) => {
+                          const currentTargets = docGroupTargets[selectedDocGroup] || [];
+                          let updated;
+                          if (e.target.checked) {
+                            updated = [...currentTargets, c.name];
+                          } else {
+                            updated = currentTargets.filter((name) => name !== c.name);
+                          }
+                          const updatedMappings = { ...docGroupTargets, [selectedDocGroup]: updated };
+                          setDocGroupTargets(updatedMappings);
+                          localStorage.setItem('admission_doc_targets', JSON.stringify(updatedMappings));
+                        }}
+                        className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 transition-all cursor-pointer"
+                      />
+                      <span className="text-xs font-bold text-slate-600">{c.name}</span>
+                    </label>
+                  );
+                })}
+                {configs.filter((c) => c.categoryType === "DOI_TUONG_TS").length === 0 && (
+                  <span className="text-xs text-slate-400 italic ml-1">Chưa có Đối tượng Tuyển sinh nào trong Danh mục</span>
+                )}
+              </div>
+            </div>
+
+            {/* Grade association checkboxes */}
+            <div className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100 space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <span className="block text-[10px] font-bold tracking-wider uppercase text-slate-400 ml-1">
+                  Áp dụng cho Khối lớp học:
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      const updated = ["Khối 2", "Khối 3", "Khối 4", "Khối 5"];
+                      const updatedMappings = { ...docGroupGrades, [selectedDocGroup]: updated };
+                      setDocGroupGrades(updatedMappings);
+                      localStorage.setItem('admission_doc_grades_mapping', JSON.stringify(updatedMappings));
+                    }}
+                    type="button"
+                    className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg text-[10px] font-black transition-all border border-indigo-100 cursor-pointer"
+                  >
+                    Chọn nhanh Khối 2,3,4,5
+                  </button>
+                  <button
+                    onClick={() => {
+                      localStorage.setItem('admission_doc_grades_mapping', JSON.stringify(docGroupGrades));
+                      notify("Đã lưu cấu hình áp dụng khối lớp thành công!");
+                    }}
+                    type="button"
+                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow-md shadow-emerald-100 cursor-pointer"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    Lưu cấu hình Khối
+                  </button>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                {["Khối 1", "Khối 2", "Khối 3", "Khối 4", "Khối 5", "Khối 6", "Khối 7", "Khối 8", "Khối 9", "Khối 10", "Khối 11", "Khối 12"].map((g) => {
+                  const isChecked = (docGroupGrades[selectedDocGroup] || []).includes(g);
+                  return (
+                    <label key={g} className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-slate-200/60 shadow-sm cursor-pointer hover:bg-indigo-50/20 hover:border-indigo-200 transition-all select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={isChecked}
+                        onChange={(e) => {
+                          const currentGrades = docGroupGrades[selectedDocGroup] || [];
+                          let updated;
+                          if (e.target.checked) {
+                            updated = [...currentGrades, g];
+                          } else {
+                            updated = currentGrades.filter((name) => name !== g);
+                          }
+                          const updatedMappings = { ...docGroupGrades, [selectedDocGroup]: updated };
+                          setDocGroupGrades(updatedMappings);
+                          localStorage.setItem('admission_doc_grades_mapping', JSON.stringify(updatedMappings));
+                        }}
+                        className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 transition-all cursor-pointer"
+                      />
+                      <span className="text-xs font-bold text-slate-600">{g}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* List Table */}
             <div className="overflow-x-auto border border-slate-100 rounded-2xl">
               <table className="w-full text-left border-collapse">
