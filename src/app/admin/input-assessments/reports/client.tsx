@@ -1342,7 +1342,7 @@ export function ReportsClient({
         </div>
       )}
 
-      {/* ===== TAB: ADMISSION DOCUMENTS (HỒ SƠ NHẬP HỌC) ===== */}
+            {/* ===== TAB: ADMISSION DOCUMENTS (HỒ SƠ NHẬP HỌC) ===== */}
       {tab === "admission_documents" && selectedLevel === "high" && (
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
           <div className="bg-white/80 backdrop-blur-md p-6 rounded-3xl shadow-sm border border-slate-200/60 flex flex-wrap items-center justify-between gap-4">
@@ -1391,275 +1391,352 @@ export function ReportsClient({
             </div>
           </div>
 
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-6">
-            <div className="group space-y-2">
-              <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-indigo-900/70 ml-1">Chọn Đối tượng Hồ sơ</label>
-              <div className="flex items-center gap-2 flex-wrap">
-                <div className="relative w-64">
-                  <select 
-                    value={selectedDocGroup} 
-                    onChange={(e) => setSelectedDocGroup(e.target.value)} 
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 pr-10 text-sm font-black text-slate-700 outline-none appearance-none cursor-pointer hover:bg-slate-100/50 focus:border-indigo-500 focus:bg-white transition-all duration-300"
-                  >
-                    {docGroups.map(g => (
-                      <option key={g.id} value={g.id}>{g.label}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="w-4 h-4 text-slate-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-slate-600 transition-colors" />
-                </div>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            {/* Left side configurations */}
+            <div className="lg:col-span-5 bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-6">
+              <div className="group space-y-2">
+                <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-indigo-900/70 ml-1">Chọn Đối tượng Hồ sơ</label>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="relative w-full">
+                    <select 
+                      value={selectedDocGroup} 
+                      onChange={(e) => setSelectedDocGroup(e.target.value)} 
+                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 pr-10 text-sm font-black text-slate-700 outline-none appearance-none cursor-pointer hover:bg-slate-100/50 focus:border-indigo-500 focus:bg-white transition-all duration-300"
+                    >
+                      {docGroups.map(g => (
+                        <option key={g.id} value={g.id}>{g.label}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="w-4 h-4 text-slate-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-slate-600 transition-colors" />
+                  </div>
 
-                <button 
-                  onClick={() => {
-                    const newName = prompt("Nhập tên Đối tượng Hồ sơ mới:");
-                    if (newName && newName.trim()) {
-                      const newId = "custom_" + Date.now();
-                      const updated = [...customDocGroups, { id: newId, label: newName.trim() }];
-                      setCustomDocGroups(updated);
-                      localStorage.setItem('admission_doc_groups', JSON.stringify(updated));
-                      setSelectedDocGroup(newId);
-                    }
-                  }}
-                  className="px-4 py-3.5 rounded-2xl bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center gap-2 text-xs font-black transition-all border border-indigo-100 shadow-sm"
-                  title="Thêm đối tượng mới"
-                >
-                  <Plus className="w-4 h-4" />
-                  Thêm đối tượng
-                </button>
-
-                {selectedDocGroup && (
-                  <>
+                  <div className="flex gap-2 w-full mt-2">
                     <button 
                       onClick={() => {
-                        const current = customDocGroups.find(g => g.id === selectedDocGroup);
-                        const newName = prompt("Sửa tên Đối tượng Hồ sơ:", current?.label);
+                        const newName = prompt("Nhập tên Đối tượng Hồ sơ mới:");
                         if (newName && newName.trim()) {
-                          const updated = customDocGroups.map(g => g.id === selectedDocGroup ? { ...g, label: newName.trim() } : g);
+                          const newId = "custom_" + Date.now();
+                          const updated = [...customDocGroups, { id: newId, label: newName.trim() }];
                           setCustomDocGroups(updated);
                           localStorage.setItem('admission_doc_groups', JSON.stringify(updated));
+                          setSelectedDocGroup(newId);
                         }
                       }}
-                      className="w-10 h-10 rounded-2xl bg-amber-50 hover:bg-amber-100 text-amber-600 flex items-center justify-center transition-all border border-amber-100 shadow-sm"
-                      title="Sửa tên đối tượng"
+                      className="flex-1 py-3 px-4 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center gap-2 text-xs font-black transition-all border border-indigo-100 shadow-sm"
+                      title="Thêm đối tượng mới"
                     >
-                      <Pencil className="w-4 h-4" />
+                      <Plus className="w-4 h-4" />
+                      Thêm đối tượng
                     </button>
-                    <button 
+
+                    {selectedDocGroup && (
+                      <>
+                        <button 
+                          onClick={() => {
+                            const current = customDocGroups.find(g => g.id === selectedDocGroup);
+                            const newName = prompt("Sửa tên Đối tượng Hồ sơ:", current?.label);
+                            if (newName && newName.trim()) {
+                              const updated = customDocGroups.map(g => g.id === selectedDocGroup ? { ...g, label: newName.trim() } : g);
+                              setCustomDocGroups(updated);
+                              localStorage.setItem('admission_doc_groups', JSON.stringify(updated));
+                            }
+                          }}
+                          className="w-10 h-10 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-600 flex items-center justify-center transition-all border border-amber-100 shadow-sm"
+                          title="Sửa tên đối tượng"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => {
+                            const current = customDocGroups.find(g => g.id === selectedDocGroup);
+                            setConfirm({
+                              msg: `Bạn có chắc chắn muốn xóa Đối tượng "${current?.label}" và toàn bộ hồ sơ đi kèm?`,
+                              fn: () => {
+                                const updated = customDocGroups.filter(g => g.id !== selectedDocGroup);
+                                setCustomDocGroups(updated);
+                                localStorage.setItem('admission_doc_groups', JSON.stringify(updated));
+                                localStorage.removeItem(getDocStorageKey(selectedDocGroup));
+                                setSelectedDocGroup("khoi_1");
+                              }
+                            });
+                          }}
+                          className="w-10 h-10 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 flex items-center justify-center transition-all border border-rose-100 shadow-sm"
+                          title="Xóa đối tượng"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Association checkboxes */}
+              <div className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100 space-y-4">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <span className="block text-[10px] font-bold tracking-wider uppercase text-slate-400 ml-1">
+                    Áp dụng cho Đối tượng Tuyển sinh:
+                  </span>
+                  <button
+                    onClick={() => {
+                      localStorage.setItem('admission_doc_targets', JSON.stringify(docGroupTargets));
+                      notify("Đã lưu cấu hình áp dụng đối tượng tuyển sinh thành công!");
+                    }}
+                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-1 shadow-md shadow-emerald-100 cursor-pointer"
+                  >
+                    <Check className="w-3 h-3" />
+                    Lưu
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2 max-h-[120px] overflow-y-auto pr-1">
+                  {configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => {
+                    const isChecked = (docGroupTargets[selectedDocGroup] || []).includes(c.name);
+                    return (
+                      <label key={c.id} className="flex items-center gap-2 px-2.5 py-1.5 bg-white rounded-lg border border-slate-200/60 shadow-sm cursor-pointer hover:bg-indigo-50/20 hover:border-indigo-200 transition-all select-none">
+                        <input 
+                          type="checkbox" 
+                          checked={isChecked}
+                          onChange={(e) => {
+                            const currentTargets = docGroupTargets[selectedDocGroup] || [];
+                            let updated;
+                            if (e.target.checked) {
+                              updated = [...currentTargets, c.name];
+                            } else {
+                              updated = currentTargets.filter(name => name !== c.name);
+                            }
+                            const updatedMappings = { ...docGroupTargets, [selectedDocGroup]: updated };
+                            setDocGroupTargets(updatedMappings);
+                            localStorage.setItem('admission_doc_targets', JSON.stringify(updatedMappings));
+                          }}
+                          className="w-3.5 h-3.5 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 transition-all cursor-pointer"
+                        />
+                        <span className="text-[11px] font-bold text-slate-600">{c.name}</span>
+                      </label>
+                    );
+                  })}
+                  {configs.filter(c => c.categoryType === "DOI_TUONG_TS").length === 0 && (
+                    <span className="text-xs text-slate-400 italic ml-1">Chưa có Đối tượng Tuyển sinh nào trong Danh mục</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Grade association checkboxes */}
+              <div className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100 space-y-4">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <span className="block text-[10px] font-bold tracking-wider uppercase text-slate-400 ml-1">
+                    Áp dụng cho Khối lớp học:
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <button
                       onClick={() => {
-                        const current = customDocGroups.find(g => g.id === selectedDocGroup);
-                        setConfirm({
-                          msg: `Bạn có chắc chắn muốn xóa Đối tượng "${current?.label}" và toàn bộ hồ sơ đi kèm?`,
-                          fn: () => {
-                            const updated = customDocGroups.filter(g => g.id !== selectedDocGroup);
-                            setCustomDocGroups(updated);
-                            localStorage.setItem('admission_doc_groups', JSON.stringify(updated));
-                            localStorage.removeItem(getDocStorageKey(selectedDocGroup));
-                            setSelectedDocGroup("khoi_1");
-                          }
-                        });
+                        const updated = ["Khối 2", "Khối 3", "Khối 4", "Khối 5"];
+                        const updatedMappings = { ...docGroupGrades, [selectedDocGroup]: updated };
+                        setDocGroupGrades(updatedMappings);
+                        localStorage.setItem('admission_doc_grades_mapping', JSON.stringify(updatedMappings));
                       }}
-                      className="w-10 h-10 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-600 flex items-center justify-center transition-all border border-rose-100 shadow-sm"
-                      title="Xóa đối tượng"
+                      type="button"
+                      className="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg text-[9px] font-black transition-all border border-indigo-100"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      Chọn nhanh 2,3,4,5
                     </button>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Association checkboxes */}
-            <div className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100 space-y-4">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <span className="block text-[10px] font-bold tracking-wider uppercase text-slate-400 ml-1">
-                  Áp dụng cho Đối tượng Tuyển sinh (từ Danh mục):
-                </span>
-                <button
-                  onClick={() => {
-                    localStorage.setItem('admission_doc_targets', JSON.stringify(docGroupTargets));
-                    notify("Đã lưu cấu hình áp dụng đối tượng tuyển sinh thành công!");
-                  }}
-                  className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow-md shadow-emerald-100 cursor-pointer"
-                >
-                  <Check className="w-3.5 h-3.5" />
-                  Lưu cấu hình áp dụng
-                </button>
-              </div>
-              <div className="flex flex-wrap gap-3">
-                {configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => {
-                  const isChecked = (docGroupTargets[selectedDocGroup] || []).includes(c.name);
-                  return (
-                    <label key={c.id} className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-slate-200/60 shadow-sm cursor-pointer hover:bg-indigo-50/20 hover:border-indigo-200 transition-all select-none">
-                      <input 
-                        type="checkbox" 
-                        checked={isChecked}
-                        onChange={(e) => {
-                          const currentTargets = docGroupTargets[selectedDocGroup] || [];
-                          let updated;
-                          if (e.target.checked) {
-                            updated = [...currentTargets, c.name];
-                          } else {
-                            updated = currentTargets.filter(name => name !== c.name);
-                          }
-                          const updatedMappings = { ...docGroupTargets, [selectedDocGroup]: updated };
-                          setDocGroupTargets(updatedMappings);
-                          localStorage.setItem('admission_doc_targets', JSON.stringify(updatedMappings));
-                        }}
-                        className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 transition-all cursor-pointer"
-                      />
-                      <span className="text-xs font-bold text-slate-600">{c.name}</span>
-                    </label>
-                  );
-                })}
-                {configs.filter(c => c.categoryType === "DOI_TUONG_TS").length === 0 && (
-                  <span className="text-xs text-slate-400 italic ml-1">Chưa có Đối tượng Tuyển sinh nào trong Danh mục</span>
-                )}
-              </div>
-            </div>
-
-            {/* Grade association checkboxes */}
-            <div className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100 space-y-4">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <span className="block text-[10px] font-bold tracking-wider uppercase text-slate-400 ml-1">
-                  Áp dụng cho Khối lớp học:
-                </span>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => {
-                      const updated = ["Khối 2", "Khối 3", "Khối 4", "Khối 5"];
-                      const updatedMappings = { ...docGroupGrades, [selectedDocGroup]: updated };
-                      setDocGroupGrades(updatedMappings);
-                      localStorage.setItem('admission_doc_grades_mapping', JSON.stringify(updatedMappings));
-                    }}
-                    type="button"
-                    className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg text-[10px] font-black transition-all border border-indigo-100"
-                  >
-                    Chọn nhanh Khối 2,3,4,5
-                  </button>
-                  <button
-                    onClick={() => {
-                      localStorage.setItem('admission_doc_grades_mapping', JSON.stringify(docGroupGrades));
-                      notify("Đã lưu cấu hình áp dụng khối lớp thành công!");
-                    }}
-                    type="button"
-                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow-md shadow-emerald-100"
-                  >
-                    <Check className="w-3.5 h-3.5" />
-                    Lưu cấu hình Khối
-                  </button>
+                    <button
+                      onClick={() => {
+                        localStorage.setItem('admission_doc_grades_mapping', JSON.stringify(docGroupGrades));
+                        notify("Đã lưu cấu hình áp dụng khối lớp thành công!");
+                      }}
+                      type="button"
+                      className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-1 shadow-md shadow-emerald-100"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                      Lưu
+                    </button>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2 max-h-[140px] overflow-y-auto pr-1">
+                  {["Khối 1", "Khối 2", "Khối 3", "Khối 4", "Khối 5", "Khối 6", "Khối 7", "Khối 8", "Khối 9", "Khối 10", "Khối 11", "Khối 12"].map(g => {
+                    const isChecked = (docGroupGrades[selectedDocGroup] || []).includes(g);
+                    return (
+                      <label key={g} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white rounded-lg border border-slate-200/60 shadow-sm cursor-pointer hover:bg-indigo-50/20 hover:border-indigo-200 transition-all select-none font-medium">
+                        <input 
+                          type="checkbox" 
+                          checked={isChecked}
+                          onChange={(e) => {
+                            const currentGrades = docGroupGrades[selectedDocGroup] || [];
+                            let updated;
+                            if (e.target.checked) {
+                              updated = [...currentGrades, g];
+                            } else {
+                              updated = currentGrades.filter(name => name !== g);
+                            }
+                            const updatedMappings = { ...docGroupGrades, [selectedDocGroup]: updated };
+                            setDocGroupGrades(updatedMappings);
+                            localStorage.setItem('admission_doc_grades_mapping', JSON.stringify(updatedMappings));
+                          }}
+                          className="w-3.5 h-3.5 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 transition-all cursor-pointer"
+                        />
+                        <span className="text-[11px] font-bold text-slate-600">{g}</span>
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
-              <div className="flex flex-wrap gap-3">
-                {["Khối 1", "Khối 2", "Khối 3", "Khối 4", "Khối 5", "Khối 6", "Khối 7", "Khối 8", "Khối 9", "Khối 10", "Khối 11", "Khối 12"].map(g => {
-                  const isChecked = (docGroupGrades[selectedDocGroup] || []).includes(g);
-                  return (
-                    <label key={g} className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-slate-200/60 shadow-sm cursor-pointer hover:bg-indigo-50/20 hover:border-indigo-200 transition-all select-none">
-                      <input 
-                        type="checkbox" 
-                        checked={isChecked}
-                        onChange={(e) => {
-                          const currentGrades = docGroupGrades[selectedDocGroup] || [];
-                          let updated;
-                          if (e.target.checked) {
-                            updated = [...currentGrades, g];
-                          } else {
-                            updated = currentGrades.filter(name => name !== g);
-                          }
-                          const updatedMappings = { ...docGroupGrades, [selectedDocGroup]: updated };
-                          setDocGroupGrades(updatedMappings);
-                          localStorage.setItem('admission_doc_grades_mapping', JSON.stringify(updatedMappings));
-                        }}
-                        className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 transition-all cursor-pointer"
-                      />
-                      <span className="text-xs font-bold text-slate-600">{g}</span>
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
 
-            {filteredDocList.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 text-center border-2 border-dashed border-slate-100 rounded-3xl">
-                <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-4 border border-slate-100">
-                  <Tag className="w-8 h-8 text-slate-300" />
+              {filteredDocList.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-10 text-center border-2 border-dashed border-slate-100 rounded-3xl">
+                  <Tag className="w-8 h-8 text-slate-300 mb-2" />
+                  <p className="font-bold text-xs text-slate-400">Chưa cấu hình hồ sơ nào cho đối tượng này</p>
                 </div>
-                <p className="font-bold text-slate-400">Chưa cấu hình hồ sơ nào cho đối tượng này</p>
-                <p className="text-xs text-slate-300 mt-1 max-w-xs leading-normal">Hãy nhấp vào "Thêm hồ sơ mới" ở góc trên bên phải để bắt đầu thiết lập danh sách hồ sơ nhập học.</p>
-              </div>
-            ) : (
-              <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-inner">
-                <table className="w-full border-collapse text-left text-sm text-slate-700">
-                  <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200">
-                      <th className="px-6 py-4 font-black text-slate-900 text-center w-16">TT</th>
-                      <th className="px-6 py-4 font-black text-slate-900">Hồ sơ yêu cầu</th>
-                      <th className="px-6 py-4 font-black text-slate-900 text-center w-36">Số lượng</th>
-                      <th className="px-6 py-4 font-black text-slate-900 text-center w-48">Ghi chú</th>
-                      <th className="px-6 py-4 font-black text-slate-900 text-center w-32">Thao tác</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 bg-white">
-                    {filteredDocList.map((item, idx) => (
-                      <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="px-6 py-3.5 text-center font-bold text-slate-400">{idx + 1}</td>
-                        <td className="px-6 py-3.5">
-                          <div className="font-bold text-slate-800">{item.name}</div>
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {item.grades && item.grades.length > 0 && item.grades.map(g => (
-                              <span key={g} className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 rounded text-[9px] font-black border border-emerald-100">{g}</span>
-                            ))}
-                            {item.targets && item.targets.length > 0 && item.targets.map(t => (
-                              <span key={t} className="px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded text-[9px] font-black border border-indigo-100">{t}</span>
-                            ))}
-                          </div>
-                        </td>
-                        <td className="px-6 py-3.5 text-center font-bold text-slate-600">{item.qty || "—"}</td>
-                        <td className="px-6 py-3.5 text-center text-xs italic text-slate-400 font-semibold">{item.note || "—"}</td>
-                        <td className="px-6 py-3.5 text-center">
-                          <div className="flex items-center justify-center gap-2">
-                            <button 
-                              onClick={() => {
-                                setEditingDoc(item);
-                                setDocFormName(item.name);
-                                setDocFormQty(item.qty);
-                                setDocFormNote(item.note);
-                                setDocFormSelectedTargets(item.targets || []);
-                                setDocFormSelectedGrades(item.grades || []);
-                                setIsDocModalOpen(true);
-                              }}
-                              className="w-8 h-8 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center transition-colors"
-                              title="Sửa hồ sơ"
-                            >
-                              <Pencil className="w-3.5 h-3.5" />
-                            </button>
-                            <button 
-                              onClick={() => {
-                                setConfirm({
-                                  msg: "Bạn có chắc chắn muốn xóa hồ sơ này không?",
-                                  fn: () => {
-                                    const updated = docList.filter(d => d.id !== item.id);
-                                    setDocList(updated);
-                                    localStorage.setItem(getDocStorageKey(selectedDocGroup), JSON.stringify(updated));
-                                  }
-                                });
-                              }}
-                              className="w-8 h-8 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 flex items-center justify-center transition-colors"
-                              title="Xóa hồ sơ"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
+              ) : (
+                <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-inner">
+                  <table className="w-full border-collapse text-left text-xs text-slate-700">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-200">
+                        <th className="px-4 py-3 font-black text-slate-900 text-center w-12">TT</th>
+                        <th className="px-4 py-3 font-black text-slate-900">Hồ sơ</th>
+                        <th className="px-4 py-3 font-black text-slate-900 text-center w-20">SL</th>
+                        <th className="px-4 py-3 font-black text-slate-900 text-center w-24">Thao tác</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 bg-white">
+                      {filteredDocList.map((item, idx) => (
+                        <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="px-4 py-2.5 text-center font-bold text-slate-400">{idx + 1}</td>
+                          <td className="px-4 py-2.5">
+                            <div className="font-bold text-slate-800 text-[11px] truncate max-w-[120px] sm:max-w-none" title={item.name}>{item.name}</div>
+                          </td>
+                          <td className="px-4 py-2.5 text-center font-bold text-slate-600">{item.qty || "—"}</td>
+                          <td className="px-4 py-2.5 text-center">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button 
+                                onClick={() => {
+                                  setEditingDoc(item);
+                                  setDocFormName(item.name);
+                                  setDocFormQty(item.qty);
+                                  setDocFormNote(item.note);
+                                  setDocFormSelectedTargets(item.targets || []);
+                                  setDocFormSelectedGrades(item.grades || []);
+                                  setIsDocModalOpen(true);
+                                }}
+                                className="w-7 h-7 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center transition-colors"
+                                title="Sửa hồ sơ"
+                              >
+                                <Pencil className="w-3 h-3" />
+                              </button>
+                              <button 
+                                onClick={() => {
+                                  setConfirm({
+                                    msg: "Bạn có chắc chắn muốn xóa hồ sơ này không?",
+                                    fn: () => {
+                                      const updated = docList.filter(d => d.id !== item.id);
+                                      setDocList(updated);
+                                      localStorage.setItem(getDocStorageKey(selectedDocGroup), JSON.stringify(updated));
+                                    }
+                                  });
+                                }}
+                                className="w-7 h-7 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 flex items-center justify-center transition-colors"
+                                title="Xóa hồ sơ"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Right side live A4 design preview stack */}
+            <div className="lg:col-span-7 bg-slate-50 border border-slate-200 shadow-inner rounded-3xl p-8 flex flex-col justify-between min-h-[500px]">
+              <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-5">Khung Xem trước thiết kế A4 thực tế</span>
+              <div className="bg-white rounded-2xl border border-slate-200 p-10 shadow-lg flex flex-col justify-between w-full aspect-[210/297] relative overflow-hidden select-none font-serif text-slate-800 leading-normal" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
+                {/* Background Watermark for Preview */}
+                <div 
+                  className="absolute pointer-events-none"
+                  style={{
+                    backgroundImage: `url('${rcBackground || DEFAULT_WATERMARK_SVG}')`,
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'center',
+                    backgroundSize: 'contain',
+                    opacity: rcBackground ? 0.45 : 0.05,
+                    top: '50%',
+                    left: '50%',
+                    width: '80%',
+                    height: '80%',
+                    transform: 'translate(-50%, -50%)'
+                  }}
+                />
+
+                {/* Top info */}
+                <div className="relative z-10 space-y-4 flex flex-col h-full justify-between">
+                  <div>
+                    <div className="border-b border-slate-200 pb-2 mb-3">
+                      {rcLogo ? (
+                        <img src={rcLogo} alt="Logo" className="h-8 object-contain mb-1" />
+                      ) : (
+                        <span className="text-[10px] font-black tracking-tight text-teal-600 uppercase">SKY-LINE</span>
+                      )}
+                      <h4 className="font-extrabold text-[9px] uppercase tracking-wider text-slate-800" style={{ fontFamily: "Arial, sans-serif" }}>
+                        TRƯỜNG TH, THCS, THPT SKY-LINE
+                      </h4>
+                    </div>
+
+                    <div className="text-center mb-3">
+                      <h2 className="text-xs font-black tracking-widest text-indigo-950 uppercase" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+                        DANH MỤC HỒ SƠ NHẬP HỌC
+                      </h2>
+                    </div>
+
+                    {/* Table stack */}
+                    <div className="mt-4 overflow-hidden border border-slate-950">
+                      <table className="w-full border-collapse text-left text-[9px] text-slate-900" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+                        <thead>
+                          <tr className="bg-white border-b border-slate-950 font-bold text-slate-950">
+                            <th className="px-2 py-1.5 border-r border-slate-950 text-center uppercase w-10" style={{ borderRightWidth: '1px', borderColor: '#000' }}>STT</th>
+                            <th className="px-3 py-1.5 border-r border-slate-950 text-center uppercase" style={{ borderRightWidth: '1px', borderColor: '#000' }}>Tên hồ sơ</th>
+                            <th className="px-3 py-1.5 text-center uppercase w-16">Số lượng</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredDocList.map((item, idx) => (
+                            <tr key={item.id || idx} className="border-b border-slate-950 last:border-b-0">
+                              <td className="px-2 py-1.5 border-r border-slate-950 text-center text-slate-900" style={{ borderRightWidth: '1px', borderColor: '#000' }}>{idx + 1}</td>
+                              <td className="px-3 py-1.5 border-r border-slate-950 font-medium text-slate-900" style={{ borderRightWidth: '1px', borderColor: '#000' }}>{item.name}</td>
+                              <td className="px-3 py-1.5 text-center text-slate-950 font-bold">{item.qty || "—"}</td>
+                            </tr>
+                          ))}
+                          {filteredDocList.length === 0 && (
+                            <tr>
+                              <td colSpan={3} className="text-center py-4 text-slate-400 italic">Chưa cấu hình hồ sơ nào cho đối tượng này</td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <p className="mt-4 text-[9px] text-slate-950 font-bold text-left leading-relaxed" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+                      * Quý phụ huynh vui lòng bổ sung hồ sơ thiếu (nếu có) trong vòng 10 ngày kể từ ngày nộp Hồ sơ.
+                    </p>
+                  </div>
+
+                  {/* Signature/Footer Anchor */}
+                  {rcFooter ? (
+                    <div className="pt-2 border-t border-slate-200 mt-2">
+                      <img src={rcFooter} alt="Footer" className="w-full h-auto" />
+                    </div>
+                  ) : (
+                    <div className="border-t border-[#00A6A9]/50 pt-2 text-[5px] text-slate-400 text-center">
+                      <p className="font-bold">www.skylineschool.edu.vn • Hotline: (+84.236) 378 7777</p>
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
+            </div>
           </div>
         </div>
       )}
-
-      {/* PRINT DIALOG PREVIEW MODAL */}
       <Modal open={isPrintModalOpen} onClose={() => setIsPrintModalOpen(false)} title={isInvitation ? "Mẫu Thư mời khảo sát" : isCommitment ? "Bản Cam kết học tập" : "Mẫu Thư Chúc mừng"} size="xl" footer={<><button onClick={() => setIsPrintModalOpen(false)} className="flex-1 text-xs font-black uppercase text-slate-400 hover:text-slate-600">Đóng</button><button onClick={handlePrintPDF} className="flex-1 py-3.5 bg-indigo-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 cursor-pointer"><Printer className="w-4 h-4" /> In / Tải PDF</button></>}>
         <div className="bg-slate-50 p-4 border border-slate-100 rounded-3xl overflow-y-auto max-h-[60vh] flex flex-col items-center justify-start gap-8 w-full">
           <div id="print-area-reports" className="flex flex-col items-center gap-8 w-full">
