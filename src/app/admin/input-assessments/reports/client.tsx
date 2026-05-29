@@ -847,6 +847,7 @@ export function ReportsClient({
         <div className="flex flex-wrap gap-1">
           {[
             { id: "report_config", label: "Cấu hình báo cáo", icon: Settings },
+            ...(selectedLevel === "high" ? [{ id: "admission_documents", label: "Hồ sơ", icon: Tag }] : []),
             { id: "letters", label: "Xuất thư chúc mừng", icon: GraduationCap },
             { id: "results", label: "Trả kết quả", icon: BarChart3 }
           ].map(t => (
@@ -1341,6 +1342,323 @@ export function ReportsClient({
         </div>
       )}
 
+      {/* ===== TAB: ADMISSION DOCUMENTS (HỒ SƠ NHẬP HỌC) ===== */}
+      {tab === "admission_documents" && selectedLevel === "high" && (
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <div className="bg-white/80 backdrop-blur-md p-6 rounded-3xl shadow-sm border border-slate-200/60 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 shadow-inner">
+                <Tag className="w-6 h-6" />
+              </div>
+              <div>
+                <h2 className="text-lg font-black text-slate-800">Danh mục Hồ sơ nhập học</h2>
+                <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Cấu hình danh sách giấy tờ cần nộp theo từng đối tượng tuyển sinh</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => {
+                  setConfirm({
+                    msg: "Bạn có chắc chắn muốn khôi phục danh sách hồ sơ mẫu cho đối tượng này không?",
+                    fn: () => {
+                      const defaultDocs = selectedDocGroup === "khoi_2_5" ? defaultDocumentsGrade2_5 : selectedDocGroup === "khoi_6" ? defaultDocumentsGrade6 : selectedDocGroup === "khoi_10_noi_tinh" ? defaultDocumentsGrade10NoiTinh : selectedDocGroup === "khoi_10_ngoai_tinh" ? defaultDocumentsGrade10NgoaiTinh : defaultDocumentsGrade1;
+                      setDocList(defaultDocs);
+                      localStorage.setItem(getDocStorageKey(selectedDocGroup), JSON.stringify(defaultDocs));
+                    }
+                  });
+                }}
+                className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-black transition-all flex items-center gap-2"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                Khôi phục mẫu
+              </button>
+              <button 
+                onClick={() => {
+                  setEditingDoc(null);
+                  setDocFormName("");
+                  setDocFormQty("");
+                  setDocFormNote("");
+                  setDocFormSelectedTargets(docGroupTargets[selectedDocGroup] || []);
+                  setDocFormSelectedGrades(docGroupGrades[selectedDocGroup] || []);
+                  setIsDocModalOpen(true);
+                }}
+                className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-2 shadow-lg shadow-indigo-100 cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Thêm hồ sơ mới
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-6">
+            <div className="group space-y-2">
+              <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-indigo-900/70 ml-1">Chọn Đối tượng Hồ sơ</label>
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="relative w-64">
+                  <select 
+                    value={selectedDocGroup} 
+                    onChange={(e) => setSelectedDocGroup(e.target.value)} 
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 pr-10 text-sm font-black text-slate-700 outline-none appearance-none cursor-pointer hover:bg-slate-100/50 focus:border-indigo-500 focus:bg-white transition-all duration-300"
+                  >
+                    {docGroups.map(g => (
+                      <option key={g.id} value={g.id}>{g.label}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-4 h-4 text-slate-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-slate-600 transition-colors" />
+                </div>
+
+                <button 
+                  onClick={() => {
+                    const newName = prompt("Nhập tên Đối tượng Hồ sơ mới:");
+                    if (newName && newName.trim()) {
+                      const newId = "custom_" + Date.now();
+                      const updated = [...customDocGroups, { id: newId, label: newName.trim() }];
+                      setCustomDocGroups(updated);
+                      localStorage.setItem('admission_doc_groups', JSON.stringify(updated));
+                      setSelectedDocGroup(newId);
+                    }
+                  }}
+                  className="px-4 py-3.5 rounded-2xl bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center gap-2 text-xs font-black transition-all border border-indigo-100 shadow-sm"
+                  title="Thêm đối tượng mới"
+                >
+                  <Plus className="w-4 h-4" />
+                  Thêm đối tượng
+                </button>
+
+                {selectedDocGroup && (
+                  <>
+                    <button 
+                      onClick={() => {
+                        const current = customDocGroups.find(g => g.id === selectedDocGroup);
+                        const newName = prompt("Sửa tên Đối tượng Hồ sơ:", current?.label);
+                        if (newName && newName.trim()) {
+                          const updated = customDocGroups.map(g => g.id === selectedDocGroup ? { ...g, label: newName.trim() } : g);
+                          setCustomDocGroups(updated);
+                          localStorage.setItem('admission_doc_groups', JSON.stringify(updated));
+                        }
+                      }}
+                      className="w-10 h-10 rounded-2xl bg-amber-50 hover:bg-amber-100 text-amber-600 flex items-center justify-center transition-all border border-amber-100 shadow-sm"
+                      title="Sửa tên đối tượng"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={() => {
+                        const current = customDocGroups.find(g => g.id === selectedDocGroup);
+                        setConfirm({
+                          msg: `Bạn có chắc chắn muốn xóa Đối tượng "${current?.label}" và toàn bộ hồ sơ đi kèm?`,
+                          fn: () => {
+                            const updated = customDocGroups.filter(g => g.id !== selectedDocGroup);
+                            setCustomDocGroups(updated);
+                            localStorage.setItem('admission_doc_groups', JSON.stringify(updated));
+                            localStorage.removeItem(getDocStorageKey(selectedDocGroup));
+                            setSelectedDocGroup("khoi_1");
+                          }
+                        });
+                      }}
+                      className="w-10 h-10 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-600 flex items-center justify-center transition-all border border-rose-100 shadow-sm"
+                      title="Xóa đối tượng"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Association checkboxes */}
+            <div className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100 space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <span className="block text-[10px] font-bold tracking-wider uppercase text-slate-400 ml-1">
+                  Áp dụng cho Đối tượng Tuyển sinh (từ Danh mục):
+                </span>
+                <button
+                  onClick={() => {
+                    localStorage.setItem('admission_doc_targets', JSON.stringify(docGroupTargets));
+                    notify("Đã lưu cấu hình áp dụng đối tượng tuyển sinh thành công!");
+                  }}
+                  className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow-md shadow-emerald-100 cursor-pointer"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  Lưu cấu hình áp dụng
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                {configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => {
+                  const isChecked = (docGroupTargets[selectedDocGroup] || []).includes(c.name);
+                  return (
+                    <label key={c.id} className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-slate-200/60 shadow-sm cursor-pointer hover:bg-indigo-50/20 hover:border-indigo-200 transition-all select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={isChecked}
+                        onChange={(e) => {
+                          const currentTargets = docGroupTargets[selectedDocGroup] || [];
+                          let updated;
+                          if (e.target.checked) {
+                            updated = [...currentTargets, c.name];
+                          } else {
+                            updated = currentTargets.filter(name => name !== c.name);
+                          }
+                          const updatedMappings = { ...docGroupTargets, [selectedDocGroup]: updated };
+                          setDocGroupTargets(updatedMappings);
+                          localStorage.setItem('admission_doc_targets', JSON.stringify(updatedMappings));
+                        }}
+                        className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 transition-all cursor-pointer"
+                      />
+                      <span className="text-xs font-bold text-slate-600">{c.name}</span>
+                    </label>
+                  );
+                })}
+                {configs.filter(c => c.categoryType === "DOI_TUONG_TS").length === 0 && (
+                  <span className="text-xs text-slate-400 italic ml-1">Chưa có Đối tượng Tuyển sinh nào trong Danh mục</span>
+                )}
+              </div>
+            </div>
+
+            {/* Grade association checkboxes */}
+            <div className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100 space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <span className="block text-[10px] font-bold tracking-wider uppercase text-slate-400 ml-1">
+                  Áp dụng cho Khối lớp học:
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      const updated = ["Khối 2", "Khối 3", "Khối 4", "Khối 5"];
+                      const updatedMappings = { ...docGroupGrades, [selectedDocGroup]: updated };
+                      setDocGroupGrades(updatedMappings);
+                      localStorage.setItem('admission_doc_grades_mapping', JSON.stringify(updatedMappings));
+                    }}
+                    type="button"
+                    className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg text-[10px] font-black transition-all border border-indigo-100"
+                  >
+                    Chọn nhanh Khối 2,3,4,5
+                  </button>
+                  <button
+                    onClick={() => {
+                      localStorage.setItem('admission_doc_grades_mapping', JSON.stringify(docGroupGrades));
+                      notify("Đã lưu cấu hình áp dụng khối lớp thành công!");
+                    }}
+                    type="button"
+                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow-md shadow-emerald-100"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    Lưu cấu hình Khối
+                  </button>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                {["Khối 1", "Khối 2", "Khối 3", "Khối 4", "Khối 5", "Khối 6", "Khối 7", "Khối 8", "Khối 9", "Khối 10", "Khối 11", "Khối 12"].map(g => {
+                  const isChecked = (docGroupGrades[selectedDocGroup] || []).includes(g);
+                  return (
+                    <label key={g} className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-slate-200/60 shadow-sm cursor-pointer hover:bg-indigo-50/20 hover:border-indigo-200 transition-all select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={isChecked}
+                        onChange={(e) => {
+                          const currentGrades = docGroupGrades[selectedDocGroup] || [];
+                          let updated;
+                          if (e.target.checked) {
+                            updated = [...currentGrades, g];
+                          } else {
+                            updated = currentGrades.filter(name => name !== g);
+                          }
+                          const updatedMappings = { ...docGroupGrades, [selectedDocGroup]: updated };
+                          setDocGroupGrades(updatedMappings);
+                          localStorage.setItem('admission_doc_grades_mapping', JSON.stringify(updatedMappings));
+                        }}
+                        className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 transition-all cursor-pointer"
+                      />
+                      <span className="text-xs font-bold text-slate-600">{g}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
+            {filteredDocList.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center border-2 border-dashed border-slate-100 rounded-3xl">
+                <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-4 border border-slate-100">
+                  <Tag className="w-8 h-8 text-slate-300" />
+                </div>
+                <p className="font-bold text-slate-400">Chưa cấu hình hồ sơ nào cho đối tượng này</p>
+                <p className="text-xs text-slate-300 mt-1 max-w-xs leading-normal">Hãy nhấp vào "Thêm hồ sơ mới" ở góc trên bên phải để bắt đầu thiết lập danh sách hồ sơ nhập học.</p>
+              </div>
+            ) : (
+              <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-inner">
+                <table className="w-full border-collapse text-left text-sm text-slate-700">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200">
+                      <th className="px-6 py-4 font-black text-slate-900 text-center w-16">TT</th>
+                      <th className="px-6 py-4 font-black text-slate-900">Hồ sơ yêu cầu</th>
+                      <th className="px-6 py-4 font-black text-slate-900 text-center w-36">Số lượng</th>
+                      <th className="px-6 py-4 font-black text-slate-900 text-center w-48">Ghi chú</th>
+                      <th className="px-6 py-4 font-black text-slate-900 text-center w-32">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {filteredDocList.map((item, idx) => (
+                      <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="px-6 py-3.5 text-center font-bold text-slate-400">{idx + 1}</td>
+                        <td className="px-6 py-3.5">
+                          <div className="font-bold text-slate-800">{item.name}</div>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {item.grades && item.grades.length > 0 && item.grades.map(g => (
+                              <span key={g} className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 rounded text-[9px] font-black border border-emerald-100">{g}</span>
+                            ))}
+                            {item.targets && item.targets.length > 0 && item.targets.map(t => (
+                              <span key={t} className="px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded text-[9px] font-black border border-indigo-100">{t}</span>
+                            ))}
+                          </div>
+                        </td>
+                        <td className="px-6 py-3.5 text-center font-bold text-slate-600">{item.qty || "—"}</td>
+                        <td className="px-6 py-3.5 text-center text-xs italic text-slate-400 font-semibold">{item.note || "—"}</td>
+                        <td className="px-6 py-3.5 text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            <button 
+                              onClick={() => {
+                                setEditingDoc(item);
+                                setDocFormName(item.name);
+                                setDocFormQty(item.qty);
+                                setDocFormNote(item.note);
+                                setDocFormSelectedTargets(item.targets || []);
+                                setDocFormSelectedGrades(item.grades || []);
+                                setIsDocModalOpen(true);
+                              }}
+                              className="w-8 h-8 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center transition-colors"
+                              title="Sửa hồ sơ"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <button 
+                              onClick={() => {
+                                setConfirm({
+                                  msg: "Bạn có chắc chắn muốn xóa hồ sơ này không?",
+                                  fn: () => {
+                                    const updated = docList.filter(d => d.id !== item.id);
+                                    setDocList(updated);
+                                    localStorage.setItem(getDocStorageKey(selectedDocGroup), JSON.stringify(updated));
+                                  }
+                                });
+                              }}
+                              className="w-8 h-8 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 flex items-center justify-center transition-colors"
+                              title="Xóa hồ sơ"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* PRINT DIALOG PREVIEW MODAL */}
       <Modal open={isPrintModalOpen} onClose={() => setIsPrintModalOpen(false)} title={isInvitation ? "Mẫu Thư mời khảo sát" : isCommitment ? "Bản Cam kết học tập" : "Mẫu Thư Chúc mừng"} size="xl" footer={<><button onClick={() => setIsPrintModalOpen(false)} className="flex-1 text-xs font-black uppercase text-slate-400 hover:text-slate-600">Đóng</button><button onClick={handlePrintPDF} className="flex-1 py-3.5 bg-indigo-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 cursor-pointer"><Printer className="w-4 h-4" /> In / Tải PDF</button></>}>
         <div className="bg-slate-50 p-4 border border-slate-100 rounded-3xl overflow-y-auto max-h-[60vh] flex flex-col items-center justify-start gap-8 w-full">
@@ -1542,6 +1860,134 @@ export function ReportsClient({
           </div>
         </div>
       </Modal>
+
+            {/* DOCUMENT ADD/EDIT MODAL */}
+      {isDocModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-100">
+            <div className="bg-slate-50 px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center">
+                  <Tag className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-800">{editingDoc ? "Cập nhật Hồ sơ" : "Thêm Hồ sơ Mới"}</h3>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Đối tượng: {selectedDocGroup === "khoi_1" ? "Khối 1" : selectedDocGroup === "khoi_2_5" ? "Khối 2 đến 5" : selectedDocGroup === "khoi_6" ? "Khối 6" : selectedDocGroup === "khoi_7_9" ? "Khối 7 đến 9" : selectedDocGroup === "khoi_10" ? "Khối 10" : selectedDocGroup === "khoi_11_12" ? "Khối 11 đến 12" : "Đối tượng Tuyển sinh"}</p>
+                </div>
+              </div>
+              <button onClick={() => setIsDocModalOpen(false)} className="w-8 h-8 rounded-lg bg-slate-200/50 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 ml-1">Tên Hồ sơ yêu cầu <span className="text-rose-500">*</span></label>
+                <input 
+                  type="text" 
+                  value={docFormName} 
+                  onChange={(e) => setDocFormName(e.target.value)} 
+                  placeholder="Ví dụ: Đơn đăng ký nhập học" 
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-sm font-bold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white transition-all animate-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 ml-1">Số lượng</label>
+                  <input 
+                    type="text" 
+                    value={docFormQty} 
+                    onChange={(e) => setDocFormQty(e.target.value)} 
+                    placeholder="Ví dụ: 01 bản" 
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-sm font-bold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white transition-all animate-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 ml-1">Ghi chú</label>
+                  <input 
+                    type="text" 
+                    value={docFormNote} 
+                    onChange={(e) => setDocFormNote(e.target.value)} 
+                    placeholder="Ví dụ: Bản sao y" 
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-sm font-bold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white transition-all animate-none"
+                  />
+                </div>
+              </div>
+              <div className="pt-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 ml-1">Áp dụng cho Khối lớp học</label>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {["Khối 1", "Khối 2", "Khối 3", "Khối 4", "Khối 5", "Khối 6", "Khối 7", "Khối 8", "Khối 9", "Khối 10", "Khối 11", "Khối 12"].map(g => {
+                    const isChecked = docFormSelectedGrades.includes(g);
+                    return (
+                      <label key={g} className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-50 hover:bg-emerald-50/50 rounded-lg border border-slate-200 cursor-pointer select-none transition-colors">
+                        <input type="checkbox" checked={isChecked} onChange={(e) => { if(e.target.checked) setDocFormSelectedGrades(p=>[...p,g]); else setDocFormSelectedGrades(p=>p.filter(x=>x!==g)); }} className="w-3.5 h-3.5 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300" />
+                        <span className="text-[11px] font-bold text-slate-600">{g}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 ml-1">Áp dụng cho Đối tượng Tuyển sinh</label>
+                <div className="flex flex-wrap gap-2">
+                  {configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => {
+                    const isChecked = docFormSelectedTargets.includes(c.name);
+                    return (
+                      <label key={c.id} className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 hover:bg-indigo-50/50 rounded-xl border border-slate-200 cursor-pointer select-none transition-colors">
+                        <input 
+                          type="checkbox" 
+                          checked={isChecked}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setDocFormSelectedTargets(p => [...p, c.name]);
+                            } else {
+                              setDocFormSelectedTargets(p => p.filter(x => x !== c.name));
+                            }
+                          }}
+                          className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300"
+                        />
+                        <span className="text-xs font-bold text-slate-600">{c.name}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 px-6 py-4 border-t border-slate-100 flex items-center justify-end gap-3">
+              <button 
+                onClick={() => setIsDocModalOpen(false)} 
+                className="px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-600 rounded-xl text-xs font-black transition-colors"
+              >
+                Hủy bỏ
+              </button>
+              <button 
+                onClick={() => {
+                  if (!docFormName.trim()) {
+                    notify("Vui lòng nhập tên hồ sơ!", "err");
+                    return;
+                  }
+                  
+                  let updated = [];
+                  if (editingDoc) {
+                    updated = docList.map(d => d.id === editingDoc.id ? { ...d, name: docFormName, qty: docFormQty, note: docFormNote, targets: docFormSelectedTargets, grades: docFormSelectedGrades } : d);
+                  } else {
+                    const newId = docList.length > 0 ? Math.max(...docList.map(d => d.id)) + 1 : 1;
+                    updated = [...docList, { id: newId, name: docFormName, qty: docFormQty, note: docFormNote, targets: docFormSelectedTargets, grades: docFormSelectedGrades }];
+                  }
+                  
+                  setDocList(updated);
+                  localStorage.setItem(getDocStorageKey(selectedDocGroup), JSON.stringify(updated));
+                  setIsDocModalOpen(false);
+                }} 
+                className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black transition-colors shadow-lg shadow-indigo-100"
+              >
+                Lưu hồ sơ
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {/* EMAIL QUICK MODAL */}
       <Modal open={isEmailModalOpen} onClose={() => setIsEmailModalOpen(false)} title="Gửi email Báo cáo Nhanh" footer={<><button onClick={() => setIsEmailModalOpen(false)} className="flex-1 text-xs font-black uppercase text-slate-400 hover:text-slate-600">Hủy</button><button onClick={handleSendEmailsSubmit} disabled={emailSending} className="flex-1 py-3.5 bg-indigo-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 cursor-pointer">{emailSending ? <Loader2 className="w-4 h-4 animate-spin"/> : <Send className="w-4 h-4" />}{emailSending ? emailSendingStatus : "Gửi ngay"}</button></>}>
