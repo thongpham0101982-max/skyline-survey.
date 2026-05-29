@@ -169,6 +169,12 @@ export function ReportsClient({
   const [rcSignature, setRcSignature] = useState("");
   const [rcBackground, setRcBackground] = useState("");
   const [rcFooter, setRcFooter] = useState("");
+  const [previewPage, setPreviewPage] = useState<1 | 2>(1);
+  useEffect(() => {
+    if (rcReportType !== "thu_chuc_mung" || selectedLevel !== "high") {
+      setPreviewPage(1);
+    }
+  }, [rcReportType, selectedLevel]);
 
   const reportDocGroups = [
     { id: "all", label: "Tất cả các khối (Mặc định)" },
@@ -240,6 +246,25 @@ export function ReportsClient({
     { id: 7, name: "Đơn xin xác nhận về việc đồng ý tiếp nhận học sinh", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 10"] },
     { id: 8, name: "Đơn xin chuyển trường", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 10"] },
   ], []);
+
+  const previewDocList = useMemo(() => {
+    if (typeof window === "undefined") return [];
+    const group = rcTargetGroup === "all" ? "khoi_1" : rcTargetGroup;
+    const saved = localStorage.getItem('admission_docs_' + group);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      } catch (e) {}
+    }
+    if (group === "khoi_2_5") return defaultDocumentsGrade2_5;
+    if (group === "khoi_6") return defaultDocumentsGrade6;
+    if (group === "khoi_10_noi_tinh") return defaultDocumentsGrade10NoiTinh;
+    if (group === "khoi_10_ngoai_tinh") return defaultDocumentsGrade10NgoaiTinh;
+    return defaultDocumentsGrade1;
+  }, [rcTargetGroup, defaultDocumentsGrade1, defaultDocumentsGrade2_5, defaultDocumentsGrade6, defaultDocumentsGrade10NoiTinh, defaultDocumentsGrade10NgoaiTinh]);
 
   // Admission Documents State
   const defaultDocGroups = useMemo(() => [
@@ -1028,7 +1053,25 @@ export function ReportsClient({
 
           {/* Right panel live preview */}
           <div className="lg:col-span-7 bg-slate-50 border border-slate-200 shadow-inner rounded-3xl p-8 flex flex-col justify-between min-h-[500px]">
-            <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-5">Khung Xem trước thiết kế A4 thực tế</span>
+            <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
+              <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Khung Xem trước thiết kế A4 thực tế</span>
+              {selectedLevel === "high" && rcReportType === "thu_chuc_mung" && (
+                <div className="flex items-center gap-1 bg-slate-200/60 p-0.5 rounded-lg text-[10px]">
+                  <button 
+                    onClick={() => setPreviewPage(1)} 
+                    className={`px-2.5 py-1 rounded-md font-bold transition-all ${previewPage === 1 ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                  >
+                    Trang 1 (Thư)
+                  </button>
+                  <button 
+                    onClick={() => setPreviewPage(2)} 
+                    className={`px-2.5 py-1 rounded-md font-bold transition-all ${previewPage === 2 ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                  >
+                    Trang 2 (Hồ sơ)
+                  </button>
+                </div>
+              )}
+            </div>
             <div className="bg-white rounded-2xl border border-slate-200 p-10 shadow-lg flex flex-col justify-between w-full aspect-[210/297] relative overflow-hidden">
               {/* Background Watermark for Preview */}
               <div 
@@ -1049,7 +1092,61 @@ export function ReportsClient({
 
               {/* Top info */}
               <div className="relative z-10 space-y-4 flex flex-col h-full justify-between">
-                <div>
+                {previewPage === 2 && selectedLevel === "high" && rcReportType === "thu_chuc_mung" ? (
+                  /* PAGE 2: CHECKLIST PREVIEW */
+                  <div>
+                    <div className="border-b border-slate-200 pb-2 mb-3">
+                      {rcLogo ? (
+                        <img src={rcLogo} alt="Logo" className="h-8 object-contain mb-1" />
+                      ) : (
+                        <span className="text-[10px] font-black tracking-tight text-teal-600 uppercase">SKY-LINE</span>
+                      )}
+                      <h4 className="font-extrabold text-[9px] uppercase tracking-wider text-slate-800" style={{ fontFamily: "Arial, sans-serif" }}>
+                        TRƯỜNG TH, THCS, THPT SKY-LINE
+                      </h4>
+                    </div>
+
+                    <div className="text-center mb-3">
+                      <h2 className="text-xs font-black tracking-widest text-indigo-950 uppercase" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+                        DANH MỤC HỒ SƠ NHẬP HỌC
+                      </h2>
+                    </div>
+
+                    {/* Table of documents */}
+                    <div className="mt-4 overflow-hidden border border-slate-950">
+                      <table className="w-full border-collapse text-left text-[9px] text-slate-900" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+                        <thead>
+                          <tr className="bg-white border-b border-slate-950 font-bold text-slate-950">
+                            <th className="px-2 py-1.5 border-r border-slate-950 text-center uppercase w-10" style={{ borderRightWidth: '1px', borderColor: '#000' }}>STT</th>
+                            <th className="px-3 py-1.5 border-r border-slate-950 text-center uppercase" style={{ borderRightWidth: '1px', borderColor: '#000' }}>Tên hồ sơ</th>
+                            <th className="px-3 py-1.5 text-center uppercase w-16">Số lượng</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {previewDocList.map((item, idx) => (
+                            <tr key={item.id || idx} className="border-b border-slate-950 last:border-b-0">
+                              <td className="px-2 py-1.5 border-r border-slate-950 text-center text-slate-900" style={{ borderRightWidth: '1px', borderColor: '#000' }}>{idx + 1}</td>
+                              <td className="px-3 py-1.5 border-r border-slate-950 font-medium text-slate-900" style={{ borderRightWidth: '1px', borderColor: '#000' }}>{item.name}</td>
+                              <td className="px-3 py-1.5 text-center text-slate-950 font-bold">{item.qty || "—"}</td>
+                            </tr>
+                          ))}
+                          {previewDocList.length === 0 && (
+                            <tr>
+                              <td colSpan={3} className="text-center py-4 text-slate-400 italic">Chưa cấu hình hồ sơ nào cho đối tượng này</td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <p className="mt-4 text-[9px] text-slate-950 font-bold text-left leading-relaxed" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+                      * Quý phụ huynh vui lòng hoàn thiện và nộp đầy đủ các giấy tờ nêu trên trong vòng 10 ngày kể từ ngày nhận được thông báo trúng tuyển.
+                    </p>
+                  </div>
+                ) : (
+                  /* PAGE 1: LETTER PREVIEW */
+                  <>
+                    <div>
                   <div className="border-b border-slate-200 pb-2 mb-3">
                     {rcLogo ? (
                       <img src={rcLogo} alt="Logo" className="h-8 object-contain mb-1" />
@@ -1127,6 +1224,8 @@ export function ReportsClient({
                       <p className="text-[11px] font-black text-slate-700">{rcDirectorName || "-- Họ tên --"}</p>
                     </div>
                   </div>
+                )}
+                  </>
                 )}
 
                 {/* Footer Banner */}
