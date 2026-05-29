@@ -1344,7 +1344,7 @@ export function ReportsClient({
               
               {/* Watermark */}
               {studentCampusConfig?.background && (
-                <img crossOrigin={(studentCampusConfig.background || "").startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "110mm", height: "auto", opacity: 0.04, zIndex: 0, pointerEvents: "none" }} />
+                <img crossOrigin={(studentCampusConfig?.background || "").startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig?.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "110mm", height: "auto", opacity: 0.04, zIndex: 0, pointerEvents: "none" }} />
               )}
 
               {/* Content wrapped */}
@@ -1354,7 +1354,7 @@ export function ReportsClient({
                   <div className="header-container" style={{ display: "flex", flexDirection: "column", borderBottom: "1.5px solid #00A6A9", paddingBottom: "8px", marginBottom: "16px" }}>
                     <div style={{ display: "flex", alignItems: "center", justifycontent: "space-between" }}>
                       {studentCampusConfig?.logo ? (
-                        <img src={studentCampusConfig.logo} alt="Logo" style={{ maxHeight: "48px", objectFit: "contain" }} />
+                        <img src={studentCampusConfig?.logo} alt="Logo" style={{ maxHeight: "48px", objectFit: "contain" }} />
                       ) : (
                         <svg style={{ height: "48px", fill: "#00A6A9" }} viewBox="0 0 260 50"><text x="0" y="38" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="34" letterSpacing="-1">SKY-LINE</text><circle cx="178" cy="26" r="6" /></svg>
                       )}
@@ -1412,7 +1412,7 @@ export function ReportsClient({
                       <p style={{ fontSize: "9pt", fontWeight: "bold", textTransform: "uppercase", color: "#475569", margin: "2px 0 0 0", textAlign: "center", textIndent: 0 }}>GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}</p>
                       <div style={{ height: "60px", display: "flex", alignItems: "center", justifycontent: "center", margin: "8px 0" }}>
                         {studentCampusConfig?.signature ? (
-                          <img src={studentCampusConfig.signature} alt="Signature" style={{ maxHeight: "60px", objectFit: "contain" }} />
+                          <img src={studentCampusConfig?.signature} alt="Signature" style={{ maxHeight: "60px", objectFit: "contain" }} />
                         ) : (
                           <svg style={{ height: "60px" }} viewBox="0 0 100 40" width="120"><path d="M10,25 Q30,5 50,20 T90,15 M30,12 Q45,28 60,8" fill="none" stroke="#0f172a" strokeWidth="2" strokeLinecap="round"/></svg>
                         )}
@@ -1427,7 +1427,7 @@ export function ReportsClient({
                     <p style={{ fontSize: "10pt", fontWeight: "bold", textTransform: "uppercase", color: "#475569", margin: "2px 0 0 0", textAlign: "center", textIndent: 0 }}>GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}</p>
                     <div style={{ height: "60px", display: "flex", alignItems: "center", justifycontent: "center", margin: "8px 0" }}>
                       {studentCampusConfig?.signature ? (
-                        <img src={studentCampusConfig.signature} alt="Signature" style={{ maxHeight: "60px", objectFit: "contain" }} />
+                        <img src={studentCampusConfig?.signature} alt="Signature" style={{ maxHeight: "60px", objectFit: "contain" }} />
                       ) : (
                         <svg style={{ height: "60px" }} viewBox="0 0 100 40" width="120"><path d="M10,25 Q30,5 50,20 T90,15 M30,12 Q45,28 60,8" fill="none" stroke="#0f172a" strokeWidth="2" strokeLinecap="round"/></svg>
                       )}
@@ -1439,7 +1439,7 @@ export function ReportsClient({
                 {/* Footer Banner */}
                 <div className="footer-container" style={{ position: "absolute", bottom: "8mm", left: "20mm", right: "20mm", width: "auto", zIndex: 10 }}>
                   {studentCampusConfig?.footer ? (
-                    <img src={studentCampusConfig.footer} alt="Footer" style={{ width: "100%", maxHeight: "100px", objectFit: "contain" }} />
+                    <img src={studentCampusConfig?.footer} alt="Footer" style={{ width: "100%", maxHeight: "100px", objectFit: "contain" }} />
                   ) : (
                     <div style={{ width: "100%", fontFamily: "Arial, sans-serif", boxSizing: "border-box", textAlign: "left" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", width: "100%" }}>
@@ -1460,7 +1460,7 @@ export function ReportsClient({
                 
                 {/* Watermark */}
                 {studentCampusConfig?.background && (
-                  <img crossOrigin={(studentCampusConfig.background || "").startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "110mm", height: "auto", opacity: 0.04, zIndex: 0, pointerEvents: "none" }} />
+                  <img crossOrigin={(studentCampusConfig?.background || "").startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig?.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "110mm", height: "auto", opacity: 0.04, zIndex: 0, pointerEvents: "none" }} />
                 )}
 
                 <div className="relative z-10 flex flex-col h-full justify-between">
@@ -1469,7 +1469,7 @@ export function ReportsClient({
                     <div className="header-container" style={{ display: "flex", flexDirection: "column", borderBottom: "1.5px solid #00A6A9", paddingBottom: "8px", marginBottom: "16px" }}>
                       <div style={{ display: "flex", alignItems: "center", justifycontent: "space-between" }}>
                         {studentCampusConfig?.logo ? (
-                          <img src={studentCampusConfig.logo} alt="Logo" style={{ maxHeight: "48px", objectFit: "contain" }} />
+                          <img src={studentCampusConfig?.logo} alt="Logo" style={{ maxHeight: "48px", objectFit: "contain" }} />
                         ) : (
                           <svg style={{ height: "48px", fill: "#00A6A9" }} viewBox="0 0 260 50"><text x="0" y="38" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="34" letterSpacing="-1">SKY-LINE</text><circle cx="178" cy="26" r="6" /></svg>
                         )}
@@ -1516,7 +1516,7 @@ export function ReportsClient({
                   {/* Footer Banner */}
                   <div className="footer-container" style={{ position: "absolute", bottom: "8mm", left: "20mm", right: "20mm", width: "auto", zIndex: 10 }}>
                     {studentCampusConfig?.footer ? (
-                      <img src={studentCampusConfig.footer} alt="Footer" style={{ width: "100%", maxHeight: "100px", objectFit: "contain" }} />
+                      <img src={studentCampusConfig?.footer} alt="Footer" style={{ width: "100%", maxHeight: "100px", objectFit: "contain" }} />
                     ) : (
                       <div style={{ width: "100%", fontFamily: "Arial, sans-serif", boxSizing: "border-box", textAlign: "left" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", width: "100%" }}>
