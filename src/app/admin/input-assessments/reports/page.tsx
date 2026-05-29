@@ -2,13 +2,7 @@ import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import dynamic from "next/dynamic"
 
-// Use dynamic import with ssr:false to prevent server-side rendering of this
-// heavy browser-only client component (which uses localStorage extensively).
-// This completely eliminates all SSR/hydration mismatch crashes.
-const ReportsClient = dynamic(
-  () => import("./client").then(m => ({ default: m.ReportsClient })),
-  { ssr: false }
-)
+import { ReportsClient } from "./client"
 
 export const metadata = { title: "Xuat bao cao KSNL | Admin" }
 export const dynamic_conf = "force-dynamic"

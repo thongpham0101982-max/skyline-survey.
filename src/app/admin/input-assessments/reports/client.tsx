@@ -143,6 +143,11 @@ function Modal({ open, onClose, title, children, footer, size = "md" }: any) {
 export function ReportsClient({
   academicYears, campuses, giaoVuCSUsers, gdcsUsers, teachers, departments, generalPeriods, preschoolPeriods, currentUser
 }: any) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const [tab, setTab] = useState("report_config");
   const [selectedLevel, setSelectedLevel] = useState<"preschool" | "high">("high");
   const [toast, setToast] = useState<{ msg: string; type: string } | null>(null);
@@ -352,7 +357,7 @@ export function ReportsClient({
   const [docFormSelectedTargets, setDocFormSelectedTargets] = useState<string[]>([]);
   const [docFormSelectedGrades, setDocFormSelectedGrades] = useState<string[]>([]);
 
-  const getDocStorageKey = (group: string) => 'admission_docs_' + group;
+
   // Student print/export modal states - declared BEFORE modalDocList useMemo which depends on them
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [selectedReportStudent, setSelectedReportStudent] = useState(null);
@@ -793,6 +798,14 @@ export function ReportsClient({
     return "GLOBAL";
   }, [selectedReportStudent]);
 
+
+  if (!mounted) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-slate-400 font-bold uppercase tracking-widest text-xs">
+        Đang tải trang...
+      </div>
+    );
+  }
   return (
     <div className="space-y-4 font-sans max-w-[1440px] mx-auto pb-16">
       {toast && <Toast msg={toast.msg} type={toast.type} />}
