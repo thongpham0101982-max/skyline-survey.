@@ -2193,6 +2193,7 @@ export function ReportsClient({
             visibility: visible !important;
           }
           #print-area-reports {
+            display: block !important;
             position: absolute !important;
             left: 0 !important;
             top: 0 !important;
