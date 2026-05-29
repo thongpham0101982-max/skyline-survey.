@@ -165,7 +165,7 @@ export function ReportsClient({
   const [rcBackground, setRcBackground] = useState("");
   const [rcFooter, setRcFooter] = useState("");
 
-  const docGroups = [
+  const reportDocGroups = [
     { id: "all", label: "Tất cả các khối (Mặc định)" },
     { id: "khoi_1", label: "Hồ sơ Khối 1" },
     { id: "khoi_2_5", label: "Hồ sơ Khối 2-5" },
@@ -175,6 +175,202 @@ export function ReportsClient({
   ];
 
   // Active periods depending on level
+  // --- ADMISSION DOCUMENTS STATES & DEFAULTS ---
+  const [configs, setConfigs] = useState<any[]>([]);
+  useEffect(() => {
+    fetch('/api/assessment-configs')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) setConfigs(data);
+      })
+      .catch(() => {});
+  }, []);
+
+  const defaultDocumentsGrade1 = useMemo(() => [
+    { id: 1, name: "Giấy khai sinh (có dấu đỏ)", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 1"] },
+    { id: 2, name: "Đơn xin nhập học lớp 1", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 1"] },
+    { id: 3, name: "Bản cam kết (nếu có)", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 1"] },
+  ], []);
+
+  const defaultDocumentsGrade2_5 = useMemo(() => [
+    { id: 1, name: "Giấy khai sinh (có dấu đỏ)", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 2", "Khối 3", "Khối 4", "Khối 5"] },
+    { id: 2, name: "Học bạ Tiểu học (bản gốc)", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 2", "Khối 3", "Khối 4", "Khối 5"] },
+    { id: 3, name: "Giấy giới thiệu chuyển của trường nơi đi", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 2", "Khối 3", "Khối 4", "Khối 5"] },
+    { id: 4, name: "Đơn xin xác nhận về việc đồng ý tiếp nhận học sinh", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 2", "Khối 3", "Khối 4", "Khối 5"] },
+  ], []);
+
+  const defaultDocumentsGrade6 = useMemo(() => [
+    { id: 1, name: "Giấy khai sinh (bản sao hoặc bản chính đối chiếu)", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 6"] },
+    { id: 2, name: "Đơn xin nhập học lớp 6", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 6"] },
+    { id: 3, name: "Học bạ Tiểu học hoàn thành chương trình (bản gốc)", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 6"] },
+  ], []);
+
+  const defaultDocumentsGrade10NoiTinh = useMemo(() => [
+    { id: 1, name: "Giấy khai sinh (bản sao)", qty: "1", note: "", targets: ["Nội tỉnh"], grades: ["Khối 10"] },
+    { id: 2, name: "Học bạ THCS (bản gốc)", qty: "1", note: "", targets: ["Nội tỉnh"], grades: ["Khối 10"] },
+    { id: 3, name: "Bằng tốt nghiệp THCS hoặc Giấy chứng nhận tốt nghiệp tạm thời (bản gốc)", qty: "1", note: "", targets: ["Nội tỉnh"], grades: ["Khối 10"] },
+    { id: 4, name: "Giấy báo điểm tuyển sinh lớp 10 (bản gốc)", qty: "1", note: "", targets: ["Nội tỉnh"], grades: ["Khối 10"] },
+  ], []);
+
+  const defaultDocumentsGrade10NgoaiTinh = useMemo(() => [
+    { id: 1, name: "Giấy khai sinh (bản sao)", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 10"] },
+    { id: 2, name: "Học bạ THCS (bản gốc)", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 10"] },
+    { id: 3, name: "Bằng tốt nghiệp THCS hoặc Giấy chứng nhận tốt nghiệp tạm thời (bản gốc)", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 10"] },
+    { id: 4, name: "Quyết định trúng tuyển hoặc Giấy báo trúng tuyển trường nơi đi", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 10"] },
+  ], []);
+
+  const [docGroups, setDocGroups] = useState([
+    { id: "khoi_1", label: "Hồ sơ Khối 1" },
+    { id: "khoi_2_5", label: "Hồ sơ Khối 2-5" },
+    { id: "khoi_6", label: "Hồ sơ Khối 6" },
+    { id: "khoi_10_noi_tinh", label: "Hồ sơ Khối 10 (Nội tỉnh)" },
+    { id: "khoi_10_ngoai_tinh", label: "Hồ sơ Khối 10 (Ngoại tỉnh)" }
+  ]);
+
+  const [customDocGroups, setCustomDocGroups] = useState<any[]>([]);
+  const [selectedDocGroup, setSelectedDocGroup] = useState("khoi_1");
+
+  const [docGroupTargets, setDocGroupTargets] = useState<Record<string, string[]>>({
+    "khoi_1": ["Nội tỉnh", "Ngoại tỉnh"],
+    "khoi_2_5": ["Nội tỉnh", "Ngoại tỉnh"],
+    "khoi_6": ["Nội tỉnh", "Ngoại tỉnh"],
+    "khoi_10_noi_tinh": ["Nội tỉnh"],
+    "khoi_10_ngoai_tinh": ["Ngoại tỉnh"]
+  });
+
+  const [docGroupGrades, setDocGroupGrades] = useState<Record<string, string[]>>({
+    "khoi_1": ["Khối 1"],
+    "khoi_2_5": ["Khối 2", "Khối 3", "Khối 4", "Khối 5"],
+    "khoi_6": ["Khối 6"],
+    "khoi_10_noi_tinh": ["Khối 10"],
+    "khoi_10_ngoai_tinh": ["Khối 10"]
+  });
+
+  const [docList, setDocList] = useState<any[]>([]);
+  const [isDocModalOpen, setIsDocModalOpen] = useState(false);
+  const [editingDoc, setEditingDoc] = useState<any>(null);
+  const [docFormName, setDocFormName] = useState("");
+  const [docFormQty, setDocFormQty] = useState("");
+  const [docFormNote, setDocFormNote] = useState("");
+  const [docFormSelectedTargets, setDocFormSelectedTargets] = useState<string[]>([]);
+  const [docFormSelectedGrades, setDocFormSelectedGrades] = useState<string[]>([]);
+
+  const getDocStorageKey = (group: string) => 'admission_docs_' + group;
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedGroups = localStorage.getItem('admission_doc_groups');
+      if (savedGroups) {
+        try { setCustomDocGroups(JSON.parse(savedGroups)); } catch (e) {}
+      }
+      const savedTargets = localStorage.getItem('admission_doc_targets');
+      if (savedTargets) {
+        try { setDocGroupTargets(JSON.parse(savedTargets)); } catch (e) {}
+      }
+      const savedGrades = localStorage.getItem('admission_doc_grades_mapping');
+      if (savedGrades) {
+        try { setDocGroupGrades(JSON.parse(savedGrades)); } catch (e) {}
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storageKey = getDocStorageKey(selectedDocGroup);
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        try {
+          setDocList(JSON.parse(saved));
+        } catch (e) {
+          setDocList([]);
+        }
+      } else {
+        let def = defaultDocumentsGrade1;
+        if (selectedDocGroup === "khoi_2_5") def = defaultDocumentsGrade2_5;
+        else if (selectedDocGroup === "khoi_6") def = defaultDocumentsGrade6;
+        else if (selectedDocGroup === "khoi_10_noi_tinh") def = defaultDocumentsGrade10NoiTinh;
+        else if (selectedDocGroup === "khoi_10_ngoai_tinh") def = defaultDocumentsGrade10NgoaiTinh;
+        
+        setDocList(def);
+        localStorage.setItem(storageKey, JSON.stringify(def));
+      }
+    }
+  }, [selectedDocGroup, defaultDocumentsGrade1, defaultDocumentsGrade2_5, defaultDocumentsGrade6, defaultDocumentsGrade10NoiTinh, defaultDocumentsGrade10NgoaiTinh]);
+
+  const modalDocList = useMemo(() => {
+    if (typeof window === "undefined" || !selectedReportStudent) return [];
+    
+    let studentGroup = "khoi_1";
+    const getNumericGrade = (g: any) => {
+      if (!g) return null;
+      const match = g.toString().match(/\d+/);
+      return match ? parseInt(match[0], 10) : null;
+    };
+    const sGradeNum = getNumericGrade(selectedReportStudent.grade);
+    
+    const gradeMatchedGroups = docGroups.filter(g => {
+      const mappedGrades = docGroupGrades[g.id] || [];
+      const hasGradeMatch = mappedGrades.some(gradeStr => {
+        if (!selectedReportStudent.grade) return false;
+        const sGrade = selectedReportStudent.grade.toString().toLowerCase();
+        const gStr = gradeStr.toLowerCase();
+        return sGrade === gStr || sGrade.includes(gStr) || gStr.includes(sGrade);
+      });
+      if (hasGradeMatch) return true;
+      
+      if (sGradeNum !== null) {
+        if (g.id === "khoi_1" && sGradeNum === 1) return true;
+        if (g.id === "khoi_2_5" && sGradeNum >= 2 && sGradeNum <= 5) return true;
+        if (g.id === "khoi_6" && sGradeNum === 6) return true;
+        if (g.id === "khoi_10_noi_tinh" && sGradeNum === 10) return true;
+        if (g.id === "khoi_10_ngoai_tinh" && sGradeNum === 10) return true;
+      }
+      return false;
+    });
+
+    if (selectedReportStudent.targetType) {
+      const studentTargets = selectedReportStudent.targetType.split(',').map((x: any) => x.trim().toLowerCase()).filter(Boolean);
+      
+      const targetMatch = gradeMatchedGroups.find(g => {
+        const mappedTs = docGroupTargets[g.id] || [];
+        return mappedTs.some(ts => studentTargets.includes(ts.toLowerCase()));
+      });
+      
+      if (targetMatch) {
+        studentGroup = targetMatch.id;
+      } else {
+        const anyTargetMatch = docGroups.find(g => {
+          const mappedTs = docGroupTargets[g.id] || [];
+          return mappedTs.some(ts => studentTargets.includes(ts.toLowerCase()));
+        });
+        if (anyTargetMatch) {
+          studentGroup = anyTargetMatch.id;
+        } else {
+          studentGroup = gradeMatchedGroups[0]?.id || "doi_tuong_tuyen_sinh";
+        }
+      }
+    } else {
+      studentGroup = gradeMatchedGroups[0]?.id || "khoi_1";
+    }
+    
+    const saved = localStorage.getItem('admission_docs_' + studentGroup);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      } catch (e) {}
+    }
+    
+    if (studentGroup === "khoi_2_5") return defaultDocumentsGrade2_5;
+    if (studentGroup === "khoi_6") return defaultDocumentsGrade6;
+    if (studentGroup === "khoi_10_noi_tinh") return defaultDocumentsGrade10NoiTinh;
+    if (studentGroup === "khoi_10_ngoai_tinh") return defaultDocumentsGrade10NgoaiTinh;
+    return defaultDocumentsGrade1;
+  }, [selectedReportStudent, docGroups, docGroupTargets, docGroupGrades, defaultDocumentsGrade1, defaultDocumentsGrade2_5, defaultDocumentsGrade6, defaultDocumentsGrade10NoiTinh, defaultDocumentsGrade10NgoaiTinh]);
+
+
   const activePeriods = useMemo(() => {
     return selectedLevel === "preschool" ? preschoolPeriods : generalPeriods;
   }, [selectedLevel, preschoolPeriods, generalPeriods]);
@@ -515,6 +711,7 @@ export function ReportsClient({
         <div className="flex flex-wrap gap-1">
           {[
             { id: "report_config", label: "Cấu hình báo cáo", icon: Settings },
+            { id: "admission_documents", label: "Tag Hồ sơ", icon: Tag },
             { id: "letters", label: "Xuất thư chúc mừng", icon: GraduationCap },
             { id: "results", label: "Trả kết quả", icon: BarChart3 }
           ].map(t => (
@@ -568,7 +765,7 @@ export function ReportsClient({
               {selectedLevel === "high" && (
                 <Field label="Nhóm/Khối áp dụng" required>
                   <select value={rcTargetGroup} onChange={e => setRcTargetGroup(e.target.value)} className={inp}>
-                    {docGroups.map(g => (
+                    {reportDocGroups.map(g => (
                       <option key={g.id} value={g.id}>{g.label}</option>
                     ))}
                   </select>
@@ -1009,122 +1206,375 @@ export function ReportsClient({
         </div>
       )}
 
-      {/* PRINT DIALOG PREVIEW MODAL */}
-      <Modal open={isPrintModalOpen} onClose={() => setIsPrintModalOpen(false)} title={isInvitation ? "Mẫu Thư mời khảo sát" : isCommitment ? "Bản Cam kết học tập" : "Mẫu Thư Chúc mừng"} size="xl" footer={<><button onClick={() => setIsPrintModalOpen(false)} className="flex-1 text-xs font-black uppercase text-slate-400 hover:text-slate-600">Đóng</button><button onClick={handlePrintPDF} className="flex-1 py-3.5 bg-indigo-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 cursor-pointer"><Printer className="w-4 h-4" /> In / Tải PDF</button></>}>
-        <div className="bg-slate-50 p-4 border border-slate-100 rounded-3xl overflow-y-auto max-h-[60vh] flex items-center justify-center">
-          <div id="print-area-reports" className="bg-white rounded-none border border-slate-300 w-[210mm] min-w-[210mm] max-w-[210mm] h-[297mm] min-h-[297mm] p-[20mm_20mm_45mm_20mm] box-border relative flex flex-col justify-start overflow-hidden select-none font-serif text-slate-800 leading-normal" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
-            
-            {/* Watermark */}
-            {studentCampusConfig?.background && (
-              <img crossOrigin={(studentCampusConfig.background || "").startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "110mm", height: "auto", opacity: 0.04, zIndex: 0, pointerEvents: "none" }} />
-            )}
-
-            {/* Content wrapped */}
-            <div className="relative z-10 flex flex-col h-full justify-between">
+      {/* ===== TAB: ADMISSION DOCUMENTS (HỒ SƠ NHẬP HỌC) ===== */}
+      {tab === "admission_documents" && (
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <div className="bg-white/80 backdrop-blur-md p-6 rounded-3xl shadow-sm border border-slate-200/60 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 shadow-inner">
+                <Tag className="w-6 h-6" />
+              </div>
               <div>
-                {/* Header logo */}
-                <div className="header-container" style={{ display: "flex", flexDirection: "column", borderBottom: "1.5px solid #00A6A9", paddingBottom: "8px", marginBottom: "16px" }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    {studentCampusConfig?.logo ? (
-                      <img src={studentCampusConfig.logo} alt="Logo" style={{ maxHeight: "48px", objectFit: "contain" }} />
-                    ) : (
-                      <svg style={{ height: "48px", fill: "#00A6A9" }} viewBox="0 0 260 50"><text x="0" y="38" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="34" letterSpacing="-1">SKY-LINE</text><circle cx="178" cy="26" r="6" /></svg>
-                    )}
-                  </div>
-                  <div style={{ textAlign: "left", marginTop: "4px" }}>
-                    <h4 style={{ fontFamily: "Arial, sans-serif", fontSize: "11pt", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.5px", color: "#1e293b", margin: 0 }}>
-                      {selectedLevel === "preschool" ? "TRƯỜNG MẦM NON SKY-LINE" : "TRƯỜNG TIỂU HỌC, THCS VÀ THPT SKY-LINE"}
-                    </h4>
-                  </div>
-                </div>
+                <h2 className="text-lg font-black text-slate-800">Danh mục Hồ sơ nhập học</h2>
+                <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Cấu hình danh sách giấy tờ cần nộp theo từng đối tượng tuyển sinh</p>
+              </div>
+            </div>
 
-                {/* Title */}
-                <h2 style={{ textAlign: "center", fontSize: "22pt", fontWeight: "bold", color: "#0f172a", textTransform: "uppercase", letterSpacing: "2px", margin: "12px 0 16px 0" }}>
-                  {studentCampusConfig?.title}
-                </h2>
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => {
+                  setConfirm({
+                    msg: "Bạn có chắc chắn muốn khôi phục danh sách hồ sơ mẫu cho đối tượng này không?",
+                    fn: () => {
+                      const defaultDocs = selectedDocGroup === "khoi_2_5" ? defaultDocumentsGrade2_5 : selectedDocGroup === "khoi_6" ? defaultDocumentsGrade6 : selectedDocGroup === "khoi_10_noi_tinh" ? defaultDocumentsGrade10NoiTinh : selectedDocGroup === "khoi_10_ngoai_tinh" ? defaultDocumentsGrade10NgoaiTinh : defaultDocumentsGrade1;
+                      setDocList(defaultDocs);
+                      localStorage.setItem(getDocStorageKey(selectedDocGroup), JSON.stringify(defaultDocs));
+                    }
+                  });
+                }}
+                className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-black transition-all flex items-center gap-2"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                Khôi phục mẫu
+              </button>
+              <button 
+                onClick={() => {
+                  setEditingDoc(null);
+                  setDocFormName("");
+                  setDocFormQty("");
+                  setDocFormNote("");
+                  setIsDocModalOpen(true);
+                }}
+                className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-2 shadow-lg shadow-indigo-100 cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Thêm hồ sơ mới
+              </button>
+            </div>
+          </div>
 
-                {/* Greeting */}
-                <p style={{ fontSize: "14pt", fontStyle: "italic", marginBottom: "8px", color: "#1e293b", textIndent: 0 }}>
-                  {isInvitation ? (
-                    <>Kính gửi Quý Phụ huynh và em <strong style={{ fontWeight: "bold", color: "#0f172a" }}>{selectedReportStudent?.fullName}</strong>,</>
-                  ) : (
-                    <>Thân gửi con <strong style={{ fontWeight: "bold", color: "#0f172a" }}>{selectedReportStudent?.fullName}</strong>,</>
-                  )}
-                </p>
-
-                {/* Body template text */}
-                <div style={{ flexGrow: 1, fontFamily: '"Times New Roman", Times, serif' }}>
-                  {renderTemplate(
-                    studentCampusConfig?.content || "",
-                    selectedReportStudent
-                  ).split('\n').filter(Boolean).map((para, idx) => {
-                    const isList = /^\s*[\d•\-*]+/.test(para);
-                    return (
-                      <p key={idx} style={isList ? { paddingLeft: "24px", fontWeight: "bold", color: "#374151", margin: "4px 0", fontSize: "13.5pt" } : { textIndent: "10mm", margin: "0 0 8px 0", textAlign: "justify", lineBreak: "auto", lineHeight: "1.45", fontSize: "13.5pt" }}>
-                        {para}
-                      </p>
-                    );
-                  })}
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-6">
+            <div className="group space-y-2">
+              <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-indigo-900/70 ml-1">Chọn Đối tượng Hồ sơ</label>
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="relative w-64">
+                  <select 
+                    value={selectedDocGroup} 
+                    onChange={(e) => setSelectedDocGroup(e.target.value)} 
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 pr-10 text-sm font-black text-slate-700 outline-none appearance-none cursor-pointer hover:bg-slate-100/50 focus:border-indigo-500 focus:bg-white transition-all duration-300"
+                  >
+                    {docGroups.map(g => (
+                      <option key={g.id} value={g.id}>{g.label}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-4 h-4 text-slate-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-slate-600 transition-colors" />
                 </div>
               </div>
+            </div>
 
-              {/* Bottom Signatures dual-mode support */}
-              {isCommitment ? (
-                <div style={{ width: "100%", display: "flex", justifyContent: "space-between", marginTop: "auto", paddingTop: "12px", pageBreakInside: "avoid", breakInside: "avoid" }}>
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", width: "45%" }}>
-                    <p style={{ fontSize: "11pt", fontWeight: "bold", textTransform: "uppercase", margin: 0, textAlign: "center", textIndent: 0, color: "#475569" }}>ĐẠI DIỆN GIA ĐÌNH</p>
-                    <p style={{ fontSize: "9pt", fontStyle: "italic", color: "#64748b", marginTop: "4px", textIndent: 0 }}>(Ký và ghi rõ họ tên)</p>
-                    <div style={{ height: "60px", display: "flex", alignItems: "flex-end", justifyContent: "center", margin: "8px 0" }}>
-                      <span style={{ fontSize: "10pt", color: "#cbd5e1", fontStyle: "italic" }}>Ký tên</span>
+            {/* List Table */}
+            <div className="overflow-x-auto border border-slate-100 rounded-2xl">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 text-slate-500 text-[10px] font-black uppercase tracking-wider border-b border-slate-100">
+                    <th className="px-6 py-4 text-center w-16">STT</th>
+                    <th className="px-6 py-4">Tên hồ sơ / Giấy tờ cần nộp</th>
+                    <th className="px-6 py-4 text-center w-40">Số lượng bản nộp</th>
+                    <th className="px-6 py-4 w-48 text-center">Hành động</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50 text-xs">
+                  {docList.map((d, idx) => (
+                    <tr key={d.id || idx} className="hover:bg-slate-50/50 transition-colors font-medium text-slate-700">
+                      <td className="px-6 py-4 text-center text-slate-400">{idx + 1}</td>
+                      <td className="px-6 py-4 font-black text-slate-800 text-sm">{d.name}</td>
+                      <td className="px-6 py-4 text-center font-bold text-indigo-600">{d.qty}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex gap-2 justify-center">
+                          <button 
+                            onClick={() => {
+                              setEditingDoc(d);
+                              setDocFormName(d.name);
+                              setDocFormQty(d.qty);
+                              setDocFormNote(d.note || "");
+                              setIsDocModalOpen(true);
+                            }}
+                            className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all cursor-pointer"
+                          >
+                            <Edit2 className="w-4 h-4"/>
+                          </button>
+                          <button 
+                            onClick={() => {
+                              setConfirm({
+                                msg: "Bạn có chắc chắn muốn xóa hồ sơ này không?",
+                                fn: () => {
+                                  const updated = docList.filter((x: any) => x.id !== d.id);
+                                  setDocList(updated);
+                                  localStorage.setItem(getDocStorageKey(selectedDocGroup), JSON.stringify(updated));
+                                }
+                              });
+                            }}
+                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
+                          >
+                            <Trash2 className="w-4 h-4"/>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {docList.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="text-center py-8 text-slate-400 italic">Chưa có hồ sơ nào trong đối tượng này</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PRINT DIALOG PREVIEW MODAL */}
+      <Modal open={isPrintModalOpen} onClose={() => setIsPrintModalOpen(false)} title={isInvitation ? "Mẫu Thư mời khảo sát" : isCommitment ? "Bản Cam kết học tập" : "Mẫu Thư Chúc mừng"} size="xl" footer={<><button onClick={() => setIsPrintModalOpen(false)} className="flex-1 text-xs font-black uppercase text-slate-400 hover:text-slate-600">Đóng</button><button onClick={handlePrintPDF} className="flex-1 py-3.5 bg-indigo-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 cursor-pointer"><Printer className="w-4 h-4" /> In / Tải PDF</button></>}>
+        <div className="bg-slate-50 p-4 border border-slate-100 rounded-3xl overflow-y-auto max-h-[60vh] flex flex-col items-center justify-start gap-8 w-full">
+          <div id="print-area-reports" className="flex flex-col items-center gap-8 w-full">
+            
+            {/* PAGE 1: THE LETTER */}
+            <div className="bg-white rounded-none border border-slate-300 w-[210mm] min-w-[210mm] max-w-[210mm] h-[297mm] min-h-[297mm] p-[20mm_20mm_45mm_20mm] box-border relative flex flex-col justify-start overflow-hidden select-none font-serif text-slate-800 leading-normal" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
+              
+              {/* Watermark */}
+              {studentCampusConfig?.background && (
+                <img crossOrigin={(studentCampusConfig.background || "").startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "110mm", height: "auto", opacity: 0.04, zIndex: 0, pointerEvents: "none" }} />
+              )}
+
+              {/* Content wrapped */}
+              <div className="relative z-10 flex flex-col h-full justify-between">
+                <div>
+                  {/* Header logo */}
+                  <div className="header-container" style={{ display: "flex", flexDirection: "column", borderBottom: "1.5px solid #00A6A9", paddingBottom: "8px", marginBottom: "16px" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifycontent: "space-between" }}>
+                      {studentCampusConfig?.logo ? (
+                        <img src={studentCampusConfig.logo} alt="Logo" style={{ maxHeight: "48px", objectFit: "contain" }} />
+                      ) : (
+                        <svg style={{ height: "48px", fill: "#00A6A9" }} viewBox="0 0 260 50"><text x="0" y="38" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="34" letterSpacing="-1">SKY-LINE</text><circle cx="178" cy="26" r="6" /></svg>
+                      )}
+                    </div>
+                    <div style={{ textAlign: "left", marginTop: "4px" }}>
+                      <h4 style={{ fontFamily: "Arial, sans-serif", fontSize: "11pt", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.5px", color: "#1e293b", margin: 0 }}>
+                        {selectedLevel === "preschool" ? "TRƯỜNG MẦM NON SKY-LINE" : "TRƯỜNG TIỂU HỌC, THCS VÀ THPT SKY-LINE"}
+                      </h4>
                     </div>
                   </div>
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", width: "45%" }}>
+
+                  {/* Title */}
+                  <h2 style={{ textAlign: "center", fontSize: "22pt", fontWeight: "bold", color: "#0f172a", textTransform: "uppercase", letterSpacing: "2px", margin: "12px 0 16px 0" }}>
+                    {studentCampusConfig?.title}
+                  </h2>
+
+                  {/* Greeting */}
+                  <p style={{ fontSize: "14pt", fontStyle: "italic", marginBottom: "8px", color: "#1e293b", textIndent: 0 }}>
+                    {isInvitation ? (
+                      <>Kính gửi Quý Phụ huynh và em <strong style={{ fontWeight: "bold", color: "#0f172a" }}>{selectedReportStudent?.fullName}</strong>,</>
+                    ) : (
+                      <>Thân gửi con <strong style={{ fontWeight: "bold", color: "#0f172a" }}>{selectedReportStudent?.fullName}</strong>,</>
+                    )}
+                  </p>
+
+                  {/* Body template text */}
+                  <div style={{ flexGrow: 1, fontFamily: '"Times New Roman", Times, serif' }}>
+                    {renderTemplate(
+                      studentCampusConfig?.content || "",
+                      selectedReportStudent
+                    ).split('\n').filter(Boolean).map((para, idx) => {
+                      const isList = /^\s*[\d•\-*]+/.test(para);
+                      return (
+                        <p key={idx} style={isList ? { paddingLeft: "24px", fontWeight: "bold", color: "#374151", margin: "4px 0", fontSize: "13.5pt" } : { textIndent: "10mm", margin: "0 0 8px 0", textAlign: "justify", lineBreak: "auto", lineHeight: "1.45", fontSize: "13.5pt" }}>
+                          {para}
+                        </p>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Bottom Signatures dual-mode support */}
+                {isCommitment ? (
+                  <div style={{ width: "100%", display: "flex", justifyContent: "space-between", marginTop: "auto", paddingTop: "12px", pageBreakInside: "avoid", breakInside: "avoid" }}>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", width: "45%" }}>
+                      <p style={{ fontSize: "11pt", fontWeight: "bold", textTransform: "uppercase", margin: 0, textAlign: "center", textIndent: 0, color: "#475569" }}>ĐẠI DIỆN GIA ĐÌNH</p>
+                      <p style={{ fontSize: "9pt", fontStyle: "italic", color: "#64748b", marginTop: "4px", textIndent: 0 }}>(Ký và ghi rõ họ tên)</p>
+                      <div style={{ height: "60px", display: "flex", alignItems: "flex-end", justifyContent: "center", margin: "8px 0" }}>
+                        <span style={{ fontSize: "10pt", color: "#cbd5e1", fontStyle: "italic" }}>Ký tên</span>
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", width: "45%" }}>
+                      <p style={{ fontSize: "12pt", fontStyle: "italic", color: "#555555", marginBottom: "4px", textAlign: "center", textIndent: 0 }}>{formattedLetterDate}</p>
+                      <p style={{ fontSize: "11pt", fontWeight: "bold", textTransform: "uppercase", margin: 0, textAlign: "center", textIndent: 0, color: "#0f172a" }}>TM. HỘI ĐỒNG TUYỂN SINH</p>
+                      <p style={{ fontSize: "9pt", fontWeight: "bold", textTransform: "uppercase", color: "#475569", margin: "2px 0 0 0", textAlign: "center", textIndent: 0 }}>GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}</p>
+                      <div style={{ height: "60px", display: "flex", alignItems: "center", justifycontent: "center", margin: "8px 0" }}>
+                        {studentCampusConfig?.signature ? (
+                          <img src={studentCampusConfig.signature} alt="Signature" style={{ maxHeight: "60px", objectFit: "contain" }} />
+                        ) : (
+                          <svg style={{ height: "60px" }} viewBox="0 0 100 40" width="120"><path d="M10,25 Q30,5 50,20 T90,15 M30,12 Q45,28 60,8" fill="none" stroke="#0f172a" strokeWidth="2" strokeLinecap="round"/></svg>
+                        )}
+                      </div>
+                      <p style={{ fontSize: "12pt", fontWeight: "bold", margin: 0, textAlign: "center", textIndent: 0, color: "#1e293b" }}>{selectedReportStudent?.signatureName || studentCampusConfig?.directorName || "Trần Thị Thanh"}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ alignSelf: "flex-end", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", minWidth: "70mm", marginTop: "auto", paddingTop: "12px", pageBreakInside: "avoid", breakInside: "avoid" }}>
                     <p style={{ fontSize: "12pt", fontStyle: "italic", color: "#555555", marginBottom: "4px", textAlign: "center", textIndent: 0 }}>{formattedLetterDate}</p>
-                    <p style={{ fontSize: "11pt", fontWeight: "bold", textTransform: "uppercase", margin: 0, textAlign: "center", textIndent: 0, color: "#0f172a" }}>TM. HỘI ĐỒNG TUYỂN SINH</p>
-                    <p style={{ fontSize: "9pt", fontWeight: "bold", textTransform: "uppercase", color: "#475569", margin: "2px 0 0 0", textAlign: "center", textIndent: 0 }}>GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}</p>
-                    <div style={{ height: "60px", display: "flex", alignItems: "center", justifyContent: "center", margin: "8px 0" }}>
+                    <p style={{ fontSize: "12pt", fontWeight: "bold", textTransform: "uppercase", margin: 0, textAlign: "center", textIndent: 0, color: "#0f172a" }}>TM. HỘI ĐỒNG TUYỂN SINH</p>
+                    <p style={{ fontSize: "10pt", fontWeight: "bold", textTransform: "uppercase", color: "#475569", margin: "2px 0 0 0", textAlign: "center", textIndent: 0 }}>GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}</p>
+                    <div style={{ height: "60px", display: "flex", alignItems: "center", justifycontent: "center", margin: "8px 0" }}>
                       {studentCampusConfig?.signature ? (
                         <img src={studentCampusConfig.signature} alt="Signature" style={{ maxHeight: "60px", objectFit: "contain" }} />
                       ) : (
                         <svg style={{ height: "60px" }} viewBox="0 0 100 40" width="120"><path d="M10,25 Q30,5 50,20 T90,15 M30,12 Q45,28 60,8" fill="none" stroke="#0f172a" strokeWidth="2" strokeLinecap="round"/></svg>
                       )}
                     </div>
-                    <p style={{ fontSize: "12pt", fontWeight: "bold", margin: 0, textAlign: "center", textIndent: 0, color: "#1e293b" }}>{selectedReportStudent?.signatureName || studentCampusConfig?.directorName || "Trần Thị Thanh"}</p>
-                  </div>
-                </div>
-              ) : (
-                <div style={{ alignSelf: "flex-end", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", minWidth: "70mm", marginTop: "auto", paddingTop: "12px", pageBreakInside: "avoid", breakInside: "avoid" }}>
-                  <p style={{ fontSize: "12pt", fontStyle: "italic", color: "#555555", marginBottom: "4px", textAlign: "center", textIndent: 0 }}>{formattedLetterDate}</p>
-                  <p style={{ fontSize: "12pt", fontWeight: "bold", textTransform: "uppercase", margin: 0, textAlign: "center", textIndent: 0, color: "#0f172a" }}>TM. HỘI ĐỒNG TUYỂN SINH</p>
-                  <p style={{ fontSize: "10pt", fontWeight: "bold", textTransform: "uppercase", color: "#475569", margin: "2px 0 0 0", textAlign: "center", textIndent: 0 }}>GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}</p>
-                  <div style={{ height: "60px", display: "flex", alignItems: "center", justifyContent: "center", margin: "8px 0" }}>
-                    {studentCampusConfig?.signature ? (
-                      <img src={studentCampusConfig.signature} alt="Signature" style={{ maxHeight: "60px", objectFit: "contain" }} />
-                    ) : (
-                      <svg style={{ height: "60px" }} viewBox="0 0 100 40" width="120"><path d="M10,25 Q30,5 50,20 T90,15 M30,12 Q45,28 60,8" fill="none" stroke="#0f172a" strokeWidth="2" strokeLinecap="round"/></svg>
-                    )}
-                  </div>
-                  <p style={{ fontSize: "13pt", fontWeight: "bold", margin: 0, textAlign: "center", textIndent: 0, color: "#1e293b" }}>{selectedReportStudent?.signatureName || studentCampusConfig?.directorName || "Trần Thị Thanh"}</p>
-                </div>
-              )}
-
-              {/* Footer Banner */}
-              <div className="footer-container" style={{ position: "absolute", bottom: "8mm", left: "20mm", right: "20mm", width: "auto", zIndex: 10 }}>
-                {studentCampusConfig?.footer ? (
-                  <img src={studentCampusConfig.footer} alt="Footer" style={{ width: "100%", maxHeight: "100px", objectFit: "contain" }} />
-                ) : (
-                  <div style={{ width: "100%", fontFamily: "Arial, sans-serif", boxSizing: "border-box", textAlign: "left" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", width: "100%" }}>
-                      <span style={{ fontWeight: "bold", color: "#00A6A9", whiteSpace: "nowrap", textTransform: "uppercase", fontSize: "9.5pt", letterSpacing: "0.5px" }}>HỆ THỐNG GIÁO DỤC SKY-LINE</span>
-                      <div style={{ flexGrow: 1, borderTop: "1px solid rgba(0, 166, 169, 0.7)", height: 0, marginTop: "2px" }}></div>
-                      <span style={{ fontWeight: "600", color: "#00A6A9", whiteSpace: "nowrap", textTransform: "lowercase", fontSize: "9pt" }}>www.skylineschool.edu.vn</span>
-                    </div>
+                    <p style={{ fontSize: "13pt", fontWeight: "bold", margin: 0, textAlign: "center", textIndent: 0, color: "#1e293b" }}>{selectedReportStudent?.signatureName || studentCampusConfig?.directorName || "Trần Thị Thanh"}</p>
                   </div>
                 )}
+
+                {/* Footer Banner */}
+                <div className="footer-container" style={{ position: "absolute", bottom: "8mm", left: "20mm", right: "20mm", width: "auto", zIndex: 10 }}>
+                  {studentCampusConfig?.footer ? (
+                    <img src={studentCampusConfig.footer} alt="Footer" style={{ width: "100%", maxHeight: "100px", objectFit: "contain" }} />
+                  ) : (
+                    <div style={{ width: "100%", fontFamily: "Arial, sans-serif", boxSizing: "border-box", textAlign: "left" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", width: "100%" }}>
+                        <span style={{ fontWeight: "bold", color: "#00A6A9", whiteSpace: "nowrap", textTransform: "uppercase", fontSize: "9.5pt", letterSpacing: "0.5px" }}>HỆ THỐNG GIÁO DỤC SKY-LINE</span>
+                        <div style={{ flexGrow: 1, borderTop: "1px solid rgba(0, 166, 169, 0.7)", height: 0, marginTop: "2px" }}></div>
+                        <span style={{ fontWeight: "600", color: "#00A6A9", whiteSpace: "nowrap", textTransform: "lowercase", fontSize: "9pt" }}>www.skylineschool.edu.vn</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
+
             </div>
 
+            {/* PAGE 2: ADMISSION CHECKLIST */}
+            {modalDocList && modalDocList.length > 0 && !isInvitation && !isCommitment && (
+              <div className="bg-white rounded-none border border-slate-300 w-[210mm] min-w-[210mm] max-w-[210mm] h-[297mm] min-h-[297mm] p-[20mm_20mm_45mm_20mm] box-border relative flex flex-col justify-start overflow-hidden select-none font-serif text-slate-800 leading-normal" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
+                
+                {/* Watermark */}
+                {studentCampusConfig?.background && (
+                  <img crossOrigin={(studentCampusConfig.background || "").startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "110mm", height: "auto", opacity: 0.04, zIndex: 0, pointerEvents: "none" }} />
+                )}
+
+                <div className="relative z-10 flex flex-col h-full justify-between">
+                  <div>
+                    {/* Header logo */}
+                    <div className="header-container" style={{ display: "flex", flexDirection: "column", borderBottom: "1.5px solid #00A6A9", paddingBottom: "8px", marginBottom: "16px" }}>
+                      <div style={{ display: "flex", alignItems: "center", justifycontent: "space-between" }}>
+                        {studentCampusConfig?.logo ? (
+                          <img src={studentCampusConfig.logo} alt="Logo" style={{ maxHeight: "48px", objectFit: "contain" }} />
+                        ) : (
+                          <svg style={{ height: "48px", fill: "#00A6A9" }} viewBox="0 0 260 50"><text x="0" y="38" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="34" letterSpacing="-1">SKY-LINE</text><circle cx="178" cy="26" r="6" /></svg>
+                        )}
+                      </div>
+                      <div style={{ textAlign: "left", marginTop: "4px" }}>
+                        <h4 style={{ fontFamily: "Arial, sans-serif", fontSize: "11pt", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.5px", color: "#1e293b", margin: 0 }}>
+                          {selectedLevel === "preschool" ? "TRƯỜNG MẦM NON SKY-LINE" : "TRƯỜNG TIỂU HỌC, THCS VÀ THPT SKY-LINE"}
+                        </h4>
+                      </div>
+                    </div>
+
+                    {/* Title */}
+                    <h2 style={{ textAlign: "center", fontSize: "20pt", fontWeight: "bold", color: "#0f172a", textTransform: "uppercase", letterSpacing: "1px", margin: "24px 0" }}>
+                      DANH MỤC HỒ SƠ NHẬP HỌC
+                    </h2>
+
+                    {/* Table of documents */}
+                    <div style={{ marginTop: "24px", overflow: "hidden", border: "1.5px solid #0f172a", borderRadius: "8px" }}>
+                      <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "13px", color: "#0f172a" }}>
+                        <thead>
+                          <tr style={{ backgroundColor: "#f8fafc", borderBottom: "1.5px solid #0f172a" }}>
+                            <th style={{ padding: "10px 15px", fontWeight: "bold", borderRight: "1.5px solid #0f172a", textAlign: "center", width: "60px", textTransform: "uppercase" }}>STT</th>
+                            <th style={{ padding: "10px 15px", fontWeight: "bold", borderRight: "1.5px solid #0f172a", textTransform: "uppercase" }}>Tên hồ sơ / Giấy tờ</th>
+                            <th style={{ padding: "10px 15px", fontWeight: "bold", textAlign: "center", width: "120px", textTransform: "uppercase" }}>Số lượng</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {modalDocList.map((item: any, idx: number) => (
+                            <tr key={item.id || idx} style={{ borderBottom: "1px solid #0f172a" }}>
+                              <td style={{ padding: "10px 15px", borderRight: "1.5px solid #0f172a", textAlign: "center" }}>{idx + 1}</td>
+                              <td style={{ padding: "10px 15px", borderRight: "1.5px solid #0f172a", fontWeight: "500" }}>{item.name}</td>
+                              <td style={{ padding: "10px 15px", textAlign: "center", fontWeight: "bold" }}>{item.qty}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <p style={{ marginTop: "24px", fontSize: "13px", fontWeight: "bold", color: "#1e293b", textAlign: "justify" }}>
+                      * Quý phụ huynh vui lòng hoàn thiện và nộp đầy đủ các giấy tờ nêu trên trong vòng 10 ngày kể từ ngày nhận được thông báo trúng tuyển.
+                    </p>
+                  </div>
+
+                  {/* Footer Banner */}
+                  <div className="footer-container" style={{ position: "absolute", bottom: "8mm", left: "20mm", right: "20mm", width: "auto", zIndex: 10 }}>
+                    {studentCampusConfig?.footer ? (
+                      <img src={studentCampusConfig.footer} alt="Footer" style={{ width: "100%", maxHeight: "100px", objectFit: "contain" }} />
+                    ) : (
+                      <div style={{ width: "100%", fontFamily: "Arial, sans-serif", boxSizing: "border-box", textAlign: "left" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", width: "100%" }}>
+                          <span style={{ fontWeight: "bold", color: "#00A6A9", whiteSpace: "nowrap", textTransform: "uppercase", fontSize: "9.5pt", letterSpacing: "0.5px" }}>HỆ THỐNG GIÁO DỤC SKY-LINE</span>
+                          <div style={{ flexGrow: 1, borderTop: "1px solid rgba(0, 166, 169, 0.7)", height: 0, marginTop: "2px" }}></div>
+                          <span style={{ fontWeight: "600", color: "#00A6A9", whiteSpace: "nowrap", textTransform: "lowercase", fontSize: "9pt" }}>www.skylineschool.edu.vn</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
           </div>
+        </div>
+      </Modal>
+
+      {/* DOCUMENT ADD/EDIT MODAL */}
+      <Modal open={isDocModalOpen} onClose={() => setIsDocModalOpen(false)} title={editingDoc ? "Sửa tài liệu hồ sơ" : "Thêm hồ sơ mới"}>
+        <div className="space-y-4">
+          <Field label="Tên hồ sơ / Giấy tờ" required>
+            <input value={docFormName} onChange={e => setDocFormName(e.target.value)} placeholder="Nhập tên giấy tờ..." className={inp} />
+          </Field>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Số lượng bản nộp" required>
+              <input value={docFormQty} onChange={e => setDocFormQty(e.target.value)} placeholder="VD: 1 bản gốc, 2 bản sao..." className={inp} />
+            </Field>
+            <Field label="Ghi chú thêm">
+              <input value={docFormNote} onChange={e => setDocFormNote(e.target.value)} placeholder="Không bắt buộc..." className={inp} />
+            </Field>
+          </div>
+          
+          <button 
+            onClick={() => {
+              if (!docFormName || !docFormQty) return notify("Vui lòng nhập đầy đủ tên và số lượng hồ sơ", "err");
+              let updated;
+              if (editingDoc) {
+                updated = docList.map((d: any) => d.id === editingDoc.id ? { ...d, name: docFormName, qty: docFormQty, note: docFormNote } : d);
+                notify("Cập nhật tài liệu hồ sơ thành công!");
+              } else {
+                const newDoc = {
+                  id: Date.now(),
+                  name: docFormName,
+                  qty: docFormQty,
+                  note: docFormNote
+                };
+                updated = [...docList, newDoc];
+                notify("Thêm tài liệu hồ sơ mới thành công!");
+              }
+              setDocList(updated);
+              localStorage.setItem(getDocStorageKey(selectedDocGroup), JSON.stringify(updated));
+              setIsDocModalOpen(false);
+            }} 
+            className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-lg transition-all cursor-pointer"
+          >
+            Lưu tài liệu
+          </button>
         </div>
       </Modal>
 
@@ -1150,23 +1600,39 @@ export function ReportsClient({
       <style>{`
         @media print {
           body * {
-            visibility: hidden;
+            visibility: hidden !important;
           }
           #print-area-reports, #print-area-reports * {
-            visibility: visible;
+            visibility: visible !important;
           }
           #print-area-reports {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 210mm;
-            height: 297mm;
-            margin: 0;
-            padding: 20mm 20mm 45mm 20mm;
-            box-sizing: border-box;
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 210mm !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background-color: transparent !important;
+          }
+          #print-area-reports > div {
+            width: 210mm !important;
+            height: 297mm !important;
+            min-height: 297mm !important;
+            max-height: 297mm !important;
+            margin: 0 0 10mm 0 !important;
+            padding: 20mm 20mm 45mm 20mm !important;
+            box-sizing: border-box !important;
+            position: relative !important;
             background-color: white !important;
+            page-break-after: always !important;
+            break-after: page !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
+          }
+          #print-area-reports > div:last-child {
+            page-break-after: auto !important;
+            break-after: auto !important;
+            margin-bottom: 0 !important;
           }
           @page {
             size: A4 portrait;
