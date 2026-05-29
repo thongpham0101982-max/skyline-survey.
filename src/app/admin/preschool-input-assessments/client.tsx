@@ -5758,7 +5758,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 min-height: 297mm !important;
                 max-height: 297mm !important;
                 margin: 0 auto !important;
-                padding: 20mm 20mm 35mm 20mm !important; /* Reserved 35mm bottom zone for absolute footer */
+                padding: 20mm 20mm 42mm 20mm !important; /* Reserved 35mm bottom zone for absolute footer */
                 flex-shrink: 0 !important;
                 display: flex !important;
                 flex-direction: column !important;
@@ -5774,9 +5774,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               /* DEFINITIVE ABSOLUTE FOOTER PINNING FOR PREMIUM PRESENTATION */
               .print-footer, .footer-container {
                 position: absolute !important;
-                bottom: 8mm !important;
-                left: 20mm !important;
-                right: 20mm !important;
+                bottom: 12mm !important; left: 20mm !important; right: 20mm !important;
                 width: auto !important;
                 margin: 0 !important;
                 padding: 0 !important;
@@ -5840,7 +5838,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 min-height: 297mm !important;
                 max-height: 297mm !important;
                 margin: 0 !important; /* MUST BE 0 to avoid Chrome auto-centering */
-                padding: 20mm 20mm 35mm 20mm !important; /* Premium margins reserving 35mm at bottom */
+                padding: 20mm 20mm 42mm 20mm !important; /* Premium margins reserving 35mm at bottom */
                 box-shadow: none !important;
                 border: none !important;
                 display: flex !important;
@@ -5854,9 +5852,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               /* Force all footers to anchor to the very bottom of the page */
               .print-footer, .footer-container, .print-page .print-footer, #print-letter-area .print-footer {
                 position: absolute !important;
-                bottom: 8mm !important;
-                left: 20mm !important;
-                right: 20mm !important;
+                bottom: 12mm !important; left: 20mm !important; right: 20mm !important;
                 width: auto !important;
                 margin: 0 !important;
                 padding: 0 !important;
@@ -6184,7 +6180,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 <div 
                   id="print-letter-area" 
                   className="bg-white shadow-lg border border-slate-200 relative text-slate-800 text-sm leading-relaxed print-page"
-                  style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "297mm", padding: "20mm 20mm 35mm 20mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: "flex-start", overflow: "hidden", position: "relative" }}
+                  style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "297mm", padding: "20mm 20mm 42mm 20mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: "flex-start", overflow: "hidden", position: "relative" }}
               >
 
                 {/* Print Watermark */}
@@ -6277,10 +6273,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   )}
 
 
-                                {/* Bottom Signature Area */}
-                                {/* Bottom Signature Area */}
+                                {/* Bottom Signature Area with dynamic spacer */}
+                  <div style={{ flex: "1 1 auto", minHeight: "16px", maxHeight: "60px" }} />
                   {isCommitment ? (
-                    <div className="grid grid-cols-2 gap-8 mt-auto w-full text-center" style={{ pageBreakInside: "avoid", marginTop: "auto", paddingTop: "20px" }}>
+                    <div className="grid grid-cols-2 gap-8 mt-auto w-full text-center" style={{ pageBreakInside: "avoid", marginTop: "24px", paddingTop: "12px" }}>
                       <div className="flex flex-col items-center">
                         <p className="font-bold uppercase text-slate-700 text-[11pt] tracking-wider">ĐẠI DIỆN GIA ĐÌNH</p>
                         <p className="italic text-[9pt] text-slate-400 mt-1">(Ký và ghi rõ họ tên)</p>
@@ -6312,7 +6308,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       </div>
                     </div>
                   ) : (
-                    <div className="flex flex-col items-end mt-auto pr-4" style={{ pageBreakInside: "avoid", marginTop: "auto", paddingTop: "20px" }}>
+                    <div className="flex flex-col items-end mt-auto pr-4" style={{ pageBreakInside: "avoid", marginTop: "24px", paddingTop: "12px" }}>
                       <div className="flex flex-col items-center text-center" style={{ minWidth: "70mm" }}>
                         <p className="italic text-slate-500 mb-1 text-[12pt]">{formattedLetterDate}</p>
                         <p className="font-bold uppercase text-[#0f172a] text-[12pt]">TM. HỘI ĐỒNG TUYỂN SINH</p>

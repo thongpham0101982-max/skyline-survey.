@@ -5384,7 +5384,7 @@ return {
                 min-height: 297mm !important;
                 max-height: 297mm !important;
                 margin: 0 auto !important;
-                padding: 12.7mm 15mm 48mm 15mm !important; /* Reserved 28mm bottom zone for pinned absolute footer! */
+                padding: 20mm 20mm 42mm 20mm !important; /* Reserved 28mm bottom zone for pinned absolute footer! */
                 flex-shrink: 0 !important;
                 display: flex !important;
                 flex-direction: column !important;
@@ -5400,13 +5400,7 @@ return {
               /* DEFINITIVE ABSOLUTE FOOTER ANCHOR FOR SCREEN AND PRINT */
               .print-footer {
                 position: absolute !important;
-                bottom: 0 !important;
-                left: 0 !important;
-                right: 0 !important;
-                padding-left: 15mm !important;
-                padding-right: 15mm !important;
-                box-sizing: border-box !important;
-                height: 28mm !important;
+                bottom: 12mm !important; left: 20mm !important; right: 20mm !important; padding: 0 !important; height: auto !important;
                 margin-bottom: 0 !important;
                 margin-top: 0 !important;
                 box-sizing: border-box !important;
@@ -5471,7 +5465,7 @@ return {
                 min-height: auto !important;
                 max-height: none !important;
                 margin: 0 !important; /* MUST BE 0 to avoid Chrome auto-centering */
-                padding: 12.7mm 15mm 15mm 15mm !important;
+                padding: 20mm 20mm 42mm 20mm !important;
                 box-shadow: none !important;
                 border: none !important;
                 display: flex !important;
@@ -5645,14 +5639,15 @@ return {
               
               /* USER MANDATED FLEX CONTAINER WITHOUT ANY HEIGHTS */
               .print-page, #print-letter-area {
-                width: 100% !important; /* FLUID FULL BLEED PAPER WIDTH - REMOVES SIDE GAPS */
-                height: auto !important;
-                min-height: auto !important;
-                max-height: none !important;
+                width: 210mm !important;
+                height: 297mm !important;
+                min-height: 297mm !important;
+                max-height: 297mm !important;
                 margin: 0 !important;
                 box-shadow: none !important;
                 border: none !important;
-                padding: 12.7mm 15mm 15mm 15mm !important; 
+                padding: 20mm 20mm 42mm 20mm !important;
+                overflow: hidden !important; 
                 overflow: visible !important;
                 box-sizing: border-box !important;
                 
@@ -5670,22 +5665,19 @@ return {
               
               /* DEFINITIVE ABSOLUTE PRINT FOOTER PIN FOR 297mm A4 SHEETS */
               .print-page .print-footer, #print-letter-area .print-footer {
-                position: relative !important;
-                margin-top: 40px !important;
+                position: absolute !important;
+                bottom: 12mm !important;
+                left: 20mm !important;
+                right: 20mm !important;
+                width: auto !important;
                 height: auto !important;
-                
-                /* Safety buffer for interior text elements while supporting full bleed checkmark */
-                padding-left: 15mm !important; 
-                padding-right: 15mm !important;
-                padding-bottom: 0 !important;
-                
-                margin-bottom: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
                 box-sizing: border-box !important;
                 background: transparent !important;
                 display: block !important;
                 z-index: 9999 !important;
                 flex-shrink: 0 !important;
-                width: 100% !important;
               }
               .print-page > div {
                 flex: none !important;
@@ -5837,7 +5829,7 @@ return {
                 <div 
                   id="print-letter-area" 
                   className="bg-white shadow-lg border border-slate-200 relative text-slate-800 text-sm leading-relaxed print-page"
-                  style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "auto", padding: "12.7mm 15mm 15mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "block", overflow: "hidden" }}
+                  style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "auto", padding: "20mm 20mm 42mm 20mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "block", overflow: "hidden" }}
               >
                 {/* Print Watermark */}
                 <img crossOrigin={(rcBackground || DEFAULT_WATERMARK_SVG).startsWith("data:") ? undefined : "anonymous"}  className="print-watermark" src={rcBackground || DEFAULT_WATERMARK_SVG} alt="Watermark" style={{ display: "block", position: "absolute", top: "22%", left: "10%", transform: "none", width: "80%", height: "auto", opacity: 0.08, zIndex: 0, pointerEvents: "none" }} />
@@ -5938,9 +5930,10 @@ return {
                   )}
 
 
-                {/* Bottom Signature Area */}
+                {/* Bottom Signature Area with dynamic spacer */}
+                <div style={{ flex: "1 1 auto", minHeight: "16px", maxHeight: "60px" }} />
                 {isCommitment ? (
-                  <div className="grid grid-cols-2 gap-8 mt-6 text-center">
+                  <div className="grid grid-cols-2 gap-8 mt-4 text-center">
                     <div className="flex flex-col items-center">
                       <p className="font-bold uppercase text-slate-700 text-xs tracking-wider">ĐẠI DIỆN GIA ĐÌNH</p>
                       <p className="italic text-[10px] text-slate-400 mt-1">(Ký và ghi rõ họ tên)</p>
@@ -5966,7 +5959,7 @@ return {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-end mt-8 pr-4">
+                  <div className="flex flex-col items-end mt-4 pr-4">
                     <div className="flex flex-col items-center text-center" style={{ minWidth: "240px" }}>
                       <p className="italic text-slate-500 mb-1">{formattedLetterDate}</p>
                       <p className="font-bold uppercase text-indigo-950 text-xs tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
@@ -6064,7 +6057,7 @@ return {
                 {modalDocList && modalDocList.length > 0 && (
                   <div 
                     className="bg-white shadow-lg border border-slate-200 relative text-slate-800 text-sm leading-relaxed print-page mt-8"
-                    style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "auto", padding: "12.7mm 15mm 15mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "block", overflow: "hidden" }}
+                    style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "auto", padding: "20mm 20mm 42mm 20mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "block", overflow: "hidden" }}
                   >
                     <div className="flex flex-col relative z-10 w-full">
                 {/* Print Watermark */}
@@ -6253,7 +6246,7 @@ return {
                     <div 
                       key={"assessment_page_" + sc.id}
                       className="bg-white shadow-lg border border-slate-200 relative text-slate-800 text-sm leading-relaxed print-page mt-8"
-                      style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "auto", padding: "12.7mm 15mm 15mm 15mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "block", overflow: "hidden" }}
+                      style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "auto", padding: "20mm 20mm 42mm 20mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "block", overflow: "hidden" }}
                     >
                       <div className="flex flex-col relative z-10 w-full">
                         {/* Print Watermark */}

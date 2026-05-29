@@ -1340,7 +1340,7 @@ export function ReportsClient({
           <div id="print-area-reports" className="flex flex-col items-center gap-8 w-full">
             
             {/* PAGE 1: THE LETTER */}
-            <div className="bg-white rounded-none border border-slate-300 w-[210mm] min-w-[210mm] max-w-[210mm] h-[297mm] min-h-[297mm] p-[20mm_20mm_45mm_20mm] box-border relative flex flex-col justify-start overflow-hidden select-none font-serif text-slate-800 leading-normal" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
+            <div className="bg-white rounded-none border border-slate-300 w-[210mm] min-w-[210mm] max-w-[210mm] h-[297mm] min-h-[297mm] p-[20mm_20mm_42mm_20mm] box-border relative flex flex-col justify-start overflow-hidden select-none font-serif text-slate-800 leading-normal" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
               
               {/* Watermark */}
               {studentCampusConfig?.background && (
@@ -1348,7 +1348,7 @@ export function ReportsClient({
               )}
 
               {/* Content wrapped */}
-              <div className="relative z-10 flex flex-col h-full justify-between">
+              <div className="relative z-10 flex flex-col h-full justify-start">
                 <div>
                   {/* Header logo */}
                   <div className="header-container" style={{ display: "flex", flexDirection: "column", borderBottom: "1.5px solid #00A6A9", paddingBottom: "8px", marginBottom: "16px" }}>
@@ -1398,7 +1398,7 @@ export function ReportsClient({
 
                 {/* Bottom Signatures dual-mode support */}
                 {isCommitment ? (
-                  <div style={{ width: "100%", display: "flex", justifyContent: "space-between", marginTop: "auto", paddingTop: "12px", pageBreakInside: "avoid", breakInside: "avoid" }}>
+                  <div style={{ width: "100%", display: "flex", justifyContent: "space-between", marginTop: "24px", paddingTop: "12px", pageBreakInside: "avoid", breakInside: "avoid" }}>
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", width: "45%" }}>
                       <p style={{ fontSize: "11pt", fontWeight: "bold", textTransform: "uppercase", margin: 0, textAlign: "center", textIndent: 0, color: "#475569" }}>ĐẠI DIỆN GIA ĐÌNH</p>
                       <p style={{ fontSize: "9pt", fontStyle: "italic", color: "#64748b", marginTop: "4px", textIndent: 0 }}>(Ký và ghi rõ họ tên)</p>
@@ -1421,7 +1421,7 @@ export function ReportsClient({
                     </div>
                   </div>
                 ) : (
-                  <div style={{ alignSelf: "flex-end", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", minWidth: "70mm", marginTop: "auto", paddingTop: "12px", pageBreakInside: "avoid", breakInside: "avoid" }}>
+                  <div style={{ alignSelf: "flex-end", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", minWidth: "70mm", marginTop: "24px", paddingTop: "12px", pageBreakInside: "avoid", breakInside: "avoid" }}>
                     <p style={{ fontSize: "12pt", fontStyle: "italic", color: "#555555", marginBottom: "4px", textAlign: "center", textIndent: 0 }}>{formattedLetterDate}</p>
                     <p style={{ fontSize: "12pt", fontWeight: "bold", textTransform: "uppercase", margin: 0, textAlign: "center", textIndent: 0, color: "#0f172a" }}>TM. HỘI ĐỒNG TUYỂN SINH</p>
                     <p style={{ fontSize: "10pt", fontWeight: "bold", textTransform: "uppercase", color: "#475569", margin: "2px 0 0 0", textAlign: "center", textIndent: 0 }}>GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}</p>
@@ -1456,7 +1456,7 @@ export function ReportsClient({
 
             {/* PAGE 2: ADMISSION CHECKLIST */}
             {modalDocList && modalDocList.length > 0 && !isInvitation && !isCommitment && (
-              <div className="bg-white rounded-none border border-slate-300 w-[210mm] min-w-[210mm] max-w-[210mm] h-[297mm] min-h-[297mm] p-[20mm_20mm_45mm_20mm] box-border relative flex flex-col justify-start overflow-hidden select-none font-serif text-slate-800 leading-normal" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
+              <div className="bg-white rounded-none border border-slate-300 w-[210mm] min-w-[210mm] max-w-[210mm] h-[297mm] min-h-[297mm] p-[20mm_20mm_42mm_20mm] box-border relative flex flex-col justify-start overflow-hidden select-none font-serif text-slate-800 leading-normal" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
                 
                 {/* Watermark */}
                 {studentCampusConfig?.background && (
@@ -1620,7 +1620,7 @@ export function ReportsClient({
             min-height: 297mm !important;
             max-height: 297mm !important;
             margin: 0 0 10mm 0 !important;
-            padding: 20mm 20mm 45mm 20mm !important;
+            padding: 20mm 20mm 42mm 20mm !important;
             box-sizing: border-box !important;
             position: relative !important;
             background-color: white !important;
@@ -1633,6 +1633,16 @@ export function ReportsClient({
             page-break-after: auto !important;
             break-after: auto !important;
             margin-bottom: 0 !important;
+          }
+          .footer-container {
+            position: absolute !important;
+            bottom: 12mm !important;
+            left: 20mm !important;
+            right: 20mm !important;
+            width: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            z-index: 10 !important;
           }
           @page {
             size: A4 portrait;
