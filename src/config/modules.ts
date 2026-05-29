@@ -15,7 +15,8 @@ import {
   Settings,
   Briefcase,
   ArrowRightLeft,
-  Baby
+  Baby,
+  RefreshCcw
 } from "lucide-react"
 
 export const APP_CATEGORIES = [
@@ -28,6 +29,7 @@ export const APP_CATEGORIES = [
       { code: "ROLES", name: "Quản lý Nhóm quyền", icon: Shield, href: "/admin/roles", requiresAdmin: true },
       { code: "USERS", name: "Tài khoản Nhân sự", icon: Users, href: "/admin/users", requiresAdmin: true },
       { code: "CAMPUSES", name: "Quản lý Cơ sở", icon: Building2, href: "/admin/campuses", requiresAdmin: true },
+      { code: "SCHOOL_SYNC", name: "Đồng bộ API Trường", icon: RefreshCcw, href: "/admin/school-sync" },
     ]
   },
   {
