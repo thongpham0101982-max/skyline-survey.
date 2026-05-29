@@ -15,10 +15,10 @@ export default async function InputAssessmentReportsPage() {
   
   const user = session?.user as any;
   const isGDCS = user?.role === 'GDCS';
-  const allowedCampusIds = user?.campusIds || [];
+  const allowedCampusIds = Array.isArray(user?.campusIds) ? user.campusIds : [];
   let liveCampusIds = [...allowedCampusIds];
   try {
-    if (user?.id) {
+    if (user?.id && prisma.userCampusAssignment) {
       const dbAssignments = await prisma.userCampusAssignment.findMany({
         where: { userId: user.id }
       });
@@ -42,52 +42,66 @@ export default async function InputAssessmentReportsPage() {
   try {
     const pAny = prisma as any;
     if (pAny) {
-      academicYears = await pAny.academicYear.findMany({ orderBy: { startDate: "desc" } }).catch(() => []);
-      campuses = await pAny.campus.findMany({ 
-        where: isGDCS ? { id: { in: allowedCampusIds } } : { status: "ACTIVE" }, 
-        include: { 
-          manager: {
-            include: {
-              teacher: true
-            }
-          } 
-        },
-        orderBy: { campusName: "asc" } 
-      }).catch(() => []);
+      if (pAny.academicYear) {
+        academicYears = await pAny.academicYear.findMany({ orderBy: { startDate: "desc" } }).catch(() => []);
+      }
+      if (pAny.campus) {
+        campuses = await pAny.campus.findMany({ 
+          where: isGDCS ? { id: { in: allowedCampusIds } } : { status: "ACTIVE" }, 
+          include: { 
+            manager: {
+              include: {
+                teacher: true
+              }
+            } 
+          },
+          orderBy: { campusName: "asc" } 
+        }).catch(() => []);
+      }
 
-      giaoVuCSUsers = await pAny.user.findMany({ 
-        where: { role: { in: ["GĐ_CS", "GIAO_VU", "GDCS", "GIAO_VU_CS"] } }, 
-        select: { id: true, fullName: true } 
-      }).catch(() => []);
+      if (pAny.user) {
+        giaoVuCSUsers = await pAny.user.findMany({ 
+          where: { role: { in: ["GĐ_CS", "GIAO_VU", "GDCS", "GIAO_VU_CS"] } }, 
+          select: { id: true, fullName: true } 
+        }).catch(() => []);
 
-      gdcsUsers = await pAny.user.findMany({ 
-        where: { role: { in: ["GDCS", "GĐCS", "GD_CS", "GĐ_CS"] } }, 
-        select: { id: true, fullName: true, email: true } 
-      }).catch(() => []);
+        gdcsUsers = await pAny.user.findMany({ 
+          where: { role: { in: ["GDCS", "GĐCS", "GD_CS", "GĐ_CS"] } }, 
+          select: { id: true, fullName: true, email: true } 
+        }).catch(() => []);
+      }
 
-      departments = await pAny.department.findMany({ 
-        where: { status: "ACTIVE" }, orderBy: { name: "asc" } 
-      }).catch(() => []);
+      if (pAny.department) {
+        departments = await pAny.department.findMany({ 
+          where: { status: "ACTIVE" }, orderBy: { name: "asc" } 
+        }).catch(() => []);
+      }
 
-      teachers = await pAny.teacher.findMany({
-        where: { status: "ACTIVE" },
-        include: {
-          departmentRel: true,
-          campus: true,
-          user: true
-        },
-        orderBy: { teacherName: "asc" }
-      }).catch(() => []);
+      if (pAny.teacher) {
+        teachers = await pAny.teacher.findMany({
+          where: { status: "ACTIVE" },
+          include: {
+            departmentRel: true,
+            campus: true,
+            user: true
+          },
+          orderBy: { teacherName: "asc" }
+        }).catch(() => []);
+      }
 
-      generalPeriods = await pAny.inputAssessmentPeriod.findMany({
-        include: { batches: true },
-        orderBy: { createdAt: 'desc' }
-      }).catch(() => []);
+      if (pAny.inputAssessmentPeriod) {
+        generalPeriods = await pAny.inputAssessmentPeriod.findMany({
+          include: { batches: true },
+          orderBy: { createdAt: 'desc' }
+        }).catch(() => []);
+      }
 
-      preschoolPeriods = await pAny.preschoolInputAssessmentPeriod.findMany({
-        include: { batches: true },
-        orderBy: { createdAt: 'desc' }
-      }).catch(() => []);
+      if (pAny.preschoolInputAssessmentPeriod) {
+        preschoolPeriods = await pAny.preschoolInputAssessmentPeriod.findMany({
+          include: { batches: true },
+          orderBy: { createdAt: 'desc' }
+        }).catch(() => []);
+      }
     }
   } catch (error) {
     console.error("InputAssessmentReportsPage fetch error:", error);

@@ -530,7 +530,7 @@ export function ReportsClient({
 
   // Print modal configuration resolver
   const studentCampusConfig = useMemo(() => {
-    if (!selectedReportStudent) return null;
+    if (typeof window === "undefined" || !selectedReportStudent) return null;
     const effCampus = selectedReportStudent.admissionCampus;
     let targetCampus = campuses.find((c: any) => 
       c.id === effCampus || c.campusName === effCampus || c.campusCode === effCampus ||
