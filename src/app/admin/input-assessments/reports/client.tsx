@@ -197,26 +197,43 @@ export function ReportsClient({
     { id: 2, name: "Học bạ Tiểu học (bản gốc)", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 2", "Khối 3", "Khối 4", "Khối 5"] },
     { id: 3, name: "Giấy giới thiệu chuyển của trường nơi đi", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 2", "Khối 3", "Khối 4", "Khối 5"] },
     { id: 4, name: "Đơn xin xác nhận về việc đồng ý tiếp nhận học sinh", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 2", "Khối 3", "Khối 4", "Khối 5"] },
+    { id: 5, name: "Đơn xin chuyển trường", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 2", "Khối 3", "Khối 4", "Khối 5"] },
+    { id: 6, name: "Bản cam kết (nếu có)", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 2", "Khối 3", "Khối 4", "Khối 5"] },
   ], []);
 
   const defaultDocumentsGrade6 = useMemo(() => [
-    { id: 1, name: "Giấy khai sinh (bản sao hoặc bản chính đối chiếu)", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 6"] },
-    { id: 2, name: "Đơn xin nhập học lớp 6", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 6"] },
-    { id: 3, name: "Học bạ Tiểu học hoàn thành chương trình (bản gốc)", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 6"] },
+    { id: 1, name: "Giấy khai sinh (có dấu đỏ)", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 6"] },
+    { id: 2, name: "Học bạ Tiểu học (bản gốc)", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 6"] },
+    { id: 3, name: "Giấy chứng nhận HTCT Tiểu học", qty: "1", note: "Nếu có", targets: ["Nội tỉnh"], grades: ["Khối 6"] },
+    { id: 4, name: "Giấy giới thiệu chuyển của trường nơi đi (nhập học sau 15/8)", qty: "1", note: "", targets: ["Nội tỉnh"], grades: ["Khối 6"] },
+    { id: 5, name: "Giấy giới thiệu chuyển của trường nơi đi (nếu nhập học sau 15/8)", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 6"] },
+    { id: 6, name: "Giấy giới thiệu chuyển trường do UBND/ Sở GD&ĐT nơi đi (Trường trực thuộc sở)", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 6"] },
+    { id: 7, name: "Bản cam kết (nếu có)", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 6"] },
+    { id: 8, name: "Ảnh thẻ 3x4", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 6"] },
+    { id: 9, name: "Đơn xin xác nhận về việc đồng ý tiếp nhận học sinh", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 6"] },
+    { id: 10, name: "Đơn xin chuyển trường", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 6"] },
   ], []);
 
   const defaultDocumentsGrade10NoiTinh = useMemo(() => [
-    { id: 1, name: "Giấy khai sinh (bản sao)", qty: "1", note: "", targets: ["Nội tỉnh"], grades: ["Khối 10"] },
+    { id: 1, name: "Giấy khai sinh (có dấu đỏ)", qty: "1", note: "", targets: ["Nội tỉnh"], grades: ["Khối 10"] },
     { id: 2, name: "Học bạ THCS (bản gốc)", qty: "1", note: "", targets: ["Nội tỉnh"], grades: ["Khối 10"] },
-    { id: 3, name: "Bằng tốt nghiệp THCS hoặc Giấy chứng nhận tốt nghiệp tạm thời (bản gốc)", qty: "1", note: "", targets: ["Nội tỉnh"], grades: ["Khối 10"] },
-    { id: 4, name: "Giấy báo điểm tuyển sinh lớp 10 (bản gốc)", qty: "1", note: "", targets: ["Nội tỉnh"], grades: ["Khối 10"] },
+    { id: 3, name: "Giấy chứng nhận tốt nghiệp THCS tạm thời hoặc Bằng tốt nghiệp THCS", qty: "1", note: "", targets: ["Nội tỉnh"], grades: ["Khối 10"] },
+    { id: 4, name: "Giấy giới thiệu chuyển của trường nơi đi (nếu nhập học sau 15/8)", qty: "1", note: "", targets: ["Nội tỉnh"], grades: ["Khối 10"] },
+    { id: 5, name: "Bản cam kết (nếu có)", qty: "1", note: "", targets: ["Nội tỉnh"], grades: ["Khối 10"] },
+    { id: 6, name: "Ảnh thẻ 3x4", qty: "1", note: "", targets: ["Nội tỉnh"], grades: ["Khối 10"] },
+    { id: 7, name: "Đơn xin xác nhận về việc đồng ý tiếp nhận học sinh", qty: "1", note: "", targets: ["Nội tỉnh"], grades: ["Khối 10"] },
+    { id: 8, name: "Đơn xin chuyển trường", qty: "1", note: "", targets: ["Nội tỉnh"], grades: ["Khối 10"] },
   ], []);
 
   const defaultDocumentsGrade10NgoaiTinh = useMemo(() => [
-    { id: 1, name: "Giấy khai sinh (bản sao)", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 10"] },
+    { id: 1, name: "Giấy khai sinh (có dấu đỏ)", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 10"] },
     { id: 2, name: "Học bạ THCS (bản gốc)", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 10"] },
-    { id: 3, name: "Bằng tốt nghiệp THCS hoặc Giấy chứng nhận tốt nghiệp tạm thời (bản gốc)", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 10"] },
-    { id: 4, name: "Quyết định trúng tuyển hoặc Giấy báo trúng tuyển trường nơi đi", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 10"] },
+    { id: 3, name: "Giấy giới thiệu chuyển của trường nơi đi (nếu nhập học sau 15/8)", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 10"] },
+    { id: 4, name: "Giấy giới thiệu chuyển trường do Sở GD&ĐT nơi đi (Trường trực phục sở hoặc ngoại tỉnh)", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 10"] },
+    { id: 5, name: "Bản cam kết (nếu có)", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 10"] },
+    { id: 6, name: "Ảnh thẻ 3x4", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 10"] },
+    { id: 7, name: "Đơn xin xác nhận về việc đồng ý tiếp nhận học sinh", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 10"] },
+    { id: 8, name: "Đơn xin chuyển trường", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 10"] },
   ], []);
 
   const [docGroups, setDocGroups] = useState([
@@ -261,6 +278,24 @@ export function ReportsClient({
   const [selectedReportStudent, setSelectedReportStudent] = useState(null);
   const [isInvitation, setIsInvitation] = useState(false);
   const [isCommitment, setIsCommitment] = useState(false);
+
+  // One-time automatic migration for new default checklists
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const isMigrated = localStorage.getItem('admission_docs_migrated_reports_v4');
+      if (!isMigrated) {
+        localStorage.removeItem('admission_doc_groups');
+        localStorage.removeItem('admission_docs_khoi_1');
+        localStorage.removeItem('admission_docs_khoi_2_5');
+        localStorage.removeItem('admission_docs_khoi_6');
+        localStorage.removeItem('admission_docs_khoi_10_noi_tinh');
+        localStorage.removeItem('admission_docs_khoi_10_ngoai_tinh');
+        localStorage.removeItem('admission_doc_targets');
+        localStorage.removeItem('admission_doc_grades_mapping');
+        localStorage.setItem('admission_docs_migrated_reports_v4', 'true');
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -1243,6 +1278,8 @@ export function ReportsClient({
                   setDocFormName("");
                   setDocFormQty("");
                   setDocFormNote("");
+                  setDocFormSelectedTargets(docGroupTargets[selectedDocGroup] || []);
+                  setDocFormSelectedGrades(docGroupGrades[selectedDocGroup] || []);
                   setIsDocModalOpen(true);
                 }}
                 className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-2 shadow-lg shadow-indigo-100 cursor-pointer"
@@ -1287,7 +1324,17 @@ export function ReportsClient({
                   {docList.map((d, idx) => (
                     <tr key={d.id || idx} className="hover:bg-slate-50/50 transition-colors font-medium text-slate-700">
                       <td className="px-6 py-4 text-center text-slate-400">{idx + 1}</td>
-                      <td className="px-6 py-4 font-black text-slate-800 text-sm">{d.name}</td>
+                      <td className="px-6 py-4 font-black text-slate-800 text-sm">
+                        <div className="font-bold text-slate-800">{d.name}</div>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {d.grades && d.grades.length > 0 && d.grades.map((g: string) => (
+                            <span key={g} className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 rounded text-[9px] font-black border border-emerald-100">{g}</span>
+                          ))}
+                          {d.targets && d.targets.length > 0 && d.targets.map((t: string) => (
+                            <span key={t} className="px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded text-[9px] font-black border border-indigo-100">{t}</span>
+                          ))}
+                        </div>
+                      </td>
                       <td className="px-6 py-4 text-center font-bold text-indigo-600">{d.qty}</td>
                       <td className="px-6 py-4">
                         <div className="flex gap-2 justify-center">
@@ -1297,6 +1344,8 @@ export function ReportsClient({
                               setDocFormName(d.name);
                               setDocFormQty(d.qty);
                               setDocFormNote(d.note || "");
+                              setDocFormSelectedTargets(d.targets || []);
+                              setDocFormSelectedGrades(d.grades || []);
                               setIsDocModalOpen(true);
                             }}
                             className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all cursor-pointer"
@@ -1536,7 +1585,7 @@ export function ReportsClient({
         </div>
       </Modal>
 
-      {/* DOCUMENT ADD/EDIT MODAL */}
+            {/* DOCUMENT ADD/EDIT MODAL */}
       <Modal open={isDocModalOpen} onClose={() => setIsDocModalOpen(false)} title={editingDoc ? "Sửa tài liệu hồ sơ" : "Thêm hồ sơ mới"}>
         <div className="space-y-4">
           <Field label="Tên hồ sơ / Giấy tờ" required>
@@ -1550,20 +1599,60 @@ export function ReportsClient({
               <input value={docFormNote} onChange={e => setDocFormNote(e.target.value)} placeholder="Không bắt buộc..." className={inp} />
             </Field>
           </div>
+
+          <div className="pt-2">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 ml-1">Áp dụng cho Khối lớp học</label>
+            <div className="flex flex-wrap gap-2 mb-3">
+              {["Khối 1", "Khối 2", "Khối 3", "Khối 4", "Khối 5", "Khối 6", "Khối 7", "Khối 8", "Khối 9", "Khối 10", "Khối 11", "Khối 12"].map(g => {
+                const isChecked = docFormSelectedGrades.includes(g);
+                return (
+                  <label key={g} className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-50 hover:bg-emerald-50/50 rounded-lg border border-slate-200 cursor-pointer select-none transition-colors">
+                    <input type="checkbox" checked={isChecked} onChange={(e) => { if(e.target.checked) setDocFormSelectedGrades(p=>[...p,g]); else setDocFormSelectedGrades(p=>p.filter(x=>x!==g)); }} className="w-3.5 h-3.5 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300 cursor-pointer" />
+                    <span className="text-[11px] font-bold text-slate-600">{g}</span>
+                  </label>
+                );
+              })}
+            </div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 ml-1">Áp dụng cho Đối tượng Tuyển sinh</label>
+            <div className="flex flex-wrap gap-2">
+              {configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => {
+                const isChecked = docFormSelectedTargets.includes(c.name);
+                return (
+                  <label key={c.id} className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 hover:bg-indigo-50/50 rounded-xl border border-slate-200 cursor-pointer select-none transition-colors">
+                    <input 
+                      type="checkbox" 
+                      checked={isChecked}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setDocFormSelectedTargets(p => [...p, c.name]);
+                        } else {
+                          setDocFormSelectedTargets(p => p.filter(x => x !== c.name));
+                        }
+                      }}
+                      className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 cursor-pointer"
+                    />
+                    <span className="text-xs font-bold text-slate-600">{c.name}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
           
           <button 
             onClick={() => {
               if (!docFormName || !docFormQty) return notify("Vui lòng nhập đầy đủ tên và số lượng hồ sơ", "err");
               let updated;
               if (editingDoc) {
-                updated = docList.map((d: any) => d.id === editingDoc.id ? { ...d, name: docFormName, qty: docFormQty, note: docFormNote } : d);
+                updated = docList.map((d: any) => d.id === editingDoc.id ? { ...d, name: docFormName, qty: docFormQty, note: docFormNote, targets: docFormSelectedTargets, grades: docFormSelectedGrades } : d);
                 notify("Cập nhật tài liệu hồ sơ thành công!");
               } else {
                 const newDoc = {
                   id: Date.now(),
                   name: docFormName,
                   qty: docFormQty,
-                  note: docFormNote
+                  note: docFormNote,
+                  targets: docFormSelectedTargets,
+                  grades: docFormSelectedGrades
                 };
                 updated = [...docList, newDoc];
                 notify("Thêm tài liệu hồ sơ mới thành công!");

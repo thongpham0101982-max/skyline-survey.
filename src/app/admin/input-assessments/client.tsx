@@ -2074,23 +2074,34 @@ ${reportForm.directorNote}`;
       studentGroup = gradeMatchedGroups[0]?.id || "khoi_1";
     }
     
+    let documents = [];
     const saved = localStorage.getItem('admission_docs_' + studentGroup);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed; // Return full configured list without restrictive per-item filtering, ensuring 100% preview alignment!
+          documents = parsed;
         }
       } catch (e) {}
     }
     
-    // Fallback to default documents group, guaranteeing Page 2 is never empty!
-    if (studentGroup === "khoi_2_5") return defaultDocumentsGrade2_5;
-    if (studentGroup === "khoi_6") return defaultDocumentsGrade6;
-    if (studentGroup === "khoi_10_noi_tinh") return defaultDocumentsGrade10NoiTinh;
-    if (studentGroup === "khoi_10_ngoai_tinh") return defaultDocumentsGrade10NgoaiTinh;
-    return defaultDocumentsGrade1;
-  }, [selectedReportStudent, defaultDocumentsGrade1, defaultDocumentsGrade2_5, defaultDocumentsGrade6, defaultDocumentsGrade10NoiTinh, defaultDocumentsGrade10NgoaiTinh, docGroups, docGroupTargets, docGroupGrades]);
+    if (documents.length === 0) {
+      if (studentGroup === "khoi_2_5") documents = defaultDocumentsGrade2_5;
+      else if (studentGroup === "khoi_6") documents = defaultDocumentsGrade6;
+      else if (studentGroup === "khoi_10_noi_tinh") documents = defaultDocumentsGrade10NoiTinh;
+      else if (studentGroup === "khoi_10_ngoai_tinh") documents = defaultDocumentsGrade10NgoaiTinh;
+      else documents = defaultDocumentsGrade1;
+    }
+
+    if (selectedReportStudent.targetType) {
+      const studentTargets = selectedReportStudent.targetType.split(',').map((x) => x.trim().toLowerCase()).filter(Boolean);
+      return documents.filter((doc) => {
+        if (!doc.targets || !Array.isArray(doc.targets) || doc.targets.length === 0) return true;
+        return doc.targets.some((t) => studentTargets.includes(t.toLowerCase()));
+      });
+    }
+
+    return documents;}, [selectedReportStudent, defaultDocumentsGrade1, defaultDocumentsGrade2_5, defaultDocumentsGrade6, defaultDocumentsGrade10NoiTinh, defaultDocumentsGrade10NgoaiTinh, docGroups, docGroupTargets, docGroupGrades]);
 
   const studentCampusConfig = useMemo(() => {
     if (typeof window === "undefined" || !selectedReportStudent) return null;
