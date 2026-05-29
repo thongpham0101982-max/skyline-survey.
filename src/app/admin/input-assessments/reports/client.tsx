@@ -1012,7 +1012,7 @@ export function ReportsClient({
       {/* PRINT DIALOG PREVIEW MODAL */}
       <Modal open={isPrintModalOpen} onClose={() => setIsPrintModalOpen(false)} title={isInvitation ? "Mẫu Thư mời khảo sát" : isCommitment ? "Bản Cam kết học tập" : "Mẫu Thư Chúc mừng"} size="xl" footer={<><button onClick={() => setIsPrintModalOpen(false)} className="flex-1 text-xs font-black uppercase text-slate-400 hover:text-slate-600">Đóng</button><button onClick={handlePrintPDF} className="flex-1 py-3.5 bg-indigo-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 cursor-pointer"><Printer className="w-4 h-4" /> In / Tải PDF</button></>}>
         <div className="bg-slate-50 p-4 border border-slate-100 rounded-3xl overflow-y-auto max-h-[60vh] flex items-center justify-center">
-          <div id="print-area-reports" className="bg-white rounded-none border border-slate-300 w-[210mm] min-w-[210mm] max-w-[210mm] h-[297mm] min-h-[297mm] p-[20mm_20mm_35mm_20mm] box-border relative flex flex-col justify-start overflow-hidden select-none font-serif text-slate-800 leading-normal" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
+          <div id="print-area-reports" className="bg-white rounded-none border border-slate-300 w-[210mm] min-w-[210mm] max-w-[210mm] h-[297mm] min-h-[297mm] p-[20mm_20mm_45mm_20mm] box-border relative flex flex-col justify-start overflow-hidden select-none font-serif text-slate-800 leading-normal" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
             
             {/* Watermark */}
             {studentCampusConfig?.background && (
@@ -1023,7 +1023,7 @@ export function ReportsClient({
             <div className="relative z-10 flex flex-col h-full justify-between">
               <div>
                 {/* Header logo */}
-                <div className="header-container" style={{ display: "flex", flexDirection: "column", borderBottom: "1.5px solid #00A6A9", paddingBottom: "8px", marginBottom: "24px" }}>
+                <div className="header-container" style={{ display: "flex", flexDirection: "column", borderBottom: "1.5px solid #00A6A9", paddingBottom: "8px", marginBottom: "16px" }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     {studentCampusConfig?.logo ? (
                       <img src={studentCampusConfig.logo} alt="Logo" style={{ maxHeight: "48px", objectFit: "contain" }} />
@@ -1039,12 +1039,12 @@ export function ReportsClient({
                 </div>
 
                 {/* Title */}
-                <h2 style={{ textAlign: "center", fontSize: "22pt", fontWeight: "bold", color: "#0f172a", textTransform: "uppercase", letterSpacing: "2px", margin: "16px 0 24px 0" }}>
+                <h2 style={{ textAlign: "center", fontSize: "22pt", fontWeight: "bold", color: "#0f172a", textTransform: "uppercase", letterSpacing: "2px", margin: "12px 0 16px 0" }}>
                   {studentCampusConfig?.title}
                 </h2>
 
                 {/* Greeting */}
-                <p style={{ fontSize: "14pt", fontStyle: "italic", marginBottom: "12px", color: "#1e293b", textIndent: 0 }}>
+                <p style={{ fontSize: "14pt", fontStyle: "italic", marginBottom: "8px", color: "#1e293b", textIndent: 0 }}>
                   {isInvitation ? (
                     <>Kính gửi Quý Phụ huynh và em <strong style={{ fontWeight: "bold", color: "#0f172a" }}>{selectedReportStudent?.fullName}</strong>,</>
                   ) : (
@@ -1060,7 +1060,7 @@ export function ReportsClient({
                   ).split('\n').filter(Boolean).map((para, idx) => {
                     const isList = /^\s*[\d•\-*]+/.test(para);
                     return (
-                      <p key={idx} style={isList ? { paddingLeft: "24px", fontWeight: "bold", color: "#374151", margin: "4px 0", fontSize: "13.5pt" } : { textIndent: "10mm", margin: "0 0 14px 0", textAlign: "justify", lineBreak: "auto", lineHeight: "1.6", fontSize: "13.5pt" }}>
+                      <p key={idx} style={isList ? { paddingLeft: "24px", fontWeight: "bold", color: "#374151", margin: "4px 0", fontSize: "13.5pt" } : { textIndent: "10mm", margin: "0 0 8px 0", textAlign: "justify", lineBreak: "auto", lineHeight: "1.45", fontSize: "13.5pt" }}>
                         {para}
                       </p>
                     );
@@ -1070,7 +1070,7 @@ export function ReportsClient({
 
               {/* Bottom Signatures dual-mode support */}
               {isCommitment ? (
-                <div style={{ width: "100%", display: "flex", justifyContent: "space-between", marginTop: "auto", paddingTop: "20px", pageBreakInside: "avoid", breakInside: "avoid" }}>
+                <div style={{ width: "100%", display: "flex", justifyContent: "space-between", marginTop: "auto", paddingTop: "12px", pageBreakInside: "avoid", breakInside: "avoid" }}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", width: "45%" }}>
                     <p style={{ fontSize: "11pt", fontWeight: "bold", textTransform: "uppercase", margin: 0, textAlign: "center", textIndent: 0, color: "#475569" }}>ĐẠI DIỆN GIA ĐÌNH</p>
                     <p style={{ fontSize: "9pt", fontStyle: "italic", color: "#64748b", marginTop: "4px", textIndent: 0 }}>(Ký và ghi rõ họ tên)</p>
@@ -1093,7 +1093,7 @@ export function ReportsClient({
                   </div>
                 </div>
               ) : (
-                <div style={{ alignSelf: "flex-end", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", minWidth: "70mm", marginTop: "auto", paddingTop: "20px", pageBreakInside: "avoid", breakInside: "avoid" }}>
+                <div style={{ alignSelf: "flex-end", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", minWidth: "70mm", marginTop: "auto", paddingTop: "12px", pageBreakInside: "avoid", breakInside: "avoid" }}>
                   <p style={{ fontSize: "12pt", fontStyle: "italic", color: "#555555", marginBottom: "4px", textAlign: "center", textIndent: 0 }}>{formattedLetterDate}</p>
                   <p style={{ fontSize: "12pt", fontWeight: "bold", textTransform: "uppercase", margin: 0, textAlign: "center", textIndent: 0, color: "#0f172a" }}>TM. HỘI ĐỒNG TUYỂN SINH</p>
                   <p style={{ fontSize: "10pt", fontWeight: "bold", textTransform: "uppercase", color: "#475569", margin: "2px 0 0 0", textAlign: "center", textIndent: 0 }}>GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}</p>
@@ -1162,7 +1162,7 @@ export function ReportsClient({
             width: 210mm;
             height: 297mm;
             margin: 0;
-            padding: 20mm 20mm 35mm 20mm;
+            padding: 20mm 20mm 45mm 20mm;
             box-sizing: border-box;
             background-color: white !important;
             -webkit-print-color-adjust: exact !important;
