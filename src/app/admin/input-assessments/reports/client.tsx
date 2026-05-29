@@ -256,6 +256,11 @@ export function ReportsClient({
   const [docFormSelectedGrades, setDocFormSelectedGrades] = useState<string[]>([]);
 
   const getDocStorageKey = (group: string) => 'admission_docs_' + group;
+  // Student print/export modal states - declared BEFORE modalDocList useMemo which depends on them
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [selectedReportStudent, setSelectedReportStudent] = useState(null);
+  const [isInvitation, setIsInvitation] = useState(false);
+  const [isCommitment, setIsCommitment] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -464,11 +469,6 @@ export function ReportsClient({
   const [searchQuery, setSearchQuery] = useState("");
   const [students, setStudents] = useState<any[]>([]);
   const [loadingStudents, setLoadingStudents] = useState(false);
-  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
-  const [selectedReportStudent, setSelectedReportStudent] = useState<any>(null);
-  const [isInvitation, setIsInvitation] = useState(false);
-  const [isCommitment, setIsCommitment] = useState(false);
-
   // Auto select first period when level changes
   useEffect(() => {
     if (activePeriods.length > 0) {
