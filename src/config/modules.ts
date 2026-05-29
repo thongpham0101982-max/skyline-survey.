@@ -53,6 +53,7 @@ export const APP_CATEGORIES = [
     modules: [
       { code: "PRESCHOOL_INPUT_ASSESSMENTS", name: "KSNL Đầu vào Mầm non", icon: Baby, href: "/admin/preschool-input-assessments" },
       { code: "INPUT_ASSESSMENTS", name: "KSNL đầu vào Phổ thông", icon: ClipboardList, href: "/admin/input-assessments" },
+      { code: "INPUT_ASSESSMENT_REPORTS", name: "Xuất báo cáo", icon: FileSpreadsheet, href: "/admin/input-assessments/reports" },
       { code: "STUDENT_ACHIEVEMENTS", name: "Thành tích Học sinh", icon: GraduationCap, href: "/admin/achievements" },
     ]
   },

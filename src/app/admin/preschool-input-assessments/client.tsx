@@ -2519,7 +2519,6 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             { id: "assignments", label: "Phân công", icon: UserCheck },
             { id: "devAssess", label: "Đánh giá PT", icon: Star },
             { id: "reports", label: "Tổng hợp KQKS", icon: BarChart3 },
-            { id: "report_config", label: "Cấu hình Báo cáo", icon: Settings }
           ].map(t => (
             <button key={t.id} onClick={() => setTab(t.id)} className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-[11px] font-bold transition-all duration-200 ${tab === t.id ? "bg-violet-500 text-white shadow-sm" : "text-slate-500 hover:bg-violet-50 hover:text-violet-600"}`}>
               <t.icon className={`w-4 h-4 ${tab === t.id ? "text-white" : "text-slate-400"}`} />
@@ -3050,12 +3049,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             >
               Đánh giá Học thử
             </button>
-            <button
-              onClick={() => setDevTab("xuatThuChucMung")}
-              className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${devTab === "xuatThuChucMung" ? "bg-violet-500 text-white shadow-sm" : "text-slate-500 hover:bg-violet-50"}`}
-            >
-              Xuất thư Chúc mừng
-            </button>
+            
           </div>
 
           {/* Sub-tab: Đánh giá Trẻ */}
