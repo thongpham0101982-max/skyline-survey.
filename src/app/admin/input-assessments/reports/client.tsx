@@ -753,6 +753,8 @@ export function ReportsClient({
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [emailSubject, setEmailSubject] = useState("");
   const [recipientEmail, setRecipientEmail] = useState("");
+  const [ccEmail, setCcEmail] = useState("");
+  const [selectedEmailStudentIds, setSelectedEmailStudentIds] = useState<any[]>([]);
   const [emailSending, setEmailSending] = useState(false);
   const [emailSendingStatus, setEmailSendingStatus] = useState("");
   const [attachLetters, setAttachLetters] = useState(true);
@@ -762,12 +764,16 @@ export function ReportsClient({
     const activeBatchName = cBatchId !== "all" ? (activeBatches.find(b => b.id === cBatchId)?.name || "Đợt") : "Tất cả các đợt";
     
     setEmailSubject(`[Báo cáo nhanh] Kết quả Khảo sát đầu vào KSNL - Kỳ: ${activePeriodName} - Đợt: ${activeBatchName}`);
-    setRecipientEmail("bankhaothi@skylineschool.edu.vn, tuyensinh.cs3@skylineschool.edu.vn");
+    setRecipientEmail("bankhaothi@skylineschool.edu.vn");
+    setCcEmail("tuyensinh.cs3@skylineschool.edu.vn");
     setAttachLetters(true);
+    setSelectedEmailStudentIds(filteredStudents.map(s => s.id));
     setIsEmailModalOpen(true);
   };
 
   const handleSendEmailsSubmit = async () => {
+    const targetStudents = filteredStudents.filter(s => selectedEmailStudentIds.includes(s.id));
+    if (targetStudents.length === 0) return alert("Vui lòng chọn ít nhất 1 học sinh để gửi báo cáo!");
     if (!recipientEmail) return alert("Vui lòng nhập Email người nhận");
     setEmailSending(true);
     setEmailSendingStatus("Đang khởi tạo gửi mail...");
@@ -785,10 +791,11 @@ export function ReportsClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           to: recipientEmail,
+          cc: ccEmail,
           subject: emailSubject,
           periodName: activePeriodName,
           batchName: activeBatchName,
-          students: filteredStudents,
+          students: targetStudents,
           attachLetters: attachLetters
         })
       });
@@ -2314,19 +2321,163 @@ export function ReportsClient({
 
 
       {/* EMAIL QUICK MODAL */}
-      <Modal open={isEmailModalOpen} onClose={() => setIsEmailModalOpen(false)} title="Gửi email Báo cáo Nhanh" footer={<><button onClick={() => setIsEmailModalOpen(false)} className="flex-1 text-xs font-black uppercase text-slate-400 hover:text-slate-600">Hủy</button><button onClick={handleSendEmailsSubmit} disabled={emailSending} className="flex-1 py-3.5 bg-indigo-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 cursor-pointer">{emailSending ? <Loader2 className="w-4 h-4 animate-spin"/> : <Send className="w-4 h-4" />}{emailSending ? emailSendingStatus : "Gửi ngay"}</button></>}>
-        <div className="space-y-4">
-          <Field label="Địa chỉ Email người nhận (CC nhiều người dùng dấu phẩy)" required>
-            <input value={recipientEmail} onChange={e => setRecipientEmail(e.target.value)} placeholder="Nhập email..." className={inp} />
-          </Field>
-          
-          <Field label="Tiêu đề Email" required>
-            <input value={emailSubject} onChange={e => setEmailSubject(e.target.value)} placeholder="Nhập tiêu đề email..." className={inp} />
-          </Field>
+      <Modal open={isEmailModalOpen} onClose={() => setIsEmailModalOpen(false)} title="Gửi email Báo cáo Nhanh" size="xl" footer={<><button onClick={() => setIsEmailModalOpen(false)} className="flex-1 text-xs font-black uppercase text-slate-400 hover:text-slate-600">Hủy</button><button onClick={handleSendEmailsSubmit} disabled={emailSending} className="flex-1 py-3.5 bg-indigo-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 cursor-pointer">{emailSending ? <Loader2 className="w-4 h-4 animate-spin"/> : <Send className="w-4 h-4" />}{emailSending ? emailSendingStatus : "Gửi ngay"}</button></>}>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 max-h-[70vh] overflow-y-auto pr-1">
+          {/* Left inputs column */}
+          <div className="lg:col-span-7 space-y-4 text-left">
+            {/* TO field */}
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5 ml-1">Địa chỉ Email người nhận (To) <span className="text-rose-500">*</span></label>
+              <input value={recipientEmail} onChange={e => setRecipientEmail(e.target.value)} placeholder="Nhập email người nhận..." className={inp} />
+              
+              {/* Presets for To */}
+              <div className="flex flex-wrap gap-1 mt-2">
+                <span className="text-[10px] text-slate-400 font-bold uppercase mr-1 mt-1">Gợi ý To:</span>
+                {[
+                  { label: "Khảo thí", email: "bankhaothi@skylineschool.edu.vn" },
+                  { label: "Hội đồng tuyển sinh", email: "hoidongtuyensinh@skylineschool.edu.vn" },
+                  { label: "TS Global (CS3)", email: "tuyensinh.cs3@skylineschool.edu.vn" },
+                ].map(p => {
+                  const isActive = recipientEmail.includes(p.email);
+                  return (
+                    <button
+                      key={p.email}
+                      type="button"
+                      onClick={() => {
+                        if (isActive) {
+                          setRecipientEmail(recipientEmail.split(',').map(x => x.trim()).filter(x => x !== p.email).join(', '));
+                        } else {
+                          const current = recipientEmail.trim();
+                          setRecipientEmail(current ? `${current}, ${p.email}` : p.email);
+                        }
+                      }}
+                      className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition-all ${isActive ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'}`}
+                    >
+                      + {p.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
-          <div className="flex items-center gap-2 p-3 bg-indigo-50/50 border border-indigo-100 rounded-2xl">
-            <input type="checkbox" id="attach_checkbox" checked={attachLetters} onChange={e => setAttachLetters(e.target.checked)} className="w-4 h-4 text-indigo-600 border-slate-300 rounded" />
-            <label htmlFor="attach_checkbox" className="text-xs font-bold text-indigo-700 cursor-pointer">Tự động đính kèm tệp mẫu Thư PDF cho từng bé Đạt</label>
+            {/* CC field */}
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5 ml-1">Đồng kính gửi (CC)</label>
+              <input value={ccEmail} onChange={e => setCcEmail(e.target.value)} placeholder="Nhập email CC (phân cách bằng dấu phẩy)..." className={inp} />
+              
+              {/* Presets for CC */}
+              <div className="flex flex-wrap gap-1 mt-2">
+                <span className="text-[10px] text-slate-400 font-bold uppercase mr-1 mt-1">Gợi ý CC:</span>
+                {[
+                  { label: "TS Riverside (CS1)", email: "tuyensinh.cs1@skylineschool.edu.vn" },
+                  { label: "TS Central (CS2)", email: "tuyensinh.cs2@skylineschool.edu.vn" },
+                  { label: "TS Hill (CS4)", email: "tuyensinh.cs4@skylineschool.edu.vn" },
+                  { label: "TS Beach (CS5)", email: "tuyensinh.cs5@skylineschool.edu.vn" },
+                ].map(p => {
+                  const isActive = ccEmail.includes(p.email);
+                  return (
+                    <button
+                      key={p.email}
+                      type="button"
+                      onClick={() => {
+                        if (isActive) {
+                          setCcEmail(ccEmail.split(',').map(x => x.trim()).filter(x => x !== p.email).join(', '));
+                        } else {
+                          const current = ccEmail.trim();
+                          setCcEmail(current ? `${current}, ${p.email}` : p.email);
+                        }
+                      }}
+                      className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition-all ${isActive ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'}`}
+                    >
+                      + {p.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Subject field */}
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5 ml-1">Tiêu đề Email <span className="text-rose-500">*</span></label>
+              <input value={emailSubject} onChange={e => setEmailSubject(e.target.value)} placeholder="Nhập tiêu đề email..." className={inp} />
+            </div>
+
+            {/* Attachment checkbox */}
+            <div className="flex items-start gap-3 p-4 bg-indigo-50/40 border border-indigo-100 rounded-3xl transition-all hover:bg-indigo-50/60">
+              <input type="checkbox" id="attach_checkbox" checked={attachLetters} onChange={e => setAttachLetters(e.target.checked)} className="w-5 h-5 text-indigo-600 border-slate-300 rounded mt-0.5 cursor-pointer focus:ring-indigo-500" />
+              <div>
+                <label htmlFor="attach_checkbox" className="text-xs font-black text-indigo-900 cursor-pointer select-none">Tự động đính kèm tệp mẫu Thư PDF cho từng học sinh</label>
+                <p className="text-[10px] text-slate-400 font-semibold mt-1 leading-normal">
+                  Hệ thống tự động biên dịch và tạo tệp PDF Thư chúc mừng đính kèm trực tiếp vào mail gửi cho các đối tượng đạt khảo thí.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Right students selection list column */}
+          <div className="lg:col-span-5 flex flex-col justify-start space-y-3 h-full text-left">
+            <div className="flex justify-between items-center px-1">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500">Học sinh gửi báo cáo</label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedEmailStudentIds(filteredStudents.map(s => s.id))}
+                  className="text-[10px] font-bold text-indigo-600 hover:underline cursor-pointer"
+                >
+                  Chọn hết
+                </button>
+                <span className="text-slate-300 text-[10px]">|</span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedEmailStudentIds([])}
+                  className="text-[10px] font-bold text-slate-500 hover:underline cursor-pointer"
+                >
+                  Bỏ hết
+                </button>
+              </div>
+            </div>
+
+            {/* Students list container */}
+            <div className="border border-slate-200 rounded-3xl bg-slate-50 p-4 space-y-2 overflow-y-auto max-h-[350px] shadow-inner w-full">
+              {filteredStudents.map(s => {
+                const isSelected = selectedEmailStudentIds.includes(s.id);
+                return (
+                  <label
+                    key={s.id}
+                    className={`flex items-center justify-between p-3 rounded-2xl border transition-all cursor-pointer select-none ${isSelected ? 'bg-white border-indigo-200 shadow-sm' : 'bg-slate-100/50 border-slate-200 opacity-60'}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => {
+                          if (isSelected) {
+                            setSelectedEmailStudentIds(selectedEmailStudentIds.filter(id => id !== s.id));
+                          } else {
+                            setSelectedEmailStudentIds([...selectedEmailStudentIds, s.id]);
+                          }
+                        }}
+                        className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
+                      />
+                      <div className="text-left">
+                        <p className="text-xs font-bold text-slate-800 leading-none mb-1">${s.fullName}</p>
+                        <p className="text-[10px] text-slate-400 font-semibold leading-none">Mã HS: ${s.studentCode || "—"} • Khối: ${s.grade}</p>
+                      </div>
+                    </div>
+                    <div>
+                      <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black border uppercase tracking-wider ${s.admissionResult?.includes("Đạt") || s.probationaryResult === "DAT" || (s.admissionResult || "").toUpperCase().includes("MIỄN") ? "bg-emerald-50 text-emerald-700 border-emerald-100" : "bg-slate-100 text-slate-400 border-slate-200"}`}>
+                        ${s.probationaryResult === "DAT" ? "Đạt" : s.admissionResult || "—"}
+                      </span>
+                    </div>
+                  </label>
+                );
+              })}
+              {filteredStudents.length === 0 && (
+                <div className="text-center py-8 text-slate-400 italic text-xs font-medium">
+                  Không tìm thấy học sinh nào phù hợp
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </Modal>
