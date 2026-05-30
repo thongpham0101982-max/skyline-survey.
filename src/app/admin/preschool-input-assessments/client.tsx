@@ -948,8 +948,8 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
         const gdcsTeacher = teachers.find((t: any) => 
           t.campusId === selectedCampusObj.id && 
           (t.user?.role === "GDCS" || t.user?.role === "GD_CS" || 
-           t.departmentRel?.name?.toUpperCase().includes("GIÁM ĐỐC") ||
-           t.departmentRel?.name?.toUpperCase().includes("GĐCS"))
+           t.departmentRel?.name?.toUpperCase()?.includes("GIÁM ĐỐC") ||
+           t.departmentRel?.name?.toUpperCase()?.includes("GĐCS"))
         );
         if (gdcsTeacher?.email) {
           gdcsEmail = gdcsTeacher.email;
@@ -964,7 +964,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
     if (teachers && teachers.length > 0) {
       const foundGiaovu = teachers.find((t: any) => 
         t.campusId === selectedCampusObj.id && 
-        (t.departmentRel?.name?.toUpperCase().includes("GIÁO VỤ") || 
+        (t.departmentRel?.name?.toUpperCase()?.includes("GIÁO VỤ") || 
          t.user?.role?.includes("GIAO_VU") || 
          t.user?.role?.includes("GD_CS"))
       );
@@ -979,8 +979,8 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
     if (teachers && teachers.length > 0) {
       const foundTuvan = teachers.find((t: any) => 
         t.campusId === selectedCampusObj.id && 
-        (t.departmentRel?.name?.toUpperCase().includes("TƯ VẤN") || 
-         t.departmentRel?.name?.toUpperCase().includes("TUYỂN SINH"))
+        (t.departmentRel?.name?.toUpperCase()?.includes("TƯ VẤN") || 
+         t.departmentRel?.name?.toUpperCase()?.includes("TUYỂN SINH"))
       );
       if (foundTuvan?.email) {
         tuyensinhEmail = foundTuvan.email;
