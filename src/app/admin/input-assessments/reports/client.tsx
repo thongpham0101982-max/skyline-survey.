@@ -823,7 +823,7 @@ export function ReportsClient({
       if (foundGdcs?.email) gdcsEmail = foundGdcs.email;
     }
 
-    // 2. Giáo vụ Email
+    // 2. Giáo vụ Email (Prioritize explicit teacher.email "Email Nhận thông báo")
     let giaovuEmail = `giaovu.${suffix}@skylineschool.edu.vn`;
     if (teachers && teachers.length > 0) {
       const foundGiaovu = teachers.find((t: any) => 
@@ -832,10 +832,14 @@ export function ReportsClient({
          t.user?.role?.includes("GIAO_VU") || 
          t.user?.role?.includes("GD_CS"))
       );
-      if (foundGiaovu?.user?.email) giaovuEmail = foundGiaovu.user.email;
+      if (foundGiaovu?.email) {
+        giaovuEmail = foundGiaovu.email;
+      } else if (foundGiaovu?.user?.email) {
+        giaovuEmail = foundGiaovu.user.email;
+      }
     }
 
-    // 3. Tư vấn (Tuyển sinh) Email
+    // 3. Tư vấn (Tuyển sinh) Email (Prioritize explicit teacher.email "Email Nhận thông báo")
     let tuyensinhEmail = `tuyensinh.${suffix}@skylineschool.edu.vn`;
     if (teachers && teachers.length > 0) {
       const foundTuvan = teachers.find((t: any) => 
@@ -843,7 +847,11 @@ export function ReportsClient({
         (t.departmentRel?.name?.toUpperCase().includes("TƯ VẤN") || 
          t.departmentRel?.name?.toUpperCase().includes("TUYỂN SINH"))
       );
-      if (foundTuvan?.user?.email) tuyensinhEmail = foundTuvan.user.email;
+      if (foundTuvan?.email) {
+        tuyensinhEmail = foundTuvan.email;
+      } else if (foundTuvan?.user?.email) {
+        tuyensinhEmail = foundTuvan.user.email;
+      }
     }
 
     return {
