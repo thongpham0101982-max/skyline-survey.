@@ -817,10 +817,58 @@ export function ReportsClient({
     if (name.includes("CS5") || name.includes("BEACH")) suffix = "cs5";
 
     // 1. GĐCS Email
-    let gdcsEmail = selectedCampusObj.manager?.email || `gdcs.${suffix}@skylineschool.edu.vn`;
-    if (!selectedCampusObj.manager?.email && gdcsUsers && gdcsUsers.length > 0) {
+    let gdcsEmail = "";
+    
+    // Try to get email from manager's teacher record
+    if (selectedCampusObj.manager?.teacher?.email) {
+      gdcsEmail = selectedCampusObj.manager.teacher.email;
+    } else if (selectedCampusObj.manager?.email && selectedCampusObj.manager.email.includes("@")) {
+      gdcsEmail = selectedCampusObj.manager.email;
+    }
+    
+    // If not resolved, try to find in teachers list where the teacher represents GĐCS or GĐ_CS or user is campus manager
+    if (!gdcsEmail && teachers && teachers.length > 0) {
+      // Find teacher who matches the campus manager's name
+      if (selectedCampusObj.manager?.fullName) {
+        const mgrTeacher = teachers.find((t: any) => t.teacherName === selectedCampusObj.manager?.fullName || t.user?.fullName === selectedCampusObj.manager?.fullName);
+        if (mgrTeacher?.email) {
+          gdcsEmail = mgrTeacher.email;
+        }
+      }
+      
+      // If still not resolved, look for a teacher in the same campus with role containing GDCS or department name containing "GIÁM ĐỐC" or "GĐCS"
+      if (!gdcsEmail) {
+        const gdcsTeacher = teachers.find((t: any) => 
+          t.campusId === selectedCampusObj.id && 
+          (t.user?.role === "GDCS" || t.user?.role === "GD_CS" || 
+           t.departmentRel?.name?.toUpperCase().includes("GIÁM ĐỐC") ||
+           t.departmentRel?.name?.toUpperCase().includes("GĐCS"))
+        );
+        if (gdcsTeacher?.email) {
+          gdcsEmail = gdcsTeacher.email;
+        }
+      }
+    }
+
+    // If still not resolved, try the gdcsUsers list from prop
+    if (!gdcsEmail && gdcsUsers && gdcsUsers.length > 0) {
       const foundGdcs = gdcsUsers.find((u: any) => u.fullName === selectedCampusObj.manager?.fullName);
-      if (foundGdcs?.email) gdcsEmail = foundGdcs.email;
+      if (foundGdcs) {
+        if (foundGdcs.email && foundGdcs.email.includes("@")) {
+          gdcsEmail = foundGdcs.email;
+        } else {
+          // Look up in teachers array
+          const tGdcs = teachers.find((t: any) => t.userId === foundGdcs.id);
+          if (tGdcs?.email) {
+            gdcsEmail = tGdcs.email;
+          }
+        }
+      }
+    }
+
+    // Ultimate fallback to default email format
+    if (!gdcsEmail) {
+      gdcsEmail = `gdcs.${suffix}@skylineschool.edu.vn`;
     }
 
     // 2. Giáo vụ Email (Prioritize explicit teacher.email "Email Nhận thông báo")
