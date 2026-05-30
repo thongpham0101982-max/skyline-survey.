@@ -3682,24 +3682,6 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                      >
                                        <Eye className="w-3.5 h-3.5" /> Xem kết quả
                                      </button>
-                                     <button
-                                       onClick={() => { setSelectedReportStudent(s); setIsInvitation(true); setIsCommitment(false); setIsPrintModalOpen(true); }}
-                                       className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-black text-indigo-700 bg-indigo-50 hover:bg-indigo-600 hover:text-white rounded-xl border border-indigo-100 transition-all shadow-sm"
-                                       title="Xuất Thư mời"
-                                     >
-                                       <Mail className="w-3.5 h-3.5" /> Xuất Thư mời
-                                     </button>
-                                     <button
-                                       disabled={sendingEmailId === s.id}
-                                       onClick={() => sendTuVanEmail(s.id)}
-                                       className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-600 hover:text-white rounded-xl border border-emerald-100 disabled:opacity-50 transition-all shadow-sm"
-                                     >
-                                       {sendingEmailId === s.id ? (
-                                         <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                                       ) : (
-                                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                                       )}
-                                       Email TVCS
                                      </button>
                                    </div>
                                  </td>
