@@ -257,6 +257,12 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
     const eligible = studentSummaries.filter((s: any) => {
       const result = (s.admissionResult || "").toUpperCase();
       return result.includes("MIỄN HỌC THỬ") || result.includes("MIEN_HOC_THU") || s.probationaryResult === "DAT";
+    }).map((s: any) => {
+      const isPassed = (s.probationaryResult === "DAT" || (s.admissionResult || "").toUpperCase().includes("MIỄN") || (s.admissionResult || "").toUpperCase().includes("MIEN"));
+      return {
+        ...s,
+        admissionResult: s.probationaryResult === "DAT" ? "Đạt - Sau học thử" : isPassed ? "Đạt - Miễn học thử" : "Chưa duyệt"
+      };
     });
 
     if (eligible.length === 0) {
@@ -264,10 +270,16 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
       return;
     }
 
-    setBatchEmailCongratsStudents(eligible.map(s => ({ ...s, checked: true })));
-    setBatchEmailCongratsRoles(["Tư vấn", "Giáo vụ", "Tổ/Môn", "GĐCS", "BGH"]);
-    setBatchEmailCongratsAdditionalNote("");
-    setIsBatchEmailCongratsModalOpen(true);
+    const activeBatchName = cBatchId ? (periods.flatMap((p: any) => p.batches || []).find((b: any) => b.id === cBatchId)?.name || "Đợt khảo sát") : "Tất cả các đợt";
+    const activePeriodName = periods.find((p: any) => p.id === cPeriodId)?.name || "Kỳ khảo sát";
+
+    setRecipientEmail([campusEmails.giaovu, campusEmails.gdcs, campusEmails.tuyensinh].filter(Boolean).join(", "));
+    setCcEmail("bankhaothi@skylineschool.edu.vn");
+    setEmailSubject("[Thư chúc mừng] Kết quả Khảo sát đầu vào Mầm non - Kỳ: " + activePeriodName + " - Đợt: " + activeBatchName);
+    setEmailStudents(eligible);
+    setEmailResult(null);
+    setAttachLetters(true);
+    setIsEmailModalOpen(true);
   };
 
   const handleSendBatchCongratsEmail = async () => {
@@ -763,6 +775,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           to: recipientEmail,
+          cc: ccEmail,
           subject: emailSubject,
           periodName: activePeriodName,
           batchName: activeBatchName,
@@ -870,6 +883,118 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [checkedEmails, setCheckedEmails] = useState({ tuvan: [] as string[], giaovu: [] as string[], gdcs: [] as string[], cc: false });
   const [attachLetters, setAttachLetters] = useState(true);
+  const [ccEmail, setCcEmail] = useState("");
+
+  const selectedCampusObj = useMemo(() => {
+    if (!cBatchId) return null;
+    const allBatches = periods.flatMap((p: any) => p.batches || []);
+    const batch = allBatches.find((b: any) => b.id === cBatchId);
+    if (!batch) return null;
+
+    const name = (batch.name || "").toUpperCase();
+    let code = "";
+    if (name.includes("CS1") || name.includes("RIVERSIDE")) code = "CS1";
+    else if (name.includes("CS2") || name.includes("CENTRAL")) code = "CS2";
+    else if (name.includes("CS3") || name.includes("GLOBAL")) code = "CS3";
+    else if (name.includes("CS4") || name.includes("HILL")) code = "CS4";
+    else if (name.includes("CS5") || name.includes("BEACH")) code = "CS5";
+
+    if (code) {
+      return campuses.find((c: any) => (c.campusCode || "").toUpperCase().includes(code) || (c.campusName || "").toUpperCase().includes(code));
+    }
+    return null;
+  }, [cBatchId, periods, campuses]);
+
+  const campusLabel = useMemo(() => {
+    if (!selectedCampusObj) return "Toàn bộ";
+    const name = (selectedCampusObj.campusName || "").toUpperCase();
+    if (name.includes("CS1") || name.includes("RIVERSIDE")) return "CS1 - Riverside";
+    if (name.includes("CS2") || name.includes("CENTRAL")) return "CS2 - Central";
+    if (name.includes("CS3") || name.includes("GLOBAL")) return "CS3 - Global";
+    if (name.includes("CS4") || name.includes("HILL")) return "CS4 - Hill";
+    if (name.includes("CS5") || name.includes("BEACH")) return "CS5 - Beach";
+    return selectedCampusObj.campusName;
+  }, [selectedCampusObj]);
+
+  const campusEmails = useMemo(() => {
+    if (!selectedCampusObj) {
+      return {
+        tuyensinh: "bankhaothi@skylineschool.edu.vn",
+        giaovu: "giaovu.cs3@skylineschool.edu.vn",
+        gdcs: "gdcs.cs3@skylineschool.edu.vn"
+      };
+    }
+
+    const name = (selectedCampusObj.campusName || "").toUpperCase();
+    let suffix = "cs3";
+    if (name.includes("CS1") || name.includes("RIVERSIDE")) suffix = "cs1";
+    if (name.includes("CS2") || name.includes("CENTRAL")) suffix = "cs2";
+    if (name.includes("CS3") || name.includes("GLOBAL")) suffix = "cs3";
+    if (name.includes("CS4") || name.includes("HILL")) suffix = "cs4";
+    if (name.includes("CS5") || name.includes("BEACH")) suffix = "cs5";
+
+    let gdcsEmail = "";
+    if (selectedCampusObj.manager?.email && selectedCampusObj.manager.email.includes("@")) {
+      gdcsEmail = selectedCampusObj.manager.email;
+    }
+    if (!gdcsEmail && teachers && teachers.length > 0) {
+      if (selectedCampusObj.manager?.fullName) {
+        const mgrTeacher = teachers.find((t: any) => t.teacherName === selectedCampusObj.manager?.fullName || t.user?.fullName === selectedCampusObj.manager?.fullName);
+        if (mgrTeacher?.email) {
+          gdcsEmail = mgrTeacher.email;
+        }
+      }
+      if (!gdcsEmail) {
+        const gdcsTeacher = teachers.find((t: any) => 
+          t.campusId === selectedCampusObj.id && 
+          (t.user?.role === "GDCS" || t.user?.role === "GD_CS" || 
+           t.departmentRel?.name?.toUpperCase().includes("GIÁM ĐỐC") ||
+           t.departmentRel?.name?.toUpperCase().includes("GĐCS"))
+        );
+        if (gdcsTeacher?.email) {
+          gdcsEmail = gdcsTeacher.email;
+        }
+      }
+    }
+    if (!gdcsEmail) {
+      gdcsEmail = "gdcs." + suffix + "@skylineschool.edu.vn";
+    }
+
+    let giaovuEmail = "giaovu." + suffix + "@skylineschool.edu.vn";
+    if (teachers && teachers.length > 0) {
+      const foundGiaovu = teachers.find((t: any) => 
+        t.campusId === selectedCampusObj.id && 
+        (t.departmentRel?.name?.toUpperCase().includes("GIÁO VỤ") || 
+         t.user?.role?.includes("GIAO_VU") || 
+         t.user?.role?.includes("GD_CS"))
+      );
+      if (foundGiaovu?.email) {
+        giaovuEmail = foundGiaovu.email;
+      } else if (foundGiaovu?.user?.email) {
+        giaovuEmail = foundGiaovu.user.email;
+      }
+    }
+
+    let tuyensinhEmail = "tuyensinh." + suffix + "@skylineschool.edu.vn";
+    if (teachers && teachers.length > 0) {
+      const foundTuvan = teachers.find((t: any) => 
+        t.campusId === selectedCampusObj.id && 
+        (t.departmentRel?.name?.toUpperCase().includes("TƯ VẤN") || 
+         t.departmentRel?.name?.toUpperCase().includes("TUYỂN SINH"))
+      );
+      if (foundTuvan?.email) {
+        tuyensinhEmail = foundTuvan.email;
+      } else if (foundTuvan?.user?.email) {
+        tuyensinhEmail = foundTuvan.user.email;
+      }
+    }
+
+    return {
+      tuyensinh: tuyensinhEmail,
+      giaovu: giaovuEmail,
+      gdcs: gdcsEmail
+    };
+  }, [selectedCampusObj, teachers]);
 
   const EMAIL_MAP = useMemo(() => {
     const map = {
@@ -3084,12 +3209,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                     Gửi Email theo Đợt
                   </button>
-                  <button 
-                    onClick={handleOpenEmailModal}
-                    className="flex items-center gap-1.5 px-4 py-2 text-sm font-black text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-all shadow-md shadow-indigo-100 hover:shadow-indigo-200 cursor-pointer"
-                  >
-                    <Mail className="w-4 h-4"/> Gửi Mail nhanh
-                  </button>
+                  
                   </>
                 )}
                 <div className="ml-auto relative"><Search className="w-4 h-4 text-slate-300 absolute left-3 top-1/2 -translate-y-1/2" /><input value={cSearch} onChange={e => setCSearch(e.target.value)} placeholder="Tìm bé..." className="pl-9 pr-4 py-2 border border-violet-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-violet-300 min-w-[200px]" /></div>
@@ -3186,12 +3306,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                       Gửi Email theo Đợt
                     </button>
-                    <button 
-                      onClick={handleOpenEmailModal}
-                      className="flex items-center gap-1.5 px-4 py-2 text-sm font-black text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-all shadow-md shadow-indigo-100 hover:shadow-indigo-200 cursor-pointer"
-                    >
-                      <Mail className="w-4 h-4"/> Gửi Mail nhanh
-                    </button>
+                    
                   </>
                 )}
                 <button
@@ -3625,12 +3740,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                       Gửi Email theo Đợt
                     </button>
-                    <button 
-                      onClick={handleOpenEmailModal}
-                      className="flex items-center gap-1.5 px-4 py-2 text-sm font-black text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-all shadow-md shadow-indigo-100 hover:shadow-indigo-200 cursor-pointer"
-                    >
-                      <Mail className="w-4 h-4"/> Gửi Mail nhanh
-                    </button>
+                    
                   </>
                 )}
                 <div className="ml-auto relative"><Search className="w-4 h-4 text-slate-300 absolute left-3 top-1/2 -translate-y-1/2" /><input value={cSearch} onChange={e => setCSearch(e.target.value)} placeholder="Tìm bé..." className="pl-9 pr-4 py-2 border border-violet-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-violet-300 min-w-[200px]" /></div>
@@ -4740,87 +4850,159 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       )}
 
 
-      {isBatchEmailCongratsModalOpen && (
-        <div className="fixed inset-0 z-550 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-3xl border border-violet-100 shadow-2xl max-w-3xl w-full overflow-hidden flex flex-col max-h-[90vh] animate-scale-up">
-            
+      
+
+
+      {/* Quick Email Modal Overlay */}
+      {isEmailModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex justify-center items-center z-[150] p-4 overflow-y-auto no-print">
+          <div className="bg-white rounded-3xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-slate-200 animate-in fade-in zoom-in-95 duration-300">
             {/* Header */}
-            <div className="bg-gradient-to-r from-violet-600 to-indigo-700 p-6 text-white relative">
-              <button 
-                onClick={() => setIsBatchEmailCongratsModalOpen(false)}
-                className="absolute right-6 top-6 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 p-1.5 rounded-full transition-all cursor-pointer"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-              </button>
-              <h3 className="text-lg font-black tracking-wide uppercase">Gửi thư chúc mừng hàng loạt theo đợt</h3>
-              <p className="text-xs text-white/80 mt-1 font-medium">Gửi email chúc mừng đồng thời cho nhiều học sinh được duyệt đạt của Đợt hiện tại.</p>
+            <div className="bg-[#0c363f] p-6 text-white shrink-0 relative overflow-hidden border-b border-[#14b8a6]/10">
+              <div className="absolute top-0 right-0 p-8 opacity-10">
+                <Mail className="w-32 h-32 text-white" />
+              </div>
+              <div className="relative z-10 flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-emerald-400 shadow-inner">
+                    <Mail className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-black tracking-wide flex items-center gap-2 text-white">
+                      Gửi thư chúc mừng hàng loạt (Mầm non)
+                    </h2>
+                    <p className="text-slate-300 text-xs mt-0.5 font-medium">Gửi email mẫu chúc mừng kèm danh sách và PDF học sinh được duyệt</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setIsEmailModalOpen(false)} 
+                  className="p-2 hover:bg-white/10 rounded-xl transition-colors text-white/80 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             {/* Content */}
-            <div className="p-6 overflow-y-auto flex-1 space-y-5">
+            <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 custom-scrollbar bg-[#f8fafc]">
               
-              {/* Target Roles Checklist */}
-              <div className="space-y-2">
-                <label className="block text-xs font-black text-slate-500 uppercase tracking-wider">1. Gửi thư chúc mừng đến các vai trò sau (theo Cơ sở):</label>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                  {[
-                    { id: "Tư vấn", label: "Tư vấn Tuyển sinh", desc: "Mặc định theo Cơ sở", color: "amber" },
-                    { id: "Giáo vụ", label: "Giáo vụ Cơ sở", desc: "Tất cả Giáo vụ cơ sở", color: "violet" },
-                    { id: "Tổ/Môn", label: "Tổ / Môn dạy", desc: "Tổ chuyên môn GV", color: "cyan" },
-                    { id: "GĐCS", label: "Giám đốc Cơ sở", desc: "Manager & users GĐCS", color: "emerald" },
-                    { id: "BGH", label: "BGH / Khảo thí", desc: "Ban Khảo thí Hệ thống", color: "indigo" }
-                  ].map((role) => {
-                    const isChecked = batchEmailCongratsRoles.includes(role.id);
-                    return (
-                      <label 
-                        key={role.id}
-                        className={`flex flex-col p-3 rounded-2xl border transition-all cursor-pointer select-none text-xs ${
-                          isChecked 
-                            ? "bg-violet-50/50 border-violet-200 text-violet-900 shadow-sm font-bold" 
-                            : "bg-white border-slate-100 text-slate-400 font-semibold hover:bg-slate-50"
-                        }`}
-                      >
-                        <div className="flex items-center gap-1.5 mb-1">
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={() => toggleBatchCongratsRole(role.id)}
-                            className="rounded text-violet-600 focus:ring-violet-400 border-slate-300 w-3.5 h-3.5 cursor-pointer"
-                          />
-                          <span className="truncate text-[11px]">{role.label}</span>
-                        </div>
-                        <span className="text-[9px] text-slate-400 font-medium ml-5 truncate">{role.desc}</span>
-                      </label>
-                    );
-                  })}
+              {/* Recipient Input Configuration Panel */}
+              <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4 text-left">
+                {/* TO field */}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5 ml-1">Địa chỉ Email người nhận (To) <span className="text-rose-500">*</span></label>
+                  <input value={recipientEmail} onChange={e => setRecipientEmail(e.target.value)} placeholder="Nhập email người nhận (phân cách bằng dấu phẩy)..." className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-400/10 text-sm font-medium text-slate-700 transition-all shadow-sm" />
+                  
+                  {/* Presets for To */}
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    <span className="text-[10px] text-slate-400 font-bold uppercase mr-1 mt-1">Gợi ý To:</span>
+                    {[
+                      { label: "Giáo vụ (" + campusLabel + ")", email: campusEmails.giaovu },
+                      { label: "GĐCS (" + campusLabel + ")", email: campusEmails.gdcs },
+                      { label: "Tư vấn (" + campusLabel + ")", email: campusEmails.tuyensinh },
+                      { label: "Khảo thí", email: "bankhaothi@skylineschool.edu.vn" },
+                    ].map(p => {
+                      const isActive = recipientEmail.includes(p.email);
+                      return (
+                        <button
+                          key={p.email}
+                          type="button"
+                          onClick={() => {
+                            if (isActive) {
+                              setRecipientEmail(recipientEmail.split(',').map(x => x.trim()).filter(x => x !== p.email).join(', '));
+                            } else {
+                              const current = recipientEmail.trim();
+                              setRecipientEmail(current ? (current + ", " + p.email) : p.email);
+                            }
+                          }}
+                          className={"px-2 py-1 rounded-lg text-[10px] font-bold border transition-all " + (isActive ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100')}
+                        >
+                          + {p.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* CC field */}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5 ml-1">Đồng kính gửi (CC)</label>
+                  <input value={ccEmail} onChange={e => setCcEmail(e.target.value)} placeholder="Nhập email CC (phân cách bằng dấu phẩy)..." className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-400/10 text-sm font-medium text-slate-700 transition-all shadow-sm" />
+                  
+                  {/* Presets for CC */}
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    <span className="text-[10px] text-slate-400 font-bold uppercase mr-1 mt-1">Gợi ý CC:</span>
+                    {[
+                      { label: "Khảo thí", email: "bankhaothi@skylineschool.edu.vn" },
+                      { label: "Giáo vụ (" + campusLabel + ")", email: campusEmails.giaovu },
+                      { label: "GĐCS (" + campusLabel + ")", email: campusEmails.gdcs },
+                      { label: "Tư vấn (" + campusLabel + ")", email: campusEmails.tuyensinh },
+                    ].map(p => {
+                      const isActive = ccEmail.includes(p.email);
+                      return (
+                        <button
+                          key={p.email}
+                          type="button"
+                          onClick={() => {
+                            if (isActive) {
+                              setCcEmail(ccEmail.split(',').map(x => x.trim()).filter(x => x !== p.email).join(', '));
+                            } else {
+                              const current = ccEmail.trim();
+                              setCcEmail(current ? (current + ", " + p.email) : p.email);
+                            }
+                          }}
+                          className={"px-2 py-1 rounded-lg text-[10px] font-bold border transition-all " + (isActive ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100')}
+                        >
+                          + {p.label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
 
-              {/* Additional Note */}
-              <div className="space-y-1.5">
-                <label className="block text-xs font-black text-slate-500 uppercase tracking-wider">2. Lời nhắn/Ghi chú thêm gửi kèm email (Không bắt buộc):</label>
-                <textarea
-                  value={batchEmailCongratsAdditionalNote}
-                  onChange={(e) => setBatchEmailCongratsAdditionalNote(e.target.value)}
-                  placeholder="Nhập lời chúc chung hoặc lời nhắn đặc biệt từ Bộ phận Tuyển sinh gửi kèm trong tất cả thư chúc mừng..."
-                  rows={2}
-                  className="w-full border border-violet-100 rounded-2xl p-3 text-sm outline-none focus:ring-2 focus:ring-violet-300 focus:border-violet-400 transition-all text-slate-700 resize-none shadow-inner bg-slate-50/50"
-                />
+              {/* Email Subject Block */}
+              <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4 text-left">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5 ml-1">Tiêu đề thư Email gửi đi <span className="text-rose-500">*</span></label>
+                  <input 
+                    value={emailSubject} 
+                    onChange={e => setEmailSubject(e.target.value)} 
+                    placeholder="Nhập tiêu đề email..." 
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-400/10 text-sm font-medium text-slate-700 transition-all shadow-sm"
+                  />
+                </div>
+                
+                {/* Options toggle */}
+                <div className="flex items-center gap-3 bg-slate-50 px-4 py-3 rounded-2xl border border-slate-100">
+                  <label className="inline-flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-600 select-none">
+                    <input 
+                      type="checkbox" 
+                      checked={attachLetters}
+                      onChange={e => setAttachLetters(e.target.checked)}
+                      className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 w-4.5 h-4.5 cursor-pointer accent-emerald-600"
+                    />
+                    <span>Tự động đính kèm tệp PDF Thư chúc mừng trúng tuyển cho mỗi bé đạt yêu cầu</span>
+                  </label>
+                </div>
               </div>
 
-              {/* Students Checklist */}
-              <div className="space-y-3">
+              {/* Target Students list with Checkboxes */}
+              <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4 text-left">
                 <div className="flex items-center justify-between">
-                  <label className="block text-xs font-black text-slate-500 uppercase tracking-wider">3. Chọn danh sách học sinh nhận thư chúc mừng ({batchEmailCongratsStudents.filter(s => s.checked).length}/{batchEmailCongratsStudents.length} bé):</label>
+                  <div>
+                    <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest block">Danh sách học sinh gửi thư ({emailStudents.filter(s => s.checked !== false).length}/{emailStudents.length} học sinh)</span>
+                    <span className="text-[10px] text-slate-400 font-semibold mt-0.5 block">Hệ thống sẽ tạo PDF Thư chúc mừng cho các học sinh được chọn</span>
+                  </div>
                   <div className="flex gap-2 text-[10px] font-bold">
                     <button 
-                      onClick={() => setBatchEmailCongratsStudents(prev => prev.map(s => ({ ...s, checked: true })))}
+                      onClick={() => setEmailStudents(prev => prev.map(s => ({ ...s, checked: true })))}
                       className="text-violet-600 hover:text-violet-800 bg-violet-50 px-2.5 py-1 rounded-lg border border-violet-100 transition-colors cursor-pointer"
                     >
                       Chọn tất cả
                     </button>
                     <button 
-                      onClick={() => setBatchEmailCongratsStudents(prev => prev.map(s => ({ ...s, checked: false })))}
+                      onClick={() => setEmailStudents(prev => prev.map(s => ({ ...s, checked: false })))}
                       className="text-slate-500 hover:text-slate-700 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200 transition-colors cursor-pointer"
                     >
                       Bỏ chọn tất cả
@@ -4828,421 +5010,60 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   </div>
                 </div>
 
-                <div className="border border-violet-100 rounded-2xl overflow-hidden bg-slate-50/30 max-h-[220px] overflow-y-auto">
-                  <table className="w-full text-left whitespace-nowrap text-xs">
-                    <thead className="bg-slate-50 border-b border-slate-100 sticky top-0 font-bold text-slate-500">
-                      <tr>
+                <div className="border border-slate-100 rounded-2xl overflow-hidden max-h-[260px] overflow-y-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-slate-50 text-slate-500 font-bold uppercase text-[9px] tracking-wider border-b border-slate-100">
                         <th className="p-3 w-10 text-center">Gửi</th>
                         <th className="p-3">Mã học sinh</th>
                         <th className="p-3">Họ và tên</th>
-                        <th className="p-3">Cơ sở</th>
+                        <th className="p-3">Nhóm tuổi</th>
+                        <th className="p-3">Hệ khảo sát</th>
                         <th className="p-3">Kết quả</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-violet-50 bg-white">
-                      {batchEmailCongratsStudents.map((s, idx) => (
+                    <tbody>
+                      {emailStudents.map((s, idx) => (
                         <tr 
                           key={s.id} 
                           onClick={() => {
-                            const updated = [...batchEmailCongratsStudents];
-                            updated[idx].checked = !updated[idx].checked;
-                            setBatchEmailCongratsStudents(updated);
+                            setEmailStudents(prev => {
+                              const copy = [...prev];
+                              copy[idx] = { ...copy[idx], checked: copy[idx].checked === false ? true : false };
+                              return copy;
+                            });
                           }}
-                          className={`hover:bg-violet-50/30 transition-colors cursor-pointer ${
-                            s.checked ? "bg-violet-50/10 font-semibold" : "text-slate-400"
-                          }`}
+                          className={"hover:bg-slate-50/50 transition-colors cursor-pointer " + (s.checked === false ? "text-slate-400 bg-slate-50/20" : "font-semibold")}
                         >
-                          <td className="p-3 text-center" onClick={(e) => e.stopPropagation()}>
-                            <input
-                              type="checkbox"
-                              checked={s.checked}
-                              onChange={(e) => {
-                                const updated = [...batchEmailCongratsStudents];
-                                updated[idx].checked = e.target.checked;
-                                setBatchEmailCongratsStudents(updated);
+                          <td className="p-3 text-center" onClick={e => e.stopPropagation()}>
+                            <input 
+                              type="checkbox" 
+                              checked={s.checked !== false}
+                              onChange={e => {
+                                setEmailStudents(prev => {
+                                  const copy = [...prev];
+                                  copy[idx] = { ...copy[idx], checked: e.target.checked };
+                                  return copy;
+                                });
                               }}
-                              className="rounded text-violet-600 focus:ring-violet-400 border-slate-300 w-3.5 h-3.5 cursor-pointer"
+                              className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer"
                             />
                           </td>
-                          <td className="p-3 font-mono text-[11px]">{s.studentCode}</td>
+                          <td className="p-3 font-mono">{s.studentCode}</td>
                           <td className="p-3 font-bold text-slate-800">{s.fullName}</td>
-                          <td className="p-3">{s.admissionCampus || "—"}</td>
+                          <td className="p-3">{s.grade}</td>
+                          <td className="p-3">{s.surveyFormType || "—"}</td>
                           <td className="p-3">
-                            <span className="text-[10px] font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
-                              {s.probationaryResult === "DAT" ? "ĐẠT - SAU HỌC THỬ" : "✓ ĐẠT - MIỄN HỌC THỬ"}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-            </div>
-
-            {/* Footer */}
-            <div className="bg-slate-50 p-4 border-t border-slate-100 flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setIsBatchEmailCongratsModalOpen(false)}
-                className="px-5 py-2 text-xs font-black text-slate-500 bg-white hover:bg-slate-100 rounded-xl border border-slate-200 transition-all cursor-pointer"
-                disabled={batchEmailCongratsSending}
-              >
-                Hủy bỏ
-              </button>
-              <button
-                type="button"
-                onClick={handleSendBatchCongratsEmail}
-                className="flex items-center gap-1.5 px-6 py-2 text-xs font-black text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 rounded-xl transition-all shadow-md shadow-violet-100 hover:shadow-violet-200 cursor-pointer"
-                disabled={batchEmailCongratsSending}
-              >
-                {batchEmailCongratsSending ? (
-                  <>
-                    <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Đang gửi hàng loạt...
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-                    Xác nhận gửi đợt ({batchEmailCongratsStudents.filter(s => s.checked).length} học sinh)
-                  </>
-                )}
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
-
-
-      {/* Quick Email Modal Overlay */}
-      {isEmailModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex justify-center items-center z-[150] p-4 overflow-y-auto no-print">
-          <div className="bg-white rounded-3xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-slate-200 animate-in fade-in zoom-in-95 duration-300">
-            {/* Header */}
-            <div className="bg-[#0c363f] p-6 text-white shrink-0 relative overflow-hidden border-b border-[#14b8a6]/10">
-              <div className="absolute top-0 right-0 p-8 opacity-10">
-                <Mail className="w-32 h-32 text-white" />
-              </div>
-              <div className="relative z-10 flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-emerald-400 shadow-inner">
-                    <Mail className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-black tracking-wide flex items-center gap-2 text-white">
-                      Gửi Báo cáo nhanh qua Email (Mầm non)
-                    </h2>
-                    <p className="text-slate-300 text-xs mt-0.5 font-medium">Gửi trực tiếp danh sách kết quả khảo sát qua hệ thống email</p>
-                  </div>
-                </div>
-                <button 
-                  onClick={() => setIsEmailModalOpen(false)} 
-                  className="p-2 hover:bg-white/10 rounded-xl transition-colors text-white/80 hover:text-white"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 custom-scrollbar bg-[#f8fafc]">
-              
-              {/* Recipient Checkbox Configuration Panel */}
-              <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                  <div>
-                    <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest block">
-                      THIẾT LẬP CHECK EMAIL NHẬN
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-semibold mt-0.5 block">
-                      Chọn nhanh nhóm nhận thư tự động dựa trên Cơ sở (CS)
-                    </span>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => {
-                        const targetCS = ['CS1', 'CS2', 'CS3', 'CS4'];
-                        const newChecked = {
-                          tuvan: [...targetCS],
-                          giaovu: [...targetCS],
-                          gdcs: [...targetCS],
-                          cc: true
-                        };
-                        setCheckedEmails(newChecked);
-                        
-                        const selectedEmails = [];
-                        newChecked.tuvan.forEach(c => selectedEmails.push(EMAIL_MAP.tuvan[c]));
-                        newChecked.giaovu.forEach(c => selectedEmails.push(EMAIL_MAP.giaovu[c]));
-                        newChecked.gdcs.forEach(c => selectedEmails.push(EMAIL_MAP.gdcs[c]));
-                        if (newChecked.cc) selectedEmails.push(EMAIL_MAP.cc);
-                        
-                        const currentEmails = recipientEmail.split(',').map(e => e.trim()).filter(Boolean);
-                        const manualEmails = currentEmails.filter(e => !allMapEmails.includes(e));
-                        setRecipientEmail([...manualEmails, ...selectedEmails].join(', '));
-                      }}
-                      className="px-3 py-1.5 bg-[#0c363f]/5 hover:bg-[#0c363f]/10 text-[#0c363f] font-bold text-[10px] rounded-lg transition-colors cursor-pointer select-none"
-                    >
-                      Chọn nhanh CS1-CS4
-                    </button>
-                    <button
-                      onClick={() => {
-                        const newChecked = { tuvan: [], giaovu: [], gdcs: [], cc: false };
-                        setCheckedEmails(newChecked);
-                        const currentEmails = recipientEmail.split(',').map(e => e.trim()).filter(Boolean);
-                        const manualEmails = currentEmails.filter(e => !allMapEmails.includes(e));
-                        setRecipientEmail(manualEmails.join(', ') || (currentUser?.email || "bankhaothi@skylineschool.edu.vn"));
-                      }}
-                      className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-[10px] rounded-lg transition-colors cursor-pointer select-none"
-                    >
-                      Xóa chọn
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="divide-y divide-slate-50 text-xs">
-                  {/* Row 1: Tư vấn */}
-                  <div className="grid grid-cols-1 md:grid-cols-6 items-center gap-2 py-3">
-                    <span className="text-[11px] font-bold text-slate-500 md:col-span-1 tracking-wider uppercase">Tư vấn:</span>
-                    <div className="md:col-span-5 flex flex-wrap gap-x-6 gap-y-3">
-                      {['CS1', 'CS2', 'CS3', 'CS4', 'CS5'].map(cs => (
-                        <label key={`tuvan-${cs}`} className="inline-flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-600 hover:text-[#0c363f] transition-colors select-none">
-                          <input
-                            type="checkbox"
-                            checked={checkedEmails.tuvan.includes(cs)}
-                            onChange={() => handleCheckboxChange('tuvan', cs)}
-                            className="rounded border-slate-300 text-[#0c363f] focus:ring-[#0c363f] w-4.5 h-4.5 cursor-pointer accent-[#0c363f] transition-colors"
-                          />
-                          <span>{cs}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Row 2: Giáo vụ */}
-                  <div className="grid grid-cols-1 md:grid-cols-6 items-center gap-2 py-3">
-                    <span className="text-[11px] font-bold text-slate-500 md:col-span-1 tracking-wider uppercase">Giáo vụ:</span>
-                    <div className="md:col-span-5 flex flex-wrap gap-x-6 gap-y-3">
-                      {['CS1', 'CS2', 'CS3', 'CS4', 'CS5'].map(cs => (
-                        <label key={`giaovu-${cs}`} className="inline-flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-600 hover:text-[#0c363f] transition-colors select-none">
-                          <input
-                            type="checkbox"
-                            checked={checkedEmails.giaovu.includes(cs)}
-                            onChange={() => handleCheckboxChange('giaovu', cs)}
-                            className="rounded border-slate-300 text-[#0c363f] focus:ring-[#0c363f] w-4.5 h-4.5 cursor-pointer accent-[#0c363f] transition-colors"
-                          />
-                          <span>{cs}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Row 3: GĐCS */}
-                  <div className="grid grid-cols-1 md:grid-cols-6 items-center gap-2 py-3">
-                    <span className="text-[11px] font-bold text-slate-500 md:col-span-1 tracking-wider uppercase">GĐCS:</span>
-                    <div className="md:col-span-5 flex flex-wrap gap-x-6 gap-y-3">
-                      {['CS1', 'CS2', 'CS3', 'CS4', 'CS5'].map(cs => (
-                        <label key={`gdcs-${cs}`} className="inline-flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-600 hover:text-[#0c363f] transition-colors select-none">
-                          <input
-                            type="checkbox"
-                            checked={checkedEmails.gdcs.includes(cs)}
-                            onChange={() => handleCheckboxChange('gdcs', cs)}
-                            className="rounded border-slate-300 text-[#0c363f] focus:ring-[#0c363f] w-4.5 h-4.5 cursor-pointer accent-[#0c363f] transition-colors"
-                          />
-                          <span>{cs}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Row 4: CC */}
-                  <div className="grid grid-cols-1 md:grid-cols-6 items-center gap-2 py-3">
-                    <span className="text-[11px] font-bold text-slate-500 md:col-span-1 tracking-wider uppercase">CC:</span>
-                    <div className="md:col-span-5">
-                      <label className="inline-flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-600 hover:text-[#0c363f] transition-colors select-none">
-                        <input
-                          type="checkbox"
-                          checked={checkedEmails.cc}
-                          onChange={() => handleCheckboxChange('cc', 'cc')}
-                          className="rounded border-slate-300 text-[#0c363f] focus:ring-[#0c363f] w-4.5 h-4.5 cursor-pointer accent-[#0c363f] transition-colors"
-                        />
-                        <span className="text-slate-500">cc@skylineschool.edu.vn</span>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Form Config Card */}
-              <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="flex flex-col gap-2">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                    NGƯỜI NHẬN (EMAIL)
-                  </label>
-                  <input
-                    type="text"
-                    value={recipientEmail}
-                    onChange={e => handleRecipientEmailChange(e.target.value)}
-                    className="w-full bg-[#f8fafc] border border-slate-200/80 rounded-2xl px-4.5 py-3.5 text-sm font-semibold text-slate-700 outline-none focus:bg-white focus:border-[#0c363f] focus:ring-4 focus:ring-[#0c363f]/5 transition-all shadow-sm placeholder:text-slate-300"
-                    placeholder="Nhập địa chỉ email người nhận..."
-                  />
-                  <p className="text-[10px] text-slate-400 font-semibold mt-0.5 ml-1">
-                    Có thể nhập nhiều email, phân cách bằng dấu phẩy ( , )
-                  </p>
-                </div>
-                
-                <div className="flex flex-col gap-2">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                    TIÊU ĐỀ THƯ
-                  </label>
-                  <input
-                    type="text"
-                    value={emailSubject}
-                    onChange={e => setEmailSubject(e.target.value)}
-                    className="w-full bg-[#f8fafc] border border-slate-200/80 rounded-2xl px-4.5 py-3.5 text-sm font-semibold text-slate-700 outline-none focus:bg-white focus:border-[#0c363f] focus:ring-4 focus:ring-[#0c363f]/5 transition-all shadow-sm"
-                  />
-                </div>
-              </div>
-
-              {/* Attach Letters Option Switch */}
-              <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm flex items-center justify-between transition-all hover:shadow-md">
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-xs font-black text-slate-800 uppercase tracking-widest">Có đính kèm File PDF (Thư chúc mừng)</span>
-                  <span className="text-[11px] text-slate-400 font-semibold leading-relaxed">Tự động tạo và đính kèm liên kết tệp PDF Thư chúc mừng cho từng bé đạt yêu cầu</span>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={attachLetters}
-                    onChange={e => setAttachLetters(e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0c363f]"></div>
-                </label>
-              </div>
-
-              {/* Table Card */}
-              <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col">
-                <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-white">
-                  <span className="text-xs font-black text-slate-800 uppercase tracking-widest">
-                    DANH SÁCH BÉ GỬI ĐI ({emailStudents.length} BÉ)
-                  </span>
-                  <span className="text-[10px] font-black text-[#14b8a6] bg-[#14b8a6]/10 px-3 py-1 rounded-full">
-                    Bản xem trước
-                  </span>
-                </div>
-                
-                {/* Table Preview */}
-                <div className="overflow-x-auto max-h-[300px] custom-scrollbar">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead className="bg-[#f8fafc] sticky top-0 border-b border-slate-100 z-10">
-                      <tr>
-                        <th className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">STT</th>
-                        <th className="p-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">HỌ VÀ TÊN</th>
-                        <th className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">NHÓM TUỔI</th>
-                        <th className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">PHÁI</th>
-                        <th className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">NGÀY SINH</th>
-                        <th className="p-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">HỆ KHẢO SÁT</th>
-                        <th className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">KẾT QUẢ</th>
-                        <th className="p-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">CƠ SỞ NHẬN</th>
-                        {attachLetters && (
-                          <th className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">HỒ SƠ ĐÍNH KÈM</th>
-                        )}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 bg-white">
-                      {emailStudents.map((s, idx) => (
-                        <tr key={s.id} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="p-4 text-center text-slate-400 font-semibold">{idx + 1}</td>
-                          <td className="p-4 font-bold text-slate-700">{s.fullName}</td>
-                          <td className="p-4 text-center font-bold text-slate-600">{s.grade}</td>
-                          <td className="p-4 text-center font-medium text-slate-500">{s.gender === "M" || s.gender === "Nam" ? "Nam" : s.gender === "F" || s.gender === "Nữ" ? "Nữ" : s.gender || "—"}</td>
-                          <td className="p-4 text-center text-slate-500">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
-                          <td className="p-4 text-slate-600 font-medium">{s.surveyFormType || "—"}</td>
-                          <td className="p-4 text-center">
-                            <span className="inline-block px-3 py-1 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100">
+                            <span className="px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-100">
                               {s.admissionResult || "Đạt"}
                             </span>
                           </td>
-                          <td className="p-4 font-bold text-slate-600">{s.admissionCampus || "—"}</td>
-                          {attachLetters && (
-                            <td className="p-4 text-center">
-                              <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] font-black rounded border border-emerald-100">
-                                Thư chúc mừng
-                              </span>
-                            </td>
-                          )}
                         </tr>
                       ))}
-                      {emailStudents.length === 0 && (
-                        <tr>
-                          <td colSpan={attachLetters ? 9 : 8} className="p-8 text-center text-slate-400 font-bold bg-slate-50/30">Không có bé nào có kết quả xét duyệt dưới đợt/kỳ này.</td>
-                        </tr>
-                      )}
                     </tbody>
                   </table>
                 </div>
               </div>
-
-              {/* Fallback Preview Block */}
-              {emailResult && (
-                <div className={`p-5 rounded-2xl border animate-in fade-in slide-in-from-top-4 duration-300 ${
-                  emailResult.sent 
-                    ? "bg-emerald-50 border-emerald-100 text-emerald-800" 
-                    : "bg-amber-50 border-amber-100 text-amber-900"
-                }`}>
-                  <div className="flex items-start gap-3">
-                    <div className="pt-0.5">
-                      {emailResult.sent ? (
-                        <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                      ) : (
-                        <AlertCircle className="w-5 h-5 text-amber-600" />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-bold text-sm mb-1">
-                        {emailResult.sent ? "Gửi Email Thành công!" : "Hệ thống SMTP không phản hồi (Bản xem trước sẵn sàng)"}
-                      </h4>
-                      <p className="text-xs leading-relaxed opacity-90">
-                        {emailResult.sent 
-                          ? `Báo cáo nhanh đã được gửi trực tiếp tới hòm thư ${recipientEmail}.`
-                          : `Máy chủ SMTP không thể gửi thư trực tiếp (Lỗi: ${emailResult.error || "Timeout"}). Skyline đã tạo sẵn mã HTML email chuyên nghiệp phía dưới cho thầy cô.`}
-                      </p>
-                      
-                      {!emailResult.sent && emailResult.html && (
-                        <div className="mt-4 space-y-3">
-                          <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 bg-white/60 px-2 py-1 rounded border">Xem trước Thư & Sao chép:</span>
-                          <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-inner">
-                            <iframe 
-                              srcDoc={emailResult.html}
-                              className="w-full h-80 border-0"
-                              title="Email Live Preview"
-                            />
-                          </div>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => {
-                                navigator.clipboard.writeText(emailResult.html || "");
-                                alert("Đã sao chép nội dung HTML! Bạn có thể dán trực tiếp vào Outlook/Gmail để gửi.");
-                              }}
-                              className="bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-bold text-xs px-4 py-2 rounded-xl transition-all cursor-pointer"
-                            >
-                              📋 Sao chép HTML Email
-                            </button>
-                            <a
-                              href={`mailto:${recipientEmail}?subject=${encodeURIComponent(emailSubject)}&body=Xin mời xem bảng HTML báo cáo khảo sát đính kèm.`}
-                              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all"
-                            >
-                              📧 Mở Hòm thư Outlook/Gmail
-                            </a>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
 
             </div>
 
@@ -5255,25 +5076,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 Đóng lại
               </button>
               <button
-                onClick={handleExportDirectPDFs}
-                disabled={emailSending || emailStudents.length === 0}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              >
-                {emailSending && emailSendingStatus.includes("tải") ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>{emailSendingStatus || "Đang tải..."}</span>
-                  </>
-                ) : (
-                  <>
-                    <Download className="w-4 h-4" />
-                    Xuất & Tải trực tiếp PDF
-                  </>
-                )}
-              </button>
-              <button
                 onClick={handleSendQuickEmailSubmit}
-                disabled={emailSending || emailStudents.length === 0}
+                disabled={emailSending || emailStudents.filter(s => s.checked !== false).length === 0}
                 className="bg-[#0c363f] hover:bg-[#08262c] text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {emailSending ? (
@@ -5284,388 +5088,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 ) : (
                   <>
                     <Mail className="w-4 h-4" />
-                    Xác nhận & Gửi Email
-                  </>
-                )}
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
-
-
-
-
-      {/* Quick Email Modal Overlay */}
-      {isEmailModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex justify-center items-center z-[150] p-4 overflow-y-auto no-print">
-          <div className="bg-white rounded-3xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-slate-200 animate-in fade-in zoom-in-95 duration-300">
-            {/* Header */}
-            <div className="bg-[#0c363f] p-6 text-white shrink-0 relative overflow-hidden border-b border-[#14b8a6]/10">
-              <div className="absolute top-0 right-0 p-8 opacity-10">
-                <Mail className="w-32 h-32 text-white" />
-              </div>
-              <div className="relative z-10 flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-emerald-400 shadow-inner">
-                    <Mail className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-black tracking-wide flex items-center gap-2 text-white">
-                      Gửi Báo cáo nhanh qua Email (Mầm non)
-                    </h2>
-                    <p className="text-slate-300 text-xs mt-0.5 font-medium">Gửi trực tiếp danh sách kết quả khảo sát qua hệ thống email</p>
-                  </div>
-                </div>
-                <button 
-                  onClick={() => setIsEmailModalOpen(false)} 
-                  className="p-2 hover:bg-white/10 rounded-xl transition-colors text-white/80 hover:text-white"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 custom-scrollbar bg-[#f8fafc]">
-              
-              {/* Recipient Checkbox Configuration Panel */}
-              <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                  <div>
-                    <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest block">
-                      THIẾT LẬP CHECK EMAIL NHẬN
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-semibold mt-0.5 block">
-                      Chọn nhanh nhóm nhận thư tự động dựa trên Cơ sở (CS)
-                    </span>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => {
-                        const targetCS = ['CS1', 'CS2', 'CS3', 'CS4'];
-                        const newChecked = {
-                          tuvan: [...targetCS],
-                          giaovu: [...targetCS],
-                          gdcs: [...targetCS],
-                          cc: true
-                        };
-                        setCheckedEmails(newChecked);
-                        
-                        const selectedEmails = [];
-                        newChecked.tuvan.forEach(c => selectedEmails.push(EMAIL_MAP.tuvan[c]));
-                        newChecked.giaovu.forEach(c => selectedEmails.push(EMAIL_MAP.giaovu[c]));
-                        newChecked.gdcs.forEach(c => selectedEmails.push(EMAIL_MAP.gdcs[c]));
-                        if (newChecked.cc) selectedEmails.push(EMAIL_MAP.cc);
-                        
-                        const currentEmails = recipientEmail.split(',').map(e => e.trim()).filter(Boolean);
-                        const manualEmails = currentEmails.filter(e => !allMapEmails.includes(e));
-                        setRecipientEmail([...manualEmails, ...selectedEmails].join(', '));
-                      }}
-                      className="px-3 py-1.5 bg-[#0c363f]/5 hover:bg-[#0c363f]/10 text-[#0c363f] font-bold text-[10px] rounded-lg transition-colors cursor-pointer select-none"
-                    >
-                      Chọn nhanh CS1-CS4
-                    </button>
-                    <button
-                      onClick={() => {
-                        const newChecked = { tuvan: [], giaovu: [], gdcs: [], cc: false };
-                        setCheckedEmails(newChecked);
-                        const currentEmails = recipientEmail.split(',').map(e => e.trim()).filter(Boolean);
-                        const manualEmails = currentEmails.filter(e => !allMapEmails.includes(e));
-                        setRecipientEmail(manualEmails.join(', ') || (currentUser?.email || "bankhaothi@skylineschool.edu.vn"));
-                      }}
-                      className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-[10px] rounded-lg transition-colors cursor-pointer select-none"
-                    >
-                      Xóa chọn
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="divide-y divide-slate-50 text-xs">
-                  {/* Row 1: Tư vấn */}
-                  <div className="grid grid-cols-1 md:grid-cols-6 items-center gap-2 py-3">
-                    <span className="text-[11px] font-bold text-slate-500 md:col-span-1 tracking-wider uppercase">Tư vấn:</span>
-                    <div className="md:col-span-5 flex flex-wrap gap-x-6 gap-y-3">
-                      {['CS1', 'CS2', 'CS3', 'CS4', 'CS5'].map(cs => (
-                        <label key={`tuvan-${cs}`} className="inline-flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-600 hover:text-[#0c363f] transition-colors select-none">
-                          <input
-                            type="checkbox"
-                            checked={checkedEmails.tuvan.includes(cs)}
-                            onChange={() => handleCheckboxChange('tuvan', cs)}
-                            className="rounded border-slate-300 text-[#0c363f] focus:ring-[#0c363f] w-4.5 h-4.5 cursor-pointer accent-[#0c363f] transition-colors"
-                          />
-                          <span>{cs}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Row 2: Giáo vụ */}
-                  <div className="grid grid-cols-1 md:grid-cols-6 items-center gap-2 py-3">
-                    <span className="text-[11px] font-bold text-slate-500 md:col-span-1 tracking-wider uppercase">Giáo vụ:</span>
-                    <div className="md:col-span-5 flex flex-wrap gap-x-6 gap-y-3">
-                      {['CS1', 'CS2', 'CS3', 'CS4', 'CS5'].map(cs => (
-                        <label key={`giaovu-${cs}`} className="inline-flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-600 hover:text-[#0c363f] transition-colors select-none">
-                          <input
-                            type="checkbox"
-                            checked={checkedEmails.giaovu.includes(cs)}
-                            onChange={() => handleCheckboxChange('giaovu', cs)}
-                            className="rounded border-slate-300 text-[#0c363f] focus:ring-[#0c363f] w-4.5 h-4.5 cursor-pointer accent-[#0c363f] transition-colors"
-                          />
-                          <span>{cs}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Row 3: GĐCS */}
-                  <div className="grid grid-cols-1 md:grid-cols-6 items-center gap-2 py-3">
-                    <span className="text-[11px] font-bold text-slate-500 md:col-span-1 tracking-wider uppercase">GĐCS:</span>
-                    <div className="md:col-span-5 flex flex-wrap gap-x-6 gap-y-3">
-                      {['CS1', 'CS2', 'CS3', 'CS4', 'CS5'].map(cs => (
-                        <label key={`gdcs-${cs}`} className="inline-flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-600 hover:text-[#0c363f] transition-colors select-none">
-                          <input
-                            type="checkbox"
-                            checked={checkedEmails.gdcs.includes(cs)}
-                            onChange={() => handleCheckboxChange('gdcs', cs)}
-                            className="rounded border-slate-300 text-[#0c363f] focus:ring-[#0c363f] w-4.5 h-4.5 cursor-pointer accent-[#0c363f] transition-colors"
-                          />
-                          <span>{cs}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Row 4: CC */}
-                  <div className="grid grid-cols-1 md:grid-cols-6 items-center gap-2 py-3">
-                    <span className="text-[11px] font-bold text-slate-500 md:col-span-1 tracking-wider uppercase">CC:</span>
-                    <div className="md:col-span-5">
-                      <label className="inline-flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-600 hover:text-[#0c363f] transition-colors select-none">
-                        <input
-                          type="checkbox"
-                          checked={checkedEmails.cc}
-                          onChange={() => handleCheckboxChange('cc', 'cc')}
-                          className="rounded border-slate-300 text-[#0c363f] focus:ring-[#0c363f] w-4.5 h-4.5 cursor-pointer accent-[#0c363f] transition-colors"
-                        />
-                        <span className="text-slate-500">cc@skylineschool.edu.vn</span>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Form Config Card */}
-              <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="flex flex-col gap-2">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                    NGƯỜI NHẬN (EMAIL)
-                  </label>
-                  <input
-                    type="text"
-                    value={recipientEmail}
-                    onChange={e => handleRecipientEmailChange(e.target.value)}
-                    className="w-full bg-[#f8fafc] border border-slate-200/80 rounded-2xl px-4.5 py-3.5 text-sm font-semibold text-slate-700 outline-none focus:bg-white focus:border-[#0c363f] focus:ring-4 focus:ring-[#0c363f]/5 transition-all shadow-sm placeholder:text-slate-300"
-                    placeholder="Nhập địa chỉ email người nhận..."
-                  />
-                  <p className="text-[10px] text-slate-400 font-semibold mt-0.5 ml-1">
-                    Có thể nhập nhiều email, phân cách bằng dấu phẩy ( , )
-                  </p>
-                </div>
-                
-                <div className="flex flex-col gap-2">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                    TIÊU ĐỀ THƯ
-                  </label>
-                  <input
-                    type="text"
-                    value={emailSubject}
-                    onChange={e => setEmailSubject(e.target.value)}
-                    className="w-full bg-[#f8fafc] border border-slate-200/80 rounded-2xl px-4.5 py-3.5 text-sm font-semibold text-slate-700 outline-none focus:bg-white focus:border-[#0c363f] focus:ring-4 focus:ring-[#0c363f]/5 transition-all shadow-sm"
-                  />
-                </div>
-              </div>
-
-              {/* Attach Letters Option Switch */}
-              <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm flex items-center justify-between transition-all hover:shadow-md">
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-xs font-black text-slate-800 uppercase tracking-widest">Có đính kèm File PDF (Thư chúc mừng)</span>
-                  <span className="text-[11px] text-slate-400 font-semibold leading-relaxed">Tự động tạo và đính kèm liên kết tệp PDF Thư chúc mừng cho từng bé đạt yêu cầu</span>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={attachLetters}
-                    onChange={e => setAttachLetters(e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0c363f]"></div>
-                </label>
-              </div>
-
-              {/* Table Card */}
-              <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col">
-                <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-white">
-                  <span className="text-xs font-black text-slate-800 uppercase tracking-widest">
-                    DANH SÁCH BÉ GỬI ĐI ({emailStudents.length} BÉ)
-                  </span>
-                  <span className="text-[10px] font-black text-[#14b8a6] bg-[#14b8a6]/10 px-3 py-1 rounded-full">
-                    Bản xem trước
-                  </span>
-                </div>
-                
-                {/* Table Preview */}
-                <div className="overflow-x-auto max-h-[300px] custom-scrollbar">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead className="bg-[#f8fafc] sticky top-0 border-b border-slate-100 z-10">
-                      <tr>
-                        <th className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">STT</th>
-                        <th className="p-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">HỌ VÀ TÊN</th>
-                        <th className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">NHÓM TUỔI</th>
-                        <th className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">PHÁI</th>
-                        <th className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">NGÀY SINH</th>
-                        <th className="p-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">HỆ KHẢO SÁT</th>
-                        <th className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">KẾT QUẢ</th>
-                        <th className="p-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">CƠ SỞ NHẬN</th>
-                        {attachLetters && (
-                          <th className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">HỒ SƠ ĐÍNH KÈM</th>
-                        )}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 bg-white">
-                      {emailStudents.map((s, idx) => (
-                        <tr key={s.id} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="p-4 text-center text-slate-400 font-semibold">{idx + 1}</td>
-                          <td className="p-4 font-bold text-slate-700">{s.fullName}</td>
-                          <td className="p-4 text-center font-bold text-slate-600">{s.grade}</td>
-                          <td className="p-4 text-center font-medium text-slate-500">{s.gender === "M" || s.gender === "Nam" ? "Nam" : s.gender === "F" || s.gender === "Nữ" ? "Nữ" : s.gender || "—"}</td>
-                          <td className="p-4 text-center text-slate-500">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
-                          <td className="p-4 text-slate-600 font-medium">{s.surveyFormType || "—"}</td>
-                          <td className="p-4 text-center">
-                            <span className="inline-block px-3 py-1 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100">
-                              {s.admissionResult || "Đạt"}
-                            </span>
-                          </td>
-                          <td className="p-4 font-bold text-slate-600">{s.admissionCampus || "—"}</td>
-                          {attachLetters && (
-                            <td className="p-4 text-center">
-                              <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] font-black rounded border border-emerald-100">
-                                Thư chúc mừng
-                              </span>
-                            </td>
-                          )}
-                        </tr>
-                      ))}
-                      {emailStudents.length === 0 && (
-                        <tr>
-                          <td colSpan={attachLetters ? 9 : 8} className="p-8 text-center text-slate-400 font-bold bg-slate-50/30">Không có bé nào có kết quả xét duyệt dưới đợt/kỳ này.</td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Fallback Preview Block */}
-              {emailResult && (
-                <div className={`p-5 rounded-2xl border animate-in fade-in slide-in-from-top-4 duration-300 ${
-                  emailResult.sent 
-                    ? "bg-emerald-50 border-emerald-100 text-emerald-800" 
-                    : "bg-amber-50 border-amber-100 text-amber-900"
-                }`}>
-                  <div className="flex items-start gap-3">
-                    <div className="pt-0.5">
-                      {emailResult.sent ? (
-                        <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                      ) : (
-                        <AlertCircle className="w-5 h-5 text-amber-600" />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-bold text-sm mb-1">
-                        {emailResult.sent ? "Gửi Email Thành công!" : "Hệ thống SMTP không phản hồi (Bản xem trước sẵn sàng)"}
-                      </h4>
-                      <p className="text-xs leading-relaxed opacity-90">
-                        {emailResult.sent 
-                          ? `Báo cáo nhanh đã được gửi trực tiếp tới hòm thư ${recipientEmail}.`
-                          : `Máy chủ SMTP không thể gửi thư trực tiếp (Lỗi: ${emailResult.error || "Timeout"}). Skyline đã tạo sẵn mã HTML email chuyên nghiệp phía dưới cho thầy cô.`}
-                      </p>
-                      
-                      {!emailResult.sent && emailResult.html && (
-                        <div className="mt-4 space-y-3">
-                          <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 bg-white/60 px-2 py-1 rounded border">Xem trước Thư & Sao chép:</span>
-                          <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-inner">
-                            <iframe 
-                              srcDoc={emailResult.html}
-                              className="w-full h-80 border-0"
-                              title="Email Live Preview"
-                            />
-                          </div>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => {
-                                navigator.clipboard.writeText(emailResult.html || "");
-                                alert("Đã sao chép nội dung HTML! Bạn có thể dán trực tiếp vào Outlook/Gmail để gửi.");
-                              }}
-                              className="bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-bold text-xs px-4 py-2 rounded-xl transition-all cursor-pointer"
-                            >
-                              📋 Sao chép HTML Email
-                            </button>
-                            <a
-                              href={`mailto:${recipientEmail}?subject=${encodeURIComponent(emailSubject)}&body=Xin mời xem bảng HTML báo cáo khảo sát đính kèm.`}
-                              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all"
-                            >
-                              📧 Mở Hòm thư Outlook/Gmail
-                            </a>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-            </div>
-
-            {/* Footer */}
-            <div className="p-4 bg-white border-t border-slate-100 flex justify-end items-center gap-3 shrink-0">
-              <button 
-                onClick={() => setIsEmailModalOpen(false)} 
-                className="px-5 py-2.5 rounded-xl hover:bg-slate-100 font-bold text-slate-700 text-xs transition-colors cursor-pointer"
-              >
-                Đóng lại
-              </button>
-              <button
-                onClick={handleExportDirectPDFs}
-                disabled={emailSending || emailStudents.length === 0}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              >
-                {emailSending && emailSendingStatus.includes("tải") ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>{emailSendingStatus || "Đang tải..."}</span>
-                  </>
-                ) : (
-                  <>
-                    <Download className="w-4 h-4" />
-                    Xuất & Tải trực tiếp PDF
-                  </>
-                )}
-              </button>
-              <button
-                onClick={handleSendQuickEmailSubmit}
-                disabled={emailSending || emailStudents.length === 0}
-                className="bg-[#0c363f] hover:bg-[#08262c] text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              >
-                {emailSending ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>{emailSendingStatus || "Đang gửi..."}</span>
-                  </>
-                ) : (
-                  <>
-                    <Mail className="w-4 h-4" />
-                    Xác nhận & Gửi Email
+                    Xác nhận & Gửi Email chúc mừng
                   </>
                 )}
               </button>
