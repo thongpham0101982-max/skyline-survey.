@@ -823,6 +823,206 @@ export function ReportsClient({
     return "GLOBAL";
   }, [selectedReportStudent]);
 
+  const renderPrintPages = () => {
+    return (
+      <>
+        {/* PAGE 1: THE LETTER */}
+        <div className="bg-white rounded-none border border-slate-300 w-[210mm] min-w-[210mm] max-w-[210mm] h-[297mm] min-h-[297mm] p-[20mm_20mm_42mm_20mm] box-border relative flex flex-col justify-start overflow-hidden select-none font-serif text-slate-800 leading-normal" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
+          
+          {/* Watermark */}
+          {studentCampusConfig?.background && (
+            <img crossOrigin={(studentCampusConfig?.background || "").startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig?.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "110mm", height: "auto", opacity: 0.04, zIndex: 0, pointerEvents: "none" }} />
+          )}
+
+          {/* Content wrapped */}
+          <div className="relative z-10 flex flex-col h-full justify-start">
+            <div>
+              {/* Header logo */}
+              <div className="header-container" style={{ display: "flex", flexDirection: "column", borderBottom: "1.5px solid #00A6A9", paddingBottom: "8px", marginBottom: "16px" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  {studentCampusConfig?.logo ? (
+                    <img src={studentCampusConfig?.logo} alt="Logo" style={{ maxHeight: "48px", objectFit: "contain" }} />
+                  ) : (
+                    <svg style={{ height: "48px", fill: "#00A6A9" }} viewBox="0 0 260 50"><text x="0" y="38" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="34" letterSpacing="-1">SKY-LINE</text><circle cx="178" cy="26" r="6" /></svg>
+                  )}
+                </div>
+                <div style={{ textAlign: "left", marginTop: "4px" }}>
+                  <h4 style={{ fontFamily: "Arial, sans-serif", fontSize: "11pt", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.5px", color: "#1e293b", margin: 0 }}>
+                    {selectedLevel === "preschool" ? "TRƯỜNG MẦM NON SKY-LINE" : "TRƯỜNG TIỂU HỌC, THCS VÀ THPT SKY-LINE"}
+                  </h4>
+                </div>
+              </div>
+
+              {/* Title */}
+              <h2 style={{ textAlign: "center", fontSize: "22pt", fontWeight: "bold", color: "#0f172a", textTransform: "uppercase", letterSpacing: "2px", margin: "12px 0 16px 0" }}>
+                {studentCampusConfig?.title}
+              </h2>
+
+              {/* Greeting */}
+              <p style={{ fontSize: "14pt", fontStyle: "italic", marginBottom: "8px", color: "#1e293b", textIndent: 0 }}>
+                {isInvitation ? (
+                  <>Kính gửi Quý Phụ huynh và em <strong style={{ fontWeight: "bold", color: "#0f172a" }}>{selectedReportStudent?.fullName}</strong>,</>
+                ) : (
+                  <>Thân gửi con <strong style={{ fontWeight: "bold", color: "#0f172a" }}>{selectedReportStudent?.fullName}</strong>,</>
+                )}
+              </p>
+
+              {/* Body template text */}
+              <div style={{ flexGrow: 1, fontFamily: '"Times New Roman", Times, serif' }}>
+                {renderTemplate(
+                  studentCampusConfig?.content || "",
+                  selectedReportStudent
+                ).split('\n').filter(Boolean).map((para, idx) => {
+                  const isList = /^\s*[\d•\-*]+/.test(para);
+                  return (
+                    <p key={idx} style={isList ? { paddingLeft: "24px", fontWeight: "bold", color: "#374151", margin: "4px 0", fontSize: "13.5pt" } : { textIndent: "10mm", margin: "0 0 8px 0", textAlign: "justify", lineBreak: "auto", lineHeight: "1.45", fontSize: "13.5pt" }}>
+                      {para}
+                    </p>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Bottom Signatures dual-mode support with flexible spacer */}
+            <div style={{ flex: "1 1 auto", minHeight: "20px", maxHeight: "80px" }} />
+            {isCommitment ? (
+              <div style={{ width: "100%", display: "flex", justifyContent: "space-between", marginTop: "24px", paddingTop: "12px", pageBreakInside: "avoid", breakInside: "avoid" }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", width: "45%" }}>
+                  <p style={{ fontSize: "11pt", fontWeight: "bold", textTransform: "uppercase", margin: 0, textAlign: "center", textIndent: 0, color: "#475569" }}>ĐẠI DIỆN GIA ĐÌNH</p>
+                  <p style={{ fontSize: "9pt", fontStyle: "italic", color: "#64748b", marginTop: "4px", textIndent: 0 }}>(Ký và ghi rõ họ tên)</p>
+                  <div style={{ height: "60px", display: "flex", alignItems: "flex-end", justifyContent: "center", margin: "8px 0" }}>
+                    <span style={{ fontSize: "10pt", color: "#cbd5e1", fontStyle: "italic" }}>Ký tên</span>
+                  </div>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", width: "45%" }}>
+                  <p style={{ fontSize: "12pt", fontStyle: "italic", color: "#555555", marginBottom: "4px", textAlign: "center", textIndent: 0 }}>{formattedLetterDate}</p>
+                  <p style={{ fontSize: "11pt", fontWeight: "bold", textTransform: "uppercase", margin: 0, textAlign: "center", textIndent: 0, color: "#0f172a" }}>TM. HỘI ĐỒNG TUYỂN SINH</p>
+                  <p style={{ fontSize: "9pt", fontWeight: "bold", textTransform: "uppercase", color: "#475569", margin: "2px 0 0 0", textAlign: "center", textIndent: 0 }}>GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}</p>
+                  <div style={{ height: "60px", display: "flex", alignItems: "center", justifyContent: "center", margin: "8px 0" }}>
+                    {studentCampusConfig?.signature ? (
+                      <img src={studentCampusConfig?.signature} alt="Signature" style={{ maxHeight: "60px", objectFit: "contain" }} />
+                    ) : (
+                      <svg style={{ height: "60px" }} viewBox="0 0 100 40" width="120"><path d="M10,25 Q30,5 50,20 T90,15 M30,12 Q45,28 60,8" fill="none" stroke="#0f172a" strokeWidth="2" strokeLinecap="round"/></svg>
+                    )}
+                  </div>
+                  <p style={{ fontSize: "12pt", fontWeight: "bold", margin: 0, textAlign: "center", textIndent: 0, color: "#1e293b" }}>{selectedReportStudent?.signatureName || studentCampusConfig?.directorName || "Trần Thị Thanh"}</p>
+                </div>
+              </div>
+            ) : (
+              <div style={{ alignSelf: "flex-end", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", minWidth: "70mm", marginTop: "24px", paddingTop: "12px", pageBreakInside: "avoid", breakInside: "avoid" }}>
+                <p style={{ fontSize: "12pt", fontStyle: "italic", color: "#555555", marginBottom: "4px", textAlign: "center", textIndent: 0 }}>{formattedLetterDate}</p>
+                <p style={{ fontSize: "12pt", fontWeight: "bold", textTransform: "uppercase", margin: 0, textAlign: "center", textIndent: 0, color: "#0f172a" }}>TM. HỘI ĐỒNG TUYỂN SINH</p>
+                <p style={{ fontSize: "10pt", fontWeight: "bold", textTransform: "uppercase", color: "#475569", margin: "2px 0 0 0", textAlign: "center", textIndent: 0 }}>GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}</p>
+                <div style={{ height: "60px", display: "flex", alignItems: "center", justifyContent: "center", margin: "8px 0" }}>
+                  {studentCampusConfig?.signature ? (
+                    <img src={studentCampusConfig?.signature} alt="Signature" style={{ maxHeight: "60px", objectFit: "contain" }} />
+                  ) : (
+                    <svg style={{ height: "60px" }} viewBox="0 0 100 40" width="120"><path d="M10,25 Q30,5 50,20 T90,15 M30,12 Q45,28 60,8" fill="none" stroke="#0f172a" strokeWidth="2" strokeLinecap="round"/></svg>
+                  )}
+                </div>
+                <p style={{ fontSize: "13pt", fontWeight: "bold", margin: 0, textAlign: "center", textIndent: 0, color: "#1e293b" }}>{selectedReportStudent?.signatureName || studentCampusConfig?.directorName || "Trần Thị Thanh"}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Footer Banner - Moved outside inner container to anchor to actual A4 bottom */}
+          <div className="footer-container" style={{ position: "absolute", bottom: "12mm", left: "20mm", right: "20mm", width: "auto", zIndex: 10 }}>
+            {studentCampusConfig?.footer ? (
+              <img src={studentCampusConfig?.footer} alt="Footer" style={{ width: "100%", maxHeight: "100px", objectFit: "contain" }} />
+            ) : (
+              <div style={{ width: "100%", fontFamily: "Arial, sans-serif", boxSizing: "border-box", textAlign: "left" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", width: "100%" }}>
+                  <span style={{ fontWeight: "bold", color: "#00A6A9", whiteSpace: "nowrap", textTransform: "uppercase", fontSize: "9.5pt", letterSpacing: "0.5px" }}>HỆ THỐNG GIÁO DỤC SKY-LINE</span>
+                  <div style={{ flexGrow: 1, borderTop: "1px solid rgba(0, 166, 169, 0.7)", height: 0, marginTop: "2px" }}></div>
+                  <span style={{ fontWeight: "600", color: "#00A6A9", whiteSpace: "nowrap", textTransform: "lowercase", fontSize: "9pt" }}>www.skylineschool.edu.vn</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* PAGE 2: ADMISSION CHECKLIST */}
+        {modalDocList && modalDocList.length > 0 && !isInvitation && !isCommitment && (
+          <div className="bg-white rounded-none border border-slate-300 w-[210mm] min-w-[210mm] max-w-[210mm] h-[297mm] min-h-[297mm] p-[20mm_20mm_42mm_20mm] box-border relative flex flex-col justify-start overflow-hidden select-none font-serif text-slate-800 leading-normal" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
+            
+            {/* Watermark */}
+            {studentCampusConfig?.background && (
+              <img crossOrigin={(studentCampusConfig?.background || "").startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig?.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "110mm", height: "auto", opacity: 0.04, zIndex: 0, pointerEvents: "none" }} />
+            )}
+
+            <div className="relative z-10 flex flex-col h-full justify-start">
+              <div>
+                {/* Header logo */}
+                <div className="header-container" style={{ display: "flex", flexDirection: "column", borderBottom: "1.5px solid #00A6A9", paddingBottom: "8px", marginBottom: "16px" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    {studentCampusConfig?.logo ? (
+                      <img src={studentCampusConfig?.logo} alt="Logo" style={{ maxHeight: "48px", objectFit: "contain" }} />
+                    ) : (
+                      <svg style={{ height: "48px", fill: "#00A6A9" }} viewBox="0 0 260 50"><text x="0" y="38" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="34" letterSpacing="-1">SKY-LINE</text><circle cx="178" cy="26" r="6" /></svg>
+                    )}
+                  </div>
+                  <div style={{ textAlign: "left", marginTop: "4px" }}>
+                    <h4 style={{ fontFamily: "Arial, sans-serif", fontSize: "11pt", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.5px", color: "#1e293b", margin: 0 }}>
+                      {selectedLevel === "preschool" ? "TRƯỜNG MẦM NON SKY-LINE" : "TRƯỜNG TIỂU HỌC, THCS VÀ THPT SKY-LINE"}
+                    </h4>
+                  </div>
+                </div>
+
+                {/* Title */}
+                <h2 style={{ textAlign: "center", fontSize: "20pt", fontWeight: "bold", color: "#0f172a", textTransform: "uppercase", letterSpacing: "1px", margin: "24px 0" }}>
+                  DANH MỤC HỒ SƠ NHẬP HỌC
+                </h2>
+
+                {/* Table of documents */}
+                <div style={{ marginTop: "24px", overflow: "hidden", border: "1.5px solid #0f172a", borderRadius: "8px" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "13px", color: "#0f172a" }}>
+                    <thead>
+                      <tr style={{ backgroundColor: "#f8fafc", borderBottom: "1.5px solid #0f172a" }}>
+                        <th style={{ padding: "10px 15px", fontWeight: "bold", borderRight: "1.5px solid #0f172a", textAlign: "center", width: "60px", textTransform: "uppercase" }}>STT</th>
+                        <th style={{ padding: "10px 15px", fontWeight: "bold", borderRight: "1.5px solid #0f172a", textTransform: "uppercase" }}>Tên hồ sơ / Giấy tờ</th>
+                        <th style={{ padding: "10px 15px", fontWeight: "bold", textAlign: "center", width: "120px", textTransform: "uppercase" }}>Số lượng</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {modalDocList.map((item, idx) => (
+                        <tr key={item.id || idx} style={{ borderBottom: "1px solid #0f172a" }}>
+                          <td style={{ padding: "10px 15px", borderRight: "1.5px solid #0f172a", textAlign: "center" }}>{idx + 1}</td>
+                          <td style={{ padding: "10px 15px", borderRight: "1.5px solid #0f172a", fontWeight: "500" }}>{item.name}</td>
+                          <td style={{ padding: "10px 15px", textAlign: "center", fontWeight: "bold" }}>{item.qty}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <p style={{ marginTop: "24px", fontSize: "13px", fontWeight: "bold", color: "#1e293b", textAlign: "justify" }}>
+                  * Quý phụ huynh vui lòng hoàn thiện và nộp đầy đủ các giấy tờ nêu trên trong vòng 10 ngày kể từ ngày nhận được thông báo trúng tuyển.
+                </p>
+              </div>
+            </div>
+
+            {/* Footer Banner - Moved outside inner container to anchor to actual A4 bottom */}
+            <div className="footer-container" style={{ position: "absolute", bottom: "12mm", left: "20mm", right: "20mm", width: "auto", zIndex: 10 }}>
+              {studentCampusConfig?.footer ? (
+                <img src={studentCampusConfig?.footer} alt="Footer" style={{ width: "100%", maxHeight: "100px", objectFit: "contain" }} />
+              ) : (
+                <div style={{ width: "100%", fontFamily: "Arial, sans-serif", boxSizing: "border-box", textAlign: "left" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", width: "100%" }}>
+                    <span style={{ fontWeight: "bold", color: "#00A6A9", whiteSpace: "nowrap", textTransform: "uppercase", fontSize: "9.5pt", letterSpacing: "0.5px" }}>HỆ THỐNG GIÁO DỤC SKY-LINE</span>
+                    <div style={{ flexGrow: 1, borderTop: "1px solid rgba(0, 166, 169, 0.7)", height: 0, marginTop: "2px" }}></div>
+                    <span style={{ fontWeight: "600", color: "#00A6A9", whiteSpace: "nowrap", textTransform: "lowercase", fontSize: "9pt" }}>www.skylineschool.edu.vn</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+          </div>
+        )}
+      </>
+    );
+  };
+
+
 
   if (!mounted) {
     return (
@@ -1837,205 +2037,19 @@ export function ReportsClient({
         </div>
       )}
       <Modal open={isPrintModalOpen} onClose={() => setIsPrintModalOpen(false)} title={isInvitation ? "Mẫu Thư mời khảo sát" : isCommitment ? "Bản Cam kết học tập" : "Mẫu Thư Chúc mừng"} size="xl" footer={<><button onClick={() => setIsPrintModalOpen(false)} className="flex-1 text-xs font-black uppercase text-slate-400 hover:text-slate-600">Đóng</button><button onClick={handlePrintPDF} className="flex-1 py-3.5 bg-indigo-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 cursor-pointer"><Printer className="w-4 h-4" /> In / Tải PDF</button></>}>
-        <div className="bg-slate-50 p-4 border border-slate-100 rounded-3xl overflow-y-auto max-h-[60vh] flex flex-col items-center justify-start gap-8 w-full">
-          <div id="print-area-reports" className="flex flex-col items-center gap-8 w-full">
-            
-            {/* PAGE 1: THE LETTER */}
-            <div className="bg-white rounded-none border border-slate-300 w-[210mm] min-w-[210mm] max-w-[210mm] h-[297mm] min-h-[297mm] p-[20mm_20mm_42mm_20mm] box-border relative flex flex-col justify-start overflow-hidden select-none font-serif text-slate-800 leading-normal" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
-              
-              {/* Watermark */}
-              {studentCampusConfig?.background && (
-                <img crossOrigin={(studentCampusConfig?.background || "").startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig?.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "110mm", height: "auto", opacity: 0.04, zIndex: 0, pointerEvents: "none" }} />
-              )}
-
-              {/* Content wrapped */}
-              <div className="relative z-10 flex flex-col h-full justify-start">
-                <div>
-                  {/* Header logo */}
-                  <div className="header-container" style={{ display: "flex", flexDirection: "column", borderBottom: "1.5px solid #00A6A9", paddingBottom: "8px", marginBottom: "16px" }}>
-                    <div style={{ display: "flex", alignItems: "center", justifycontent: "space-between" }}>
-                      {studentCampusConfig?.logo ? (
-                        <img src={studentCampusConfig?.logo} alt="Logo" style={{ maxHeight: "48px", objectFit: "contain" }} />
-                      ) : (
-                        <svg style={{ height: "48px", fill: "#00A6A9" }} viewBox="0 0 260 50"><text x="0" y="38" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="34" letterSpacing="-1">SKY-LINE</text><circle cx="178" cy="26" r="6" /></svg>
-                      )}
-                    </div>
-                    <div style={{ textAlign: "left", marginTop: "4px" }}>
-                      <h4 style={{ fontFamily: "Arial, sans-serif", fontSize: "11pt", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.5px", color: "#1e293b", margin: 0 }}>
-                        {selectedLevel === "preschool" ? "TRƯỜNG MẦM NON SKY-LINE" : "TRƯỜNG TIỂU HỌC, THCS VÀ THPT SKY-LINE"}
-                      </h4>
-                    </div>
-                  </div>
-
-                  {/* Title */}
-                  <h2 style={{ textAlign: "center", fontSize: "22pt", fontWeight: "bold", color: "#0f172a", textTransform: "uppercase", letterSpacing: "2px", margin: "12px 0 16px 0" }}>
-                    {studentCampusConfig?.title}
-                  </h2>
-
-                  {/* Greeting */}
-                  <p style={{ fontSize: "14pt", fontStyle: "italic", marginBottom: "8px", color: "#1e293b", textIndent: 0 }}>
-                    {isInvitation ? (
-                      <>Kính gửi Quý Phụ huynh và em <strong style={{ fontWeight: "bold", color: "#0f172a" }}>{selectedReportStudent?.fullName}</strong>,</>
-                    ) : (
-                      <>Thân gửi con <strong style={{ fontWeight: "bold", color: "#0f172a" }}>{selectedReportStudent?.fullName}</strong>,</>
-                    )}
-                  </p>
-
-                  {/* Body template text */}
-                  <div style={{ flexGrow: 1, fontFamily: '"Times New Roman", Times, serif' }}>
-                    {renderTemplate(
-                      studentCampusConfig?.content || "",
-                      selectedReportStudent
-                    ).split('\n').filter(Boolean).map((para, idx) => {
-                      const isList = /^\s*[\d•\-*]+/.test(para);
-                      return (
-                        <p key={idx} style={isList ? { paddingLeft: "24px", fontWeight: "bold", color: "#374151", margin: "4px 0", fontSize: "13.5pt" } : { textIndent: "10mm", margin: "0 0 8px 0", textAlign: "justify", lineBreak: "auto", lineHeight: "1.45", fontSize: "13.5pt" }}>
-                          {para}
-                        </p>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Bottom Signatures dual-mode support with flexible spacer */}
-                <div style={{ flex: "1 1 auto", minHeight: "20px", maxHeight: "80px" }} />
-                {isCommitment ? (
-                  <div style={{ width: "100%", display: "flex", justifyContent: "space-between", marginTop: "24px", paddingTop: "12px", pageBreakInside: "avoid", breakInside: "avoid" }}>
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", width: "45%" }}>
-                      <p style={{ fontSize: "11pt", fontWeight: "bold", textTransform: "uppercase", margin: 0, textAlign: "center", textIndent: 0, color: "#475569" }}>ĐẠI DIỆN GIA ĐÌNH</p>
-                      <p style={{ fontSize: "9pt", fontStyle: "italic", color: "#64748b", marginTop: "4px", textIndent: 0 }}>(Ký và ghi rõ họ tên)</p>
-                      <div style={{ height: "60px", display: "flex", alignItems: "flex-end", justifyContent: "center", margin: "8px 0" }}>
-                        <span style={{ fontSize: "10pt", color: "#cbd5e1", fontStyle: "italic" }}>Ký tên</span>
-                      </div>
-                    </div>
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", width: "45%" }}>
-                      <p style={{ fontSize: "12pt", fontStyle: "italic", color: "#555555", marginBottom: "4px", textAlign: "center", textIndent: 0 }}>{formattedLetterDate}</p>
-                      <p style={{ fontSize: "11pt", fontWeight: "bold", textTransform: "uppercase", margin: 0, textAlign: "center", textIndent: 0, color: "#0f172a" }}>TM. HỘI ĐỒNG TUYỂN SINH</p>
-                      <p style={{ fontSize: "9pt", fontWeight: "bold", textTransform: "uppercase", color: "#475569", margin: "2px 0 0 0", textAlign: "center", textIndent: 0 }}>GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}</p>
-                      <div style={{ height: "60px", display: "flex", alignItems: "center", justifycontent: "center", margin: "8px 0" }}>
-                        {studentCampusConfig?.signature ? (
-                          <img src={studentCampusConfig?.signature} alt="Signature" style={{ maxHeight: "60px", objectFit: "contain" }} />
-                        ) : (
-                          <svg style={{ height: "60px" }} viewBox="0 0 100 40" width="120"><path d="M10,25 Q30,5 50,20 T90,15 M30,12 Q45,28 60,8" fill="none" stroke="#0f172a" strokeWidth="2" strokeLinecap="round"/></svg>
-                        )}
-                      </div>
-                      <p style={{ fontSize: "12pt", fontWeight: "bold", margin: 0, textAlign: "center", textIndent: 0, color: "#1e293b" }}>{selectedReportStudent?.signatureName || studentCampusConfig?.directorName || "Trần Thị Thanh"}</p>
-                    </div>
-                  </div>
-                ) : (
-                  <div style={{ alignSelf: "flex-end", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", minWidth: "70mm", marginTop: "24px", paddingTop: "12px", pageBreakInside: "avoid", breakInside: "avoid" }}>
-                    <p style={{ fontSize: "12pt", fontStyle: "italic", color: "#555555", marginBottom: "4px", textAlign: "center", textIndent: 0 }}>{formattedLetterDate}</p>
-                    <p style={{ fontSize: "12pt", fontWeight: "bold", textTransform: "uppercase", margin: 0, textAlign: "center", textIndent: 0, color: "#0f172a" }}>TM. HỘI ĐỒNG TUYỂN SINH</p>
-                    <p style={{ fontSize: "10pt", fontWeight: "bold", textTransform: "uppercase", color: "#475569", margin: "2px 0 0 0", textAlign: "center", textIndent: 0 }}>GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}</p>
-                    <div style={{ height: "60px", display: "flex", alignItems: "center", justifycontent: "center", margin: "8px 0" }}>
-                      {studentCampusConfig?.signature ? (
-                        <img src={studentCampusConfig?.signature} alt="Signature" style={{ maxHeight: "60px", objectFit: "contain" }} />
-                      ) : (
-                        <svg style={{ height: "60px" }} viewBox="0 0 100 40" width="120"><path d="M10,25 Q30,5 50,20 T90,15 M30,12 Q45,28 60,8" fill="none" stroke="#0f172a" strokeWidth="2" strokeLinecap="round"/></svg>
-                      )}
-                    </div>
-                    <p style={{ fontSize: "13pt", fontWeight: "bold", margin: 0, textAlign: "center", textIndent: 0, color: "#1e293b" }}>{selectedReportStudent?.signatureName || studentCampusConfig?.directorName || "Trần Thị Thanh"}</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Footer Banner - Moved outside inner container to anchor to actual A4 bottom */}
-              <div className="footer-container" style={{ position: "absolute", bottom: "12mm", left: "20mm", right: "20mm", width: "auto", zIndex: 10 }}>
-                {studentCampusConfig?.footer ? (
-                  <img src={studentCampusConfig?.footer} alt="Footer" style={{ width: "100%", maxHeight: "100px", objectFit: "contain" }} />
-                ) : (
-                  <div style={{ width: "100%", fontFamily: "Arial, sans-serif", boxSizing: "border-box", textAlign: "left" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", width: "100%" }}>
-                      <span style={{ fontWeight: "bold", color: "#00A6A9", whiteSpace: "nowrap", textTransform: "uppercase", fontSize: "9.5pt", letterSpacing: "0.5px" }}>HỆ THỐNG GIÁO DỤC SKY-LINE</span>
-                      <div style={{ flexGrow: 1, borderTop: "1px solid rgba(0, 166, 169, 0.7)", height: 0, marginTop: "2px" }}></div>
-                      <span style={{ fontWeight: "600", color: "#00A6A9", whiteSpace: "nowrap", textTransform: "lowercase", fontSize: "9pt" }}>www.skylineschool.edu.vn</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-            </div>
-
-            {/* PAGE 2: ADMISSION CHECKLIST */}
-            {modalDocList && modalDocList.length > 0 && !isInvitation && !isCommitment && (
-              <div className="bg-white rounded-none border border-slate-300 w-[210mm] min-w-[210mm] max-w-[210mm] h-[297mm] min-h-[297mm] p-[20mm_20mm_42mm_20mm] box-border relative flex flex-col justify-start overflow-hidden select-none font-serif text-slate-800 leading-normal" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
-                
-                {/* Watermark */}
-                {studentCampusConfig?.background && (
-                  <img crossOrigin={(studentCampusConfig?.background || "").startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig?.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "110mm", height: "auto", opacity: 0.04, zIndex: 0, pointerEvents: "none" }} />
-                )}
-
-                <div className="relative z-10 flex flex-col h-full justify-start">
-                  <div>
-                    {/* Header logo */}
-                    <div className="header-container" style={{ display: "flex", flexDirection: "column", borderBottom: "1.5px solid #00A6A9", paddingBottom: "8px", marginBottom: "16px" }}>
-                      <div style={{ display: "flex", alignItems: "center", justifycontent: "space-between" }}>
-                        {studentCampusConfig?.logo ? (
-                          <img src={studentCampusConfig?.logo} alt="Logo" style={{ maxHeight: "48px", objectFit: "contain" }} />
-                        ) : (
-                          <svg style={{ height: "48px", fill: "#00A6A9" }} viewBox="0 0 260 50"><text x="0" y="38" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="34" letterSpacing="-1">SKY-LINE</text><circle cx="178" cy="26" r="6" /></svg>
-                        )}
-                      </div>
-                      <div style={{ textAlign: "left", marginTop: "4px" }}>
-                        <h4 style={{ fontFamily: "Arial, sans-serif", fontSize: "11pt", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.5px", color: "#1e293b", margin: 0 }}>
-                          {selectedLevel === "preschool" ? "TRƯỜNG MẦM NON SKY-LINE" : "TRƯỜNG TIỂU HỌC, THCS VÀ THPT SKY-LINE"}
-                        </h4>
-                      </div>
-                    </div>
-
-                    {/* Title */}
-                    <h2 style={{ textAlign: "center", fontSize: "20pt", fontWeight: "bold", color: "#0f172a", textTransform: "uppercase", letterSpacing: "1px", margin: "24px 0" }}>
-                      DANH MỤC HỒ SƠ NHẬP HỌC
-                    </h2>
-
-                    {/* Table of documents */}
-                    <div style={{ marginTop: "24px", overflow: "hidden", border: "1.5px solid #0f172a", borderRadius: "8px" }}>
-                      <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "13px", color: "#0f172a" }}>
-                        <thead>
-                          <tr style={{ backgroundColor: "#f8fafc", borderBottom: "1.5px solid #0f172a" }}>
-                            <th style={{ padding: "10px 15px", fontWeight: "bold", borderRight: "1.5px solid #0f172a", textAlign: "center", width: "60px", textTransform: "uppercase" }}>STT</th>
-                            <th style={{ padding: "10px 15px", fontWeight: "bold", borderRight: "1.5px solid #0f172a", textTransform: "uppercase" }}>Tên hồ sơ / Giấy tờ</th>
-                            <th style={{ padding: "10px 15px", fontWeight: "bold", textAlign: "center", width: "120px", textTransform: "uppercase" }}>Số lượng</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {modalDocList.map((item: any, idx: number) => (
-                            <tr key={item.id || idx} style={{ borderBottom: "1px solid #0f172a" }}>
-                              <td style={{ padding: "10px 15px", borderRight: "1.5px solid #0f172a", textAlign: "center" }}>{idx + 1}</td>
-                              <td style={{ padding: "10px 15px", borderRight: "1.5px solid #0f172a", fontWeight: "500" }}>{item.name}</td>
-                              <td style={{ padding: "10px 15px", textAlign: "center", fontWeight: "bold" }}>{item.qty}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    <p style={{ marginTop: "24px", fontSize: "13px", fontWeight: "bold", color: "#1e293b", textAlign: "justify" }}>
-                      * Quý phụ huynh vui lòng hoàn thiện và nộp đầy đủ các giấy tờ nêu trên trong vòng 10 ngày kể từ ngày nhận được thông báo trúng tuyển.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Footer Banner - Moved outside inner container to anchor to actual A4 bottom */}
-                <div className="footer-container" style={{ position: "absolute", bottom: "12mm", left: "20mm", right: "20mm", width: "auto", zIndex: 10 }}>
-                  {studentCampusConfig?.footer ? (
-                    <img src={studentCampusConfig?.footer} alt="Footer" style={{ width: "100%", maxHeight: "100px", objectFit: "contain" }} />
-                  ) : (
-                    <div style={{ width: "100%", fontFamily: "Arial, sans-serif", boxSizing: "border-box", textAlign: "left" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", width: "100%" }}>
-                        <span style={{ fontWeight: "bold", color: "#00A6A9", whiteSpace: "nowrap", textTransform: "uppercase", fontSize: "9.5pt", letterSpacing: "0.5px" }}>HỆ THỐNG GIÁO DỤC SKY-LINE</span>
-                        <div style={{ flexGrow: 1, borderTop: "1px solid rgba(0, 166, 169, 0.7)", height: 0, marginTop: "2px" }}></div>
-                        <span style={{ fontWeight: "600", color: "#00A6A9", whiteSpace: "nowrap", textTransform: "lowercase", fontSize: "9pt" }}>www.skylineschool.edu.vn</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
+        <div className="bg-slate-50 p-4 border border-slate-100 rounded-3xl overflow-y-auto max-h-[60vh] flex flex-col items-center justify-start gap-8 w-full animate-none">
+          <div className="flex flex-col items-center gap-8 w-full">
+            {renderPrintPages()}
           </div>
         </div>
       </Modal>
+
+      {/* Hidden print container for high-fidelity A4 output */}
+      {isPrintModalOpen && (
+        <div id="print-area-reports" className="flex flex-col items-center gap-8 w-full" style={{ display: "none" }}>
+          {renderPrintPages()}
+        </div>
+      )}
 
             {/* DOCUMENT ADD/EDIT MODAL */}
       {isDocModalOpen && (
@@ -2185,25 +2199,17 @@ export function ReportsClient({
 
       {/* Native Print Media Styles */}
       <style>{`
+        @media screen {
+          #print-area-reports {
+            display: none !important;
+          }
+        }
         @media print {
           html, body {
             width: 100% !important;
             height: auto !important;
             min-height: 0 !important;
             overflow: visible !important;
-          }
-          /* Reset parent modal/dialog constraints so they do not clip printable pages */
-          .fixed, .absolute, [role="dialog"], .bg-slate-50, .max-h-\[60vh\], .max-h-\[75vh\], .overflow-y-auto, .overflow-hidden {
-            position: static !important;
-            max-height: none !important;
-            height: auto !important;
-            overflow: visible !important;
-            border: none !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            box-shadow: none !important;
-            background: transparent !important;
-            display: block !important;
           }
           body * {
             visibility: hidden !important;
@@ -2220,6 +2226,7 @@ export function ReportsClient({
             margin: 0 !important;
             padding: 0 !important;
             background-color: transparent !important;
+            z-index: 999999 !important;
           }
           #print-area-reports > div {
             width: 210mm !important;
