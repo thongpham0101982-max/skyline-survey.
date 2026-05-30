@@ -2186,6 +2186,25 @@ export function ReportsClient({
       {/* Native Print Media Styles */}
       <style>{`
         @media print {
+          html, body {
+            width: 100% !important;
+            height: auto !important;
+            min-height: 0 !important;
+            overflow: visible !important;
+          }
+          /* Reset parent modal/dialog constraints so they do not clip printable pages */
+          .fixed, .absolute, [role="dialog"], .bg-slate-50, .max-h-\[60vh\], .max-h-\[75vh\], .overflow-y-auto, .overflow-hidden {
+            position: static !important;
+            max-height: none !important;
+            height: auto !important;
+            overflow: visible !important;
+            border: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            box-shadow: none !important;
+            background: transparent !important;
+            display: block !important;
+          }
           body * {
             visibility: hidden !important;
           }
@@ -2207,7 +2226,7 @@ export function ReportsClient({
             height: 297mm !important;
             min-height: 297mm !important;
             max-height: 297mm !important;
-            margin: 0 0 10mm 0 !important;
+            margin: 0 !important;
             padding: 20mm 20mm 42mm 20mm !important;
             box-sizing: border-box !important;
             position: relative !important;
@@ -2220,7 +2239,7 @@ export function ReportsClient({
           #print-area-reports > div:last-child {
             page-break-after: auto !important;
             break-after: auto !important;
-            margin-bottom: 0 !important;
+            margin: 0 !important;
           }
           .footer-container {
             position: absolute !important;
