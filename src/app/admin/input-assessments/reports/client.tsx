@@ -746,10 +746,37 @@ export function ReportsClient({
 
   // Selected campus and its specific department emails (Giáo vụ, GĐCS, Tư vấn)
   const selectedCampusObj = useMemo(() => {
-    const batchCampusId = cBatchId !== "all" ? (activeBatches.find(b => b.id === cBatchId)?.campusId) : null;
+    // 1. Try direct batch campusId relation
+    const selectedBatch = cBatchId !== "all" ? activeBatches.find(b => b.id === cBatchId) : null;
+    const batchCampusId = selectedBatch?.campusId;
     if (batchCampusId) {
-      return campuses.find((c: any) => c.id === batchCampusId);
+      const found = campuses.find((c: any) => c.id === batchCampusId);
+      if (found) return found;
     }
+
+    // 2. Try parsing batch name for campus prefix/code (e.g. CS1, CS2, CS3, CS4, CS5)
+    if (selectedBatch && selectedBatch.name) {
+      const bName = selectedBatch.name.toUpperCase();
+      const matchedCampus = campuses.find((c: any) => {
+        const cCode = (c.campusCode || "").toUpperCase();
+        const cName = (c.campusName || "").toUpperCase();
+        return (cCode && bName.includes(cCode)) || (cName && bName.includes(cName));
+      });
+      if (matchedCampus) return matchedCampus;
+    }
+
+    // 2b. Try parsing period name for campus prefix/code
+    if (activePeriod && activePeriod.name) {
+      const pName = activePeriod.name.toUpperCase();
+      const matchedCampus = campuses.find((c: any) => {
+        const cCode = (c.campusCode || "").toUpperCase();
+        const cName = (c.campusName || "").toUpperCase();
+        return (cCode && pName.includes(cCode)) || (cName && pName.includes(cName));
+      });
+      if (matchedCampus) return matchedCampus;
+    }
+
+    // 3. Try parsing students' campus in the filtered list
     if (students && students.length > 0) {
       const firstStudentCampus = students[0].admissionCampus;
       const found = campuses.find((c: any) => 
@@ -759,7 +786,7 @@ export function ReportsClient({
       if (found) return found;
     }
     return campuses[0];
-  }, [cBatchId, activeBatches, campuses, students]);
+  }, [cBatchId, activeBatches, campuses, students, activePeriod]);
 
   const campusLabel = useMemo(() => {
     if (!selectedCampusObj) return "Toàn Hệ thống";
