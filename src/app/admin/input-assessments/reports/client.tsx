@@ -2210,6 +2210,27 @@ export function ReportsClient({
             height: auto !important;
             min-height: 0 !important;
             overflow: visible !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          /* Flatten all intermediate layout wrappers in the DOM to prevent shifts or crops */
+          div:not(#print-area-reports):not(#print-area-reports *),
+          main:not(#print-area-reports):not(#print-area-reports *),
+          section:not(#print-area-reports):not(#print-area-reports *),
+          aside:not(#print-area-reports):not(#print-area-reports *),
+          header:not(#print-area-reports):not(#print-area-reports *),
+          footer:not(#print-area-reports):not(#print-area-reports *) {
+            position: static !important;
+            overflow: visible !important;
+            max-height: none !important;
+            height: auto !important;
+            min-height: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
+            background: transparent !important;
+            display: block !important;
           }
           body * {
             visibility: hidden !important;
@@ -2219,11 +2240,9 @@ export function ReportsClient({
           }
           #print-area-reports {
             display: block !important;
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
+            position: relative !important;
             width: 210mm !important;
-            margin: 0 !important;
+            margin: 0 auto !important;
             padding: 0 !important;
             background-color: transparent !important;
             z-index: 999999 !important;
@@ -2233,7 +2252,7 @@ export function ReportsClient({
             height: 297mm !important;
             min-height: 297mm !important;
             max-height: 297mm !important;
-            margin: 0 !important;
+            margin: 0 auto !important;
             padding: 20mm 20mm 42mm 20mm !important;
             box-sizing: border-box !important;
             position: relative !important;
@@ -2246,7 +2265,7 @@ export function ReportsClient({
           #print-area-reports > div:last-child {
             page-break-after: auto !important;
             break-after: auto !important;
-            margin: 0 !important;
+            margin: 0 auto !important;
           }
           .footer-container {
             position: absolute !important;
