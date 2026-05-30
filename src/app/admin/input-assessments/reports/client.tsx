@@ -1671,34 +1671,27 @@ export function ReportsClient({
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex gap-1.5 flex-wrap">
-                            <button
-                              onClick={() => { setIsInvitation(true); setIsCommitment(false); setSelectedReportStudent(s); setIsPrintModalOpen(true); }}
-                              className="px-2.5 py-1.5 text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-lg hover:bg-indigo-600 hover:text-white transition-all shadow-sm flex items-center gap-1 cursor-pointer"
-                            >
-                              <Mail className="w-3 h-3"/> Thư mời
-                            </button>
+                            {selectedLevel !== "preschool" && (
+                              <button
+                                onClick={() => { setIsInvitation(true); setIsCommitment(false); setSelectedReportStudent(s); setIsPrintModalOpen(true); }}
+                                className="px-2.5 py-1.5 text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-lg hover:bg-indigo-600 hover:text-white transition-all shadow-sm flex items-center gap-1 cursor-pointer"
+                              >
+                                <Mail className="w-3 h-3"/> Thư mời
+                              </button>
+                            )}
                             <button
                               onClick={() => { setIsInvitation(false); setIsCommitment(false); setSelectedReportStudent(s); setIsPrintModalOpen(true); }}
                               className="px-2.5 py-1.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm flex items-center gap-1 cursor-pointer"
                             >
                               <CheckCircle className="w-3 h-3"/> Chúc mừng
                             </button>
-                            {selectedLevel === "preschool" ? (
+                            {selectedLevel !== "preschool" && (result.includes("cam kết") || result.includes("Đạt cam kết")) && (
                               <button
                                 onClick={() => { setIsInvitation(false); setIsCommitment(true); setSelectedReportStudent(s); setIsPrintModalOpen(true); }}
                                 className="px-2.5 py-1.5 text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-100 rounded-lg hover:bg-amber-600 hover:text-white transition-all shadow-sm flex items-center gap-1 cursor-pointer"
                               >
                                 <PenLine className="w-3 h-3"/> Bản Cam kết
                               </button>
-                            ) : (
-                              (result.includes("cam kết") || result.includes("Đạt cam kết")) && (
-                                <button
-                                  onClick={() => { setIsInvitation(false); setIsCommitment(true); setSelectedReportStudent(s); setIsPrintModalOpen(true); }}
-                                  className="px-2.5 py-1.5 text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-100 rounded-lg hover:bg-amber-600 hover:text-white transition-all shadow-sm flex items-center gap-1 cursor-pointer"
-                                >
-                                  <PenLine className="w-3 h-3"/> Bản Cam kết
-                                </button>
-                              )
                             )}
                           </div>
                         </td>
