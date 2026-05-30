@@ -2315,7 +2315,7 @@ export function ReportsClient({
 
               <div className="flex flex-col group">
                 <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider mb-1.5 ml-1 flex items-center gap-1">
-                  <Layers className="w-3 h-3 text-indigo-500" /> Đợt Khảo sát
+                  <ClipboardList className="w-3 h-3 text-indigo-500" /> Đợt Khảo sát
                 </span>
                 <div className="relative">
                   <select value={cBatchId} onChange={e => setCBatchId(e.target.value)} className="bg-white border border-slate-200 pl-4 pr-10 py-2.5 text-xs font-bold text-slate-700 rounded-xl outline-none min-w-[170px] focus:border-indigo-400 focus:ring-4 focus:ring-indigo-150/15 appearance-none cursor-pointer transition-all shadow-sm">
