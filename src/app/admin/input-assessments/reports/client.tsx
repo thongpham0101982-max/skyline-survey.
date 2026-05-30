@@ -819,6 +819,484 @@ export function ReportsClient({
     };
   }, [selectedCampusObj, gdcsUsers, teachers]);
 
+  // PDF & HTML Generation Helpers for dynamic quick reports emailing
+  const getHtml2Pdf = async () => {
+    if (typeof window !== "undefined" && (window as any).html2pdf) {
+      return (window as any).html2pdf;
+    }
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
+      script.onload = () => {
+        if ((window as any).html2pdf) resolve((window as any).html2pdf);
+        else reject(new Error("html2pdf failed to load"));
+      };
+      script.onerror = () => reject(new Error("Failed to load html2pdf script"));
+      document.head.appendChild(script);
+    });
+  };
+
+  const generatePdfBase64 = async (html2pdf: any, docHtml: string, opt: any) => {
+    const styleElements = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'));
+    const detachedElements: any[] = [];
+    styleElements.forEach((el: any) => {
+      const parent = el.parentNode;
+      if (parent) {
+        try {
+          parent.removeChild(el);
+          detachedElements.push({ element: el, parent });
+        } catch (err) {
+          console.error("Failed to detach style element:", err);
+        }
+      }
+    });
+
+    try {
+      const pdfBase64 = await html2pdf().from(docHtml).set(opt).outputPdf('datauristring');
+      return pdfBase64;
+    } finally {
+      detachedElements.forEach(({ element, parent }) => {
+        if (parent) {
+          try {
+            parent.appendChild(element);
+          } catch (e) {
+            console.error("Failed to re-attach style element:", e);
+          }
+        }
+      });
+    }
+  };
+
+  const getStudentCampusConfigForEmail = (student: any) => {
+    if (typeof window === "undefined" || !student) return null;
+    const effCampus = student.admissionCampus;
+    let targetCampus = campuses.find((c: any) => 
+      c.id === effCampus || c.campusName === effCampus || c.campusCode === effCampus ||
+      effCampus?.includes(c.campusCode) || effCampus?.includes(c.campusName)
+    );
+    if (!targetCampus && campuses.length > 0) targetCampus = campuses[0];
+
+    if (targetCampus) {
+      let studentGroup = "all";
+      const gClean = String(student.grade || "").toLowerCase();
+      if (gClean.includes("mầm non") || gClean.includes("nhóm") || selectedLevel === "preschool") {
+        studentGroup = "preschool";
+      } else if (gClean.includes("6") || gClean.includes("7") || gClean.includes("8") || gClean.includes("9")) {
+        studentGroup = "khoi_6";
+      } else if (gClean.includes("10") || gClean.includes("11") || gClean.includes("12")) {
+        studentGroup = "khoi_10_noi_tinh";
+      } else {
+        studentGroup = "khoi_1";
+      }
+
+      const baseKey = 'thu_chuc_mung';
+      const typeKey = selectedLevel === "preschool" ? baseKey + "_preschool" : baseKey + "_" + studentGroup;
+
+      const savedCampus = localStorage.getItem('report_config_' + targetCampus.id + '_' + typeKey);
+      const savedGlobal = localStorage.getItem('report_config_global_' + typeKey);
+
+      let campusData: any = {};
+      let globalData: any = {};
+      if (savedCampus) { try { campusData = JSON.parse(savedCampus); } catch (e) {} }
+      if (savedGlobal) { try { globalData = JSON.parse(savedGlobal); } catch (e) {} }
+
+      const mergedTitle = globalData.title || campusData.title || "THƯ CHÚC MỪNG";
+      const mLogo = localStorage.getItem('report_config_master_logo') || "";
+      const mBg = localStorage.getItem('report_config_master_background') || "";
+      const mFooter = localStorage.getItem('report_config_master_footer') || "";
+      const mSig = localStorage.getItem('report_config_master_signature') || "";
+
+      const mergedLogo = mLogo || globalData.logo || campusData.logo || "";
+      const mergedBackground = mBg || globalData.background || campusData.background || "";
+      
+      const defaultText = selectedLevel === "preschool"
+        ? defaultPreschoolCongratulations
+        : defaultThuChucMung;
+
+      const mergedContent = globalData.content || campusData.content || defaultText;
+      const mergedFooter = mFooter || globalData.footer || campusData.footer || "";
+      const campusSig = localStorage.getItem('report_config_signature_' + targetCampus.id) || campusData.signature || mSig || "";
+      const campusDir = localStorage.getItem('report_config_director_' + targetCampus.id) || campusData.directorName || targetCampus.manager?.fullName || getCampusDefaultManager(targetCampus.campusName || "");
+
+      return {
+        title: mergedTitle,
+        logo: mergedLogo,
+        background: mergedBackground,
+        content: mergedContent,
+        footer: mergedFooter,
+        signature: campusSig,
+        directorName: campusDir
+      };
+    }
+    return null;
+  };
+
+  const getStudentDocListForEmail = (student: any) => {
+    if (typeof window === "undefined" || !student) return [];
+    
+    let studentGroup = "khoi_1";
+    const getNumericGrade = (g: any) => {
+      if (!g) return null;
+      const match = g.toString().match(/d+/);
+      return match ? parseInt(match[0], 10) : null;
+    };
+    const sGradeNum = getNumericGrade(student.grade);
+    
+    const gradeMatchedGroups = docGroups.filter(g => {
+      const mappedGrades = docGroupGrades[g.id] || [];
+      const hasGradeMatch = mappedGrades.some(gradeStr => {
+        if (!student.grade) return false;
+        const sGrade = student.grade.toString().toLowerCase();
+        const gStr = gradeStr.toLowerCase();
+        return sGrade === gStr || sGrade.includes(gStr) || gStr.includes(sGrade);
+      });
+      if (hasGradeMatch) return true;
+      
+      if (sGradeNum !== null) {
+        if (g.id === "khoi_1" && sGradeNum === 1) return true;
+        if (g.id === "khoi_2_5" && sGradeNum >= 2 && sGradeNum <= 5) return true;
+        if (g.id === "khoi_6" && sGradeNum === 6) return true;
+        if (g.id === "khoi_10_noi_tinh" && sGradeNum === 10) return true;
+        if (g.id === "khoi_10_ngoai_tinh" && sGradeNum === 10) return true;
+      }
+      return false;
+    });
+
+    if (student.targetType) {
+      const studentTargets = student.targetType.split(',').map((x: any) => x.trim().toLowerCase()).filter(Boolean);
+      
+      const targetMatch = gradeMatchedGroups.find(g => {
+        const mappedTs = docGroupTargets[g.id] || [];
+        return mappedTs.some(ts => studentTargets.includes(ts.toLowerCase()));
+      });
+      
+      if (targetMatch) {
+        studentGroup = targetMatch.id;
+      } else {
+        const anyTargetMatch = docGroups.find(g => {
+          const mappedTs = docGroupTargets[g.id] || [];
+          return mappedTs.some(ts => studentTargets.includes(ts.toLowerCase()));
+        });
+        if (anyTargetMatch) {
+          studentGroup = anyTargetMatch.id;
+        } else {
+          studentGroup = gradeMatchedGroups[0]?.id || "doi_tuong_tuyen_sinh";
+        }
+      }
+    } else {
+      studentGroup = gradeMatchedGroups[0]?.id || "khoi_1";
+    }
+    
+    const saved = localStorage.getItem('admission_docs_' + studentGroup);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      } catch (e) {}
+    }
+    
+    if (studentGroup === "khoi_2_5") return defaultDocumentsGrade2_5;
+    if (studentGroup === "khoi_6") return defaultDocumentsGrade6;
+    if (studentGroup === "khoi_10_noi_tinh") return defaultDocumentsGrade10NoiTinh;
+    if (studentGroup === "khoi_10_ngoai_tinh") return defaultDocumentsGrade10NgoaiTinh;
+    return defaultDocumentsGrade1;
+  };
+
+  const buildLetterHtmlForEmail = (student: any, config: any) => {
+    const rawGrade = student?.grade || "1";
+    const gradeMatch = rawGrade.toString().match(/d+/);
+    const numericGrade = gradeMatch ? gradeMatch[0] : rawGrade;
+    const comSubs = Array.isArray(student?.committedSubjects) 
+      ? student.committedSubjects.join(", ") 
+      : (student?.committedSubjects || "");
+      
+    const renderedContent = (config.content || "")
+      .replace(/{{fullName}}/g, student?.fullName || "")
+      .replace(/{{grade}}/g, numericGrade)
+      .replace(/{{hocKy}}/g, student?.hocKy || "1")
+      .replace(/{{surveyFormType}}/g, student?.surveyFormType || "")
+      .replace(/{{admissionCampus}}/g, student?.admissionCampus || "")
+      .replace(/{{directorNote}}/g, student?.directorNote || "")
+      .replace(/{{committedSubjects}}/g, comSubs)
+      .replace(/{{signatureName}}/g, student?.signatureName || "");
+
+    const paragraphs = renderedContent.split("\n").filter(Boolean);
+    const bodyHtml = paragraphs.map((p: string) => '<p style="text-indent: 1cm; margin: 0 0 10px 0;">' + p + '</p>').join("");
+    
+    const greetingHtml = 'Thân gửi con <strong style="font-weight: 900; font-style: normal; color: #0f172a;">' + student.fullName + '</strong>,';
+    const directorName = student?.signatureName || config.directorName || "Trần Thị Thanh";
+    const getImgTag = (src: string, className: string, style: string = "", alt: string = "") => {
+      if (!src) return "";
+      const cors = src.startsWith("data:") ? "" : ' crossorigin="anonymous"';
+      const styleAttr = style ? ' style="' + style + '"' : "";
+      const altAttr = alt ? ' alt="' + alt + '"' : "";
+      return '<img class="' + className + '"' + cors + ' src="' + src + '"' + styleAttr + altAttr + ' />';
+    };
+
+    const logoHtml = config.logo ? getImgTag(config.logo, "logo-img", "", "Logo") : "";
+    const signatureHtml = config.signature ? getImgTag(config.signature, "signature-img", "", "Signature") : "";
+    const footerHtml = config.footer ? getImgTag(config.footer, "footer-img", "", "Footer") : "";
+    
+    const effCampus = student.admissionCampus;
+    const campusObj = campuses.find((c: any) => c.id === effCampus || c.campusName === effCampus || c.campusCode === effCampus);
+    const campusCodeStr = (campusObj ? campusObj.campusCode || campusObj.campusName : effCampus || "").toUpperCase();
+    let schoolName = selectedLevel === "preschool" ? "TRƯỜNG MẦM NON SKY-LINE" : "TRƯỜNG TIỂU HỌC, THCS VÀ THPT SKY-LINE";
+    if (campusCodeStr.includes("CS4") || campusCodeStr.includes("HILL") || campusCodeStr.includes("HILLTOP")) {
+      schoolName = selectedLevel === "preschool" ? "TRƯỜNG MẦM NON SKY-LINE" : "TRƯỜNG TIỂU HỌC, THCS VÀ THPT SKY-LINE HILL";
+    }
+
+    const d = new Date();
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    const formattedLetterDate = `Đà Nẵng, ngày ${day} tháng ${month} năm ${year}`;
+
+    const campusTitleSuffix = (campusCodeStr.includes("CS1") || campusCodeStr.includes("RIVERSIDE")) ? "RIVERSIDE"
+      : (campusCodeStr.includes("CS2") || campusCodeStr.includes("CENTRAL")) ? "CENTRAL"
+      : (campusCodeStr.includes("CS3") || campusCodeStr.includes("GLOBAL")) ? "GLOBAL"
+      : (campusCodeStr.includes("CS4") || campusCodeStr.includes("HILL")) ? "HILL"
+      : (campusCodeStr.includes("CS5") || campusCodeStr.includes("BEACH")) ? "BEACH"
+      : campusCodeStr || "GLOBAL";
+
+    const titleText = "TM. HỘI ĐỒNG TUYỂN SINH";
+    const subTitleText = `GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE ${campusTitleSuffix}`;
+    const signName = directorName;
+
+    const customFooterHtml = config.footer ? getImgTag(config.footer, "footer-img", "width: 100%; max-height: 100px; object-fit: contain;", "Footer") :
+      '<div style="width: 100%; font-family: Arial, sans-serif; box-sizing: border-box; text-align: left;">' +
+        '<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; width: 100%;">' +
+          '<span style="font-weight: bold; color: #00A6A9; white-space: nowrap; text-transform: uppercase; font-size: 11.5px; letter-spacing: 0.5px;">HỆ THỐNG GIÁO DỤC SKY-LINE</span>' +
+          '<div style="flex-grow: 1; border-top: 1px solid rgba(0, 166, 169, 0.7); height: 0; margin-top: 2px;"></div>' +
+          '<span style="font-weight: 600; color: #00A6A9; white-space: nowrap; text-transform: lowercase; font-size: 11px;">www.skylineschool.edu.vn</span>' +
+        '</div>' +
+      '</div>';
+
+    let page2Html = "";
+    if (selectedLevel !== "preschool") {
+      const docList = getStudentDocListForEmail(student);
+      if (docList && docList.length > 0) {
+        const rowsHtml = docList.map((item: any, idx: number) => {
+          return '<tr style="border-bottom: 1px solid #000000;">' +
+            '<td style="padding: 10px; border-right: 1px solid #000000; text-align: center; color: #000000;">' + (idx + 1) + '</td>' +
+            '<td style="padding: 10px 15px; border-right: 1px solid #000000; font-weight: bold; color: #000000;">' + item.name + '</td>' +
+            '<td style="padding: 10px; text-align: center; font-weight: bold; color: #000000;">' + item.qty + '</td>' +
+          '</tr>';
+        }).join("");
+
+        page2Html = '<div class="print-page">' +
+            getImgTag(config.background || DEFAULT_WATERMARK_SVG, "print-watermark", "display: block; position: absolute; top: 22%; left: 10%; transform: none; width: 80%; height: auto; opacity: 0.08; z-index: 0; pointer-events: none;", "Watermark") +
+            '<div class="header-container" style="display: flex; flex-direction: column; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; margin-bottom: 12px; position: relative; z-index: 10;">' +
+              '<div style="display: flex; align-items: center; justify-content: space-between;">' +
+                logoHtml +
+              '</div>' +
+              '<div style="text-align: left; margin-top: 4px;">' +
+                '<h4 style="font-family: Arial, sans-serif; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #1e293b; margin: 0;">' + schoolName + '</h4>' +
+              '</div>' +
+            '</div>' +
+            '<div class="letter-title">' +
+              '<h2>DANH MỤC HỒ SƠ NHẬP HỌC</h2>' +
+            '</div>' +
+            '<div style="margin-top: 30px; border: 1px solid #000000; overflow: hidden; position: relative; z-index: 10;">' +
+              '<table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; color: #000000; font-family: \'Times New Roman\', Times, serif;">' +
+                '<thead>' +
+                  '<tr style="background-color: #ffffff; border-bottom: 1px solid #000000;">' +
+                    '<th style="padding: 10px; border-right: 1px solid #000000; text-align: center; font-weight: bold; width: 60px; text-transform: uppercase; color: #000000;">STT</th>' +
+                    '<th style="padding: 10px 15px; border-right: 1px solid #000000; text-align: center; font-weight: bold; text-transform: uppercase; color: #000000;">Tên hồ sơ</th>' +
+                    '<th style="padding: 10px; text-align: center; font-weight: bold; width: 120px; text-transform: uppercase; color: #000000;">Số lượng</th>' +
+                  '</tr>' +
+                '</thead>' +
+                '<tbody>' +
+                  rowsHtml +
+                '</tbody>' +
+              '</table>' +
+            '</div>' +
+            '<p style="margin-top: 35px; font-size: 14px; font-weight: bold; color: #000000; line-height: 1.6; text-align: left; position: relative; z-index: 10;">' +
+              'Quý phụ huynh vui lòng bổ sung hồ sơ thiếu (nếu có) trong vòng 10 ngày kể từ ngày nộp Hồ sơ.' +
+            '</p>' +
+            '<div class="footer-container">' +
+              customFooterHtml +
+            '</div>' +
+          '</div>';
+      }
+    }
+
+    return '<!DOCTYPE html>' +
+      '<html>' +
+      '<head>' +
+        '<meta charset="utf-8">' +
+        '<title>' + (config.title || "Tài liệu") + '</title>' +
+        '<style>' +
+          '@page {' +
+            'size: A4;' +
+            'margin: 0;' +
+          '}' +
+          'body {' +
+            'margin: 0;' +
+            'padding: 0;' +
+            'background-color: #ffffff;' +
+            '-webkit-print-color-adjust: exact !important;' +
+            'print-color-adjust: exact !important;' +
+          '}' +
+          '.print-page {' +
+            'font-family: "Times New Roman", Times, serif;' +
+            'width: 210mm;' +
+            'height: 296.8mm;' +
+            'padding: 12.7mm 15mm 48mm 15mm;' +
+            'box-sizing: border-box;' +
+            'position: relative;' +
+            'overflow: hidden;' +
+            'background-color: #ffffff;' +
+          '}' +
+          '.print-page + .print-page {' +
+            'page-break-before: always !important;' +
+            'break-before: page !important;' +
+          '}' +
+          '.print-watermark {' +
+            'display: block;' +
+            'position: absolute;' +
+            'top: 22%;' +
+            'left: 10%;' +
+            'transform: none;' +
+            'width: 80%;' +
+            'height: auto;' +
+            'opacity: 0.08;' +
+            'z-index: 0;' +
+            'pointer-events: none;' +
+          '}' +
+          '.logo-img {' +
+            'max-height: 48px;' +
+            'object-fit: contain;' +
+          '}' +
+          '.letter-title {' +
+            'text-align: center;' +
+            'margin: 20px 0;' +
+            'position: relative;' +
+            'z-index: 10;' +
+          '}' +
+          '.letter-title h2 {' +
+            'font-size: 22px;' +
+            'font-weight: 900;' +
+            'letter-spacing: 0.5px;' +
+            'color: #1e1b4b;' +
+            'text-transform: uppercase;' +
+            'margin: 0;' +
+          '}' +
+          '.greeting {' +
+            'font-size: 16px;' +
+            'font-style: italic;' +
+            'color: #1e293b;' +
+            'margin-bottom: 12px;' +
+            'position: relative;' +
+            'z-index: 10;' +
+          '}' +
+          '.content-body {' +
+            'font-size: 14pt;' +
+            'line-height: 1.5;' +
+            'text-align: justify;' +
+            'color: #1e293b;' +
+            'position: relative;' +
+            'z-index: 10;' +
+          '}' +
+          '.signature-section {' +
+            'margin-top: 30px;' +
+            'display: flex;' +
+            'justify-content: flex-end;' +
+            'position: relative;' +
+            'z-index: 10;' +
+          '}' +
+          '.signature-block {' +
+            'text-align: center;' +
+            'width: 200px;' +
+          '}' +
+          '.signature-title {' +
+            'font-size: 14px;' +
+            'font-weight: bold;' +
+            'color: #1e293b;' +
+            'margin-bottom: 4px;' +
+          '}' +
+          '.signature-desc {' +
+            'font-size: 12px;' +
+            'color: #475569;' +
+            'font-style: italic;' +
+            'margin-bottom: 10px;' +
+          '}' +
+          '.signature-img-container {' +
+            'height: 64px;' +
+            'display: flex;' +
+            'justify-content: center;' +
+            'align-items: center;' +
+            'margin-bottom: 8px;' +
+          '}' +
+          '.signature-img {' +
+            'max-height: 64px;' +
+            'object-fit: contain;' +
+          '}' +
+          '.signature-name {' +
+            'font-size: 15px;' +
+            'font-weight: bold;' +
+            'color: #1e293b;' +
+          '}' +
+          '.footer-container {' +
+            'position: absolute;' +
+            'bottom: 8mm;' +
+            'left: 0;' +
+            'right: 0;' +
+            'width: 100%;' +
+            'padding-left: 15mm;' +
+            'padding-right: 15mm;' +
+            'box-sizing: border-box;' +
+            'z-index: 10;' +
+          '}' +
+          '.footer-img {' +
+            'width: 100%;' +
+            'max-height: 100px;' +
+            'object-fit: contain;' +
+          '}' +
+        '</style>' +
+      '</head>' +
+      '<body>' +
+        '<div class="print-page">' +
+          getImgTag(config.background || DEFAULT_WATERMARK_SVG, "print-watermark", "display: block; position: absolute; top: 22%; left: 10%; transform: none; width: 80%; height: auto; opacity: 0.08; z-index: 0; pointer-events: none;", "Watermark") +
+          '<div class="header-container" style="display: flex; flex-direction: column; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; margin-bottom: 12px; position: relative; z-index: 10;">' +
+            '<div style="display: flex; align-items: center; justify-content: space-between;">' +
+              logoHtml +
+            '</div>' +
+            '<div style="text-align: left; margin-top: 4px;">' +
+              '<h4 style="font-family: Arial, sans-serif; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #1e293b; margin: 0;">' + schoolName + '</h4>' +
+            '</div>' +
+          '</div>' +
+          '<div class="letter-title">' +
+            '<h2>' + config.title + '</h2>' +
+          '</div>' +
+          '<div class="greeting">' +
+            greetingHtml +
+          '</div>' +
+          '<div class="content-body">' +
+            bodyHtml +
+          '</div>' +
+          '<div class="signature-section" style="margin-top: 30px; display: flex; justify-content: flex-end; position: relative; z-index: 10;">' +
+            '<div class="signature-block" style="text-align: center; width: 240px;">' +
+              '<div style="font-size: 13px; font-style: italic; color: #4b5563; margin-bottom: 4px;">' + formattedLetterDate + '</div>' +
+              '<div class="signature-title" style="font-size: 12px; font-weight: bold; color: #1e1b4b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">' + titleText + '</div>' +
+              '<div style="font-size: 10px; font-weight: bold; color: #312e81; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px;">' + subTitleText + '</div>' +
+              '<div class="signature-img-container" style="height: 64px; display: flex; justify-content: center; align-items: center; margin-bottom: 8px;">' +
+                (config.signature ? signatureHtml : '') +
+              '</div>' +
+              '<div class="signature-name" style="font-size: 14px; font-weight: bold; color: #1e293b;">' + signName + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="footer-container">' +
+            customFooterHtml +
+          '</div>' +
+        '</div>' +
+        page2Html +
+      '</body>' +
+      '</html>';
+  };
+
+
   // SMTP Email Send Modal States
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [emailSubject, setEmailSubject] = useState("");
@@ -835,13 +1313,12 @@ export function ReportsClient({
     
     setEmailSubject(`[Báo cáo nhanh] Kết quả Khảo sát đầu vào KSNL - Kỳ: ${activePeriodName} - Đợt: ${activeBatchName}`);
     
-    // Automatically pre-populate:
-    // To: Tư vấn (Tuyển sinh) + Khảo thí
-    const defaultTo = [campusEmails.tuyensinh, "bankhaothi@skylineschool.edu.vn"].filter(Boolean).join(", ");
+    // Automatically pre-populate To: Giáo vụ + GĐCS + Tư vấn theo Cơ sở
+    const defaultTo = [campusEmails.giaovu, campusEmails.gdcs, campusEmails.tuyensinh].filter(Boolean).join(", ");
     setRecipientEmail(defaultTo);
     
-    // CC: Giáo vụ + GĐCS
-    const defaultCc = [campusEmails.giaovu, campusEmails.gdcs].filter(Boolean).join(", ");
+    // CC: Khảo thí
+    const defaultCc = "bankhaothi@skylineschool.edu.vn";
     setCcEmail(defaultCc);
 
     setAttachLetters(true);
@@ -860,6 +1337,60 @@ export function ReportsClient({
       const activePeriodName = activePeriod?.name || "Kỳ khảo sát";
       const activeBatchName = cBatchId !== "all" ? (activeBatches.find(b => b.id === cBatchId)?.name || "Đợt") : "Tất cả các đợt";
 
+      const pdfAttachmentsList: any[] = [];
+      if (attachLetters) {
+        const html2pdf = await getHtml2Pdf();
+        
+        const eligibleStudents = targetStudents.filter(s => {
+          const r = s.admissionResult || s.devAssessmentResult || "";
+          const isPassed = r.includes("Đạt") || r.includes("DAT") || r.includes("MIỄN") || s.probationaryResult === "DAT";
+          return isPassed;
+        });
+        
+        let currentPdfCount = 0;
+        let totalPdfs = eligibleStudents.length;
+
+        for (const s of targetStudents) {
+          const r = s.admissionResult || s.devAssessmentResult || "";
+          const isPassed = r.includes("Đạt") || r.includes("DAT") || r.includes("MIỄN") || s.probationaryResult === "DAT";
+          if (isPassed) {
+            const config = getStudentCampusConfigForEmail(s);
+            if (config) {
+              currentPdfCount++;
+              setEmailSendingStatus(`Đang tạo PDF (${currentPdfCount}/${totalPdfs}): Thư chúc mừng - ${s.fullName}`);
+              const docHtml = buildLetterHtmlForEmail(s, config);
+              const filename = `Thu_Chuc_Mung_${s.fullName.replace(/\s+/g, '_')}.pdf`;
+              const opt = {
+                margin: 0,
+                filename: filename,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 1.8, useCORS: true, logging: false, letterRendering: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak: { mode: ['avoid-all', 'css'] }
+              };
+
+              try {
+                const pdfBase64 = await generatePdfBase64(html2pdf, docHtml, opt);
+                const base64Data = pdfBase64.split(',')[1];
+                
+                pdfAttachmentsList.push({
+                  filename: filename,
+                  base64: base64Data
+                });
+              } catch (pdfErr) {
+                console.error("Client PDF generation failed, falling back to server:", pdfErr);
+                pdfAttachmentsList.push({
+                  filename: filename,
+                  html: docHtml
+                });
+              }
+            }
+          }
+        }
+      }
+
+      setEmailSendingStatus("Đang truyền tải & gửi Email...");
+
       const apiRoute = selectedLevel === "preschool"
         ? "/api/admin/preschool-send-quick-email"
         : "/api/admin/send-quick-email";
@@ -874,7 +1405,8 @@ export function ReportsClient({
           periodName: activePeriodName,
           batchName: activeBatchName,
           students: targetStudents,
-          attachLetters: attachLetters
+          attachLetters: attachLetters,
+          pdfAttachments: pdfAttachmentsList
         })
       });
 
@@ -2412,6 +2944,8 @@ export function ReportsClient({
               <div className="flex flex-wrap gap-1 mt-2">
                 <span className="text-[10px] text-slate-400 font-bold uppercase mr-1 mt-1">Gợi ý To:</span>
                 {[
+                  { label: `Giáo vụ (${campusLabel})`, email: campusEmails.giaovu },
+                  { label: `GĐCS (${campusLabel})`, email: campusEmails.gdcs },
                   { label: `Tư vấn (${campusLabel})`, email: campusEmails.tuyensinh },
                   { label: "Khảo thí", email: "bankhaothi@skylineschool.edu.vn" },
                   { label: "Hội đồng tuyển sinh", email: "hoidongtuyensinh@skylineschool.edu.vn" },
@@ -2447,8 +2981,11 @@ export function ReportsClient({
               <div className="flex flex-wrap gap-1 mt-2">
                 <span className="text-[10px] text-slate-400 font-bold uppercase mr-1 mt-1">Gợi ý CC:</span>
                 {[
+                  { label: "Khảo thí", email: "bankhaothi@skylineschool.edu.vn" },
+                  { label: "Hội đồng tuyển sinh", email: "hoidongtuyensinh@skylineschool.edu.vn" },
                   { label: `Giáo vụ (${campusLabel})`, email: campusEmails.giaovu },
                   { label: `GĐCS (${campusLabel})`, email: campusEmails.gdcs },
+                  { label: `Tư vấn (${campusLabel})`, email: campusEmails.tuyensinh },
                 ].map(p => {
                   const isActive = ccEmail.includes(p.email);
                   return (

@@ -8,7 +8,7 @@ export async function POST(req: Request) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
-    const { to, subject, periodName, batchName, students, attachLetters, pdfAttachments } = await req.json();
+    const { to, cc, subject, periodName, batchName, students, attachLetters, pdfAttachments } = await req.json();
 
     if (!to || !students || !Array.isArray(students)) {
       return NextResponse.json({ error: "Missing required parameters" }, { status: 400 });
@@ -204,6 +204,7 @@ export async function POST(req: Request) {
     try {
       await sendEmail({
         to,
+        cc,
         subject,
         html: emailHtml,
         attachments: mailAttachments
