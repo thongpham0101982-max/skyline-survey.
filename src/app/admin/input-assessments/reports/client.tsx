@@ -2439,7 +2439,7 @@ export function ReportsClient({
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Statistics summary */}
-          <div className="bg-white border border-slate-200 shadow-sm rounded-3xl p-6 space-y-6">
+          <div className="lg:col-span-3 bg-white border border-slate-200 shadow-sm rounded-3xl p-6 space-y-6">
             <h3 className="text-base font-extrabold text-slate-800 border-b pb-3 mb-2 flex items-center gap-2"><BarChart3 className="w-5 h-5 text-indigo-500"/> Thống kê tổng quan</h3>
             
             <div className="grid grid-cols-2 gap-4">
@@ -2475,26 +2475,7 @@ export function ReportsClient({
             </div>
           </div>
 
-          {/* Email triggers */}
-          <div className="lg:col-span-2 bg-white border border-slate-200 shadow-sm rounded-3xl p-6 space-y-6">
-            <div className="flex items-center justify-between border-b pb-3 mb-2">
-              <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2"><Mail className="w-5 h-5 text-indigo-500"/> Trả kết quả / Gửi mail nhanh</h3>
-              <button
-                onClick={handleOpenEmailModal}
-                className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black shadow-md shadow-indigo-100 flex items-center gap-2 cursor-pointer"
-              >
-                <Send className="w-3.5 h-3.5"/>
-                Gửi Email báo cáo nhanh
-              </button>
-            </div>
 
-            <div className="bg-slate-50 border border-slate-100 p-5 rounded-2xl space-y-3 text-xs leading-relaxed text-slate-600">
-              <p className="font-bold text-slate-700 text-sm">💡 Chức năng Trả kết quả & Email nhanh:</p>
-              <p>1. Gửi email tổng hợp nhanh danh sách kết quả xét tuyển cho Ban giám hiệu, các bộ phận tuyển sinh và tư vấn của cơ sở.</p>
-              <p>2. Hệ thống tự động tạo, tối ưu hóa kích thước và đính kèm các tệp **PDF Thư chúc mừng / Bản cam kết** trực tiếp cho từng bé đạt yêu cầu khi gửi mail.</p>
-              <p>3. Đảm bảo bảo mật tối đa, đồng bộ hóa 100% thời gian thực kết quả duyệt.</p>
-            </div>
-          </div>
         </div>
       </div>
       )}

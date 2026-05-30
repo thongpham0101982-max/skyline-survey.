@@ -4341,14 +4341,7 @@ return {
                 Kết quả chi tiết môn học
               </button>
             </div>
-            <div className="flex-1 flex justify-end w-full md:w-auto">
-              <button
-                onClick={handleOpenEmailModal}
-                className="w-full md:w-auto bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-bold text-xs px-5 py-3 rounded-2xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
-              >
-                <Mail className="w-4 h-4"/> Gửi Mail nhanh
-              </button>
-            </div>
+            <div className="flex-1 flex justify-end w-full md:w-auto"></div>
           </div>
 
           {/* TOP SELECTORS BAR */}
