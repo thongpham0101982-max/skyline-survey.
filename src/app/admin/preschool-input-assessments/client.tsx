@@ -3682,7 +3682,6 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                      >
                                        <Eye className="w-3.5 h-3.5" /> Xem kết quả
                                      </button>
-                                     </button>
                                    </div>
                                  </td>
                               </tr>
