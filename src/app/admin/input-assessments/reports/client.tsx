@@ -804,7 +804,137 @@ export function ReportsClient({
   // PDF Download Helper
   const handlePrintPDF = async () => {
     if (typeof window === "undefined") return;
-    window.print();
+    
+    const printArea = document.getElementById('print-area-reports');
+    if (!printArea) {
+      window.print();
+      return;
+    }
+
+    // Create a temporary hidden iframe for clean printing isolation
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.bottom = '0';
+    iframe.style.right = '0';
+    iframe.style.width = '0px';
+    iframe.style.height = '0px';
+    iframe.style.border = 'none';
+    iframe.style.opacity = '0';
+    iframe.style.zIndex = '-9999';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document;
+    if (!doc) {
+      window.print();
+      return;
+    }
+
+    // Copy all CSS stylesheet links and inline styles from parent document to iframe
+    const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
+      .map(el => el.outerHTML)
+      .join('\n');
+
+    // Write content into iframe, styling A4 pages to prevent any overflow or blank pages
+    doc.open();
+    doc.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>In Thư Skyline</title>
+          ${styles}
+          <style>
+            @media print {
+              html, body {
+                width: 100% !important;
+                height: auto !important;
+                min-height: 0 !important;
+                overflow: visible !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background-color: white !important;
+              }
+              #print-area-iframe-root {
+                display: block !important;
+                width: 210mm !important;
+                margin: 0 auto !important;
+                padding: 0 !important;
+              }
+              #print-area-iframe-root > div {
+                width: 210mm !important;
+                height: 296mm !important; /* Extremely safe height to avoid rounding error splits */
+                min-height: 296mm !important;
+                max-height: 296mm !important;
+                margin: 0 auto !important;
+                padding: 18mm 20mm 22mm 20mm !important;
+                box-sizing: border-box !important;
+                position: relative !important;
+                background-color: white !important;
+                border: none !important; /* Zero borders so height calculation is exact */
+                box-shadow: none !important;
+                page-break-after: always !important;
+                break-after: page !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+              }
+              #print-area-iframe-root > div:last-child {
+                page-break-after: auto !important;
+                break-after: auto !important;
+              }
+              .footer-container {
+                position: absolute !important;
+                bottom: 12mm !important;
+                left: 20mm !important;
+                right: 20mm !important;
+                width: auto !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                z-index: 10 !important;
+              }
+              @page {
+                size: A4 portrait;
+                margin: 0mm !important;
+              }
+            }
+          </style>
+        </head>
+        <body style="background-color: white;">
+          <div id="print-area-iframe-root">
+            ${printArea.innerHTML}
+          </div>
+        </body>
+      </html>
+    `);
+    doc.close();
+
+    // Ensure all images are fully loaded before triggering print dialog
+    const images = iframe.contentWindow?.document.querySelectorAll('img') || [];
+    const imagePromises = Array.from(images).map(img => {
+      if (img.complete) return Promise.resolve();
+      return new Promise(resolve => {
+        img.onload = resolve;
+        img.onerror = resolve;
+      });
+    });
+
+    await Promise.all(imagePromises);
+
+    // Focus and print from the clean isolated iframe
+    setTimeout(() => {
+      try {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+      } catch (err) {
+        console.error("Iframe print triggered error:", err);
+        window.print();
+      } finally {
+        // Clean up same-origin dynamic print iframe
+        setTimeout(() => {
+          if (iframe && iframe.parentNode) {
+            iframe.parentNode.removeChild(iframe);
+          }
+        }, 1500);
+      }
+    }, 400);
   };
 
   const formattedLetterDate = useMemo(() => {
