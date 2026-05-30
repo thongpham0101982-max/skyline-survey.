@@ -885,6 +885,106 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   const [attachLetters, setAttachLetters] = useState(true);
   const [ccEmail, setCcEmail] = useState("");
 
+  // useMemos depending on cBatchId moved below
+// Đánh giá phát triển
+  const [devTab, setDevTab] = useState<"assess" | "xetDuyet" | "manage" | "dgkqHocThu" | "xuatThuChucMung">("assess");
+  const [ageGroupFilter, setAgeGroupFilter] = useState("18 đến 24 tháng");
+  
+  // Đánh giá học sinh
+  const [evalStudent, setEvalStudent] = useState<PreschoolChild | null>(null);
+
+  const [evalModal, setEvalModal] = useState(false);
+  const [devAreas, setDevAreas] = useState<DevArea[]>([]);
+  const [devType, setDevType] = useState<"INPUT"|"PROBATION">("INPUT");
+  const isApprovedStatus = (s?: string) => s === "DAT" || s === "DAT_MIEN_HOC_THU" || s === "DAT_HOC_THU";
+  const isAssessmentLocked = !!(isApprovedStatus(evalStudent?.bghApprovalStatus) && isApprovedStatus(evalStudent?.gdcsApprovalStatus));
+  const [devLoading, setDevLoading] = useState(false);
+  const [studentScores, setStudentScores] = useState<Record<string, { result: string; note: string }>>({});
+  const [savingEval, setSavingEval] = useState(false);
+  const [devProfComment, setDevProfComment] = useState("");
+  const [devPsyComment, setDevPsyComment] = useState("");
+  const [devNote, setDevNote] = useState("");
+  const [devResult, setDevResult] = useState("");
+  const [bghApprovalStatus, setBghApprovalStatus] = useState("");
+  const [bghApprovalComment, setBghApprovalComment] = useState("");
+  const [gdcsApprovalStatus, setGdcsApprovalStatus] = useState("");
+  const [gdcsApprovalComment, setGdcsApprovalComment] = useState("");
+
+  const calculateBMI = () => {
+    let height = 0;
+    let weight = 0;
+    for (const area of devAreas) {
+      for (const crit of area.criteria) {
+        if (crit.code.endsWith("_01") || crit.name.toLowerCase().includes("chiều cao")) {
+          const score = studentScores[crit.id];
+          if (score && score.note) {
+            // Handle pipe separator: "110 cm|obs text" -> parse only the measurement part
+            const rawPart = score.note.includes("|") ? score.note.split("|")[0] : score.note;
+            const num = parseFloat(rawPart.replace(/[^\d.]/g, ""));
+            if (!isNaN(num) && num > 0) height = num;
+          }
+        }
+        if (crit.code.endsWith("_02") || crit.name.toLowerCase().includes("cân nặng")) {
+          const score = studentScores[crit.id];
+          if (score && score.note) {
+            const rawPart = score.note.includes("|") ? score.note.split("|")[0] : score.note;
+            const num = parseFloat(rawPart.replace(/[^\d.]/g, ""));
+            if (!isNaN(num) && num > 0) weight = num;
+          }
+        }
+      }
+    }
+    if (height > 0 && weight > 0) {
+      const heightInMeters = height / 100;
+      return weight / (heightInMeters * heightInMeters);
+    }
+    return null;
+  };
+
+  const getBMIClassification = (bmi: number) => {
+    if (bmi < 13.5) return { label: "Gầy (Thiếu cân)", color: "text-amber-600 bg-amber-50 border-amber-100", dot: "bg-amber-400" };
+    if (bmi <= 17.0) return { label: "Bình thường", color: "text-emerald-600 bg-emerald-50 border-emerald-100", dot: "bg-emerald-400" };
+    if (bmi <= 18.5) return { label: "Thừa cân", color: "text-orange-600 bg-orange-50 border-orange-100", dot: "bg-orange-400" };
+    return { label: "Béo phì", color: "text-rose-600 bg-rose-50 border-rose-100", dot: "bg-rose-400" };
+  };
+
+  // Summary scores for students list
+  const [studentSummaries, setStudentSummaries] = useState<any[]>([]);
+  const [sumLoading, setSumLoading] = useState(false);
+
+  // Quản lý tiêu chí / lĩnh vực
+  const [criteriaModal, setCriteriaModal] = useState(false);
+  const [editCriteria, setEditCriteria] = useState<DevCriteria | null>(null);
+  const [criteriaForm, setCriteriaForm] = useState({ areaId: "", code: "", name: "", ageGroup: "18 đến 24 tháng" });
+  const [savingCriteria, setSavingCriteria] = useState(false);
+  const [expAreaId, setExpAreaId] = useState<string | null>(null);
+  const [yearId, setYearId] = useState(academicYears[0]?.id || "");
+  const [toast, setToast] = useState<{ msg: string; type: string } | null>(null);
+  const [confirm, setConfirm] = useState<{ msg: string; fn: () => void } | null>(null);
+  const notify = (msg: string, type = "ok") => { setToast({ msg, type }); setTimeout(() => setToast(null), 3200); };
+
+  // Periods
+  const [periods, setPeriods] = useState<Period[]>([]);
+  const [pLoading, setPLoading] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [pModal, setPModal] = useState(false);
+  const [editP, setEditP] = useState<Period | null>(null);
+  const [pForm, setPForm] = useState({ code: "", name: "", assignedUserId: "", startDate: "", endDate: "", description: "", status: "ACTIVE", surveyType: "KHAO_SAT_LE" });
+
+  // Batches
+  const [bModal, setBModal] = useState(false);
+  const [editB, setEditB] = useState<Batch | null>(null);
+  const [bForm, setBForm] = useState({ batchNumber: "1", name: "", startDate: "", endDate: "", status: "ACTIVE", campusId: "", assignedUserId: "" });
+  const [targetPeriodId, setTargetPeriodId] = useState("");
+
+  // Children/Students
+  const [children, setChildren] = useState<PreschoolChild[]>([]);
+  const [cLoading, setCLoading] = useState(false);
+  const [cPeriodId, setCPeriodId] = useState("");
+  const [cBatchId, setCBatchId] = useState("");
+
+  // useMemos that depend on cBatchId - must be AFTER declaration to avoid TDZ crash in production
+
   const selectedCampusObj = useMemo(() => {
     if (!cBatchId) return null;
     const allBatches = periods.flatMap((p: any) => p.batches || []);
@@ -1064,102 +1164,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
     ...Object.values(EMAIL_MAP.gdcs),
     EMAIL_MAP.cc
   ], [EMAIL_MAP]);
-// Đánh giá phát triển
-  const [devTab, setDevTab] = useState<"assess" | "xetDuyet" | "manage" | "dgkqHocThu" | "xuatThuChucMung">("assess");
-  const [ageGroupFilter, setAgeGroupFilter] = useState("18 đến 24 tháng");
-  
-  // Đánh giá học sinh
-  const [evalStudent, setEvalStudent] = useState<PreschoolChild | null>(null);
 
-  const [evalModal, setEvalModal] = useState(false);
-  const [devAreas, setDevAreas] = useState<DevArea[]>([]);
-  const [devType, setDevType] = useState<"INPUT"|"PROBATION">("INPUT");
-  const isApprovedStatus = (s?: string) => s === "DAT" || s === "DAT_MIEN_HOC_THU" || s === "DAT_HOC_THU";
-  const isAssessmentLocked = !!(isApprovedStatus(evalStudent?.bghApprovalStatus) && isApprovedStatus(evalStudent?.gdcsApprovalStatus));
-  const [devLoading, setDevLoading] = useState(false);
-  const [studentScores, setStudentScores] = useState<Record<string, { result: string; note: string }>>({});
-  const [savingEval, setSavingEval] = useState(false);
-  const [devProfComment, setDevProfComment] = useState("");
-  const [devPsyComment, setDevPsyComment] = useState("");
-  const [devNote, setDevNote] = useState("");
-  const [devResult, setDevResult] = useState("");
-  const [bghApprovalStatus, setBghApprovalStatus] = useState("");
-  const [bghApprovalComment, setBghApprovalComment] = useState("");
-  const [gdcsApprovalStatus, setGdcsApprovalStatus] = useState("");
-  const [gdcsApprovalComment, setGdcsApprovalComment] = useState("");
-
-  const calculateBMI = () => {
-    let height = 0;
-    let weight = 0;
-    for (const area of devAreas) {
-      for (const crit of area.criteria) {
-        if (crit.code.endsWith("_01") || crit.name.toLowerCase().includes("chiều cao")) {
-          const score = studentScores[crit.id];
-          if (score && score.note) {
-            // Handle pipe separator: "110 cm|obs text" -> parse only the measurement part
-            const rawPart = score.note.includes("|") ? score.note.split("|")[0] : score.note;
-            const num = parseFloat(rawPart.replace(/[^\d.]/g, ""));
-            if (!isNaN(num) && num > 0) height = num;
-          }
-        }
-        if (crit.code.endsWith("_02") || crit.name.toLowerCase().includes("cân nặng")) {
-          const score = studentScores[crit.id];
-          if (score && score.note) {
-            const rawPart = score.note.includes("|") ? score.note.split("|")[0] : score.note;
-            const num = parseFloat(rawPart.replace(/[^\d.]/g, ""));
-            if (!isNaN(num) && num > 0) weight = num;
-          }
-        }
-      }
-    }
-    if (height > 0 && weight > 0) {
-      const heightInMeters = height / 100;
-      return weight / (heightInMeters * heightInMeters);
-    }
-    return null;
-  };
-
-  const getBMIClassification = (bmi: number) => {
-    if (bmi < 13.5) return { label: "Gầy (Thiếu cân)", color: "text-amber-600 bg-amber-50 border-amber-100", dot: "bg-amber-400" };
-    if (bmi <= 17.0) return { label: "Bình thường", color: "text-emerald-600 bg-emerald-50 border-emerald-100", dot: "bg-emerald-400" };
-    if (bmi <= 18.5) return { label: "Thừa cân", color: "text-orange-600 bg-orange-50 border-orange-100", dot: "bg-orange-400" };
-    return { label: "Béo phì", color: "text-rose-600 bg-rose-50 border-rose-100", dot: "bg-rose-400" };
-  };
-
-  // Summary scores for students list
-  const [studentSummaries, setStudentSummaries] = useState<any[]>([]);
-  const [sumLoading, setSumLoading] = useState(false);
-
-  // Quản lý tiêu chí / lĩnh vực
-  const [criteriaModal, setCriteriaModal] = useState(false);
-  const [editCriteria, setEditCriteria] = useState<DevCriteria | null>(null);
-  const [criteriaForm, setCriteriaForm] = useState({ areaId: "", code: "", name: "", ageGroup: "18 đến 24 tháng" });
-  const [savingCriteria, setSavingCriteria] = useState(false);
-  const [expAreaId, setExpAreaId] = useState<string | null>(null);
-  const [yearId, setYearId] = useState(academicYears[0]?.id || "");
-  const [toast, setToast] = useState<{ msg: string; type: string } | null>(null);
-  const [confirm, setConfirm] = useState<{ msg: string; fn: () => void } | null>(null);
-  const notify = (msg: string, type = "ok") => { setToast({ msg, type }); setTimeout(() => setToast(null), 3200); };
-
-  // Periods
-  const [periods, setPeriods] = useState<Period[]>([]);
-  const [pLoading, setPLoading] = useState(false);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [pModal, setPModal] = useState(false);
-  const [editP, setEditP] = useState<Period | null>(null);
-  const [pForm, setPForm] = useState({ code: "", name: "", assignedUserId: "", startDate: "", endDate: "", description: "", status: "ACTIVE", surveyType: "KHAO_SAT_LE" });
-
-  // Batches
-  const [bModal, setBModal] = useState(false);
-  const [editB, setEditB] = useState<Batch | null>(null);
-  const [bForm, setBForm] = useState({ batchNumber: "1", name: "", startDate: "", endDate: "", status: "ACTIVE", campusId: "", assignedUserId: "" });
-  const [targetPeriodId, setTargetPeriodId] = useState("");
-
-  // Children/Students
-  const [children, setChildren] = useState<PreschoolChild[]>([]);
-  const [cLoading, setCLoading] = useState(false);
-  const [cPeriodId, setCPeriodId] = useState("");
-  const [cBatchId, setCBatchId] = useState("");
   const [cSearch, setCSearch] = useState("");
   const [cSelected, setCSelected] = useState<string[]>([]);
   const [cModal, setCModal] = useState(false);
