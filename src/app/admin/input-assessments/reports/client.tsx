@@ -829,8 +829,8 @@ export function ReportsClient({
       return;
     }
 
-    // Copy all CSS stylesheet links and inline styles from parent document to iframe
-    const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
+    // Copy all CSS stylesheet links and inline styles from parent document to iframe (excluding parent media print styles)
+    const styles = Array.from(document.querySelectorAll('style:not([data-next-print-styles="true"]), link[rel="stylesheet"]'))
       .map(el => el.outerHTML)
       .join('\n');
 
@@ -858,6 +858,10 @@ export function ReportsClient({
                 width: 210mm !important;
                 margin: 0 auto !important;
                 padding: 0 !important;
+              }
+              #print-area-iframe-root,
+              #print-area-iframe-root * {
+                visibility: visible !important;
               }
               #print-area-iframe-root > div {
                 width: 210mm !important;
@@ -2328,7 +2332,7 @@ export function ReportsClient({
       </Modal>
 
       {/* Native Print Media Styles */}
-      <style>{`
+      <style data-next-print-styles="true">{`
         @media screen {
           #print-area-reports {
             display: none !important;
