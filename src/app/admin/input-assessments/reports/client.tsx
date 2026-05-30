@@ -679,14 +679,9 @@ export function ReportsClient({
         s.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         s.studentCode?.toLowerCase().includes(searchQuery.toLowerCase())
       );
-      // campus query
-      const matchCampus = !cCampusId ? true : (
-        s.admissionCampus === cCampusId ||
-        s.admissionCampus?.includes(cCampusId)
-      );
-      return matchQuery && matchCampus;
+      return matchQuery;
     });
-  }, [students, searchQuery, cCampusId]);
+  }, [students, searchQuery]);
 
   // Print modal configuration resolver
   const studentCampusConfig = useMemo(() => {
@@ -751,8 +746,20 @@ export function ReportsClient({
 
   // Selected campus and its specific department emails (Giáo vụ, GĐCS, Tư vấn)
   const selectedCampusObj = useMemo(() => {
-    return campuses.find((c: any) => c.id === cCampusId);
-  }, [cCampusId, campuses]);
+    const batchCampusId = cBatchId !== "all" ? (activeBatches.find(b => b.id === cBatchId)?.campusId) : null;
+    if (batchCampusId) {
+      return campuses.find((c: any) => c.id === batchCampusId);
+    }
+    if (students && students.length > 0) {
+      const firstStudentCampus = students[0].admissionCampus;
+      const found = campuses.find((c: any) => 
+        c.id === firstStudentCampus || c.campusName === firstStudentCampus || c.campusCode === firstStudentCampus ||
+        firstStudentCampus?.includes(c.campusCode) || firstStudentCampus?.includes(c.campusName)
+      );
+      if (found) return found;
+    }
+    return campuses[0];
+  }, [cBatchId, activeBatches, campuses, students]);
 
   const campusLabel = useMemo(() => {
     if (!selectedCampusObj) return "Toàn Hệ thống";
@@ -2224,13 +2231,7 @@ export function ReportsClient({
                 </select>
               </div>
 
-              <div className="flex flex-col">
-                <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider mb-1 ml-1">Cơ sở đăng ký</span>
-                <select value={cCampusId} onChange={e => setCCampusId(e.target.value)} className="bg-white border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 rounded-xl outline-none min-w-[150px]">
-                  <option value="">Tất cả Cơ sở</option>
-                  {campuses.map(c => <option key={c.id} value={c.id}>{getCampusFullName(c.campusName || "")}</option>)}
-                </select>
-              </div>
+
             </div>
 
             {/* Search Input */}
