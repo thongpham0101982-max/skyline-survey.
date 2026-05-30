@@ -1892,7 +1892,7 @@ export function ReportsClient({
           </div>
           <div>
             <h1 className="text-xl font-extrabold text-slate-800 tracking-tight">Trung tâm Xuất Báo cáo KSNL</h1>
-            <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mt-0.5">Xuất mẫu in, Thư chúc mừng, Thư mời và Cam kết học tập</p>
+            <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mt-0.5">Xuất mẫu in, Thư chúc mừng và Cam kết học tập</p>
           </div>
         </div>
 
@@ -1965,7 +1965,7 @@ export function ReportsClient({
             <div className="grid grid-cols-2 gap-4">
               <Field label="Loại báo cáo" required>
                 <select value={rcReportType} onChange={e => setRcReportType(e.target.value)} className={inp}>
-                  {selectedLevel !== "preschool" && <option value="thu_moi">Thư mời</option>}
+
                   <option value="thu_chuc_mung">Thư chúc mừng</option>
                   {selectedLevel !== "preschool" && <option value="cam_ket_hoc_tap">Cam kết học tập</option>}
                 </select>
@@ -2379,14 +2379,7 @@ export function ReportsClient({
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex gap-1.5 flex-wrap">
-                            {selectedLevel !== "preschool" && (
-                              <button
-                                onClick={() => { setIsInvitation(true); setIsCommitment(false); setSelectedReportStudent(s); setIsPrintModalOpen(true); }}
-                                className="px-2.5 py-1.5 text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-lg hover:bg-indigo-600 hover:text-white transition-all shadow-sm flex items-center gap-1 cursor-pointer"
-                              >
-                                <Mail className="w-3 h-3"/> Thư mời
-                              </button>
-                            )}
+
                             <button
                               onClick={() => { setIsInvitation(false); setIsCommitment(false); setSelectedReportStudent(s); setIsPrintModalOpen(true); }}
                               className="px-2.5 py-1.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm flex items-center gap-1 cursor-pointer"
