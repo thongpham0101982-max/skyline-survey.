@@ -2367,7 +2367,29 @@ export function ReportsClient({
 
       {/* 3. EMAIL REPORT RESULTS */}
       {tab === "results" && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          {/* Filters Bar for Results Tab */}
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+            <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+              <div className="flex flex-col">
+                <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider mb-1 ml-1">Kỳ Khảo sát</span>
+                <select value={cPeriodId} onChange={e => { setCPeriodId(e.target.value); setCBatchId("all"); }} className="bg-white border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 rounded-xl outline-none min-w-[200px]">
+                  {activePeriods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  {activePeriods.length === 0 && <option value="">Không có kỳ nào</option>}
+                </select>
+              </div>
+
+              <div className="flex flex-col">
+                <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider mb-1 ml-1">Đợt Khảo sát</span>
+                <select value={cBatchId} onChange={e => setCBatchId(e.target.value)} className="bg-white border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 rounded-xl outline-none min-w-[150px]">
+                  <option value="all">Tất cả các đợt</option>
+                  {activeBatches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Statistics summary */}
           <div className="bg-white border border-slate-200 shadow-sm rounded-3xl p-6 space-y-6">
             <h3 className="text-base font-extrabold text-slate-800 border-b pb-3 mb-2 flex items-center gap-2"><BarChart3 className="w-5 h-5 text-indigo-500"/> Thống kê tổng quan</h3>
@@ -2426,6 +2448,7 @@ export function ReportsClient({
             </div>
           </div>
         </div>
+      </div>
       )}
 
             {/* ===== TAB: ADMISSION DOCUMENTS (HỒ SƠ NHẬP HỌC) ===== */}
@@ -2984,7 +3007,6 @@ export function ReportsClient({
                   { label: `GĐCS (${campusLabel})`, email: campusEmails.gdcs },
                   { label: `Tư vấn (${campusLabel})`, email: campusEmails.tuyensinh },
                   { label: "Khảo thí", email: "bankhaothi@skylineschool.edu.vn" },
-                  { label: "Hội đồng tuyển sinh", email: "hoidongtuyensinh@skylineschool.edu.vn" },
                 ].map(p => {
                   const isActive = recipientEmail.includes(p.email);
                   return (
@@ -3018,7 +3040,6 @@ export function ReportsClient({
                 <span className="text-[10px] text-slate-400 font-bold uppercase mr-1 mt-1">Gợi ý CC:</span>
                 {[
                   { label: "Khảo thí", email: "bankhaothi@skylineschool.edu.vn" },
-                  { label: "Hội đồng tuyển sinh", email: "hoidongtuyensinh@skylineschool.edu.vn" },
                   { label: `Giáo vụ (${campusLabel})`, email: campusEmails.giaovu },
                   { label: `GĐCS (${campusLabel})`, email: campusEmails.gdcs },
                   { label: `Tư vấn (${campusLabel})`, email: campusEmails.tuyensinh },
