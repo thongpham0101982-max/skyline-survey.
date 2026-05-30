@@ -1076,7 +1076,7 @@ export function ReportsClient({
         </div>
 
         {/* PAGE 2: ADMISSION CHECKLIST */}
-        {modalDocList && modalDocList.length > 0 && !isInvitation && !isCommitment && (
+        {modalDocList && modalDocList.length > 0 && !isInvitation && !isCommitment && selectedLevel !== "preschool" && (
           <div className="bg-white rounded-none border border-slate-300 w-[210mm] min-w-[210mm] max-w-[210mm] h-[297mm] min-h-[297mm] p-[18mm_20mm_22mm_20mm] box-border relative flex flex-col justify-start overflow-hidden select-none font-sans text-slate-800 leading-normal" style={{ fontFamily: 'Arial, sans-serif' }}>
             
             {/* Watermark */}
