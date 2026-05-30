@@ -749,6 +749,76 @@ export function ReportsClient({
     return null;
   }, [selectedReportStudent, isInvitation, isCommitment, selectedLevel, campuses]);
 
+  // Selected campus and its specific department emails (Giáo vụ, GĐCS, Tư vấn)
+  const selectedCampusObj = useMemo(() => {
+    return campuses.find((c: any) => c.id === cCampusId);
+  }, [cCampusId, campuses]);
+
+  const campusLabel = useMemo(() => {
+    if (!selectedCampusObj) return "Toàn Hệ thống";
+    const name = (selectedCampusObj.campusName || "").toUpperCase();
+    if (name.includes("CS1") || name.includes("RIVERSIDE")) return "CS1 - Riverside";
+    if (name.includes("CS2") || name.includes("CENTRAL")) return "CS2 - Central";
+    if (name.includes("CS3") || name.includes("GLOBAL")) return "CS3 - Global";
+    if (name.includes("CS4") || name.includes("HILL")) return "CS4 - Hill";
+    if (name.includes("CS5") || name.includes("BEACH")) return "CS5 - Beach";
+    return name;
+  }, [selectedCampusObj]);
+
+  const campusEmails = useMemo(() => {
+    if (!selectedCampusObj) {
+      return {
+        tuyensinh: "bankhaothi@skylineschool.edu.vn",
+        giaovu: "giaovu.cs3@skylineschool.edu.vn",
+        gdcs: "gdcs.cs3@skylineschool.edu.vn"
+      };
+    }
+
+    const name = (selectedCampusObj.campusName || "").toUpperCase();
+    let suffix = "cs3";
+    if (name.includes("CS1") || name.includes("RIVERSIDE")) suffix = "cs1";
+    if (name.includes("CS2") || name.includes("CENTRAL")) suffix = "cs2";
+    if (name.includes("CS3") || name.includes("GLOBAL")) suffix = "cs3";
+    if (name.includes("CS4") || name.includes("HILL")) suffix = "cs4";
+    if (name.includes("CS5") || name.includes("BEACH")) suffix = "cs5";
+
+    // 1. GĐCS Email
+    let gdcsEmail = selectedCampusObj.manager?.email || `gdcs.${suffix}@skylineschool.edu.vn`;
+    if (!selectedCampusObj.manager?.email && gdcsUsers && gdcsUsers.length > 0) {
+      const foundGdcs = gdcsUsers.find((u: any) => u.fullName === selectedCampusObj.manager?.fullName);
+      if (foundGdcs?.email) gdcsEmail = foundGdcs.email;
+    }
+
+    // 2. Giáo vụ Email
+    let giaovuEmail = `giaovu.${suffix}@skylineschool.edu.vn`;
+    if (teachers && teachers.length > 0) {
+      const foundGiaovu = teachers.find((t: any) => 
+        t.campusId === selectedCampusObj.id && 
+        (t.departmentRel?.name?.toUpperCase().includes("GIÁO VỤ") || 
+         t.user?.role?.includes("GIAO_VU") || 
+         t.user?.role?.includes("GD_CS"))
+      );
+      if (foundGiaovu?.user?.email) giaovuEmail = foundGiaovu.user.email;
+    }
+
+    // 3. Tư vấn (Tuyển sinh) Email
+    let tuyensinhEmail = `tuyensinh.${suffix}@skylineschool.edu.vn`;
+    if (teachers && teachers.length > 0) {
+      const foundTuvan = teachers.find((t: any) => 
+        t.campusId === selectedCampusObj.id && 
+        (t.departmentRel?.name?.toUpperCase().includes("TƯ VẤN") || 
+         t.departmentRel?.name?.toUpperCase().includes("TUYỂN SINH"))
+      );
+      if (foundTuvan?.user?.email) tuyensinhEmail = foundTuvan.user.email;
+    }
+
+    return {
+      tuyensinh: tuyensinhEmail,
+      giaovu: giaovuEmail,
+      gdcs: gdcsEmail
+    };
+  }, [selectedCampusObj, gdcsUsers, teachers]);
+
   // SMTP Email Send Modal States
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [emailSubject, setEmailSubject] = useState("");
@@ -764,8 +834,16 @@ export function ReportsClient({
     const activeBatchName = cBatchId !== "all" ? (activeBatches.find(b => b.id === cBatchId)?.name || "Đợt") : "Tất cả các đợt";
     
     setEmailSubject(`[Báo cáo nhanh] Kết quả Khảo sát đầu vào KSNL - Kỳ: ${activePeriodName} - Đợt: ${activeBatchName}`);
-    setRecipientEmail("bankhaothi@skylineschool.edu.vn");
-    setCcEmail("tuyensinh.cs3@skylineschool.edu.vn");
+    
+    // Automatically pre-populate:
+    // To: Tư vấn (Tuyển sinh) + Khảo thí
+    const defaultTo = [campusEmails.tuyensinh, "bankhaothi@skylineschool.edu.vn"].filter(Boolean).join(", ");
+    setRecipientEmail(defaultTo);
+    
+    // CC: Giáo vụ + GĐCS
+    const defaultCc = [campusEmails.giaovu, campusEmails.gdcs].filter(Boolean).join(", ");
+    setCcEmail(defaultCc);
+
     setAttachLetters(true);
     setSelectedEmailStudentIds(filteredStudents.map(s => s.id));
     setIsEmailModalOpen(true);
@@ -2334,9 +2412,9 @@ export function ReportsClient({
               <div className="flex flex-wrap gap-1 mt-2">
                 <span className="text-[10px] text-slate-400 font-bold uppercase mr-1 mt-1">Gợi ý To:</span>
                 {[
+                  { label: `Tư vấn (${campusLabel})`, email: campusEmails.tuyensinh },
                   { label: "Khảo thí", email: "bankhaothi@skylineschool.edu.vn" },
                   { label: "Hội đồng tuyển sinh", email: "hoidongtuyensinh@skylineschool.edu.vn" },
-                  { label: "TS Global (CS3)", email: "tuyensinh.cs3@skylineschool.edu.vn" },
                 ].map(p => {
                   const isActive = recipientEmail.includes(p.email);
                   return (
@@ -2369,10 +2447,8 @@ export function ReportsClient({
               <div className="flex flex-wrap gap-1 mt-2">
                 <span className="text-[10px] text-slate-400 font-bold uppercase mr-1 mt-1">Gợi ý CC:</span>
                 {[
-                  { label: "TS Riverside (CS1)", email: "tuyensinh.cs1@skylineschool.edu.vn" },
-                  { label: "TS Central (CS2)", email: "tuyensinh.cs2@skylineschool.edu.vn" },
-                  { label: "TS Hill (CS4)", email: "tuyensinh.cs4@skylineschool.edu.vn" },
-                  { label: "TS Beach (CS5)", email: "tuyensinh.cs5@skylineschool.edu.vn" },
+                  { label: `Giáo vụ (${campusLabel})`, email: campusEmails.giaovu },
+                  { label: `GĐCS (${campusLabel})`, email: campusEmails.gdcs },
                 ].map(p => {
                   const isActive = ccEmail.includes(p.email);
                   return (
