@@ -575,6 +575,13 @@ export function ReportsClient({
     setRcDirectorName(savedDirector);
   }, [rcCampusId, rcReportType, rcTargetGroup, selectedLevel, campuses]);
 
+  // Force Congratulations report type for preschool level to exclude invitation and commitment templates
+  useEffect(() => {
+    if (selectedLevel === "preschool") {
+      setRcReportType("thu_chuc_mung");
+    }
+  }, [selectedLevel]);
+
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) { const reader = new FileReader(); reader.onloadend = () => { setRcLogo(reader.result as string); }; reader.readAsDataURL(file); }
@@ -1251,9 +1258,9 @@ export function ReportsClient({
             <div className="grid grid-cols-2 gap-4">
               <Field label="Loại báo cáo" required>
                 <select value={rcReportType} onChange={e => setRcReportType(e.target.value)} className={inp}>
-                  <option value="thu_moi">Thư mời</option>
+                  {selectedLevel !== "preschool" && <option value="thu_moi">Thư mời</option>}
                   <option value="thu_chuc_mung">Thư chúc mừng</option>
-                  <option value="cam_ket_hoc_tap">Cam kết học tập</option>
+                  {selectedLevel !== "preschool" && <option value="cam_ket_hoc_tap">Cam kết học tập</option>}
                 </select>
               </Field>
 
