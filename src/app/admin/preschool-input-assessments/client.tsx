@@ -3225,6 +3225,24 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                           .map((s, idx) => {
                             const pct = s.totalCriteria > 0 ? Math.round((s.scoredCount / s.totalCriteria) * 100) : 0;
                             const statusBadge = () => {
+                              const res = s.admissionResult || s.devAssessmentResult;
+                              if (res && res !== "Chưa duyệt" && res !== "CHUA_DUYET" && res !== "") {
+                                if (res === "Đạt - Miễn Học Thử" || res === "DAT_MIEN_HOC_THU") {
+                                  return <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-teal-50 text-teal-600 border border-teal-200">✓ ĐẠT - MIỄN HỌC THỬ</span>;
+                                }
+                                if (res === "Đạt - Học Thử" || res === "DAT_HOC_THU" || res === "Học thử" || res === "HOC_THU") {
+                                  return <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-200">★ ĐẠT - HỌC THỬ</span>;
+                                }
+                                if (res === "Đạt" || res === "DAT") {
+                                  return <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200">✓ ĐẠT</span>;
+                                }
+                                if (res === "Không đạt" || res === "KHONG_DAT") {
+                                  return <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-rose-50 text-rose-600 border border-rose-200">✗ KHÔNG ĐẠT</span>;
+                                }
+                                if (res === "Ý kiến khác" || res === "Y_KIEN_KHAC") {
+                                  return <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-amber-50 text-amber-600 border border-amber-200">★ Ý KIẾN KHÁC</span>;
+                                }
+                              }
                               if (s.totalCriteria === 0) return <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2.5 py-0.5 rounded-full border border-slate-100">Không có tiêu chí</span>;
                               if (s.scoredCount === s.totalCriteria) return <span className="text-[10px] font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">🟢 Hoàn tất</span>;
                               if (s.scoredCount > 0) return <span className="text-[10px] font-black text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-100">🟡 Đang chấm</span>;
