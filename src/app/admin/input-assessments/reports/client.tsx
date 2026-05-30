@@ -827,7 +827,7 @@ export function ReportsClient({
     return (
       <>
         {/* PAGE 1: THE LETTER */}
-        <div className="bg-white rounded-none border border-slate-300 w-[210mm] min-w-[210mm] max-w-[210mm] h-[297mm] min-h-[297mm] p-[20mm_20mm_42mm_20mm] box-border relative flex flex-col justify-start overflow-hidden select-none font-serif text-slate-800 leading-normal" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
+        <div className="bg-white rounded-none border border-slate-300 w-[210mm] min-w-[210mm] max-w-[210mm] h-[297mm] min-h-[297mm] p-[28mm_20mm_42mm_20mm] box-border relative flex flex-col justify-start overflow-hidden select-none font-sans text-slate-800 leading-normal" style={{ fontFamily: 'Arial, sans-serif' }}>
           
           {/* Watermark */}
           {studentCampusConfig?.background && (
@@ -859,7 +859,7 @@ export function ReportsClient({
               </h2>
 
               {/* Greeting */}
-              <p style={{ fontSize: "14pt", fontStyle: "italic", marginBottom: "8px", color: "#1e293b", textIndent: 0 }}>
+              <p style={{ fontSize: "13pt", fontStyle: "italic", marginBottom: "8px", color: "#1e293b", textIndent: 0 }}>
                 {isInvitation ? (
                   <>Kính gửi Quý Phụ huynh và em <strong style={{ fontWeight: "bold", color: "#0f172a" }}>{selectedReportStudent?.fullName}</strong>,</>
                 ) : (
@@ -868,14 +868,14 @@ export function ReportsClient({
               </p>
 
               {/* Body template text */}
-              <div style={{ flexGrow: 1, fontFamily: '"Times New Roman", Times, serif' }}>
+              <div style={{ flexGrow: 1, fontFamily: 'Arial, sans-serif' }}>
                 {renderTemplate(
                   studentCampusConfig?.content || "",
                   selectedReportStudent
                 ).split('\n').filter(Boolean).map((para, idx) => {
                   const isList = /^\s*[\d•\-*]+/.test(para);
                   return (
-                    <p key={idx} style={isList ? { paddingLeft: "24px", fontWeight: "bold", color: "#374151", margin: "4px 0", fontSize: "13.5pt" } : { textIndent: "10mm", margin: "0 0 8px 0", textAlign: "justify", lineBreak: "auto", lineHeight: "1.45", fontSize: "13.5pt" }}>
+                    <p key={idx} style={isList ? { paddingLeft: "24px", fontWeight: "bold", color: "#374151", margin: "4px 0", fontSize: "13pt" } : { textIndent: "10mm", margin: "0 0 8px 0", textAlign: "justify", lineBreak: "auto", lineHeight: "1.45", fontSize: "13pt" }}>
                       {para}
                     </p>
                   );
@@ -943,7 +943,7 @@ export function ReportsClient({
 
         {/* PAGE 2: ADMISSION CHECKLIST */}
         {modalDocList && modalDocList.length > 0 && !isInvitation && !isCommitment && (
-          <div className="bg-white rounded-none border border-slate-300 w-[210mm] min-w-[210mm] max-w-[210mm] h-[297mm] min-h-[297mm] p-[20mm_20mm_42mm_20mm] box-border relative flex flex-col justify-start overflow-hidden select-none font-serif text-slate-800 leading-normal" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
+          <div className="bg-white rounded-none border border-slate-300 w-[210mm] min-w-[210mm] max-w-[210mm] h-[297mm] min-h-[297mm] p-[28mm_20mm_42mm_20mm] box-border relative flex flex-col justify-start overflow-hidden select-none font-sans text-slate-800 leading-normal" style={{ fontFamily: 'Arial, sans-serif' }}>
             
             {/* Watermark */}
             {studentCampusConfig?.background && (
@@ -2213,6 +2213,13 @@ export function ReportsClient({
             margin: 0 !important;
             padding: 0 !important;
           }
+          /* Hide all sibling elements of the print area to prevent ghost/blank pages */
+          .space-y-4.font-sans > *:not(#print-area-reports) {
+            display: none !important;
+          }
+          aside, nav, header, footer, .sidebar, .navbar, .no-print {
+            display: none !important;
+          }
           /* Flatten all intermediate layout wrappers in the DOM to prevent shifts or crops */
           div:not(#print-area-reports):not(#print-area-reports *),
           main:not(#print-area-reports):not(#print-area-reports *),
@@ -2253,7 +2260,7 @@ export function ReportsClient({
             min-height: 297mm !important;
             max-height: 297mm !important;
             margin: 0 auto !important;
-            padding: 20mm 20mm 42mm 20mm !important;
+            padding: 28mm 20mm 42mm 20mm !important; /* Top padding pushed to 28mm! */
             box-sizing: border-box !important;
             position: relative !important;
             background-color: white !important;
