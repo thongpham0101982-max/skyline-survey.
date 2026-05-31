@@ -4853,7 +4853,7 @@ return {
                 </div>
               </div>
 
-              /* SUBJECTS RESULTS DISPLAY */
+              {/* SUBJECTS RESULTS DISPLAY */}
               <div className="lg:col-span-8 space-y-6">
                 <div className="flex items-center justify-between bg-white px-6 py-4 rounded-3xl border border-slate-200/80 shadow-sm text-left">
                   <div className="flex items-center gap-3">
