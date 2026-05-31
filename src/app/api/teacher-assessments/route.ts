@@ -245,6 +245,25 @@ export async function GET(req: any) {
         return NextResponse.json(students);
     }
 
+    if (action === "getRetestHistory") {
+        const studentCode = searchParams.get("studentCode");
+        if (!studentCode) return NextResponse.json({error: "Missing studentCode"}, {status:400});
+        
+        const history = await prisma.inputAssessmentStudent.findMany({
+            where: { studentCode: studentCode },
+            orderBy: { createdAt: 'desc' },
+            include: {
+                period: true,
+                batch: true,
+                scores: {
+                    include: { subject: true }
+                }
+            }
+        });
+        
+        return NextResponse.json(history);
+    }
+
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
 
   } catch (error: any) {
