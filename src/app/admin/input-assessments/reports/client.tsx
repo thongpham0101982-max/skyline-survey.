@@ -1116,7 +1116,7 @@ export function ReportsClient({
     const bodyHtml = paragraphs.map((p: string) => '<p style="text-indent: 1cm; margin: 0 0 10px 0;">' + p + '</p>').join("");
     
     const greetingHtml = 'Thân gửi con <strong style="font-weight: 900; font-style: normal; color: #0f172a;">' + student.fullName + '</strong>,';
-    const directorName = student?.signatureName || config.directorName || "Trần Thị Thanh";
+    const directorName = config.directorName || "Trần Thị Thanh";
     const getImgTag = (src: string, className: string, style: string = "", alt: string = "") => {
       if (!src) return "";
       const cors = src.startsWith("data:") ? "" : ' crossorigin="anonymous"';
@@ -1433,7 +1433,7 @@ export function ReportsClient({
         
         const eligibleStudents = targetStudents.filter(s => {
           const r = s.admissionResult || s.devAssessmentResult || "";
-          const isPassed = r.includes("Đạt") || r.includes("DAT") || r.includes("MIỄN") || s.probationaryResult === "DAT";
+          const isPassed = (r.includes("Đạt") && !r.includes("Không")) || r.includes("DAT") || r.includes("MIỄN") || s.probationaryResult === "DAT";
           return isPassed;
         });
         
@@ -1442,7 +1442,7 @@ export function ReportsClient({
 
         for (const s of targetStudents) {
           const r = s.admissionResult || s.devAssessmentResult || "";
-          const isPassed = r.includes("Đạt") || r.includes("DAT") || r.includes("MIỄN") || s.probationaryResult === "DAT";
+          const isPassed = (r.includes("Đạt") && !r.includes("Không")) || r.includes("DAT") || r.includes("MIỄN") || s.probationaryResult === "DAT";
           if (isPassed) {
             const config = getStudentCampusConfigForEmail(s);
             if (config) {
@@ -1719,7 +1719,10 @@ export function ReportsClient({
               <div style={{ flexGrow: 1, fontFamily: 'Arial, sans-serif' }}>
                 {renderTemplate(
                   studentCampusConfig?.content || "",
-                  selectedReportStudent
+                  {
+                    ...selectedReportStudent,
+                    signatureName: studentCampusConfig?.directorName || selectedReportStudent?.signatureName || ""
+                  }
                 ).split('\n').filter(Boolean).map((para, idx) => {
                   const isList = /^\s*[\d•\-*]+/.test(para);
                   return (
@@ -1753,7 +1756,7 @@ export function ReportsClient({
                       <svg style={{ height: "45px" }} viewBox="0 0 100 40" width="120"><path d="M10,25 Q30,5 50,20 T90,15 M30,12 Q45,28 60,8" fill="none" stroke="#0f172a" strokeWidth="2" strokeLinecap="round"/></svg>
                     )}
                   </div>
-                  <p style={{ fontSize: "12pt", fontWeight: "bold", margin: 0, textAlign: "center", textIndent: 0, color: "#1e293b" }}>{selectedReportStudent?.signatureName || studentCampusConfig?.directorName || "Trần Thị Thanh"}</p>
+                  <p style={{ fontSize: "12pt", fontWeight: "bold", margin: 0, textAlign: "center", textIndent: 0, color: "#1e293b" }}>{studentCampusConfig?.directorName || "Trần Thị Thanh"}</p>
                 </div>
               </div>
             ) : (
@@ -1768,7 +1771,7 @@ export function ReportsClient({
                     <svg style={{ height: "45px" }} viewBox="0 0 100 40" width="120"><path d="M10,25 Q30,5 50,20 T90,15 M30,12 Q45,28 60,8" fill="none" stroke="#0f172a" strokeWidth="2" strokeLinecap="round"/></svg>
                   )}
                 </div>
-                <p style={{ fontSize: "13pt", fontWeight: "bold", margin: 0, textAlign: "center", textIndent: 0, color: "#1e293b" }}>{selectedReportStudent?.signatureName || studentCampusConfig?.directorName || "Trần Thị Thanh"}</p>
+                <p style={{ fontSize: "13pt", fontWeight: "bold", margin: 0, textAlign: "center", textIndent: 0, color: "#1e293b" }}>{studentCampusConfig?.directorName || "Trần Thị Thanh"}</p>
               </div>
             )}
           </div>
@@ -2378,7 +2381,7 @@ export function ReportsClient({
                       
                       // Approval results badges
                       const result = s.admissionResult || s.devAssessmentResult || "Chưa duyệt";
-                      const isPassed = result.includes("Đạt") || result.includes("Đại") || result.includes("MIỄN") || result.includes("DAT");
+                      const isPassed = (result.includes("Đạt") && !result.includes("Không")) || result.includes("Đại") || result.includes("MIỄN") || result.includes("DAT");
 
                       return (
                         <tr key={s.id} className="hover:bg-indigo-50/15 transition-all duration-150 font-bold text-slate-650 group/row">
@@ -2465,7 +2468,7 @@ export function ReportsClient({
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Statistics summary */}
-          <div className="lg:col-span-3 bg-white border border-slate-200 shadow-sm rounded-3xl p-6 space-y-6">
+          <div className="bg-white border border-slate-200 shadow-sm rounded-3xl p-6 space-y-6">
             <h3 className="text-base font-extrabold text-slate-800 border-b pb-3 mb-2 flex items-center gap-2"><BarChart3 className="w-5 h-5 text-indigo-500"/> Thống kê tổng quan</h3>
             
             <div className="grid grid-cols-2 gap-4">
@@ -2479,7 +2482,7 @@ export function ReportsClient({
                 <span className="text-2xl font-black text-slate-800 block">
                   {filteredStudents.filter(s => {
                     const r = s.admissionResult || s.devAssessmentResult || "";
-                    return r.includes("Đạt") || r.includes("DAT") || r.includes("MIỄN");
+                    return (r.includes("Đạt") && !r.includes("Không")) || r.includes("DAT") || r.includes("MIỄN");
                   }).length}
                 </span>
               </div>
@@ -2498,6 +2501,27 @@ export function ReportsClient({
                   );
                 })}
               </div>
+            </div>
+          </div>
+
+          {/* Email triggers */}
+          <div className="lg:col-span-2 bg-white border border-slate-200 shadow-sm rounded-3xl p-6 space-y-6">
+            <div className="flex items-center justify-between border-b pb-3 mb-2">
+              <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2"><Mail className="w-5 h-5 text-indigo-500"/> Trả kết quả / Gửi mail nhanh</h3>
+              <button
+                onClick={handleOpenEmailModal}
+                className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black shadow-md shadow-indigo-100 flex items-center gap-2 cursor-pointer"
+              >
+                <Send className="w-3.5 h-3.5"/>
+                Gửi Email báo cáo nhanh
+              </button>
+            </div>
+
+            <div className="bg-slate-50 border border-slate-100 p-5 rounded-2xl space-y-3 text-xs leading-relaxed text-slate-600">
+              <p className="font-bold text-slate-700 text-sm">💡 Chức năng Trả kết quả & Email nhanh:</p>
+              <p>1. Gửi email tổng hợp nhanh danh sách kết quả xét tuyển cho Ban giám hiệu, các bộ phận tuyển sinh và tư vấn của cơ sở.</p>
+              <p>2. Hệ thống tự động tạo, tối ưu hóa kích thước và đính kèm các tệp **PDF Thư chúc mừng / Bản cam kết** trực tiếp cho từng bé đạt yêu cầu khi gửi mail.</p>
+              <p>3. Đảm bảo bảo mật tối đa, đồng bộ hóa 100% thời gian thực kết quả duyệt.</p>
             </div>
           </div>
 
@@ -3190,7 +3214,7 @@ export function ReportsClient({
                       </div>
                     </div>
                     <div>
-                      <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black border uppercase tracking-wider ${s.admissionResult?.includes("Đạt") || s.probationaryResult === "DAT" || (s.admissionResult || "").toUpperCase().includes("MIỄN") ? "bg-emerald-50 text-emerald-700 border-emerald-100" : "bg-slate-100 text-slate-400 border-slate-200"}`}>
+                      <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black border uppercase tracking-wider ${(s.admissionResult?.includes("Đạt") && !s.admissionResult?.includes("Không")) || s.probationaryResult === "DAT" || (s.admissionResult || "").toUpperCase().includes("MIỄN") ? "bg-emerald-50 text-emerald-700 border-emerald-100" : "bg-slate-100 text-slate-400 border-slate-200"}`}>
                         ${s.probationaryResult === "DAT" ? "Đạt" : s.admissionResult || "—"}
                       </span>
                     </div>

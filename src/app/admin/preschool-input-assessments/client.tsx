@@ -527,7 +527,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
       : (campusCodeStr.includes("CS5") || campusCodeStr.includes("BEACH")) ? "BEACH"
       : campusCodeStr || "GLOBAL";
 
-    const directorName = student?.signatureName || config.directorName || "Trần Thị Thanh";
+    const directorName = config.directorName || "Trần Thị Thanh";
     const subTitleTextStr = `GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE ${campusTitleSuffixStr}`;
 
     const customFooterHtml = config.footer ? getImgTag(config.footer, "footer-img", "width: 100%; max-height: 100px; object-fit: contain;", "Footer") :
@@ -5609,7 +5609,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <div className="space-y-3 text-justify text-slate-800 font-serif" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: "13.5pt", lineHeight: "1.45", textAlign: "justify" }}>
                       {renderPreschoolTemplate(
                         studentCampusConfig?.content || defaultPreschoolInvitation,
-                        selectedReportStudent
+                        {
+                          ...selectedReportStudent,
+                          signatureName: studentCampusConfig?.directorName || selectedReportStudent?.signatureName || ""
+                        }
                       ).split('\n').filter(Boolean).map((para, idx) => {
                         const isList = /^\s*[\d•\-*]+/.test(para);
                         return (
@@ -5623,7 +5626,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <div className="space-y-3 text-justify text-slate-800 font-serif" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: "13.5pt", lineHeight: "1.45", textAlign: "justify" }}>
                       {renderPreschoolTemplate(
                         studentCampusConfig?.content || defaultPreschoolCommitment,
-                        selectedReportStudent
+                        {
+                          ...selectedReportStudent,
+                          signatureName: studentCampusConfig?.directorName || selectedReportStudent?.signatureName || ""
+                        }
                       ).split('\n').filter(Boolean).map((para, idx) => {
                         const isList = /^[\d•\-*]+/.test(para.trim());
                         return (
@@ -5637,7 +5643,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <div className="space-y-3 text-justify text-slate-800 font-serif" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: "13.5pt", lineHeight: "1.45", textAlign: "justify" }}>
                       {renderPreschoolTemplate(
                         studentCampusConfig?.content || defaultPreschoolCongratulations,
-                        selectedReportStudent
+                        {
+                          ...selectedReportStudent,
+                          signatureName: studentCampusConfig?.directorName || selectedReportStudent?.signatureName || ""
+                        }
                       ).split('\n').filter(Boolean).map((para, idx) => (
                         <p key={idx} className="" style={{ textIndent: "1cm" }}>
                           {para}
@@ -5677,7 +5686,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         </div>
                         
                         <p className="font-bold text-[#1e293b] text-[12pt] mt-0">
-                          {selectedReportStudent?.signatureName || studentCampusConfig?.directorName || "Trần Thị Thanh"}
+                          {studentCampusConfig?.directorName || "Trần Thị Thanh"}
                         </p>
                       </div>
                     </div>
@@ -5701,7 +5710,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         </div>
                         
                         <p className="font-bold text-[#1e293b] text-[13pt] mt-0">
-                          {selectedReportStudent?.signatureName || studentCampusConfig?.directorName || "Trần Thị Thanh"}
+                          {studentCampusConfig?.directorName || "Trần Thị Thanh"}
                         </p>
                       </div>
                     </div>

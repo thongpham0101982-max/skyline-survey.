@@ -189,12 +189,12 @@ export default function AdminDashboard() {
               let colorClasses = "bg-slate-50 border-slate-200 text-slate-600"
               let Icon = AlertCircle
 
-              if (resultName.includes("DAT") || resultName.includes("ĐẠT")) {
-                colorClasses = "bg-emerald-50 border-emerald-100 text-emerald-700"
-                Icon = CheckCircle2
-              } else if (resultName.includes("KHONG") || resultName.includes("KHÔNG")) {
+              if (resultName.includes("KHONG") || resultName.includes("KHÔNG")) {
                 colorClasses = "bg-rose-50 border-rose-100 text-rose-700"
                 Icon = XCircle
+              } else if (resultName.includes("DAT") || resultName.includes("ĐẠT")) {
+                colorClasses = "bg-emerald-50 border-emerald-100 text-emerald-700"
+                Icon = CheckCircle2
               }
 
               return (

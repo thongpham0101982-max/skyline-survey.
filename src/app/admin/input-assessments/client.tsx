@@ -1181,7 +1181,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     const bodyHtml = paragraphs.map((p: string) => '<p style="text-indent: 1cm; margin: 0 0 10px 0;">' + p + '</p>').join("");
     
     const greetingHtml = 'Thân gửi em <strong style="font-weight: 900; font-style: normal; color: #0f172a;">' + student.fullName + '</strong>,';
-    const directorName = student?.signatureName || config.directorName || "Đỗ Quang Trung";
+    const directorName = config.directorName || "Đỗ Quang Trung";
     const getImgTag = (src: string, className: string, style: string = "", alt: string = "") => {
       if (!src) return "";
       const cors = src.startsWith("data:") ? "" : ' crossorigin="anonymous"';
@@ -1851,6 +1851,10 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
         finalNote = `Môn cam kết: [${reportForm.committedSubjects.join(", ")}]
 
 ${reportForm.directorNote}`;
+      } else if (reportForm.admissionResult === "Không đạt - Kiểm tra lại" && reportForm.committedSubjects.length > 0) {
+        finalNote = `Môn kiểm tra lại: [${reportForm.committedSubjects.join(", ")}]
+
+${reportForm.directorNote}`;
       }
       const r = await fetch("/api/input-assessment-students", {
         method: "PUT",
@@ -2347,7 +2351,7 @@ ${reportForm.directorNote}`;
       stat.total++;
       if (s.admissionResult === "Đạt" || s.admissionResult === "Học thử") {
         stat.passed++;
-      } else if (s.admissionResult === "Không đạt") {
+      } else if (s.admissionResult === "Không đạt" || s.admissionResult === "Không đạt - Kiểm tra lại" || s.admissionResult === "Không đạt - Không kiểm tra lại") {
         stat.failed++;
       } else if (s.admissionResult === "Đạt cam kết") {
         stat.committed++;
@@ -2370,7 +2374,7 @@ ${reportForm.directorNote}`;
     
     filteredReportStudents.forEach(s => {
       if (s.admissionResult === "Đạt" || s.admissionResult === "Học thử") passed++;
-      else if (s.admissionResult === "Không đạt") failed++;
+      else if (s.admissionResult === "Không đạt" || s.admissionResult === "Không đạt - Kiểm tra lại" || s.admissionResult === "Không đạt - Không kiểm tra lại") failed++;
       else if (s.admissionResult === "Đạt cam kết") committed++;
       else pending++;
     });
@@ -2423,9 +2427,13 @@ ${reportForm.directorNote}`;
       let commSubs: string[] = [];
       let cleanNote = selectedReportStudent.directorNote || "";
       const match = cleanNote.match(/^Môn cam kết: \[(.*?)\](?:\r?\n\r?\n)?/);
+      const matchRetest = cleanNote.match(/^Môn kiểm tra lại: \[(.*?)\](?:\r?\n\r?\n)?/);
       if (match) {
         commSubs = match[1] ? match[1].split(", ") : [];
         cleanNote = cleanNote.replace(/^Môn cam kết: \[(.*?)\](?:\r?\n\r?\n)?/, "");
+      } else if (matchRetest) {
+        commSubs = matchRetest[1] ? matchRetest[1].split(", ") : [];
+        cleanNote = cleanNote.replace(/^Môn kiểm tra lại: \[(.*?)\](?:\r?\n\r?\n)?/, "");
       }
       setReportForm({
         admissionResult: selectedReportStudent.admissionResult || "",
@@ -4721,6 +4729,8 @@ return {
                       <option value="">-- Chưa xét duyệt --</option>
                       <option value="Đạt">Đạt</option>
                       <option value="Không đạt">Không đạt</option>
+                      <option value="Không đạt - Kiểm tra lại">Không đạt - Kiểm tra lại</option>
+                      <option value="Không đạt - Không kiểm tra lại">Không đạt - Không kiểm tra lại</option>
                       <option value="Đạt cam kết">Đạt cam kết</option>
                       <option value="Học thử">Học thử</option>
                     </select>
@@ -4728,6 +4738,35 @@ return {
 
                   {reportForm.admissionResult === "Đạt cam kết" && (
                     <Field label="Môn Cam Kết">
+                      <div className="grid grid-cols-2 gap-2 bg-slate-50 p-4 rounded-2xl border border-slate-200 max-h-48 overflow-y-auto">
+                        {initialSubjects.map(sub => {
+                          const isChecked = reportForm.committedSubjects.includes(sub.name);
+                          return (
+                            <label key={sub.id} className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer hover:text-indigo-600 transition-colors">
+                              <input 
+                                type="checkbox"
+                                checked={isChecked}
+                                disabled={!canApprove}
+                                onChange={() => {
+                                  setReportForm(f => {
+                                    const next = isChecked 
+                                      ? f.committedSubjects.filter(name => name !== sub.name)
+                                      : [...f.committedSubjects, sub.name];
+                                    return { ...f, committedSubjects: next };
+                                  });
+                                }}
+                                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                              />
+                              {sub.name}
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </Field>
+                  )}
+
+                  {reportForm.admissionResult === "Không đạt - Kiểm tra lại" && (
+                    <Field label="Môn Kiểm tra lại">
                       <div className="grid grid-cols-2 gap-2 bg-slate-50 p-4 rounded-2xl border border-slate-200 max-h-48 overflow-y-auto">
                         {initialSubjects.map(sub => {
                           const isChecked = reportForm.committedSubjects.includes(sub.name);
@@ -5950,7 +5989,10 @@ return {
                   {isInvitation ? (
                     studentCampusConfig?.content ? (
                       <div className="space-y-3 text-justify text-slate-800 font-serif" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: "13.5pt", lineHeight: "1.45", textAlign: "justify" }}>
-                        {renderTemplate(studentCampusConfig.content, mergedStudent || selectedReportStudent).split('\n').filter(Boolean).map((para, idx) => (
+                        {renderTemplate(studentCampusConfig.content, {
+                          ...(mergedStudent || selectedReportStudent),
+                          signatureName: studentCampusConfig?.directorName || (mergedStudent || selectedReportStudent)?.signatureName || ""
+                        }).split('\n').filter(Boolean).map((para, idx) => (
                           <p key={idx} className="" style={{ textIndent: "1cm" }}>{para}</p>
                         ))}
                       </div>
@@ -5983,7 +6025,10 @@ return {
                     <div className="space-y-3 text-justify text-slate-800 font-serif" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: "13.5pt", lineHeight: "1.45", textAlign: "justify" }}>
                       {renderTemplate(
                         studentCampusConfig?.content || getDefaultContent("cam_ket_hoc_tap"),
-                        selectedReportStudent
+                        {
+                          ...selectedReportStudent,
+                          signatureName: studentCampusConfig?.directorName || selectedReportStudent?.signatureName || ""
+                        }
                       ).split('\n').filter(Boolean).map((para, idx) => {
                         const isList = /^[\d•\-*]+/.test(para.trim());
                         return (
@@ -5997,7 +6042,10 @@ return {
                     <div className="space-y-3 text-justify text-slate-800 font-serif" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: "13.5pt", lineHeight: "1.45", textAlign: "justify" }}>
                       {renderTemplate(
                         studentCampusConfig?.content || getDefaultContent("thu_chuc_mung"),
-                        selectedReportStudent
+                        {
+                          ...selectedReportStudent,
+                          signatureName: studentCampusConfig?.directorName || selectedReportStudent?.signatureName || ""
+                        }
                       ).split('\n').filter(Boolean).map((para, idx) => (
                         <p key={idx} className="" style={{ textIndent: "1cm" }}>
                           {para}
@@ -6031,7 +6079,7 @@ return {
                       </div>
                       
                       <p className="font-bold text-slate-700 mt-2 text-sm">
-                        {mergedStudent?.signatureName || studentCampusConfig?.directorName || "Đỗ Quang Trung"}
+                        {studentCampusConfig?.directorName || "Đỗ Quang Trung"}
                       </p>
                     </div>
                   </div>
@@ -6049,7 +6097,7 @@ return {
                       </div>
                       
                       <p className="font-bold text-slate-700 mt-2 text-sm">
-                        {mergedStudent?.signatureName || studentCampusConfig?.directorName || "Đỗ Quang Trung"}
+                        {studentCampusConfig?.directorName || "Đỗ Quang Trung"}
                       </p>
                     </div>
                   </div>
@@ -6655,7 +6703,7 @@ return {
                             <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-black ${
                               s.admissionResult === "Đạt" ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
                               s.admissionResult === "Đạt cam kết" ? "bg-amber-50 text-amber-600 border border-amber-100" :
-                              s.admissionResult === "Không đạt" ? "bg-rose-50 text-rose-600 border border-rose-100" :
+                              (s.admissionResult === "Không đạt" || s.admissionResult === "Không đạt - Kiểm tra lại" || s.admissionResult === "Không đạt - Không kiểm tra lại") ? "bg-rose-50 text-rose-600 border border-rose-100" :
                               s.admissionResult === "Học thử" ? "bg-indigo-50 text-indigo-600 border border-indigo-100" :
                               "bg-slate-50 text-slate-500"
                             }`}>
