@@ -4874,140 +4874,139 @@ return {
                     </button>
                   )}
                 </div>
-              </div>
 
-              {/* RETEST HISTORY TIMELINE CARD */}
-              {retestHistory.length > 1 && (
-                <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4 animate-fade-in text-left">
-                  <h4 className="font-black text-slate-800 text-sm flex items-center justify-between border-b pb-3 mb-2">
-                    <span className="flex items-center gap-2">
-                      <RefreshCw className="w-4 h-4 text-indigo-500 animate-spin-slow shrink-0" />
-                      Lịch sử Khảo sát & Thi lại
-                    </span>
-                    <span className="text-[10px] font-black bg-indigo-50 text-indigo-700 border border-indigo-100 px-2 py-0.5 rounded-lg shrink-0 shadow-sm">
-                      {retestHistory.length} Đợt thi
-                    </span>
-                  </h4>
-                  
-                  <div className="relative pl-4 border-l-2 border-slate-100 space-y-5 my-2 max-h-[380px] overflow-y-auto pr-1 scrollbar-thin">
-                    {retestHistory.map((hist, idx) => {
-                      const isCurrent = selectedReportStudent && hist.id === selectedReportStudent.id;
-                      let sNote = hist.directorNote || "";
-                      let retestMuns = [];
-                      const matchRetest = sNote.match(/^Môn (?:kiểm tra lại|cam kết): \[(.*?)\](?:\r?\n\r?\n)?/);
-                      if (matchRetest && matchRetest[1]) {
-                        retestMuns = matchRetest[1].split(", ");
-                        sNote = sNote.replace(/^Môn (?:kiểm tra lại|cam kết): \[(.*?)\](?:\r?\n\r?\n)?/, "");
-                      }
+                {/* RETEST HISTORY TIMELINE CARD */}
+                {Array.isArray(retestHistory) && retestHistory.length > 1 && (
+                  <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4 animate-fade-in text-left">
+                    <h4 className="font-black text-slate-800 text-sm flex items-center justify-between border-b pb-3 mb-2">
+                      <span className="flex items-center gap-2">
+                        <RefreshCw className="w-4 h-4 text-indigo-500 animate-spin-slow shrink-0" />
+                        Lịch sử Khảo sát & Thi lại
+                      </span>
+                      <span className="text-[10px] font-black bg-indigo-50 text-indigo-700 border border-indigo-100 px-2 py-0.5 rounded-lg shrink-0 shadow-sm">
+                        {retestHistory.length} Đợt thi
+                      </span>
+                    </h4>
+                    
+                    <div className="relative pl-4 border-l-2 border-slate-100 space-y-5 my-2 max-h-[380px] overflow-y-auto pr-1 scrollbar-thin">
+                      {retestHistory.filter(Boolean).map((hist, idx) => {
+                        const isCurrent = selectedReportStudent && hist?.id === selectedReportStudent.id;
+                        let sNote = hist?.directorNote || "";
+                        let retestMuns = [];
+                        const matchRetest = sNote.match(/^Môn (?:kiểm tra lại|cam kết): \[(.*?)\](?:\r?\n\r?\n)?/);
+                        if (matchRetest && matchRetest[1]) {
+                          retestMuns = matchRetest[1].split(", ");
+                          sNote = sNote.replace(/^Môn (?:kiểm tra lại|cam kết): \[(.*?)\](?:\r?\n\r?\n)?/, "");
+                        }
 
-                      let parsedScores = hist.scores || [];
+                        const parsedScores = Array.isArray(hist?.scores) ? hist.scores : [];
 
-                      return (
-                        <div key={hist.id} className="relative group text-left">
-                          {/* Timeline node dot */}
-                          <span className={`absolute -left-[23px] top-1.5 w-3 h-3 rounded-full border-2 ${
-                            isCurrent ? "bg-indigo-600 border-indigo-200 scale-125 ring-4 ring-indigo-50 animate-pulse" : "bg-slate-300 border-white group-hover:bg-indigo-400 group-hover:scale-110 transition-all duration-300"
-                          }`} />
-                          
-                          <div className="space-y-1.5">
-                            <div className="flex items-center justify-between gap-1.5">
-                              <span className={`text-xs font-black truncate max-w-[150px] ${
-                                isCurrent ? "text-indigo-700" : "text-slate-600 font-bold"
-                              }`} title={hist.period?.name}>
-                                {hist.period?.name || "Đợt khảo sát"}
-                              </span>
-                              <span className={`text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded border ${
-                                isCurrent ? "bg-indigo-50 text-indigo-700 border-indigo-100" : "bg-slate-50 text-slate-500 border-slate-200"
-                              }`}>
-                                {isCurrent ? "Hiện tại" : `Đợt ${retestHistory.length - idx}`}
-                              </span>
-                            </div>
+                        return (
+                          <div key={hist?.id || idx} className="relative group text-left">
+                            {/* Timeline node dot */}
+                            <span className={`absolute -left-[23px] top-1.5 w-3 h-3 rounded-full border-2 ${
+                              isCurrent ? "bg-indigo-600 border-indigo-200 scale-125 ring-4 ring-indigo-50 animate-pulse" : "bg-slate-300 border-white group-hover:bg-indigo-400 group-hover:scale-110 transition-all duration-300"
+                            }`} />
                             
-                            <p className="text-[10px] text-slate-400 font-bold leading-none">
-                              {hist.batch?.name ? hist.batch.name.split("|")[0]?.trim() : "Khảo sát lẻ"} • {new Date(hist.createdAt).toLocaleDateString("vi-VN")}
-                            </p>
-
-                            {/* Attempt Result Badge */}
-                            <div className="flex items-center gap-1.5 mt-1">
-                              <span className="text-[9px] font-bold text-slate-400">Kết quả:</span>
-                              {hist.admissionResult ? (
-                                <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${
-                                  hist.admissionResult.includes("Không đạt") 
-                                    ? "bg-rose-50 text-rose-700" 
-                                    : hist.admissionResult.includes("Đạt cam kết")
-                                    ? "bg-amber-50 text-amber-700"
-                                    : "bg-emerald-50 text-emerald-700"
-                                }`}>
-                                  {hist.admissionResult}
+                            <div className="space-y-1.5">
+                              <div className="flex items-center justify-between gap-1.5">
+                                <span className={`text-xs font-black truncate max-w-[150px] ${
+                                  isCurrent ? "text-indigo-700" : "text-slate-600 font-bold"
+                                }`} title={hist?.period?.name}>
+                                  {hist?.period?.name || "Đợt khảo sát"}
                                 </span>
-                              ) : (
-                                <span className="text-[9px] font-black bg-slate-50 text-slate-450 px-2 py-0.5 rounded border border-slate-200/50">Chưa duyệt</span>
+                                <span className={`text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded border ${
+                                  isCurrent ? "bg-indigo-50 text-indigo-700 border-indigo-100" : "bg-slate-50 text-slate-500 border-slate-200"
+                                }`}>
+                                  {isCurrent ? "Hiện tại" : `Đợt ${retestHistory.length - idx}`}
+                                </span>
+                              </div>
+                              
+                              <p className="text-[10px] text-slate-400 font-bold leading-none">
+                                {hist?.batch?.name ? hist.batch.name.split("|")[0]?.trim() : "Khảo sát lẻ"} • {hist?.createdAt ? new Date(hist.createdAt).toLocaleDateString("vi-VN") : "—"}
+                              </p>
+
+                              {/* Attempt Result Badge */}
+                              <div className="flex items-center gap-1.5 mt-1">
+                                <span className="text-[9px] font-bold text-slate-400">Kết quả:</span>
+                                {hist?.admissionResult ? (
+                                  <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${
+                                    String(hist.admissionResult).includes("Không đạt")
+                                      ? "bg-rose-50 text-rose-700"
+                                      : String(hist.admissionResult).includes("Đạt cam kết")
+                                      ? "bg-amber-50 text-amber-700"
+                                      : "bg-emerald-50 text-emerald-700"
+                                  }`}>
+                                    {hist.admissionResult}
+                                  </span>
+                                ) : (
+                                  <span className="text-[9px] font-black bg-slate-50 text-slate-450 px-2 py-0.5 rounded border border-slate-200/50">Chưa duyệt</span>
+                                )}
+                              </div>
+
+                              {/* Retest subjects warning */}
+                              {retestMuns.length > 0 && (
+                                <div className="text-[10px] bg-indigo-50/20 border border-indigo-100/50 p-2.5 rounded-2xl mt-1.5 space-y-1.5">
+                                  <span className="font-black text-indigo-600 uppercase tracking-wider text-[8px] block">Môn cần thi lại/cam kết:</span>
+                                  <div className="flex flex-wrap gap-1">
+                                    {retestMuns.map(m => (
+                                      <span key={m} className="bg-indigo-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md shadow-sm">
+                                        {m}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Brief scores list from past attempt */}
+                              {!isCurrent && parsedScores.length > 0 && (
+                                <div className="text-[10px] border border-slate-200/50 p-2.5 rounded-2xl mt-1.5 space-y-1.5 bg-slate-50/50">
+                                  <span className="font-black text-slate-400 uppercase tracking-wider text-[8px] block">Bảng điểm đợt thi cũ:</span>
+                                  <div className="grid grid-cols-2 gap-x-2.5 gap-y-1 text-[9px] font-bold text-slate-600">
+                                    {parsedScores.filter(Boolean).map((sc, sIdx) => {
+                                      const sub = sc?.subject || {};
+                                      const subCode = (sub?.code || "").toLowerCase();
+                                      let vStr = "—";
+                                      try {
+                                        if (sc?.scores) {
+                                          const parsed = JSON.parse(sc.scores);
+                                          const vArr = Array.isArray(parsed) ? parsed : [parsed];
+                                          if (subCode.includes("tly")) {
+                                            vStr = parseFloat(vArr[6] || vArr[20] || "0") + "đ";
+                                          } else if (subCode.includes("nltd")) {
+                                            vStr = (vArr[4] || "0") + "%";
+                                          } else if (subCode.includes("tci") || subCode.includes("cpt")) {
+                                            vStr = Array.isArray(vArr) ? vArr.filter(x => x === "3").length + " Đạt" : "—";
+                                          } else {
+                                            vStr = vArr.find(x => x !== undefined && x !== "" && x !== null) || "—";
+                                          }
+                                        }
+                                      } catch {}
+                                      return (
+                                        <div key={sc?.id || sIdx} className="flex justify-between items-center border-b border-slate-200/20 pb-0.5">
+                                          <span className="text-slate-400 font-semibold truncate max-w-[80px]" title={sub?.name}>{sub?.name || "Môn"}</span>
+                                          <span className="font-black text-slate-700">{vStr}</span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {/* Past notes */}
+                              {!isCurrent && sNote && (
+                                <p className="text-[10px] text-slate-500 italic mt-1 font-semibold bg-slate-100/50 p-2.5 rounded-2xl border border-slate-200/50 leading-relaxed">
+                                  "{sNote.trim()}"
+                                </p>
                               )}
                             </div>
-
-                            {/* Retest subjects warning */}
-                            {retestMuns.length > 0 && (
-                              <div className="text-[10px] bg-indigo-50/20 border border-indigo-100/50 p-2.5 rounded-2xl mt-1.5 space-y-1.5">
-                                <span className="font-black text-indigo-600 uppercase tracking-wider text-[8px] block">Môn cần thi lại/cam kết:</span>
-                                <div className="flex flex-wrap gap-1">
-                                  {retestMuns.map(m => (
-                                    <span key={m} className="bg-indigo-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md shadow-sm">
-                                      {m}
-                                    </span>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Brief scores list from past attempt */}
-                            {!isCurrent && parsedScores.length > 0 && (
-                              <div className="text-[10px] border border-slate-200/50 p-2.5 rounded-2xl mt-1.5 space-y-1.5 bg-slate-50/50">
-                                <span className="font-black text-slate-400 uppercase tracking-wider text-[8px] block">Bảng điểm đợt thi cũ:</span>
-                                <div className="grid grid-cols-2 gap-x-2.5 gap-y-1 text-[9px] font-bold text-slate-600">
-                                  {parsedScores.map((sc: any) => {
-                                    const sub = sc.subject || {};
-                                    const subCode = (sub.code || "").toLowerCase();
-                                    let vStr = "—";
-                                    try {
-                                      if (sc.scores) {
-                                        const parsed = JSON.parse(sc.scores);
-                                        const vArr = Array.isArray(parsed) ? parsed : [parsed];
-                                        if (subCode.includes("tly")) {
-                                          vStr = parseFloat(vArr[6] || vArr[20] || "0") + "đ";
-                                        } else if (subCode.includes("nltd")) {
-                                          vStr = (vArr[4] || "0") + "%";
-                                        } else if (subCode.includes("tci") || subCode.includes("cpt")) {
-                                          vStr = vArr.filter(x => x === "3").length + " Đạt";
-                                        } else {
-                                          vStr = vArr.find(x => x !== undefined && x !== "" && x !== null) || "—";
-                                        }
-                                      }
-                                    } catch {}
-                                    return (
-                                      <div key={sc.id} className="flex justify-between items-center border-b border-slate-200/20 pb-0.5">
-                                        <span className="text-slate-400 font-semibold truncate max-w-[80px]" title={sub.name}>{sub.name}</span>
-                                        <span className="font-black text-slate-700">{vStr}</span>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            )}
-                            
-                            {/* Past notes */}
-                            {!isCurrent && sNote && (
-                              <p className="text-[10px] text-slate-500 italic mt-1 font-semibold bg-slate-100/50 p-2.5 rounded-2xl border border-slate-200/50 leading-relaxed">
-                                "{sNote.trim()}"
-                              </p>
-                            )}
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              )}
-
+                )}
+              </div>
               {/* SUBJECTS RESULTS DISPLAY */}
               <div className="lg:col-span-8 space-y-6">
                 <div className="flex items-center justify-between bg-white px-6 py-4 rounded-3xl border border-slate-200/80 shadow-sm text-left">
