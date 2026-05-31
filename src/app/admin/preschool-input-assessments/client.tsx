@@ -273,7 +273,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
     const activeBatchName = cBatchId ? (periods.flatMap((p: any) => p.batches || []).find((b: any) => b.id === cBatchId)?.name || "Đợt khảo sát") : "Tất cả các đợt";
     const activePeriodName = periods.find((p: any) => p.id === cPeriodId)?.name || "Kỳ khảo sát";
 
-    setRecipientEmail([campusEmails.giaovu, campusEmails.gdcs, campusEmails.tuyensinh].filter(Boolean).join(", "));
+    setRecipientEmail([campusEmails.giaovu, campusEmails.gdcs, campusEmails.bghmn, campusEmails.tuyensinh].filter(Boolean).join(", "));
     setCcEmail("bankhaothi@skylineschool.edu.vn");
     setEmailSubject("[Thư chúc mừng] Kết quả Khảo sát đầu vào Mầm non - Kỳ: " + activePeriodName + " - Đợt: " + activeBatchName);
     setEmailStudents(eligible);
@@ -323,7 +323,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
     }
   };
 
-  const handleCheckboxChange = (group: 'tuvan' | 'giaovu' | 'gdcs' | 'cc', cs?: string) => {
+  const handleCheckboxChange = (group: 'tuvan' | 'giaovu' | 'gdcs' | 'bghmn' | 'cc', cs?: string) => {
     setCheckedEmails(prev => {
       let nextChecked = { ...prev };
       if (group === 'cc') {
@@ -340,6 +340,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
       nextChecked.tuvan.forEach(c => selectedEmails.push(EMAIL_MAP.tuvan[c as keyof typeof EMAIL_MAP.tuvan]));
       nextChecked.giaovu.forEach(c => selectedEmails.push(EMAIL_MAP.giaovu[c as keyof typeof EMAIL_MAP.giaovu]));
       nextChecked.gdcs.forEach(c => selectedEmails.push(EMAIL_MAP.gdcs[c as keyof typeof EMAIL_MAP.gdcs]));
+      nextChecked.bghmn.forEach(c => selectedEmails.push(EMAIL_MAP.bghmn[c as keyof typeof EMAIL_MAP.bghmn]));
       if (nextChecked.cc) {
         selectedEmails.push(EMAIL_MAP.cc);
       }
@@ -361,6 +362,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
       tuvan: [] as string[],
       giaovu: [] as string[],
       gdcs: [] as string[],
+      bghmn: [] as string[],
       cc: false
     };
     
@@ -373,6 +375,9 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
       });
       Object.entries(EMAIL_MAP.gdcs).forEach(([cs, addr]) => {
         if (addr === email) parsedChecked.gdcs.push(cs);
+      });
+      Object.entries(EMAIL_MAP.bghmn).forEach(([cs, addr]) => {
+        if (addr === email) parsedChecked.bghmn.push(cs);
       });
       if (email === EMAIL_MAP.cc) parsedChecked.cc = true;
     });
@@ -401,6 +406,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
       tuvan: [...targetCampuses],
       giaovu: [...targetCampuses],
       gdcs: [...targetCampuses],
+      bghmn: [...targetCampuses],
       cc: true
     };
     
@@ -412,6 +418,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
       if (EMAIL_MAP.tuvan[cs]) initialEmailsSet.add(EMAIL_MAP.tuvan[cs]);
       if (EMAIL_MAP.giaovu[cs]) initialEmailsSet.add(EMAIL_MAP.giaovu[cs]);
       if (EMAIL_MAP.gdcs[cs]) initialEmailsSet.add(EMAIL_MAP.gdcs[cs]);
+      if (EMAIL_MAP.bghmn[cs]) initialEmailsSet.add(EMAIL_MAP.bghmn[cs]);
     });
     initialEmailsSet.add(EMAIL_MAP.cc);
     
@@ -881,7 +888,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   const [emailSubject, setEmailSubject] = useState("");
   const [emailResult, setEmailResult] = useState<any>(null);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
-  const [checkedEmails, setCheckedEmails] = useState({ tuvan: [] as string[], giaovu: [] as string[], gdcs: [] as string[], cc: false });
+  const [checkedEmails, setCheckedEmails] = useState({ tuvan: [] as string[], giaovu: [] as string[], gdcs: [] as string[], bghmn: [] as string[], cc: false });
   const [attachLetters, setAttachLetters] = useState(true);
   const [ccEmail, setCcEmail] = useState("");
 
@@ -1021,7 +1028,8 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
       return {
         tuyensinh: "bankhaothi@skylineschool.edu.vn",
         giaovu: "giaovu.cs3@skylineschool.edu.vn",
-        gdcs: "gdcs.cs3@skylineschool.edu.vn"
+        gdcs: "gdcs.cs3@skylineschool.edu.vn",
+        bghmn: "bghmn.cs3@skylineschool.edu.vn"
       };
     }
 
@@ -1089,10 +1097,26 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
       }
     }
 
+    let bghmnEmail = "bghmn." + suffix + "@skylineschool.edu.vn";
+    if (teachers && teachers.length > 0) {
+      const foundBgh = teachers.find((t: any) => 
+        t.campusId === selectedCampusObj.id && 
+        (t.user?.role === "BGH MN" || t.user?.role === "BGH_MN" || t.user?.role === "BGH" ||
+         t.departmentRel?.name?.toUpperCase()?.includes("BAN GIÁM HIỆU") || 
+         t.departmentRel?.name?.toUpperCase()?.includes("BGH"))
+      );
+      if (foundBgh?.email) {
+        bghmnEmail = foundBgh.email;
+      } else if (foundBgh?.user?.email) {
+        bghmnEmail = foundBgh.user.email;
+      }
+    }
+
     return {
       tuyensinh: tuyensinhEmail,
       giaovu: giaovuEmail,
-      gdcs: gdcsEmail
+      gdcs: gdcsEmail,
+      bghmn: bghmnEmail
     };
   }, [selectedCampusObj, teachers]);
 
@@ -1118,6 +1142,13 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
         CS3: "gdcs.cs3@skylineschool.edu.vn",
         CS4: "gdcs.cs4@skylineschool.edu.vn",
         CS5: "gdcs.cs5@skylineschool.edu.vn",
+      },
+      bghmn: {
+        CS1: "bghmn.cs1@skylineschool.edu.vn",
+        CS2: "bghmn.cs2@skylineschool.edu.vn",
+        CS3: "bghmn.cs3@skylineschool.edu.vn",
+        CS4: "bghmn.cs4@skylineschool.edu.vn",
+        CS5: "bghmn.cs5@skylineschool.edu.vn",
       },
       cc: "cc@skylineschool.edu.vn"
     };
@@ -1151,6 +1182,9 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
           if (deptName.includes('tư vấn') || deptName.includes('tuyển sinh') || deptCode.includes('tuvan') || deptCode.includes('tuyensinh')) {
             map.tuvan[csCode] = t.email;
           }
+          if (deptName.includes('ban giám hiệu') || deptName.includes('bgh') || t.user?.role === "BGH MN" || t.user?.role === "BGH_MN") {
+            map.bghmn[csCode] = t.email;
+          }
         }
       }
     });
@@ -1162,6 +1196,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
     ...Object.values(EMAIL_MAP.tuvan),
     ...Object.values(EMAIL_MAP.giaovu),
     ...Object.values(EMAIL_MAP.gdcs),
+    ...Object.values(EMAIL_MAP.bghmn),
     EMAIL_MAP.cc
   ], [EMAIL_MAP]);
 
@@ -4850,6 +4885,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     {[
                       { label: "Giáo vụ (" + campusLabel + ")", email: campusEmails.giaovu },
                       { label: "GĐCS (" + campusLabel + ")", email: campusEmails.gdcs },
+                      { label: "BGH MN (" + campusLabel + ")", email: campusEmails.bghmn },
                       { label: "Tư vấn (" + campusLabel + ")", email: campusEmails.tuyensinh },
                       { label: "Khảo thí", email: "bankhaothi@skylineschool.edu.vn" },
                     ].map(p => {
@@ -4887,6 +4923,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       { label: "Khảo thí", email: "bankhaothi@skylineschool.edu.vn" },
                       { label: "Giáo vụ (" + campusLabel + ")", email: campusEmails.giaovu },
                       { label: "GĐCS (" + campusLabel + ")", email: campusEmails.gdcs },
+                      { label: "BGH MN (" + campusLabel + ")", email: campusEmails.bghmn },
                       { label: "Tư vấn (" + campusLabel + ")", email: campusEmails.tuyensinh },
                     ].map(p => {
                       const isActive = ccEmail.includes(p.email);
