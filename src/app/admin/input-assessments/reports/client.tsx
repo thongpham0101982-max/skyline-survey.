@@ -804,7 +804,8 @@ export function ReportsClient({
       return {
         tuyensinh: "bankhaothi@skylineschool.edu.vn",
         giaovu: "giaovu.cs3@skylineschool.edu.vn",
-        gdcs: "gdcs.cs3@skylineschool.edu.vn"
+        gdcs: "gdcs.cs3@skylineschool.edu.vn",
+        bghmn: "bghmn.cs3@skylineschool.edu.vn"
       };
     }
 
@@ -902,10 +903,26 @@ export function ReportsClient({
       }
     }
 
+    let bghmnEmail = "bghmn." + suffix + "@skylineschool.edu.vn";
+    if (teachers && teachers.length > 0) {
+      const foundBgh = teachers.find((t: any) => 
+        t.campusId === selectedCampusObj.id && 
+        (t.user?.role === "BGH MN" || t.user?.role === "BGH_MN" || t.user?.role === "BGH" ||
+         t.departmentRel?.name?.toUpperCase()?.includes("BAN GIÁM HIỆU") || 
+         t.departmentRel?.name?.toUpperCase()?.includes("BGH"))
+      );
+      if (foundBgh?.email) {
+        bghmnEmail = foundBgh.email;
+      } else if (foundBgh?.user?.email) {
+        bghmnEmail = foundBgh.user.email;
+      }
+    }
+
     return {
       tuyensinh: tuyensinhEmail,
       giaovu: giaovuEmail,
-      gdcs: gdcsEmail
+      gdcs: gdcsEmail,
+      bghmn: bghmnEmail
     };
   }, [selectedCampusObj, gdcsUsers, teachers]);
 
@@ -1403,8 +1420,13 @@ export function ReportsClient({
     
     setEmailSubject(`[Báo cáo nhanh] Kết quả Khảo sát đầu vào KSNL - Kỳ: ${activePeriodName} - Đợt: ${activeBatchName}`);
     
-    // Automatically pre-populate To: Giáo vụ + GĐCS + Tư vấn theo Cơ sở
-    const defaultTo = [campusEmails.giaovu, campusEmails.gdcs, campusEmails.tuyensinh].filter(Boolean).join(", ");
+    // Automatically pre-populate To: Giáo vụ + GĐCS + BGH MN (nếu mầm non) + Tư vấn theo Cơ sở
+    const defaultTo = [
+      campusEmails.giaovu, 
+      campusEmails.gdcs, 
+      selectedLevel === "preschool" ? campusEmails.bghmn : null, 
+      campusEmails.tuyensinh
+    ].filter(Boolean).join(", ");
     setRecipientEmail(defaultTo);
     
     // CC: Khảo thí
@@ -3084,6 +3106,7 @@ export function ReportsClient({
                 {[
                   { label: `Giáo vụ (${campusLabel})`, email: campusEmails.giaovu },
                   { label: `GĐCS (${campusLabel})`, email: campusEmails.gdcs },
+                  ...(selectedLevel === "preschool" ? [{ label: `BGH MN (${campusLabel})`, email: campusEmails.bghmn }] : []),
                   { label: `Tư vấn (${campusLabel})`, email: campusEmails.tuyensinh },
                   { label: "Khảo thí", email: "bankhaothi@skylineschool.edu.vn" },
                 ].map(p => {
@@ -3121,6 +3144,7 @@ export function ReportsClient({
                   { label: "Khảo thí", email: "bankhaothi@skylineschool.edu.vn" },
                   { label: `Giáo vụ (${campusLabel})`, email: campusEmails.giaovu },
                   { label: `GĐCS (${campusLabel})`, email: campusEmails.gdcs },
+                  ...(selectedLevel === "preschool" ? [{ label: `BGH MN (${campusLabel})`, email: campusEmails.bghmn }] : []),
                   { label: `Tư vấn (${campusLabel})`, email: campusEmails.tuyensinh },
                 ].map(p => {
                   const isActive = ccEmail.includes(p.email);
