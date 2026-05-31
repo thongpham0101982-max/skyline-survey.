@@ -4891,7 +4891,7 @@ return {
                   
                   <div className="relative pl-4 border-l-2 border-slate-100 space-y-5 my-2 max-h-[380px] overflow-y-auto pr-1 scrollbar-thin">
                     {retestHistory.map((hist, idx) => {
-                      const isCurrent = hist.id === selectedReportStudent.id;
+                      const isCurrent = selectedReportStudent && hist.id === selectedReportStudent.id;
                       let sNote = hist.directorNote || "";
                       let retestMuns = [];
                       const matchRetest = sNote.match(/^Môn (?:kiểm tra lại|cam kết): \[(.*?)\](?:\r?\n\r?\n)?/);
