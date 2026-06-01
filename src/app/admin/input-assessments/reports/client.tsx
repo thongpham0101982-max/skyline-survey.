@@ -89,15 +89,46 @@ Gia đình cam kết thực hiện đầy đủ các nội dung sau:
 
 Bản cam kết được thực hiện dưới sự đồng thuận của cả hai bên và có giá trị kể từ ngày ký.`;
 
+const getCampusAndSchoolName = (rawCampusCode: string) => {
+  const cNameLower = (rawCampusCode || "").toLowerCase();
+  let actualCampusName = rawCampusCode || "";
+  let schoolNameSuffix = "Sky-Line";
+
+  if (cNameLower.includes("cs1") || cNameLower.includes("riverside")) {
+    actualCampusName = "Sky-Line Riverside";
+  } else if (cNameLower.includes("cs2") || cNameLower.includes("central")) {
+    actualCampusName = "Sky-Line Central";
+  } else if (cNameLower.includes("cs3") || cNameLower.includes("international")) {
+    actualCampusName = "Sky-Line International";
+  } else if (cNameLower.includes("cs4") || cNameLower.includes("global")) {
+    actualCampusName = "Sky-Line Global";
+  } else if (cNameLower.includes("cs5") || cNameLower.includes("hill")) {
+    actualCampusName = "Sky-Line Hill";
+    schoolNameSuffix = "Sky-Line Hill";
+  } else if (cNameLower.includes("cs6") || cNameLower.includes("beach")) {
+    actualCampusName = "Sky-Line Beach";
+  } else if (cNameLower.includes("cs7")) {
+    actualCampusName = "Trung tâm Sáng tạo";
+  }
+
+  const schoolNameFull = "Trường TH, THCS và THPT " + schoolNameSuffix;
+  return { actualCampusName, schoolNameFull };
+};
+
+
 const renderTemplate = (content: string, student: any) => {
   if (!content) return "";
   const comSubs = Array.isArray(student?.committedSubjects) 
     ? student.committedSubjects.join(", ") 
     : (student?.committedSubjects || "");
+    
+  const { actualCampusName, schoolNameFull } = getCampusAndSchoolName(student?.admissionCampus);
+
   return content
     .replace(/\{\{fullName\}\}/g, student?.fullName || "")
     .replace(/\{\{grade\}\}/g, student?.grade || "")
-    .replace(/\{\{admissionCampus\}\}/g, student?.admissionCampus || "")
+    .replace(/\{\{admissionCampus\}\}/g, actualCampusName)
+    .replace(/\{\{schoolName\}\}/g, schoolNameFull)
     .replace(/\{\{academicYear\}\}/g, student?.academicYear || "2025-2026")
     .replace(/\{\{surveyFormType\}\}/g, student?.surveyFormType || "")
     .replace(/\{\{hocKy\}\}/g, student?.hocKy || "1")
@@ -1193,12 +1224,15 @@ export function ReportsClient({
       ? student.committedSubjects.join(", ") 
       : (student?.committedSubjects || "");
       
+    const { actualCampusName, schoolNameFull } = getCampusAndSchoolName(student?.admissionCampus);
+
     const renderedContent = (config.content || "")
       .replace(/{{fullName}}/g, student?.fullName || "")
       .replace(/{{grade}}/g, numericGrade)
       .replace(/{{hocKy}}/g, student?.hocKy || "1")
       .replace(/{{surveyFormType}}/g, student?.surveyFormType || "")
-      .replace(/{{admissionCampus}}/g, student?.admissionCampus || "")
+      .replace(/{{admissionCampus}}/g, actualCampusName)
+      .replace(/{{schoolName}}/g, schoolNameFull)
       .replace(/{{directorNote}}/g, student?.directorNote || "")
       .replace(/{{committedSubjects}}/g, comSubs)
       .replace(/{{signatureName}}/g, student?.signatureName || "");
@@ -2256,7 +2290,7 @@ export function ReportsClient({
                 className={`${inp} py-3 font-normal resize-none text-xs leading-relaxed font-sans`}
               />
               <p className="text-[10px] text-slate-400 mt-1 font-semibold leading-normal">
-                Từ khóa tự điền: <span className="text-indigo-600 font-bold">{"{{fullName}}"}</span>, <span className="text-indigo-600 font-bold">{"{{grade}}"}</span>, <span className="text-indigo-600 font-bold">{"{{surveyFormType}}"}</span>, <span className="text-indigo-600 font-bold">{"{{academicYear}}"}</span>, <span className="text-indigo-600 font-bold">{"{{admissionCampus}}"}</span>, <span className="text-indigo-600 font-bold">{"{{committedSubjects}}"}</span>
+                Từ khóa tự điền: <span className="text-indigo-600 font-bold">{"{{fullName}}"}</span>, <span className="text-indigo-600 font-bold">{"{{grade}}"}</span>, <span className="text-indigo-600 font-bold">{"{{surveyFormType}}"}</span>, <span className="text-indigo-600 font-bold">{"{{academicYear}}"}</span>, <span className="text-indigo-600 font-bold">{"{{admissionCampus}}"}</span>, <span className="text-indigo-600 font-bold">{"{{schoolName}}"}</span>, <span className="text-indigo-600 font-bold">{"{{committedSubjects}}"}</span>
               </p>
             </Field>
 
