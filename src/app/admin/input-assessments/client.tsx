@@ -3139,7 +3139,6 @@ return {
             { id:"students",             label:"H\u1ecdc sinh",   tip:"DS HS kh\u1ea3o s\u00e1t",      icon:Users },
             { id:"assignments",          label:"Ph\u00e2n c\u00f4ng",  tip:"Ph\u00e2n c\u00f4ng GV",        icon:UserCheck },
             { id:"reports",              label:"Tổng hợp KQKS",    tip:"Tổng hợp kết quả khảo sát",    icon:BarChart3 },
-                        { id:"admission_documents",  label:"H\u1ed3 s\u01a1",      tip:"H\u1ed3 s\u01a1 nh\u1eadp h\u1ecdc",      icon:Tag },
           ].map(t=>(
             <button
               key={t.id}

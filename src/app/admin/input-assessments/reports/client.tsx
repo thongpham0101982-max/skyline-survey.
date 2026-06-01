@@ -1885,26 +1885,24 @@ export function ReportsClient({
             {studentCampusConfig?.background && (
               <img crossOrigin={(studentCampusConfig?.background || "").startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig?.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "110mm", height: "auto", opacity: 0.04, zIndex: 0, pointerEvents: "none" }} />
             )}
-            <div className="relative z-10 flex flex-col justify-start h-full">
-              <div>
-                <div className="header-container" style={{ display: "flex", flexDirection: "column", borderBottom: "1.5px solid #00A6A9", paddingBottom: "8px", marginBottom: "16px" }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    {studentCampusConfig?.logo ? (
-                      <img src={studentCampusConfig?.logo} alt="Logo" style={{ maxHeight: "48px", objectFit: "contain" }} />
-                    ) : (
-                      <svg style={{ height: "48px", fill: "#00A6A9" }} viewBox="0 0 260 50"><text x="0" y="38" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="34" letterSpacing="-1">SKY-LINE</text><circle cx="178" cy="26" r="6" /></svg>
-                    )}
-                  </div>
-                  <div style={{ textAlign: "left", marginTop: "4px" }}>
-                    <h4 style={{ fontFamily: '"Open Sans", sans-serif', fontSize: "11pt", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.5px", color: "#1e293b", margin: 0 }}>
-                      {selectedLevel === "preschool" ? "TRƯỜNG MẦM NON SKY-LINE" : "TRƯỜNG TIỂU HỌC, THCS VÀ THPT SKY-LINE"}
-                    </h4>
-                  </div>
+            <div className="relative z-10">
+              <div className="header-container" style={{ display: "flex", flexDirection: "column", borderBottom: "1.5px solid #00A6A9", paddingBottom: "8px", marginBottom: "16px" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  {studentCampusConfig?.logo ? (
+                    <img src={studentCampusConfig?.logo} alt="Logo" style={{ maxHeight: "48px", objectFit: "contain" }} />
+                  ) : (
+                    <svg style={{ height: "48px", fill: "#00A6A9" }} viewBox="0 0 260 50"><text x="0" y="38" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="34" letterSpacing="-1">SKY-LINE</text><circle cx="178" cy="26" r="6" /></svg>
+                  )}
                 </div>
+                <div style={{ textAlign: "left", marginTop: "4px" }}>
+                  <h4 style={{ fontFamily: '"Open Sans", sans-serif', fontSize: "11pt", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.5px", color: "#1e293b", margin: 0 }}>
+                    {selectedLevel === "preschool" ? "TRƯỜNG MẦM NON SKY-LINE" : "TRƯỜNG TIỂU HỌC, THCS VÀ THPT SKY-LINE"}
+                  </h4>
+                </div>
+              </div>
 
-                <div style={{ flexGrow: 1, fontFamily: '"Open Sans", sans-serif' }}>
-                  {buildParagraphElement(page2Paragraphs)}
-                </div>
+              <div style={{ fontFamily: '"Open Sans", sans-serif' }}>
+                {buildParagraphElement(page2Paragraphs)}
               </div>
               <div style={{ width: "100%", display: "flex", justifyContent: "space-between", marginTop: "40px", paddingTop: "2px", pageBreakInside: "avoid", breakInside: "avoid" }}>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", width: "45%" }}>
