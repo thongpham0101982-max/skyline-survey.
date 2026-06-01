@@ -91,6 +91,9 @@ Bản cam kết được thực hiện dưới sự đồng thuận của cả h
 
 const renderTemplate = (content: string, student: any) => {
   if (!content) return "";
+  const comSubs = Array.isArray(student?.committedSubjects) 
+    ? student.committedSubjects.join(", ") 
+    : (student?.committedSubjects || "");
   return content
     .replace(/\{\{fullName\}\}/g, student?.fullName || "")
     .replace(/\{\{grade\}\}/g, student?.grade || "")
@@ -98,6 +101,7 @@ const renderTemplate = (content: string, student: any) => {
     .replace(/\{\{academicYear\}\}/g, student?.academicYear || "2025-2026")
     .replace(/\{\{surveyFormType\}\}/g, student?.surveyFormType || "")
     .replace(/\{\{hocKy\}\}/g, student?.hocKy || "1")
+    .replace(/\{\{committedSubjects\}\}/g, comSubs || "Tiếng Anh")
     .replace(/\{\{signatureName\}\}/g, student?.signatureName || "");
 };
 
@@ -2071,7 +2075,7 @@ export function ReportsClient({
                 className={`${inp} py-3 font-normal resize-none text-xs leading-relaxed font-sans`}
               />
               <p className="text-[10px] text-slate-400 mt-1 font-semibold leading-normal">
-                Từ khóa tự điền: <span className="text-indigo-600 font-bold">{"{{fullName}}"}</span>, <span className="text-indigo-600 font-bold">{"{{grade}}"}</span>, <span className="text-indigo-600 font-bold">{"{{surveyFormType}}"}</span>, <span className="text-indigo-600 font-bold">{"{{academicYear}}"}</span>
+                Từ khóa tự điền: <span className="text-indigo-600 font-bold">{"{{fullName}}"}</span>, <span className="text-indigo-600 font-bold">{"{{grade}}"}</span>, <span className="text-indigo-600 font-bold">{"{{surveyFormType}}"}</span>, <span className="text-indigo-600 font-bold">{"{{academicYear}}"}</span>, <span className="text-indigo-600 font-bold">{"{{admissionCampus}}"}</span>, <span className="text-indigo-600 font-bold">{"{{committedSubjects}}"}</span>
               </p>
             </Field>
 
@@ -2289,7 +2293,15 @@ export function ReportsClient({
                   <div className={`space-y-3 py-2 text-[10px] leading-relaxed text-slate-600 text-justify font-serif pr-1 ${rcReportType === 'cam_ket_hoc_tap' ? '' : 'max-h-[300px] overflow-y-auto'}`}>
                     {renderTemplate(
                       rcContent || "",
-                      { fullName: "Nguyễn Minh An", grade: "1", surveyFormType: "Chất lượng cao", academicYear: "2025-2026", hocKy: "1" }
+                      { 
+                        fullName: "Nguyễn Minh An", 
+                        grade: "1", 
+                        surveyFormType: "Chất lượng cao", 
+                        academicYear: "2025-2026", 
+                        hocKy: "1",
+                        admissionCampus: campuses.find((c: any) => c.id === rcCampusId)?.campusName || "Sky-Line Hill",
+                        committedSubjects: ["Tiếng Anh"]
+                      }
                     ).split('\n').filter(Boolean).map((para, idx) => {
                       const pClean = para.trim();
                       const isList = /^\s*[\d•\-*]+/.test(pClean);
