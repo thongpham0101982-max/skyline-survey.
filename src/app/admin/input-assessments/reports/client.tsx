@@ -603,16 +603,59 @@ export function ReportsClient({
     if (file) { const reader = new FileReader(); reader.onloadend = () => { setRcFooter(reader.result as string); }; reader.readAsDataURL(file); }
   };
 
+  const reclaimLocalStorageSpace = () => {
+    if (typeof window === "undefined") return;
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.startsWith("report_config_global_") || key.startsWith("report_config_"))) {
+          if (
+            key === "report_config_master_logo" ||
+            key === "report_config_master_background" ||
+            key === "report_config_master_footer" ||
+            key === "report_config_master_signature" ||
+            key.startsWith("report_config_signature_") ||
+            key.startsWith("report_config_director_")
+          ) {
+            continue;
+          }
+          
+          const val = localStorage.getItem(key);
+          if (val && val.includes("data:image")) {
+            try {
+              const parsed = JSON.parse(val);
+              let changed = false;
+              if (parsed.logo) { delete parsed.logo; changed = true; }
+              if (parsed.background) { delete parsed.background; changed = true; }
+              if (parsed.footer) { delete parsed.footer; changed = true; }
+              if (parsed.signature) { delete parsed.signature; changed = true; }
+              
+              if (changed) {
+                localStorage.setItem(key, JSON.stringify(parsed));
+              }
+            } catch (e) {}
+          }
+        }
+      }
+      console.log("Successfully reclaimed localStorage space.");
+    } catch (err) {
+      console.error("Reclaim space error:", err);
+    }
+  };
+
   const saveReportConfig = () => {
     try {
       if (!rcCampusId) return notify("Vui lòng chọn Cơ sở", "err");
       if (!rcReportType) return notify("Vui lòng chọn Loại báo cáo", "err");
       
+      // Auto-reclaim space to prevent QuotaExceededError
+      reclaimLocalStorageSpace();
+      
       const typeKey = selectedLevel === "preschool" 
         ? rcReportType + "_preschool"
         : rcReportType + "_" + rcTargetGroup;
 
-      const globalData = { title: rcTitle, logo: rcLogo, background: rcBackground, content: rcContent, footer: rcFooter };
+      const globalData = { title: rcTitle, content: rcContent };
       
       try {
         localStorage.setItem('report_config_global_' + typeKey, JSON.stringify(globalData));
@@ -623,7 +666,7 @@ export function ReportsClient({
         localStorage.setItem('report_config_signature_' + rcCampusId, rcSignature || "");
         localStorage.setItem('report_config_director_' + rcCampusId, rcDirectorName || "");
         
-        const campusData = { signature: rcSignature, directorName: rcDirectorName, title: rcTitle, logo: rcLogo, background: rcBackground, content: rcContent, footer: rcFooter };
+        const campusData = { directorName: rcDirectorName, title: rcTitle, content: rcContent };
         localStorage.setItem('report_config_' + rcCampusId + '_' + typeKey, JSON.stringify(campusData));
       } catch (storageErr) {
         console.error("Local storage error:", storageErr);
