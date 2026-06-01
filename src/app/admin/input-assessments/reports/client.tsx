@@ -122,7 +122,7 @@ const getCampusAndSchoolName = (rawCampusCode: string) => {
   if (actualCampusName === "Sky-Line Hill") {
     schoolNameFull = "Trường TH, THCS và THPT Sky-Line Hill";
   } else {
-    schoolNameFull = "Trường TH, THCS và THPT Sky-Line ( cơ sở " + actualCampusName + ")";
+    schoolNameFull = "Trường TH, THCS và THPT Sky-Line";
   }
 
   return { actualCampusName, schoolNameFull };
