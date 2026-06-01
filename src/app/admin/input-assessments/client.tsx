@@ -911,6 +911,40 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
   const [retestHistory, setRetestHistory] = useState<any[]>([]);
   const [retestHistoryLoading, setRetestHistoryLoading] = useState(false);
 
+  const [mockPreviewStudent, setMockPreviewStudent] = useState<any>(null);
+  const [reportForm, setReportForm] = useState({
+    admissionResult: "",
+    admissionCampus: "",
+    signatureName: "",
+    directorNote: "",
+    committedSubjects: [] as string[]
+  });
+
+  const reportSelPeriod = useMemo(() => visiblePeriods.find(p => p.id === reportPeriodId), [periods, reportPeriodId]);
+  const reportBatches = useMemo(() => reportSelPeriod?.batches || [], [reportSelPeriod]);
+
+  const selectedReportStudent = useMemo(() => {
+    if (mockPreviewStudent) return mockPreviewStudent;
+    if (!Array.isArray(reportStudents)) return undefined;
+    return reportStudents.find(s => s.id === reportStudentId);
+  }, [reportStudents, reportStudentId, mockPreviewStudent]);
+
+  const resolvedStudentCampusObj = useMemo(() => {
+    if (!selectedReportStudent) return null;
+    let tc = campuses.find(c => 
+      c.campusName && (c.campusName === reportForm.admissionCampus || c.campusName === selectedReportStudent.admissionCampus)
+    );
+    if (!tc && selectedReportStudent.batchId) {
+      const b = reportBatches.find(bx => bx.id === selectedReportStudent.batchId);
+      if (b?.campusId) {
+        tc = campuses.find(c => c.id === b.campusId);
+      }
+    }
+    return tc || null;
+  }, [selectedReportStudent, reportForm.admissionCampus, campuses, reportBatches]);
+
+  const autoCampusDirectorName = useMemo(() => resolvedStudentCampusObj?.manager?.fullName || "", [resolvedStudentCampusObj]);
+
   // Email States
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [recipientEmail, setRecipientEmail] = useState("");
@@ -1807,13 +1841,6 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
   };
 
   const [reportLoading, setReportLoading] = useState(false);
-  const [reportForm, setReportForm] = useState({
-    admissionResult: "",
-    admissionCampus: "",
-    signatureName: "",
-    directorNote: "",
-    committedSubjects: [] as string[]
-  });
 
   const [saveReportLoading, setSaveReportLoading] = useState(false);
   const [sendingApproval, setSendingApproval] = useState(false);
@@ -1821,7 +1848,6 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
   const [isInvitation, setIsInvitation] = useState(false);
   const [isCommitment, setIsCommitment] = useState(false);
   const [includeChecklistSheet, setIncludeChecklistSheet] = useState(false);
-  const [mockPreviewStudent, setMockPreviewStudent] = useState<any>(null);
   const handleSaveReportResult = async () => {
     if (!selectedReportStudent) return;
     setSaveReportLoading(true);
@@ -2014,34 +2040,10 @@ ${reportForm.directorNote}`;
     }
   }, [reportStudents, tab]);
 
-  const reportSelPeriod = useMemo(() => visiblePeriods.find(p => p.id === reportPeriodId), [periods, reportPeriodId]);
-  const reportBatches = useMemo(() => reportSelPeriod?.batches || [], [reportSelPeriod]);
-
   const filteredReportStudents = useMemo(() => {
     if (!Array.isArray(reportStudents)) return [];
     return reportStudents.filter(s => reportBatchId === "all" || s.batchId === reportBatchId || s.batchId === null || s.batchId === "");
   }, [reportStudents, reportBatchId]);
-
-  const selectedReportStudent = useMemo(() => {
-    if (mockPreviewStudent) return mockPreviewStudent;
-    if (!Array.isArray(reportStudents)) return undefined;
-    return reportStudents.find(s => s.id === reportStudentId);
-  }, [reportStudents, reportStudentId, mockPreviewStudent]);
-  const resolvedStudentCampusObj = useMemo(() => {
-    if (!selectedReportStudent) return null;
-    let tc = campuses.find(c => 
-      c.campusName && (c.campusName === reportForm.admissionCampus || c.campusName === selectedReportStudent.admissionCampus)
-    );
-    if (!tc && selectedReportStudent.batchId) {
-      const b = reportBatches.find(bx => bx.id === selectedReportStudent.batchId);
-      if (b?.campusId) {
-        tc = campuses.find(c => c.id === b.campusId);
-      }
-    }
-    return tc || null;
-  }, [selectedReportStudent, reportForm.admissionCampus, campuses, reportBatches]);
-
-  const autoCampusDirectorName = useMemo(() => resolvedStudentCampusObj?.manager?.fullName || "", [resolvedStudentCampusObj]);
 
   const modalDocList = useMemo(() => {
     if (typeof window === "undefined" || !selectedReportStudent) return [];
