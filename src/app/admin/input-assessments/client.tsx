@@ -4740,28 +4740,13 @@ return {
                           <span className="font-bold text-slate-700">{selectedReportStudent.signatureName}</span>
                         </div>
                       )}
-                      
+                      {selectedReportStudent.admissionResult && selectedReportStudent.updatedAt && (
+                        <div className="flex items-center justify-between border-t border-slate-200/50 pt-2 text-[12px]">
+                          <span className="text-slate-400 font-bold">Ngày phê duyệt:</span>
+                          <span className="font-bold text-slate-700">{new Date(selectedReportStudent.updatedAt).toLocaleDateString("vi-VN")}</span>
+                        </div>
+                      )}
                     </div>
-                    {(selectedReportStudent.admissionResult === "Đạt" || selectedReportStudent.admissionResult === "Đạt cam kết") && (
-                      <div className="space-y-2 mt-4 animate-fade-in">
-                        <button
-                          onClick={() => { setIsInvitation(false); setIsCommitment(false); setIsPrintModalOpen(true); }}
-                          className="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-md shadow-emerald-100 transition-all flex justify-center items-center gap-2"
-                        >
-                          <GraduationCap className="w-4 h-4"/>
-                          Xuất Thư Chúc mừng
-                        </button>
-                        {selectedReportStudent.admissionResult === "Đạt cam kết" && (
-                          <button
-                            onClick={() => { setIsInvitation(false); setIsCommitment(true); setIsPrintModalOpen(true); }}
-                            className="w-full py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-md shadow-amber-100 transition-all flex justify-center items-center gap-2"
-                          >
-                            <PenLine className="w-4 h-4"/>
-                            Xuất Cam kết học tập
-                          </button>
-                        )}
-                      </div>
-                    )}
                   </div>
                 </div>
 
