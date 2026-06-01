@@ -91,6 +91,21 @@ export async function PUT(req) {
         where: { id },
         data: {
            ...(data.name !== undefined && { name: data.name }),
+           ...(data.description !== undefined && { description: data.description }),
+           ...(data.assignedUserId !== undefined && { assignedUserId: data.assignedUserId || null }),
+           ...(data.startDate !== undefined && { startDate: data.startDate ? new Date(data.startDate) : null }),
+           ...(data.endDate !== undefined && { endDate: data.endDate ? new Date(data.endDate) : null }),
+           ...(data.status !== undefined && { status: data.status })
+           
+        }
+      });
+      return NextResponse.json(result);
+    }
+    else if (action === "UPDATE_BATCH") {
+      const result = await (prisma as any).inputAssessmentBatch.update({
+        where: { id },
+        data: {
+           ...(data.name !== undefined && { name: data.name }),
            ...(data.startDate !== undefined && { startDate: new Date(data.startDate) }),
            ...(data.endDate !== undefined && { endDate: new Date(data.endDate) }),
            ...(data.campusId !== undefined && { campusId: data.campusId || null }),
