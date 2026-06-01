@@ -90,28 +90,32 @@ Gia đình cam kết thực hiện đầy đủ các nội dung sau:
 Bản cam kết được thực hiện dưới sự đồng thuận của cả hai bên và có giá trị kể từ ngày ký.`;
 
 const getCampusAndSchoolName = (rawCampusCode: string) => {
-  const cNameLower = (rawCampusCode || "").toLowerCase();
+  const clean = (rawCampusCode || "").toUpperCase();
   let actualCampusName = rawCampusCode || "";
-  let schoolNameSuffix = "Sky-Line";
 
-  if (cNameLower.includes("cs1") || cNameLower.includes("riverside")) {
+  if (clean.includes("CS1") || clean.includes("RIVERSIDE")) {
     actualCampusName = "Sky-Line Riverside";
-  } else if (cNameLower.includes("cs2") || cNameLower.includes("central")) {
+  } else if (clean.includes("CS2") || clean.includes("CENTRAL")) {
     actualCampusName = "Sky-Line Central";
-  } else if (cNameLower.includes("cs3") || cNameLower.includes("international")) {
-    actualCampusName = "Sky-Line International";
-  } else if (cNameLower.includes("cs4") || cNameLower.includes("global")) {
+  } else if (clean.includes("CS3") || clean.includes("GLOBAL")) {
     actualCampusName = "Sky-Line Global";
-  } else if (cNameLower.includes("cs5") || cNameLower.includes("hill")) {
+  } else if (clean.includes("CS4") || clean.includes("HILL")) {
     actualCampusName = "Sky-Line Hill";
-    schoolNameSuffix = "Sky-Line Hill";
-  } else if (cNameLower.includes("cs6") || cNameLower.includes("beach")) {
+  } else if (clean.includes("CS5") || clean.includes("BEACH")) {
     actualCampusName = "Sky-Line Beach";
-  } else if (cNameLower.includes("cs7")) {
+  } else if (clean.includes("CS6") || clean.includes("QUỐC TẾ") || clean.includes("INTERNATIONAL")) {
+    actualCampusName = "Sky-Line International";
+  } else if (clean.includes("CS7") || clean.includes("SÁNG TẠO")) {
     actualCampusName = "Trung tâm Sáng tạo";
   }
 
-  const schoolNameFull = "Trường TH, THCS và THPT " + schoolNameSuffix;
+  let schoolNameFull = "Trường TH, THCS và THPT Sky-Line";
+  if (actualCampusName === "Sky-Line Hill") {
+    schoolNameFull = "Trường TH, THCS và THPT Sky-Line Hill";
+  } else {
+    schoolNameFull = "Trường TH, THCS và THPT Sky-Line (cơ sở " + actualCampusName + ")";
+  }
+
   return { actualCampusName, schoolNameFull };
 };
 
