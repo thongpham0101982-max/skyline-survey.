@@ -319,17 +319,17 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     return (
         <div className="p-3 md:p-6 max-w-[1400px] mx-auto space-y-4 md:space-y-6">
             
-<div className="bg-gradient-to-br from-indigo-900 via-slate-800 to-indigo-900 rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 -mt-16 -mr-16 w-64 h-64 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
-                <div className="absolute bottom-0 left-0 -mb-16 -ml-16 w-64 h-64 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
+<div className="bg-[#00A19A] rounded-2xl p-6 md:p-8 shadow-lg relative overflow-hidden">
+                <div className="absolute top-0 right-0 -mt-16 -mr-16 w-64 h-64 bg-white rounded-full mix-blend-overlay filter blur-3xl opacity-20 animate-pulse"></div>
+                <div className="absolute bottom-0 left-0 -mb-16 -ml-16 w-64 h-64 bg-black rounded-full mix-blend-overlay filter blur-3xl opacity-10"></div>
                 
                 <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div>
                         <div>
                 <h1 className="text-3xl font-black text-white tracking-tight drop-shadow-md">Nhập kết quả Khảo sát</h1>
-                <p className="text-indigo-100 font-medium mt-1">Xin chào giáo viên <span className="text-white font-bold">{user?.fullName || "ẩn danh"}</span>!</p>
+                <p className="text-teal-50 font-medium mt-1">Xin chào giáo viên <span className="text-white font-bold">{user?.fullName || "ẩn danh"}</span>!</p>
             </div>
-                        <p className="text-indigo-100 mt-2 flex items-center flex-wrap gap-2 text-sm md:text-base font-medium opacity-90">
+                        <p className="text-teal-50 mt-2 flex flex-wrap items-center gap-2 text-sm md:text-base font-medium opacity-90">
                             <span className="bg-white/20 backdrop-blur-md text-white font-bold px-3 py-1 rounded-full shadow-inner shadow-white/10 ring-1 ring-white/30 truncate max-w-[200px] md:max-w-none">
                                 👋 {user?.name || "Thầy/Cô"}
                             </span>
@@ -346,23 +346,23 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 </div>
             </div>
 
-            <div className="-mt-10 mx-auto w-[92%] relative z-20 bg-white/70 backdrop-blur-xl p-5 rounded-3xl shadow-xl shadow-indigo-900/5 ring-1 ring-slate-200/50 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="-mt-6 mx-auto w-[96%] max-w-[1200px] relative z-20 bg-white p-6 rounded-2xl shadow-lg ring-1 ring-slate-200 grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="group">
-                    <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-indigo-900/70 flex items-center gap-2 ml-1">
-                        <CalendarDays className="w-3.5 h-3.5 text-indigo-500"/> Kỳ Khảo sát
+                    <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-slate-500 flex items-center gap-2 ml-1">
+                        <CalendarDays className="w-3.5 h-3.5 text-[#00A19A]"/> Kỳ Khảo sát
                     </label>
                     <div className="relative">
                         <select 
                             value={selectedPeriodId} 
                             onChange={e => setSelectedPeriodId(e.target.value)}
-                            className="w-full bg-white border border-slate-200 rounded-2xl pl-5 pr-10 py-3.5 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
+                            className="w-full bg-white border border-slate-200 rounded-2xl pl-5 pr-10 py-3.5 outline-none focus:border-[#00A19A] focus:ring-4 focus:ring-[#00A19A]/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
                         >
                             {periods.map(p => (
                                 <option key={p.id} value={p.id}>{p.name}</option>
                             ))}
                             {periods.length === 0 && <option value="">Không có kỳ KS nào</option>}
                         </select>
-                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-indigo-500 transition-colors">
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A19A] transition-colors">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
                         </div>
                     </div>
@@ -370,21 +370,21 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
 
                 {batches.length > 0 && (
                     <div className="group">
-                        <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-indigo-900/70 flex items-center gap-2 ml-1">
-                            <Layers className="w-3.5 h-3.5 text-indigo-500"/> Đợt khảo sát
+                        <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-slate-500 flex items-center gap-2 ml-1">
+                            <Layers className="w-3.5 h-3.5 text-[#00A19A]"/> Đợt khảo sát
                         </label>
                         <div className="relative">
                             <select 
                                 value={selectedBatchId} 
                                 onChange={e => setSelectedBatchId(e.target.value)}
-                                className="w-full bg-white border border-slate-200 rounded-2xl pl-5 pr-10 py-3.5 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
+                                className="w-full bg-white border border-slate-200 rounded-2xl pl-5 pr-10 py-3.5 outline-none focus:border-[#00A19A] focus:ring-4 focus:ring-[#00A19A]/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
                             >
                                 <option value="all">Tất cả các đợt</option>
                                 {batches.map(b => (
                                     <option key={b.id} value={b.id}>{b.name}</option>
                                 ))}
                             </select>
-                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-indigo-500 transition-colors">
+                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A19A] transition-colors">
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
                         </div>
@@ -392,14 +392,14 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 )}
 
                 <div className="group lg:col-span-1">
-                    <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-indigo-900/70 flex items-center gap-2 ml-1">
-                        <BookOpen className="w-3.5 h-3.5 text-indigo-500"/> Môn Khảo sát
+                    <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-slate-500 flex items-center gap-2 ml-1">
+                        <BookOpen className="w-3.5 h-3.5 text-[#00A19A]"/> Môn Khảo sát
                     </label>
                     <div className="relative">
                         <select 
                             value={selectedAssignmentId} 
                             onChange={e => setSelectedAssignmentId(e.target.value)}
-                            className="w-full bg-white border border-slate-200 rounded-2xl pl-5 pr-10 py-3.5 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
+                            className="w-full bg-white border border-slate-200 rounded-2xl pl-5 pr-10 py-3.5 outline-none focus:border-[#00A19A] focus:ring-4 focus:ring-[#00A19A]/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
                         >
                             {availableAssignments.map(a => (
                                 <option key={a.id} value={a.id}>
@@ -408,7 +408,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                             ))}
                             {availableAssignments.length === 0 && <option value="">Vui lòng chọn kỳ KS...</option>}
                         </select>
-                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-indigo-500 transition-colors">
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A19A] transition-colors">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
                         </div>
                     </div>
@@ -416,14 +416,14 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
             </div>
 
 {currentAssignment && isEnglishAssignment && relatedEnglishAssignments.length > 0 && (
-    <div className="-mt-6 mx-auto w-[92%] bg-white/70 backdrop-blur-md p-3 rounded-2xl shadow-sm border border-indigo-200 mb-6 animate-in fade-in slide-in-from-top-4 flex flex-col gap-2 relative z-20">
+    <div className="-mt-6 mx-auto w-[92%] bg-white/70 backdrop-blur-md p-3 rounded-2xl shadow-sm border border-slate-300 mb-6 animate-in fade-in slide-in-from-top-4 flex flex-col gap-2 relative z-20">
         <div className="text-xs font-black text-indigo-400 uppercase tracking-widest pl-1">Danh sách Môn Tiếng Anh:</div>
         <div className="flex flex-wrap gap-2">
             {relatedEnglishAssignments.map(a => (
                 <button 
                     key={a.id}
                     onClick={() => setSelectedAssignmentId(a.id)}
-                    className={`flex-1 min-w-[150px] py-3 px-4 rounded-xl font-bold text-sm transition-all shadow-sm flex items-center justify-center gap-2 ${selectedAssignmentId === a.id ? 'bg-indigo-600 text-white shadow-indigo-200 ring-2 ring-indigo-400 ring-offset-1' : 'bg-white text-indigo-700 hover:bg-indigo-50 border border-indigo-100'}`}
+                    className={`flex-1 min-w-[150px] py-3 px-4 rounded-xl font-bold text-sm transition-all shadow-sm flex items-center justify-center gap-2 ${selectedAssignmentId === a.id ? 'bg-indigo-600 text-white shadow-indigo-200 ring-2 ring-indigo-400 ring-offset-1' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'}`}
                 >
                     <BookOpen className="w-4 h-4" />
                     {a.subject?.name}
@@ -433,11 +433,11 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     </div>
 )}
 {currentAssignment && (
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div className="px-6 py-4 border-b bg-gradient-to-r from-indigo-50 to-white flex justify-between items-center">
+                <div className="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden mt-6">
+                    <div className="px-6 py-4 border-b bg-[#F0FDFA] flex justify-between items-center">
                         <div>
                             <h3 className="font-bold text-slate-800 flex items-center gap-2 text-lg">
-                                <Users className="w-5 h-5 text-indigo-600"/>
+                                <Users className="w-5 h-5 text-[#00A19A]"/>
                                 Form nhập kết quả: {currentAssignment.subject.name}
                             </h3>
                             <p className="text-sm text-slate-500 mt-1 flex items-center gap-2">
@@ -486,34 +486,34 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                         <table className="w-full text-sm text-left border-collapse min-w-max">
                             <thead className="bg-slate-50 border-b-2 border-slate-200">
     <tr>
-        <th className="px-3 py-4 w-12 text-center font-bold text-slate-500 bg-slate-50/50 uppercase tracking-wider text-xs md:sticky md:left-0 z-20">STT</th>
-        <th className="px-3 py-4 font-bold text-slate-500 bg-slate-50/50 uppercase tracking-wider text-xs whitespace-nowrap text-center">Mã HS KS</th>
-          <th className="px-3 py-4 font-bold text-slate-500 bg-slate-50/50 uppercase tracking-wider text-xs whitespace-nowrap text-left">Họ và Tên</th>
-          <th className="px-3 py-4 font-bold text-slate-500 bg-slate-50/50 uppercase tracking-wider text-xs whitespace-nowrap text-center">Khối</th>
-          <th className="px-3 py-4 font-bold text-slate-500 bg-slate-50/50 uppercase tracking-wider text-xs whitespace-nowrap text-center">Giới tính</th>
-          <th className="px-3 py-4 font-bold text-slate-500 bg-slate-50/50 uppercase tracking-wider text-xs whitespace-nowrap text-center">Ngày sinh</th>
-          <th className="px-3 py-4 font-bold text-slate-500 bg-slate-50/50 uppercase tracking-wider text-xs whitespace-nowrap text-center">Hệ Khảo sát</th>
-        <th className="px-4 py-4 font-bold text-amber-800 bg-amber-50/50 uppercase tracking-wider text-xs text-center">
+        <th className="px-3 py-4 w-12 text-center font-bold text-slate-500 bg-[#F8FAFC] uppercase tracking-wider text-xs md:sticky md:left-0 z-20">STT</th>
+        <th className="px-3 py-4 font-bold text-slate-500 bg-[#F8FAFC] uppercase tracking-wider text-xs whitespace-nowrap text-center">Mã HS KS</th>
+          <th className="px-3 py-4 font-bold text-slate-500 bg-[#F8FAFC] uppercase tracking-wider text-xs whitespace-nowrap text-left">Họ và Tên</th>
+          <th className="px-3 py-4 font-bold text-slate-500 bg-[#F8FAFC] uppercase tracking-wider text-xs whitespace-nowrap text-center">Khối</th>
+          <th className="px-3 py-4 font-bold text-slate-500 bg-[#F8FAFC] uppercase tracking-wider text-xs whitespace-nowrap text-center">Giới tính</th>
+          <th className="px-3 py-4 font-bold text-slate-500 bg-[#F8FAFC] uppercase tracking-wider text-xs whitespace-nowrap text-center">Ngày sinh</th>
+          <th className="px-3 py-4 font-bold text-slate-500 bg-[#F8FAFC] uppercase tracking-wider text-xs whitespace-nowrap text-center">Hệ Khảo sát</th>
+        <th className="px-4 py-4 font-bold text-[#00A19A] bg-[#F8FAFC] uppercase tracking-wider text-xs text-center">
             {isPsychSubject || isChildDevSubject || isThinkingSkillsSubject || isPreschoolSubject ? "Form Khảo sát" : (hideComments ? "Chi tiết Điểm" : "Chi tiết Điểm & Nhận xét")}
         </th>
         {(isChildDevSubject || isThinkingSkillsSubject) && (
-            <th className="px-4 py-4 font-bold text-amber-800 bg-amber-50/50 uppercase tracking-wider text-xs text-left min-w-[250px]">Nhận xét chung</th>
+            <th className="px-4 py-4 font-bold text-[#00A19A] bg-[#F8FAFC] uppercase tracking-wider text-xs text-left min-w-[250px]">Nhận xét chung</th>
         )}
         {isPsychSubject && (
             <>
-                <th className="px-4 py-4 font-bold text-amber-800 bg-amber-50/50 uppercase tracking-wider text-xs text-left min-w-[200px]">Kết luận sơ bộ</th>
-                <th className="px-4 py-4 font-bold text-amber-800 bg-amber-50/50 uppercase tracking-wider text-xs text-left min-w-[200px]">Khuyến nghị (Nếu có)</th>
+                <th className="px-4 py-4 font-bold text-[#00A19A] bg-[#F8FAFC] uppercase tracking-wider text-xs text-left min-w-[200px]">Kết luận sơ bộ</th>
+                <th className="px-4 py-4 font-bold text-[#00A19A] bg-[#F8FAFC] uppercase tracking-wider text-xs text-left min-w-[200px]">Khuyến nghị (Nếu có)</th>
             </>
         )}
-        <th className="px-2 py-3 md:px-4 md:py-4 text-center font-bold text-emerald-800 bg-emerald-50/50 uppercase tracking-wider text-xs w-32 md:sticky md:right-0 z-20">Xác nhận</th>
+        <th className="px-2 py-3 md:px-4 md:py-4 text-center font-bold text-[#00A19A] bg-[#F8FAFC] uppercase tracking-wider text-xs w-32 md:sticky md:right-0 z-20">Xác nhận</th>
     </tr>
 </thead>
                             <tbody className="divide-y border-b">
                                 {students.map((st, i) => (
-                                    <tr key={st.id} className="hover:bg-indigo-50/30 group border-b border-slate-100 last:border-none transition-colors">
+                                    <tr key={st.id} className="hover:bg-slate-100/30 group border-b border-slate-100 last:border-none transition-colors">
                                         <td className="px-2 py-2 md:px-3 md:py-4 text-center text-slate-500 bg-transparent md:sticky md:left-0 z-10 font-medium text-sm">{i+1}</td>
                                         <td className="px-3 py-3 bg-transparent text-center">
-                                              <span className="font-mono font-bold text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-full text-xs">{st.studentCode}</span>
+                                              <span className="font-mono font-bold text-slate-700 bg-slate-100 px-3 py-1.5 rounded-full text-xs">{st.studentCode}</span>
                                           </td>
                                           <td className="px-3 py-3 bg-transparent text-left">
                                               <span className="font-bold text-slate-700 text-sm whitespace-nowrap">{st.fullName}</span>
@@ -528,7 +528,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                               <span className="text-xs text-slate-500 whitespace-nowrap">{st.dateOfBirth ? new Date(st.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</span>
                                           </td>
                                           <td className="px-3 py-3 bg-transparent text-center">
-                                              <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded-md border border-amber-100 whitespace-nowrap uppercase">{st.surveyFormType || "—"}</span>
+                                              <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded-md border border-slate-200 whitespace-nowrap uppercase">{st.surveyFormType || "—"}</span>
                                           </td>
                                         
                                         <td className="px-4 py-4 bg-transparent">
@@ -555,7 +555,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
               <div className="flex flex-col items-center justify-center gap-2">
                   <button 
                     onClick={() => { setActiveThinkingSkillsStudent(st); setIsThinkingSkillsModalOpen(true); }}
-                    className="bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white font-bold py-2 px-5 rounded-full shadow-sm flex items-center gap-2 transition-all active:scale-95 text-xs"
+                    className="bg-slate-100 hover:bg-indigo-600 text-slate-700 hover:text-white font-bold py-2 px-5 rounded-full shadow-sm flex items-center gap-2 transition-all active:scale-95 text-xs"
                   >
                     <BookOpen className="w-3.5 h-3.5" /> 
                     Mở Form Đánh giá
@@ -566,7 +566,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                           <div className="text-[11px] text-slate-600 flex gap-1.5 flex-wrap justify-center mt-0.5">
                               <span className="font-semibold text-emerald-600">Logic: {st.scoreVals[0] || "-"}</span>
                               <span className="text-slate-300">|</span>
-                              <span className="font-semibold text-indigo-500">L.Tưởng: {st.scoreVals[1] || "-"}</span>
+                              <span className="font-semibold text-[#00A19A]">L.Tưởng: {st.scoreVals[1] || "-"}</span>
                               <span className="text-slate-300">|</span>
                               <span className="font-semibold text-rose-500">P.Biện: {st.scoreVals[2] || "-"}</span>
                               <span className="text-slate-300">|</span>
@@ -582,7 +582,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
               <div className="flex flex-col items-center justify-center gap-2">
                   <button 
                     onClick={() => { setActiveChildDevStudent(st); setIsChildDevModalOpen(true); }}
-                    className="bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white font-bold py-2 px-5 rounded-full shadow-sm flex items-center gap-2 transition-all active:scale-95 text-xs"
+                    className="bg-slate-100 hover:bg-indigo-600 text-slate-700 hover:text-white font-bold py-2 px-5 rounded-full shadow-sm flex items-center gap-2 transition-all active:scale-95 text-xs"
                   >
                     <BookOpen className="w-3.5 h-3.5" /> 
                     Mở Form Đánh giá
@@ -609,7 +609,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
               <div className="flex flex-col items-center justify-center gap-2">
                   <button 
         onClick={() => { setActivePsychStudent(st); setIsPsychModalOpen(true); }}
-        className="bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white font-bold py-2 px-5 rounded-full shadow-sm flex items-center gap-2 transition-all active:scale-95 text-xs"
+        className="bg-slate-100 hover:bg-indigo-600 text-slate-700 hover:text-white font-bold py-2 px-5 rounded-full shadow-sm flex items-center gap-2 transition-all active:scale-95 text-xs"
     >
         <BookOpen className="w-3.5 h-3.5" /> 
         Mở Form Khối {st.grade || "Cơ bản"}
@@ -628,7 +628,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                           let level = ""; let color = "";
                           if (score <= 15) { level = "Bình thường"; color = "text-emerald-700 bg-emerald-50 border-emerald-200"; }
                           else if (score <= 31) { level = "Dấu hiệu nhẹ"; color = "text-blue-700 bg-blue-50 border-blue-200"; }
-                          else if (score <= 47) { level = "Dấu hiệu vừa"; color = "text-amber-700 bg-amber-50 border-amber-200"; }
+                          else if (score <= 47) { level = "Dấu hiệu vừa"; color = "text-amber-700 bg-amber-50 border-slate-300"; }
                           else if (score <= 63) { level = "Nguy cơ cao"; color = "text-orange-700 bg-orange-50 border-orange-200"; }
                           else { level = "Nguy cơ rất cao"; color = "text-red-700 bg-red-50 border-red-200"; }
                           return (
@@ -656,9 +656,9 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                     
                     return (
                         <div key={"sc-input-"+colIdx} className="flex flex-col gap-1.5 w-24 flex-none">
-                            <span className="text-[10px] uppercase font-bold text-indigo-700/80 truncate border-b border-indigo-100 pb-1" title={cName + maxScoreStr}>{cName}{maxScoreStr && <span className="text-red-500 font-black ml-0.5">{maxScoreStr}</span>}</span>
+                            <span className="text-[10px] uppercase font-bold text-slate-600 truncate border-b border-slate-200 pb-1" title={cName + maxScoreStr}>{cName}{maxScoreStr && <span className="text-red-500 font-black ml-0.5">{maxScoreStr}</span>}</span>
                             {isTotal ? (
-                                <div className="w-full bg-indigo-50/80 border border-indigo-200 rounded-lg py-2 text-center font-black text-indigo-800 shadow-inner h-[42px] flex items-center justify-center">
+                                <div className="w-full bg-[#F0FDFA] border border-slate-300 rounded-lg py-2 text-center font-black text-[#00A19A] shadow-inner h-[42px] flex items-center justify-center">
                                     {(st.scoreVals || []).slice(0, colIdx).reduce((sum: number, val: any) => sum + (parseFloat(val) || 0), 0).toLocaleString("vi-VN", {maximumFractionDigits: 2})}
                                 </div>
                             ) : (
@@ -667,7 +667,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                     value={st.scoreVals?.[colIdx] || ""}
                                     onChange={e => handleScoreChange(st.id, colIdx, e.target.value)}
                                     disabled={isLocked}
-                                    className={`w-full border border-indigo-200 rounded-lg py-2 text-center font-bold shadow-sm outline-none transition-all h-[42px] ${isLocked ? "bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200" : "bg-white text-indigo-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 placeholder-slate-300"}`}
+                                    className={`w-full border border-slate-300 rounded-lg py-2 text-center font-bold shadow-sm outline-none transition-all h-[42px] ${isLocked ? "bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200" : "bg-white text-slate-800 focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/20 placeholder-slate-300"}`}
                                     placeholder="-"
                                 />
                             )}
@@ -680,13 +680,13 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                     try { if(currentAssignment.subject.columnNames) { const p = JSON.parse(currentAssignment.subject.columnNames); if(p.comments && p.comments[colIdx]) cName = p.comments[colIdx]; } } catch(e){}
                     return (
                         <div key={"cm-input-"+colIdx} className="flex flex-col gap-1.5 w-full min-w-[200px] flex-1">
-                            <span className="text-[10px] uppercase font-bold text-amber-700/80 truncate border-b border-amber-100 pb-1" title={cName}>{cName}</span>
+                            <span className="text-[10px] uppercase font-bold text-slate-600 truncate border-b border-slate-200 pb-1" title={cName}>{cName}</span>
                             <input 
                                 type="text"
                                 value={st.commentVals?.[colIdx] || ""}
                                 onChange={e => handleCommentChange(st.id, colIdx, e.target.value)}
                                 disabled={isLocked}
-                                className={`w-full border border-amber-200 rounded-lg py-2 px-3 text-sm font-medium shadow-sm outline-none transition-all h-[42px] ${isLocked ? "bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200" : "bg-white text-slate-700 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 placeholder-slate-400"}`}
+                                className={`w-full border border-slate-300 rounded-lg py-2 px-3 text-sm font-medium shadow-sm outline-none transition-all h-[42px] ${isLocked ? "bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200" : "bg-white text-slate-700 focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/20 placeholder-slate-400"}`}
                                 placeholder="..."
                             />
                         </div>
@@ -728,7 +728,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                 ))}
                                 {students.length === 0 && !loading && (
                                     <tr>
-                                        <td colSpan={8} className="px-4 py-12 text-center text-slate-500 bg-slate-50/50">Chưa có dữ liệu học sinh nào thỏa mãn Khối/Hệ môn học này trong kỳ Khảo sát.</td>
+                                        <td colSpan={8} className="px-4 py-12 text-center text-slate-500 bg-[#F8FAFC]">Chưa có dữ liệu học sinh nào thỏa mãn Khối/Hệ môn học này trong kỳ Khảo sát.</td>
                                     </tr>
                                 )}
                             </tbody>
@@ -740,7 +740,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
       {isUnlockRequestOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex justify-center items-center z-50 p-4">
           <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-hidden flex flex-col">
-            <div className="p-5 border-b flex justify-between items-center bg-slate-50/50">
+            <div className="p-5 border-b flex justify-between items-center bg-[#F8FAFC]">
               <h3 className="font-bold text-lg text-slate-800">Yêu cầu Mở khóa Form</h3>
               <button onClick={() => setIsUnlockRequestOpen(false)} className="text-slate-400 hover:text-red-500"><X className="w-5 h-5" /></button>
             </div>
@@ -750,7 +750,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 <textarea 
                     value={unlockReason} 
                     onChange={e => setUnlockReason(e.target.value)} 
-                    className="w-full border rounded-xl p-3 text-sm focus:border-indigo-500 outline-none h-32 resize-none" 
+                    className="w-full border rounded-xl p-3 text-sm focus:border-[#00A19A] outline-none h-32 resize-none" 
                     placeholder="VD: Cần chỉnh sửa lại điểm cột Hành vi cho một số học sinh..."
                 />
               </div>
