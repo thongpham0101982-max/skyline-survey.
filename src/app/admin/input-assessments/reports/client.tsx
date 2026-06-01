@@ -1470,7 +1470,7 @@ export function ReportsClient({
           '</div>' +
           '<div class="signature-section" style="margin-top: 30px; display: flex; justify-content: flex-end; position: relative; z-index: 10;">' +
             '<div class="signature-block" style="text-align: center; width: 240px;">' +
-              '<div style="font-size: 13px; font-style: italic; color: #4b5563; margin-bottom: 4px;">' + formattedLetterDate + '</div>' +
+              (!isCommitmentReport ? '<div style="font-size: 13px; font-style: italic; color: #4b5563; margin-bottom: 4px;">' + formattedLetterDate + '</div>' : '') +
               '<div class="signature-title" style="font-size: 12px; font-weight: bold; color: #1e1b4b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">' + titleText + '</div>' +
               '<div style="font-size: 10px; font-weight: bold; color: #312e81; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px;">' + subTitleText + '</div>' +
               '<div class="signature-img-container" style="height: 64px; display: flex; justify-content: center; align-items: center; margin-bottom: 8px;">' +
@@ -1911,7 +1911,6 @@ export function ReportsClient({
                   </div>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", width: "45%" }}>
-                  <p style={{ fontSize: "11pt", fontStyle: "italic", color: "#555555", marginBottom: "1px", textAlign: "center", textIndent: 0 }}>{formattedLetterDate}</p>
                   <p style={{ fontSize: "11pt", fontWeight: "bold", textTransform: "uppercase", margin: 0, textAlign: "center", textIndent: 0, color: "#0f172a" }}>TM. HỘI ĐỒNG TUYỂN SINH</p>
                   <p style={{ fontSize: "9pt", fontWeight: "bold", textTransform: "uppercase", color: "#475569", margin: "1px 0 0 0", textAlign: "center", textIndent: 0 }}>GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}</p>
                   <div style={{ height: "45px", display: "flex", alignItems: "center", justifyContent: "center", margin: "2px 0" }}>
@@ -1998,7 +1997,6 @@ export function ReportsClient({
                   </div>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", width: "45%" }}>
-                  <p style={{ fontSize: "11pt", fontStyle: "italic", color: "#555555", marginBottom: "1px", textAlign: "center", textIndent: 0 }}>{formattedLetterDate}</p>
                   <p style={{ fontSize: "11pt", fontWeight: "bold", textTransform: "uppercase", margin: 0, textAlign: "center", textIndent: 0, color: "#0f172a" }}>TM. HỘI ĐỒNG TUYỂN SINH</p>
                   <p style={{ fontSize: "9pt", fontWeight: "bold", textTransform: "uppercase", color: "#475569", margin: "1px 0 0 0", textAlign: "center", textIndent: 0 }}>GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}</p>
                   <div style={{ height: "45px", display: "flex", alignItems: "center", justifyContent: "center", margin: "2px 0" }}>
