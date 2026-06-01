@@ -2708,6 +2708,30 @@ export function ReportsClient({
       {/* 2. LETTERS EXPORT TABLE */}
       {tab === "letters" && (
         <div className="bg-white border border-slate-100 shadow-sm rounded-[2rem] p-6 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          {/* STATS CARDS */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center relative overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1 z-10">Tổng HS</span>
+              <span className="text-2xl font-black text-slate-700 z-10">{filteredStudents.length}</span>
+            </div>
+            <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center relative overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1 z-10">Đạt</span>
+              <span className="text-2xl font-black text-emerald-600 z-10">{filteredStudents.filter((s: any) => s.admissionResult === "Đạt" || s.admissionResult === "Đại").length}</span>
+            </div>
+            <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center relative overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-br from-amber-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1 z-10">Đạt Cam Kết</span>
+              <span className="text-2xl font-black text-amber-600 z-10">{filteredStudents.filter((s: any) => s.admissionResult === "Đạt cam kết").length}</span>
+            </div>
+            <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center relative overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-br from-rose-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1 z-10">Kiểm tra lại</span>
+              <span className="text-2xl font-black text-rose-600 z-10">{filteredStudents.filter((s: any) => String(s.admissionResult || "").includes("Không đạt")).length}</span>
+            </div>
+          </div>
+
           <div className="flex flex-col md:flex-row items-center justify-between gap-5 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
             {/* Filters Bar */}
             <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
@@ -2815,8 +2839,8 @@ export function ReportsClient({
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse table-auto">
-                  <thead>
-                    <tr className="bg-slate-50/80 text-slate-450 text-[9px] font-black uppercase tracking-widest border-b border-slate-100">
+                  <thead className="bg-slate-50">
+                    <tr className="text-slate-500 text-[10px] font-black uppercase tracking-widest border-b border-slate-200">
                       <th className="px-6 py-4 text-center w-14">STT</th>
                       <th className="px-6 py-4">Mã HS</th>
                       <th className="px-6 py-4 pl-4">Họ và Tên</th>
@@ -2838,7 +2862,7 @@ export function ReportsClient({
                       const isPassed = (result.includes("Đạt") && !result.includes("Không")) || result.includes("Đại") || result.includes("MIỄN") || result.includes("DAT");
 
                       return (
-                        <tr key={s.id} className="hover:bg-indigo-50/15 transition-all duration-150 font-bold text-slate-650 group/row">
+                        <tr key={s.id} className="even:bg-slate-50/50 hover:bg-indigo-50/30 transition-all duration-150 font-bold text-slate-650 group/row">
                           <td className="px-6 py-4 text-center text-slate-400 font-semibold">{idx + 1}</td>
                           <td className="px-6 py-4">
                             <span className="font-mono text-xs font-black text-indigo-600 bg-indigo-50/60 px-2 py-1 rounded-lg border border-indigo-100/50">
