@@ -2333,221 +2333,300 @@ export function ReportsClient({
           </div>
 
           {/* Right panel live preview */}
-          <div className="lg:col-span-7 bg-slate-50 border border-slate-200 shadow-inner rounded-3xl p-8 flex flex-col justify-between min-h-[500px]">
-            <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
-              <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Khung Xem trước thiết kế A4 thực tế</span>
-              {selectedLevel === "high" && rcReportType === "thu_chuc_mung" && (
-                <div className="flex items-center gap-1 bg-slate-200/60 p-0.5 rounded-lg text-[10px]">
-                  <button 
-                    onClick={() => setPreviewPage(1)} 
-                    className={`px-2.5 py-1 rounded-md font-bold transition-all ${previewPage === 1 ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
-                  >
-                    Trang 1 (Thư)
-                  </button>
-                  <button 
-                    onClick={() => setPreviewPage(2)} 
-                    className={`px-2.5 py-1 rounded-md font-bold transition-all ${previewPage === 2 ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
-                  >
-                    Trang 2 (Hồ sơ)
-                  </button>
-                </div>
-              )}
-            </div>
-            <div className={`bg-white rounded-2xl border border-slate-200 p-10 shadow-lg flex flex-col justify-between w-full relative ${rcReportType === 'cam_ket_hoc_tap' ? 'aspect-auto overflow-visible h-auto' : 'aspect-[210/297] overflow-hidden'}`}>
-              {/* Background Watermark for Preview */}
-              <div 
-                className="absolute pointer-events-none"
-                style={{
-                  backgroundImage: `url('${rcBackground || DEFAULT_WATERMARK_SVG}')`,
-                  backgroundRepeat: 'no-repeat',
-                  backgroundPosition: 'center',
-                  backgroundSize: 'contain',
-                  opacity: rcBackground ? 0.45 : 0.05,
-                  top: '50%',
-                  left: '50%',
-                  width: '80%',
-                  height: '80%',
-                  transform: 'translate(-50%, -50%)'
-                }}
-              />
+          {(() => {
+            const tempFullText = renderTemplate(
+              rcContent || "",
+              { 
+                fullName: "Nguyễn Minh An", 
+                grade: "1", 
+                surveyFormType: "Chất lượng cao", 
+                academicYear: "2025-2026", 
+                hocKy: "1",
+                admissionCampus: campuses.find((c: any) => c.id === rcCampusId)?.campusName || "Sky-Line Hill",
+                committedSubjects: ["Tiếng Anh"]
+              }
+            );
+            
+            let tempParagraphs: string[] = [];
+            tempFullText.split('\n').filter(Boolean).forEach(p => {
+              const idx = p.toLowerCase().indexOf("kính mong phụ huynh đồng hành");
+              if (idx !== -1 && idx > 0) {
+                tempParagraphs.push(p.substring(0, idx).trim());
+                tempParagraphs.push(p.substring(idx).trim());
+              } else {
+                tempParagraphs.push(p.trim());
+              }
+            });
 
-              {/* Top info */}
-              <div className={`relative z-10 space-y-4 flex flex-col justify-between ${rcReportType === 'cam_ket_hoc_tap' ? 'h-auto' : 'h-full'}`}>
-                {previewPage === 2 && selectedLevel === "high" && rcReportType === "thu_chuc_mung" ? (
-                  /* PAGE 2: CHECKLIST PREVIEW */
-                  <div>
-                    <div className="border-b border-slate-200 pb-2 mb-3">
-                      {rcLogo ? (
-                        <img src={rcLogo} alt="Logo" className="h-8 object-contain mb-1" />
-                      ) : (
-                        <span className="text-[10px] font-black tracking-tight text-teal-600 uppercase">SKY-LINE</span>
-                      )}
-                      <h4 className="font-extrabold text-[9px] uppercase tracking-wider text-slate-800" style={{ fontFamily: '"Open Sans", sans-serif' }}>
-                        TRƯỜNG TH, THCS, THPT SKY-LINE
-                      </h4>
+            const isTempCommitment = rcReportType === "cam_ket_hoc_tap";
+            const splitIndexTemp = isTempCommitment ? tempParagraphs.findIndex(p => p.toLowerCase().includes("kính mong phụ huynh đồng hành")) : -1;
+            const isSplitTemp = isTempCommitment && splitIndexTemp !== -1;
+
+            let page1ParagraphsTemp = isSplitTemp ? tempParagraphs.slice(0, splitIndexTemp) : tempParagraphs;
+            let page2ParagraphsTemp = isSplitTemp ? tempParagraphs.slice(splitIndexTemp) : [];
+
+            return (
+              <div className="lg:col-span-7 bg-slate-50 border border-slate-200 shadow-inner rounded-3xl p-8 flex flex-col justify-between min-h-[500px]">
+                <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
+                  <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Khung Xem trước thiết kế A4 thực tế</span>
+                  {((selectedLevel === "high" && rcReportType === "thu_chuc_mung") || (rcReportType === "cam_ket_hoc_tap" && isSplitTemp)) && (
+                    <div className="flex items-center gap-1 bg-slate-200/60 p-0.5 rounded-lg text-[10px]">
+                      <button 
+                        onClick={() => setPreviewPage(1)} 
+                        className={`px-2.5 py-1 rounded-md font-bold transition-all ${previewPage === 1 ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                      >
+                        Trang 1 (Thư)
+                      </button>
+                      <button 
+                        onClick={() => setPreviewPage(2)} 
+                        className={`px-2.5 py-1 rounded-md font-bold transition-all ${previewPage === 2 ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                      >
+                        {rcReportType === "cam_ket_hoc_tap" ? "Trang 2 (Cam kết)" : "Trang 2 (Hồ sơ)"}
+                      </button>
                     </div>
-
-                    <div className="text-center mb-3">
-                      <h2 className="text-xs font-black tracking-widest text-indigo-950 uppercase" style={{ fontFamily: '"Open Sans", sans-serif' }}>
-                        DANH MỤC HỒ SƠ NHẬP HỌC
-                      </h2>
-                    </div>
-
-                    {/* Table of documents */}
-                    <div className="mt-4 overflow-hidden border border-slate-950">
-                      <table className="w-full border-collapse text-left text-[9px] text-slate-900" style={{ fontFamily: '"Open Sans", sans-serif' }}>
-                        <thead>
-                          <tr className="bg-white border-b border-slate-950 font-bold text-slate-950">
-                            <th className="px-2 py-1.5 border-r border-slate-950 text-center uppercase w-10" style={{ borderRightWidth: '1px', borderColor: '#000' }}>STT</th>
-                            <th className="px-3 py-1.5 border-r border-slate-950 text-center uppercase" style={{ borderRightWidth: '1px', borderColor: '#000' }}>Tên hồ sơ</th>
-                            <th className="px-3 py-1.5 text-center uppercase w-16">Số lượng</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {previewDocList.map((item, idx) => (
-                            <tr key={item.id || idx} className="border-b border-slate-950 last:border-b-0">
-                              <td className="px-2 py-1.5 border-r border-slate-950 text-center text-slate-900" style={{ borderRightWidth: '1px', borderColor: '#000' }}>{idx + 1}</td>
-                              <td className="px-3 py-1.5 border-r border-slate-950 font-medium text-slate-900" style={{ borderRightWidth: '1px', borderColor: '#000' }}>{item.name}</td>
-                              <td className="px-3 py-1.5 text-center text-slate-950 font-bold">{item.qty || "—"}</td>
-                            </tr>
-                          ))}
-                          {previewDocList.length === 0 && (
-                            <tr>
-                              <td colSpan={3} className="text-center py-4 text-slate-400 italic">Chưa cấu hình hồ sơ nào cho đối tượng này</td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    <p className="mt-4 text-[9px] text-slate-950 font-bold text-left leading-relaxed" style={{ fontFamily: '"Open Sans", sans-serif' }}>
-                      * Quý phụ huynh vui lòng hoàn thiện và nộp đầy đủ các giấy tờ nêu trên trong vòng 10 ngày kể từ ngày nhận được thông báo trúng tuyển.
-                    </p>
-                  </div>
-                ) : (
-                  /* PAGE 1: LETTER PREVIEW */
-                  <>
-                    <div>
-                  <div className="border-b border-slate-200 pb-2 mb-3">
-                    {rcLogo ? (
-                      <img src={rcLogo} alt="Logo" className="h-8 object-contain mb-1" />
-                    ) : (
-                      <span className="text-[10px] font-black tracking-tight text-teal-600 uppercase">SKY-LINE</span>
-                    )}
-                    <h4 className="font-extrabold text-[9px] uppercase tracking-wider text-slate-800">
-                      {selectedLevel === "preschool" ? "TRƯỜNG MẦM NON SKY-LINE" : "TRƯỜNG TH, THCS, THPT SKY-LINE"}
-                    </h4>
-                  </div>
-
-                  <div className="text-center mb-3">
-                    <h2 className="text-xs font-black tracking-widest text-indigo-950 uppercase" style={{ fontFamily: '"Open Sans", sans-serif' }}>
-                      {rcTitle}
-                    </h2>
-                  </div>
-
-                  {/* Greeting */}
-                  {rcReportType !== 'cam_ket_hoc_tap' && (
-                    <p className="text-[10px] italic mb-2 text-slate-700 font-bold">
-                      {rcReportType === 'thu_moi' ? (
-                        <>Kính gửi Quý Phụ huynh và bé <strong className="font-bold not-italic">Nguyễn Minh An</strong>,</>
-                      ) : (
-                        <>Thân gửi con <strong className="font-bold not-italic">Nguyễn Minh An</strong>,</>
-                      )}
-                    </p>
                   )}
-
-                  {/* Template text */}
-                  <div className={`space-y-3 py-2 text-[10px] leading-relaxed text-slate-600 text-justify font-serif pr-1 ${rcReportType === 'cam_ket_hoc_tap' ? '' : 'max-h-[300px] overflow-y-auto'}`}>
-                    {renderTemplate(
-                      rcContent || "",
-                      { 
-                        fullName: "Nguyễn Minh An", 
-                        grade: "1", 
-                        surveyFormType: "Chất lượng cao", 
-                        academicYear: "2025-2026", 
-                        hocKy: "1",
-                        admissionCampus: campuses.find((c: any) => c.id === rcCampusId)?.campusName || "Sky-Line Hill",
-                        committedSubjects: ["Tiếng Anh"]
-                      }
-                    ).split('\n').filter(Boolean).map((para, idx) => {
-                      const pClean = para.trim();
-                      const isList = /^\s*[\d•\-*]+/.test(pClean);
-                      const isCentred = pClean.toLowerCase().includes("về việc") || pClean.toLowerCase().includes("kính gửi:");
-                      const isDateLine = pClean.toLowerCase().includes("ngày") && pClean.toLowerCase().includes("tháng") && pClean.toLowerCase().includes("năm") && (pClean.toLowerCase().includes("đà nẵng") || pClean.toLowerCase().includes("hà nội") || pClean.toLowerCase().includes("hồ chí minh"));
-                      
-                      if (isDateLine) return null;
-                      if (isCentred) {
-                        return (
-                          <p key={idx} className="text-center font-bold mb-1" style={{ textIndent: 0, fontSize: "10px" }}>
-                            {pClean}
-                          </p>
-                        );
-                      }
-                      
-                      return (
-                        <p key={idx} className={isList ? "pl-4 font-semibold" : "indent-4"} style={isList ? {} : { textIndent: "1cm" }}>
-                          {pClean}
-                        </p>
-                      );
-                    }).filter(Boolean)}
-                  </div>
                 </div>
+                <div className={`bg-white rounded-2xl border border-slate-200 p-10 shadow-lg flex flex-col justify-between w-full relative ${rcReportType === 'cam_ket_hoc_tap' && !isSplitTemp ? 'aspect-auto overflow-visible h-auto' : 'aspect-[210/297] overflow-hidden'}`}>
+                  {/* Background Watermark for Preview */}
+                  <div 
+                    className="absolute pointer-events-none"
+                    style={{
+                      backgroundImage: `url('${rcBackground || DEFAULT_WATERMARK_SVG}')`,
+                      backgroundRepeat: 'no-repeat',
+                      backgroundPosition: 'center',
+                      backgroundSize: 'contain',
+                      opacity: rcBackground ? 0.45 : 0.05,
+                      top: '50%',
+                      left: '50%',
+                      width: '80%',
+                      height: '80%',
+                      transform: 'translate(-50%, -50%)'
+                    }}
+                  />
 
-                {/* Signatures */}
-                {rcReportType === "cam_ket_hoc_tap" ? (
-                  <div className="grid grid-cols-2 gap-4 text-center mt-auto">
-                    <div className="space-y-1">
-                      <p className="text-[7px] font-bold text-slate-500 uppercase tracking-wider">ĐẠI DIỆN GIA ĐÌNH</p>
-                      <div className="h-10 flex items-end justify-center">
-                        <span className="text-[7px] text-slate-300 italic">Ký tên</span>
-                      </div>
-                    </div>
-                    <div className="space-y-1 min-w-[70px]">
-                      <p className="text-[7px] font-bold text-slate-500 uppercase tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
-                      <div className="h-10 flex items-center justify-center">
-                        {rcSignature ? (
-                          <img src={rcSignature} alt="Chữ ký" className="max-h-full object-contain" />
-                        ) : (
-                          <div className="text-[7px] text-slate-300 italic">Chưa upload</div>
-                        )}
-                      </div>
-                      <p className="text-[9px] font-black text-slate-700">{rcDirectorName || "-- Họ tên --"}</p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex justify-end mt-auto">
-                    <div className="text-center space-y-1 min-w-[140px]">
-                      <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
-                      <div className="h-10 flex items-center justify-center">
-                        {rcSignature ? (
-                          <img src={rcSignature} alt="Chữ ký" className="max-h-full object-contain" />
-                        ) : (
-                          <div className="text-[8px] text-slate-300 italic">Chưa upload chữ ký</div>
-                        )}
-                      </div>
-                      <p className="text-[11px] font-black text-slate-700">{rcDirectorName || "-- Họ tên --"}</p>
-                    </div>
-                  </div>
-                )}
-                  </>
-                )}
+                  {/* Top info */}
+                  <div className={`relative z-10 space-y-4 flex flex-col justify-between ${rcReportType === 'cam_ket_hoc_tap' && !isSplitTemp ? 'h-auto' : 'h-full'}`}>
+                    {(previewPage === 2 && selectedLevel === "high" && rcReportType === "thu_chuc_mung") || (previewPage === 2 && rcReportType === "cam_ket_hoc_tap" && isSplitTemp) ? (
+                      rcReportType === "thu_chuc_mung" ? (
+                        /* PAGE 2: CHECKLIST PREVIEW */
+                        <div>
+                          <div className="border-b border-slate-200 pb-2 mb-3">
+                            {rcLogo ? (
+                              <img src={rcLogo} alt="Logo" className="h-8 object-contain mb-1" />
+                            ) : (
+                              <span className="text-[10px] font-black tracking-tight text-teal-600 uppercase">SKY-LINE</span>
+                            )}
+                            <h4 className="font-extrabold text-[9px] uppercase tracking-wider text-slate-800" style={{ fontFamily: '"Open Sans", sans-serif' }}>
+                              TRƯỜNG TH, THCS, THPT SKY-LINE
+                            </h4>
+                          </div>
 
-                {/* Footer Banner */}
-                {rcFooter ? (
-                  <div className="pt-2 border-t border-slate-200 mt-2">
-                    <img src={rcFooter} alt="Footer" className="w-full h-auto" />
+                          <div className="text-center mb-3">
+                            <h2 className="text-xs font-black tracking-widest text-indigo-950 uppercase" style={{ fontFamily: '"Open Sans", sans-serif' }}>
+                              DANH MỤC HỒ SƠ NHẬP HỌC
+                            </h2>
+                          </div>
+
+                          {/* Table of documents */}
+                          <div className="mt-4 overflow-hidden border border-slate-950">
+                            <table className="w-full border-collapse text-left text-[9px] text-slate-900" style={{ fontFamily: '"Open Sans", sans-serif' }}>
+                              <thead>
+                                <tr className="bg-white border-b border-slate-950 font-bold text-slate-950">
+                                  <th className="px-2 py-1.5 border-r border-slate-950 text-center uppercase w-10" style={{ borderRightWidth: '1px', borderColor: '#000' }}>STT</th>
+                                  <th className="px-3 py-1.5 border-r border-slate-950 text-center uppercase" style={{ borderRightWidth: '1px', borderColor: '#000' }}>Tên hồ sơ</th>
+                                  <th className="px-3 py-1.5 text-center uppercase w-16">Số lượng</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {previewDocList.map((item, idx) => (
+                                  <tr key={item.id || idx} className="border-b border-slate-950 last:border-b-0">
+                                    <td className="px-2 py-1.5 border-r border-slate-950 text-center text-slate-900" style={{ borderRightWidth: '1px', borderColor: '#000' }}>{idx + 1}</td>
+                                    <td className="px-3 py-1.5 border-r border-slate-950 font-medium text-slate-900" style={{ borderRightWidth: '1px', borderColor: '#000' }}>{item.name}</td>
+                                    <td className="px-3 py-1.5 text-center text-slate-950 font-bold">{item.qty || "—"}</td>
+                                  </tr>
+                                ))}
+                                {previewDocList.length === 0 && (
+                                  <tr>
+                                    <td colSpan={3} className="text-center py-4 text-slate-400 italic">Chưa cấu hình hồ sơ nào cho đối tượng này</td>
+                                  </tr>
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
+
+                          <p className="mt-4 text-[9px] text-slate-950 font-bold text-left leading-relaxed" style={{ fontFamily: '"Open Sans", sans-serif' }}>
+                            * Quý phụ huynh vui lòng hoàn thiện và nộp đầy đủ các giấy tờ nêu trên trong vòng 10 ngày kể từ ngày nhận được thông báo trúng tuyển.
+                          </p>
+                        </div>
+                      ) : (
+                        /* PAGE 2: COMMITMENT EXPECTATIONS & SIGNATURES PREVIEW */
+                        <>
+                          <div>
+                            <div className="border-b border-slate-200 pb-2 mb-3">
+                              {rcLogo ? (
+                                <img src={rcLogo} alt="Logo" className="h-8 object-contain mb-1" />
+                              ) : (
+                                <span className="text-[10px] font-black tracking-tight text-teal-600 uppercase">SKY-LINE</span>
+                              )}
+                              <h4 className="font-extrabold text-[9px] uppercase tracking-wider text-slate-800" style={{ fontFamily: '"Open Sans", sans-serif' }}>
+                                {selectedLevel === "preschool" ? "TRƯỜNG MẦM NON SKY-LINE" : "TRƯỜNG TH, THCS, THPT SKY-LINE"}
+                              </h4>
+                            </div>
+                            <div className="text-center mb-3">
+                              <h2 className="text-xs font-black tracking-widest text-indigo-950 uppercase" style={{ fontFamily: '"Open Sans", sans-serif' }}>
+                                {rcTitle} (TIẾP THEO)
+                              </h2>
+                            </div>
+                            <div className="space-y-3 py-2 text-[10px] leading-relaxed text-slate-600 text-justify font-sans pr-1">
+                              {page2ParagraphsTemp.map((para, idx) => {
+                                const pClean = para.trim();
+                                const isList = /^\s*[\d•\-*]+/.test(pClean);
+                                
+                                return (
+                                  <p key={idx} className={isList ? "pl-4 font-semibold" : "indent-4"} style={isList ? {} : { textIndent: "1cm" }}>
+                                    {pClean}
+                                  </p>
+                                );
+                              }).filter(Boolean)}
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4 text-center mt-auto">
+                            <div className="space-y-1">
+                              <p className="text-[7px] font-bold text-slate-500 uppercase tracking-wider">ĐẠI DIỆN GIA ĐÌNH</p>
+                              <div className="h-10 flex items-end justify-center">
+                                <span className="text-[7px] text-slate-300 italic">Ký tên</span>
+                              </div>
+                            </div>
+                            <div className="space-y-1 min-w-[70px]">
+                              <p className="text-[7px] font-bold text-slate-500 uppercase tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
+                              <div className="h-10 flex items-center justify-center">
+                                {rcSignature ? (
+                                  <img src={rcSignature} alt="Chữ ký" className="max-h-full object-contain" />
+                                ) : (
+                                  <div className="text-[7px] text-slate-300 italic">Chưa upload</div>
+                                )}
+                              </div>
+                              <p className="text-[9px] font-black text-slate-700">{rcDirectorName || "-- Họ tên --"}</p>
+                            </div>
+                          </div>
+                        </>
+                      )
+                    ) : (
+                      /* PAGE 1: LETTER PREVIEW */
+                      <>
+                        <div>
+                          <div className="border-b border-slate-200 pb-2 mb-3">
+                            {rcLogo ? (
+                              <img src={rcLogo} alt="Logo" className="h-8 object-contain mb-1" />
+                            ) : (
+                              <span className="text-[10px] font-black tracking-tight text-teal-600 uppercase">SKY-LINE</span>
+                            )}
+                            <h4 className="font-extrabold text-[9px] uppercase tracking-wider text-slate-800">
+                              {selectedLevel === "preschool" ? "TRƯỜNG MẦM NON SKY-LINE" : "TRƯỜNG TH, THCS, THPT SKY-LINE"}
+                            </h4>
+                          </div>
+
+                          <div className="text-center mb-3">
+                            <h2 className="text-xs font-black tracking-widest text-indigo-950 uppercase" style={{ fontFamily: '"Open Sans", sans-serif' }}>
+                              {rcTitle}
+                            </h2>
+                          </div>
+
+                          {/* Greeting */}
+                          {rcReportType !== 'cam_ket_hoc_tap' && (
+                            <p className="text-[10px] italic mb-2 text-slate-700 font-bold">
+                              {rcReportType === 'thu_moi' ? (
+                                <>Kính gửi Quý Phụ huynh và bé <strong className="font-bold not-italic">Nguyễn Minh An</strong>,</>
+                              ) : (
+                                <>Thân gửi con <strong className="font-bold not-italic">Nguyễn Minh An</strong>,</>
+                              )}
+                            </p>
+                          )}
+
+                          {/* Template text */}
+                          <div className={`space-y-3 py-2 text-[10px] leading-relaxed text-slate-600 text-justify font-sans pr-1 ${rcReportType === 'cam_ket_hoc_tap' && !isSplitTemp ? '' : 'max-h-[300px] overflow-y-auto'}`}>
+                            {page1ParagraphsTemp.map((para, idx) => {
+                              const pClean = para.trim();
+                              const isList = /^\s*[\d•\-*]+/.test(pClean);
+                              const isCentred = pClean.toLowerCase().includes("về việc") || pClean.toLowerCase().includes("kính gửi:");
+                              const isDateLine = pClean.toLowerCase().includes("ngày") && pClean.toLowerCase().includes("tháng") && pClean.toLowerCase().includes("năm") && (pClean.toLowerCase().includes("đà nẵng") || pClean.toLowerCase().includes("hà nội") || pClean.toLowerCase().includes("hồ chí minh"));
+                              
+                              if (isDateLine) return null;
+                              if (isCentred) {
+                                return (
+                                  <p key={idx} className="text-center font-bold mb-1" style={{ textIndent: 0, fontSize: "10px" }}>
+                                    {pClean}
+                                  </p>
+                                );
+                              }
+                              
+                              return (
+                                <p key={idx} className={isList ? "pl-4 font-semibold" : "indent-4"} style={isList ? {} : { textIndent: "1cm" }}>
+                                  {pClean}
+                                </p>
+                              );
+                            }).filter(Boolean)}
+                          </div>
+                        </div>
+
+                        {/* Signatures */}
+                        {rcReportType === "cam_ket_hoc_tap" ? (
+                          !isSplitTemp && (
+                            <div className="grid grid-cols-2 gap-4 text-center mt-auto">
+                              <div className="space-y-1">
+                                <p className="text-[7px] font-bold text-slate-500 uppercase tracking-wider">ĐẠI DIỆN GIA ĐÌNH</p>
+                                <div className="h-10 flex items-end justify-center">
+                                  <span className="text-[7px] text-slate-300 italic">Ký tên</span>
+                                </div>
+                              </div>
+                              <div className="space-y-1 min-w-[70px]">
+                                <p className="text-[7px] font-bold text-slate-500 uppercase tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
+                                <div className="h-10 flex items-center justify-center">
+                                  {rcSignature ? (
+                                    <img src={rcSignature} alt="Chữ ký" className="max-h-full object-contain" />
+                                  ) : (
+                                    <div className="text-[7px] text-slate-300 italic">Chưa upload</div>
+                                  )}
+                                </div>
+                                <p className="text-[9px] font-black text-slate-700">{rcDirectorName || "-- Họ tên --"}</p>
+                              </div>
+                            </div>
+                          )
+                        ) : (
+                          <div className="flex justify-end mt-auto">
+                            <div className="text-center space-y-1 min-w-[140px]">
+                              <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
+                              <div className="h-10 flex items-center justify-center">
+                                {rcSignature ? (
+                                  <img src={rcSignature} alt="Chữ ký" className="max-h-full object-contain" />
+                                ) : (
+                                  <div className="text-[8px] text-slate-300 italic">Chưa upload chữ ký</div>
+                                )}
+                              </div>
+                              <p className="text-[11px] font-black text-slate-700">{rcDirectorName || "-- Họ tên --"}</p>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
-                ) : (
-                  <div className="border-t border-teal-500/30 pt-2 text-[5px] text-slate-400 text-center">
-                    <p className="font-bold">www.skylineschool.edu.vn • Hotline: (+84.236) 378 7777</p>
-                  </div>
-                )}
+
+                  {/* Footer Banner */}
+                  {rcFooter ? (
+                    <div className="pt-2 border-t border-slate-200 mt-2">
+                      <img src={rcFooter} alt="Footer" className="w-full h-auto" />
+                    </div>
+                  ) : (
+                    <div className="border-t border-teal-500/30 pt-2 text-[5px] text-slate-400 text-center">
+                      <p className="font-bold">www.skylineschool.edu.vn • Hotline: (+84.236) 378 7777</p>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          </div>
+            );
+          })()}
         </div>
       )}
-
       {/* 2. LETTERS EXPORT TABLE */}
       {tab === "letters" && (
         <div className="bg-white border border-slate-100 shadow-sm rounded-[2rem] p-6 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
