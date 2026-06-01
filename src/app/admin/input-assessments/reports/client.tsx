@@ -131,6 +131,7 @@ const getCampusAndSchoolName = (rawCampusCode: string) => {
 const extractCleanNote = (student: any) => {
   let cleanNote = student?.directorNote || "";
   cleanNote = cleanNote.replace(/^Môn cam kết: \[(.*?)\](?:\r?\n\r?\n)?/, "");
+  cleanNote = cleanNote.replace(/^Môn kiểm tra lại: \[(.*?)\](?:\r?\n\r?\n)?/, "");
   return cleanNote.trim();
 };
 
