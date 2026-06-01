@@ -2212,7 +2212,7 @@ export function ReportsClient({
         <div className="bg-slate-100 p-1.5 rounded-2xl border border-slate-200 flex gap-1.5 shadow-inner">
           <button
             onClick={() => setSelectedLevel("high")}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black tracking-tight transition-all duration-300 ${selectedLevel === "high" ? "bg-white text-indigo-600 shadow-md scale-[1.02]" : "text-slate-500 hover:text-slate-800"}`}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black tracking-tight transition-all duration-300 ${selectedLevel === "high" ? "bg-white text-teal-600 shadow-md scale-[1.02]" : "text-slate-500 hover:text-slate-800"}`}
           >
             <GraduationCap className="w-4 h-4 text-indigo-500" />
             Khảo thí Phổ thông
@@ -2256,7 +2256,7 @@ export function ReportsClient({
           {/* Left panel settings */}
           <div className="lg:col-span-5 bg-white border border-slate-200 shadow-sm rounded-3xl p-8 space-y-6">
             <div className="flex items-center gap-3 border-b pb-4 mb-2">
-              <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 bg-indigo-50 text-teal-600 rounded-xl flex items-center justify-center">
                 <Settings className="w-5 h-5"/>
               </div>
               <div>
@@ -2308,7 +2308,7 @@ export function ReportsClient({
                       : (rcReportType === "thu_moi" ? defaultThuMoi : rcReportType === "cam_ket_hoc_tap" ? defaultCamKet : defaultThuChucMung);
                     setRcContent(defaultText);
                   }}
-                  className="text-[10px] font-extrabold text-indigo-600 hover:underline cursor-pointer"
+                  className="text-[10px] font-extrabold text-teal-600 hover:underline cursor-pointer"
                 >
                   Khôi phục mặc định
                 </button>
@@ -2321,7 +2321,7 @@ export function ReportsClient({
                 className={`${inp} py-3 font-normal resize-none text-xs leading-relaxed font-sans`}
               />
               <p className="text-[10px] text-slate-400 mt-1 font-semibold leading-normal">
-                Từ khóa tự điền: <span className="text-indigo-600 font-bold">{"{{fullName}}"}</span>, <span className="text-indigo-600 font-bold">{"{{grade}}"}</span>, <span className="text-indigo-600 font-bold">{"{{surveyFormType}}"}</span>, <span className="text-indigo-600 font-bold">{"{{academicYear}}"}</span>, <span className="text-indigo-600 font-bold">{"{{admissionCampus}}"}</span>, <span className="text-indigo-600 font-bold">{"{{schoolName}}"}</span>, <span className="text-indigo-600 font-bold">{"{{committedSubjects}}"}</span>
+                Từ khóa tự điền: <span className="text-teal-600 font-bold">{"{{fullName}}"}</span>, <span className="text-teal-600 font-bold">{"{{grade}}"}</span>, <span className="text-teal-600 font-bold">{"{{surveyFormType}}"}</span>, <span className="text-teal-600 font-bold">{"{{academicYear}}"}</span>, <span className="text-teal-600 font-bold">{"{{admissionCampus}}"}</span>, <span className="text-teal-600 font-bold">{"{{schoolName}}"}</span>, <span className="text-teal-600 font-bold">{"{{committedSubjects}}"}</span>
               </p>
             </Field>
 
@@ -2342,7 +2342,7 @@ export function ReportsClient({
                         <button onClick={() => setRcLogo("")} className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 text-white rounded-full flex items-center justify-center shadow-md"><X className="w-2.5 h-2.5"/></button>
                       </div>
                     ) : (
-                      <label className="w-12 h-12 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 cursor-pointer hover:border-indigo-400 hover:text-indigo-600 transition-all">
+                      <label className="w-12 h-12 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 cursor-pointer hover:border-indigo-400 hover:text-teal-600 transition-all">
                         <Upload className="w-4 h-4"/>
                         <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
                       </label>
@@ -2360,7 +2360,7 @@ export function ReportsClient({
                         <button onClick={() => setRcSignature("")} className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 text-white rounded-full flex items-center justify-center shadow-md"><X className="w-2.5 h-2.5"/></button>
                       </div>
                     ) : (
-                      <label className="w-12 h-12 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 cursor-pointer hover:border-indigo-400 hover:text-indigo-600 transition-all">
+                      <label className="w-12 h-12 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 cursor-pointer hover:border-indigo-400 hover:text-teal-600 transition-all">
                         <Upload className="w-4 h-4"/>
                         <input type="file" accept="image/*" className="hidden" onChange={handleSignatureUpload} />
                       </label>
@@ -2378,7 +2378,7 @@ export function ReportsClient({
                         <button onClick={() => setRcBackground("")} className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 text-white rounded-full flex items-center justify-center shadow-md"><X className="w-2.5 h-2.5"/></button>
                       </div>
                     ) : (
-                      <label className="w-12 h-12 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 cursor-pointer hover:border-indigo-400 hover:text-indigo-600 transition-all">
+                      <label className="w-12 h-12 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 cursor-pointer hover:border-indigo-400 hover:text-teal-600 transition-all">
                         <Upload className="w-4 h-4"/>
                         <input type="file" accept="image/*" className="hidden" onChange={handleBackgroundUpload} />
                       </label>
@@ -2396,7 +2396,7 @@ export function ReportsClient({
                         <button onClick={() => setRcFooter("")} className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 text-white rounded-full flex items-center justify-center shadow-md"><X className="w-2.5 h-2.5"/></button>
                       </div>
                     ) : (
-                      <label className="w-12 h-12 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 cursor-pointer hover:border-indigo-400 hover:text-indigo-600 transition-all">
+                      <label className="w-12 h-12 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 cursor-pointer hover:border-indigo-400 hover:text-teal-600 transition-all">
                         <Upload className="w-4 h-4"/>
                         <input type="file" accept="image/*" className="hidden" onChange={handleFooterUpload} />
                       </label>
@@ -2456,13 +2456,13 @@ export function ReportsClient({
                     <div className="flex items-center gap-1 bg-slate-200/60 p-0.5 rounded-lg text-[10px]">
                       <button 
                         onClick={() => setPreviewPage(1)} 
-                        className={`px-2.5 py-1 rounded-md font-bold transition-all ${previewPage === 1 ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                        className={`px-2.5 py-1 rounded-md font-bold transition-all ${previewPage === 1 ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
                       >
                         Trang 1 (Thư)
                       </button>
                       <button 
                         onClick={() => setPreviewPage(2)} 
-                        className={`px-2.5 py-1 rounded-md font-bold transition-all ${previewPage === 2 ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                        className={`px-2.5 py-1 rounded-md font-bold transition-all ${previewPage === 2 ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
                       >
                         {rcReportType === "cam_ket_hoc_tap" ? "Trang 2 (Cam kết)" : "Trang 2 (Hồ sơ)"}
                       </button>
@@ -2712,7 +2712,7 @@ export function ReportsClient({
           {/* STATS CARDS */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center relative overflow-hidden group">
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-teal-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
               <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1 z-10">Tổng HS</span>
               <span className="text-2xl font-black text-slate-700 z-10">{filteredStudents.length}</span>
             </div>
@@ -2802,7 +2802,7 @@ export function ReportsClient({
                   link.click();
                   document.body.removeChild(link);
                 }}
-                className="w-full md:w-auto px-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl font-bold text-xs uppercase tracking-wider shadow-sm transition-all flex justify-center items-center gap-2 border border-indigo-100 whitespace-nowrap"
+                className="w-full md:w-auto px-4 py-2.5 bg-teal-50 hover:bg-teal-100 text-teal-700 rounded-xl font-bold text-xs uppercase tracking-wider shadow-sm transition-all flex justify-center items-center gap-2 border border-indigo-100 whitespace-nowrap"
               >
                 <Download className="w-4 h-4"/>
                 Xuất File
@@ -2839,22 +2839,18 @@ export function ReportsClient({
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse table-auto">
+                <table className="w-full text-left text-sm border-collapse">
                   <thead className="bg-slate-50">
                     <tr className="text-slate-500 text-[10px] font-black uppercase tracking-widest border-b border-slate-200">
                       <th className="px-6 py-4 text-center w-14">STT</th>
-                      <th className="px-6 py-4">Mã HS</th>
-                      <th className="px-6 py-4 pl-4">Họ và Tên</th>
-                      <th className="px-6 py-4 text-center">Khối</th>
-                      <th className="px-6 py-4 text-center">Giới tính</th>
-                      <th className="px-6 py-4">Hệ Đăng ký</th>
+                      <th className="px-6 py-4">Học sinh</th>
                       <th className="px-6 py-4">Kết quả Phê duyệt</th>
                       <th className="px-6 py-4">Môn Cam kết</th>
                       <th className="px-6 py-4">Ý kiến / Ghi chú Hội đồng</th>
-                      <th className="px-6 py-4 text-center w-[230px]">In / Xuất mẫu thư</th>
+                      <th className="px-6 py-4 text-center w-[120px]">Thao tác</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-50 text-xs bg-white">
+                  <tbody className="divide-y divide-slate-100 bg-white">
                     {filteredStudents.map((s, idx) => {
                       const gender = s.gender === "M" || s.gender === "MALE" || s.gender === "Nam" ? "Nam" : s.gender === "F" || s.gender === "FEMALE" || s.gender === "Nữ" ? "Nữ" : "—";
                       
@@ -2863,70 +2859,84 @@ export function ReportsClient({
                       const isPassed = (result.includes("Đạt") && !result.includes("Không")) || result.includes("Đại") || result.includes("MIỄN") || result.includes("DAT");
 
                       return (
-                        <tr key={s.id} className="even:bg-slate-50/50 hover:bg-indigo-50/30 transition-all duration-150 font-bold text-slate-650 group/row">
+                        <tr key={s.id} className="even:bg-slate-50/50 hover:bg-teal-50/30 transition-all duration-150 group/row">
                           <td className="px-6 py-4 text-center text-slate-400 font-semibold">{idx + 1}</td>
                           <td className="px-6 py-4">
-                            <span className="font-mono text-xs font-black text-indigo-600 bg-indigo-50/60 px-2 py-1 rounded-lg border border-indigo-100/50">
-                              {s.studentCode || "—"}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 pl-4 font-black text-slate-800 text-sm group-hover/row:text-indigo-600 transition-colors">
-                            {s.fullName}
-                          </td>
-                          <td className="px-6 py-4 text-center">
-                            <span className="text-[11px] font-black text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200/50">
-                              K{s.grade || "—"}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-center text-slate-500">{gender}</td>
-                          <td className="px-6 py-4 text-slate-500 font-semibold">{s.surveyFormType || "—"}</td>
-                          <td className="px-6 py-4">
-                            <span className={`px-2.5 py-1 rounded-xl text-[10px] font-black border uppercase tracking-wider flex items-center gap-1.5 w-max shadow-sm ${
-                              isPassed 
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-100/60 shadow-emerald-50/50" 
-                                : "bg-slate-50 text-slate-450 border-slate-200/60"
-                            }`}>
-                              <span className={`w-1 h-1 rounded-full ${isPassed ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`}></span>
-                              {result}
-                            </span>
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-slate-800 text-sm group-hover/row:text-teal-700 transition-colors">{s.fullName}</span>
+                                <span className="font-mono text-[10px] font-black text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded border border-teal-100/50">
+                                  {s.studentCode || "—"}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500">
+                                <span className="bg-slate-100 px-1.5 rounded">{s.grade ? `K${s.grade}` : "—"}</span>
+                                <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                                <span>{gender}</span>
+                                <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                                <span className="truncate max-w-[120px]" title={s.surveyFormType || "—"}>{s.surveyFormType || "—"}</span>
+                              </div>
+                            </div>
                           </td>
                           <td className="px-6 py-4">
-                            <div className="flex flex-wrap gap-1 max-w-[200px]">
+                            {(() => {
+                              const isGreen = result.includes("Đạt") && !result.includes("cam kết") && !result.includes("Không");
+                              const isAmber = result.includes("cam kết");
+                              const isRed = result.includes("Không đạt");
+                              
+                              if (isGreen) return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200/50"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>{result}</span>;
+                              if (isAmber) return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200/50"><span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>{result}</span>;
+                              if (isRed) return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200/50"><span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>{result}</span>;
+                              return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-600">{result}</span>;
+                            })()}
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex flex-wrap gap-1 max-w-[180px]">
                               {extractCommittedSubjects(s).length > 0 ? (
                                 extractCommittedSubjects(s).map((sub: string, subIdx: number) => (
-                                  <span key={subIdx} className="px-2 py-1 bg-amber-50 text-amber-700 rounded-md text-[10px] font-black border border-amber-200/60 shadow-sm">{sub}</span>
+                                  <span key={subIdx} className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200/50 px-2 py-0.5 rounded-md whitespace-nowrap">
+                                    {sub.trim()}
+                                  </span>
                                 ))
                               ) : (
                                 <span className="text-slate-400 font-medium text-[10px]">—</span>
                               )}
                             </div>
                           </td>
-                          <td className="px-6 py-4 text-xs font-medium text-slate-600 whitespace-pre-line max-w-[200px]">
-                            {extractCleanNote(s) || <span className="text-slate-400">—</span>}
+                          <td className="px-6 py-4">
+                            <div className="text-[11px] font-medium text-slate-600 max-w-[200px] group/note relative cursor-default">
+                              <p className="line-clamp-2 leading-relaxed">{extractCleanNote(s) || <span className="text-slate-300">—</span>}</p>
+                              {extractCleanNote(s) && (
+                                <div className="absolute left-0 bottom-full mb-2 hidden group-hover/note:block w-max max-w-xs bg-slate-800 text-white text-[11px] p-3 rounded-xl shadow-xl z-50 whitespace-pre-line leading-relaxed pointer-events-none">
+                                  {extractCleanNote(s)}
+                                  <div className="absolute -bottom-1 left-4 w-2 h-2 bg-slate-800 rotate-45"></div>
+                                </div>
+                              )}
+                            </div>
                           </td>
-                          <td className="px-6 py-3">
+                          <td className="px-6 py-4">
                             <div className="flex gap-2 justify-center">
                               {isPassed ? (
                                 <>
                                   <button
                                     onClick={() => { setIsInvitation(false); setIsCommitment(false); setSelectedReportStudent(s); setIsPrintModalOpen(true); }}
-                                    className="px-3.5 py-2 text-[11px] font-black text-emerald-700 bg-emerald-50 border border-emerald-100/80 rounded-xl hover:bg-emerald-500 hover:text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer active:scale-95 group/btn"
+                                    className="p-2 text-emerald-600 bg-emerald-50 border border-emerald-100/80 rounded-xl hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all shadow-sm tooltip-trigger relative group/btn"
+                                    title="Thư Chúc mừng"
                                   >
-                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 group-hover/btn:text-white transition-colors" /> 
-                                    Chúc mừng
+                                    <Send className="w-4 h-4 transition-colors" />
                                   </button>
                                   {selectedLevel !== "preschool" && (result.includes("cam kết") || result.includes("Đạt cam kết")) && (
                                     <button
                                       onClick={() => { setIsInvitation(false); setIsCommitment(true); setSelectedReportStudent(s); setIsPrintModalOpen(true); }}
-                                      className="px-3.5 py-2 text-[11px] font-black text-amber-700 bg-amber-50 border border-amber-100/80 rounded-xl hover:bg-amber-500 hover:text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer active:scale-95 group/btn"
+                                      className="p-2 text-amber-600 bg-amber-50 border border-amber-100/80 rounded-xl hover:bg-amber-500 hover:text-white hover:border-amber-500 transition-all shadow-sm tooltip-trigger relative group/btn"
+                                      title="Cam kết học tập"
                                     >
-                                      <PenLine className="w-3.5 h-3.5 text-amber-600 group-hover/btn:text-white transition-colors" /> 
-                                      Cam kết
+                                      <PenLine className="w-4 h-4 transition-colors" />
                                     </button>
                                   )}
                                 </>
                               ) : (
-                                <span className="text-[10px] font-bold text-slate-400">—</span>
+                                <span className="text-[10px] font-bold text-slate-300">—</span>
                               )}
                             </div>
                           </td>
@@ -3034,7 +3044,7 @@ export function ReportsClient({
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
           <div className="bg-white/80 backdrop-blur-md p-6 rounded-3xl shadow-sm border border-slate-200/60 flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 shadow-inner">
+              <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-teal-600 shadow-inner">
                 <Tag className="w-6 h-6" />
               </div>
               <div>
@@ -3109,7 +3119,7 @@ export function ReportsClient({
                           setSelectedDocGroup(newId);
                         }
                       }}
-                      className="flex-1 py-3 px-4 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center gap-2 text-xs font-black transition-all border border-indigo-100 shadow-sm"
+                      className="flex-1 py-3 px-4 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-teal-600 flex items-center justify-center gap-2 text-xs font-black transition-all border border-indigo-100 shadow-sm"
                       title="Thêm đối tượng mới"
                     >
                       <Plus className="w-4 h-4" />
@@ -3195,7 +3205,7 @@ export function ReportsClient({
                             setDocGroupTargets(updatedMappings);
                             localStorage.setItem('admission_doc_targets', JSON.stringify(updatedMappings));
                           }}
-                          className="w-3.5 h-3.5 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 transition-all cursor-pointer"
+                          className="w-3.5 h-3.5 rounded text-teal-600 focus:ring-indigo-500 border-slate-300 transition-all cursor-pointer"
                         />
                         <span className="text-[11px] font-bold text-slate-600">{c.name}</span>
                       </label>
@@ -3222,7 +3232,7 @@ export function ReportsClient({
                         localStorage.setItem('admission_doc_grades_mapping', JSON.stringify(updatedMappings));
                       }}
                       type="button"
-                      className="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg text-[9px] font-black transition-all border border-indigo-100"
+                      className="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-teal-600 rounded-lg text-[9px] font-black transition-all border border-indigo-100"
                     >
                       Chọn nhanh 2,3,4,5
                     </button>
@@ -3259,7 +3269,7 @@ export function ReportsClient({
                             setDocGroupGrades(updatedMappings);
                             localStorage.setItem('admission_doc_grades_mapping', JSON.stringify(updatedMappings));
                           }}
-                          className="w-3.5 h-3.5 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 transition-all cursor-pointer"
+                          className="w-3.5 h-3.5 rounded text-teal-600 focus:ring-indigo-500 border-slate-300 transition-all cursor-pointer"
                         />
                         <span className="text-[11px] font-bold text-slate-600">{g}</span>
                       </label>
@@ -3304,7 +3314,7 @@ export function ReportsClient({
                                   setDocFormSelectedGrades(item.grades || []);
                                   setIsDocModalOpen(true);
                                 }}
-                                className="w-7 h-7 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center transition-colors"
+                                className="w-7 h-7 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-teal-600 flex items-center justify-center transition-colors"
                                 title="Sửa hồ sơ"
                               >
                                 <Pencil className="w-3 h-3" />
@@ -3445,7 +3455,7 @@ export function ReportsClient({
           <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-100">
             <div className="bg-slate-50 px-6 py-5 border-b border-slate-100 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center">
+                <div className="w-10 h-10 bg-indigo-100 text-teal-600 rounded-xl flex items-center justify-center">
                   <Tag className="w-5 h-5" />
                 </div>
                 <div>
@@ -3521,7 +3531,7 @@ export function ReportsClient({
                               setDocFormSelectedTargets(p => p.filter(x => x !== c.name));
                             }
                           }}
-                          className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300"
+                          className="w-4 h-4 rounded text-teal-600 focus:ring-indigo-500 border-slate-300"
                         />
                         <span className="text-xs font-bold text-slate-600">{c.name}</span>
                       </label>
@@ -3654,7 +3664,7 @@ export function ReportsClient({
 
             {/* Attachment checkbox */}
             <div className="flex items-start gap-3 p-4 bg-indigo-50/40 border border-indigo-100 rounded-3xl transition-all hover:bg-indigo-50/60">
-              <input type="checkbox" id="attach_checkbox" checked={attachLetters} onChange={e => setAttachLetters(e.target.checked)} className="w-5 h-5 text-indigo-600 border-slate-300 rounded mt-0.5 cursor-pointer focus:ring-indigo-500" />
+              <input type="checkbox" id="attach_checkbox" checked={attachLetters} onChange={e => setAttachLetters(e.target.checked)} className="w-5 h-5 text-teal-600 border-slate-300 rounded mt-0.5 cursor-pointer focus:ring-indigo-500" />
               <div>
                 <label htmlFor="attach_checkbox" className="text-xs font-black text-indigo-900 cursor-pointer select-none">Tự động đính kèm tệp mẫu Thư PDF cho từng học sinh</label>
                 <p className="text-[10px] text-slate-400 font-semibold mt-1 leading-normal">
@@ -3672,7 +3682,7 @@ export function ReportsClient({
                 <button
                   type="button"
                   onClick={() => setSelectedEmailStudentIds(filteredStudents.map(s => s.id))}
-                  className="text-[10px] font-bold text-indigo-600 hover:underline cursor-pointer"
+                  className="text-[10px] font-bold text-teal-600 hover:underline cursor-pointer"
                 >
                   Chọn hết
                 </button>
@@ -3707,7 +3717,7 @@ export function ReportsClient({
                             setSelectedEmailStudentIds([...selectedEmailStudentIds, s.id]);
                           }
                         }}
-                        className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
+                        className="w-4 h-4 text-teal-600 border-slate-300 rounded focus:ring-indigo-500"
                       />
                       <div className="text-left">
                         <p className="text-xs font-bold text-slate-800 leading-none mb-1">${s.fullName}</p>
