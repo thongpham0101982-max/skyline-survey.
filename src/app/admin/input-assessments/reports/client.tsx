@@ -1130,7 +1130,18 @@ export function ReportsClient({
       .replace(/{{signatureName}}/g, student?.signatureName || "");
 
     const paragraphs = renderedContent.split("\n").filter(Boolean);
-    const bodyHtml = paragraphs.map((p: string) => '<p style="text-indent: 1cm; margin: 0 0 10px 0;">' + p + '</p>').join("");
+    const isCommitmentReport = isCommitment || (config?.title?.toUpperCase().includes("CAM KẾT")) || (rcReportType === "cam_ket_hoc_tap");
+    const bodyHtml = paragraphs.map((p: string) => {
+      const pClean = p.trim();
+      const isCentred = pClean.toLowerCase().includes("về việc") || pClean.toLowerCase().includes("kính gửi:");
+      const isDateLine = pClean.toLowerCase().includes("ngày") && pClean.toLowerCase().includes("tháng") && pClean.toLowerCase().includes("năm") && (pClean.toLowerCase().includes("đà nẵng") || pClean.toLowerCase().includes("hà nội") || pClean.toLowerCase().includes("hồ chí minh"));
+      
+      if (isDateLine) return "";
+      if (isCentred) {
+        return '<p style="text-align: center; font-weight: bold; text-indent: 0; margin: 0 0 10px 0;">' + pClean + '</p>';
+      }
+      return '<p style="text-indent: 1cm; margin: 0 0 10px 0;">' + pClean + '</p>';
+    }).filter(Boolean).join("");
     
     const greetingHtml = 'Thân gửi con <strong style="font-weight: 900; font-style: normal; color: #0f172a;">' + student.fullName + '</strong>,';
     const directorName = config.directorName || "Trần Thị Thanh";
@@ -1377,9 +1388,10 @@ export function ReportsClient({
           '<div class="letter-title">' +
             '<h2>' + config.title + '</h2>' +
           '</div>' +
+          (!isCommitmentReport ? 
           '<div class="greeting">' +
             greetingHtml +
-          '</div>' +
+          '</div>' : '') +
           '<div class="content-body">' +
             bodyHtml +
           '</div>' +
@@ -1729,13 +1741,15 @@ export function ReportsClient({
               </h2>
 
               {/* Greeting */}
-              <p style={{ fontSize: "13pt", fontStyle: "italic", marginBottom: "8px", color: "#1e293b", textIndent: 0 }}>
-                {isInvitation ? (
-                  <>Kính gửi Quý Phụ huynh và em <strong style={{ fontWeight: "bold", color: "#0f172a" }}>{selectedReportStudent?.fullName}</strong>,</>
-                ) : (
-                  <>Thân gửi con <strong style={{ fontWeight: "bold", color: "#0f172a" }}>{selectedReportStudent?.fullName}</strong>,</>
-                )}
-              </p>
+              {!(isCommitment || studentCampusConfig?.title?.toUpperCase().includes("CAM KẾT")) && (
+                <p style={{ fontSize: "13pt", fontStyle: "italic", marginBottom: "8px", color: "#1e293b", textIndent: 0 }}>
+                  {isInvitation ? (
+                    <>Kính gửi Quý Phụ huynh và em <strong style={{ fontWeight: "bold", color: "#0f172a" }}>{selectedReportStudent?.fullName}</strong>,</>
+                  ) : (
+                    <>Thân gửi con <strong style={{ fontWeight: "bold", color: "#0f172a" }}>{selectedReportStudent?.fullName}</strong>,</>
+                  )}
+                </p>
+              )}
 
               {/* Body template text */}
               <div style={{ flexGrow: 1, fontFamily: 'Arial, sans-serif' }}>
@@ -1746,13 +1760,26 @@ export function ReportsClient({
                     signatureName: studentCampusConfig?.directorName || selectedReportStudent?.signatureName || ""
                   }
                 ).split('\n').filter(Boolean).map((para, idx) => {
-                  const isList = /^\s*[\d•\-*]+/.test(para);
+                  const pClean = para.trim();
+                  const isList = /^\s*[\d•\-*]+/.test(pClean);
+                  const isCentred = pClean.toLowerCase().includes("về việc") || pClean.toLowerCase().includes("kính gửi:");
+                  const isDateLine = pClean.toLowerCase().includes("ngày") && pClean.toLowerCase().includes("tháng") && pClean.toLowerCase().includes("năm") && (pClean.toLowerCase().includes("đà nẵng") || pClean.toLowerCase().includes("hà nội") || pClean.toLowerCase().includes("hồ chí minh"));
+                  
+                  if (isDateLine) return null;
+                  if (isCentred) {
+                    return (
+                      <p key={idx} style={{ textAlign: "center", fontWeight: "bold", margin: "0 0 8px 0", fontSize: "13pt", textIndent: 0 }}>
+                        {pClean}
+                      </p>
+                    );
+                  }
+                  
                   return (
                     <p key={idx} style={isList ? { paddingLeft: "24px", fontWeight: "bold", color: "#374151", margin: "4px 0", fontSize: "13pt" } : { textIndent: "10mm", margin: "0 0 4px 0", textAlign: "justify", lineBreak: "auto", lineHeight: "1.3", fontSize: "13pt" }}>
-                      {para}
+                      {pClean}
                     </p>
                   );
-                })}
+                }).filter(Boolean)}
               </div>
             </div>
 
@@ -2238,13 +2265,15 @@ export function ReportsClient({
                   </div>
 
                   {/* Greeting */}
-                  <p className="text-[10px] italic mb-2 text-slate-700 font-bold">
-                    {rcReportType === 'thu_moi' ? (
-                      <>Kính gửi Quý Phụ huynh và bé <strong className="font-bold not-italic">Nguyễn Minh An</strong>,</>
-                    ) : (
-                      <>Thân gửi con <strong className="font-bold not-italic">Nguyễn Minh An</strong>,</>
-                    )}
-                  </p>
+                  {rcReportType !== 'cam_ket_hoc_tap' && (
+                    <p className="text-[10px] italic mb-2 text-slate-700 font-bold">
+                      {rcReportType === 'thu_moi' ? (
+                        <>Kính gửi Quý Phụ huynh và bé <strong className="font-bold not-italic">Nguyễn Minh An</strong>,</>
+                      ) : (
+                        <>Thân gửi con <strong className="font-bold not-italic">Nguyễn Minh An</strong>,</>
+                      )}
+                    </p>
+                  )}
 
                   {/* Template text */}
                   <div className="space-y-3 py-2 text-[10px] leading-relaxed text-slate-600 text-justify font-serif max-h-[300px] overflow-y-auto pr-1">
@@ -2252,13 +2281,26 @@ export function ReportsClient({
                       rcContent || "",
                       { fullName: "Nguyễn Minh An", grade: "1", surveyFormType: "Chất lượng cao", academicYear: "2025-2026", hocKy: "1" }
                     ).split('\n').filter(Boolean).map((para, idx) => {
-                      const isList = /^\s*[\d•\-*]+/.test(para);
+                      const pClean = para.trim();
+                      const isList = /^\s*[\d•\-*]+/.test(pClean);
+                      const isCentred = pClean.toLowerCase().includes("về việc") || pClean.toLowerCase().includes("kính gửi:");
+                      const isDateLine = pClean.toLowerCase().includes("ngày") && pClean.toLowerCase().includes("tháng") && pClean.toLowerCase().includes("năm") && (pClean.toLowerCase().includes("đà nẵng") || pClean.toLowerCase().includes("hà nội") || pClean.toLowerCase().includes("hồ chí minh"));
+                      
+                      if (isDateLine) return null;
+                      if (isCentred) {
+                        return (
+                          <p key={idx} className="text-center font-bold mb-1" style={{ textIndent: 0, fontSize: "10px" }}>
+                            {pClean}
+                          </p>
+                        );
+                      }
+                      
                       return (
                         <p key={idx} className={isList ? "pl-4 font-semibold" : "indent-4"} style={isList ? {} : { textIndent: "1cm" }}>
-                          {para}
+                          {pClean}
                         </p>
                       );
-                    })}
+                    }).filter(Boolean)}
                   </div>
                 </div>
 
