@@ -2765,6 +2765,7 @@ export function ReportsClient({
                       <th className="px-6 py-4 text-center">Phái</th>
                       <th className="px-6 py-4">Hệ Đăng ký</th>
                       <th className="px-6 py-4">Kết quả Phê duyệt</th>
+                      <th className="px-6 py-4">Môn Cam kết</th>
                       <th className="px-6 py-4 text-center w-[230px]">In / Xuất mẫu thư</th>
                     </tr>
                   </thead>
@@ -2803,6 +2804,17 @@ export function ReportsClient({
                               <span className={`w-1 h-1 rounded-full ${isPassed ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`}></span>
                               {result}
                             </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex flex-wrap gap-1 max-w-[200px]">
+                              {Array.isArray(s.committedSubjects) && s.committedSubjects.length > 0 ? (
+                                s.committedSubjects.map((sub: string, subIdx: number) => (
+                                  <span key={subIdx} className="px-2 py-1 bg-amber-50 text-amber-700 rounded-md text-[10px] font-black border border-amber-200/60 shadow-sm">{sub}</span>
+                                ))
+                              ) : (
+                                <span className="text-slate-400 font-medium text-[10px]">—</span>
+                              )}
+                            </div>
                           </td>
                           <td className="px-6 py-3">
                             <div className="flex gap-2 justify-center">
