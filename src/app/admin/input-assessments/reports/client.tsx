@@ -1788,18 +1788,22 @@ export function ReportsClient({
     );
     // Split the paragraph if "Kính mong Phụ huynh..." is in the middle of a paragraph
     let paragraphs: string[] = [];
-    fullContent.split('\n').filter(Boolean).forEach(p => {
-      const idx = p.toLowerCase().indexOf("kính mong phụ huynh đồng hành");
-      if (idx !== -1 && idx > 0) {
-        paragraphs.push(p.substring(0, idx).trim());
-        paragraphs.push(p.substring(idx).trim());
+    fullContent.replace(/\u00a0/g, ' ').split('\n').filter(Boolean).forEach(p => {
+      const pNorm = p.normalize('NFC');
+      const regex = /kính\s+mong\s+phụ\s+huynh\s+đồng\s+hành/i;
+      const match = pNorm.match(regex);
+      if (match && match.index !== undefined && match.index > 0) {
+        paragraphs.push(p.substring(0, match.index).trim());
+        paragraphs.push(p.substring(match.index).trim());
       } else {
         paragraphs.push(p.trim());
       }
     });
 
     const isCommitmentReport = isCommitment || (studentCampusConfig?.title?.toUpperCase().includes("CAM KẾT"));
-    const splitIndex = isCommitmentReport ? paragraphs.findIndex(p => p.toLowerCase().includes("kính mong phụ huynh đồng hành")) : -1;
+    const splitIndex = isCommitmentReport ? paragraphs.findIndex(p => {
+      return /kính\s+mong\s+phụ\s+huynh\s+đồng\s+hành/i.test(p.normalize('NFC'));
+    }) : -1;
     const isSplit = isCommitmentReport && splitIndex !== -1;
 
     let page1Paragraphs = isSplit ? paragraphs.slice(0, splitIndex) : paragraphs;
@@ -2360,18 +2364,22 @@ export function ReportsClient({
             );
             
             let tempParagraphs: string[] = [];
-            tempFullText.split('\n').filter(Boolean).forEach(p => {
-              const idx = p.toLowerCase().indexOf("kính mong phụ huynh đồng hành");
-              if (idx !== -1 && idx > 0) {
-                tempParagraphs.push(p.substring(0, idx).trim());
-                tempParagraphs.push(p.substring(idx).trim());
+            tempFullText.replace(/\u00a0/g, ' ').split('\n').filter(Boolean).forEach(p => {
+              const pNorm = p.normalize('NFC');
+              const regex = /kính\s+mong\s+phụ\s+huynh\s+đồng\s+hành/i;
+              const match = pNorm.match(regex);
+              if (match && match.index !== undefined && match.index > 0) {
+                tempParagraphs.push(p.substring(0, match.index).trim());
+                tempParagraphs.push(p.substring(match.index).trim());
               } else {
                 tempParagraphs.push(p.trim());
               }
             });
 
             const isTempCommitment = rcReportType === "cam_ket_hoc_tap";
-            const splitIndexTemp = isTempCommitment ? tempParagraphs.findIndex(p => p.toLowerCase().includes("kính mong phụ huynh đồng hành")) : -1;
+            const splitIndexTemp = isTempCommitment ? tempParagraphs.findIndex(p => {
+              return /kính\s+mong\s+phụ\s+huynh\s+đồng\s+hành/i.test(p.normalize('NFC'));
+            }) : -1;
             const isSplitTemp = isTempCommitment && splitIndexTemp !== -1;
 
             let page1ParagraphsTemp = isSplitTemp ? tempParagraphs.slice(0, splitIndexTemp) : tempParagraphs;
