@@ -1904,7 +1904,7 @@ export function ReportsClient({
           {/* PAGE 1: CONGRATULATIONS & COMMITMENTS LIST */}
           <div className="bg-white rounded-none border border-slate-300 w-[210mm] min-w-[210mm] max-w-[210mm] h-[297mm] min-h-[297mm] p-[18mm_20mm_22mm_20mm] box-border relative flex flex-col justify-start overflow-hidden select-none font-sans text-slate-800 leading-normal" style={{ fontFamily: '"Open Sans", sans-serif' }}>
             {studentCampusConfig?.background && (
-              <img crossOrigin={(studentCampusConfig?.background || "").startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig?.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "110mm", height: "auto", opacity: 0.15, zIndex: 0, pointerEvents: "none" }} />
+              <img crossOrigin={(studentCampusConfig?.background || "").startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig?.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "110mm", height: "auto", opacity: 0.08, zIndex: 0, pointerEvents: "none" }} />
             )}
             <div className="relative z-10 flex flex-col justify-start h-full">
               <div>
@@ -1948,7 +1948,7 @@ export function ReportsClient({
           {/* PAGE 2: EXPECTATIONS & SIGNATURES */}
           <div className="bg-white rounded-none border border-slate-300 w-[210mm] min-w-[210mm] max-w-[210mm] h-[297mm] min-h-[297mm] p-[18mm_20mm_22mm_20mm] box-border relative flex flex-col justify-start overflow-hidden select-none font-sans text-slate-800 leading-normal" style={{ fontFamily: '"Open Sans", sans-serif' }}>
             {studentCampusConfig?.background && (
-              <img crossOrigin={(studentCampusConfig?.background || "").startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig?.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "110mm", height: "auto", opacity: 0.15, zIndex: 0, pointerEvents: "none" }} />
+              <img crossOrigin={(studentCampusConfig?.background || "").startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig?.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "110mm", height: "auto", opacity: 0.08, zIndex: 0, pointerEvents: "none" }} />
             )}
             <div className="relative z-10">
               <div className="header-container" style={{ display: "flex", flexDirection: "column", borderBottom: "1.5px solid #00A6A9", paddingBottom: "8px", marginBottom: "16px" }}>
@@ -2014,7 +2014,7 @@ export function ReportsClient({
         {/* PAGE 1: THE LETTER */}
         <div className={`bg-white rounded-none border border-slate-300 w-[210mm] min-w-[210mm] max-w-[210mm] p-[18mm_20mm_22mm_20mm] box-border relative flex flex-col justify-start select-none font-sans text-slate-800 leading-normal ${isCommitment || studentCampusConfig?.title?.toUpperCase().includes("CAM KẾT") ? 'h-auto min-h-[297mm] overflow-visible' : 'h-[297mm] min-h-[297mm] overflow-hidden'}`} style={{ fontFamily: '"Open Sans", sans-serif' }}>
           {studentCampusConfig?.background && (
-            <img crossOrigin={(studentCampusConfig?.background || "").startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig?.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "110mm", height: "auto", opacity: 0.15, zIndex: 0, pointerEvents: "none" }} />
+            <img crossOrigin={(studentCampusConfig?.background || "").startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig?.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "110mm", height: "auto", opacity: 0.08, zIndex: 0, pointerEvents: "none" }} />
           )}
 
           <div className={`relative z-10 flex flex-col justify-start ${isCommitment || studentCampusConfig?.title?.toUpperCase().includes("CAM KẾT") ? 'h-auto' : 'h-full'}`}>
@@ -2112,7 +2112,7 @@ export function ReportsClient({
         {modalDocList && modalDocList.length > 0 && !isInvitation && !isCommitment && selectedLevel !== "preschool" && (
           <div className="bg-white rounded-none border border-slate-300 w-[210mm] min-w-[210mm] max-w-[210mm] h-[297mm] min-h-[297mm] p-[18mm_20mm_22mm_20mm] box-border relative flex flex-col justify-start overflow-hidden select-none font-sans text-slate-800 leading-normal" style={{ fontFamily: '"Open Sans", sans-serif' }}>
             {studentCampusConfig?.background && (
-              <img crossOrigin={(studentCampusConfig?.background || "").startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig?.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "110mm", height: "auto", opacity: 0.15, zIndex: 0, pointerEvents: "none" }} />
+              <img crossOrigin={(studentCampusConfig?.background || "").startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig?.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "110mm", height: "auto", opacity: 0.08, zIndex: 0, pointerEvents: "none" }} />
             )}
 
             <div className="relative z-10 flex flex-col h-full justify-start">
