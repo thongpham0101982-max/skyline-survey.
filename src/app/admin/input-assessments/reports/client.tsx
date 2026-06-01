@@ -600,26 +600,37 @@ export function ReportsClient({
   };
 
   const saveReportConfig = () => {
-    if (!rcCampusId) return notify("Vui lòng chọn Cơ sở", "err");
-    if (!rcReportType) return notify("Vui lòng chọn Loại báo cáo", "err");
-    
-    const typeKey = selectedLevel === "preschool" 
-      ? rcReportType + "_preschool"
-      : rcReportType + "_" + rcTargetGroup;
+    try {
+      if (!rcCampusId) return notify("Vui lòng chọn Cơ sở", "err");
+      if (!rcReportType) return notify("Vui lòng chọn Loại báo cáo", "err");
+      
+      const typeKey = selectedLevel === "preschool" 
+        ? rcReportType + "_preschool"
+        : rcReportType + "_" + rcTargetGroup;
 
-    const globalData = { title: rcTitle, logo: rcLogo, background: rcBackground, content: rcContent, footer: rcFooter };
-    localStorage.setItem('report_config_global_' + typeKey, JSON.stringify(globalData));
-    localStorage.setItem('report_config_master_logo', rcLogo || "");
-    localStorage.setItem('report_config_master_background', rcBackground || "");
-    localStorage.setItem('report_config_master_footer', rcFooter || "");
-    localStorage.setItem('report_config_master_signature', rcSignature || "");
-    localStorage.setItem('report_config_signature_' + rcCampusId, rcSignature || "");
-    localStorage.setItem('report_config_director_' + rcCampusId, rcDirectorName || "");
-    
-    const campusData = { signature: rcSignature, directorName: rcDirectorName, title: rcTitle, logo: rcLogo, background: rcBackground, content: rcContent, footer: rcFooter };
-    localStorage.setItem('report_config_' + rcCampusId + '_' + typeKey, JSON.stringify(campusData));
-    
-    notify("Lưu cấu hình báo cáo thành công!");
+      const globalData = { title: rcTitle, logo: rcLogo, background: rcBackground, content: rcContent, footer: rcFooter };
+      
+      try {
+        localStorage.setItem('report_config_global_' + typeKey, JSON.stringify(globalData));
+        localStorage.setItem('report_config_master_logo', rcLogo || "");
+        localStorage.setItem('report_config_master_background', rcBackground || "");
+        localStorage.setItem('report_config_master_footer', rcFooter || "");
+        localStorage.setItem('report_config_master_signature', rcSignature || "");
+        localStorage.setItem('report_config_signature_' + rcCampusId, rcSignature || "");
+        localStorage.setItem('report_config_director_' + rcCampusId, rcDirectorName || "");
+        
+        const campusData = { signature: rcSignature, directorName: rcDirectorName, title: rcTitle, logo: rcLogo, background: rcBackground, content: rcContent, footer: rcFooter };
+        localStorage.setItem('report_config_' + rcCampusId + '_' + typeKey, JSON.stringify(campusData));
+      } catch (storageErr) {
+        console.error("Local storage error:", storageErr);
+        return notify("Lỗi trình duyệt (localStorage): " + (storageErr.message || "Không thể ghi vào bộ nhớ"), "err");
+      }
+      
+      notify("Lưu cấu hình báo cáo thành công!");
+    } catch (err) {
+      console.error("Save config error:", err);
+      notify("Lỗi hệ thống: " + (err.message || "Lỗi không xác định"), "err");
+    }
   };
 
   // Student Export Tab States
