@@ -2748,7 +2748,7 @@ export function ReportsClient({
               <button
                 onClick={() => {
                   const csvData = [
-                    ["STT", "Mã HS", "Họ và Tên", "Khối", "Phái", "Hệ Đăng ký", "Kết quả Phê duyệt", "Môn Cam kết", "Ý kiến / Ghi chú Hội đồng"]
+                    ["STT", "Mã HS", "Họ và Tên", "Khối", "Giới tính", "Hệ Đăng ký", "Kết quả Phê duyệt", "Môn Cam kết", "Ý kiến / Ghi chú Hội đồng"]
                   ];
                   filteredStudents.forEach((s, idx) => {
                     const gender = s.gender === "M" || s.gender === "MALE" || s.gender === "Nam" ? "Nam" : s.gender === "F" || s.gender === "FEMALE" || s.gender === "Nữ" ? "Nữ" : "—";
@@ -2821,7 +2821,7 @@ export function ReportsClient({
                       <th className="px-6 py-4">Mã HS</th>
                       <th className="px-6 py-4 pl-4">Họ và Tên</th>
                       <th className="px-6 py-4 text-center">Khối</th>
-                      <th className="px-6 py-4 text-center">Phái</th>
+                      <th className="px-6 py-4 text-center">Giới tính</th>
                       <th className="px-6 py-4">Hệ Đăng ký</th>
                       <th className="px-6 py-4">Kết quả Phê duyệt</th>
                       <th className="px-6 py-4">Môn Cam kết</th>
