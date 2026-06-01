@@ -90,26 +90,13 @@ export async function PUT(req) {
       const result = await (prisma as any).inputAssessmentPeriod.update({
         where: { id },
         data: {
-           name: data.name,
-           description: data.description,
-           assignedUserId: data.assignedUserId || null,
-           startDate: data.startDate ? new Date(data.startDate) : null,
-           endDate: data.endDate ? new Date(data.endDate) : null,
-           status: data.status || "ACTIVE"
-        }
-      });
-      return NextResponse.json(result);
-    }
-    else if (action === "UPDATE_BATCH") {
-      const result = await (prisma as any).inputAssessmentBatch.update({
-        where: { id },
-        data: {
-           name: data.name,
-            startDate: new Date(data.startDate),
-            endDate: new Date(data.endDate),
-            campusId: data.campusId || null,
-            assignedUserId: data.assignedUserId || null,
-            status: data.status,
+           ...(data.name !== undefined && { name: data.name }),
+           ...(data.startDate !== undefined && { startDate: new Date(data.startDate) }),
+           ...(data.endDate !== undefined && { endDate: new Date(data.endDate) }),
+           ...(data.campusId !== undefined && { campusId: data.campusId || null }),
+           ...(data.assignedUserId !== undefined && { assignedUserId: data.assignedUserId || null }),
+           ...(data.status !== undefined && { status: data.status }),
+           ...(data.batchNumber !== undefined && { batchNumber: typeof data.batchNumber === 'string' ? parseInt(data.batchNumber) : data.batchNumber }),
         }
       });
       return NextResponse.json(result);
