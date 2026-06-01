@@ -80,14 +80,23 @@ Thầy cô tại Sky-Line vui mừng chào đón em đến với ngôi trường
 
 Nhà trường hy vọng rằng, với sự tự tin và khát khao học hỏi của mình, em sẽ là một mảnh ghép sắc màu góp phần làm phong phú thêm bức tranh học đường tại Sky-Line. Hãy luôn giữ vững niềm vui thích học hỏi và khát khao khám phá thế giới xung quanh em nhé!`;
 
-const defaultCamKet = `Hệ thống Giáo dục Sky-Line chúc mừng em đã vượt qua kỳ khảo sát đầu vào lớp {{grade}} học kì {{hocKy}} hệ {{surveyFormType}} năm học {{academicYear}}. Để tạo điều kiện tốt nhất cho hành trình phát triển toàn diện của học sinh tại trường, Nhà trường và Gia đình cùng thống nhất ký kết Bản Cam kết học tập này.
+const defaultCamKet = `Về việc tăng cường kiến thức trong quá trình học tập
 
-Gia đình cam kết thực hiện đầy đủ các nội dung sau:
-1. Đồng hành cùng con trong các hoạt động rèn luyện thói quen tự lập, nề nếp sinh hoạt và học tập.
-2. Phối hợp chặt chẽ với giáo viên chủ nhiệm trong việc theo dõi sức khỏe, tâm lý và học tập của con.
-3. Tham gia đầy đủ các chương trình hội thảo, hoạt động trải nghiệm dành cho Phụ huynh và học sinh do nhà trường tổ chức.
+Kính gửi: Phụ huynh học sinh {{fullName}}
 
-Bản cam kết được thực hiện dưới sự đồng thuận của cả hai bên và có giá trị kể từ ngày ký.`;
+Hệ thống Giáo dục Sky-Line cảm ơn Quý Phụ huynh đã tin tưởng lựa chọn Sky-Line là nơi gửi gắm con em mình và sẽ đồng hành cùng Nhà trường trong thời gian sắp tới để tạo dựng một môi trường học tập văn minh, hiện đại và thân thiện cho các em học sinh.
+
+Thông qua khảo sát đầu vào, Nhà trường đã nắm bắt ban đầu tính cách và khả năng của học sinh để xây dựng phương pháp giáo dục phù hợp. Với kết quả khảo sát năng lực đầu vào của em {{fullName}}, nhà trường đồng ý tiếp nhận em trong năm học {{academicYear}} và học tập tại {{admissionCampus}}. Nhưng để đánh giá đúng năng lực của học sinh nên nhà trường sẽ đánh giá sau 01 năm học tập tại trường. Thời gian đến, rất mong sự hỗ trợ, đồng hành của Phụ huynh cùng sự cố gắng của học sinh giúp các em cải thiện kết quả học tập.
+
+Ban Giám hiệu {{schoolName}} mong muốn Phụ huynh cùng cam kết những điều kiện sau khi học sinh {{fullName}} theo học tại Sky-Line:
+
+1. Cùng phối hợp, đồng hành cùng Nhà trường tạo môi trường học tập tốt nhất cho học sinh trong việc giáo dục và rèn luyện của học sinh theo đúng Quy định.
+
+2. Học sinh tham gia các khóa học bổ sung kiến thức do Nhà trường tổ chức đối với các môn học có kết quả học tập chưa cao (chú ý môn {{committedSubjects}}) và đồng hành cùng học sinh tự rèn luyện tại nhà nhằm tăng cường, bổ sung thêm kiến thức, kỹ năng đảm bảo yêu cầu học tập các môn học tại Sky-Line.
+
+Nhà trường sẽ tiến hành đánh giá toàn diện năng lực, rèn luyện của học sinh {{fullName}} và sẽ chính thức tiếp nhận học sinh nếu đạt các yêu cầu về năng lực, rèn luyện. Kính mong Phụ huynh đồng hành và cam kết cùng nhà trường trong việc giáo dục để kết quả học tập, rèn luyện của học sinh đạt được như kì vọng.
+
+Trân trọng./.`;
 
 const getCampusAndSchoolName = (rawCampusCode: string) => {
   const clean = (rawCampusCode || "").toUpperCase();
