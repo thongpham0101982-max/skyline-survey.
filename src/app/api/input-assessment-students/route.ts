@@ -411,10 +411,9 @@ export async function PUT(req) {
     if (!student) return NextResponse.json({ error: "Student not found" }, { status: 404 });
 
     const isBatchLocked = student.batch?.status === "LOCKED" || student.batch?.status === "CLOSED";
-    const isGDCSUser = ["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole);
-
-    if (isBatchLocked && isGDCSUser) {
-      return NextResponse.json({ error: "Đợt khảo sát đã bị khóa. Giám đốc cơ sở không có quyền điều chỉnh!" }, { status: 403 });
+    // Block everyone if batch is locked (Hard lock feature)
+    if (isBatchLocked) {
+      return NextResponse.json({ error: "Đợt khảo sát này ĐÃ BỊ KHÓA! Mọi tính năng nhập, chỉnh sửa, xét duyệt đều bị vô hiệu hóa." }, { status: 403 });
     }
     
     const result = await (prisma as any).inputAssessmentStudent.update({

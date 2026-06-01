@@ -1700,10 +1700,16 @@ export async function PUT(req) {
     const { id, data } = body;
 
     const student = await (prisma as any).preschoolInputAssessmentStudent.findUnique({
-      where: { id }
+      where: { id },
+      include: { batch: true }
     });
 
     if (!student) return NextResponse.json({ error: "Student not found" }, { status: 404 });
+
+    const isBatchLocked = student.batch?.status === "LOCKED" || student.batch?.status === "CLOSED";
+    if (isBatchLocked) {
+      return NextResponse.json({ error: "Đợt khảo sát này ĐÃ BỊ KHÓA! Mọi tính năng nhập, chỉnh sửa, xét duyệt đều bị vô hiệu hóa." }, { status: 403 });
+    }
     
     const result = await (prisma as any).preschoolInputAssessmentStudent.update({
       where: { id },

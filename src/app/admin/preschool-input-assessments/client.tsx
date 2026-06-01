@@ -2748,7 +2748,33 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                     <td className="p-4"><span className="text-sm font-semibold text-slate-700">{baseName}</span></td>
                                     <td className="p-4"><span className="text-xs text-slate-500">{campus?.campusName || "Tất cả"}</span></td>
                                     <td className="p-4"><span className="text-xs text-slate-500">{b.startDate?.slice(0,10)} → {b.endDate?.slice(0,10)}</span></td>
-                                    <td className="p-4"><Badge s={b.status} /></td>
+                                    <td className="p-4"><div className="flex items-center gap-2">
+                                       <button
+                                         onClick={async () => {
+                                           const newStatus = b.status === "ACTIVE" ? "LOCKED" : "ACTIVE";
+                                           try {
+                                             const res = await fetch(b.isPreschool || true ? "/api/preschool-input-assessments" : "/api/input-assessments", {
+                                               method: "PUT",
+                                               headers: { "Content-Type": "application/json" },
+                                               body: JSON.stringify({ action: "UPDATE_BATCH", id: b.id, data: { status: newStatus } })
+                                             });
+                                             if (res.ok) { fetchPeriods(); }
+                                             else { const d = await res.json(); alert(d.error || "Lỗi cập nhật"); }
+                                           } catch(e) { alert("Lỗi mạng"); }
+                                         }}
+                                         className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 ${
+                                           b.status === "ACTIVE" ? "bg-emerald-500" : "bg-slate-300"
+                                         }`}
+                                         title={b.status === "ACTIVE" ? "Đang mở (Click để Khóa)" : "Đã khóa (Click để Mở)"}
+                                       >
+                                         <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                           b.status === "ACTIVE" ? "translate-x-4" : "translate-x-0"
+                                         }`} />
+                                       </button>
+                                       <span className={`text-[10px] font-black uppercase tracking-widest ${b.status === "ACTIVE" ? "text-emerald-600" : "text-slate-500"}`}>
+                                         {b.status === "ACTIVE" ? "ON" : "OFF"}
+                                       </span>
+                                     </div></td>
                                     <td className="p-4 text-right"><div className="flex justify-end gap-1"><button onClick={() => openEditBatch(b)} className="p-2 text-slate-300 hover:text-violet-600 hover:bg-violet-50 rounded-lg"><Edit2 className="w-4 h-4" /></button><button onClick={() => setConfirm({ msg: `Xóa đợt #${b.batchNumber}?`, fn: () => doDeleteBatch(b.id) })} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg"><Trash2 className="w-4 h-4" /></button></div></td>
                                   </tr>
                                 );
