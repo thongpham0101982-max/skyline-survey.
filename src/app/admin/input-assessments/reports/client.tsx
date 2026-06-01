@@ -1821,7 +1821,7 @@ export function ReportsClient({
             {studentCampusConfig?.background && (
               <img crossOrigin={(studentCampusConfig?.background || "").startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig?.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "110mm", height: "auto", opacity: 0.04, zIndex: 0, pointerEvents: "none" }} />
             )}
-            <div className="relative z-10 flex flex-col justify-between h-full">
+            <div className="relative z-10 flex flex-col justify-start h-full">
               <div>
                 <div className="header-container" style={{ display: "flex", flexDirection: "column", borderBottom: "1.5px solid #00A6A9", paddingBottom: "8px", marginBottom: "16px" }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -1881,14 +1881,12 @@ export function ReportsClient({
                     </h4>
                   </div>
                 </div>
-                <h2 style={{ textAlign: "center", fontSize: "22pt", fontWeight: "bold", color: "#0f172a", textTransform: "uppercase", letterSpacing: "2px", margin: "12px 0 16px 0" }}>
-                  {studentCampusConfig?.title} (TIẾP THEO)
-                </h2>
+
                 <div style={{ flexGrow: 1, fontFamily: '"Open Sans", sans-serif' }}>
                   {buildParagraphElement(page2Paragraphs)}
                 </div>
               </div>
-              <div style={{ width: "100%", display: "flex", justifyContent: "space-between", marginTop: "8px", paddingTop: "2px", pageBreakInside: "avoid", breakInside: "avoid" }}>
+              <div style={{ width: "100%", display: "flex", justifyContent: "space-between", marginTop: "24px", paddingTop: "2px", pageBreakInside: "avoid", breakInside: "avoid" }}>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", width: "45%" }}>
                   <p style={{ fontSize: "11pt", fontWeight: "bold", textTransform: "uppercase", margin: 0, textAlign: "center", textIndent: 0, color: "#475569" }}>ĐẠI DIỆN GIA ĐÌNH</p>
                   <p style={{ fontSize: "9pt", fontStyle: "italic", color: "#64748b", marginTop: "1px", textIndent: 0 }}>(Ký và ghi rõ họ tên)</p>
@@ -2405,7 +2403,7 @@ export function ReportsClient({
                   />
 
                   {/* Top info */}
-                  <div className={`relative z-10 space-y-4 flex flex-col justify-between ${rcReportType === 'cam_ket_hoc_tap' && !isSplitTemp ? 'h-auto' : 'h-full'}`}>
+                  <div className={`relative z-10 space-y-4 flex flex-col ${rcReportType === 'cam_ket_hoc_tap' && previewPage === 2 ? 'justify-start' : 'justify-between'} ${rcReportType === 'cam_ket_hoc_tap' && !isSplitTemp ? 'h-auto' : 'h-full'}`}>
                     {(previewPage === 2 && selectedLevel === "high" && rcReportType === "thu_chuc_mung") || (previewPage === 2 && rcReportType === "cam_ket_hoc_tap" && isSplitTemp) ? (
                       rcReportType === "thu_chuc_mung" ? (
                         /* PAGE 2: CHECKLIST PREVIEW */
@@ -2472,11 +2470,7 @@ export function ReportsClient({
                                 {selectedLevel === "preschool" ? "TRƯỜNG MẦM NON SKY-LINE" : "TRƯỜNG TH, THCS, THPT SKY-LINE"}
                               </h4>
                             </div>
-                            <div className="text-center mb-3">
-                              <h2 className="text-xs font-black tracking-widest text-indigo-950 uppercase" style={{ fontFamily: '"Open Sans", sans-serif' }}>
-                                {rcTitle} (TIẾP THEO)
-                              </h2>
-                            </div>
+
                             <div className="space-y-3 py-2 text-[10px] leading-relaxed text-slate-600 text-justify font-sans pr-1">
                               {page2ParagraphsTemp.map((para, idx) => {
                                 const pClean = para.trim();
@@ -2490,7 +2484,7 @@ export function ReportsClient({
                               }).filter(Boolean)}
                             </div>
                           </div>
-                          <div className="grid grid-cols-2 gap-4 text-center mt-auto">
+                          <div className="grid grid-cols-2 gap-4 text-center mt-6">
                             <div className="space-y-1">
                               <p className="text-[7px] font-bold text-slate-500 uppercase tracking-wider">ĐẠI DIỆN GIA ĐÌNH</p>
                               <div className="h-10 flex items-end justify-center">
