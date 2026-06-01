@@ -1260,11 +1260,10 @@ export function ReportsClient({
           '.print-page {' +
             'font-family: "Times New Roman", Times, serif;' +
             'width: 210mm;' +
-            'height: 296.8mm;' +
+            (isCommitmentReport ? 'height: auto; min-height: 296.8mm; overflow: visible;' : 'height: 296.8mm; overflow: hidden;') +
             'padding: 12.7mm 15mm 48mm 15mm;' +
             'box-sizing: border-box;' +
             'position: relative;' +
-            'overflow: hidden;' +
             'background-color: #ffffff;' +
           '}' +
           '.print-page + .print-page {' +
@@ -1709,7 +1708,7 @@ export function ReportsClient({
     return (
       <>
         {/* PAGE 1: THE LETTER */}
-        <div className="bg-white rounded-none border border-slate-300 w-[210mm] min-w-[210mm] max-w-[210mm] h-[297mm] min-h-[297mm] p-[18mm_20mm_22mm_20mm] box-border relative flex flex-col justify-start overflow-hidden select-none font-sans text-slate-800 leading-normal" style={{ fontFamily: 'Arial, sans-serif' }}>
+        <div className={`bg-white rounded-none border border-slate-300 w-[210mm] min-w-[210mm] max-w-[210mm] p-[18mm_20mm_22mm_20mm] box-border relative flex flex-col justify-start select-none font-sans text-slate-800 leading-normal ${isCommitment || studentCampusConfig?.title?.toUpperCase().includes("CAM KẾT") ? 'h-auto min-h-[297mm] overflow-visible' : 'h-[297mm] min-h-[297mm] overflow-hidden'}`} style={{ fontFamily: 'Arial, sans-serif' }}>
           
           {/* Watermark */}
           {studentCampusConfig?.background && (
@@ -1717,7 +1716,7 @@ export function ReportsClient({
           )}
 
           {/* Content wrapped */}
-          <div className="relative z-10 flex flex-col h-full justify-start">
+          <div className={`relative z-10 flex flex-col justify-start ${isCommitment || studentCampusConfig?.title?.toUpperCase().includes("CAM KẾT") ? 'h-auto' : 'h-full'}`}>
             <div>
               {/* Header logo */}
               <div className="header-container" style={{ display: "flex", flexDirection: "column", borderBottom: "1.5px solid #00A6A9", paddingBottom: "8px", marginBottom: "16px" }}>
@@ -2172,7 +2171,7 @@ export function ReportsClient({
                 </div>
               )}
             </div>
-            <div className="bg-white rounded-2xl border border-slate-200 p-10 shadow-lg flex flex-col justify-between w-full aspect-[210/297] relative overflow-hidden">
+            <div className={`bg-white rounded-2xl border border-slate-200 p-10 shadow-lg flex flex-col justify-between w-full relative ${rcReportType === 'cam_ket_hoc_tap' ? 'aspect-auto overflow-visible h-auto' : 'aspect-[210/297] overflow-hidden'}`}>
               {/* Background Watermark for Preview */}
               <div 
                 className="absolute pointer-events-none"
@@ -2191,7 +2190,7 @@ export function ReportsClient({
               />
 
               {/* Top info */}
-              <div className="relative z-10 space-y-4 flex flex-col h-full justify-between">
+              <div className={`relative z-10 space-y-4 flex flex-col justify-between ${rcReportType === 'cam_ket_hoc_tap' ? 'h-auto' : 'h-full'}`}>
                 {previewPage === 2 && selectedLevel === "high" && rcReportType === "thu_chuc_mung" ? (
                   /* PAGE 2: CHECKLIST PREVIEW */
                   <div>
@@ -2276,7 +2275,7 @@ export function ReportsClient({
                   )}
 
                   {/* Template text */}
-                  <div className="space-y-3 py-2 text-[10px] leading-relaxed text-slate-600 text-justify font-serif max-h-[300px] overflow-y-auto pr-1">
+                  <div className={`space-y-3 py-2 text-[10px] leading-relaxed text-slate-600 text-justify font-serif pr-1 ${rcReportType === 'cam_ket_hoc_tap' ? '' : 'max-h-[300px] overflow-y-auto'}`}>
                     {renderTemplate(
                       rcContent || "",
                       { fullName: "Nguyễn Minh An", grade: "1", surveyFormType: "Chất lượng cao", academicYear: "2025-2026", hocKy: "1" }
