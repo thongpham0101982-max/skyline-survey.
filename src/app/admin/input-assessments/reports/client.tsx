@@ -2753,21 +2753,27 @@ export function ReportsClient({
                           </td>
                           <td className="px-6 py-3">
                             <div className="flex gap-2 justify-center">
-                              <button
-                                onClick={() => { setIsInvitation(false); setIsCommitment(false); setSelectedReportStudent(s); setIsPrintModalOpen(true); }}
-                                className="px-3.5 py-2 text-[11px] font-black text-emerald-700 bg-emerald-50 border border-emerald-100/80 rounded-xl hover:bg-emerald-500 hover:text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer active:scale-95 group/btn"
-                              >
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 group-hover/btn:text-white transition-colors" /> 
-                                Chúc mừng
-                              </button>
-                              {selectedLevel !== "preschool" && (result.includes("cam kết") || result.includes("Đạt cam kết")) && (
-                                <button
-                                  onClick={() => { setIsInvitation(false); setIsCommitment(true); setSelectedReportStudent(s); setIsPrintModalOpen(true); }}
-                                  className="px-3.5 py-2 text-[11px] font-black text-amber-700 bg-amber-50 border border-amber-100/80 rounded-xl hover:bg-amber-500 hover:text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer active:scale-95 group/btn"
-                                >
-                                  <PenLine className="w-3.5 h-3.5 text-amber-600 group-hover/btn:text-white transition-colors" /> 
-                                  Cam kết
-                                </button>
+                              {isPassed ? (
+                                <>
+                                  <button
+                                    onClick={() => { setIsInvitation(false); setIsCommitment(false); setSelectedReportStudent(s); setIsPrintModalOpen(true); }}
+                                    className="px-3.5 py-2 text-[11px] font-black text-emerald-700 bg-emerald-50 border border-emerald-100/80 rounded-xl hover:bg-emerald-500 hover:text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer active:scale-95 group/btn"
+                                  >
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 group-hover/btn:text-white transition-colors" /> 
+                                    Chúc mừng
+                                  </button>
+                                  {selectedLevel !== "preschool" && (result.includes("cam kết") || result.includes("Đạt cam kết")) && (
+                                    <button
+                                      onClick={() => { setIsInvitation(false); setIsCommitment(true); setSelectedReportStudent(s); setIsPrintModalOpen(true); }}
+                                      className="px-3.5 py-2 text-[11px] font-black text-amber-700 bg-amber-50 border border-amber-100/80 rounded-xl hover:bg-amber-500 hover:text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer active:scale-95 group/btn"
+                                    >
+                                      <PenLine className="w-3.5 h-3.5 text-amber-600 group-hover/btn:text-white transition-colors" /> 
+                                      Cam kết
+                                    </button>
+                                  )}
+                                </>
+                              ) : (
+                                <span className="text-[10px] font-bold text-slate-400">—</span>
                               )}
                             </div>
                           </td>
