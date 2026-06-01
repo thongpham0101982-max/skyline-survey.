@@ -128,12 +128,24 @@ const getCampusAndSchoolName = (rawCampusCode: string) => {
   return { actualCampusName, schoolNameFull };
 };
 
+const extractCommittedSubjects = (student: any) => {
+  if (Array.isArray(student?.committedSubjects) && student.committedSubjects.length > 0) {
+    return student.committedSubjects;
+  }
+  const cleanNote = student?.directorNote || "";
+  const match = cleanNote.match(/^Môn cam kết: \[(.*?)\]/);
+  if (match && match[1]) {
+    return match[1].split(", ");
+  }
+  return [];
+};
+
+
 
 const renderTemplate = (content: string, student: any) => {
   if (!content) return "";
-  const comSubs = Array.isArray(student?.committedSubjects) 
-    ? student.committedSubjects.join(", ") 
-    : (student?.committedSubjects || "");
+  const extSubs1 = extractCommittedSubjects(student);
+  const comSubs = extSubs1.length > 0 ? extSubs1.join(", ") : "";
     
   const { actualCampusName, schoolNameFull } = getCampusAndSchoolName(student?.admissionCampus);
 
@@ -1233,9 +1245,8 @@ export function ReportsClient({
     const rawGrade = student?.grade || "1";
     const gradeMatch = rawGrade.toString().match(/d+/);
     const numericGrade = gradeMatch ? gradeMatch[0] : rawGrade;
-    const comSubs = Array.isArray(student?.committedSubjects) 
-      ? student.committedSubjects.join(", ") 
-      : (student?.committedSubjects || "");
+    const extSubs2 = extractCommittedSubjects(student);
+    const comSubs = extSubs2.length > 0 ? extSubs2.join(", ") : "";
       
     const { actualCampusName, schoolNameFull } = getCampusAndSchoolName(student?.admissionCampus);
 
@@ -2807,8 +2818,8 @@ export function ReportsClient({
                           </td>
                           <td className="px-6 py-4">
                             <div className="flex flex-wrap gap-1 max-w-[200px]">
-                              {Array.isArray(s.committedSubjects) && s.committedSubjects.length > 0 ? (
-                                s.committedSubjects.map((sub: string, subIdx: number) => (
+                              {extractCommittedSubjects(s).length > 0 ? (
+                                extractCommittedSubjects(s).map((sub: string, subIdx: number) => (
                                   <span key={subIdx} className="px-2 py-1 bg-amber-50 text-amber-700 rounded-md text-[10px] font-black border border-amber-200/60 shadow-sm">{sub}</span>
                                 ))
                               ) : (
