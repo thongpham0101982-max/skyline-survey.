@@ -128,6 +128,12 @@ const getCampusAndSchoolName = (rawCampusCode: string) => {
   return { actualCampusName, schoolNameFull };
 };
 
+const extractCleanNote = (student: any) => {
+  let cleanNote = student?.directorNote || "";
+  cleanNote = cleanNote.replace(/^Môn cam kết: \[(.*?)\](?:\r?\n\r?\n)?/, "");
+  return cleanNote.trim();
+};
+
 const extractCommittedSubjects = (student: any) => {
   if (Array.isArray(student?.committedSubjects) && student.committedSubjects.length > 0) {
     return student.committedSubjects;
@@ -2737,6 +2743,48 @@ export function ReportsClient({
             </div>
 
             {/* Search Input */}
+                        <div className="flex flex-col w-full md:w-auto">
+              <span className="text-[9px] font-black uppercase text-transparent tracking-wider mb-1.5 ml-1 select-none">Xuất</span>
+              <button
+                onClick={() => {
+                  const csvData = [
+                    ["STT", "Mã HS", "Họ và Tên", "Khối", "Phái", "Hệ Đăng ký", "Kết quả Phê duyệt", "Môn Cam kết", "Ý kiến / Ghi chú Hội đồng"]
+                  ];
+                  filteredStudents.forEach((s, idx) => {
+                    const gender = s.gender === "M" || s.gender === "MALE" || s.gender === "Nam" ? "Nam" : s.gender === "F" || s.gender === "FEMALE" || s.gender === "Nữ" ? "Nữ" : "—";
+                    const result = s.admissionResult || s.devAssessmentResult || "Chưa duyệt";
+                    const comSubs = extractCommittedSubjects(s).join(", ");
+                    const cleanNote = extractCleanNote(s);
+                    csvData.push([
+                      (idx + 1).toString(),
+                      s.studentCode || "—",
+                      s.fullName || "",
+                      s.grade ? `K${s.grade}` : "—",
+                      gender,
+                      s.surveyFormType || "—",
+                      result,
+                      comSubs,
+                      cleanNote.replace(/\n/g, " ")
+                    ]);
+                  });
+                  const csvContent = "\uFEFF" + csvData.map(e => e.map(item => `"${(item||'').replace(/"/g, '""')}"`).join(",")).join("\n");
+                  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                  const url = URL.createObjectURL(blob);
+                  const link = document.createElement("a");
+                  link.setAttribute("href", url);
+                  link.setAttribute("download", "DanhSachHocSinh.csv");
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                }}
+                className="w-full md:w-auto px-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl font-bold text-xs uppercase tracking-wider shadow-sm transition-all flex justify-center items-center gap-2 border border-indigo-100 whitespace-nowrap"
+              >
+                <Download className="w-4 h-4"/>
+                Xuất File
+              </button>
+            </div>
+
+            {/* Search Input */}
             <div className="flex flex-col w-full md:w-72">
               <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider mb-1.5 ml-1">Tìm học sinh</span>
               <div className="relative">
@@ -2777,6 +2825,7 @@ export function ReportsClient({
                       <th className="px-6 py-4">Hệ Đăng ký</th>
                       <th className="px-6 py-4">Kết quả Phê duyệt</th>
                       <th className="px-6 py-4">Môn Cam kết</th>
+                      <th className="px-6 py-4">Ý kiến / Ghi chú Hội đồng</th>
                       <th className="px-6 py-4 text-center w-[230px]">In / Xuất mẫu thư</th>
                     </tr>
                   </thead>
@@ -2826,6 +2875,9 @@ export function ReportsClient({
                                 <span className="text-slate-400 font-medium text-[10px]">—</span>
                               )}
                             </div>
+                          </td>
+                          <td className="px-6 py-4 text-xs font-medium text-slate-600 whitespace-pre-line max-w-[200px]">
+                            {extractCleanNote(s) || <span className="text-slate-400">—</span>}
                           </td>
                           <td className="px-6 py-3">
                             <div className="flex gap-2 justify-center">
