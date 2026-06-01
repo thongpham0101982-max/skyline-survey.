@@ -767,9 +767,17 @@ export function ReportsClient({
 
       const baseKey = isInvitation ? 'thu_moi' : isCommitment ? 'cam_ket_hoc_tap' : 'thu_chuc_mung';
       const typeKey = selectedLevel === "preschool" ? baseKey + "_preschool" : baseKey + "_" + studentGroup;
+      const fallbackTypeKey = selectedLevel === "preschool" ? baseKey + "_preschool" : baseKey + "_all";
 
-      const savedCampus = localStorage.getItem('report_config_' + targetCampus.id + '_' + typeKey);
-      const savedGlobal = localStorage.getItem('report_config_global_' + typeKey);
+      let savedCampus = localStorage.getItem('report_config_' + targetCampus.id + '_' + typeKey);
+      let savedGlobal = localStorage.getItem('report_config_global_' + typeKey);
+
+      if (!savedGlobal) {
+        savedGlobal = localStorage.getItem('report_config_global_' + fallbackTypeKey);
+      }
+      if (!savedCampus) {
+        savedCampus = localStorage.getItem('report_config_' + targetCampus.id + '_' + fallbackTypeKey);
+      }
 
       let campusData: any = {};
       let globalData: any = {};
@@ -1056,9 +1064,17 @@ export function ReportsClient({
 
       const baseKey = 'thu_chuc_mung';
       const typeKey = selectedLevel === "preschool" ? baseKey + "_preschool" : baseKey + "_" + studentGroup;
+      const fallbackTypeKey = selectedLevel === "preschool" ? baseKey + "_preschool" : baseKey + "_all";
 
-      const savedCampus = localStorage.getItem('report_config_' + targetCampus.id + '_' + typeKey);
-      const savedGlobal = localStorage.getItem('report_config_global_' + typeKey);
+      let savedCampus = localStorage.getItem('report_config_' + targetCampus.id + '_' + typeKey);
+      let savedGlobal = localStorage.getItem('report_config_global_' + typeKey);
+
+      if (!savedGlobal) {
+        savedGlobal = localStorage.getItem('report_config_global_' + fallbackTypeKey);
+      }
+      if (!savedCampus) {
+        savedCampus = localStorage.getItem('report_config_' + targetCampus.id + '_' + fallbackTypeKey);
+      }
 
       let campusData: any = {};
       let globalData: any = {};
