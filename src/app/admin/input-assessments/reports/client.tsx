@@ -1316,7 +1316,7 @@ export function ReportsClient({
             'print-color-adjust: exact !important;' +
           '}' +
           '.print-page {' +
-            'font-family: "Times New Roman", Times, serif;' +
+            'font-family: "Open Sans", sans-serif;' +
             'width: 210mm;' +
             (isCommitmentReport ? 'height: auto; min-height: 296.8mm; overflow: visible;' : 'height: 296.8mm; overflow: hidden;') +
             'padding: 12.7mm 15mm 48mm 15mm;' +
@@ -1763,20 +1763,182 @@ export function ReportsClient({
   }, [selectedReportStudent]);
 
   const renderPrintPages = () => {
+    const fullContent = renderTemplate(
+      studentCampusConfig?.content || "",
+      {
+        ...selectedReportStudent,
+        signatureName: studentCampusConfig?.directorName || selectedReportStudent?.signatureName || ""
+      }
+    );
+    // Split the paragraph if "Kính mong Phụ huynh..." is in the middle of a paragraph
+    let paragraphs: string[] = [];
+    fullContent.split('\n').filter(Boolean).forEach(p => {
+      const idx = p.toLowerCase().indexOf("kính mong phụ huynh đồng hành");
+      if (idx !== -1 && idx > 0) {
+        paragraphs.push(p.substring(0, idx).trim());
+        paragraphs.push(p.substring(idx).trim());
+      } else {
+        paragraphs.push(p.trim());
+      }
+    });
+
+    const isCommitmentReport = isCommitment || (studentCampusConfig?.title?.toUpperCase().includes("CAM KẾT"));
+    const splitIndex = isCommitmentReport ? paragraphs.findIndex(p => p.toLowerCase().includes("kính mong phụ huynh đồng hành")) : -1;
+    const isSplit = isCommitmentReport && splitIndex !== -1;
+
+    let page1Paragraphs = isSplit ? paragraphs.slice(0, splitIndex) : paragraphs;
+    let page2Paragraphs = isSplit ? paragraphs.slice(splitIndex) : [];
+
+    const buildParagraphElement = (paras: string[]) => {
+      return paras.map((para, idx) => {
+        const pClean = para.trim();
+        const isList = /^\s*[\d•\-*]+/.test(pClean);
+        const isCentred = pClean.toLowerCase().includes("về việc") || pClean.toLowerCase().includes("kính gửi:");
+        const isDateLine = pClean.toLowerCase().includes("ngày") && pClean.toLowerCase().includes("tháng") && pClean.toLowerCase().includes("năm") && (pClean.toLowerCase().includes("đà nẵng") || pClean.toLowerCase().includes("hà nội") || pClean.toLowerCase().includes("hồ chí minh"));
+        
+        if (isDateLine) return null;
+        if (isCentred) {
+          return (
+            <p key={idx} style={{ textAlign: "center", fontWeight: "bold", margin: "0 0 8px 0", fontSize: "13pt", textIndent: 0 }}>
+              {pClean}
+            </p>
+          );
+        }
+        
+        return (
+          <p key={idx} style={isList ? { paddingLeft: "24px", fontWeight: "bold", color: "#374151", margin: "4px 0", fontSize: "13pt" } : { textIndent: "10mm", margin: "0 0 4px 0", textAlign: "justify", lineBreak: "auto", lineHeight: "1.3", fontSize: "13pt" }}>
+            {pClean}
+          </p>
+        );
+      }).filter(Boolean);
+    };
+
+    if (isSplit) {
+      return (
+        <>
+          {/* PAGE 1: CONGRATULATIONS & COMMITMENTS LIST */}
+          <div className="bg-white rounded-none border border-slate-300 w-[210mm] min-w-[210mm] max-w-[210mm] h-[297mm] min-h-[297mm] p-[18mm_20mm_22mm_20mm] box-border relative flex flex-col justify-start overflow-hidden select-none font-sans text-slate-800 leading-normal" style={{ fontFamily: '"Open Sans", sans-serif' }}>
+            {studentCampusConfig?.background && (
+              <img crossOrigin={(studentCampusConfig?.background || "").startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig?.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "110mm", height: "auto", opacity: 0.04, zIndex: 0, pointerEvents: "none" }} />
+            )}
+            <div className="relative z-10 flex flex-col justify-between h-full">
+              <div>
+                <div className="header-container" style={{ display: "flex", flexDirection: "column", borderBottom: "1.5px solid #00A6A9", paddingBottom: "8px", marginBottom: "16px" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    {studentCampusConfig?.logo ? (
+                      <img src={studentCampusConfig?.logo} alt="Logo" style={{ maxHeight: "48px", objectFit: "contain" }} />
+                    ) : (
+                      <svg style={{ height: "48px", fill: "#00A6A9" }} viewBox="0 0 260 50"><text x="0" y="38" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="34" letterSpacing="-1">SKY-LINE</text><circle cx="178" cy="26" r="6" /></svg>
+                    )}
+                  </div>
+                  <div style={{ textAlign: "left", marginTop: "4px" }}>
+                    <h4 style={{ fontFamily: '"Open Sans", sans-serif', fontSize: "11pt", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.5px", color: "#1e293b", margin: 0 }}>
+                      {selectedLevel === "preschool" ? "TRƯỜNG MẦM NON SKY-LINE" : "TRƯỜNG TIỂU HỌC, THCS VÀ THPT SKY-LINE"}
+                    </h4>
+                  </div>
+                </div>
+                <h2 style={{ textAlign: "center", fontSize: "22pt", fontWeight: "bold", color: "#0f172a", textTransform: "uppercase", letterSpacing: "2px", margin: "12px 0 16px 0" }}>
+                  {studentCampusConfig?.title}
+                </h2>
+                <div style={{ flexGrow: 1, fontFamily: '"Open Sans", sans-serif' }}>
+                  {buildParagraphElement(page1Paragraphs)}
+                </div>
+              </div>
+            </div>
+            <div className="footer-container" style={{ position: "absolute", bottom: "12mm", left: "20mm", right: "20mm", width: "auto", zIndex: 10 }}>
+              {studentCampusConfig?.footer ? (
+                <img src={studentCampusConfig?.footer} alt="Footer" style={{ width: "100%", maxHeight: "100px", objectFit: "contain" }} />
+              ) : (
+                <div style={{ width: "100%", fontFamily: '"Open Sans", sans-serif', boxSizing: "border-box", textAlign: "left" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", width: "100%" }}>
+                    <span style={{ fontWeight: "bold", color: "#00A6A9", whiteSpace: "nowrap", textTransform: "uppercase", fontSize: "9.5pt", letterSpacing: "0.5px" }}>HỆ THỐNG GIÁO DỤC SKY-LINE</span>
+                    <div style={{ flexGrow: 1, borderTop: "1px solid rgba(0, 166, 169, 0.7)", height: 0, marginTop: "2px" }}></div>
+                    <span style={{ fontWeight: "600", color: "#00A6A9", whiteSpace: "nowrap", textTransform: "lowercase", fontSize: "9pt" }}>www.skylineschool.edu.vn</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* PAGE 2: EXPECTATIONS & SIGNATURES */}
+          <div className="bg-white rounded-none border border-slate-300 w-[210mm] min-w-[210mm] max-w-[210mm] h-[297mm] min-h-[297mm] p-[18mm_20mm_22mm_20mm] box-border relative flex flex-col justify-start overflow-hidden select-none font-sans text-slate-800 leading-normal" style={{ fontFamily: '"Open Sans", sans-serif' }}>
+            {studentCampusConfig?.background && (
+              <img crossOrigin={(studentCampusConfig?.background || "").startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig?.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "110mm", height: "auto", opacity: 0.04, zIndex: 0, pointerEvents: "none" }} />
+            )}
+            <div className="relative z-10 flex flex-col justify-between h-full">
+              <div>
+                <div className="header-container" style={{ display: "flex", flexDirection: "column", borderBottom: "1.5px solid #00A6A9", paddingBottom: "8px", marginBottom: "16px" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    {studentCampusConfig?.logo ? (
+                      <img src={studentCampusConfig?.logo} alt="Logo" style={{ maxHeight: "48px", objectFit: "contain" }} />
+                    ) : (
+                      <svg style={{ height: "48px", fill: "#00A6A9" }} viewBox="0 0 260 50"><text x="0" y="38" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="34" letterSpacing="-1">SKY-LINE</text><circle cx="178" cy="26" r="6" /></svg>
+                    )}
+                  </div>
+                  <div style={{ textAlign: "left", marginTop: "4px" }}>
+                    <h4 style={{ fontFamily: '"Open Sans", sans-serif', fontSize: "11pt", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.5px", color: "#1e293b", margin: 0 }}>
+                      {selectedLevel === "preschool" ? "TRƯỜNG MẦM NON SKY-LINE" : "TRƯỜNG TIỂU HỌC, THCS VÀ THPT SKY-LINE"}
+                    </h4>
+                  </div>
+                </div>
+                <h2 style={{ textAlign: "center", fontSize: "22pt", fontWeight: "bold", color: "#0f172a", textTransform: "uppercase", letterSpacing: "2px", margin: "12px 0 16px 0" }}>
+                  {studentCampusConfig?.title} (TIẾP THEO)
+                </h2>
+                <div style={{ flexGrow: 1, fontFamily: '"Open Sans", sans-serif' }}>
+                  {buildParagraphElement(page2Paragraphs)}
+                </div>
+              </div>
+              <div style={{ width: "100%", display: "flex", justifyContent: "space-between", marginTop: "8px", paddingTop: "2px", pageBreakInside: "avoid", breakInside: "avoid" }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", width: "45%" }}>
+                  <p style={{ fontSize: "11pt", fontWeight: "bold", textTransform: "uppercase", margin: 0, textAlign: "center", textIndent: 0, color: "#475569" }}>ĐẠI DIỆN GIA ĐÌNH</p>
+                  <p style={{ fontSize: "9pt", fontStyle: "italic", color: "#64748b", marginTop: "1px", textIndent: 0 }}>(Ký và ghi rõ họ tên)</p>
+                  <div style={{ height: "45px", display: "flex", alignItems: "flex-end", justifyContent: "center", margin: "2px 0" }}>
+                    <span style={{ fontSize: "10pt", color: "#cbd5e1", fontStyle: "italic" }}>Ký tên</span>
+                  </div>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", width: "45%" }}>
+                  <p style={{ fontSize: "11pt", fontStyle: "italic", color: "#555555", marginBottom: "1px", textAlign: "center", textIndent: 0 }}>{formattedLetterDate}</p>
+                  <p style={{ fontSize: "11pt", fontWeight: "bold", textTransform: "uppercase", margin: 0, textAlign: "center", textIndent: 0, color: "#0f172a" }}>TM. HỘI ĐỒNG TUYỂN SINH</p>
+                  <p style={{ fontSize: "9pt", fontWeight: "bold", textTransform: "uppercase", color: "#475569", margin: "1px 0 0 0", textAlign: "center", textIndent: 0 }}>GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}</p>
+                  <div style={{ height: "45px", display: "flex", alignItems: "center", justifyContent: "center", margin: "2px 0" }}>
+                    {studentCampusConfig?.signature ? (
+                      <img src={studentCampusConfig?.signature} alt="Signature" style={{ maxHeight: "45px", objectFit: "contain" }} />
+                    ) : (
+                      <svg style={{ height: "45px" }} viewBox="0 0 100 40" width="120"><path d="M10,25 Q30,5 50,20 T90,15 M30,12 Q45,28 60,8" fill="none" stroke="#0f172a" strokeWidth="2" strokeLinecap="round"/></svg>
+                    )}
+                  </div>
+                  <p style={{ fontSize: "12pt", fontWeight: "bold", margin: 0, textAlign: "center", textIndent: 0, color: "#1e293b" }}>{studentCampusConfig?.directorName || "Trần Thị Thanh"}</p>
+                </div>
+              </div>
+            </div>
+            <div className="footer-container" style={{ position: "absolute", bottom: "12mm", left: "20mm", right: "20mm", width: "auto", zIndex: 10 }}>
+              {studentCampusConfig?.footer ? (
+                <img src={studentCampusConfig?.footer} alt="Footer" style={{ width: "100%", maxHeight: "100px", objectFit: "contain" }} />
+              ) : (
+                <div style={{ width: "100%", fontFamily: '"Open Sans", sans-serif', boxSizing: "border-box", textAlign: "left" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", width: "100%" }}>
+                    <span style={{ fontWeight: "bold", color: "#00A6A9", whiteSpace: "nowrap", textTransform: "uppercase", fontSize: "9.5pt", letterSpacing: "0.5px" }}>HỆ THỐNG GIÁO DỤC SKY-LINE</span>
+                    <div style={{ flexGrow: 1, borderTop: "1px solid rgba(0, 166, 169, 0.7)", height: 0, marginTop: "2px" }}></div>
+                    <span style={{ fontWeight: "600", color: "#00A6A9", whiteSpace: "nowrap", textTransform: "lowercase", fontSize: "9pt" }}>www.skylineschool.edu.vn</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      );
+    }
+
     return (
       <>
         {/* PAGE 1: THE LETTER */}
-        <div className={`bg-white rounded-none border border-slate-300 w-[210mm] min-w-[210mm] max-w-[210mm] p-[18mm_20mm_22mm_20mm] box-border relative flex flex-col justify-start select-none font-sans text-slate-800 leading-normal ${isCommitment || studentCampusConfig?.title?.toUpperCase().includes("CAM KẾT") ? 'h-auto min-h-[297mm] overflow-visible' : 'h-[297mm] min-h-[297mm] overflow-hidden'}`} style={{ fontFamily: 'Arial, sans-serif' }}>
-          
-          {/* Watermark */}
+        <div className={`bg-white rounded-none border border-slate-300 w-[210mm] min-w-[210mm] max-w-[210mm] p-[18mm_20mm_22mm_20mm] box-border relative flex flex-col justify-start select-none font-sans text-slate-800 leading-normal ${isCommitment || studentCampusConfig?.title?.toUpperCase().includes("CAM KẾT") ? 'h-auto min-h-[297mm] overflow-visible' : 'h-[297mm] min-h-[297mm] overflow-hidden'}`} style={{ fontFamily: '"Open Sans", sans-serif' }}>
           {studentCampusConfig?.background && (
             <img crossOrigin={(studentCampusConfig?.background || "").startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig?.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "110mm", height: "auto", opacity: 0.04, zIndex: 0, pointerEvents: "none" }} />
           )}
 
-          {/* Content wrapped */}
           <div className={`relative z-10 flex flex-col justify-start ${isCommitment || studentCampusConfig?.title?.toUpperCase().includes("CAM KẾT") ? 'h-auto' : 'h-full'}`}>
             <div>
-              {/* Header logo */}
               <div className="header-container" style={{ display: "flex", flexDirection: "column", borderBottom: "1.5px solid #00A6A9", paddingBottom: "8px", marginBottom: "16px" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   {studentCampusConfig?.logo ? (
@@ -1786,18 +1948,16 @@ export function ReportsClient({
                   )}
                 </div>
                 <div style={{ textAlign: "left", marginTop: "4px" }}>
-                  <h4 style={{ fontFamily: "Arial, sans-serif", fontSize: "11pt", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.5px", color: "#1e293b", margin: 0 }}>
+                  <h4 style={{ fontFamily: '"Open Sans", sans-serif', fontSize: "11pt", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.5px", color: "#1e293b", margin: 0 }}>
                     {selectedLevel === "preschool" ? "TRƯỜNG MẦM NON SKY-LINE" : "TRƯỜNG TIỂU HỌC, THCS VÀ THPT SKY-LINE"}
                   </h4>
                 </div>
               </div>
 
-              {/* Title */}
               <h2 style={{ textAlign: "center", fontSize: "22pt", fontWeight: "bold", color: "#0f172a", textTransform: "uppercase", letterSpacing: "2px", margin: "12px 0 16px 0" }}>
                 {studentCampusConfig?.title}
               </h2>
 
-              {/* Greeting */}
               {!(isCommitment || studentCampusConfig?.title?.toUpperCase().includes("CAM KẾT")) && (
                 <p style={{ fontSize: "13pt", fontStyle: "italic", marginBottom: "8px", color: "#1e293b", textIndent: 0 }}>
                   {isInvitation ? (
@@ -1808,39 +1968,11 @@ export function ReportsClient({
                 </p>
               )}
 
-              {/* Body template text */}
-              <div style={{ flexGrow: 1, fontFamily: 'Arial, sans-serif' }}>
-                {renderTemplate(
-                  studentCampusConfig?.content || "",
-                  {
-                    ...selectedReportStudent,
-                    signatureName: studentCampusConfig?.directorName || selectedReportStudent?.signatureName || ""
-                  }
-                ).split('\n').filter(Boolean).map((para, idx) => {
-                  const pClean = para.trim();
-                  const isList = /^\s*[\d•\-*]+/.test(pClean);
-                  const isCentred = pClean.toLowerCase().includes("về việc") || pClean.toLowerCase().includes("kính gửi:");
-                  const isDateLine = pClean.toLowerCase().includes("ngày") && pClean.toLowerCase().includes("tháng") && pClean.toLowerCase().includes("năm") && (pClean.toLowerCase().includes("đà nẵng") || pClean.toLowerCase().includes("hà nội") || pClean.toLowerCase().includes("hồ chí minh"));
-                  
-                  if (isDateLine) return null;
-                  if (isCentred) {
-                    return (
-                      <p key={idx} style={{ textAlign: "center", fontWeight: "bold", margin: "0 0 8px 0", fontSize: "13pt", textIndent: 0 }}>
-                        {pClean}
-                      </p>
-                    );
-                  }
-                  
-                  return (
-                    <p key={idx} style={isList ? { paddingLeft: "24px", fontWeight: "bold", color: "#374151", margin: "4px 0", fontSize: "13pt" } : { textIndent: "10mm", margin: "0 0 4px 0", textAlign: "justify", lineBreak: "auto", lineHeight: "1.3", fontSize: "13pt" }}>
-                      {pClean}
-                    </p>
-                  );
-                }).filter(Boolean)}
+              <div style={{ flexGrow: 1, fontFamily: '"Open Sans", sans-serif' }}>
+                {buildParagraphElement(paragraphs)}
               </div>
             </div>
 
-            {/* Bottom Signatures dual-mode support with flexible spacer */}
             <div style={{ flex: "1 1 auto", minHeight: "5px", maxHeight: "30px" }} />
             {isCommitment ? (
               <div style={{ width: "100%", display: "flex", justifyContent: "space-between", marginTop: "8px", paddingTop: "2px", pageBreakInside: "avoid", breakInside: "avoid" }}>
@@ -1882,12 +2014,11 @@ export function ReportsClient({
             )}
           </div>
 
-          {/* Footer Banner - Moved outside inner container to anchor to actual A4 bottom */}
           <div className="footer-container" style={{ position: "absolute", bottom: "12mm", left: "20mm", right: "20mm", width: "auto", zIndex: 10 }}>
             {studentCampusConfig?.footer ? (
               <img src={studentCampusConfig?.footer} alt="Footer" style={{ width: "100%", maxHeight: "100px", objectFit: "contain" }} />
             ) : (
-              <div style={{ width: "100%", fontFamily: "Arial, sans-serif", boxSizing: "border-box", textAlign: "left" }}>
+              <div style={{ width: "100%", fontFamily: '"Open Sans", sans-serif', boxSizing: "border-box", textAlign: "left" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", width: "100%" }}>
                   <span style={{ fontWeight: "bold", color: "#00A6A9", whiteSpace: "nowrap", textTransform: "uppercase", fontSize: "9.5pt", letterSpacing: "0.5px" }}>HỆ THỐNG GIÁO DỤC SKY-LINE</span>
                   <div style={{ flexGrow: 1, borderTop: "1px solid rgba(0, 166, 169, 0.7)", height: 0, marginTop: "2px" }}></div>
@@ -1900,16 +2031,13 @@ export function ReportsClient({
 
         {/* PAGE 2: ADMISSION CHECKLIST */}
         {modalDocList && modalDocList.length > 0 && !isInvitation && !isCommitment && selectedLevel !== "preschool" && (
-          <div className="bg-white rounded-none border border-slate-300 w-[210mm] min-w-[210mm] max-w-[210mm] h-[297mm] min-h-[297mm] p-[18mm_20mm_22mm_20mm] box-border relative flex flex-col justify-start overflow-hidden select-none font-sans text-slate-800 leading-normal" style={{ fontFamily: 'Arial, sans-serif' }}>
-            
-            {/* Watermark */}
+          <div className="bg-white rounded-none border border-slate-300 w-[210mm] min-w-[210mm] max-w-[210mm] h-[297mm] min-h-[297mm] p-[18mm_20mm_22mm_20mm] box-border relative flex flex-col justify-start overflow-hidden select-none font-sans text-slate-800 leading-normal" style={{ fontFamily: '"Open Sans", sans-serif' }}>
             {studentCampusConfig?.background && (
               <img crossOrigin={(studentCampusConfig?.background || "").startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig?.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "110mm", height: "auto", opacity: 0.04, zIndex: 0, pointerEvents: "none" }} />
             )}
 
             <div className="relative z-10 flex flex-col h-full justify-start">
               <div>
-                {/* Header logo */}
                 <div className="header-container" style={{ display: "flex", flexDirection: "column", borderBottom: "1.5px solid #00A6A9", paddingBottom: "8px", marginBottom: "16px" }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     {studentCampusConfig?.logo ? (
@@ -1919,18 +2047,16 @@ export function ReportsClient({
                     )}
                   </div>
                   <div style={{ textAlign: "left", marginTop: "4px" }}>
-                    <h4 style={{ fontFamily: "Arial, sans-serif", fontSize: "11pt", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.5px", color: "#1e293b", margin: 0 }}>
+                    <h4 style={{ fontFamily: '"Open Sans", sans-serif', fontSize: "11pt", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.5px", color: "#1e293b", margin: 0 }}>
                       {selectedLevel === "preschool" ? "TRƯỜNG MẦM NON SKY-LINE" : "TRƯỜNG TIỂU HỌC, THCS VÀ THPT SKY-LINE"}
                     </h4>
                   </div>
                 </div>
 
-                {/* Title */}
                 <h2 style={{ textAlign: "center", fontSize: "20pt", fontWeight: "bold", color: "#0f172a", textTransform: "uppercase", letterSpacing: "1px", margin: "12px 0" }}>
                   DANH MỤC HỒ SƠ NHẬP HỌC
                 </h2>
 
-                {/* Table of documents */}
                 <div style={{ marginTop: "10px", overflow: "hidden", border: "1.5px solid #0f172a", borderRadius: "8px" }}>
                   <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "13px", color: "#0f172a" }}>
                     <thead>
@@ -1958,12 +2084,11 @@ export function ReportsClient({
               </div>
             </div>
 
-            {/* Footer Banner - Moved outside inner container to anchor to actual A4 bottom */}
             <div className="footer-container" style={{ position: "absolute", bottom: "12mm", left: "20mm", right: "20mm", width: "auto", zIndex: 10 }}>
               {studentCampusConfig?.footer ? (
                 <img src={studentCampusConfig?.footer} alt="Footer" style={{ width: "100%", maxHeight: "100px", objectFit: "contain" }} />
               ) : (
-                <div style={{ width: "100%", fontFamily: "Arial, sans-serif", boxSizing: "border-box", textAlign: "left" }}>
+                <div style={{ width: "100%", fontFamily: '"Open Sans", sans-serif', boxSizing: "border-box", textAlign: "left" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", width: "100%" }}>
                     <span style={{ fontWeight: "bold", color: "#00A6A9", whiteSpace: "nowrap", textTransform: "uppercase", fontSize: "9.5pt", letterSpacing: "0.5px" }}>HỆ THỐNG GIÁO DỤC SKY-LINE</span>
                     <div style={{ flexGrow: 1, borderTop: "1px solid rgba(0, 166, 169, 0.7)", height: 0, marginTop: "2px" }}></div>
@@ -1972,7 +2097,6 @@ export function ReportsClient({
                 </div>
               )}
             </div>
-
           </div>
         )}
       </>
@@ -2258,20 +2382,20 @@ export function ReportsClient({
                       ) : (
                         <span className="text-[10px] font-black tracking-tight text-teal-600 uppercase">SKY-LINE</span>
                       )}
-                      <h4 className="font-extrabold text-[9px] uppercase tracking-wider text-slate-800" style={{ fontFamily: "Arial, sans-serif" }}>
+                      <h4 className="font-extrabold text-[9px] uppercase tracking-wider text-slate-800" style={{ fontFamily: '"Open Sans", sans-serif' }}>
                         TRƯỜNG TH, THCS, THPT SKY-LINE
                       </h4>
                     </div>
 
                     <div className="text-center mb-3">
-                      <h2 className="text-xs font-black tracking-widest text-indigo-950 uppercase" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+                      <h2 className="text-xs font-black tracking-widest text-indigo-950 uppercase" style={{ fontFamily: '"Open Sans", sans-serif' }}>
                         DANH MỤC HỒ SƠ NHẬP HỌC
                       </h2>
                     </div>
 
                     {/* Table of documents */}
                     <div className="mt-4 overflow-hidden border border-slate-950">
-                      <table className="w-full border-collapse text-left text-[9px] text-slate-900" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+                      <table className="w-full border-collapse text-left text-[9px] text-slate-900" style={{ fontFamily: '"Open Sans", sans-serif' }}>
                         <thead>
                           <tr className="bg-white border-b border-slate-950 font-bold text-slate-950">
                             <th className="px-2 py-1.5 border-r border-slate-950 text-center uppercase w-10" style={{ borderRightWidth: '1px', borderColor: '#000' }}>STT</th>
@@ -2296,7 +2420,7 @@ export function ReportsClient({
                       </table>
                     </div>
 
-                    <p className="mt-4 text-[9px] text-slate-950 font-bold text-left leading-relaxed" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+                    <p className="mt-4 text-[9px] text-slate-950 font-bold text-left leading-relaxed" style={{ fontFamily: '"Open Sans", sans-serif' }}>
                       * Quý phụ huynh vui lòng hoàn thiện và nộp đầy đủ các giấy tờ nêu trên trong vòng 10 ngày kể từ ngày nhận được thông báo trúng tuyển.
                     </p>
                   </div>
@@ -2316,7 +2440,7 @@ export function ReportsClient({
                   </div>
 
                   <div className="text-center mb-3">
-                    <h2 className="text-xs font-black tracking-widest text-indigo-950 uppercase" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+                    <h2 className="text-xs font-black tracking-widest text-indigo-950 uppercase" style={{ fontFamily: '"Open Sans", sans-serif' }}>
                       {rcTitle}
                     </h2>
                   </div>
@@ -2968,7 +3092,7 @@ export function ReportsClient({
             {/* Right side live A4 design preview stack */}
             <div className="lg:col-span-7 bg-slate-50 border border-slate-200 shadow-inner rounded-3xl p-8 flex flex-col justify-between min-h-[500px]">
               <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-5">Khung Xem trước thiết kế A4 thực tế</span>
-              <div className="bg-white rounded-2xl border border-slate-200 p-10 shadow-lg flex flex-col justify-between w-full aspect-[210/297] relative overflow-hidden select-none font-serif text-slate-800 leading-normal" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
+              <div className="bg-white rounded-2xl border border-slate-200 p-10 shadow-lg flex flex-col justify-between w-full aspect-[210/297] relative overflow-hidden select-none font-serif text-slate-800 leading-normal" style={{ fontFamily: '"Open Sans", sans-serif' }}>
                 {/* Background Watermark for Preview */}
                 <div 
                   className="absolute pointer-events-none"
@@ -2995,20 +3119,20 @@ export function ReportsClient({
                       ) : (
                         <span className="text-[10px] font-black tracking-tight text-teal-600 uppercase">SKY-LINE</span>
                       )}
-                      <h4 className="font-extrabold text-[9px] uppercase tracking-wider text-slate-800" style={{ fontFamily: "Arial, sans-serif" }}>
+                      <h4 className="font-extrabold text-[9px] uppercase tracking-wider text-slate-800" style={{ fontFamily: '"Open Sans", sans-serif' }}>
                         TRƯỜNG TH, THCS, THPT SKY-LINE
                       </h4>
                     </div>
 
                     <div className="text-center mb-3">
-                      <h2 className="text-xs font-black tracking-widest text-indigo-950 uppercase" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+                      <h2 className="text-xs font-black tracking-widest text-indigo-950 uppercase" style={{ fontFamily: '"Open Sans", sans-serif' }}>
                         DANH MỤC HỒ SƠ NHẬP HỌC
                       </h2>
                     </div>
 
                     {/* Table stack */}
                     <div className="mt-4 overflow-hidden border border-slate-950">
-                      <table className="w-full border-collapse text-left text-[9px] text-slate-900" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+                      <table className="w-full border-collapse text-left text-[9px] text-slate-900" style={{ fontFamily: '"Open Sans", sans-serif' }}>
                         <thead>
                           <tr className="bg-white border-b border-slate-950 font-bold text-slate-950">
                             <th className="px-2 py-1.5 border-r border-slate-950 text-center uppercase w-10" style={{ borderRightWidth: '1px', borderColor: '#000' }}>STT</th>
@@ -3033,7 +3157,7 @@ export function ReportsClient({
                       </table>
                     </div>
 
-                    <p className="mt-4 text-[9px] text-slate-950 font-bold text-left leading-relaxed" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
+                    <p className="mt-4 text-[9px] text-slate-950 font-bold text-left leading-relaxed" style={{ fontFamily: '"Open Sans", sans-serif' }}>
                       * Quý phụ huynh vui lòng bổ sung hồ sơ thiếu (nếu có) trong vòng 10 ngày kể từ ngày nộp Hồ sơ.
                     </p>
                   </div>

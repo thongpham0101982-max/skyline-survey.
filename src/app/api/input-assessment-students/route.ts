@@ -333,6 +333,59 @@ export async function POST(req) {
       }
     }
 
+    if (action === "RETEST_REGISTER") {
+      const { studentId, targetPeriodId, targetBatchId } = data;
+      if (!studentId || !targetPeriodId) {
+        return NextResponse.json({ error: "Missing studentId or targetPeriodId" }, { status: 400 });
+      }
+
+      const sourceStudent = await (prisma as any).inputAssessmentStudent.findUnique({
+        where: { id: studentId }
+      });
+      if (!sourceStudent) {
+        return NextResponse.json({ error: "Student not found" }, { status: 404 });
+      }
+
+      const existing = await (prisma as any).inputAssessmentStudent.findFirst({
+        where: {
+          studentCode: sourceStudent.studentCode,
+          periodId: targetPeriodId
+        }
+      });
+      if (existing) {
+        return NextResponse.json({ error: `Học sinh này đã được đăng ký khảo sát ở Kỳ khảo sát được chọn (Mã HS: ${sourceStudent.studentCode})` }, { status: 400 });
+      }
+
+      const newStudent = await (prisma as any).inputAssessmentStudent.create({
+        data: {
+          studentCode: sourceStudent.studentCode,
+          fullName: sourceStudent.fullName,
+          dateOfBirth: sourceStudent.dateOfBirth,
+          gender: sourceStudent.gender,
+          className: sourceStudent.className,
+          grade: sourceStudent.grade,
+          academicRating: sourceStudent.academicRating,
+          conductRating: sourceStudent.conductRating,
+          admissionCriteria: sourceStudent.admissionCriteria,
+          surveySystem: sourceStudent.surveySystem,
+          targetType: sourceStudent.targetType,
+          surveyFormType: sourceStudent.surveyFormType,
+          hocKy: sourceStudent.hocKy,
+          kqgdTieuHoc: sourceStudent.kqgdTieuHoc,
+          kqHocTap: sourceStudent.kqHocTap,
+          hoSoCtQuocTe: sourceStudent.hoSoCtQuocTe,
+          kqRenLuyen: sourceStudent.kqRenLuyen,
+          periodId: targetPeriodId,
+          batchId: targetBatchId || null,
+          admissionResult: null,
+          directorNote: `Kiểm tra lại đợt trước từ kỳ: ${sourceStudent.periodId}`,
+          admissionCampus: sourceStudent.admissionCampus,
+        }
+      });
+
+      return NextResponse.json({ success: true, newStudent });
+    }
+
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   } catch (error) {
     return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
