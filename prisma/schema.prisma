@@ -78,7 +78,6 @@ model Campus {
   campusName             String
   address                String?
   status                 String                  @default("ACTIVE")
-  isOff                  Boolean                 @default(false)
   managerId              String?
   manager                User?                   @relation("CampusManager", fields: [managerId], references: [id], onDelete: SetNull)
   classes                Class[]
@@ -99,6 +98,7 @@ model AcademicYear {
   startDate              DateTime
   endDate                DateTime
   status                 String                  @default("ACTIVE")
+  isOff                  Boolean                 @default(false)
   assessmentConfigs      AssessmentConfig[]
   preschoolAssessmentConfigs PreschoolAssessmentConfig[]
   classes                Class[]
