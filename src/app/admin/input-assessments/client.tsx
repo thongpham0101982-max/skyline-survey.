@@ -5149,7 +5149,7 @@ return {
                           className={inp}
                         >
                           <option value="">-- Chọn Đợt khảo sát mới (Tất cả / Lẻ) --</option>
-                          {(visiblePeriods.find(p => p.id === retestPeriodId)?.batches || []).filter(b => b.id !== selectedReportStudent.batchId).map(b => (
+                          {(visiblePeriods.find(p => p.id === retestPeriodId)?.batches || []).filter(b => b.id !== selectedReportStudent.batchId && b.status === "ACTIVE").map(b => (
                             <option key={b.id} value={b.id}>{b.name}</option>
                           ))}
                         </select>
