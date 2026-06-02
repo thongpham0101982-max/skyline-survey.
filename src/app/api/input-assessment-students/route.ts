@@ -351,7 +351,8 @@ export async function POST(req) {
       const existing = await (prisma as any).inputAssessmentStudent.findFirst({
         where: {
           studentCode: sourceStudent.studentCode,
-          periodId: targetPeriodId
+          periodId: targetPeriodId,
+          batchId: targetBatchId || null
         }
       });
       if (existing) {
