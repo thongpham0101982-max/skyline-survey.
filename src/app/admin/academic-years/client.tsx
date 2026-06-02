@@ -8,11 +8,22 @@ const EDU_SYSTEMS = [
   { code: "HNS", name: "Hội nhập S" }
 ];
 
-export function AcademicYearsClient({ initialYears, updateAction, deleteAction, setActiveAction }) {
+export function AcademicYearsClient({ initialYears, updateAction, deleteAction, setActiveAction, toggleOffAction }) {
   const [years, setYears] = useState(initialYears)
   const [editingId, setEditingId] = useState(null)
   const [editForm, setEditForm] = useState({})
   const [saving, setSaving] = useState(false)
+  const [togglingId, setTogglingId] = useState(null)
+  
+  const handleToggleOff = async (id, isOff) => {
+    setTogglingId(id);
+    try {
+      await toggleOffAction(id, isOff);
+      setYears(years.map(y => y.id === id ? { ...y, isOff } : y));
+    } finally {
+      setTogglingId(null);
+    }
+  }
 
   const handleEdit = (y) => {
     setEditingId(y.id)
