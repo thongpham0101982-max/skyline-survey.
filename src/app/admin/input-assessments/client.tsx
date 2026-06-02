@@ -2692,7 +2692,7 @@ ${reportForm.directorNote}`;
     if (!sPeriodId) return
     setSLoading(true)
     try {
-      let url = `/api/input-assessment-students?periodId=${sPeriodId}`
+      let url = `/api/input-assessment-students?periodId=${sPeriodId}&t=${Date.now()}`
       if (sBatchId) url += `&batchId=${sBatchId}`
       const r = await fetch(url)
       if (r.ok) setStudents(await r.json())
@@ -5141,10 +5141,15 @@ return {
                               )}
 
                               {/* Brief scores list from past attempt */}
-                              {!isCurrent && parsedScores.length > 0 && (
+                              {!isCurrent && (parsedScores.length > 0 || hist.psychologyScore != null || hist.mathScore != null || hist.literatureScore != null || hist.writtenEnglishScore != null || hist.oralEnglishScore != null) && (
                                 <div className="text-[10px] border border-slate-200/50 p-2.5 rounded-2xl mt-1.5 space-y-1.5 bg-slate-50/50">
                                   <span className="font-black text-slate-400 uppercase tracking-wider text-[8px] block">Bảng điểm đợt thi cũ:</span>
                                   <div className="grid grid-cols-2 gap-x-2.5 gap-y-1 text-[9px] font-bold text-slate-600">
+                                    {hist.psychologyScore != null && <div><span className="text-slate-400 font-normal">Tâm lý:</span> {hist.psychologyScore}đ</div>}
+                                    {hist.mathScore != null && <div><span className="text-slate-400 font-normal">Toán:</span> {hist.mathScore}đ</div>}
+                                    {hist.literatureScore != null && <div><span className="text-slate-400 font-normal">Ngữ Văn:</span> {hist.literatureScore}đ</div>}
+                                    {hist.writtenEnglishScore != null && <div><span className="text-slate-400 font-normal">Anh (viết):</span> {hist.writtenEnglishScore}đ</div>}
+                                    {hist.oralEnglishScore != null && <div><span className="text-slate-400 font-normal">Anh (nói):</span> {hist.oralEnglishScore}đ</div>}
                                     {parsedScores.filter(Boolean).map((sc, sIdx) => {
                                       const sub = sc?.subject || {};
                                       const subCode = (sub?.code || "").toLowerCase();
