@@ -3620,100 +3620,180 @@ return {
         </div>
       )}
 
-      {/* ===== TAB: STUDENTS (RESTORED) ===== */}
+      {/* ===== TAB: STUDENTS (SAAS REDESIGNED) ===== */}
       {tab==="students" && (
-        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
-           <div className="bg-white border border-slate-200 rounded-[2rem] p-6 shadow-sm">
-              <div className="flex flex-wrap items-end gap-5">
-                 <div className="flex-1 min-w-[280px] space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                       <Field label="Kỳ khảo sát" required>
-                          <select value={sPeriodId} onChange={e=>{setSPeriodId(e.target.value); setSBatchId("")}} className={inp}>
-                             <option value="">-- Chọn Kỳ --</option>
-                             {visiblePeriods.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
-                          </select>
-                       </Field>
-                       <Field label="Đợt khảo sát">
-                          <select value={sBatchId} onChange={e=>setSBatchId(e.target.value)} className={inp} disabled={!sPeriodId}>
-                             <option value="">-- Tất cả đợt --</option>
-                             {selPeriod?.batches?.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
-                          </select>
-                       </Field>
-                    </div>
-                    <div className="relative">
-                       <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300"/>
-                       <input value={sSearch} onChange={e=>setSSearch(e.target.value)} placeholder="Tìm theo mã định danh hoặc tên học sinh..." className={inp+" pl-11"}/>
-                    </div>
-                 </div>
-                 <div className="flex items-center gap-2 pb-1">
-                    <button onClick={fetchStudents} disabled={!sPeriodId} className="px-6 py-3 bg-slate-800 text-white text-xs font-black rounded-2xl hover:bg-black disabled:opacity-30 transition-all uppercase tracking-widest shadow-lg shadow-slate-100">Tìm kiếm</button>
-                    <button onClick={openAddStudent} disabled={!sPeriodId} className="px-6 py-3 bg-indigo-600 text-white text-xs font-black rounded-2xl hover:bg-indigo-700 disabled:opacity-30 transition-all uppercase tracking-widest shadow-lg shadow-indigo-100">Thêm mới</button>
-                    <button onClick={handleDownloadTemplate} disabled={!sPeriodId} className="w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center hover:bg-blue-700 shadow-lg shadow-blue-50 transition-all mr-2">
-                       <Download className="w-5 h-5"/>
-                    </button>
-                    <button onClick={()=>fileRef.current?.click()} disabled={!sPeriodId||importing} className="w-12 h-12 bg-emerald-600 text-white rounded-2xl flex items-center justify-center hover:bg-emerald-700 shadow-lg shadow-emerald-50 transition-all">
-                       <Upload className="w-5 h-5"/>
-                    </button>
-                    <input type="file" ref={fileRef} accept=".xlsx" className="hidden" onChange={handleImport}/>
-                 </div>
-              </div>
-           </div>
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          
+          {/* Header & Stats */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-black text-slate-800 tracking-tight">Quản lý Hồ sơ Học sinh</h2>
+              <p className="text-sm text-slate-500 font-medium mt-1">
+                Tìm kiếm, lọc và cập nhật thông tin học sinh tham gia khảo sát năng lực.
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <span className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 text-xs font-bold border border-slate-200">
+                Tổng cộng: <span className="text-[#00A19A] ml-1">{filtStu.length}</span> HS
+              </span>
+              <button onClick={handleDownloadTemplate} disabled={!sPeriodId} className="h-10 px-4 bg-white text-slate-600 border border-slate-200 rounded-xl flex items-center justify-center hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 shadow-sm transition-all disabled:opacity-50 text-sm font-semibold group">
+                 <Download className="w-4 h-4 sm:mr-2 group-hover:-translate-y-0.5 transition-transform"/>
+                 <span className="hidden sm:inline">Tải mẫu</span>
+              </button>
+              <button onClick={()=>fileRef.current?.click()} disabled={!sPeriodId||importing} className="h-10 px-4 bg-white text-slate-600 border border-slate-200 rounded-xl flex items-center justify-center hover:bg-slate-50 hover:text-emerald-600 hover:border-emerald-200 shadow-sm transition-all disabled:opacity-50 text-sm font-semibold group">
+                 <Upload className="w-4 h-4 sm:mr-2 group-hover:-translate-y-0.5 transition-transform"/>
+                 <span className="hidden sm:inline">Nhập Excel</span>
+              </button>
+              <button onClick={openAddStudent} disabled={!sPeriodId} className="h-10 px-5 bg-[#00A19A] text-white text-sm font-bold rounded-xl hover:bg-[#008c85] disabled:opacity-50 transition-all shadow-md shadow-[#00A19A]/20 flex items-center justify-center">
+                <Plus className="w-4 h-4 mr-2"/> Thêm mới
+              </button>
+              <input type="file" ref={fileRef} accept=".xlsx" className="hidden" onChange={handleImport}/>
+            </div>
+          </div>
 
-           <div className="bg-white border border-slate-200 rounded-[2rem] shadow-sm overflow-hidden min-h-[400px]">
-              {sLoading ? <Spin/> : filtStu.length === 0 ? <Empty icon={Users} text="Không tìm thấy học sinh nào" sub="Hãy chọn Kỳ và bấm 'Tìm kiếm'"/> : (
-                <div className="overflow-x-auto">
-                   <table className="w-full text-left whitespace-nowrap">
-                      <thead className="bg-slate-50 border-b border-slate-100">
-                         <tr>
-                            <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Mã HS KS</th>
-                            <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Họ và Tên</th>
-                            <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Khối</th>
-                              <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Giới tính</th>
-                              <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Ngày sinh</th>
-                              <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Hệ Khảo sát</th>
-                              
-                              <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Hồ sơ / Bảng điểm</th>
-                              <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Học kỳ / Năm TS</th>
-                              <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Đối tượng TS</th>
-                                <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Diện khảo sát</th>
-                                <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Hình thức KS</th>
-                                
-                                <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">KQ Học tập</th>
-                                <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">KQ Rèn luyện</th>
-                              <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Thao tác</th>
-                         </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-50">
-                        {filtStu.map(s => (
-                          <tr key={s.id} className="group hover:bg-slate-50/50">
-                             <td className="p-5"><span className="font-mono text-xs font-black text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg">{s.studentCode}</span></td>
-                             <td className="p-5"><span className="text-sm font-black text-slate-700">{s.fullName}</span></td>
-                             <td className="p-5 text-center text-xs font-black text-slate-400">{s.grade}</td>
-                             <td className="p-5 text-center text-xs font-black text-slate-400">{s.gender || "-"}</td>
-                               <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString('vi-VN') : "-"}</span></td>
-                               <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.surveyFormType || "-"}</span></td>
-                               
-                               <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.hoSoCtQuocTe || "-"}</span></td>
-                               <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.hocKy || "-"}</span></td>
-                               <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.targetType || "-"}</span></td>
-                                 <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.admissionCriteria || "-"}</span></td>
-                                 <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.surveySystem || "-"}</span></td>
-                                 
-                                 <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.kqHocTap || "-"}</span></td>
-                                 <td className="p-5 text-center"><span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{s.kqRenLuyen || "-"}</span></td>
-                               <td className="p-5 text-right">
-                                <div className="flex items-center justify-end gap-1 ">
-                                   <button onClick={()=>openEditStudent(s)} className="p-2 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all" title="Sửa học sinh"><Edit2 className="w-4 h-4"/></button>
-                                   <button onClick={()=>setConfirm({msg:`Xóa học sinh này?`,fn:()=>doDeleteStudent(s.id)})} className="p-2 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all" title="Xóa học sinh"><Trash2 className="w-4 h-4"/></button>
-                                </div>
-                             </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                   </table>
+          {/* Filter Card */}
+          <div className="bg-white border border-slate-200/60 rounded-[1.5rem] p-5 shadow-sm">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+              <div className="md:col-span-3">
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Kỳ khảo sát *</label>
+                <select value={sPeriodId} onChange={e=>{setSPeriodId(e.target.value); setSBatchId("")}} className={inp + " bg-slate-50/50 hover:bg-white focus:bg-white transition-colors"}>
+                   <option value="">-- Chọn Kỳ --</option>
+                   {visiblePeriods.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+              </div>
+              <div className="md:col-span-3">
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Đợt khảo sát</label>
+                <select value={sBatchId} onChange={e=>setSBatchId(e.target.value)} className={inp + " bg-slate-50/50 hover:bg-white focus:bg-white transition-colors"} disabled={!sPeriodId}>
+                   <option value="">-- Tất cả đợt --</option>
+                   {selPeriod?.batches?.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
+                </select>
+              </div>
+              <div className="md:col-span-4">
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Tìm kiếm</label>
+                <div className="relative">
+                   <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"/>
+                   <input value={sSearch} onChange={e=>setSSearch(e.target.value)} placeholder="Tên hoặc mã HS..." className={inp+" pl-10 bg-slate-50/50 hover:bg-white focus:bg-white transition-colors"}/>
                 </div>
-              )}
-           </div>
+              </div>
+              <div className="md:col-span-2 flex items-end">
+                <button onClick={fetchStudents} disabled={!sPeriodId} className="w-full h-[42px] bg-slate-900 text-white text-xs font-bold rounded-xl hover:bg-black disabled:opacity-50 transition-all flex items-center justify-center gap-2">
+                  <Search className="w-4 h-4"/> Lọc dữ liệu
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Data Table Area */}
+          <div className="bg-white border border-slate-200/80 rounded-[1.5rem] shadow-sm overflow-hidden flex flex-col min-h-[400px]">
+            {sLoading ? (
+              <div className="flex-1 flex items-center justify-center py-20"><Spin/></div>
+            ) : filtStu.length === 0 ? (
+              <div className="flex-1 flex flex-col items-center justify-center py-20 text-slate-500">
+                <div className="w-16 h-16 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center mb-4">
+                  <Users className="w-8 h-8 text-slate-300"/>
+                </div>
+                <p className="font-bold text-slate-700">Không tìm thấy dữ liệu</p>
+                <p className="text-sm mt-1">Hãy chọn Kỳ khảo sát và bấm 'Lọc dữ liệu'</p>
+              </div>
+            ) : (
+              <>
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto custom-scrollbar flex-1">
+                  <table className="w-full text-left whitespace-nowrap border-collapse">
+                    <thead className="bg-[#F0FDFA] sticky top-0 z-10 shadow-[0_1px_0_#CCFBF1]">
+                       <tr>
+                          <th className="px-5 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest">Mã HS KS</th>
+                          <th className="px-5 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest">Họ và Tên</th>
+                          <th className="px-3 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center">Khối</th>
+                          <th className="px-3 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center">Giới tính</th>
+                          <th className="px-4 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center">Ngày sinh</th>
+                          <th className="px-4 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center">Hệ Khảo sát</th>
+                          <th className="px-4 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center">Hồ sơ / Bảng điểm</th>
+                          <th className="px-4 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center">Học kỳ / Năm TS</th>
+                          <th className="px-4 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center">Đối tượng TS</th>
+                          <th className="px-4 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center">Thao tác</th>
+                       </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {filtStu.map((s, idx) => (
+                        <tr key={s.id} className={`group hover:bg-slate-50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
+                           <td className="px-5 py-3.5"><span className="font-mono text-xs font-black text-[#00A19A] bg-[#00A19A]/10 border border-[#00A19A]/20 px-2.5 py-1 rounded-md">{s.studentCode}</span></td>
+                           <td className="px-5 py-3.5">
+                             <div className="flex flex-col">
+                               <span className="text-sm font-bold text-slate-800">{s.fullName}</span>
+                               <span className="text-[10px] font-semibold text-slate-400 mt-0.5">{s.surveySystem || "Chưa xếp hệ"}</span>
+                             </div>
+                           </td>
+                           <td className="px-3 py-3.5 text-center text-xs font-bold text-slate-500 bg-slate-50/50 group-hover:bg-transparent">{s.grade}</td>
+                           <td className="px-3 py-3.5 text-center text-xs font-bold text-slate-500">{s.gender || "-"}</td>
+                           <td className="px-4 py-3.5 text-center"><span className="text-xs font-semibold text-slate-600">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString('vi-VN') : "-"}</span></td>
+                           <td className="px-4 py-3.5 text-center">
+                             <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-600 border border-indigo-100">
+                               {s.surveyFormType || "-"}
+                             </span>
+                           </td>
+                           <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.hoSoCtQuocTe || "-"}</td>
+                           <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.hocKy || "-"}</td>
+                           <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.targetType || "-"}</td>
+                           
+                           <td className="px-4 py-3.5 text-center sticky right-0 bg-white group-hover:bg-slate-50 transition-colors shadow-[-10px_0_15px_-10px_rgba(0,0,0,0.05)] border-l border-slate-100">
+                              <div className="flex items-center justify-center gap-1.5">
+                                 <button onClick={()=>openEditStudent(s)} className="p-1.5 text-slate-400 hover:text-[#00A19A] hover:bg-[#00A19A]/10 rounded-lg transition-all" title="Sửa hồ sơ"><Edit2 className="w-4 h-4"/></button>
+                                 <button onClick={()=>setConfirm({msg:`Xóa hồ sơ học sinh ${s.fullName}?`,fn:()=>doDeleteStudent(s.id)})} className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all" title="Xóa hồ sơ"><Trash2 className="w-4 h-4"/></button>
+                              </div>
+                           </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile Card List View */}
+                <div className="md:hidden flex flex-col p-4 gap-4 bg-slate-50/50">
+                  {filtStu.map(s => (
+                    <div key={s.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm relative">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex flex-col">
+                          <span className="font-mono text-xs font-black text-[#00A19A] mb-1">{s.studentCode}</span>
+                          <span className="text-sm font-bold text-slate-800">{s.fullName}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                           <button onClick={()=>openEditStudent(s)} className="p-2 text-slate-400 hover:text-[#00A19A] bg-slate-50 rounded-lg"><Edit2 className="w-4 h-4"/></button>
+                           <button onClick={()=>setConfirm({msg:`Xóa hồ sơ học sinh ${s.fullName}?`,fn:()=>doDeleteStudent(s.id)})} className="p-2 text-slate-400 hover:text-rose-600 bg-slate-50 rounded-lg"><Trash2 className="w-4 h-4"/></button>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-y-3 gap-x-2 text-xs border-t border-slate-100 pt-3 mt-2">
+                        <div>
+                          <span className="text-slate-400 block mb-0.5 text-[10px] uppercase font-bold">Giới tính</span>
+                          <span className="font-semibold text-slate-700">{s.gender || "-"}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block mb-0.5 text-[10px] uppercase font-bold">Khối</span>
+                          <span className="font-semibold text-slate-700">{s.grade}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block mb-0.5 text-[10px] uppercase font-bold">Ngày sinh</span>
+                          <span className="font-semibold text-slate-700">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString('vi-VN') : "-"}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block mb-0.5 text-[10px] uppercase font-bold">Hệ KS</span>
+                          <span className="font-semibold text-[#00A19A]">{s.surveyFormType || "-"}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Footer Pagination (Visual only for now) */}
+                <div className="border-t border-slate-200 p-4 bg-slate-50 flex items-center justify-between text-xs font-medium text-slate-500">
+                  <span>Hiển thị <span className="font-bold text-slate-700">{filtStu.length}</span> kết quả</span>
+                  {/* Future real pagination can go here */}
+                </div>
+              </>
+            )}
+          </div>
         </div>
       )}
 
