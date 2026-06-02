@@ -563,7 +563,7 @@ model InputAssessmentStudent {
   period              InputAssessmentPeriod    @relation(fields: [periodId], references: [id], onDelete: Cascade)
   scores              StudentAssessmentScore[]
 
-  @@unique([studentCode, periodId])
+  @@unique([studentCode, periodId, batchId])
   @@index([periodId])
   @@index([batchId])
 }
@@ -805,7 +805,7 @@ model PreschoolInputAssessmentStudent {
   batch               PreschoolInputAssessmentBatch?    @relation(fields: [batchId], references: [id])
   period              PreschoolInputAssessmentPeriod    @relation(fields: [periodId], references: [id], onDelete: Cascade)
 
-  @@unique([studentCode, periodId])
+  @@unique([studentCode, periodId, batchId])
   @@index([periodId])
   @@index([batchId])
 }
