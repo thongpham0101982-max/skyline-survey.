@@ -39,6 +39,12 @@ async function setActiveYear(id) {
   revalidatePath("/admin/parents")
 }
 
+async function toggleYearOffStatus(id, isOff) {
+  "use server"
+  await prisma.academicYear.update({ where: { id }, data: { isOff } })
+  revalidatePath("/admin/academic-years")
+}
+
 export default async function AcademicYearsPage() {
   const years = await prisma.academicYear.findMany({
     orderBy: { startDate: "desc" },
@@ -85,7 +91,7 @@ export default async function AcademicYearsPage() {
         </form>
       </div>
 
-      <AcademicYearsClient initialYears={yearsWithCounts} updateAction={updateAcademicYear} deleteAction={deleteAcademicYear} setActiveAction={setActiveYear} />
+      <AcademicYearsClient initialYears={yearsWithCounts} updateAction={updateAcademicYear} deleteAction={deleteAcademicYear} setActiveAction={setActiveYear} toggleOffAction={toggleYearOffStatus} />
     </div>
   )
 }

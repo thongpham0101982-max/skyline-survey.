@@ -99,7 +99,7 @@ export function AcademicYearsClient({ initialYears, updateAction, deleteAction, 
                     )}
                   </div>
 
-                  <div className="flex-1">
+                  <div className={`flex-1 ${y.isOff ? 'opacity-50' : ''}`}>
                     {isEditing ? (
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <input type="text" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} className="border border-indigo-300 rounded-lg px-3 py-2 text-sm font-bold outline-none" />
@@ -110,7 +110,9 @@ export function AcademicYearsClient({ initialYears, updateAction, deleteAction, 
                       <div>
                         <div className="flex items-center gap-3 flex-wrap">
                           <h3 className="font-extrabold text-slate-800 text-xl">{y.name}</h3>
-                          {isActive && <span className="text-xs font-bold bg-[#00A19A] text-white px-2.5 py-0.5 rounded-full">Đang hoạt động</span>}
+                          {y.isOff && <span className="text-xs font-bold bg-rose-500 text-white px-2.5 py-0.5 rounded-full shadow-sm">Đã khóa (OFF)</span>}
+                          {!y.isOff && isActive && <span className="text-xs font-bold bg-[#00A19A] text-white px-2.5 py-0.5 rounded-full shadow-sm">Đang hoạt động</span>}
+
                         </div>
                         <p className="text-sm text-slate-500 mt-0.5">
                           {new Date(y.startDate).toLocaleDateString("vi-VN")} &rarr; {new Date(y.endDate).toLocaleDateString("vi-VN")}
