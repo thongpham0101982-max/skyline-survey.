@@ -1626,7 +1626,11 @@ export function ReportsClient({
               currentPdfCount++;
               setEmailSendingStatus(`Đang tạo PDF (${currentPdfCount}/${totalPdfs}): Thư chúc mừng - ${s.fullName}`);
               const docHtml = buildLetterHtmlForEmail(s, config);
-              const filename = `Thu_Chuc_Mung_${s.fullName.replace(/\s+/g, '_')}.pdf`;
+              const currentDate = new Date();
+              const yearStr = currentDate.getFullYear().toString();
+              const monthStr = "T" + String(currentDate.getMonth() + 1).padStart(2, '0');
+              const dayStr = String(currentDate.getDate()).padStart(2, '0');
+              const filename = `${yearStr}-${monthStr}.${dayStr}-TCM-${s.fullName}.pdf`;
               const opt = {
                 margin: 0,
                 filename: filename,
@@ -1696,6 +1700,17 @@ export function ReportsClient({
   const handlePrintPDF = async () => {
     if (typeof window === "undefined") return;
     
+    let pdfTitle = "In_Thu_Skyline";
+    if (selectedReportStudent) {
+      const currentDate = new Date();
+      const yearStr = currentDate.getFullYear().toString();
+      const monthStr = "T" + String(currentDate.getMonth() + 1).padStart(2, '0');
+      const dayStr = String(currentDate.getDate()).padStart(2, '0');
+      const studentName = selectedReportStudent?.fullName || "";
+      const prefix = isInvitation ? "TM" : isCommitment ? "BCK" : "TCM";
+      pdfTitle = `${yearStr}-${monthStr}.${dayStr}-${prefix}-${studentName}`;
+    }
+    
     const printArea = document.getElementById('print-area-reports');
     if (!printArea) {
       window.print();
@@ -1731,7 +1746,7 @@ export function ReportsClient({
       <!DOCTYPE html>
       <html>
         <head>
-          <title>In Thư Skyline</title>
+          <title>${pdfTitle}</title>
           ${styles}
           <style>
             @media print {

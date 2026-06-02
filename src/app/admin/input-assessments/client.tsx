@@ -6363,10 +6363,13 @@ return {
                     if (!printArea) return;
                     
                     const academicYearStr = selectedReportStudent?.academicYear?.substring(0, 4) || new Date().getFullYear().toString();
-                    const monthStr = "T" + String(new Date().getMonth() + 1).padStart(2, '0');
-                    const studentName = (selectedReportStudent?.fullName || "").replace(/\s+/g, '_');
-                    const prefix = isInvitation ? "Thu_Moi_Khao_Sat" : isCommitment ? "Ban_Cam_Ket" : "Thu_Chuc_Mung";
-                    const pdfFileName = prefix + "_" + studentName + ".pdf";
+                    const currentDate = new Date();
+                    const yearStr = currentDate.getFullYear().toString();
+                    const monthStr = "T" + String(currentDate.getMonth() + 1).padStart(2, '0');
+                    const dayStr = String(currentDate.getDate()).padStart(2, '0');
+                    const studentName = selectedReportStudent?.fullName || "";
+                    const prefix = isInvitation ? "TM" : isCommitment ? "BCK" : "TCM";
+                    const pdfFileName = `${yearStr}-${monthStr}.${dayStr}-${prefix}-${studentName}.pdf`;
                     
                     const btn = document.getElementById('export-pdf-btn') as HTMLButtonElement | null;
                     if(btn) {
