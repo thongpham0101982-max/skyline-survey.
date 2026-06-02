@@ -157,6 +157,14 @@ export function AcademicYearsClient({ initialYears, updateAction, deleteAction, 
                       </>
                     ) : (
                       <>
+                        <label className="flex items-center cursor-pointer mr-2">
+                          <div className="relative">
+                            <input type="checkbox" className="sr-only" checked={!y.isOff} onChange={() => handleToggleOff(y.id, !y.isOff)} disabled={togglingId === y.id} />
+                            <div className={`block w-10 h-6 rounded-full transition-colors ${y.isOff ? 'bg-slate-300' : 'bg-[#00A19A]'}`}></div>
+                            <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${y.isOff ? '' : 'transform translate-x-4'}`}></div>
+                          </div>
+                          <div className="ml-2 text-xs font-bold text-slate-500">{y.isOff ? "Đã khóa" : "Mở"}</div>
+                        </label>
                         {!isActive && <button onClick={() => handleSetActive(y.id)} disabled={saving} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-[#00A19A] hover:bg-indigo-100 border border-indigo-200 rounded-lg text-xs font-bold"><Star className="w-3.5 h-3.5" />Đặt Active</button>}
                         <button onClick={() => handleEdit(y)} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg"><Edit2 className="w-4 h-4" /></button>
                         <button onClick={() => handleDelete(y.id, y.name)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4" /></button>
