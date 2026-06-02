@@ -119,13 +119,16 @@ const getCampusAndSchoolName = (rawCampusCode: string) => {
   }
 
   let schoolNameFull = "Trường TH, THCS và THPT Sky-Line";
+  let truongName = "TH, THCS và THPT Sky-Line";
   if (actualCampusName === "Sky-Line Hill") {
     schoolNameFull = "Trường TH, THCS và THPT Sky-Line Hill";
+    truongName = "TH, THCS và THPT Sky-Line Hill";
   } else {
     schoolNameFull = "Trường TH, THCS và THPT Sky-Line";
+    truongName = "TH, THCS và THPT Sky-Line";
   }
 
-  return { actualCampusName, schoolNameFull };
+  return { actualCampusName, schoolNameFull, truongName };
 };
 
 const extractCleanNote = (student: any) => {
@@ -154,13 +157,14 @@ const renderTemplate = (content: string, student: any) => {
   const extSubs1 = extractCommittedSubjects(student);
   const comSubs = extSubs1.length > 0 ? extSubs1.join(", ") : "";
     
-  const { actualCampusName, schoolNameFull } = getCampusAndSchoolName(student?.admissionCampus);
+  const { actualCampusName, schoolNameFull, truongName } = getCampusAndSchoolName(student?.admissionCampus);
 
   return content
     .replace(/\{\{fullName\}\}/g, student?.fullName || "")
     .replace(/\{\{grade\}\}/g, student?.grade || "")
     .replace(/\{\{admissionCampus\}\}/g, actualCampusName)
     .replace(/\{\{schoolName\}\}/g, schoolNameFull)
+    .replace(/\{\{truong\}\}/g, truongName)
     .replace(/\{\{academicYear\}\}/g, student?.academicYear || "2025-2026")
     .replace(/\{\{surveyFormType\}\}/g, student?.surveyFormType || "")
     .replace(/\{\{hocKy\}\}/g, student?.hocKy || "1")
@@ -1255,7 +1259,7 @@ export function ReportsClient({
     const extSubs2 = extractCommittedSubjects(student);
     const comSubs = extSubs2.length > 0 ? extSubs2.join(", ") : "";
       
-    const { actualCampusName, schoolNameFull } = getCampusAndSchoolName(student?.admissionCampus);
+    const { actualCampusName, schoolNameFull, truongName } = getCampusAndSchoolName(student?.admissionCampus);
 
     const renderedContent = (config.content || "")
       .replace(/{{fullName}}/g, student?.fullName || "")
@@ -1264,6 +1268,7 @@ export function ReportsClient({
       .replace(/{{surveyFormType}}/g, student?.surveyFormType || "")
       .replace(/{{admissionCampus}}/g, actualCampusName)
       .replace(/{{schoolName}}/g, schoolNameFull)
+      .replace(/{{truong}}/g, truongName)
       .replace(/{{directorNote}}/g, student?.directorNote || "")
       .replace(/{{committedSubjects}}/g, comSubs)
       .replace(/{{signatureName}}/g, student?.signatureName || "");
@@ -2321,7 +2326,7 @@ export function ReportsClient({
                 className={`${inp} py-3 font-normal resize-none text-xs leading-relaxed font-sans`}
               />
               <p className="text-[10px] text-slate-400 mt-1 font-semibold leading-normal">
-                Từ khóa tự điền: <span className="text-teal-600 font-bold">{"{{fullName}}"}</span>, <span className="text-teal-600 font-bold">{"{{grade}}"}</span>, <span className="text-teal-600 font-bold">{"{{surveyFormType}}"}</span>, <span className="text-teal-600 font-bold">{"{{academicYear}}"}</span>, <span className="text-teal-600 font-bold">{"{{admissionCampus}}"}</span>, <span className="text-teal-600 font-bold">{"{{schoolName}}"}</span>, <span className="text-teal-600 font-bold">{"{{committedSubjects}}"}</span>
+                Từ khóa tự điền: <span className="text-teal-600 font-bold">{"{{fullName}}"}</span>, <span className="text-teal-600 font-bold">{"{{grade}}"}</span>, <span className="text-teal-600 font-bold">{"{{surveyFormType}}"}</span>, <span className="text-teal-600 font-bold">{"{{academicYear}}"}</span>, <span className="text-teal-600 font-bold">{"{{admissionCampus}}"}</span>, <span className="text-teal-600 font-bold">{"{{schoolName}}"}</span>, <span className="text-teal-600 font-bold">{"{{truong}}"}</span>, <span className="text-teal-600 font-bold">{"{{committedSubjects}}"}</span>
               </p>
             </Field>
 
