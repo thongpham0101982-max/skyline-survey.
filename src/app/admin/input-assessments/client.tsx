@@ -2012,8 +2012,8 @@ ${reportForm.directorNote}`;
       alert("Vui lòng chọn Kỳ khảo sát mới!");
       return;
     }
-    if (retestPeriodId === selectedReportStudent.periodId) {
-      alert("Kỳ khảo sát mới phải khác với Kỳ khảo sát hiện tại!");
+    if (retestPeriodId === selectedReportStudent.periodId && retestBatchId === selectedReportStudent.batchId) {
+      alert("Đợt khảo sát mới phải khác với Đợt khảo sát hiện tại!");
       return;
     }
 
