@@ -69,7 +69,7 @@ export function CategoriesClient({ initialCategories }) {
         <p className="text-slate-500 text-sm">Tao va quan ly cac nhom de phan loai cau hoi khao sat theo chu de.</p>
         <button
           onClick={() => { setCreating(true); setErrorMsg("") }}
-          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-semibold shadow-lg shadow-indigo-500/30 transition-all text-sm"
+          className="flex items-center gap-2 bg-[#00A19A] hover:bg-[#008c85] text-white px-5 py-2.5 rounded-xl font-semibold shadow-lg shadow-indigo-500/30 transition-all text-sm"
         >
           <Plus className="w-4 h-4" />
           Tao Danh Muc Moi
@@ -80,7 +80,7 @@ export function CategoriesClient({ initialCategories }) {
       {creating && (
         <div className="bg-white border-2 border-indigo-200 rounded-2xl p-6 shadow-lg shadow-indigo-50">
           <h3 className="font-bold text-slate-800 text-lg mb-4 flex items-center gap-2">
-            <Tag className="w-5 h-5 text-indigo-600" />
+            <Tag className="w-5 h-5 text-[#00A19A]" />
             Tao Danh Muc Moi
           </h3>
           {errorMsg && (
@@ -128,7 +128,7 @@ export function CategoriesClient({ initialCategories }) {
             <button
               onClick={handleCreate}
               disabled={saving}
-              className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-sm shadow-md shadow-indigo-500/20 transition-all disabled:opacity-60"
+              className="px-6 py-2.5 bg-[#00A19A] hover:bg-[#008c85] text-white rounded-lg font-bold text-sm shadow-md shadow-indigo-500/20 transition-all disabled:opacity-60"
             >
               {saving ? "Dang luu..." : "Luu Danh Muc"}
             </button>
@@ -143,7 +143,7 @@ export function CategoriesClient({ initialCategories }) {
       )}
 
       {/* List */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200/80 animate-in fade-in slide-in-from-bottom-4 duration-500 border border-slate-200 overflow-hidden">
         <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center gap-3">
           <Tag className="w-5 h-5 text-indigo-500" />
           <span className="font-bold text-slate-700">Danh Sach Danh Muc ({categories.length})</span>
@@ -163,7 +163,7 @@ export function CategoriesClient({ initialCategories }) {
                 <div key={cat.id} className="px-6 py-5 flex items-center gap-4 hover:bg-slate-50/70 transition-colors group">
                   <GripVertical className="w-5 h-5 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                   <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center flex-shrink-0">
-                    <Tag className="w-5 h-5 text-indigo-600" />
+                    <Tag className="w-5 h-5 text-[#00A19A]" />
                   </div>
                   <div className="flex-1 min-w-0">
                     {isEditing ? (

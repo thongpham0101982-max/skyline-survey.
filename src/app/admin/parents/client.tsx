@@ -184,7 +184,7 @@ export function ParentAccountsClient({ classes, years, campuses, defaultYearId }
         </div>
 
         <div className="flex-1 overflow-x-auto custom-scrollbar">
-          <table className="w-full text-left whitespace-nowrap">
+          <table className="w-full text-left text-sm whitespace-nowrap border-collapse">
             <thead>
               <tr className="bg-slate-50/30">
                 <th className="px-10 py-6 w-16">

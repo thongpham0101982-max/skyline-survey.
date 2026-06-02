@@ -130,12 +130,12 @@ export function TasksClient({ initialTasks, years, roles, currentRole, currentUs
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold flex items-center gap-3 text-slate-800">
-          <ClipboardList className="w-7 h-7 text-indigo-600" />
+          <ClipboardList className="w-7 h-7 text-[#00A19A]" />
           Điều hành Công việc
         </h1>
         {isAdmin && (
           <button onClick={() => { resetForm(); setShowForm(!showForm) }}
-            className="flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-xl hover:bg-indigo-700 transition-colors shadow-sm font-medium">
+            className="flex items-center gap-2 bg-[#00A19A] text-white px-5 py-2.5 rounded-xl hover:bg-[#008c85] transition-colors shadow-sm font-medium">
             <Plus className="w-4 h-4" /> Giao việc mới
           </button>
         )}
@@ -205,7 +205,7 @@ export function TasksClient({ initialTasks, years, roles, currentRole, currentUs
             </div>
           </div>
           <div className="flex gap-3 pt-2">
-            <button onClick={handleSubmit} className="bg-indigo-600 text-white px-6 py-2.5 rounded-xl hover:bg-indigo-700 font-medium">Lưu</button>
+            <button onClick={handleSubmit} className="bg-[#00A19A] text-white px-6 py-2.5 rounded-xl hover:bg-[#008c85] font-medium">Lưu</button>
             <button onClick={() => setShowForm(false)} className="bg-slate-100 px-6 py-2.5 rounded-xl hover:bg-slate-200 font-medium">Hủy</button>
           </div>
         </div>
@@ -250,7 +250,7 @@ export function TasksClient({ initialTasks, years, roles, currentRole, currentUs
 
       {/* Table */}
       <div className="bg-white border rounded-2xl shadow-sm overflow-hidden">
-        <table className="w-full text-sm">
+        <table className="w-full text-left text-sm whitespace-nowrap border-collapse">
           <thead>
             <tr className="bg-slate-50 border-b">
               <th className="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase w-12">STT</th>
@@ -276,12 +276,12 @@ export function TasksClient({ initialTasks, years, roles, currentRole, currentUs
                 <tr key={t.id} className={"transition-colors " + (isOverdue ? "bg-red-50 hover:bg-red-100" : "hover:bg-slate-50")}>
                   <td className="px-4 py-4 text-slate-400 text-center">{i + 1}</td>
                   <td className="px-4 py-4">
-                    <span className="bg-indigo-50 text-indigo-700 text-xs px-2 py-1 rounded-full whitespace-nowrap">
+                    <span className="bg-[#00A19A]/10 text-indigo-700 text-xs px-2 py-1 rounded-full whitespace-nowrap">
                       {CATEGORIES.find(c => c.value === t.category)?.label || t.category}
                     </span>
                   </td>
                   <td className="px-4 py-4">
-                    <div className={"font-semibold cursor-pointer hover:text-indigo-600 transition-colors " + (isOverdue ? "text-red-800" : "text-slate-800")} onClick={() => setDetailTask(t)}>{t.title}</div>
+                    <div className={"font-semibold cursor-pointer hover:text-[#00A19A] transition-colors " + (isOverdue ? "text-red-800" : "text-slate-800")} onClick={() => setDetailTask(t)}>{t.title}</div>
                     {t.assignedBy?.fullName && <div className="text-xs text-slate-400 mt-0.5">Boi: {t.assignedBy.fullName}</div>}
                     {hasStaffNote && (
                       <div className="mt-2 bg-emerald-50 border border-emerald-200 rounded-lg p-2">
@@ -321,7 +321,7 @@ export function TasksClient({ initialTasks, years, roles, currentRole, currentUs
                     <div className="flex items-center justify-center gap-1">
                       {isAdmin ? (
                         <>
-                          <button onClick={() => handleRemind(t.id)} title="Nhắc việc" className="p-1.5 text-indigo-500 hover:bg-indigo-50 rounded-lg"><Bell className="w-4 h-4" /></button>
+                          <button onClick={() => handleRemind(t.id)} title="Nhắc việc" className="p-1.5 text-indigo-500 hover:bg-[#00A19A]/10 rounded-lg"><Bell className="w-4 h-4" /></button>
                           <button onClick={() => handleEdit(t)} title="Sua" className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg"><Edit className="w-4 h-4" /></button>
                           <button onClick={() => handleDelete(t.id)} title="Xoa" className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4" /></button>
                         </>

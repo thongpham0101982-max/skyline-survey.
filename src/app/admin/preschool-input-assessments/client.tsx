@@ -2762,7 +2762,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                              else { const d = await res.json(); alert(d.error || "Lỗi cập nhật"); }
                                            } catch(e) { alert("Lỗi mạng"); }
                                          }}
-                                         className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 ${
+                                         className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#00A19A] focus:ring-offset-2 ${
                                            b.status === "ACTIVE" ? "bg-emerald-500" : "bg-slate-300"
                                          }`}
                                          title={b.status === "ACTIVE" ? "Đang mở (Click để Khóa)" : "Đã khóa (Click để Mở)"}
@@ -3110,7 +3110,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           {cfgLoading ? <Spin /> : (
             <div className="bg-white rounded-2xl border border-violet-100 shadow-sm overflow-hidden">
               {configs.length === 0 ? <Empty text="Chưa có danh mục nào" /> : (
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto custom-scrollbar flex-1">
                   <table className="w-full text-left">
                     <thead className="bg-violet-50 border-b border-violet-100">
                       <tr>
@@ -3181,8 +3181,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             {cLoading ? <Spin /> : filtChildren.length === 0 ? (
               <Empty text={cPeriodId ? "Chưa có bé nào" : "Vui lòng chọn Kỳ và bấm Tìm"} sub={cPeriodId ? "Bấm Thêm bé hoặc Import Excel" : ""} />
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left whitespace-nowrap">
+              <div className="overflow-x-auto custom-scrollbar flex-1">
+                <table className="w-full text-left text-sm whitespace-nowrap border-collapse">
                   <thead className="bg-violet-50 border-b border-violet-100">
                     <tr>
                       <th className="p-4 w-12"><input type="checkbox" className="w-4 h-4 rounded accent-violet-600" checked={filtChildren.length > 0 && cSelected.length === filtChildren.length} onChange={e => setCSelected(e.target.checked ? filtChildren.map(c => c.id) : [])} /></th>
@@ -3200,7 +3200,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         <td className="p-4">{child.gender ? <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${child.gender === "Nữ" || child.gender === "F" ? "bg-violet-100 text-violet-600" : "bg-blue-100 text-blue-600"}`}>{child.gender === "M" ? "Nam" : child.gender === "F" ? "Nữ" : child.gender}</span> : <span className="text-slate-300">—</span>}</td>
                         <td className="p-4"><span className="text-xs font-bold text-purple-700 bg-purple-50 px-2 py-1 rounded-lg border border-purple-100">{child.grade || "—"}</span></td>
                         <td className="p-4 text-xs font-semibold text-slate-600">{child.admissionCampus || "—"}</td>
-                        <td className="p-4">{child.admissionResult ? <span className={`text-xs font-black px-2.5 py-1 rounded-full ${child.admissionResult === "Học thử" ? "bg-indigo-50 text-indigo-600 border border-indigo-100" : child.admissionResult.toUpperCase().includes("ĐẠT") && !child.admissionResult.toUpperCase().includes("KHÔNG") ? "bg-emerald-100 text-emerald-700" : child.admissionResult.toUpperCase().includes("KHÔNG") ? "bg-rose-100 text-rose-600" : "bg-amber-100 text-amber-700"}`}>{child.admissionResult}</span> : <span className="text-xs text-slate-300">Chưa</span>}</td>
+                        <td className="p-4">{child.admissionResult ? <span className={`text-xs font-black px-2.5 py-1 rounded-full ${child.admissionResult === "Học thử" ? "bg-[#00A19A]/10 text-[#00A19A] border border-[#00A19A]/20" : child.admissionResult.toUpperCase().includes("ĐẠT") && !child.admissionResult.toUpperCase().includes("KHÔNG") ? "bg-emerald-100 text-emerald-700" : child.admissionResult.toUpperCase().includes("KHÔNG") ? "bg-rose-100 text-rose-600" : "bg-amber-100 text-amber-700"}`}>{child.admissionResult}</span> : <span className="text-xs text-slate-300">Chưa</span>}</td>
                         <td className="p-4 text-right"><div className="flex justify-end gap-1"><button onClick={() => openEditChild(child)} className="p-2 text-slate-300 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition-all"><Edit2 className="w-4 h-4" /></button><button onClick={() => setConfirm({ msg: `Xóa bé "${child.fullName}"?`, fn: () => doDeleteChild(child.id) })} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"><Trash2 className="w-4 h-4" /></button></div></td>
                       </tr>
                     ))}
@@ -3271,8 +3271,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 {sumLoading ? <Spin /> : studentSummaries.length === 0 ? (
                   <Empty text={cPeriodId ? "Chưa có bé nào" : "Vui lòng chọn Kỳ và bấm Tìm"} sub={cPeriodId ? "Hãy thêm học sinh trước" : ""} />
                 ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left whitespace-nowrap">
+                  <div className="overflow-x-auto custom-scrollbar flex-1">
+                    <table className="w-full text-left text-sm whitespace-nowrap border-collapse">
                       <thead className="bg-violet-50 border-b border-violet-100">
                         <tr>
                           {["STT", "Mã bé", "Họ và tên", "Ngày sinh", "Nhóm tuổi", "Tiến độ", "Trạng thái", "Thao tác"].map(h => (
@@ -3292,7 +3292,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                   return <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-teal-50 text-teal-600 border border-teal-200">✓ ĐẠT - MIỄN HỌC THỬ</span>;
                                 }
                                 if (res === "Đạt - Học Thử" || res === "DAT_HOC_THU" || res === "Học thử" || res === "HOC_THU") {
-                                  return <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-200">★ ĐẠT - HỌC THỬ</span>;
+                                  return <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-[#00A19A]/10 text-[#00A19A] border border-indigo-200">★ ĐẠT - HỌC THỬ</span>;
                                 }
                                 if (res === "Đạt" || res === "DAT") {
                                   return <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200">✓ ĐẠT</span>;
@@ -3380,7 +3380,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   <Empty text={cPeriodId ? "Chưa có bé nào" : "Vui lòng chọn Kỳ và bấm Tìm"} sub={cPeriodId ? "Hãy thêm học sinh trước" : ""} />
                 ) : (
                   <div className="overflow-x-auto relative rounded-xl border border-violet-100/80">
-                    <table className="w-full min-w-max text-left whitespace-nowrap table-auto">
+                    <table className="w-full min-w-max text-left text-sm whitespace-nowrap border-collapse table-auto">
                       <thead className="bg-violet-50 border-b border-violet-100 sticky top-0 z-30">
                         <tr>
                           {xetDuyetCols.filter(col => {
@@ -3403,7 +3403,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 return <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-teal-50 text-teal-600 border border-teal-200">✓ ĐẠT - MIỄN HỌC THỬ</span>;
                               }
                               if (res === "Đạt - Học Thử" || res === "DAT_HOC_THU" || res === "Học thử" || res === "HOC_THU") {
-                                return <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-200">★ ĐẠT - HỌC THỬ</span>;
+                                return <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-[#00A19A]/10 text-[#00A19A] border border-indigo-200">★ ĐẠT - HỌC THỬ</span>;
                               }
                               if (res === "Đạt" || res === "DAT") {
                                 return <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200">✓ ĐẠT</span>;
@@ -3614,8 +3614,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                       </div>
                                     )}
                                     {s.devPsychologyComment && (
-                                      <div className="bg-indigo-50/30 border-l-[3px] border-indigo-500 rounded-r-xl p-2 flex flex-col gap-0.5 shadow-[0_1px_2px_rgba(0,0,0,0.01)]">
-                                        <span className="text-[9px] font-black text-indigo-600 uppercase tracking-wider">Tâm lý</span>
+                                      <div className="bg-[#00A19A]/10/30 border-l-[3px] border-indigo-500 rounded-r-xl p-2 flex flex-col gap-0.5 shadow-[0_1px_2px_rgba(0,0,0,0.01)]">
+                                        <span className="text-[9px] font-black text-[#00A19A] uppercase tracking-wider">Tâm lý</span>
                                         <span className="text-[11px] leading-relaxed text-slate-700 font-medium">{s.devPsychologyComment}</span>
                                       </div>
                                     )}
@@ -3642,7 +3642,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-teal-50 text-teal-600 border border-teal-100">ĐẠT - MIỄN HỌC THỬ</span>
                                              )}
                                              {s.bghApprovalStatus === "DAT_HOC_THU" && (
-                                               <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100">ĐẠT - HỌC THỬ</span>
+                                               <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-[#00A19A]/10 text-[#00A19A] border border-[#00A19A]/20">ĐẠT - HỌC THỬ</span>
                                              )}
                                              {s.bghApprovalStatus === "DAT" && (
                                                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">ĐẠT</span>
@@ -3682,7 +3682,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-teal-50 text-teal-600 border border-teal-100">ĐẠT - MIỄN HỌC THỬ</span>
                                              )}
                                              {s.gdcsApprovalStatus === "DAT_HOC_THU" && (
-                                               <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100">ĐẠT - HỌC THỬ</span>
+                                               <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-[#00A19A]/10 text-[#00A19A] border border-[#00A19A]/20">ĐẠT - HỌC THỬ</span>
                                              )}
                                              {s.gdcsApprovalStatus === "DAT" && (
                                                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">ĐẠT</span>
@@ -3782,8 +3782,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     {cPeriodId ? "Không có học sinh nào đang ở trạng thái học thử" : "Vui lòng chọn Kỳ và bấm Tìm"}
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left whitespace-nowrap">
+                  <div className="overflow-x-auto custom-scrollbar flex-1">
+                    <table className="w-full text-left text-sm whitespace-nowrap border-collapse">
                       <thead className="bg-violet-50 border-b border-violet-100">
                         <tr>
                           {["STT", "Mã bé", "Họ và tên", "Ngày sinh", "Nhóm tuổi", "Lớp học thử", "GV Học thử", "Kết quả học thử", "Thao tác"].map(h => (
@@ -3877,8 +3877,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     {cPeriodId ? "Không có học sinh nào được duyệt Miễn học thử" : "Vui lòng chọn Kỳ và bấm Tìm"}
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left whitespace-nowrap">
+                  <div className="overflow-x-auto custom-scrollbar flex-1">
+                    <table className="w-full text-left text-sm whitespace-nowrap border-collapse">
                       <thead className="bg-violet-50 border-b border-violet-100">
                         <tr>
                           {["STT", "Mã bé", "Họ và tên", "Ngày sinh", "Nhóm tuổi", "Cơ sở", "Kết quả duyệt", "Thao tác"].map(h => (
@@ -4775,7 +4775,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                             <div className="flex items-center justify-between">
                               <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full tracking-wider ${
                                 role === "GĐCS" ? "bg-emerald-50 text-emerald-700 border border-emerald-100" :
-                                role === "BGH" ? "bg-indigo-50 text-indigo-700 border border-indigo-100" :
+                                role === "BGH" ? "bg-[#00A19A]/10 text-indigo-700 border border-[#00A19A]/20" :
                                 role === "Giáo vụ" ? "bg-violet-50 text-violet-700 border border-violet-100" :
                                 role === "Tổ/Môn" ? "bg-cyan-50 text-cyan-700 border border-cyan-100" :
                                 role === "Giáo viên" ? "bg-teal-50 text-teal-700 border border-teal-100" :
@@ -4928,7 +4928,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               setRecipientEmail(current ? (current + ", " + p.email) : p.email);
                             }
                           }}
-                          className={"px-2 py-1 rounded-lg text-[10px] font-bold border transition-all " + (isActive ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100')}
+                          className={"px-2 py-1 rounded-lg text-[10px] font-bold border transition-all " + (isActive ? 'bg-[#00A19A]/10 border-indigo-200 text-indigo-700' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100')}
                         >
                           + {p.label}
                         </button>
@@ -4965,7 +4965,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               setCcEmail(current ? (current + ", " + p.email) : p.email);
                             }
                           }}
-                          className={"px-2 py-1 rounded-lg text-[10px] font-bold border transition-all " + (isActive ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100')}
+                          className={"px-2 py-1 rounded-lg text-[10px] font-bold border transition-all " + (isActive ? 'bg-[#00A19A]/10 border-indigo-200 text-indigo-700' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100')}
                         >
                           + {p.label}
                         </button>
@@ -5060,7 +5060,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                   return copy;
                                 });
                               }}
-                              className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer"
+                              className="rounded border-slate-300 text-[#00A19A] focus:ring-indigo-500 w-4 h-4 cursor-pointer"
                             />
                           </td>
                           <td className="p-3 font-mono">{s.studentCode}</td>
@@ -5535,7 +5535,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             {/* Modal Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50 no-print">
               <div className="flex items-center gap-2">
-                {isInvitation ? <Mail className="w-5 h-5 text-indigo-600"/> : <GraduationCap className="w-5 h-5 text-indigo-600"/>}
+                {isInvitation ? <Mail className="w-5 h-5 text-[#00A19A]"/> : <GraduationCap className="w-5 h-5 text-[#00A19A]"/>}
                 <h3 className="text-base font-black text-slate-800">{isInvitation ? "Mẫu Thư mời khảo sát" : isCommitment ? "Bản Cam kết học tập" : "Mẫu Thư Chúc mừng"}</h3>
               </div>
               <div className="flex items-center gap-4">
@@ -6190,7 +6190,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             </div>
             <div>
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">GV Thực hiện khảo sát</p>
-              <p className="text-sm font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-lg border border-indigo-100">{assignedTeachers}</p>
+              <p className="text-sm font-bold text-indigo-700 bg-[#00A19A]/10 px-2 py-0.5 rounded-lg border border-[#00A19A]/20">{assignedTeachers}</p>
             </div>
           </div>
 
@@ -6476,7 +6476,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     return <span className="text-xs font-black px-3 py-1 rounded-full bg-teal-50 text-teal-600 border border-teal-100 flex items-center gap-1">✓ ĐẠT - MIỄN HỌC THỬ</span>;
                   }
                   if (res === "Đạt - Học Thử" || res === "Học thử") {
-                    return <span className="text-xs font-black px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center gap-1">★ ĐẠT - HỌC THỬ</span>;
+                    return <span className="text-xs font-black px-3 py-1 rounded-full bg-[#00A19A]/10 text-[#00A19A] border border-[#00A19A]/20 flex items-center gap-1">★ ĐẠT - HỌC THỬ</span>;
                   }
                   if (res === "Đạt") {
                     return <span className="text-xs font-black px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center gap-1">✓ ĐẠT</span>;
@@ -6548,7 +6548,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                           <div className="flex flex-wrap gap-2">
                             {[
                               { status: "DAT_MIEN_HOC_THU", label: "ĐẠT - MIỄN HỌC THỬ", color: "bg-teal-50 text-teal-600 border-teal-100 hover:bg-teal-100/50", activeColor: "bg-teal-600 text-white border-teal-600 shadow-sm" },
-                              { status: "DAT_HOC_THU", label: "ĐẠT - HỌC THỬ", color: "bg-indigo-50 text-indigo-600 border-indigo-100 hover:bg-indigo-100/50", activeColor: "bg-indigo-600 text-white border-indigo-600 shadow-sm" },
+                              { status: "DAT_HOC_THU", label: "ĐẠT - HỌC THỬ", color: "bg-[#00A19A]/10 text-[#00A19A] border-[#00A19A]/20 hover:bg-indigo-100/50", activeColor: "bg-[#00A19A] text-white border-[#00A19A] shadow-sm" },
                               { status: "KHONG_DAT", label: "KHÔNG ĐẠT", color: "bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100/50", activeColor: "bg-rose-500 text-white border-rose-500 shadow-sm" },
                               { status: "Y_KIEN_KHAC", label: "Ý KIẾN KHÁC", color: "bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100/50", activeColor: "bg-amber-500 text-white border-amber-500 shadow-sm" }
                             ].map(opt => (
@@ -6635,7 +6635,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                           <div className="flex flex-wrap gap-2">
                             {[
                               { status: "DAT_MIEN_HOC_THU", label: "ĐẠT - MIỄN HỌC THỬ", color: "bg-teal-50 text-teal-600 border-teal-100 hover:bg-teal-100/50", activeColor: "bg-teal-600 text-white border-teal-600 shadow-sm" },
-                              { status: "DAT_HOC_THU", label: "ĐẠT - HỌC THỬ", color: "bg-indigo-50 text-indigo-600 border-indigo-100 hover:bg-indigo-100/50", activeColor: "bg-indigo-600 text-white border-indigo-600 shadow-sm" },
+                              { status: "DAT_HOC_THU", label: "ĐẠT - HỌC THỬ", color: "bg-[#00A19A]/10 text-[#00A19A] border-[#00A19A]/20 hover:bg-indigo-100/50", activeColor: "bg-[#00A19A] text-white border-[#00A19A] shadow-sm" },
                               { status: "KHONG_DAT", label: "KHÔNG ĐẠT", color: "bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100/50", activeColor: "bg-rose-500 text-white border-rose-500 shadow-sm" },
                               { status: "Y_KIEN_KHAC", label: "Ý KIẾN KHÁC", color: "bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100/50", activeColor: "bg-amber-500 text-white border-amber-500 shadow-sm" }
                             ].map(opt => (
@@ -6709,7 +6709,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             <button
               onClick={saveProbationary}
               disabled={savingProb || devLoading}
-              className="flex-1 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-100 disabled:opacity-50 transition-all"
+              className="flex-1 py-3.5 bg-[#00A19A] hover:bg-[#008c85] text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-[#00A19A]/20 disabled:opacity-50 transition-all"
             >
               {savingProb ? "Đang lưu..." : "Lưu Kết Quả Học Thử"}
             </button>
@@ -6733,7 +6733,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             </div>
             <div>
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cơ sở</p>
-              <p className="text-sm font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-lg border border-indigo-100">{probStudent?.admissionCampus || "—"}</p>
+              <p className="text-sm font-bold text-indigo-700 bg-[#00A19A]/10 px-2 py-0.5 rounded-lg border border-[#00A19A]/20">{probStudent?.admissionCampus || "—"}</p>
             </div>
           </div>
 
@@ -6789,9 +6789,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <h4 className="font-black text-slate-800 text-sm uppercase tracking-wide">{area.name}</h4>
                   </div>
                   
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto custom-scrollbar flex-1">
                     <table className="w-full text-left whitespace-nowrap table-fixed">
-                      <thead className="bg-slate-50/50 border-b border-slate-100">
+                      <thead className="bg-[#F0FDFA] sticky top-0 z-10 shadow-[0_1px_0_#CCFBF1]">
                         <tr>
                           <th className="p-3 text-[9px] font-black text-slate-400 uppercase tracking-wider w-[40%]">Tiêu chí</th>
                           <th className="p-3 text-[9px] font-black text-slate-400 uppercase tracking-wider text-center w-[15%]">Chưa thể hiện</th>
@@ -6840,7 +6840,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                   onClick={() => setScoreResult(currentScore.result === "BAT_DAU_THE_HIEN" ? "" : "BAT_DAU_THE_HIEN")}
                                   className={`w-5 h-5 rounded-full border transition-all ${
                                     currentScore.result === "BAT_DAU_THE_HIEN"
-                                      ? "bg-indigo-500 border-indigo-500 shadow-sm text-white flex items-center justify-center text-[10px] font-bold mx-auto"
+                                      ? "bg-[#00A19A]/100 border-indigo-500 shadow-sm text-white flex items-center justify-center text-[10px] font-bold mx-auto"
                                       : "border-slate-300 hover:border-slate-400 bg-white mx-auto block"
                                   }`}
                                 >

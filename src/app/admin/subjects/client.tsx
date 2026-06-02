@@ -80,7 +80,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
             <div className="flex items-center gap-2 flex-wrap">
               {safeYears.map((y: any) => (
                 <button key={y.id} onClick={() => setSelectedYearId(y.id)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all ${selectedYearId === y.id ? "bg-indigo-600 text-white border-indigo-600 shadow-sm" : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"}`}>
+                  className={`px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all ${selectedYearId === y.id ? "bg-[#00A19A] text-white border-[#00A19A] shadow-sm" : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"}`}>
                   {y.name}{y.status === "ACTIVE" && <span className="ml-1 opacity-75 text-[10px]">Active</span>}
                 </button>
               ))}
@@ -99,7 +99,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
             <div className="flex items-center gap-2 flex-wrap">
               {["ALL_PROGRAMS", "Hệ S", "Hệ Song Bằng"].map((prog) => (
                 <button key={prog} onClick={() => setFilterProgram(prog)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all ${filterProgram === prog ? "bg-indigo-600 text-white border-indigo-600 shadow-sm" : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"}`}>
+                  className={`px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all ${filterProgram === prog ? "bg-[#00A19A] text-white border-[#00A19A] shadow-sm" : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"}`}>
                   {prog === "ALL_PROGRAMS" ? "Tất cả Hệ" : prog}
                 </button>
               ))}
@@ -117,7 +117,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
             <div className="flex items-center gap-2 flex-wrap">
               {["ALL_LEVELS", "PRIMARY", "MIDDLE", "HIGH"].map((lvl) => (
                 <button key={lvl} onClick={() => setFilterLevel(lvl)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all ${filterLevel === lvl ? "bg-indigo-600 text-white border-indigo-600 shadow-sm" : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"}`}>
+                  className={`px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all ${filterLevel === lvl ? "bg-[#00A19A] text-white border-[#00A19A] shadow-sm" : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"}`}>
                   {lvl === "ALL_LEVELS" ? "Tất cả các bậc" : levelLabels[lvl]}
                 </button>
               ))}
@@ -126,18 +126,18 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200">
+      <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200/80 animate-in fade-in slide-in-from-bottom-4 duration-500 border border-slate-200">
         <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
           <div>
             <h3 className="font-bold text-slate-700">Danh mục môn học ({displayedSubjects.length})</h3>
-            <p className="text-sm text-indigo-600 font-medium mt-1">Tổng số tiết trên tuần: Quy định là 40 Tiết</p>
+            <p className="text-sm text-[#00A19A] font-medium mt-1">Tổng số tiết trên tuần: Quy định là 40 Tiết</p>
           </div>
-          <button onClick={() => startEdit()} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold flex items-center hover:bg-indigo-700 shadow-sm">
+          <button onClick={() => startEdit()} className="px-4 py-2 bg-[#00A19A] text-white rounded-lg text-sm font-semibold flex items-center hover:bg-[#008c85] shadow-sm">
             <Plus className="w-4 h-4 mr-2" /> Thêm Môn học
           </button>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto custom-scrollbar flex-1">
           <table className="w-full text-left whitespace-nowrap">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
@@ -145,7 +145,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                 <th colSpan={3} className="px-6 py-3 font-bold text-slate-600 text-sm border-r border-slate-200 text-center text-indigo-700 bg-indigo-50/50">Số tiết (Theo Bậc) / tuần</th>
                 <th rowSpan={2} className="px-6 py-4 font-bold text-slate-600 text-sm text-right">Thao tác</th>
               </tr>
-              <tr className="border-b border-slate-200">
+              <tr className="border-b border-slate-200 hover:bg-slate-50/50">
                 <th className="px-4 py-2 font-semibold text-slate-600 text-xs">Mã môn</th>
                 <th className="px-4 py-2 font-semibold text-slate-600 text-xs border-r border-slate-200">Tên môn</th>
                 <th className="px-4 py-2 font-semibold text-slate-600 text-xs border-r border-slate-200">Hệ học</th>
@@ -250,7 +250,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                     <td className="px-4 py-3 text-center font-bold text-emerald-700 text-sm border-r border-slate-200 bg-emerald-50/30">{q.quotaMiddle > 0 ? q.quotaMiddle + ' tiết' : '-'}</td>
                     <td className="px-4 py-3 text-center font-bold text-amber-700 text-sm border-r border-slate-200 bg-amber-50/30">{q.quotaHigh > 0 ? q.quotaHigh + ' tiết' : '-'}</td>
                     <td className="px-4 py-3 text-right">
-                      <button onClick={() => startEdit(s)} className="p-2 text-slate-400 hover:text-indigo-600 rounded-lg"><Edit2 className="w-4 h-4"/></button>
+                      <button onClick={() => startEdit(s)} className="p-2 text-slate-400 hover:text-[#00A19A] rounded-lg"><Edit2 className="w-4 h-4"/></button>
                       <button onClick={() => handleDelete(s.id)} className="p-2 text-slate-400 hover:text-red-600 rounded-lg"><Trash2 className="w-4 h-4"/></button>
                     </td>
                   </tr>

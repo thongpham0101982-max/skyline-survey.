@@ -57,7 +57,7 @@ export function CampusManagerClient({ initialCampuses, gdcsUsers = [] }: any) {
             className="w-full pl-9 pr-4 py-3 border border-slate-200 rounded-2xl text-sm focus:ring-4 focus:ring-indigo-50 outline-none transition-all" />
         </div>
         <button onClick={() => { setShowAddForm(true); setEditingId(null); setForm({ code: "", name: "", address: "", managerId: "" }) }}
-          className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-2xl hover:bg-indigo-700 font-bold shadow-lg shadow-indigo-200 transition-all active:scale-95">
+          className="flex items-center gap-2 bg-[#00A19A] text-white px-6 py-3 rounded-2xl hover:bg-[#008c85] font-bold shadow-lg shadow-indigo-200 transition-all active:scale-95">
           <Plus className="w-5 h-5" /> Thêm Cơ Sở
         </button>
       </div>
@@ -66,7 +66,7 @@ export function CampusManagerClient({ initialCampuses, gdcsUsers = [] }: any) {
         <div className="bg-white border border-slate-200 rounded-3xl p-8 shadow-2xl shadow-slate-200/50 animate-in fade-in slide-in-from-top-4">
           <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-3">
             <div className="p-2 bg-indigo-100 rounded-xl">
-              <Building2 className="w-6 h-6 text-indigo-600" />
+              <Building2 className="w-6 h-6 text-[#00A19A]" />
             </div>
             {editingId ? "Cập nhật Cơ sở" : "Thêm Cơ sở Mới"}
           </h3>
@@ -101,7 +101,7 @@ export function CampusManagerClient({ initialCampuses, gdcsUsers = [] }: any) {
             </div>
           </div>
           <div className="flex gap-4 mt-8">
-            <button onClick={handleSave} disabled={saving} className="bg-indigo-600 text-white px-8 py-3 rounded-2xl font-black text-sm shadow-xl shadow-indigo-200 hover:bg-indigo-700 disabled:opacity-50 transition-all active:scale-95">
+            <button onClick={handleSave} disabled={saving} className="bg-[#00A19A] text-white px-8 py-3 rounded-2xl font-black text-sm shadow-xl shadow-indigo-200 hover:bg-[#008c85] disabled:opacity-50 transition-all active:scale-95">
               {saving ? "Số liệu đang được lưu..." : "Lưu Thay Đổi"}
             </button>
             <button onClick={() => { setShowAddForm(false); setEditingId(null) }} className="bg-slate-100 text-slate-600 px-8 py-3 rounded-2xl font-black text-sm hover:bg-slate-200 transition-all">Hủy bỏ</button>
@@ -110,8 +110,8 @@ export function CampusManagerClient({ initialCampuses, gdcsUsers = [] }: any) {
       )}
 
       <div className="bg-white rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-100/50 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+        <div className="overflow-x-auto custom-scrollbar flex-1">
+          <table className="w-full text-left whitespace-nowrap border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
                 <th className="px-8 py-5 text-[11px] font-black text-slate-400 uppercase tracking-widest">Mã Cơ sở</th>
@@ -124,7 +124,7 @@ export function CampusManagerClient({ initialCampuses, gdcsUsers = [] }: any) {
             </thead>
             <tbody className="divide-y divide-slate-50">
               {filtered.map((c: any) => (
-                <tr key={c.id} className="hover:bg-indigo-50/30 transition-colors group">
+                <tr key={c.id} className="hover:bg-[#00A19A]/10/30 transition-colors group">
                   <td className="px-8 py-6">
                     <span className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg font-black text-xs tracking-wider border border-indigo-100">
                       {c.campusCode}
@@ -159,7 +159,7 @@ export function CampusManagerClient({ initialCampuses, gdcsUsers = [] }: any) {
                   <td className="px-8 py-6 text-right">
                     <div className="flex items-center justify-end gap-3 opacity-100 transition-all ">
                       <button onClick={() => { setEditingId(c.id); setForm({ code: c.campusCode, name: c.campusName, address: c.address || "", managerId: c.managerId || "" }); setShowAddForm(false); }}
-                        className="p-2.5 text-indigo-600 hover:bg-white hover:shadow-md rounded-xl transition-all border border-transparent hover:border-indigo-100">
+                        className="p-2.5 text-[#00A19A] hover:bg-white hover:shadow-md rounded-xl transition-all border border-transparent hover:border-indigo-100">
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button onClick={() => handleDelete(c.id, c.campusName)}

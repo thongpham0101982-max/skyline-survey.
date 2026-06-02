@@ -151,11 +151,11 @@ export function TaskDetailPanel({ task, currentUserId, isAdmin, onClose }: TaskD
         {/* Tabs */}
         <div className="flex border-b border-slate-200">
           <button onClick={() => setTab("comments")}
-            className={"flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold border-b-2 transition-colors " + (tab === "comments" ? "border-indigo-600 text-indigo-700 bg-indigo-50/50" : "border-transparent text-slate-500 hover:text-slate-700")}>
+            className={"flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold border-b-2 transition-colors " + (tab === "comments" ? "border-[#00A19A] text-indigo-700 bg-[#00A19A]/10/50" : "border-transparent text-slate-500 hover:text-slate-700")}>
             <MessageSquare className="w-4 h-4" /> Bình luận ({comments.length})
           </button>
           <button onClick={() => setTab("attachments")}
-            className={"flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold border-b-2 transition-colors " + (tab === "attachments" ? "border-indigo-600 text-indigo-700 bg-indigo-50/50" : "border-transparent text-slate-500 hover:text-slate-700")}>
+            className={"flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold border-b-2 transition-colors " + (tab === "attachments" ? "border-[#00A19A] text-indigo-700 bg-[#00A19A]/10/50" : "border-transparent text-slate-500 hover:text-slate-700")}>
             <Paperclip className="w-4 h-4" /> File đính kèm ({attachments.length})
           </button>
         </div>
@@ -180,8 +180,8 @@ export function TaskDetailPanel({ task, currentUserId, isAdmin, onClose }: TaskD
                 return (
                   <div key={c.id} className={"flex " + (isOwn ? "justify-end" : "justify-start")}>
                     <div className={"max-w-[80%] group " + (isOwn ? "order-2" : "")}>
-                      <div className={"rounded-2xl px-4 py-2.5 shadow-sm " + (isOwn ? "bg-indigo-600 text-white rounded-br-md" : "bg-slate-100 text-slate-800 rounded-bl-md")}>
-                        {!isOwn && <div className={"text-xs font-bold mb-1 " + (isOwn ? "text-indigo-200" : "text-indigo-600")}>{c.user?.fullName}</div>}
+                      <div className={"rounded-2xl px-4 py-2.5 shadow-sm " + (isOwn ? "bg-[#00A19A] text-white rounded-br-md" : "bg-slate-100 text-slate-800 rounded-bl-md")}>
+                        {!isOwn && <div className={"text-xs font-bold mb-1 " + (isOwn ? "text-indigo-200" : "text-[#00A19A]")}>{c.user?.fullName}</div>}
                         <p className="text-sm whitespace-pre-wrap break-words">{c.content}</p>
                       </div>
                       <div className={"flex items-center gap-2 mt-1 px-1 " + (isOwn ? "justify-end" : "")}>
@@ -211,16 +211,16 @@ export function TaskDetailPanel({ task, currentUserId, isAdmin, onClose }: TaskD
                 const IconComp = getFileIcon(a.contentType)
                 const isImage = a.contentType?.startsWith("image")
                 return (
-                  <div key={a.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50/30 transition-all group">
+                  <div key={a.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 hover:border-indigo-200 hover:bg-[#00A19A]/10/30 transition-all group">
                     <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <IconComp className="w-5 h-5 text-indigo-600" />
+                      <IconComp className="w-5 h-5 text-[#00A19A]" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-slate-800 truncate">{a.fileName}</p>
                       <p className="text-xs text-slate-400">{formatSize(a.fileSize)} • {a.user?.fullName} • {formatTime(a.createdAt)}</p>
                     </div>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => handleDownload(a)} className="p-1.5 text-indigo-600 hover:bg-indigo-100 rounded-lg" title="Tải xuống">
+                      <button onClick={() => handleDownload(a)} className="p-1.5 text-[#00A19A] hover:bg-indigo-100 rounded-lg" title="Tải xuống">
                         <Download className="w-4 h-4" />
                       </button>
                       {(a.userId === currentUserId || isAdmin) && (
@@ -251,7 +251,7 @@ export function TaskDetailPanel({ task, currentUserId, isAdmin, onClose }: TaskD
               <button
                 onClick={handleSendComment}
                 disabled={!newComment.trim() || sending}
-                className="bg-indigo-600 text-white p-2.5 rounded-xl hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
+                className="bg-[#00A19A] text-white p-2.5 rounded-xl hover:bg-[#008c85] disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
               >
                 <Send className="w-4 h-4" />
               </button>
@@ -262,7 +262,7 @@ export function TaskDetailPanel({ task, currentUserId, isAdmin, onClose }: TaskD
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
-                className="flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-xl hover:bg-indigo-700 disabled:opacity-50 font-medium text-sm transition-colors shadow-sm"
+                className="flex items-center gap-2 bg-[#00A19A] text-white px-5 py-2.5 rounded-xl hover:bg-[#008c85] disabled:opacity-50 font-medium text-sm transition-colors shadow-sm"
               >
                 <Paperclip className="w-4 h-4" /> {uploading ? "Đang tải lên..." : "Tải file lên"}
               </button>

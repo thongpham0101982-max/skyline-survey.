@@ -77,10 +77,10 @@ export default function DepartmentsClient() {
           </h1>
           <p className="text-slate-500 mt-1 text-sm">Thêm, sửa, xóa danh sách Tổ chuyên môn / Phòng ban</p>
         </div>
-        <button onClick={() => { setEditingId(null); setForm({ code: "", name: "", description: "", blockCM: "" }); setIsOpen(true); }} className="px-4 py-2.5 bg-indigo-600 text-white rounded-xl shadow-sm hover:bg-indigo-700 font-semibold flex items-center gap-2"><Plus className="w-5 h-5"/>Thêm Tổ / Phòng</button>
+        <button onClick={() => { setEditingId(null); setForm({ code: "", name: "", description: "", blockCM: "" }); setIsOpen(true); }} className="px-4 py-2.5 bg-[#00A19A] text-white rounded-xl shadow-sm hover:bg-[#008c85] font-semibold flex items-center gap-2"><Plus className="w-5 h-5"/>Thêm Tổ / Phòng</button>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200/80 overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500 overflow-hidden">
         <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-wrap gap-3 justify-between items-center">
           <div className="flex flex-wrap gap-3 items-center">
             <div className="relative w-80">
@@ -100,7 +100,7 @@ export default function DepartmentsClient() {
         <table className="w-full text-sm text-left">
             <thead className="bg-slate-50 text-slate-500 uppercase text-xs font-semibold">
               <tr>
-                <th className="w-10 px-4 py-3"><input type="checkbox" checked={selectedIds.length === filtered.length && filtered.length > 0} onChange={() => setSelectedIds(selectedIds.length === filtered.length ? [] : filtered.map(d=>d.id))} className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500" /></th>
+                <th className="w-10 px-4 py-3"><input type="checkbox" checked={selectedIds.length === filtered.length && filtered.length > 0} onChange={() => setSelectedIds(selectedIds.length === filtered.length ? [] : filtered.map(d=>d.id))} className="w-4 h-4 rounded text-[#00A19A] focus:ring-indigo-500" /></th>
                 <th className="px-4 py-3">Mã Tổ</th>
                 <th className="px-4 py-3 w-1/3">Tên Tổ Chuyên môn</th>
                 <th className="px-4 py-3">Khối CM</th>
@@ -111,14 +111,14 @@ export default function DepartmentsClient() {
             <tbody className="divide-y divide-slate-100 text-slate-700">
               {loading ? <tr><td colSpan={6} className="p-8 text-center text-slate-400">Đang tải...</td></tr> : filtered.length === 0 ? <tr><td colSpan={6} className="p-8 text-center text-slate-400">Chưa có Tổ chuyên môn nào.</td></tr> : filtered.map(d => (
                 <tr key={d.id} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="px-4 py-3"><input type="checkbox" checked={selectedIds.includes(d.id)} onChange={() => setSelectedIds(p=>p.includes(d.id)?p.filter(x=>x!==d.id):[...p, d.id])} className="w-4 h-4 rounded text-indigo-600" /></td>
-                  <td className="px-4 py-3 font-mono font-medium text-indigo-600">{d.code}</td>
+                  <td className="px-4 py-3"><input type="checkbox" checked={selectedIds.includes(d.id)} onChange={() => setSelectedIds(p=>p.includes(d.id)?p.filter(x=>x!==d.id):[...p, d.id])} className="w-4 h-4 rounded text-[#00A19A]" /></td>
+                  <td className="px-4 py-3 font-mono font-medium text-[#00A19A]">{d.code}</td>
                   <td className="px-4 py-3 font-semibold text-slate-800">{d.name}</td>
                   <td className="px-4 py-3">
                     {d.blockCM ? (
                       <span className={`px-2.5 py-1 rounded-full text-xs font-semibold inline-block ${
                         d.blockCM === "Mầm Non" ? "bg-amber-50 text-amber-600 border border-amber-200" :
-                        d.blockCM === "Phổ thông" ? "bg-indigo-50 text-indigo-600 border border-indigo-200" :
+                        d.blockCM === "Phổ thông" ? "bg-indigo-50 text-[#00A19A] border border-indigo-200" :
                         d.blockCM === "Điều hành" ? "bg-teal-50 text-teal-600 border border-teal-200" :
                         d.blockCM === "Hỗ trợ người học" ? "bg-rose-50 text-rose-600 border border-rose-200" :
                         "bg-slate-50 text-slate-600 border border-slate-200"
@@ -132,7 +132,7 @@ export default function DepartmentsClient() {
                   <td className="px-4 py-3 text-slate-500">{d.description || "-"}</td>
                   <td className="px-4 py-3 text-center">
                     <div className="flex gap-1 justify-center">
-                      <button onClick={() => handleEdit(d)} className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-slate-100"><Pencil className="w-4 h-4"/></button>
+                      <button onClick={() => handleEdit(d)} className="p-1.5 text-slate-400 hover:text-[#00A19A] rounded-lg hover:bg-slate-100"><Pencil className="w-4 h-4"/></button>
                       <button onClick={() => handleDelete(d.id)} className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50"><Trash2 className="w-4 h-4"/></button>
                     </div>
                   </td>
@@ -174,7 +174,7 @@ export default function DepartmentsClient() {
               </div>
               <div className="pt-4 flex justify-end gap-3">
                 <button type="button" onClick={() => setIsOpen(false)} className="px-5 py-2.5 text-slate-600 font-medium hover:bg-slate-100 rounded-xl">Hủy</button>
-                <button type="submit" className="px-5 py-2.5 bg-indigo-600 text-white font-medium rounded-xl shadow-sm hover:bg-indigo-700">Lưu thông tin</button>
+                <button type="submit" className="px-5 py-2.5 bg-[#00A19A] text-white font-medium rounded-xl shadow-sm hover:bg-[#008c85]">Lưu thông tin</button>
               </div>
             </form>
           </div>

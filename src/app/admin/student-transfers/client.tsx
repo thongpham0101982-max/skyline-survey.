@@ -57,7 +57,7 @@ export function StudentTransfersClient() {
           onClick={() => setActiveTab("CHANGE_CLASS")}
           className={`flex items-center px-6 py-4 text-sm font-bold rounded-2xl transition-all whitespace-nowrap ${
             activeTab === "CHANGE_CLASS"
-              ? "bg-indigo-50 text-indigo-600 border-b-4 border-indigo-500 shadow-sm"
+              ? "bg-[#00A19A]/10 text-[#00A19A] border-b-4 border-indigo-500 shadow-sm"
               : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
           }`}
         >
@@ -74,13 +74,13 @@ export function StudentTransfersClient() {
            </div>
            
            {activeTab === "OUT" && (
-             <button onClick={() => setShowOutModal(true)} className="px-6 py-3 bg-indigo-600 text-white font-bold rounded-2xl hover:bg-indigo-700 transition-all flex items-center shadow-lg shadow-indigo-100">
+             <button onClick={() => setShowOutModal(true)} className="px-6 py-3 bg-[#00A19A] text-white font-bold rounded-2xl hover:bg-[#008c85] transition-all flex items-center shadow-lg shadow-[#00A19A]/20">
                <Plus className="w-5 h-5 mr-2" /> Tạo phiếu Chuyển đi
              </button>
            )}
 
            {activeTab === "CHANGE_CLASS" && (
-             <button onClick={() => setShowChangeModal(true)} className="px-6 py-3 bg-indigo-600 text-white font-bold rounded-2xl hover:bg-indigo-700 transition-all flex items-center shadow-lg shadow-indigo-100">
+             <button onClick={() => setShowChangeModal(true)} className="px-6 py-3 bg-[#00A19A] text-white font-bold rounded-2xl hover:bg-[#008c85] transition-all flex items-center shadow-lg shadow-[#00A19A]/20">
                <Plus className="w-5 h-5 mr-2" /> Tạo phiếu Chuyển lớp
              </button>
            )}
@@ -150,7 +150,7 @@ export function StudentTransfersClient() {
                     <tr key={t.id} className="hover:bg-slate-50">
                       <td className="p-4 font-medium text-slate-700">{new Date(t.transferDate).toLocaleDateString('vi-VN')} <br/><span className="text-xs text-slate-400">{t.semester === 'HK1' ? 'Học kỳ 1' : t.semester === 'HK2' ? 'Học kỳ 2' : t.semester === 'SUMMER' ? 'Trong hè' : ''}</span></td>
                       <td className="p-4 font-bold text-slate-900">{t.student?.studentName} <br/><span className="text-xs font-medium text-slate-400">{t.student?.studentCode}</span></td>
-                      <td className="p-4 font-medium text-indigo-600">{t.destinationSchool}</td>
+                      <td className="p-4 font-medium text-[#00A19A]">{t.destinationSchool}</td>
                       <td className="p-4 text-slate-600">{t.reason}</td>
                     </tr>
                   ))}
@@ -195,7 +195,7 @@ export function StudentTransfersClient() {
                             setEditingTransfer(t);
                             setShowInModal(true);
                           }}
-                          className="text-indigo-600 font-bold hover:text-indigo-800 transition-colors"
+                          className="text-[#00A19A] font-bold hover:text-indigo-800 transition-colors"
                         >
                           Sửa
                         </button>
@@ -389,7 +389,7 @@ function TransferOutModal({ onClose, onSaved }: { onClose: () => void, onSaved: 
             </div>
 
             {form.transferCategory === "DOMESTIC" && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-indigo-50/50 p-4 rounded-2xl border border-indigo-100">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-[#00A19A]/10/50 p-4 rounded-2xl border border-[#00A19A]/20">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Trường chuyển đến</label>
                   <input type="text" placeholder="Tên trường" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 transition-colors" value={form.destinationSchool} onChange={e => setForm({...form, destinationSchool: e.target.value})} />
@@ -446,7 +446,7 @@ function TransferOutModal({ onClose, onSaved }: { onClose: () => void, onSaved: 
               <button type="button" onClick={onClose} className="px-6 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-colors">
                 Hủy
               </button>
-              <button disabled={saving} type="submit" className="px-6 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-100 flex items-center">
+              <button disabled={saving} type="submit" className="px-6 py-3 bg-[#00A19A] text-white font-bold rounded-xl hover:bg-[#008c85] transition-colors shadow-lg shadow-[#00A19A]/20 flex items-center">
                 {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Xác nhận chuyển
               </button>
@@ -593,8 +593,8 @@ function ChangeClassModal({ onClose, onSaved }: { onClose: () => void, onSaved: 
 
             {/* Destination Info */}
             <div>
-              <h3 className="text-sm font-bold text-indigo-800 uppercase tracking-wider mb-4 pb-2 border-b border-indigo-100">Thông tin chuyển đến</h3>
-              <div className="grid grid-cols-2 gap-4 bg-indigo-50/50 p-4 rounded-2xl border border-indigo-100">
+              <h3 className="text-sm font-bold text-indigo-800 uppercase tracking-wider mb-4 pb-2 border-b border-[#00A19A]/20">Thông tin chuyển đến</h3>
+              <div className="grid grid-cols-2 gap-4 bg-[#00A19A]/10/50 p-4 rounded-2xl border border-[#00A19A]/20">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Cơ sở chuyển đến</label>
                   <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 transition-colors" value={form.destCampusId} onChange={e => setForm({...form, destCampusId: e.target.value})}>
@@ -637,7 +637,7 @@ function ChangeClassModal({ onClose, onSaved }: { onClose: () => void, onSaved: 
               <button type="button" onClick={onClose} className="px-6 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-colors">
                 Hủy
               </button>
-              <button disabled={saving} type="submit" className="px-6 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-100 flex items-center">
+              <button disabled={saving} type="submit" className="px-6 py-3 bg-[#00A19A] text-white font-bold rounded-xl hover:bg-[#008c85] transition-colors shadow-lg shadow-[#00A19A]/20 flex items-center">
                 {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Xác nhận chuyển lớp
               </button>

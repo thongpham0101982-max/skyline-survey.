@@ -92,11 +92,11 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
             <span className="text-sm font-bold text-slate-700">Lọc theo Nhóm:</span>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <button onClick={() => setFilterRole("ALL")} className={`px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all ${filterRole === "ALL" ? "bg-indigo-600 text-white border-indigo-600 shadow-sm" : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"}`}>
+            <button onClick={() => setFilterRole("ALL")} className={`px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all ${filterRole === "ALL" ? "bg-[#00A19A] text-white border-[#00A19A] shadow-sm" : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"}`}>
               Gộp Tất cả
             </button>
             {roles.map((r: any) => (
-              <button key={r.code} onClick={() => setFilterRole(r.code)} className={`px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all ${filterRole === r.code ? "bg-indigo-600 text-white border-indigo-600 shadow-sm" : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"}`}>
+              <button key={r.code} onClick={() => setFilterRole(r.code)} className={`px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all ${filterRole === r.code ? "bg-[#00A19A] text-white border-[#00A19A] shadow-sm" : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"}`}>
                 {r.name}
               </button>
             ))}
@@ -133,17 +133,17 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
                </button>
              )}
           </div>
-          <button onClick={() => startEdit()} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold flex items-center hover:bg-indigo-700 shadow-sm transition-all">
+          <button onClick={() => startEdit()} className="px-4 py-2 bg-[#00A19A] text-white rounded-lg text-sm font-semibold flex items-center hover:bg-[#008c85] shadow-sm transition-all">
             <Plus className="w-4 h-4 mr-2" /> Cấp Tài Khoản
           </button>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto custom-scrollbar flex-1">
           <table className="w-full text-left">
             <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-sm font-semibold">
               <tr>
                 <th className="px-6 py-3 w-12 text-center">
-                  <input type="checkbox" className="w-4 h-4 rounded text-indigo-600"
+                  <input type="checkbox" className="w-4 h-4 rounded text-[#00A19A]"
                     checked={displayedUsers.length > 0 && selectedIds.length === displayedUsers.length}
                     onChange={(e) => {
                       if (e.target.checked) setSelectedIds(displayedUsers.map((u: any) => u.id));
@@ -160,7 +160,7 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
             </thead>
             <tbody className="divide-y divide-slate-100">
               {editingId === "new" && (
-                <tr className="bg-indigo-50/30">
+                <tr className="bg-[#00A19A]/10/30">
                   <td className="px-6 py-3"></td>
                   <td className="px-6 py-3"><input value={formData.employeeCode} onChange={e=>setFormData({...formData, employeeCode: e.target.value})} placeholder="Vd: NV001" className="w-32 p-1.5 rounded border text-sm" /></td>
                   <td className="px-6 py-3"><input value={formData.fullName} onChange={e=>setFormData({...formData, fullName: e.target.value})} placeholder="Nguyễn Văn A" className="w-full p-1.5 rounded border text-sm" /></td>
@@ -190,7 +190,7 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
                 </tr>
               )}
               {displayedUsers.map((u:any) => editingId === u.id ? (
-                <tr key={u.id} className="bg-indigo-50/30">
+                <tr key={u.id} className="bg-[#00A19A]/10/30">
                   <td className="px-6 py-3"></td>
                   <td className="px-6 py-3"><input value={formData.employeeCode} onChange={e=>setFormData({...formData, employeeCode: e.target.value})} className="w-32 p-1.5 rounded border text-sm font-semibold border-slate-300" /></td>
                   <td className="px-6 py-3"><input value={formData.fullName} onChange={e=>setFormData({...formData, fullName: e.target.value})} className="w-full p-1.5 rounded border text-sm border-slate-300" /></td>
@@ -219,9 +219,9 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
                   </td>
                 </tr>
               ) : (
-                <tr key={u.id} className={"hover:bg-slate-50/50 transition-colors " + (selectedIds.includes(u.id) ? "bg-indigo-50/30" : "")}>
+                <tr key={u.id} className={"hover:bg-slate-50/50 transition-colors " + (selectedIds.includes(u.id) ? "bg-[#00A19A]/10/30" : "")}>
                   <td className="px-6 py-3 text-center">
-                    <input type="checkbox" className="w-4 h-4 rounded text-indigo-600"
+                    <input type="checkbox" className="w-4 h-4 rounded text-[#00A19A]"
                       checked={selectedIds.includes(u.id)}
                       onChange={e => {
                          if (e.target.checked) setSelectedIds([...selectedIds, u.id]);
@@ -234,7 +234,7 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
                   
                   <td className="px-6 py-3">
                     <div className="flex flex-col gap-1">
-                      <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 w-fit">
+                      <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-[#00A19A]/10 text-indigo-700 border border-[#00A19A]/20 w-fit">
                         {roles.find((r:any) => r.code === u.role)?.name || u.role}
                       </span>
                       {u.campusIds && u.campusIds.length > 0 && (
@@ -250,7 +250,7 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
 
                   <td className="px-6 py-3 border-l border-slate-200 text-xs text-slate-400 italic">*** (Đã mã hóa)</td>
                   <td className="px-6 py-3 text-right">
-                    <button onClick={() => startEdit(u)} className="p-2 text-slate-400 hover:text-indigo-600 rounded-lg"><Edit2 className="w-4 h-4"/></button>
+                    <button onClick={() => startEdit(u)} className="p-2 text-slate-400 hover:text-[#00A19A] rounded-lg"><Edit2 className="w-4 h-4"/></button>
                     <button onClick={() => handleDelete(u.id, u.fullName)} className="p-2 text-slate-400 hover:text-red-500 rounded-lg"><Trash2 className="w-4 h-4"/></button>
                   </td>
                 </tr>

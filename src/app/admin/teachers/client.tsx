@@ -200,7 +200,7 @@ export function TeacherManagerClient({
       {/* Thống kê */}
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center"><Users className="w-5 h-5 text-indigo-600" /></div>
+          <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center"><Users className="w-5 h-5 text-[#00A19A]" /></div>
           <div><p className="text-2xl font-extrabold text-slate-800">{displayed.length}</p><p className="text-xs text-slate-500 font-medium">Hiển thị (Tất cả)</p></div>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-3">
@@ -240,13 +240,13 @@ export function TeacherManagerClient({
             className="flex items-center gap-1.5 px-3 py-2.5 border border-slate-300 rounded-xl text-slate-600 hover:bg-slate-50 text-sm font-medium">
             <Download className="w-4 h-4" />Mẫu
           </button>
-          <label className="flex items-center gap-1.5 px-3 py-2.5 border border-indigo-200 bg-indigo-50 rounded-xl text-indigo-600 hover:bg-indigo-100 text-sm font-medium cursor-pointer">
+          <label className="flex items-center gap-1.5 px-3 py-2.5 border border-indigo-200 bg-[#00A19A]/10 rounded-xl text-[#00A19A] hover:bg-indigo-100 text-sm font-medium cursor-pointer">
             <Upload className="w-4 h-4" />{importing ? "Đang xử lý..." : "Import Excel"}
             <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv"
               onChange={handleFileImport} className="hidden" disabled={importing} />
           </label>
           <button onClick={() => { setShowAddForm(true); setErrorMsg("") }}
-            className="flex items-center gap-1.5 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-500/25 transition-all active:scale-95">
+            className="flex items-center gap-1.5 px-6 py-2.5 bg-[#00A19A] hover:bg-[#008c85] text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-500/25 transition-all active:scale-95">
             <Plus className="w-5 h-5" />Thêm GV Mới
           </button>
         </div>
@@ -256,7 +256,7 @@ export function TeacherManagerClient({
       {showAddForm && (
         <div className="bg-white border-2 border-indigo-200 rounded-2xl p-6 shadow-lg animate-in fade-in slide-in-from-top-4">
           <h3 className="font-bold text-slate-800 text-lg mb-4 flex items-center gap-2">
-            <GraduationCap className="w-6 h-6 text-indigo-600" />Thêm Giáo Viên Mới
+            <GraduationCap className="w-6 h-6 text-[#00A19A]" />Thêm Giáo Viên Mới
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
@@ -305,7 +305,7 @@ export function TeacherManagerClient({
           </div>
           <div className="flex gap-3 mt-6 pt-5 border-t border-slate-100">
             <button onClick={handleCreate} disabled={saving}
-              className="px-8 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-sm shadow-xl shadow-indigo-200 transition-all active:scale-95">
+              className="px-8 py-2.5 bg-[#00A19A] hover:bg-[#008c85] text-white rounded-xl font-black text-sm shadow-xl shadow-indigo-200 transition-all active:scale-95">
               {saving ? "Số liệu đang được lưu..." : "Lưu Giáo Viên"}
             </button>
             <button onClick={() => { setShowAddForm(false); setErrorMsg("") }}
@@ -316,8 +316,8 @@ export function TeacherManagerClient({
 
       {/* Bảng danh sách */}
       <div className="bg-white rounded-3xl shadow-xl shadow-slate-100 overflow-hidden border border-slate-100">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto custom-scrollbar flex-1">
+          <table className="w-full text-left text-sm whitespace-nowrap border-collapse">
             <thead>
               <tr className="bg-slate-50/70 border-b border-slate-200 text-[11px] font-black text-slate-500 uppercase tracking-widest">
                 <th className="px-5 py-4 text-left w-12">#</th>
@@ -339,10 +339,10 @@ export function TeacherManagerClient({
               ) : displayed.map((t, idx) => {
                 const isEditing = editingId === t.id
                 return (
-                  <tr key={t.id} className="border-b border-slate-50 last:border-0 hover:bg-indigo-50/30 transition-all group">
+                  <tr key={t.id} className="border-b border-slate-50 last:border-0 hover:bg-[#00A19A]/10/30 transition-all group">
                     <td className="px-5 py-4 text-slate-400 font-mono text-[10px]">{idx + 1}</td>
                     <td className="px-5 py-4">
-                      <span className="font-mono font-black text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-lg text-xs tracking-tight border border-indigo-100">{t.teacherCode}</span>
+                      <span className="font-mono font-black text-indigo-700 bg-[#00A19A]/10 px-2.5 py-1 rounded-lg text-xs tracking-tight border border-[#00A19A]/20">{t.teacherCode}</span>
                     </td>
                     <td className="px-5 py-4">
                       {isEditing ? (
@@ -431,7 +431,7 @@ export function TeacherManagerClient({
                           </>
                         ) : (
                           <>
-                            <button onClick={() => handleEdit(t)} className="p-2 text-indigo-600 hover:bg-white hover:shadow-md rounded-xl transition-all"><Edit2 className="w-4 h-4" /></button>
+                            <button onClick={() => handleEdit(t)} className="p-2 text-[#00A19A] hover:bg-white hover:shadow-md rounded-xl transition-all"><Edit2 className="w-4 h-4" /></button>
                             <button onClick={() => handleDelete(t.id, t.teacherName)} className="p-2 text-red-500 hover:bg-white hover:shadow-md rounded-xl transition-all"><Trash2 className="w-4 h-4" /></button>
                           </>
                         )}

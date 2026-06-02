@@ -68,11 +68,11 @@ export function RolesClient({ initialRoles }: any) {
       <div className="lg:col-span-1 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-fit">
         <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
           <h3 className="font-bold text-slate-700 flex items-center gap-2">
-            <Shield className="w-5 h-5 text-indigo-600"/> Nhóm Quyền
+            <Shield className="w-5 h-5 text-[#00A19A]"/> Nhóm Quyền
           </h3>
           <button 
              onClick={() => { setModalMode('ADD'); setFormData({ code: '', name: '', description: '' }); setModalOpen(true); }}
-             className="text-indigo-600 hover:bg-indigo-100 p-1.5 rounded-lg transition-colors">
+             className="text-[#00A19A] hover:bg-indigo-100 p-1.5 rounded-lg transition-colors">
             <Plus className="w-4 h-4"/>
           </button>
         </div>
@@ -86,7 +86,7 @@ export function RolesClient({ initialRoles }: any) {
               
               {!r.isSystem && (
                 <div className="opacity-0 group-hover:opacity-100 flex flex-col justify-center gap-1 px-2 border-l border-slate-200 transition-opacity">
-                  <button onClick={() => { setModalMode('EDIT'); setFormData({ code: r.code, name: r.name, description: r.description || '' }); setModalOpen(true); }} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-lg"><Edit className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => { setModalMode('EDIT'); setFormData({ code: r.code, name: r.name, description: r.description || '' }); setModalOpen(true); }} className="p-1.5 text-slate-400 hover:text-[#00A19A] hover:bg-white rounded-lg"><Edit className="w-3.5 h-3.5" /></button>
                   <button onClick={async () => { 
                       if(confirm('Bạn có chắc muốn xóa nhóm quyền này?')) {
                          const res = await deleteRole(r.code);
@@ -108,19 +108,19 @@ export function RolesClient({ initialRoles }: any) {
             <h3 className="font-bold text-slate-800 text-lg tracking-tight">Ma Trận Phân Quyền</h3>
             <p className="text-sm text-slate-500 mt-0.5">
               Phân quyền chi tiết cho nhóm:{" "}
-              <span className="font-semibold text-indigo-600">
+              <span className="font-semibold text-[#00A19A]">
                 {roles.find((r: any) => r.code === activeRole)?.name}
               </span>
             </p>
           </div>
           <button onClick={handleSavePerms} disabled={savingMatrix}
-            className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold flex items-center hover:bg-indigo-700 active:scale-95 shadow-md shadow-indigo-200 transition-all disabled:opacity-60">
+            className="px-5 py-2.5 bg-[#00A19A] text-white rounded-xl text-sm font-semibold flex items-center hover:bg-[#008c85] active:scale-95 shadow-md shadow-indigo-200 transition-all disabled:opacity-60">
             <Save className="w-4 h-4 mr-2"/> Lưu Cấu Hình
           </button>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+        <div className="overflow-x-auto custom-scrollbar flex-1">
+          <table className="w-full text-left whitespace-nowrap border-collapse">
             <thead>
               <tr className="bg-slate-50/80 border-b border-slate-200">
                 <th className="px-6 py-4 font-bold text-slate-700 text-xs uppercase tracking-wider w-[40%]">Chức năng / Module</th>
@@ -166,7 +166,7 @@ export function RolesClient({ initialRoles }: any) {
                                 className={`w-5 h-5 rounded-md transition-all cursor-pointer focus:ring-offset-2 border-slate-300 focus:ring-2 ${
                                   field === "canDelete"
                                     ? "text-red-500 focus:ring-red-400 border-red-200"
-                                    : "text-indigo-600 focus:ring-indigo-500 border-slate-200"
+                                    : "text-[#00A19A] focus:ring-indigo-500 border-slate-200"
                                 } shadow-sm`}
                               />
                             </label>
@@ -212,7 +212,7 @@ export function RolesClient({ initialRoles }: any) {
                  if (res.success) { setModalOpen(false); window.location.reload(); }
                  else { alert("Lỗi: " + res.error); }
                  setLoading(false);
-              }} className="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-xl transition-colors flex items-center">
+              }} className="px-4 py-2 text-sm font-semibold text-white bg-[#00A19A] hover:bg-[#008c85] disabled:opacity-50 rounded-xl transition-colors flex items-center">
                 {loading ? 'Đang xử lý...' : 'Xác nhận'}
               </button>
             </div>

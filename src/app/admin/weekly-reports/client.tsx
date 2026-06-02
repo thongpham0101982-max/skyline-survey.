@@ -278,8 +278,8 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
                 <h3 className="text-sm font-bold text-amber-800 flex items-center gap-2"><Table2 className="w-4 h-4" /> Tổng hợp bao cao Tuan {selectedWeek} - Thang {month}/{year}</h3>
                 <span className="text-xs text-amber-600">{consolidatedData.length} báo cáo</span>
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+              <div className="overflow-x-auto custom-scrollbar flex-1">
+                <table className="w-full text-left text-sm whitespace-nowrap border-collapse">
                   <thead>
                     <tr className="bg-slate-50 border-b">
                       <th className="px-3 py-3 text-left text-xs font-bold text-slate-600 uppercase w-10">STT</th>
@@ -320,7 +320,7 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
                               <td className="px-3 py-3 text-slate-500 italic">{item.proposedSolution || "-"}</td>
                               <td className="px-3 py-3">
                                 {item.managerNote ? (
-                                  <span className="text-sm text-indigo-700 bg-indigo-50 px-2 py-1 rounded-lg inline-block">{item.managerNote}</span>
+                                  <span className="text-sm text-indigo-700 bg-[#00A19A]/10 px-2 py-1 rounded-lg inline-block">{item.managerNote}</span>
                                 ) : (
                                   <span className="text-xs text-slate-400 italic">-</span>
                                 )}
@@ -353,8 +353,8 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
               )}
               {/* Report Table */}
               <div className="bg-white border rounded-2xl shadow-sm overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                <div className="overflow-x-auto custom-scrollbar flex-1">
+                  <table className="w-full text-left text-sm whitespace-nowrap border-collapse">
                     <thead>
                       <tr className="bg-amber-50 border-b border-amber-100">
                         <th className="px-3 py-3 text-left text-xs font-bold text-amber-800 uppercase w-10">STT</th>
@@ -387,15 +387,15 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
                                 editingItemNote === (item.id || String(i)) ? (
                                   <div className="flex flex-col gap-1">
                                     <textarea value={itemNoteText} onChange={e => setItemNoteText(e.target.value)} rows={2} className="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 resize-none" />
-                                    <div className="flex gap-1"><button onClick={() => item.id && handleItemNote(item.id)} className="text-xs bg-indigo-600 text-white px-2 py-1 rounded-lg">Lưu</button><button onClick={() => setEditingItemNote(null)} className="text-xs bg-slate-100 px-2 py-1 rounded-lg">Hủy</button></div>
+                                    <div className="flex gap-1"><button onClick={() => item.id && handleItemNote(item.id)} className="text-xs bg-[#00A19A] text-white px-2 py-1 rounded-lg">Lưu</button><button onClick={() => setEditingItemNote(null)} className="text-xs bg-slate-100 px-2 py-1 rounded-lg">Hủy</button></div>
                                   </div>
                                 ) : (
                                   <div className="cursor-pointer group" onClick={() => { setEditingItemNote(item.id || String(i)); setItemNoteText(item.managerNote || "") }}>
-                                    {item.managerNote ? <span className="text-sm text-indigo-700 bg-indigo-50 px-2 py-1 rounded-lg inline-block">{item.managerNote}</span> : <span className="text-xs text-slate-400 group-hover:text-indigo-600 italic">Nhấn để nhận xét...</span>}
+                                    {item.managerNote ? <span className="text-sm text-indigo-700 bg-[#00A19A]/10 px-2 py-1 rounded-lg inline-block">{item.managerNote}</span> : <span className="text-xs text-slate-400 group-hover:text-[#00A19A] italic">Nhấn để nhận xét...</span>}
                                   </div>
                                 )
                               ) : (
-                                item.managerNote ? <span className="text-sm text-indigo-700 bg-indigo-50 px-2 py-1 rounded-lg inline-block">{item.managerNote}</span> : <span className="text-xs text-slate-400 italic">Chưa có</span>
+                                item.managerNote ? <span className="text-sm text-indigo-700 bg-[#00A19A]/10 px-2 py-1 rounded-lg inline-block">{item.managerNote}</span> : <span className="text-xs text-slate-400 italic">Chưa có</span>
                               )}
                             </td>
                             {!isAdmin && <td className="px-2 py-3"><button onClick={() => removeRow(i)} className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4" /></button></td>}
@@ -413,16 +413,16 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
                 </div>
               )}
               {managerComment && (
-                <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-4">
-                  <div className="flex items-center gap-2 mb-2"><MessageSquare className="w-4 h-4 text-indigo-600" /><span className="text-sm font-bold text-indigo-800">Nhận xét tổng thể</span></div>
+                <div className="bg-[#00A19A]/10 border border-indigo-200 rounded-2xl p-4">
+                  <div className="flex items-center gap-2 mb-2"><MessageSquare className="w-4 h-4 text-[#00A19A]" /><span className="text-sm font-bold text-indigo-800">Nhận xét tổng thể</span></div>
                   <p className="text-sm text-indigo-700 whitespace-pre-wrap">{managerComment}</p>
                 </div>
               )}
               {isAdmin && reportId && (
                 <div className="bg-white border rounded-2xl p-4 shadow-sm space-y-3">
-                  <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2"><MessageSquare className="w-4 h-4 text-indigo-600" /> Nhận xét tổng thể</h3>
+                  <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2"><MessageSquare className="w-4 h-4 text-[#00A19A]" /> Nhận xét tổng thể</h3>
                   <textarea value={mgmtComment} onChange={e => setMgmtComment(e.target.value)} rows={3} placeholder="Nhập nhận xét..." className="w-full border rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-indigo-200 resize-none" />
-                  <button onClick={() => handleManagerComment(reportId)} className="flex items-center gap-2 bg-indigo-600 text-white px-5 py-2 rounded-xl hover:bg-indigo-700 text-sm font-semibold"><Send className="w-4 h-4" /> Gửi nhận xét</button>
+                  <button onClick={() => handleManagerComment(reportId)} className="flex items-center gap-2 bg-[#00A19A] text-white px-5 py-2 rounded-xl hover:bg-[#008c85] text-sm font-semibold"><Send className="w-4 h-4" /> Gửi nhận xét</button>
                 </div>
               )}
             </>

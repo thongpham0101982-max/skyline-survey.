@@ -141,7 +141,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
           </select>
         </div>
         <div className="flex items-center gap-2">
-          <Building2 className="w-5 h-5 text-indigo-600" />
+          <Building2 className="w-5 h-5 text-[#00A19A]" />
           <label className="font-semibold text-slate-700 text-sm">Cơ sở:</label>
           <select value={selectedCampus} onChange={e => setSelectedCampus(e.target.value)}
             className="border rounded-lg p-2 text-sm min-w-[160px] outline-none focus:ring-2 focus:ring-indigo-300">
@@ -199,7 +199,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
       {/* Table */}
       <div className="bg-white rounded-xl shadow-sm border overflow-x-auto">
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 border-b">
+          <thead className="bg-[#F0FDFA] sticky top-0 z-10 shadow-[0_1px_0_#CCFBF1]">
             <tr>
               <th className="px-4 py-4 w-12 text-center"><input type="checkbox" className="w-4 h-4 rounded text-blue-600" checked={filteredClasses.length > 0 && selectedIds.length === filteredClasses.length} onChange={handleSelectAll} /></th>
               <th className="px-4 py-4 font-semibold text-slate-500 uppercase text-xs w-12">STT</th>
@@ -258,7 +258,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
              </div>
              <form onSubmit={handleSaveEdit} className="p-5 space-y-4">
                 <div><label className="block text-sm font-semibold text-slate-700 mb-1">Tên lớp</label><input type="text" required value={editModal.className} onChange={e => setEditModal({...editModal, className: e.target.value})} className="w-full border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-sm"/></div>
-                <div><label className="block text-sm font-semibold text-slate-700 mb-1">Cơ sở</label><select required value={editModal.campusId} disabled={isCampusLocked} onChange={e => !isCampusLocked && setEditModal({...editModal, campusId: e.target.value})} className={`w-full border rounded-xl p-2.5 outline-none text-sm ${isCampusLocked ? "bg-indigo-50 border-indigo-200 text-indigo-700 cursor-not-allowed" : "focus:ring-2 focus:ring-blue-500 border-slate-200"}`}>{campuses.map((cp: any) => <option key={cp.id} value={cp.id}>{cp.campusName}</option>)}</select></div>
+                <div><label className="block text-sm font-semibold text-slate-700 mb-1">Cơ sở</label><select required value={editModal.campusId} disabled={isCampusLocked} onChange={e => !isCampusLocked && setEditModal({...editModal, campusId: e.target.value})} className={`w-full border rounded-xl p-2.5 outline-none text-sm ${isCampusLocked ? "bg-[#00A19A]/10 border-indigo-200 text-indigo-700 cursor-not-allowed" : "focus:ring-2 focus:ring-blue-500 border-slate-200"}`}>{campuses.map((cp: any) => <option key={cp.id} value={cp.id}>{cp.campusName}</option>)}</select></div>
                 <div className="grid grid-cols-2 gap-4">
                   <div><label className="block text-sm font-semibold text-slate-700 mb-1">Bậc học</label><select required value={editModal.level} onChange={e => setEditModal({...editModal, level: e.target.value})} className="w-full border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-sm"><option value="">Chọn bậc</option>{LEVELS.filter(l => l.value).map(l => <option key={l.value} value={l.value}>{l.label}</option>)}</select></div>
                   <div><label className="block text-sm font-semibold text-slate-700 mb-1">Khối lớp</label><input type="text" required value={editModal.grade} onChange={e => setEditModal({...editModal, grade: e.target.value})} className="w-full border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-sm"/></div>
