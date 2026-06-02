@@ -181,6 +181,40 @@ const getDefaultContent = (type) => {
   return defaultThuChucMung;
 };
 
+
+const getCampusAndSchoolName = (rawCampusCode: string) => {
+  const clean = (rawCampusCode || "").toUpperCase();
+  let actualCampusName = rawCampusCode || "";
+
+  if (clean.includes("CS1") || clean.includes("RIVERSIDE")) {
+    actualCampusName = "Sky-Line Riverside";
+  } else if (clean.includes("CS2") || clean.includes("CENTRAL")) {
+    actualCampusName = "Sky-Line Central";
+  } else if (clean.includes("CS3") || clean.includes("GLOBAL")) {
+    actualCampusName = "Sky-Line Global";
+  } else if (clean.includes("CS4") || clean.includes("HILL")) {
+    actualCampusName = "Sky-Line Hill";
+  } else if (clean.includes("CS5") || clean.includes("BEACH")) {
+    actualCampusName = "Sky-Line Beach";
+  } else if (clean.includes("CS6") || clean.includes("QUỐC TẾ") || clean.includes("INTERNATIONAL")) {
+    actualCampusName = "Sky-Line International";
+  } else if (clean.includes("CS7") || clean.includes("SÁNG TẠO")) {
+    actualCampusName = "Trung tâm Sáng tạo";
+  }
+
+  let schoolNameFull = "Trường TH, THCS và THPT Sky-Line";
+  let truongName = "TH, THCS và THPT Sky-Line";
+  if (actualCampusName === "Sky-Line Hill") {
+    schoolNameFull = "Trường TH, THCS và THPT Sky-Line Hill";
+    truongName = "TH, THCS và THPT Sky-Line Hill";
+  } else {
+    schoolNameFull = "Trường TH, THCS và THPT Sky-Line";
+    truongName = "TH, THCS và THPT Sky-Line";
+  }
+
+  return { actualCampusName, schoolNameFull, truongName };
+};
+
 const renderTemplate = (template, student) => {
   if (!template) return "";
   
@@ -192,12 +226,15 @@ const renderTemplate = (template, student) => {
     ? student.committedSubjects.join(", ") 
     : (student?.committedSubjects || "");
   
+  const { actualCampusName, schoolNameFull, truongName } = getCampusAndSchoolName(student?.admissionCampus);
   return template
+    .replace(/\{\{schoolName\}\}/g, schoolNameFull)
+    .replace(/\{\{truong\}\}/g, truongName)
     .replace(/\{\{fullName\}\}/g, student?.fullName || "Lê Trà My")
     .replace(/\{\{grade\}\}/g, numericGrade)
     .replace(/\{\{hocKy\}\}/g, student?.hocKy || "1")
     .replace(/\{\{surveyFormType\}\}/g, student?.surveyFormType || "Hội nhập S")
-    .replace(/\{\{admissionCampus\}\}/g, student?.admissionCampus || "")
+    .replace(/\{\{admissionCampus\}\}/g, actualCampusName || "")
     .replace(/\{\{directorNote\}\}/g, student?.directorNote || "")
     .replace(/\{\{committedSubjects\}\}/g, comSubs)
     .replace(/\{\{signatureName\}\}/g, student?.signatureName || "");
@@ -1207,12 +1244,15 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
       ? student.committedSubjects.join(", ") 
       : (student?.committedSubjects || "");
       
+    const { actualCampusName, schoolNameFull, truongName } = getCampusAndSchoolName(student?.admissionCampus);
     const renderedContent = (config.content || "")
+      .replace(/\{\{schoolName\}\}/g, schoolNameFull)
+      .replace(/\{\{truong\}\}/g, truongName)
       .replace(/\{\{fullName\}\}/g, student?.fullName || "")
       .replace(/\{\{grade\}\}/g, numericGrade)
       .replace(/\{\{hocKy\}\}/g, student?.hocKy || "1")
       .replace(/\{\{surveyFormType\}\}/g, student?.surveyFormType || "")
-      .replace(/\{\{admissionCampus\}\}/g, student?.admissionCampus || "")
+      .replace(/\{\{admissionCampus\}\}/g, actualCampusName || "")
       .replace(/\{\{directorNote\}\}/g, student?.directorNote || "")
       .replace(/\{\{committedSubjects\}\}/g, comSubs)
       .replace(/\{\{signatureName\}\}/g, student?.signatureName || "");
