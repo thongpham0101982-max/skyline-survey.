@@ -5135,7 +5135,7 @@ return {
                         className={inp}
                       >
                         <option value="">-- Chọn Kỳ khảo sát mới --</option>
-                        {visiblePeriods.filter(p => p.id !== selectedReportStudent.periodId).map(p => (
+                        {visiblePeriods.map(p => (
                           <option key={p.id} value={p.id}>{p.name}</option>
                         ))}
                       </select>
@@ -5149,7 +5149,7 @@ return {
                           className={inp}
                         >
                           <option value="">-- Chọn Đợt khảo sát mới (Tất cả / Lẻ) --</option>
-                          {(visiblePeriods.find(p => p.id === retestPeriodId)?.batches || []).map(b => (
+                          {(visiblePeriods.find(p => p.id === retestPeriodId)?.batches || []).filter(b => b.id !== selectedReportStudent.batchId).map(b => (
                             <option key={b.id} value={b.id}>{b.name}</option>
                           ))}
                         </select>
