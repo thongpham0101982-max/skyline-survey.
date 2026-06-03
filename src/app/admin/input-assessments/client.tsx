@@ -3974,31 +3974,31 @@ return {
             </div>
           )}
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-black text-slate-600 uppercase tracking-widest flex items-center gap-2"><BookOpen className="w-4 h-4"/> Danh sach Mon Khao sat</h2>
+            <h2 className="text-sm font-black text-slate-600 uppercase tracking-widest flex items-center gap-2"><BookOpen className="w-4 h-4"/> Danh sách Môn Khảo sát</h2>
             <button
               onClick={() => { setEditingSubjectId(null); setSubjectForm({ code:"", name:"", subjectType:"", scoreColumns:1, commentColumns:1, status:"ACTIVE", exemptCriteria:[] as string[] }); setIsSubjectOpen(true) }}
-              className={"flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white text-[13px] font-black rounded-xl hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 " + (cannotCreate ? "pointer-events-none opacity-40" : "")} disabled={cannotCreate}
+              className={"flex items-center gap-2 px-5 py-2.5 bg-[#00A19A] text-white text-[13px] font-bold rounded-xl hover:bg-[#008c85] transition-all shadow-md shadow-[#00A19A]/20 " + (cannotCreate ? "pointer-events-none opacity-40" : "")} disabled={cannotCreate}
             >
-              <Plus className="w-4 h-4"/> Them Mon moi
+              <Plus className="w-4 h-4"/> Thêm Môn mới
             </button>
           </div>
 
           {subjectsList.length === 0 ? (
-            <Empty icon={BookOpen} text="Chua co Mon khao sat nao" sub="Bam them de bat dau"/>
+            <Empty icon={BookOpen} text="Chưa có Môn khảo sát nào" sub="Bấm Thêm mới để bắt đầu"/>
           ) : (
             <div className="bg-white border border-slate-200 rounded-[2rem] shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left whitespace-nowrap">
                   <thead className="bg-slate-50 border-b border-slate-100">
                     <tr>
-                      <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Ma mon</th>
-                      <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Ten Mon</th>
+                      <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Mã Môn</th>
+                      <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Tên Môn</th>
                       
-                      <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Cot Diem</th>
-                      <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Cot NX</th>
-                      <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Trang thai</th>
-                      <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Mien giam</th>
-                      <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Thao tac</th>
+                      <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Cột Điểm</th>
+                      <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Cột NX</th>
+                      <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Trạng thái</th>
+                      <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Miễn giảm</th>
+                      <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
@@ -4018,9 +4018,9 @@ return {
                           </td>
                           <td className="p-5 text-right">
                             <div className="flex items-center justify-end gap-1">
-                              <button title="Cau hinh ten cot" onClick={() => { setColumnConfigForm({ subjectId: sub.id, name: sub.name, scoreColumns: sub.scoreColumns ?? 1, commentColumns: sub.commentColumns ?? 1, scoreNames: parsedCols.scores || [], commentNames: parsedCols.comments || [], showScoreInReport: parsedCols.showScoreInReport || [], showCommentInReport: parsedCols.showCommentInReport || [] }); setIsColumnConfigOpen(true); }} className={"p-2.5 text-slate-300 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate}><PenLine className="w-4 h-4"/></button>
+                              <button title="Cấu hình tên cột" onClick={() => { setColumnConfigForm({ subjectId: sub.id, name: sub.name, scoreColumns: sub.scoreColumns ?? 1, commentColumns: sub.commentColumns ?? 1, scoreNames: parsedCols.scores || [], commentNames: parsedCols.comments || [], showScoreInReport: parsedCols.showScoreInReport || [], showCommentInReport: parsedCols.showCommentInReport || [] }); setIsColumnConfigOpen(true); }} className={"p-2.5 text-slate-300 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate}><PenLine className="w-4 h-4"/></button>
                               <button onClick={() => { setEditingSubjectId(sub.id); setSubjectForm({ code: sub.code, name: sub.name, subjectType: sub.subjectType || "", scoreColumns: sub.scoreColumns ?? 1, commentColumns: sub.commentColumns ?? 1, status: sub.status || "ACTIVE", exemptCriteria: (() => { try { return JSON.parse(sub.exemptCriteria || "[]"); } catch { return []; } })() }); setIsSubjectOpen(true); }} className={"p-2.5 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate}><Edit2 className="w-4 h-4"/></button>
-                              <button onClick={() => setConfirm({ msg: `Xoa mon ${sub.name}?`, fn: () => deleteSubject(sub.id) })} className={"p-2.5 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete}><Trash2 className="w-4 h-4"/></button>
+                              <button onClick={() => setConfirm({ msg: `Xóa môn ${sub.name}?`, fn: () => deleteSubject(sub.id) })} className={"p-2.5 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete}><Trash2 className="w-4 h-4"/></button>
                             </div>
                           </td>
                         </tr>
