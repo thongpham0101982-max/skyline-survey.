@@ -1,6 +1,41 @@
-﻿import { Sidebar } from "@/components/Sidebar"
+import { Sidebar } from "@/components/Sidebar"
 import { NotificationBell } from "@/components/NotificationBell"
-export default function ParentLayout({ children }: { children: React.ReactNode }) {
-  return <div className="flex min-h-screen bg-slate-50"><Sidebar role="PARENT" /><main className="flex-1 p-4 sm:p-6 md:p-8 pt-16 md:pt-8 relative">
-<NotificationBell />{children}</main></div>
+import { auth } from "@/lib/auth"
+
+export default async function ParentLayout({ children }: { children: React.ReactNode }) {
+  let session: any = null;
+  try {
+    session = await auth()
+  } catch (e) {
+    console.error("Auth fail in ParentLayout:", e);
+  }
+
+  const roleCode = (session?.user as any)?.role || "PARENT"
+
+  return (
+    <div className="flex min-h-screen bg-slate-50">
+      <Sidebar role="PARENT" actualRole={roleCode} />
+      <main className="flex-1 flex flex-col relative min-w-0 overflow-hidden">
+        {/* Top Header */}
+        <header className="h-16 border-b border-slate-200 bg-white/80 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between px-6 shrink-0">
+          <div className="flex items-center gap-4">
+            <div className="hidden md:flex text-sm font-medium text-slate-500">
+              <span className="text-[#00A19A] font-bold">Phụ huynh</span>
+              <span className="mx-2">/</span>
+              <span>Cổng thông tin</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+             <NotificationBell />
+             <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#00A19A] to-teal-400 text-white flex items-center justify-center font-bold text-xs shadow-md border-2 border-white cursor-pointer hover:scale-105 transition-transform">
+                {session?.user?.name ? session.user.name.charAt(0).toUpperCase() : 'PH'}
+             </div>
+          </div>
+        </header>
+        <div className="p-4 sm:p-6 md:p-8 flex-1 overflow-x-hidden overflow-y-auto bg-slate-50/50">
+          {children}
+        </div>
+      </main>
+    </div>
+  )
 }

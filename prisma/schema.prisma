@@ -9,32 +9,32 @@ datasource db {
 }
 
 model User {
-  id                               String                             @id @default(cuid())
+  id                               String                                      @id @default(cuid())
   fullName                         String
-  email                            String                             @unique
+  email                            String                                      @unique
   passwordHash                     String
-  role                             String                             @default("PARENT")
-  status                           String                             @default("ACTIVE")
-  createdAt                        DateTime                           @default(now())
-  updatedAt                        DateTime                           @updatedAt
-  inputAssessmentPeriods           InputAssessmentPeriod[]            @relation("PeriodAssignee")
-  preschoolInputAssessmentPeriods  PreschoolInputAssessmentPeriod[]   @relation("PreschoolPeriodAssignee")
-  preschoolInputAssessmentBatches  PreschoolInputAssessmentBatch[]    @relation("PreschoolBatchAssignee")
+  role                             String                                      @default("PARENT")
+  status                           String                                      @default("ACTIVE")
+  createdAt                        DateTime                                    @default(now())
+  updatedAt                        DateTime                                    @updatedAt
+  inputAssessmentPeriods           InputAssessmentPeriod[]                     @relation("PeriodAssignee")
+  preschoolInputAssessmentPeriods  PreschoolInputAssessmentPeriod[]            @relation("PreschoolPeriodAssignee")
+  preschoolInputAssessmentBatches  PreschoolInputAssessmentBatch[]             @relation("PreschoolBatchAssignee")
   InputAssessmentTeacherAssignment InputAssessmentTeacherAssignment[]
   preschoolTeacherAssignments      PreschoolInputAssessmentTeacherAssignment[]
   notifications                    Notification[]
   parent                           Parent?
-  taskAttachments                  TaskAttachment[]                   @relation("TaskAttachments")
-  taskComments                     TaskComment[]                      @relation("TaskComments")
+  taskAttachments                  TaskAttachment[]                            @relation("TaskAttachments")
+  taskComments                     TaskComment[]                               @relation("TaskComments")
   teacher                          Teacher?
-//  student                          Student?
+  //  student                          Student?
   weeklyReports                    WeeklyReport[]
-  receivedTasks                    WorkTask[]                         @relation("TaskAssignee")
-  assignedTasks                    WorkTask[]                         @relation("TaskAssigner")
+  receivedTasks                    WorkTask[]                                  @relation("TaskAssignee")
+  assignedTasks                    WorkTask[]                                  @relation("TaskAssigner")
   campusAssignments                UserCampusAssignment[]
-  inputAssessmentBatches           InputAssessmentBatch[]             @relation("BatchAssignee")
-  studentTransfers StudentTransfer[]
-  managedCampuses                  Campus[]                           @relation("CampusManager")
+  inputAssessmentBatches           InputAssessmentBatch[]                      @relation("BatchAssignee")
+  studentTransfers                 StudentTransfer[]
+  managedCampuses                  Campus[]                                    @relation("CampusManager")
 }
 
 model Parent {
@@ -72,46 +72,46 @@ model Teacher {
 }
 
 model Campus {
-  surveyPeriods   SurveyPeriod[]
-  id                     String                  @id @default(cuid())
-  campusCode             String                  @unique
-  campusName             String
-  address                String?
-  status                 String                  @default("ACTIVE")
-  managerId              String?
-  manager                User?                   @relation("CampusManager", fields: [managerId], references: [id], onDelete: SetNull)
-  classes                Class[]
-  inputAssessmentPeriods InputAssessmentPeriod[]
+  surveyPeriods                   SurveyPeriod[]
+  id                              String                           @id @default(cuid())
+  campusCode                      String                           @unique
+  campusName                      String
+  address                         String?
+  status                          String                           @default("ACTIVE")
+  managerId                       String?
+  manager                         User?                            @relation("CampusManager", fields: [managerId], references: [id], onDelete: SetNull)
+  classes                         Class[]
+  inputAssessmentPeriods          InputAssessmentPeriod[]
   preschoolInputAssessmentPeriods PreschoolInputAssessmentPeriod[]
   preschoolInputAssessmentBatches PreschoolInputAssessmentBatch[]
-  students               Student[]
-  summaries              SummaryByCampus[]
-  surveyForms            SurveyForm[]
-  teachers               Teacher[]
-  userAssignments        UserCampusAssignment[]
-  inputAssessmentBatches InputAssessmentBatch[]
+  students                        Student[]
+  summaries                       SummaryByCampus[]
+  surveyForms                     SurveyForm[]
+  teachers                        Teacher[]
+  userAssignments                 UserCampusAssignment[]
+  inputAssessmentBatches          InputAssessmentBatch[]
 }
 
 model AcademicYear {
-  id                     String                  @id @default(cuid())
-  name                   String
-  startDate              DateTime
-  endDate                DateTime
-  status                 String                  @default("ACTIVE")
-  isOff                  Boolean                 @default(false)
-  assessmentConfigs      AssessmentConfig[]
-  preschoolAssessmentConfigs PreschoolAssessmentConfig[]
-  classes                Class[]
-  educationSystems       EducationSystem[]
-  inputAssessmentPeriods InputAssessmentPeriod[]
+  id                              String                           @id @default(cuid())
+  name                            String
+  startDate                       DateTime
+  endDate                         DateTime
+  status                          String                           @default("ACTIVE")
+  isOff                           Boolean                          @default(false)
+  assessmentConfigs               AssessmentConfig[]
+  preschoolAssessmentConfigs      PreschoolAssessmentConfig[]
+  classes                         Class[]
+  educationSystems                EducationSystem[]
+  inputAssessmentPeriods          InputAssessmentPeriod[]
   preschoolInputAssessmentPeriods PreschoolInputAssessmentPeriod[]
-  students               Student[]
-  subjectQuotas          SubjectQuota[]
-  surveyForms            SurveyForm[]
-  surveyPeriods          SurveyPeriod[]
-  teachingAssignments    TeachingAssignment[]
-  weeklyReports          WeeklyReport[]
-  workTasks              WorkTask[]
+  students                        Student[]
+  subjectQuotas                   SubjectQuota[]
+  surveyForms                     SurveyForm[]
+  surveyPeriods                   SurveyPeriod[]
+  teachingAssignments             TeachingAssignment[]
+  weeklyReports                   WeeklyReport[]
+  workTasks                       WorkTask[]
 }
 
 model Class {
@@ -147,23 +147,23 @@ model TeacherClassAssignment {
 }
 
 model Student {
-  id             String              @id @default(cuid())
-  studentCode    String              @unique
-  studentName    String
-//  userId         String?             @unique
-  classId        String
-  campusId       String
-  academicYearId String
-  status         String              @default("ACTIVE")
-  dateOfBirth    DateTime?
-  gender         String?
-  parents        ParentStudentLink[]
-  academicYear   AcademicYear        @relation(fields: [academicYearId], references: [id])
-  campus         Campus              @relation(fields: [campusId], references: [id])
-  class          Class               @relation(fields: [classId], references: [id])
-  surveyForms    SurveyForm[]
-  studentTransfers    StudentTransfer[]
-//  user           User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  id               String              @id @default(cuid())
+  studentCode      String              @unique
+  studentName      String
+  //  userId         String?             @unique
+  classId          String
+  campusId         String
+  academicYearId   String
+  status           String              @default("ACTIVE")
+  dateOfBirth      DateTime?
+  gender           String?
+  parents          ParentStudentLink[]
+  academicYear     AcademicYear        @relation(fields: [academicYearId], references: [id])
+  campus           Campus              @relation(fields: [campusId], references: [id])
+  class            Class               @relation(fields: [classId], references: [id])
+  surveyForms      SurveyForm[]
+  studentTransfers StudentTransfer[]
+  //  user           User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
 }
 
 model ParentStudentLink {
@@ -173,7 +173,7 @@ model ParentStudentLink {
   relationship String?
   status       String  @default("ACTIVE")
   student      Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  parent              Parent?          @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  parent       Parent? @relation(fields: [parentId], references: [id], onDelete: Cascade)
 
   @@unique([parentId, studentId])
 }
@@ -192,7 +192,7 @@ model SurveyPeriod {
   systemSummaries SummarySystem?
   surveyForms     SurveyForm[]
   targetAudience  String            @default("PHHS")
-  academicYear      AcademicYear      @relation(fields: [academicYearId], references: [id])
+  academicYear    AcademicYear      @relation(fields: [academicYearId], references: [id])
   campusId        String?
   campus          Campus?           @relation(fields: [campusId], references: [id])
   questions       SurveyQuestion[]
@@ -247,9 +247,9 @@ model SurveyForm {
   campus              Campus           @relation(fields: [campusId], references: [id])
   academicYear        AcademicYear     @relation(fields: [academicYearId], references: [id])
   responses           SurveyResponse[]
+  // Note: For students, we might need another check or just rely on this if student surveys have parentId=null
 
   @@unique([parentId, studentId, surveyPeriodId]) // For parents
-  // Note: For students, we might need another check or just rely on this if student surveys have parentId=null
 }
 
 model SurveyResponse {
@@ -420,21 +420,6 @@ model WorkTask {
   academicYear     AcademicYear?    @relation(fields: [academicYearId], references: [id])
 }
 
-model StudentAchievement {
-  id                String   @id @default(cuid())
-  competitionCode   String   @unique
-  competitionName   String
-  level             String
-  grade             String
-  nature            String
-  organizingLevel   String?
-  field             String
-  recognition       String?
-  participationType String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-}
-
 model TaskComment {
   id        String   @id @default(cuid())
   taskId    String
@@ -533,7 +518,7 @@ model InputAssessmentStudent {
   studentCode         String
   fullName            String
   dateOfBirth         DateTime?
-    gender              String?
+  gender              String?
   className           String?
   academicRating      String?
   conductRating       String?
@@ -560,7 +545,7 @@ model InputAssessmentStudent {
   admissionResult     String?
   directorNote        String?
   admissionCampus     String?
-  batch               InputAssessmentBatch?    @relation(fields: [batchId], references: [id])
+  batch               InputAssessmentBatch?    @relation(fields: [batchId], references: [id], onDelete: SetNull)
   period              InputAssessmentPeriod    @relation(fields: [periodId], references: [id], onDelete: Cascade)
   scores              StudentAssessmentScore[]
 
@@ -688,10 +673,6 @@ model StudentAssessmentScore {
   @@unique([studentId, subjectId])
 }
 
-
-
-
-
 model UserCampusAssignment {
   id       String @id @default(cuid())
   userId   String
@@ -703,116 +684,115 @@ model UserCampusAssignment {
 }
 
 model StudentTransfer {
-  id                  String   @id @default(cuid())
-  studentId           String
-  student             Student  @relation(fields: [studentId], references: [id])
-  
-  type                String   // "OUT", "IN", "CHANGE_CLASS"
-  transferDate        DateTime
-  semester            String?
-  
+  id        String  @id @default(cuid())
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id])
+
+  type         String // "OUT", "IN", "CHANGE_CLASS"
+  transferDate DateTime
+  semester     String?
+
   // Details for OUT
-  transferCategory    String?  // "DOMESTIC", "ABROAD"
+  transferCategory    String? // "DOMESTIC", "ABROAD"
   destinationSchool   String?
-  destinationType     String?  // "PRIVATE", "PUBLIC", "OTHER"
+  destinationType     String? // "PRIVATE", "PUBLIC", "OTHER"
   destinationProvince String?
   destinationCountry  String?
-  
-  reserveStartDate    DateTime?
-  reserveEndDate      DateTime?
-  
-  reason              String?
-  
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
-  
-  createdById         String?
-  createdBy           User?    @relation(fields: [createdById], references: [id])
+
+  reserveStartDate DateTime?
+  reserveEndDate   DateTime?
+
+  reason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdById String?
+  createdBy   User?   @relation(fields: [createdById], references: [id])
 }
 
 model PreschoolInputAssessmentPeriod {
-  id                               String                             @id @default(cuid())
-  code                             String                             @unique
-  name                             String
-  academicYearId                   String
-  campusId                         String?
-  assignedUserId                   String?
-  startDate                        DateTime?
-  endDate                          DateTime?
-  description                      String?
-  status                           String                             @default("ACTIVE")
-  surveyType                       String?                            @default("KHAO_SAT_LE")
-  createdAt                        DateTime                           @default(now())
-  updatedAt                        DateTime                           @updatedAt
-  batches                          PreschoolInputAssessmentBatch[]
-  academicYear                     AcademicYear                       @relation(fields: [academicYearId], references: [id])
-  campus                           Campus?                            @relation(fields: [campusId], references: [id])
-  assignedUser                     User?                              @relation("PreschoolPeriodAssignee", fields: [assignedUserId], references: [id])
-  students                         PreschoolInputAssessmentStudent[]
-  teacherAssignments               PreschoolInputAssessmentTeacherAssignment[]
+  id                 String                                      @id @default(cuid())
+  code               String                                      @unique
+  name               String
+  academicYearId     String
+  campusId           String?
+  assignedUserId     String?
+  startDate          DateTime?
+  endDate            DateTime?
+  description        String?
+  status             String                                      @default("ACTIVE")
+  surveyType         String?                                     @default("KHAO_SAT_LE")
+  createdAt          DateTime                                    @default(now())
+  updatedAt          DateTime                                    @updatedAt
+  batches            PreschoolInputAssessmentBatch[]
+  academicYear       AcademicYear                                @relation(fields: [academicYearId], references: [id])
+  campus             Campus?                                     @relation(fields: [campusId], references: [id])
+  assignedUser       User?                                       @relation("PreschoolPeriodAssignee", fields: [assignedUserId], references: [id])
+  students           PreschoolInputAssessmentStudent[]
+  teacherAssignments PreschoolInputAssessmentTeacherAssignment[]
 }
 
 model PreschoolInputAssessmentBatch {
-  id                               String                             @id @default(cuid())
-  periodId                         String
-  batchNumber                      Int
-  name                             String
-  startDate                        DateTime
-  endDate                          DateTime
-  status                           String                             @default("ACTIVE")
-  createdAt                        DateTime                           @default(now())
-  updatedAt                        DateTime                           @updatedAt
-  campusId                         String?
-  assignedUserId                   String?
-  campus                           Campus?                            @relation(fields: [campusId], references: [id])
-  assignedUser                     User?                              @relation("PreschoolBatchAssignee", fields: [assignedUserId], references: [id])
-  period                           PreschoolInputAssessmentPeriod     @relation(fields: [periodId], references: [id], onDelete: Cascade)
-  students                         PreschoolInputAssessmentStudent[]
-  teacherAssignments               PreschoolInputAssessmentTeacherAssignment[]
+  id                 String                                      @id @default(cuid())
+  periodId           String
+  batchNumber        Int
+  name               String
+  startDate          DateTime
+  endDate            DateTime
+  status             String                                      @default("ACTIVE")
+  createdAt          DateTime                                    @default(now())
+  updatedAt          DateTime                                    @updatedAt
+  campusId           String?
+  assignedUserId     String?
+  campus             Campus?                                     @relation(fields: [campusId], references: [id])
+  assignedUser       User?                                       @relation("PreschoolBatchAssignee", fields: [assignedUserId], references: [id])
+  period             PreschoolInputAssessmentPeriod              @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  students           PreschoolInputAssessmentStudent[]
+  teacherAssignments PreschoolInputAssessmentTeacherAssignment[]
 
   @@unique([periodId, batchNumber])
 }
 
 model PreschoolInputAssessmentStudent {
-  id                  String                   @id @default(cuid())
-  studentCode         String
-  fullName            String
-  dateOfBirth         DateTime?
-  gender              String?
-  admissionCriteria   String?
-  surveySystem        String?
-  periodId            String
-  batchId             String?
-  createdAt           DateTime                 @default(now())
-  updatedAt           DateTime                 @updatedAt
-  signatureName       String?
-  surveyFormType      String?
-  grade               String?
-  admissionResult     String?
-  directorNote        String?
-  admissionCampus     String?
+  id                     String                         @id @default(cuid())
+  studentCode            String
+  fullName               String
+  dateOfBirth            DateTime?
+  gender                 String?
+  admissionCriteria      String?
+  surveySystem           String?
+  periodId               String
+  batchId                String?
+  createdAt              DateTime                       @default(now())
+  updatedAt              DateTime                       @updatedAt
+  signatureName          String?
+  surveyFormType         String?
+  grade                  String?
+  admissionResult        String?
+  directorNote           String?
+  admissionCampus        String?
   devProfessionalComment String?
-  devPsychologyComment    String?
-  devImportantNote        String?
-  devAssessmentResult     String?
-  bghApprovalStatus       String?
-  bghApprovalComment      String?
-  gdcsApprovalStatus      String?
-  gdcsApprovalComment     String?
-  probationaryScoreText   String?
-  probationaryResult      String?
-  probationaryComment     String?
-  probationaryPeriod      String?
-  probationaryClass       String?
-  probationaryTeacher     String?
-  batch               PreschoolInputAssessmentBatch?    @relation(fields: [batchId], references: [id])
-  period              PreschoolInputAssessmentPeriod    @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  devPsychologyComment   String?
+  devImportantNote       String?
+  devAssessmentResult    String?
+  bghApprovalStatus      String?
+  bghApprovalComment     String?
+  gdcsApprovalStatus     String?
+  gdcsApprovalComment    String?
+  probationaryScoreText  String?
+  probationaryResult     String?
+  probationaryComment    String?
+  probationaryPeriod     String?
+  probationaryClass      String?
+  probationaryTeacher    String?
+  batch                  PreschoolInputAssessmentBatch? @relation(fields: [batchId], references: [id], onDelete: SetNull)
+  period                 PreschoolInputAssessmentPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
 
   @@unique([studentCode, periodId, batchId])
   @@index([periodId])
   @@index([batchId])
 }
-
 
 model PreschoolAssessmentConfig {
   id             String        @id @default(cuid())
@@ -827,7 +807,6 @@ model PreschoolAssessmentConfig {
 
   @@unique([categoryType, code, academicYearId])
 }
-
 
 // ==========================================
 // Đánh Giá Sự Phát Triển Trẻ (Mầm non)
@@ -847,44 +826,44 @@ model PreschoolDevArea {
 }
 
 model PreschoolDevCriteria {
-  id          String               @id @default(cuid())
-  areaId      String
-  code        String
-  name        String
-  ageGroup    String
-  sortOrder   Int                  @default(0)
-  status      String               @default("ACTIVE")
-  createdAt   DateTime             @default(now())
-  area        PreschoolDevArea     @relation(fields: [areaId], references: [id], onDelete: Cascade)
-  scores      PreschoolDevScore[]
+  id        String              @id @default(cuid())
+  areaId    String
+  code      String
+  name      String
+  ageGroup  String
+  sortOrder Int                 @default(0)
+  status    String              @default("ACTIVE")
+  createdAt DateTime            @default(now())
+  area      PreschoolDevArea    @relation(fields: [areaId], references: [id], onDelete: Cascade)
+  scores    PreschoolDevScore[]
 
   @@unique([areaId, code, ageGroup])
 }
 
 model PreschoolDevScore {
-  id          String               @id @default(cuid())
-  studentId   String
-  criteriaId  String
-  result      String
-  note        String?
-  assessorId  String?
-  createdAt   DateTime             @default(now())
-  updatedAt   DateTime             @updatedAt
-  criteria    PreschoolDevCriteria @relation(fields: [criteriaId], references: [id], onDelete: Cascade)
+  id         String               @id @default(cuid())
+  studentId  String
+  criteriaId String
+  result     String
+  note       String?
+  assessorId String?
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+  criteria   PreschoolDevCriteria @relation(fields: [criteriaId], references: [id], onDelete: Cascade)
 
   @@unique([studentId, criteriaId])
 }
 
 model PreschoolInputAssessmentTeacherAssignment {
-  id                  String                              @id @default(cuid())
-  periodId            String
-  batchId             String?
-  userId              String
-  grade               String                              // e.g. "18 đến 24 tháng"
-  createdAt           DateTime                            @default(now())
-  user                User                                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  batch               PreschoolInputAssessmentBatch?      @relation(fields: [batchId], references: [id], onDelete: Cascade)
-  period              PreschoolInputAssessmentPeriod      @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  id        String                         @id @default(cuid())
+  periodId  String
+  batchId   String?
+  userId    String
+  grade     String // e.g. "18 đến 24 tháng"
+  createdAt DateTime                       @default(now())
+  user      User                           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  batch     PreschoolInputAssessmentBatch? @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  period    PreschoolInputAssessmentPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
 
   @@unique([periodId, batchId, userId, grade])
   @@index([userId])
