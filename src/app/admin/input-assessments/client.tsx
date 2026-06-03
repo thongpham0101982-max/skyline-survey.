@@ -123,7 +123,7 @@ function ConfirmDialog({ open, onClose, onConfirm, message }: { open:boolean; on
         <p className="text-sm text-slate-500 mb-6">{message}</p>
         <div className="flex gap-3">
           <button onClick={onClose} className="flex-1 py-3 border border-slate-200 rounded-2xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors">Hủy</button>
-          <button disabled={cannotUpdate} onClick={()=>{onConfirm(); onClose()}} className="flex-1 py-3 bg-rose-600 text-white rounded-2xl text-sm font-bold hover:bg-rose-700 shadow-lg shadow-rose-100 transition-all">Xóa</button>
+          <button onClick={()=>{onConfirm(); onClose()}} className="flex-1 py-3 bg-rose-600 text-white rounded-2xl text-sm font-bold hover:bg-rose-700 shadow-lg shadow-rose-100 transition-all">Xóa</button>
         </div>
       </div>
     </div>
