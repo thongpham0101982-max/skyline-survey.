@@ -2772,7 +2772,9 @@ ${reportForm.directorNote}`;
     if (!sPeriodId) return
     setSLoading(true)
     try {
-      let url = `/api/input-assessment-students?periodId=${sPeriodId}&t=${Date.now()}`
+      let url = `/api/input-assessment-students?t=${Date.now()}`
+      if (sPeriodId === "all") url += `&fetch_all=true`
+      else url += `&periodId=${sPeriodId}`
       if (sBatchId) url += `&batchId=${sBatchId}`
       const r = await fetch(url)
       if (r.ok) setStudents(await r.json())
@@ -3762,15 +3764,15 @@ return {
               <span className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 text-xs font-bold border border-slate-200">
                 Tổng cộng: <span className="text-[#00A19A] ml-1">{filtStu.length}</span> HS
               </span>
-              <button onClick={handleDownloadTemplate} disabled={!sPeriodId} className="h-10 px-4 bg-white text-slate-600 border border-slate-200 rounded-xl flex items-center justify-center hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 shadow-sm transition-all disabled:opacity-50 text-sm font-semibold group">
+              <button onClick={handleDownloadTemplate} disabled={!sPeriodId || sPeriodId === "all"} className="h-10 px-4 bg-white text-slate-600 border border-slate-200 rounded-xl flex items-center justify-center hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 shadow-sm transition-all disabled:opacity-50 text-sm font-semibold group" title={sPeriodId === "all" ? "Vui lòng chọn một kỳ cụ thể" : ""}>
                  <Download className="w-4 h-4 sm:mr-2 group-hover:-translate-y-0.5 transition-transform"/>
                  <span className="hidden sm:inline">Tải mẫu</span>
               </button>
-              <button onClick={()=>fileRef.current?.click()} disabled={!sPeriodId||importing||cannotCreate} className={"h-10 px-4 bg-white text-slate-600 border border-slate-200 rounded-xl flex items-center justify-center hover:bg-slate-50 hover:text-emerald-600 hover:border-emerald-200 shadow-sm transition-all disabled:opacity-50 text-sm font-semibold group " + (cannotCreate ? "pointer-events-none opacity-40" : "")}>
+              <button onClick={()=>fileRef.current?.click()} disabled={!sPeriodId || sPeriodId === "all" || importing || cannotCreate} className={"h-10 px-4 bg-white text-slate-600 border border-slate-200 rounded-xl flex items-center justify-center hover:bg-slate-50 hover:text-emerald-600 hover:border-emerald-200 shadow-sm transition-all disabled:opacity-50 text-sm font-semibold group " + (cannotCreate ? "pointer-events-none opacity-40" : "")} title={sPeriodId === "all" ? "Vui lòng chọn một kỳ cụ thể" : ""}>
                  <Upload className="w-4 h-4 sm:mr-2 group-hover:-translate-y-0.5 transition-transform"/>
                  <span className="hidden sm:inline">Nhập Excel</span>
               </button>
-              <button onClick={openAddStudent} disabled={!sPeriodId||cannotCreate} className={"h-10 px-5 bg-[#00A19A] text-white text-sm font-bold rounded-xl hover:bg-[#008c85] disabled:opacity-50 transition-all shadow-md shadow-[#00A19A]/20 flex items-center justify-center " + (cannotCreate ? "pointer-events-none opacity-40" : "")}>
+              <button onClick={openAddStudent} disabled={!sPeriodId || sPeriodId === "all" || cannotCreate} className={"h-10 px-5 bg-[#00A19A] text-white text-sm font-bold rounded-xl hover:bg-[#008c85] disabled:opacity-50 transition-all shadow-md shadow-[#00A19A]/20 flex items-center justify-center " + (cannotCreate ? "pointer-events-none opacity-40" : "")} title={sPeriodId === "all" ? "Vui lòng chọn một kỳ cụ thể" : ""}>
                 <Plus className="w-4 h-4 mr-2"/> Thêm mới
               </button>
               <input type="file" ref={fileRef} accept=".xlsx" className="hidden" onChange={handleImport}/>
@@ -3784,12 +3786,13 @@ return {
                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Kỳ khảo sát *</label>
                 <select value={sPeriodId} onChange={e=>{setSPeriodId(e.target.value); setSBatchId("")}} className={inp + " bg-slate-50/50 hover:bg-white focus:bg-white transition-colors"}>
                    <option value="">-- Chọn Kỳ --</option>
+                   <option value="all">-- Tất cả các kỳ --</option>
                    {visiblePeriods.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
               </div>
               <div className="md:col-span-3">
                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Đợt khảo sát</label>
-                <select value={sBatchId} onChange={e=>setSBatchId(e.target.value)} className={inp + " bg-slate-50/50 hover:bg-white focus:bg-white transition-colors"} disabled={!sPeriodId}>
+                <select value={sBatchId} onChange={e=>setSBatchId(e.target.value)} className={inp + " bg-slate-50/50 hover:bg-white focus:bg-white transition-colors"} disabled={!sPeriodId || sPeriodId === "all"}>
                    <option value="">-- Tất cả đợt --</option>
                    {selPeriod?.batches?.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
                 </select>
