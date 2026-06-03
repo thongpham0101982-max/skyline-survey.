@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
+import { revalidatePath } from "next/cache"
 
 export async function POST(req) {
   try {
@@ -12,6 +13,7 @@ export async function POST(req) {
     const result = await (prisma as any).educationSystem.create({
       data: { code, name, academicYearId }
     });
+    revalidatePath("/admin/academic-years");
     return NextResponse.json(result);
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -24,6 +26,7 @@ export async function DELETE(req) {
     const id = searchParams.get("id");
     if (!id) return NextResponse.json({ error: "Thiếu ID" }, { status: 400 });
     await (prisma as any).educationSystem.delete({ where: { id } });
+    revalidatePath("/admin/academic-years");
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

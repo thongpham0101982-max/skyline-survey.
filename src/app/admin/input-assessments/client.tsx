@@ -915,6 +915,10 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
   };
 
   const [yearId, setYearId] = useState(() => getDefaultAcademicYearClient(academicYears)?.id || "")
+  
+  const currentEduSystems = useMemo(() => {
+    return eduSystems.filter((es: any) => es.academicYearId === yearId)
+  }, [eduSystems, yearId])
   const [toast, setToast] = useState<{msg:string;type:"ok"|"err"}|null>(null)
   const notify = (msg:string, type:"ok"|"err"="ok") => { setToast({msg,type}); setTimeout(()=>setToast(null),3200) }
   const handleDownloadTemplate = () => {
@@ -2647,7 +2651,7 @@ ${reportForm.directorNote}`;
   const [editingSubjectId, setEditingSubjectId] = useState<string|null>(null);
   const [subjectForm, setSubjectForm] = useState({ code:"", name:"", subjectType:"", scoreColumns: 1, commentColumns: 1, status: "ACTIVE", exemptCriteria: [] as string[] });
   const [selGrades, setSelGrades] = useState<string[]>((Array.isArray(grades) && grades[0]) ? [grades[0]] : []);
-  const [selEdus, setSelEdus] = useState<string[]>((Array.isArray(eduSystems) && eduSystems[0]?.code) ? [eduSystems[0].code] : []);
+  const [selEdus, setSelEdus] = useState<string[]>([]);
   const [mappings, setMappings] = useState<any[]>([]);
   const [mappingLoading, setMappingLoading] = useState(false);
   const [assignSelSubjects, setAssignSelSubjects] = useState<string[]>([]);
@@ -2678,6 +2682,15 @@ ${reportForm.directorNote}`;
   const [asSelGrades, setAsSelGrades] = useState<string[]>([])
   const [asSelSystems, setAsSelSystems] = useState<string[]>([])
   const [asSubmitting, setAsSubmitting] = useState(false)
+
+  useEffect(() => {
+    const systemsForYear = eduSystems.filter((es: any) => es.academicYearId === yearId);
+    if (systemsForYear.length > 0) {
+      setSelEdus([systemsForYear[0].code]);
+    } else {
+      setSelEdus([]);
+    }
+  }, [yearId, eduSystems]);
 
   useEffect(() => {
     if (visiblePeriods.length > 0) {
@@ -3406,10 +3419,10 @@ return {
                       <div className="bg-slate-50/50 p-6 rounded-3xl border border-slate-100">
                         <div className="flex items-center justify-between mb-4">
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><GraduationCap className="w-3.5 h-3.5"/> Hệ học *</label>
-                          <button onClick={() => setAsSelSystems(asSelSystems.length === eduSystems.length ? [] : eduSystems.map(es=>es.code))} className={"text-[9px] font-black text-amber-600 bg-amber-50 px-2 py-1 rounded-lg " + (isReadOnly ? "pointer-events-none opacity-40 cursor-not-allowed" : "")} disabled={isReadOnly}>Chọn hết</button>
+                          <button onClick={() => setAsSelSystems(asSelSystems.length === currentEduSystems.length ? [] : currentEduSystems.map(es=>es.code))} className={"text-[9px] font-black text-amber-600 bg-amber-50 px-2 py-1 rounded-lg " + (isReadOnly ? "pointer-events-none opacity-40 cursor-not-allowed" : "")} disabled={isReadOnly}>Chọn hết</button>
                         </div>
                         <div className="flex flex-wrap gap-2">
-                          {eduSystems.map(es => (
+                          {currentEduSystems.map(es => (
                             <button
                               key={es.code}
                               onClick={() => setAsSelSystems(p => p.includes(es.code) ? p.filter(x=>x!==es.code) : [...p, es.code])}
@@ -4055,10 +4068,10 @@ return {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="block font-bold text-slate-700 text-xs uppercase tracking-wider">Hệ học:</span>
-                    <button onClick={() => setSelEdus(selEdus.length === eduSystems.length ? [] : eduSystems.map((e: any) => e.code))} className={"text-[10px] font-bold text-purple-600 bg-purple-50 hover:bg-purple-100 px-2.5 py-1 rounded-md transition-colors " + (isReadOnly ? "pointer-events-none opacity-40" : "")} disabled={isReadOnly}>Chọn tất cả</button>
+                    <button onClick={() => setSelEdus(selEdus.length === currentEduSystems.length ? [] : currentEduSystems.map((e: any) => e.code))} className={"text-[10px] font-bold text-purple-600 bg-purple-50 hover:bg-purple-100 px-2.5 py-1 rounded-md transition-colors " + (isReadOnly ? "pointer-events-none opacity-40" : "")} disabled={isReadOnly}>Chọn tất cả</button>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {eduSystems.map((es: any) => (
+                    {currentEduSystems.map((es: any) => (
                       <button key={es.code} onClick={() => toggleEdu(es.code)} className={`text-xs px-3 py-1.5 rounded-lg font-bold transition-all ${selEdus.includes(es.code) ? 'bg-purple-500 text-white shadow-md shadow-purple-200' : 'bg-white text-slate-600 border border-slate-200 hover:border-purple-300'} ${isReadOnly ? "pointer-events-none opacity-40" : ""}`} disabled={isReadOnly}>
                         {selEdus.includes(es.code) && <Check className="w-3 h-3 inline mr-1"/>} {es.code}
                       </button>
@@ -4162,7 +4175,7 @@ return {
                       
                       return Array.from(groups.values()).map((g:any, i) => {
                         const allGrades = grades.length > 0 && g.grades.size === grades.length;
-                        const allEdus = eduSystems.length > 0 && g.edus.size === eduSystems.length;
+                        const allEdus = currentEduSystems.length > 0 && g.edus.size === currentEduSystems.length;
                         
                         return (
                           <tr key={g.subject?.id} className="hover:bg-slate-50/50 transition-colors">
@@ -6089,7 +6102,7 @@ return {
                 <Field label="Hệ Khảo sát">
                   <select value={sForm.surveyFormType} onChange={e=>setSForm(f=>({...f,surveyFormType:e.target.value}))} className={inp}>
                     <option value="">--</option>
-                    {eduSystems.map(es => <option key={es.code} value={es.name}>{es.name}</option>)}
+                    {currentEduSystems.map(es => <option key={es.code} value={es.name}>{es.name}</option>)}
                   </select>
                 </Field>
              </div>

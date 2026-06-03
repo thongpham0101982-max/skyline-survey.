@@ -104,11 +104,15 @@ export default async function InputAssessmentsPage() {
           orderBy: { teacherName: "asc" }
         }).catch(() => []);
       }
+      if (pAny.educationSystem) {
+        eduSystems = await pAny.educationSystem.findMany({
+          where: { status: "ACTIVE" }
+        }).catch(() => []);
+      }
       if (pAny.academicYear) {
         const activeYear = await getDefaultAcademicYear(pAny);
 
         if (activeYear) {
-          eduSystems = activeYear.educationSystems || [];
           if (pAny.class) {
             const uniqueGrades = await pAny.class.findMany({
               where: { academicYearId: activeYear.id },
