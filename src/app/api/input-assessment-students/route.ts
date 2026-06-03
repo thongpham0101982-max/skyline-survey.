@@ -93,8 +93,25 @@ export async function POST(req) {
     if (action === "BULK_CREATE") {
       const results = [];
       const errors = [];
+      
+      let maxNum = 0;
+      const allStudents = await (prisma as any).inputAssessmentStudent.findMany({
+        select: { studentCode: true }
+      });
+      const nums = allStudents.map((s) => {
+        const match = String(s.studentCode || "").match(/\d+$/);
+        return match ? parseInt(match[0], 10) : 0;
+      }).filter((n) => !isNaN(n));
+      if (nums.length > 0) maxNum = Math.max(...nums);
+      
       for (let i = 0; i < data.length; i++) {
         const d = data[i];
+        
+        if (!d.studentCode || d.studentCode.trim() === "") {
+            maxNum++;
+            d.studentCode = "HS" + maxNum.toString().padStart(3, "0");
+        }
+        
         try {
           const existing = await (prisma as any).inputAssessmentStudent.findUnique({
             where: { studentCode_periodId: { studentCode: d.studentCode, periodId: d.periodId } }

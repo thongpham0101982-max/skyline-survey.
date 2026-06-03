@@ -924,7 +924,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
   const handleDownloadTemplate = () => {
     const ws = XLSX.utils.json_to_sheet([
         { 
-          "Mã HS KS *": "HS_001", 
+          "Mã HS KS": "", 
           "Họ và Tên *": "Nguyễn Văn A", 
           "Ngày sinh": "20/05/2010",
           "Giới tính": "Nam",
@@ -3013,7 +3013,7 @@ return {
           batchId: sBatchId || null
         };
 
-      }).filter((r:any) => r.studentCode && r.fullName)
+      }).filter((r:any) => r.fullName)
       const res = await fetch("/api/input-assessment-students", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({action:"BULK_CREATE", data:mapped}) })
       if (res.ok) { 
         const dr = await res.json();
