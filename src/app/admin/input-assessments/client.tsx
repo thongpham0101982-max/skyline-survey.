@@ -3993,7 +3993,7 @@ return {
                     <tr>
                       <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Ma mon</th>
                       <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Ten Mon</th>
-                      <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Loai</th>
+                      
                       <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Cot Diem</th>
                       <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Cot NX</th>
                       <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Trang thai</th>
@@ -4009,9 +4009,7 @@ return {
                         <tr key={sub.id} className="group hover:bg-slate-50/70 transition-colors">
                           <td className="p-5"><span className="font-mono text-xs font-black text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg">{sub.code}</span></td>
                           <td className="p-5"><span className="text-sm font-black text-slate-700">{sub.name}</span></td>
-                          <td className="p-5 text-center">
-                            {sub.subjectType ? (<span className="px-2.5 py-1 bg-sky-50 text-sky-700 border border-sky-100 rounded-lg text-[10px] font-black uppercase tracking-wider">{sub.subjectType === "VIET_NAM" ? "GV VN" : "GV NN"}</span>) : (<span className="text-slate-300 text-xs">-</span>)}
-                          </td>
+                          
                           <td className="p-5 text-center"><span className="w-7 h-7 rounded-full bg-indigo-50 text-indigo-700 font-black text-xs inline-flex items-center justify-center">{sub.scoreColumns ?? 0}</span></td>
                           <td className="p-5 text-center"><span className="w-7 h-7 rounded-full bg-emerald-50 text-emerald-700 font-black text-xs inline-flex items-center justify-center">{sub.commentColumns ?? 0}</span></td>
                           <td className="p-5 text-center"><Badge s={sub.status || "ACTIVE"}/></td>
@@ -5890,7 +5888,7 @@ return {
         <div className="space-y-4">
            <Field label="Mã Môn" required><input value={subjectForm.code} onChange={e=>setSubjectForm(f=>({...f,code:e.target.value.toUpperCase()}))} className={inp}/></Field>
            <Field label="Tên Môn" required><input value={subjectForm.name} onChange={e=>setSubjectForm(f=>({...f,name:e.target.value}))} className={inp}/></Field>
-           <Field label="Phân loại (Anh văn)"><select value={subjectForm.subjectType} onChange={e=>setSubjectForm(f=>({...f,subjectType:e.target.value}))} className={inp}><option value="">-- Môn bình thường --</option><option value="VIET_NAM">Tiếng Anh (GV VN)</option><option value="NUOC_NGOAI">Tiếng Anh (GV Nước ngoài)</option></select></Field>
+           
            <div className="grid grid-cols-2 gap-3"><Field label="Số cột Điểm"><input type="number" min="0" max="5" value={subjectForm.scoreColumns} onChange={e=>setSubjectForm(f=>({...f,scoreColumns:parseInt(e.target.value)||0}))} className={inp}/></Field><Field label="Số cột Nhận xét"><input type="number" min="0" max="5" value={subjectForm.commentColumns} onChange={e=>setSubjectForm(f=>({...f,commentColumns:parseInt(e.target.value)||0}))} className={inp}/></Field></div>
            <Field label="Trạng thái"><select value={subjectForm.status} onChange={e=>setSubjectForm(f=>({...f,status:e.target.value}))} className={inp}><option value="ACTIVE">Hoạt động</option><option value="INACTIVE">Ngừng</option></select></Field>
            <Field label="Miễn giảm theo Diện KS">
