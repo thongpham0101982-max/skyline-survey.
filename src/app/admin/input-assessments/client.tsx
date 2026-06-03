@@ -3834,6 +3834,8 @@ return {
                           <th className="px-3 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center">Giới tính</th>
                           <th className="px-4 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center">Ngày sinh</th>
                           <th className="px-4 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center">Hệ Khảo sát</th>
+                           <th className="px-4 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center">Kết quả Học tập</th>
+                           <th className="px-4 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center">Kết quả Rèn luyện</th>
                           <th className="px-4 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center">Hồ sơ / Bảng điểm</th>
                           <th className="px-4 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center">Học kỳ / Năm TS</th>
                           <th className="px-4 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center">Đối tượng TS</th>
@@ -7397,6 +7399,8 @@ return {
                         <th className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">PHÁI</th>
                         <th className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">NGÀY SINH</th>
                         <th className="p-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">HỆ KHẢO SÁT</th>
+                        <th className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">KẾT QUẢ HỌC TẬP</th>
+                        <th className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">KẾT QUẢ RÈN LUYỆN</th>
                         <th className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">KẾT QUẢ</th>
                         <th className="p-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">CƠ SỞ NHẬN</th>
                         {attachLetters && (
@@ -7413,6 +7417,8 @@ return {
                           <td className="p-4 text-center font-medium text-slate-500">{s.gender === "M" || s.gender === "Nam" ? "Nam" : s.gender === "F" || s.gender === "Nữ" ? "Nữ" : s.gender || "—"}</td>
                           <td className="p-4 text-center text-slate-500">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
                           <td className="p-4 text-slate-600 font-medium">{s.surveyFormType || s.surveySystem || "—"}</td>
+                          <td className="p-4 text-center text-slate-600 font-medium">{s.kqHocTap || "—"}</td>
+                          <td className="p-4 text-center text-slate-600 font-medium">{s.kqRenLuyen || "—"}</td>
                           <td className="p-4 text-center">
                             <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-black ${
                               s.admissionResult === "Đạt" ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
