@@ -1,3 +1,4 @@
+import { getDefaultAcademicYear } from "@/lib/academicYear"
 ﻿import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import Link from "next/link"
@@ -23,7 +24,6 @@ async function getParentSurveys(userId: string) {
   if (!parent) return { parent: null, surveyTasks: [] }
 
   // Get active survey periods for the default active academic year
-  const { getDefaultAcademicYear } = require("@/lib/academicYear");
   const defaultYear = await getDefaultAcademicYear();
   const activePeriods = await prisma.surveyPeriod.findMany({
     where: { 

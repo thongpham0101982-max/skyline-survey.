@@ -1,4 +1,5 @@
 "use server"
+import { getDefaultAcademicYear } from "@/lib/academicYear"
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 
@@ -155,7 +156,6 @@ export async function syncServicesAction() {
     let updated = 0;
 
     // Get active academic year to link configs if needed
-    const { getDefaultAcademicYear } = require("@/lib/academicYear");
     const activeYear = await getDefaultAcademicYear();
     const academicYearId = activeYear?.id || null;
 
@@ -272,7 +272,6 @@ export async function syncTeacherClassListAction(teacherUserName: string) {
 
     // Synchronize records into SQLite db
     // 1. Get active academic year
-    const { getDefaultAcademicYear } = require("@/lib/academicYear");
     const activeYear = await getDefaultAcademicYear();
     if (!activeYear) {
       return { success: false, error: "Hệ thống chưa thiết lập năm học hoạt động. Vui lòng đồng bộ Năm học trước!" };

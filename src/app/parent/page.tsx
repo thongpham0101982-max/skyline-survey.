@@ -1,3 +1,4 @@
+import { getDefaultAcademicYear } from "@/lib/academicYear"
 ﻿import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { getParentChildren } from "@/services/dashboard"
@@ -31,7 +32,6 @@ export default async function ParentDashboard() {
   })
 
   // 2. Get active PHHS surveys for the default active academic year (Target = PHHS)
-  const { getDefaultAcademicYear } = require("@/lib/academicYear");
   const defaultYear = await getDefaultAcademicYear();
   const surveys = await prisma.surveyPeriod.findMany({
     where: { 

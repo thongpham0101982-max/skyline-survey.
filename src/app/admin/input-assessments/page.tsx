@@ -1,3 +1,4 @@
+import { getDefaultAcademicYear } from "@/lib/academicYear"
 ﻿import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { InputAssessmentsClient } from "./client"
@@ -104,7 +105,6 @@ export default async function InputAssessmentsPage() {
         }).catch(() => []);
       }
       if (pAny.academicYear) {
-        const { getDefaultAcademicYear } = require("@/lib/academicYear");
         const activeYear = await getDefaultAcademicYear(pAny);
 
         if (activeYear) {
