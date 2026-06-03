@@ -3858,6 +3858,8 @@ return {
                                {s.surveyFormType || "-"}
                              </span>
                            </td>
+                           <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.kqHocTap || "-"}</td>
+                           <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.kqRenLuyen || "-"}</td>
                            <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.hoSoCtQuocTe || "-"}</td>
                            <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.hocKy || "-"}</td>
                            <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.targetType || "-"}</td>
