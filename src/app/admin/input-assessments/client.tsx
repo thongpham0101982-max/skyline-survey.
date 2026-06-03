@@ -1,4 +1,5 @@
-﻿"use client"
+"use client"
+import { getDefaultAcademicYearClient } from "@/lib/academicYear"
 const DEFAULT_WATERMARK_SVG = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='%23007A87'><path d='M10,80 Q50,40 90,20 Q60,50 10,80 Z'/><path d='M30,80 Q60,55 90,35 Q65,60 30,80 Z'/></svg>";
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
@@ -9,7 +10,7 @@ import {
   Tag, FolderOpen, Hash, MoreVertical, PenLine, CheckCircle2,
   Filter, ClipboardCheck, ArrowRight, UserPlus, Info,
   FileSpreadsheet, Pencil, Mail, FileText,
-  Phone, Printer
+  Phone, Printer, Lock
 } from "lucide-react"
 import * as XLSX from "xlsx"
 
@@ -48,6 +49,7 @@ interface Props {
   giaoVuCSUsers?: User[];
   gdcsUsers?: any[];
   currentUser?: { id: string; role: string; campusIds: string[]; fullName?: string } | null;
+  rolePermissions?: { module: string, canRead: boolean, canCreate: boolean, canUpdate: boolean, canDelete: boolean }[];
 }
 
 // ========= CONSTANTS =========
@@ -121,7 +123,7 @@ function ConfirmDialog({ open, onClose, onConfirm, message }: { open:boolean; on
         <p className="text-sm text-slate-500 mb-6">{message}</p>
         <div className="flex gap-3">
           <button onClick={onClose} className="flex-1 py-3 border border-slate-200 rounded-2xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors">Hủy</button>
-          <button onClick={()=>{onConfirm(); onClose()}} className="flex-1 py-3 bg-rose-600 text-white rounded-2xl text-sm font-bold hover:bg-rose-700 shadow-lg shadow-rose-100 transition-all">Xóa</button>
+          <button disabled={cannotUpdate} onClick={()=>{onConfirm(); onClose()}} className="flex-1 py-3 bg-rose-600 text-white rounded-2xl text-sm font-bold hover:bg-rose-700 shadow-lg shadow-rose-100 transition-all">Xóa</button>
         </div>
       </div>
     </div>
@@ -243,8 +245,72 @@ const renderTemplate = (template, student) => {
 
 
 // ========= MAIN =========
-export function InputAssessmentsClient({ academicYears = [], campuses = [], examBoardUsers = [], subjects: initialSubjects = [], eduSystems = [], configs: initialConfigs = [], grades = [], teachers = [], departments = [], giaoVuCSUsers = [], gdcsUsers = [], currentUser = null }: Props) {
-  const [tab, setTab] = useState("periods")
+export function InputAssessmentsClient({ academicYears = [], campuses = [], examBoardUsers = [], subjects: initialSubjects = [], eduSystems = [], configs: initialConfigs = [], grades = [], teachers = [], departments = [], giaoVuCSUsers = [], gdcsUsers = [], currentUser = null, rolePermissions = [] }: Props) {
+  const TAB_PERMISSION_MAP: Record<string, string> = {
+    periods: "INPUT_ASSESSMENTS_PERIODS",
+    categories: "INPUT_ASSESSMENTS_CATEGORIES",
+    subjects: "INPUT_ASSESSMENTS_SUBJECTS",
+    mapping: "INPUT_ASSESSMENTS_MAPPING",
+    students: "INPUT_ASSESSMENTS_STUDENTS",
+    assignments: "INPUT_ASSESSMENTS_ASSIGNMENTS",
+    reports: "INPUT_ASSESSMENTS_REPORTS",
+  };
+
+  const getTabPermissions = (tabId: string) => {
+    const userRole = (currentUser?.role || "").toUpperCase();
+    if (userRole === "ADMIN" || userRole === "KT_DBCL") {
+      return { canRead: true, canCreate: true, canUpdate: true, canDelete: true };
+    }
+    
+    const requiredModule = TAB_PERMISSION_MAP[tabId];
+    const perm = rolePermissions?.find(p => p.module === requiredModule);
+    if (perm) {
+      return {
+        canRead: !!perm.canRead,
+        canCreate: !!perm.canCreate,
+        canUpdate: !!perm.canUpdate,
+        canDelete: !!perm.canDelete,
+      };
+    }
+    
+    // Fallback: Default role rules if no explicit permissions found in the DB
+    const isGDCS = ["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole);
+    if (isGDCS) {
+      const allowed = ["students", "reports"].includes(tabId);
+      return {
+        canRead: allowed,
+        canCreate: allowed,
+        canUpdate: allowed,
+        canDelete: allowed,
+      };
+    }
+    
+    return { canRead: true, canCreate: true, canUpdate: true, canDelete: true };
+  };
+
+  const [tab, setTab] = useState(() => {
+    const userRole = (currentUser?.role || "").toUpperCase();
+    const isGDCS = ["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole);
+    
+    const hasPeriods = userRole === "ADMIN" || userRole === "KT_DBCL" || (rolePermissions && rolePermissions.some(p => p.module === "INPUT_ASSESSMENTS_PERIODS" && p.canRead));
+    if (hasPeriods) return "periods";
+    
+    const hasStudents = userRole === "ADMIN" || userRole === "KT_DBCL" || (rolePermissions && rolePermissions.some(p => p.module === "INPUT_ASSESSMENTS_STUDENTS" && p.canRead)) || isGDCS;
+    if (hasStudents) return "students";
+    
+    const allTabs = ["periods", "categories", "subjects", "mapping", "students", "assignments", "reports"];
+    for (const t of allTabs) {
+      const p = getTabPermissions(t);
+      if (p.canRead) return t;
+    }
+    return "students";
+  });
+
+  const tabPerms = getTabPermissions(tab);
+  const cannotCreate = !tabPerms.canCreate;
+  const cannotUpdate = !tabPerms.canUpdate;
+  const cannotDelete = !tabPerms.canDelete;
+  const isReadOnly = tabPerms.canRead && !tabPerms.canCreate && !tabPerms.canUpdate && !tabPerms.canDelete;
 
   const EMAIL_MAP = useMemo(() => {
     const map = {
@@ -848,7 +914,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     setIsPrintModalOpen(true);
   };
 
-  const [yearId, setYearId] = useState(academicYears[0]?.id || "")
+  const [yearId, setYearId] = useState(() => getDefaultAcademicYearClient(academicYears)?.id || "")
   const [toast, setToast] = useState<{msg:string;type:"ok"|"err"}|null>(null)
   const notify = (msg:string, type:"ok"|"err"="ok") => { setToast({msg,type}); setTimeout(()=>setToast(null),3200) }
   const handleDownloadTemplate = () => {
@@ -2655,6 +2721,7 @@ ${reportForm.directorNote}`;
 
   const handleColumnConfigSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (cannotUpdate) return;
     const p = {
       type: "subject",
       id: columnConfigForm.subjectId,
@@ -2674,13 +2741,13 @@ ${reportForm.directorNote}`;
     } else notify((await r.json()).error, "err");
   };     
   
-  const handleSubjectSubmit=async(e:React.FormEvent)=>{e.preventDefault();const p=editingSubjectId?{type:"subject",id:editingSubjectId,data:{name:subjectForm.name,subjectType:subjectForm.subjectType||null, scoreColumns: subjectForm.scoreColumns, commentColumns: subjectForm.commentColumns, status: subjectForm.status, exemptCriteria: JSON.stringify(subjectForm.exemptCriteria)}}:{type:"subject",data:{code:subjectForm.code,name:subjectForm.name,subjectType:subjectForm.subjectType||null, scoreColumns: subjectForm.scoreColumns, commentColumns: subjectForm.commentColumns, status: subjectForm.status||"ACTIVE", exemptCriteria: JSON.stringify(subjectForm.exemptCriteria)}};const r=await fetch("/api/input-assessment-categories",{method:editingSubjectId?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});if(r.ok){setIsSubjectOpen(false);fetchSubjects()}else notify((await r.json()).error, "err")};
+  const handleSubjectSubmit=async(e:React.FormEvent)=>{e.preventDefault();if (editingSubjectId ? cannotUpdate : cannotCreate) return;const p=editingSubjectId?{type:"subject",id:editingSubjectId,data:{name:subjectForm.name,subjectType:subjectForm.subjectType||null, scoreColumns: subjectForm.scoreColumns, commentColumns: subjectForm.commentColumns, status: subjectForm.status, exemptCriteria: JSON.stringify(subjectForm.exemptCriteria)}}:{type:"subject",data:{code:subjectForm.code,name:subjectForm.name,subjectType:subjectForm.subjectType||null, scoreColumns: subjectForm.scoreColumns, commentColumns: subjectForm.commentColumns, status: subjectForm.status||"ACTIVE", exemptCriteria: JSON.stringify(subjectForm.exemptCriteria)}};const r=await fetch("/api/input-assessment-categories",{method:editingSubjectId?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});if(r.ok){setIsSubjectOpen(false);fetchSubjects()}else notify((await r.json()).error, "err")};
   
-  const deleteSubject=async(id:string)=>{if(!confirm("Xóa?"))return;await fetch("/api/input-assessment-categories?type=subject&id="+id,{method:"DELETE"});fetchSubjects()};
+  const deleteSubject=async(id:string)=>{if (cannotDelete) return;if(!confirm("Xóa?"))return;await fetch("/api/input-assessment-categories?type=subject&id="+id,{method:"DELETE"});fetchSubjects()};
   
-  const addMapping=async(sid:string)=>{const r=await fetch("/api/grade-subject-mappings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({grades:selGrades,eduSystems:selEdus,subjectId:sid})});if(r.ok)fetchMappings();else notify((await r.json()).error, "err")};
+  const addMapping=async(sid:string)=>{if (cannotCreate) return;const r=await fetch("/api/grade-subject-mappings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({grades:selGrades,eduSystems:selEdus,subjectId:sid})});if(r.ok)fetchMappings();else notify((await r.json()).error, "err")};
   
-  const removeMapping=async(sid:string)=>{await fetch("/api/grade-subject-mappings?subjectId="+sid+"&grades="+selGrades.join(",")+"&eduSystems="+selEdus.join(","),{method:"DELETE"});fetchMappings()};
+  const removeMapping=async(sid:string)=>{if (cannotDelete) return;await fetch("/api/grade-subject-mappings?subjectId="+sid+"&grades="+selGrades.join(",")+"&eduSystems="+selEdus.join(","),{method:"DELETE"});fetchMappings()};
   
   const assignedIds=[...new Set(mappings.map(m=>m.subjectId))];
   const uniqueAssigned=assignedIds.map(sid=>mappings.find(x=>x.subjectId===sid)).filter(Boolean);
@@ -2733,12 +2800,13 @@ ${reportForm.directorNote}`;
   const openAddPeriod = () => { setEditP(null); setPForm({ code:"", name:"", assignedUserId:"", startDate:"", endDate:"", description:"", status:"ACTIVE" }); setPModal(true) }
   const openEditPeriod = (p:Period) => { setEditP(p); setPForm({ code:p.code, name:p.name, assignedUserId:p.assignedUserId||"", startDate:p.startDate?.slice(0,10)||"", endDate:p.endDate?.slice(0,10)||"", description:p.description||"", status:p.status }); setPModal(true) }
   const savePeriod = async () => {
+    if (editP ? cannotUpdate : cannotCreate) return;
     if (!pForm.code.trim()||!pForm.name.trim()) return notify("Cần nhập Mã và Tên","err")
     const r = await fetch("/api/input-assessments", { method: editP?"PUT":"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action: editP?"UPDATE_PERIOD":"CREATE_PERIOD", id:editP?.id, data:{...pForm, academicYearId:yearId} }) })
     if (r.ok) { setPModal(false); fetchPeriods(); notify(editP?"Đã cập nhật kỳ khảo sát":"Đã tạo kỳ khảo sát mới") }
     else notify("Lỗi","err")
   }
-  const doDeletePeriod = async (id:string) => { const r = await fetch(`/api/input-assessments?type=period&id=${id}`,{method:"DELETE"}); if (r.ok) { fetchPeriods(); notify("Đã xóa kỳ khảo sát") } }
+  const doDeletePeriod = async (id:string) => { if (cannotDelete) return; const r = await fetch(`/api/input-assessments?type=period&id=${id}`,{method:"DELETE"}); if (r.ok) { fetchPeriods(); notify("Đã xóa kỳ khảo sát") } }
 
   const openAddBatch = (pid:string) => { 
     setTargetPeriodId(pid); 
@@ -2766,6 +2834,7 @@ ${reportForm.directorNote}`;
     setBModal(true) 
   }
   const saveBatch = async () => {
+    if (editB ? cannotUpdate : cannotCreate) return;
     if (!bForm.name.trim()||!bForm.startDate||!bForm.endDate) return notify("Cần nhập đủ Tên, Ngày bắt/kết thúc","err")
     
     const selectedCampus = campuses.find(c => c.id === bForm.campusId);
@@ -2787,7 +2856,7 @@ ${reportForm.directorNote}`;
     if (r.ok) { setBModal(false); fetchPeriods(); notify(editB?"Đã cập nhật đợt":"Đã tạo đợt mới") }
     else notify("Lỗi","err")
   }
-  const doDeleteBatch = async (id:string) => { const r = await fetch(`/api/input-assessments?type=batch&id=${id}`,{method:"DELETE"}); if (r.ok) { fetchPeriods(); notify("Đã xóa đợt") } }
+  const doDeleteBatch = async (id:string) => { if (cannotDelete) return; const r = await fetch(`/api/input-assessments?type=batch&id=${id}`,{method:"DELETE"}); if (r.ok) { fetchPeriods(); notify("Đã xóa đợt") } }
 
     const openAddStudent = async () => {
     setEditS(null);
@@ -2819,6 +2888,7 @@ ${reportForm.directorNote}`;
   }
   const openEditStudent = (s:Student) => { setEditS(s); setSForm({ studentCode:s.studentCode, fullName:s.fullName, dateOfBirth:s.dateOfBirth?.slice(0,10)||"", grade:s.grade||"", admissionCriteria:s.admissionCriteria||"", className:s.className||"", hocKy:s.hocKy||"", kqgdTieuHoc:s.kqgdTieuHoc||"", kqHocTap:s.kqHocTap||"", kqRenLuyen:s.kqRenLuyen||"", targetType:s.targetType||"", surveySystem:s.surveySystem||"", hoSoCtQuocTe:s.hoSoCtQuocTe||"", surveyFormType:s.surveyFormType||"" , gender:s.gender||"", batchId:s.batchId||"" }); setSModal(true) }
   const saveStudent = async () => {
+    if (editS ? cannotUpdate : cannotCreate) return;
     if (!sForm.studentCode.trim()||!sForm.fullName.trim()) return notify("Cần nhập Mã HS và Họ tên","err")
     const r = editS
       ? await fetch("/api/input-assessment-students", { method:"PUT", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id:editS.id, data:sForm }) })
@@ -2826,12 +2896,14 @@ ${reportForm.directorNote}`;
     if (r.ok) { setSModal(false); fetchStudents(); notify(editS?"Đã cập nhật học sinh":"Đã thêm học sinh") }
     else notify("Lỗi","err")
   }
-  const doDeleteStudent = async (id:string) => { const r = await fetch(`/api/input-assessment-students?id=${id}`,{method:"DELETE"}); if (r.ok) { fetchStudents(); notify("Đã xóa") } }
+  const doDeleteStudent = async (id:string) => { if (cannotDelete) return; const r = await fetch(`/api/input-assessment-students?id=${id}`,{method:"DELETE"}); if (r.ok) { fetchStudents(); notify("Đã xóa") } }
   const doDeleteSelected = async () => {
+    if (cannotDelete) return;
     const r = await fetch(`/api/input-assessment-students?ids=${sSelected.join(",")}`,{method:"DELETE"})
     if (r.ok) { setSSelected([]); fetchStudents(); notify(`Đã xóa ${sSelected.length} học sinh`) }
   }
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (cannotCreate) return;
     const file = e.target.files?.[0]; if (!file||!sPeriodId) return
     setImporting(true)
     try {
@@ -2949,13 +3021,14 @@ return {
   const openAddConfig = (type:string) => { setEditC(null); setCForm({ categoryType:type, code:"", name:"" }); setCModal(true) }
   const openEditConfig = (c:AssessmentConfig) => { setEditC(c); setCForm({ categoryType:c.categoryType, code:c.code, name:c.name }); setCModal(true) }
   const saveConfig = async () => {
+    if (editC ? cannotUpdate : cannotCreate) return;
     if (!cForm.code.trim()||!cForm.name.trim()) return notify("Cần nhập Mã và Tên","err")
     const r = editC
       ? await fetch("/api/assessment-configs", { method:"PUT", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id:editC.id, name:cForm.name, code:cForm.code }) })
       : await fetch("/api/assessment-configs", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(cForm) })
     if (r.ok) { setCModal(false); fetchConfigs(); notify("Xong") }
   }
-  const doDeleteConfig = async (id:string) => { const r = await fetch(`/api/assessment-configs?id=${id}`,{method:"DELETE"}); if (r.ok) { fetchConfigs(); notify("Xóa xong") } }
+  const doDeleteConfig = async (id:string) => { if (cannotDelete) return; const r = await fetch(`/api/assessment-configs?id=${id}`,{method:"DELETE"}); if (r.ok) { fetchConfigs(); notify("Xóa xong") } }
 
   // ───────── ASSIGNMENT ACTIONS ─────────
   const filteredTeachers = useMemo(() => {
@@ -2964,6 +3037,7 @@ return {
   }, [teachers, asDeptId])
 
   const submitAssignment = async () => {
+    if (cannotCreate || cannotUpdate) return;
     if (!asPeriodId || !asBatchId || !asTeacherId || !asSelSubjects.length || !asSelGrades.length || !asSelSystems.length) {
       return notify("Vui lòng chọn đầy đủ Kỳ, Đợt, GV, Môn, Khối và Hệ học", "err")
     }
@@ -3007,6 +3081,7 @@ return {
 
   
   const sendTeacherNotification = async (a) => {
+    if (cannotUpdate) return;
     if (!a.userId || !asPeriodId) return;
     setAsNotifyingId(a.id);
     try {
@@ -3039,6 +3114,7 @@ return {
   };
 
   const sendAllNotifications = async () => {
+    if (cannotUpdate) return;
     if (groupedAssignments.length === 0) return notify("Không có phân công nào để gửi thông báo", "err");
     setAsNotifyingAll(true);
     try {
@@ -3117,6 +3193,7 @@ return {
   }
 
   const deleteAssignment = async (ids: string[]) => {
+    if (cannotDelete) return;
     const res = await fetch(`/api/input-assessment-assignments?ids=${ids.join(",")}`, { method: "DELETE" })
     if (res.ok) {
       notify("Đã xóa phân công")
@@ -3163,7 +3240,7 @@ return {
         <div className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 rounded-lg border border-slate-200 flex-shrink-0">
           <Calendar className="w-3.5 h-3.5 text-slate-400"/>
           <select value={yearId} onChange={e=>{setYearId(e.target.value); setSPeriodId(""); setAsPeriodId(""); setStudents([]); setAssignments([])}} className="bg-transparent text-xs font-bold text-slate-700 outline-none cursor-pointer max-w-[140px] sm:max-w-none">
-            {academicYears.map(ay=><option key={ay.id} value={ay.id}>Năm học {ay.name}</option>)}
+            {academicYears.filter(ay=>!ay.isOff).map(ay=><option key={ay.id} value={ay.id}>Năm học {ay.name}</option>)}
           </select>
         </div>
       </div>
@@ -3179,23 +3256,46 @@ return {
             { id:"students",             label:"H\u1ecdc sinh",   tip:"DS HS kh\u1ea3o s\u00e1t",      icon:Users },
             { id:"assignments",          label:"Ph\u00e2n c\u00f4ng",  tip:"Ph\u00e2n c\u00f4ng GV",        icon:UserCheck },
             { id:"reports",              label:"Tổng hợp KQKS",    tip:"Tổng hợp kết quả khảo sát",    icon:BarChart3 },
-          ].map(t=>(
-            <button
-              key={t.id}
-              onClick={()=>setTab(t.id)}
-              title={t.tip}
-              className={"flex flex-col sm:flex-row items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-2 sm:py-2.5 rounded-lg text-[9px] sm:text-[11px] font-bold transition-all duration-200 min-w-[44px] sm:min-w-0 " + (tab===t.id ? "bg-indigo-600 text-white shadow-sm" : "text-slate-500 hover:bg-slate-100 hover:text-slate-700")}
-            >
-              <t.icon className={"w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 " + (tab===t.id ? "text-white" : "text-slate-400")}/>
-              <span className="leading-tight text-center whitespace-nowrap">{t.label}</span>
-            </button>
-          ))}
+          ].map(t => {
+            const p = getTabPermissions(t.id);
+            const canRead = p.canRead;
+            const isTabReadOnly = canRead && !p.canCreate && !p.canUpdate && !p.canDelete;
+            return (
+              <button
+                key={t.id}
+                onClick={() => { if (canRead) setTab(t.id); }}
+                title={!canRead ? "Bạn không có quyền xem chức năng này" : isTabReadOnly ? `${t.tip} (Chỉ xem)` : t.tip}
+                className={"flex flex-col sm:flex-row items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-2 sm:py-2.5 rounded-lg text-[9px] sm:text-[11px] font-bold transition-all duration-200 min-w-[44px] sm:min-w-0 " + 
+                  (!canRead 
+                    ? "opacity-35 cursor-not-allowed select-none" 
+                    : (tab===t.id 
+                        ? (isTabReadOnly ? "bg-amber-600 text-white shadow-sm" : "bg-indigo-600 text-white shadow-sm") 
+                        : (isTabReadOnly 
+                            ? "text-slate-500 hover:bg-slate-50 hover:text-slate-700 border border-dashed border-amber-300/40" 
+                            : "text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                          )
+                      )
+                  )}
+              >
+                {!canRead && <Lock className="w-3 h-3 text-slate-400 mr-0.5" />}
+                {isTabReadOnly && <Lock className="w-3.5 h-3.5 text-amber-500 mr-0.5 flex-shrink-0" />}
+                <t.icon className={"w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 " + (tab===t.id ? "text-white" : (isTabReadOnly ? "text-amber-500/80" : "text-slate-400"))}/>
+                <span className="leading-tight text-center whitespace-nowrap">{t.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {/* ===== TAB: ASSIGNMENTS (PHÂN CÔNG) ===== */}
       {tab==="assignments" && (
-        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <div className={"space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500 " + (isReadOnly ? "select-none" : "")}>
+          {isReadOnly && (
+            <div className="no-print bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-2xl flex items-center gap-2.5 text-xs font-semibold shadow-sm mb-2">
+              <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 animate-pulse" />
+              Chế độ xem (Đọc dữ liệu). Các chức năng Thêm mới, Chỉnh sửa và Xóa bị khóa đối với tài khoản này.
+            </div>
+          )}
           <div className="flex items-center gap-4 bg-white p-5 rounded-3xl border border-slate-200 shadow-sm">
              <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center flex-shrink-0 animate-pulse">
                 <UserCheck className="w-6 h-6 text-indigo-500"/>
@@ -3219,28 +3319,28 @@ return {
 
                   <div className="space-y-5">
                     <Field label="Kỳ khảo sát" required>
-                      <select value={asPeriodId} onChange={e=>{setAsPeriodId(e.target.value); setAsBatchId("")}} className={inp}>
+                      <select value={asPeriodId} onChange={e=>{setAsPeriodId(e.target.value); setAsBatchId("")}} className={inp} disabled={isReadOnly}>
                         <option value="">-- Chọn Kỳ --</option>
                         {visiblePeriods.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
                       </select>
                     </Field>
 
                     <Field label="Đợt khảo sát" required>
-                      <select value={asBatchId} onChange={e=>setAsBatchId(e.target.value)} className={inp} disabled={!asPeriodId}>
+                      <select value={asBatchId} onChange={e=>setAsBatchId(e.target.value)} className={inp} disabled={!asPeriodId || isReadOnly}>
                          <option value="">-- Chọn Đợt --</option>
                          {visiblePeriods.find(p=>p.id===asPeriodId)?.batches?.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
                       </select>
                     </Field>
 
                     <Field label="Lọc theo Tổ chuyên môn (Không bắt buộc)">
-                      <select value={asDeptId} onChange={e=>setAsDeptId(e.target.value)} className={inp}>
+                      <select value={asDeptId} onChange={e=>setAsDeptId(e.target.value)} className={inp} disabled={isReadOnly}>
                         <option value="">Tất cả Tổ chuyên môn</option>
                         {departments.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}
                       </select>
                     </Field>
 
                     <Field label="Giáo viên phụ trách" required>
-                      <select value={asTeacherId} onChange={e=>setAsTeacherId(e.target.value)} className={inp+" bg-slate-50/50 border-indigo-100 hover:border-indigo-300 focus:bg-white"}>
+                      <select value={asTeacherId} onChange={e=>setAsTeacherId(e.target.value)} className={inp+" bg-slate-50/50 border-indigo-100 hover:border-indigo-300 focus:bg-white"} disabled={isReadOnly}>
                         <option value="">-- Chọn Giáo viên --</option>
                         {filteredTeachers.map(t=><option key={t.userId} value={t.userId}>{t.teacherName}</option>)}
                       </select>
@@ -3265,7 +3365,7 @@ return {
                     <div>
                       <div className="flex items-center justify-between mb-3 px-1">
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><BookOpen className="w-3.5 h-3.5"/> Môn khảo sát *</label>
-                        <button onClick={() => setAsSelSubjects(asSelSubjects.length === subjectsList.length ? [] : subjectsList.map(s=>s.id))} className="text-[10px] font-black text-indigo-500 hover:bg-indigo-50 px-2 py-1 rounded-lg uppercase tracking-wider transition-colors">
+                        <button onClick={() => setAsSelSubjects(asSelSubjects.length === subjectsList.length ? [] : subjectsList.map(s=>s.id))} className={"text-[10px] font-black text-indigo-500 hover:bg-indigo-50 px-2 py-1 rounded-lg uppercase tracking-wider transition-colors " + (isReadOnly ? "pointer-events-none opacity-40 cursor-not-allowed" : "")} disabled={isReadOnly}>
                           {asSelSubjects.length === subjectsList.length ? "Bỏ chọn hết" : "Chọn tất cả"}
                         </button>
                       </div>
@@ -3274,7 +3374,7 @@ return {
                           <button
                             key={sub.id}
                             onClick={() => setAsSelSubjects(p => p.includes(sub.id) ? p.filter(x=>x!==sub.id) : [...p, sub.id])}
-                            className={`px-4 py-2.5 rounded-2xl text-xs font-bold border-2 transition-all ${asSelSubjects.includes(sub.id) ? "bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-100" : "bg-white border-slate-100 text-slate-500 hover:border-indigo-200 hover:text-indigo-500"}`}
+                            className={`px-4 py-2.5 rounded-2xl text-xs font-bold border-2 transition-all ${asSelSubjects.includes(sub.id) ? "bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-100" : "bg-white border-slate-100 text-slate-500 hover:border-indigo-200 hover:text-indigo-500"} ${isReadOnly ? "pointer-events-none opacity-40 cursor-not-allowed" : ""}`} disabled={isReadOnly}
                           >
                             {sub.name}
                           </button>
@@ -3287,14 +3387,14 @@ return {
                       <div className="bg-slate-50/50 p-6 rounded-3xl border border-slate-100">
                         <div className="flex items-center justify-between mb-4">
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Layers className="w-3.5 h-3.5"/> Khối *</label>
-                          <button onClick={() => setAsSelGrades(asSelGrades.length === grades.length ? [] : grades)} className="text-[9px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">Chọn hết</button>
+                          <button onClick={() => setAsSelGrades(asSelGrades.length === grades.length ? [] : grades)} className={"text-[9px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg " + (isReadOnly ? "pointer-events-none opacity-40 cursor-not-allowed" : "")} disabled={isReadOnly}>Chọn hết</button>
                         </div>
                         <div className="grid grid-cols-4 gap-2">
                           {grades.map(g => (
                             <button
                               key={g}
                               onClick={() => setAsSelGrades(p => p.includes(g) ? p.filter(x=>x!==g) : [...p, g])}
-                              className={`py-2 rounded-xl text-[11px] font-black border-2 transition-all ${asSelGrades.includes(g) ? "bg-emerald-500 border-emerald-500 text-white shadow-sm" : "bg-white border-white text-slate-400 hover:border-emerald-200 hover:text-emerald-500"}`}
+                              className={`py-2 rounded-xl text-[11px] font-black border-2 transition-all ${asSelGrades.includes(g) ? "bg-emerald-500 border-emerald-500 text-white shadow-sm" : "bg-white border-white text-slate-400 hover:border-emerald-200 hover:text-emerald-500"} ${isReadOnly ? "pointer-events-none opacity-40 cursor-not-allowed" : ""}`} disabled={isReadOnly}
                             >
                               K{g}
                             </button>
@@ -3306,14 +3406,14 @@ return {
                       <div className="bg-slate-50/50 p-6 rounded-3xl border border-slate-100">
                         <div className="flex items-center justify-between mb-4">
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><GraduationCap className="w-3.5 h-3.5"/> Hệ học *</label>
-                          <button onClick={() => setAsSelSystems(asSelSystems.length === eduSystems.length ? [] : eduSystems.map(es=>es.code))} className="text-[9px] font-black text-amber-600 bg-amber-50 px-2 py-1 rounded-lg">Chọn hết</button>
+                          <button onClick={() => setAsSelSystems(asSelSystems.length === eduSystems.length ? [] : eduSystems.map(es=>es.code))} className={"text-[9px] font-black text-amber-600 bg-amber-50 px-2 py-1 rounded-lg " + (isReadOnly ? "pointer-events-none opacity-40 cursor-not-allowed" : "")} disabled={isReadOnly}>Chọn hết</button>
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {eduSystems.map(es => (
                             <button
                               key={es.code}
                               onClick={() => setAsSelSystems(p => p.includes(es.code) ? p.filter(x=>x!==es.code) : [...p, es.code])}
-                              className={`px-3 py-2 rounded-xl text-[11px] font-black border-2 transition-all ${asSelSystems.includes(es.code) ? "bg-amber-500 border-amber-500 text-white shadow-sm" : "bg-white border-white text-slate-400 hover:border-amber-200 hover:text-amber-500"}`}
+                              className={`px-3 py-2 rounded-xl text-[11px] font-black border-2 transition-all ${asSelSystems.includes(es.code) ? "bg-amber-500 border-amber-500 text-white shadow-sm" : "bg-white border-white text-slate-400 hover:border-amber-200 hover:text-amber-500"} ${isReadOnly ? "pointer-events-none opacity-40 cursor-not-allowed" : ""}`} disabled={isReadOnly}
                             >
                               {es.code}
                             </button>
@@ -3331,8 +3431,8 @@ return {
           <div className="flex justify-center -mt-3">
              <button
                onClick={submitAssignment}
-               disabled={asSubmitting}
-               className="group flex items-center gap-3 px-12 py-5 bg-slate-900 text-white rounded-[2rem] font-black text-base hover:bg-black hover:scale-105 transition-all shadow-2xl shadow-indigo-200 disabled:opacity-50"
+               disabled={asSubmitting || cannotCreate}
+               className={"group flex items-center gap-3 px-12 py-5 bg-slate-900 text-white rounded-[2rem] font-black text-base hover:bg-black hover:scale-105 transition-all shadow-2xl shadow-indigo-200 disabled:opacity-50 " + (cannotCreate ? "pointer-events-none opacity-40" : "")}
              >
                {asSubmitting ? <Loader2 className="w-6 h-6 animate-spin"/> : <UserPlus className="w-6 h-6 group-hover:rotate-12 transition-all"/>}
                Xác nhận Phân công cho Giáo viên
@@ -3362,8 +3462,8 @@ return {
                       </div>
                       <button
                          onClick={sendAllNotifications}
-                         disabled={asNotifyingAll || groupedAssignments.length === 0}
-                         className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-xl text-xs font-black hover:bg-indigo-700 transition-all shadow-sm disabled:opacity-50"
+                         disabled={asNotifyingAll || groupedAssignments.length === 0 || cannotUpdate}
+                         className={"flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-xl text-xs font-black hover:bg-indigo-700 transition-all shadow-sm disabled:opacity-50 " + (cannotUpdate ? "pointer-events-none opacity-40" : "")}
                          title="Gửi email thông báo phân công cho tất cả giáo viên trong danh sách"
                       >
                          {asNotifyingAll ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
@@ -3427,20 +3527,20 @@ return {
                                <button 
                                  onClick={() => sendTeacherNotification(a)}
                                  disabled={asNotifyingId === a.id}
-                                 className="p-2.5 text-slate-300 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all mr-1 disabled:opacity-30"
+                                 className={"p-2.5 text-slate-300 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all mr-1 disabled:opacity-30 " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate}
                                  title="Gửi email thông báo phân công"
                                >
                                  {asNotifyingId === a.id ? <Loader2 className="w-4 h-4 animate-spin"/> : <Mail className="w-4 h-4"/>}
                                </button>
                                <button 
                                  onClick={() => openEditAssignment(a)}
-                                 className="p-2.5 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all mr-1"
+                                 className={"p-2.5 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all mr-1 " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate}
                                >
                                  <Edit2 className="w-4 h-4"/>
                                </button>
                                <button 
                                  onClick={() => setConfirm({ msg: `Xóa phân công của GV ${a.user?.fullName}?`, fn: () => deleteAssignment(a.ids) })}
-                                 className="p-2.5 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
+                                 className={"p-2.5 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete}
                                >
                                  <Trash2 className="w-4 h-4"/>
                                </button>
@@ -3458,12 +3558,18 @@ return {
 
       {/* ===== TAB: PERIODS (RESTORED) ===== */}
       {tab==="periods" && (
-        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <div className={"space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500 " + (isReadOnly ? "select-none" : "")}>
+          {isReadOnly && (
+            <div className="no-print bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-2xl flex items-center gap-2.5 text-xs font-semibold shadow-sm mb-2">
+              <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 animate-pulse" />
+              Chế độ xem (Đọc dữ liệu). Các chức năng Thêm mới, Chỉnh sửa và Xóa bị khóa đối với tài khoản này.
+            </div>
+          )}
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-black text-slate-600 uppercase tracking-widest flex items-center gap-2"><Clock className="w-4 h-4"/> Kỳ & Đợt Khảo sát</h2>
             <div className="flex gap-2">
               <button onClick={fetchPeriods} className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all"><RefreshCw className="w-4 h-4"/></button>
-              <button onClick={openAddPeriod} className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white text-[13px] font-black rounded-xl hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100">
+              <button onClick={e => { if (cannotCreate) return; openAddPeriod(); }} disabled={cannotCreate} className={"flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white text-[13px] font-black rounded-xl hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 " + (cannotCreate ? "pointer-events-none opacity-40 cursor-not-allowed" : "")}>
                 <Plus className="w-4 h-4"/> Tạo Kỳ mới
               </button>
             </div>
@@ -3491,11 +3597,11 @@ return {
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5 ">
-                      <button onClick={e=>{e.stopPropagation(); openAddBatch(p.id)}} className="flex items-center gap-1.5 px-4 py-2 text-[11px] font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-600 hover:text-white rounded-xl transition-all border border-emerald-100">
+                      <button onClick={e=>{e.stopPropagation(); if (cannotCreate) return; openAddBatch(p.id)}} className={"flex items-center gap-1.5 px-4 py-2 text-[11px] font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-600 hover:text-white rounded-xl transition-all border border-emerald-100 " + (cannotCreate ? "pointer-events-none opacity-40" : "")}>
                         <Plus className="w-3.5 h-3.5"/> Thêm Đợt
                       </button>
-                      <button onClick={e=>{e.stopPropagation(); openEditPeriod(p)}} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"><Edit2 className="w-4 h-4"/></button>
-                      <button onClick={e=>{e.stopPropagation(); setConfirm({msg:`Xóa kỳ "${p.name}"?`,fn:()=>doDeletePeriod(p.id)})}} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"><Trash2 className="w-4 h-4"/></button>
+                      <button onClick={e=>{e.stopPropagation(); if (cannotUpdate) return; openEditPeriod(p)}} className={"p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")}><Edit2 className="w-4 h-4"/></button>
+                      <button onClick={e=>{e.stopPropagation(); setConfirm({msg:`Xóa kỳ "${p.name}"?`,fn:()=>doDeletePeriod(p.id)})}} className={"p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all " + (cannotDelete ? "pointer-events-none opacity-40" : "")}><Trash2 className="w-4 h-4"/></button>
                       <span className="text-slate-300 ml-2">{expandedId===p.id?<ChevronUp className="w-5 h-5"/>:<ChevronDown className="w-5 h-5"/>}</span>
                     </div>
                   </div>
@@ -3596,10 +3702,10 @@ return {
                                      </td>
                                      <td className="p-4 text-right pr-6">
                                        <div className="flex items-center justify-end gap-1">
-                                         <button onClick={() => openEditBatch(b)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all" title="Chỉnh sửa">
+                                         <button onClick={() => openEditBatch(b)} className={"p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate} title="Chỉnh sửa">
                                            <Edit2 className="w-3.5 h-3.5" />
                                          </button>
-                                         <button onClick={() => setConfirm({ msg: `Xóa đợt "` + b.name + `"?`, fn: () => doDeleteBatch(b.id) })} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all" title="Xóa">
+                                         <button onClick={() => setConfirm({ msg: `Xóa đợt "` + b.name + `"?`, fn: () => doDeleteBatch(b.id) })} className={"p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete} title="Xóa">
                                            <Trash2 className="w-3.5 h-3.5" />
                                          </button>
                                        </div>
@@ -3622,7 +3728,13 @@ return {
 
       {/* ===== TAB: STUDENTS (SAAS REDESIGNED) ===== */}
       {tab==="students" && (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className={"space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 " + (isReadOnly ? "select-none" : "")}>
+          {isReadOnly && (
+            <div className="no-print bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-2xl flex items-center gap-2.5 text-xs font-semibold shadow-sm mb-2">
+              <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 animate-pulse" />
+              Chế độ xem (Đọc dữ liệu). Các chức năng Thêm mới, Chỉnh sửa và Xóa bị khóa đối với tài khoản này.
+            </div>
+          )}
           
           {/* Header & Stats */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -3641,11 +3753,11 @@ return {
                  <Download className="w-4 h-4 sm:mr-2 group-hover:-translate-y-0.5 transition-transform"/>
                  <span className="hidden sm:inline">Tải mẫu</span>
               </button>
-              <button onClick={()=>fileRef.current?.click()} disabled={!sPeriodId||importing} className="h-10 px-4 bg-white text-slate-600 border border-slate-200 rounded-xl flex items-center justify-center hover:bg-slate-50 hover:text-emerald-600 hover:border-emerald-200 shadow-sm transition-all disabled:opacity-50 text-sm font-semibold group">
+              <button onClick={()=>fileRef.current?.click()} disabled={!sPeriodId||importing||cannotCreate} className={"h-10 px-4 bg-white text-slate-600 border border-slate-200 rounded-xl flex items-center justify-center hover:bg-slate-50 hover:text-emerald-600 hover:border-emerald-200 shadow-sm transition-all disabled:opacity-50 text-sm font-semibold group " + (cannotCreate ? "pointer-events-none opacity-40" : "")}>
                  <Upload className="w-4 h-4 sm:mr-2 group-hover:-translate-y-0.5 transition-transform"/>
                  <span className="hidden sm:inline">Nhập Excel</span>
               </button>
-              <button onClick={openAddStudent} disabled={!sPeriodId} className="h-10 px-5 bg-[#00A19A] text-white text-sm font-bold rounded-xl hover:bg-[#008c85] disabled:opacity-50 transition-all shadow-md shadow-[#00A19A]/20 flex items-center justify-center">
+              <button onClick={openAddStudent} disabled={!sPeriodId||cannotCreate} className={"h-10 px-5 bg-[#00A19A] text-white text-sm font-bold rounded-xl hover:bg-[#008c85] disabled:opacity-50 transition-all shadow-md shadow-[#00A19A]/20 flex items-center justify-center " + (cannotCreate ? "pointer-events-none opacity-40" : "")}>
                 <Plus className="w-4 h-4 mr-2"/> Thêm mới
               </button>
               <input type="file" ref={fileRef} accept=".xlsx" className="hidden" onChange={handleImport}/>
@@ -3739,8 +3851,8 @@ return {
                            
                            <td className="px-4 py-3.5 text-center sticky right-0 bg-white group-hover:bg-slate-50 transition-colors shadow-[-10px_0_15px_-10px_rgba(0,0,0,0.05)] border-l border-slate-100">
                               <div className="flex items-center justify-center gap-1.5">
-                                 <button onClick={()=>openEditStudent(s)} className="p-1.5 text-slate-400 hover:text-[#00A19A] hover:bg-[#00A19A]/10 rounded-lg transition-all" title="Sửa hồ sơ"><Edit2 className="w-4 h-4"/></button>
-                                 <button onClick={()=>setConfirm({msg:`Xóa hồ sơ học sinh ${s.fullName}?`,fn:()=>doDeleteStudent(s.id)})} className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all" title="Xóa hồ sơ"><Trash2 className="w-4 h-4"/></button>
+                                 <button onClick={()=>openEditStudent(s)} className={"p-1.5 text-slate-400 hover:text-[#00A19A] hover:bg-[#00A19A]/10 rounded-lg transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate} title="Sửa hồ sơ"><Edit2 className="w-4 h-4"/></button>
+                                 <button onClick={()=>setConfirm({msg:`Xóa hồ sơ học sinh ${s.fullName}?`,fn:()=>doDeleteStudent(s.id)})} className={"p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete} title="Xóa hồ sơ"><Trash2 className="w-4 h-4"/></button>
                               </div>
                            </td>
                         </tr>
@@ -3759,8 +3871,8 @@ return {
                           <span className="text-sm font-bold text-slate-800">{s.fullName}</span>
                         </div>
                         <div className="flex items-center gap-1">
-                           <button onClick={()=>openEditStudent(s)} className="p-2 text-slate-400 hover:text-[#00A19A] bg-slate-50 rounded-lg"><Edit2 className="w-4 h-4"/></button>
-                           <button onClick={()=>setConfirm({msg:`Xóa hồ sơ học sinh ${s.fullName}?`,fn:()=>doDeleteStudent(s.id)})} className="p-2 text-slate-400 hover:text-rose-600 bg-slate-50 rounded-lg"><Trash2 className="w-4 h-4"/></button>
+                           <button onClick={()=>openEditStudent(s)} className={"p-2 text-slate-400 hover:text-[#00A19A] bg-slate-50 rounded-lg " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate}><Edit2 className="w-4 h-4"/></button>
+                           <button onClick={()=>setConfirm({msg:`Xóa hồ sơ học sinh ${s.fullName}?`,fn:()=>doDeleteStudent(s.id)})} className={"p-2 text-slate-400 hover:text-rose-600 bg-slate-50 rounded-lg " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete}><Trash2 className="w-4 h-4"/></button>
                         </div>
                       </div>
                       
@@ -3799,7 +3911,13 @@ return {
 
       {/* ===== TAB: CATEGORIES (RESTORED) ===== */}
       {tab==="categories" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <div className={"grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500 " + (isReadOnly ? "select-none" : "")}>
+          {isReadOnly && (
+            <div className="no-print bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-2xl flex items-center gap-2.5 text-xs font-semibold shadow-sm mb-2 col-span-full">
+              <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 animate-pulse" />
+              Chế độ xem (Đọc dữ liệu). Các chức năng Thêm mới, Chỉnh sửa và Xóa bị khóa đối với tài khoản này.
+            </div>
+          )}
            {CATEGORY_TYPES.map(type => (
              <div key={type.code} className="bg-white border border-slate-200 rounded-3xl shadow-sm flex flex-col overflow-hidden">
                 <div className={`h-1.5 bg-gradient-to-r ${type.color}`}/>
@@ -3808,15 +3926,15 @@ return {
                       <h4 className="text-sm font-black text-slate-800 tracking-tight">{type.label}</h4>
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{type.code}</span>
                    </div>
-                   <button onClick={()=>openAddConfig(type.code)} className="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-indigo-600 hover:text-white transition-all shadow-sm border border-slate-100"><Plus className="w-4 h-4"/></button>
+                   <button onClick={()=>openAddConfig(type.code)} className={"w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-indigo-600 hover:text-white transition-all shadow-sm border border-slate-100 " + (cannotCreate ? "pointer-events-none opacity-40" : "")} disabled={cannotCreate}><Plus className="w-4 h-4"/></button>
                 </div>
                 <div className="p-4 flex-1 space-y-1.5">
                    {configs.filter(c => c.categoryType === type.code).map(c => (
                      <div key={c.id} className="group flex items-center justify-between p-3 rounded-2xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100">
                         <span className="text-xs font-black text-slate-600 truncate">{c.name}</span>
                         <div className="flex items-center gap-0.5 ">
-                           <button onClick={()=>openEditConfig(c)} className="p-1.5 text-slate-300 hover:text-indigo-600"><Edit2 className="w-3 h-3"/></button>
-                           <button onClick={()=>setConfirm({msg:`Xóa "${c.name}"?`,fn:()=>doDeleteConfig(c.id)})} className="p-1.5 text-slate-300 hover:text-rose-600"><Trash2 className="w-3 h-3"/></button>
+                           <button onClick={()=>openEditConfig(c)} className={"p-1.5 text-slate-300 hover:text-indigo-600 " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate}><Edit2 className="w-3 h-3"/></button>
+                           <button onClick={()=>setConfirm({msg:`Xóa "${c.name}"?`,fn:()=>doDeleteConfig(c.id)})} className={"p-1.5 text-slate-300 hover:text-rose-600 " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete}><Trash2 className="w-3 h-3"/></button>
                         </div>
                      </div>
                    ))}
@@ -3828,12 +3946,18 @@ return {
 
       {/* ===== TAB: SUBJECTS (MON KHAO SAT) ===== */}
       {tab === "subjects" && (
-        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <div className={"space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500 " + (isReadOnly ? "select-none" : "")}>
+          {isReadOnly && (
+            <div className="no-print bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-2xl flex items-center gap-2.5 text-xs font-semibold shadow-sm mb-2">
+              <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 animate-pulse" />
+              Chế độ xem (Đọc dữ liệu). Các chức năng Thêm mới, Chỉnh sửa và Xóa bị khóa đối với tài khoản này.
+            </div>
+          )}
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-black text-slate-600 uppercase tracking-widest flex items-center gap-2"><BookOpen className="w-4 h-4"/> Danh sach Mon Khao sat</h2>
             <button
               onClick={() => { setEditingSubjectId(null); setSubjectForm({ code:"", name:"", subjectType:"", scoreColumns:1, commentColumns:1, status:"ACTIVE", exemptCriteria:[] as string[] }); setIsSubjectOpen(true) }}
-              className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white text-[13px] font-black rounded-xl hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100"
+              className={"flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white text-[13px] font-black rounded-xl hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 " + (cannotCreate ? "pointer-events-none opacity-40" : "")} disabled={cannotCreate}
             >
               <Plus className="w-4 h-4"/> Them Mon moi
             </button>
@@ -3876,9 +4000,9 @@ return {
                           </td>
                           <td className="p-5 text-right">
                             <div className="flex items-center justify-end gap-1">
-                              <button title="Cau hinh ten cot" onClick={() => { setColumnConfigForm({ subjectId: sub.id, name: sub.name, scoreColumns: sub.scoreColumns ?? 1, commentColumns: sub.commentColumns ?? 1, scoreNames: parsedCols.scores || [], commentNames: parsedCols.comments || [], showScoreInReport: parsedCols.showScoreInReport || [], showCommentInReport: parsedCols.showCommentInReport || [] }); setIsColumnConfigOpen(true); }} className="p-2.5 text-slate-300 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all"><PenLine className="w-4 h-4"/></button>
-                              <button onClick={() => { setEditingSubjectId(sub.id); setSubjectForm({ code: sub.code, name: sub.name, subjectType: sub.subjectType || "", scoreColumns: sub.scoreColumns ?? 1, commentColumns: sub.commentColumns ?? 1, status: sub.status || "ACTIVE", exemptCriteria: (() => { try { return JSON.parse(sub.exemptCriteria || "[]"); } catch { return []; } })() }); setIsSubjectOpen(true); }} className="p-2.5 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"><Edit2 className="w-4 h-4"/></button>
-                              <button onClick={() => setConfirm({ msg: `Xoa mon ${sub.name}?`, fn: () => deleteSubject(sub.id) })} className="p-2.5 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"><Trash2 className="w-4 h-4"/></button>
+                              <button title="Cau hinh ten cot" onClick={() => { setColumnConfigForm({ subjectId: sub.id, name: sub.name, scoreColumns: sub.scoreColumns ?? 1, commentColumns: sub.commentColumns ?? 1, scoreNames: parsedCols.scores || [], commentNames: parsedCols.comments || [], showScoreInReport: parsedCols.showScoreInReport || [], showCommentInReport: parsedCols.showCommentInReport || [] }); setIsColumnConfigOpen(true); }} className={"p-2.5 text-slate-300 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate}><PenLine className="w-4 h-4"/></button>
+                              <button onClick={() => { setEditingSubjectId(sub.id); setSubjectForm({ code: sub.code, name: sub.name, subjectType: sub.subjectType || "", scoreColumns: sub.scoreColumns ?? 1, commentColumns: sub.commentColumns ?? 1, status: sub.status || "ACTIVE", exemptCriteria: (() => { try { return JSON.parse(sub.exemptCriteria || "[]"); } catch { return []; } })() }); setIsSubjectOpen(true); }} className={"p-2.5 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate}><Edit2 className="w-4 h-4"/></button>
+                              <button onClick={() => setConfirm({ msg: `Xoa mon ${sub.name}?`, fn: () => deleteSubject(sub.id) })} className={"p-2.5 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete}><Trash2 className="w-4 h-4"/></button>
                             </div>
                           </td>
                         </tr>
@@ -3892,9 +4016,16 @@ return {
         </div>
       )}      {/* ===== TAB: MAPPING (CAU HINH KHOI) ===== */}
       {tab === "mapping" && (
-        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <div className={"space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500 " + (isReadOnly ? "select-none" : "")}>
+          {isReadOnly && (
+            <div className="no-print bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-2xl flex items-center gap-2.5 text-xs font-semibold shadow-sm mb-2">
+              <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 animate-pulse" />
+              Chế độ xem (Đọc dữ liệu). Các chức năng Thêm mới, Chỉnh sửa và Xóa bị khóa đối với tài khoản này.
+            </div>
+          )}
           {/* TOP PANEL: Form ThemMoi / Sua */}
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          {!isReadOnly && (
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
             <div className="flex items-center gap-3 mb-5 border-b pb-4">
               <div className="bg-indigo-100 p-2 rounded-xl text-indigo-600"><Settings className="w-5 h-5"/></div>
               <div>
@@ -3910,11 +4041,11 @@ return {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="block font-bold text-slate-700 text-xs uppercase tracking-wider">Khối:</span>
-                    <button onClick={() => setSelGrades(selGrades.length === grades.length ? [] : [...grades])} className="text-[10px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-md transition-colors">Chọn tất cả</button>
+                    <button onClick={() => setSelGrades(selGrades.length === grades.length ? [] : [...grades])} className={"text-[10px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-md transition-colors " + (isReadOnly ? "pointer-events-none opacity-40" : "")} disabled={isReadOnly}>Chọn tất cả</button>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {grades.map((g: string) => (
-                      <button key={g} onClick={() => toggleGrade(g)} className={`text-xs px-3 py-1.5 rounded-lg font-bold transition-all ${selGrades.includes(g) ? 'bg-indigo-500 text-white shadow-md shadow-indigo-200' : 'bg-white text-slate-600 border border-slate-200 hover:border-indigo-300'}`}>
+                      <button key={g} onClick={() => toggleGrade(g)} className={`text-xs px-3 py-1.5 rounded-lg font-bold transition-all ${selGrades.includes(g) ? 'bg-indigo-500 text-white shadow-md shadow-indigo-200' : 'bg-white text-slate-600 border border-slate-200 hover:border-indigo-300'} ${isReadOnly ? "pointer-events-none opacity-40" : ""}`} disabled={isReadOnly}>
                         {selGrades.includes(g) && <Check className="w-3 h-3 inline mr-1"/>} K{g}
                       </button>
                     ))}
@@ -3924,11 +4055,11 @@ return {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="block font-bold text-slate-700 text-xs uppercase tracking-wider">Hệ học:</span>
-                    <button onClick={() => setSelEdus(selEdus.length === eduSystems.length ? [] : eduSystems.map((e: any) => e.code))} className="text-[10px] font-bold text-purple-600 bg-purple-50 hover:bg-purple-100 px-2.5 py-1 rounded-md transition-colors">Chọn tất cả</button>
+                    <button onClick={() => setSelEdus(selEdus.length === eduSystems.length ? [] : eduSystems.map((e: any) => e.code))} className={"text-[10px] font-bold text-purple-600 bg-purple-50 hover:bg-purple-100 px-2.5 py-1 rounded-md transition-colors " + (isReadOnly ? "pointer-events-none opacity-40" : "")} disabled={isReadOnly}>Chọn tất cả</button>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {eduSystems.map((es: any) => (
-                      <button key={es.code} onClick={() => toggleEdu(es.code)} className={`text-xs px-3 py-1.5 rounded-lg font-bold transition-all ${selEdus.includes(es.code) ? 'bg-purple-500 text-white shadow-md shadow-purple-200' : 'bg-white text-slate-600 border border-slate-200 hover:border-purple-300'}`}>
+                      <button key={es.code} onClick={() => toggleEdu(es.code)} className={`text-xs px-3 py-1.5 rounded-lg font-bold transition-all ${selEdus.includes(es.code) ? 'bg-purple-500 text-white shadow-md shadow-purple-200' : 'bg-white text-slate-600 border border-slate-200 hover:border-purple-300'} ${isReadOnly ? "pointer-events-none opacity-40" : ""}`} disabled={isReadOnly}>
                         {selEdus.includes(es.code) && <Check className="w-3 h-3 inline mr-1"/>} {es.code}
                       </button>
                     ))}
@@ -3940,11 +4071,11 @@ return {
               <div className="lg:col-span-7 bg-slate-50/50 p-5 rounded-xl border border-slate-100 flex flex-col">
                 <div className="flex items-center justify-between mb-3">
                   <span className="block font-bold text-slate-700 text-xs uppercase tracking-wider">Chọn Môn Khảo Sát:</span>
-                  <button onClick={() => setAssignSelSubjects(assignSelSubjects.length === subjectsList.length ? [] : subjectsList.map((s:any)=>s.id))} className="text-[10px] font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-md transition-colors">Chọn tất cả</button>
+                  <button onClick={() => setAssignSelSubjects(assignSelSubjects.length === subjectsList.length ? [] : subjectsList.map((s:any)=>s.id))} className={"text-[10px] font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-md transition-colors " + (isReadOnly ? "pointer-events-none opacity-40" : "")} disabled={isReadOnly}>Chọn tất cả</button>
                 </div>
                 <div className="flex flex-wrap gap-2 mb-4 max-h-[150px] overflow-y-auto pr-1">
                   {subjectsList.map((s:any) => (
-                    <button key={s.id} onClick={() => setAssignSelSubjects(p => p.includes(s.id) ? p.filter(x => x !== s.id) : [...p, s.id])} className={`text-xs px-3 py-2 rounded-xl font-bold transition-all border ${assignSelSubjects.includes(s.id) ? 'bg-emerald-500 text-white border-emerald-500 shadow-md shadow-emerald-200' : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-300'}`}>
+                    <button key={s.id} onClick={() => setAssignSelSubjects(p => p.includes(s.id) ? p.filter(x => x !== s.id) : [...p, s.id])} className={`text-xs px-3 py-2 rounded-xl font-bold transition-all border ${assignSelSubjects.includes(s.id) ? 'bg-emerald-500 text-white border-emerald-500 shadow-md shadow-emerald-200' : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-300'} ${isReadOnly ? "pointer-events-none opacity-40" : ""}`} disabled={isReadOnly}>
                       {s.name}
                     </button>
                   ))}
@@ -3979,8 +4110,8 @@ return {
                       setSelGrades([]); setSelEdus([]); setAssignSelSubjects([]); setEditingMappingSubjectId(null);
                       notify(wasEditing ? "Cập nhật cấu hình thành công!" : "Lưu cấu hình thành công!");
                     }}
-                    disabled={mappingLoading || (!selGrades.length || !selEdus.length || !assignSelSubjects.length)}
-                    className="w-full py-3.5 bg-indigo-600 text-white rounded-xl font-black text-sm uppercase tracking-widest shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:shadow-none flex justify-center items-center gap-2"
+                    disabled={mappingLoading || (!selGrades.length || !selEdus.length || !assignSelSubjects.length) || cannotCreate || cannotUpdate}
+                    className={"w-full py-3.5 bg-indigo-600 text-white rounded-xl font-black text-sm uppercase tracking-widest shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:shadow-none flex justify-center items-center gap-2 " + ((cannotCreate || cannotUpdate) ? "pointer-events-none opacity-40" : "")}
                   >
                     {mappingLoading ? <FileSpreadsheet className="w-4 h-4 animate-spin"/> : <Check className="w-4 h-4"/>}
                     {editingMappingSubjectId ? "Cập Nhật Cấu Hình" : "Lưu Cấu Hình"}
@@ -3989,6 +4120,7 @@ return {
               </div>
             </div>
           </div>
+          )}
 
           {/* BOTTOM PANEL: Table of existing configurations */}
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
@@ -4076,7 +4208,7 @@ return {
                                   setAssignSelSubjects([g.subject?.id]);
                                   setEditingMappingSubjectId(g.subject?.id);
                                   window.scrollTo({ top: 0, behavior: 'smooth' });
-                                }} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all" title="Chỉnh sửa (Sẽ nạp lên form phía trên)">
+                                }} className={"p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate} title="Chỉnh sửa (Sẽ nạp lên form phía trên)">
                                   <Pencil className="w-4 h-4"/>
                                 </button>
                                 <button onClick={async () => {
@@ -4086,7 +4218,7 @@ return {
                                     }
                                     fetchAllMappings();
                                   }
-                                }} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Xóa toàn bộ môn này">
+                                }} className={"p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete} title="Xóa toàn bộ môn này">
                                   <Trash2 className="w-4 h-4"/>
                                 </button>
                               </div>

@@ -54,7 +54,21 @@ export const APP_CATEGORIES = [
     icon: ClipboardList,
     modules: [
       { code: "PRESCHOOL_INPUT_ASSESSMENTS", name: "KSNL Đầu vào Mầm non", icon: Baby, href: "/admin/preschool-input-assessments" },
-      { code: "INPUT_ASSESSMENTS", name: "KSNL đầu vào Phổ thông", icon: ClipboardList, href: "/admin/input-assessments" },
+      { 
+        code: "INPUT_ASSESSMENTS", 
+        name: "KSNL đầu vào Phổ thông", 
+        icon: ClipboardList, 
+        href: "/admin/input-assessments",
+        subModules: [
+          { code: "INPUT_ASSESSMENTS_PERIODS", name: "Kỳ KS" },
+          { code: "INPUT_ASSESSMENTS_CATEGORIES", name: "Danh mục" },
+          { code: "INPUT_ASSESSMENTS_SUBJECTS", name: "Môn KS" },
+          { code: "INPUT_ASSESSMENTS_MAPPING", name: "Cấu hình" },
+          { code: "INPUT_ASSESSMENTS_STUDENTS", name: "Học sinh" },
+          { code: "INPUT_ASSESSMENTS_ASSIGNMENTS", name: "Phân công" },
+          { code: "INPUT_ASSESSMENTS_REPORTS", name: "Tổng hợp KQKS" },
+        ]
+      },
       { code: "INPUT_ASSESSMENT_REPORTS", name: "Xuất báo cáo", icon: FileSpreadsheet, href: "/admin/input-assessments/reports" },
       { code: "STUDENT_ACHIEVEMENTS", name: "Thành tích Học sinh", icon: GraduationCap, href: "/admin/achievements" },
     ]
@@ -84,4 +98,11 @@ export const APP_CATEGORIES = [
   }
 ];
 
-export const ALL_APP_MODULES = APP_CATEGORIES.flatMap(c => c.modules).filter((m: any) => !!m.code);
+export const ALL_APP_MODULES = APP_CATEGORIES.flatMap(c => {
+  return c.modules.flatMap(m => {
+    if (m.subModules) {
+      return [m, ...m.subModules];
+    }
+    return [m];
+  });
+}).filter((m: any) => !!m.code);

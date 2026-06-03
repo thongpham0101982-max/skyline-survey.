@@ -1,4 +1,5 @@
 "use client"
+import { getDefaultAcademicYearClient } from "@/lib/academicYear"
 import { useState, useEffect, useMemo, useRef } from "react"
 import { 
   Baby, Clock, Settings, Users, BarChart3, Calendar,
@@ -219,6 +220,7 @@ export function ReportsClient({
     setMounted(true);
   }, []);
 
+  const [yearId, setYearId] = useState(() => getDefaultAcademicYearClient(academicYears)?.id || "");
   const [tab, setTab] = useState("report_config");
   const [selectedLevel, setSelectedLevel] = useState<"preschool" | "high">("high");
   const [toast, setToast] = useState<{ msg: string; type: string } | null>(null);
@@ -601,8 +603,9 @@ export function ReportsClient({
 
 
   const activePeriods = useMemo(() => {
-    return selectedLevel === "preschool" ? preschoolPeriods : generalPeriods;
-  }, [selectedLevel, preschoolPeriods, generalPeriods]);
+    const raw = selectedLevel === "preschool" ? preschoolPeriods : generalPeriods;
+    return raw.filter((p: any) => p.academicYearId === yearId);
+  }, [selectedLevel, preschoolPeriods, generalPeriods, yearId]);
 
   // Unified loading of configuration
   useEffect(() => {
@@ -2228,22 +2231,43 @@ export function ReportsClient({
           </div>
         </div>
 
-        {/* Level toggle switch */}
-        <div className="bg-slate-100 p-1.5 rounded-2xl border border-slate-200 flex gap-1.5 shadow-inner">
-          <button
-            onClick={() => setSelectedLevel("high")}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black tracking-tight transition-all duration-300 ${selectedLevel === "high" ? "bg-white text-teal-600 shadow-md scale-[1.02]" : "text-slate-500 hover:text-slate-800"}`}
-          >
-            <GraduationCap className="w-4 h-4 text-indigo-500" />
-            Khảo thí Phổ thông
-          </button>
-          <button
-            onClick={() => setSelectedLevel("preschool")}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black tracking-tight transition-all duration-300 ${selectedLevel === "preschool" ? "bg-white text-violet-600 shadow-md scale-[1.02]" : "text-slate-500 hover:text-slate-800"}`}
-          >
-            <Baby className="w-4 h-4 text-violet-500" />
-            Khảo thí Mầm non
-          </button>
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto md:justify-end">
+          {/* School Year Selector */}
+          <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 rounded-2xl border border-slate-200 hover:border-slate-300 transition-colors shadow-sm relative group cursor-pointer">
+            <Calendar className="w-4 h-4 text-indigo-500" />
+            <select
+              value={yearId}
+              onChange={e => setYearId(e.target.value)}
+              className="bg-transparent text-xs font-bold text-slate-700 outline-none cursor-pointer appearance-none pr-6 z-10"
+            >
+              {(academicYears || []).filter((ay: any) => !ay.isOff).map((ay: any) => (
+                <option key={ay.id} value={ay.id} className="bg-white text-slate-700 font-medium">
+                  Năm học {ay.name}
+                </option>
+              ))}
+            </select>
+            <div className="absolute right-3.5 pointer-events-none text-slate-400 group-hover:text-indigo-500 transition-colors">
+              <ChevronDown className="w-3.5 h-3.5" />
+            </div>
+          </div>
+
+          {/* Level toggle switch */}
+          <div className="bg-slate-100 p-1.5 rounded-2xl border border-slate-200 flex gap-1.5 shadow-inner">
+            <button
+              onClick={() => setSelectedLevel("high")}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black tracking-tight transition-all duration-300 ${selectedLevel === "high" ? "bg-white text-teal-600 shadow-md scale-[1.02]" : "text-slate-500 hover:text-slate-800"}`}
+            >
+              <GraduationCap className="w-4 h-4 text-indigo-500" />
+              Khảo thí Phổ thông
+            </button>
+            <button
+              onClick={() => setSelectedLevel("preschool")}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black tracking-tight transition-all duration-300 ${selectedLevel === "preschool" ? "bg-white text-violet-600 shadow-md scale-[1.02]" : "text-slate-500 hover:text-slate-800"}`}
+            >
+              <Baby className="w-4 h-4 text-violet-500" />
+              Khảo thí Mầm non
+            </button>
+          </div>
         </div>
       </div>
 

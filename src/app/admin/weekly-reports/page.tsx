@@ -13,7 +13,7 @@ export default async function WeeklyReportsPage() {
 
   const years = await prisma.academicYear.findMany({
     orderBy: { startDate: "desc" },
-    select: { id: true, name: true }
+    select: { id: true, name: true, isOff: true }
   })
 
   let staffUsers: any[] = []

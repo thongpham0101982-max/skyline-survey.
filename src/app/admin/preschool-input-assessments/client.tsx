@@ -1,4 +1,5 @@
 "use client"
+import { getDefaultAcademicYearClient } from "@/lib/academicYear"
 import { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import * as XLSX from "xlsx"
 import {
@@ -165,7 +166,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
     return `GIÁM ĐỐC CƠ SỞ (${campusName})`;
   };
 
-  const [tab, setTab] = useState("periods");
+  const [tab, setTab] = useState(isGDCSUser ? "children" : "periods");
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [isInvitation, setIsInvitation] = useState(true);
   const [isCommitment, setIsCommitment] = useState(false);
@@ -965,7 +966,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   const [criteriaForm, setCriteriaForm] = useState({ areaId: "", code: "", name: "", ageGroup: "18 đến 24 tháng" });
   const [savingCriteria, setSavingCriteria] = useState(false);
   const [expAreaId, setExpAreaId] = useState<string | null>(null);
-  const [yearId, setYearId] = useState(academicYears[0]?.id || "");
+  const [yearId, setYearId] = useState(() => getDefaultAcademicYearClient(academicYears)?.id || "");
   const [toast, setToast] = useState<{ msg: string; type: string } | null>(null);
   const [confirm, setConfirm] = useState<{ msg: string; fn: () => void } | null>(null);
   const notify = (msg: string, type = "ok") => { setToast({ msg, type }); setTimeout(() => setToast(null), 3200); };
@@ -2669,7 +2670,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
         <div className="flex items-center gap-1.5 px-3 py-2 bg-violet-50 rounded-xl border border-violet-100">
           <Calendar className="w-3.5 h-3.5 text-violet-400" />
           <select value={yearId} onChange={e => { setYearId(e.target.value); setCPeriodId(""); setChildren([]); }} className="bg-transparent text-xs font-bold text-slate-700 outline-none cursor-pointer">
-            {academicYears.map(ay => <option key={ay.id} value={ay.id}>Năm học {ay.name}</option>)}
+            {academicYears.filter(ay => !ay.isOff).map(ay => <option key={ay.id} value={ay.id}>Năm học {ay.name}</option>)}
           </select>
         </div>
       </div>
@@ -2684,7 +2685,12 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             { id: "assignments", label: "Phân công", icon: UserCheck },
             { id: "devAssess", label: "Đánh giá PT", icon: Star },
             { id: "reports", label: "Tổng hợp KQKS", icon: BarChart3 },
-          ].map(t => (
+          ].filter(t => {
+            if (isGDCSUser) {
+              return ["children", "devAssess", "reports"].includes(t.id);
+            }
+            return true;
+          }).map(t => (
             <button key={t.id} onClick={() => setTab(t.id)} className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-[11px] font-bold transition-all duration-200 ${tab === t.id ? "bg-violet-500 text-white shadow-sm" : "text-slate-500 hover:bg-violet-50 hover:text-violet-600"}`}>
               <t.icon className={`w-4 h-4 ${tab === t.id ? "text-white" : "text-slate-400"}`} />
               <span className="hidden sm:inline">{t.label}</span>

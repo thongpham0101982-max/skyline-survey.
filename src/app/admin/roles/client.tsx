@@ -1,6 +1,6 @@
 ﻿"use client"
 import { useState, Fragment } from "react"
-import { Shield, Plus, Save, Edit, Trash2, X } from "lucide-react"
+import { Shield, Plus, Save, Edit, Trash2, X, ChevronDown, ChevronRight, CornerDownRight } from "lucide-react"
 import { savePermissions, createRole, updateRole, deleteRole } from "./actions"
 import { APP_CATEGORIES, ALL_APP_MODULES } from "@/config/modules"
 
@@ -12,6 +12,13 @@ export function RolesClient({ initialRoles }: any) {
   const [roles, setRoles] = useState(initialRoles || []);
   const [activeRole, setActiveRole] = useState(roles[0]?.code || "");
   const [savingMatrix, setSavingMatrix] = useState(false);
+  const [expandedModules, setExpandedModules] = useState<string[]>([]);
+  
+  const toggleExpand = (code: string) => {
+    setExpandedModules(prev =>
+      prev.includes(code) ? prev.filter(c => c !== code) : [...prev, code]
+    );
+  };
 
   const buildPerms = (roleCode: string) => {
     const r = roles.find((r: any) => r.code === roleCode);
@@ -34,15 +41,38 @@ export function RolesClient({ initialRoles }: any) {
   };
 
   const togglePerm = (moduleCode: string, field: string) => {
-    setPermissions(prev => prev.map(p => {
-      if (p.module !== moduleCode) return p;
-      let newP = { ...p, [field]: !p[field] };
-      if ((field === "canCreate" || field === "canUpdate" || field === "canDelete") && newP[field])
-        newP.canRead = true;
-      if (field === "canRead" && !newP.canRead)
-        newP.canCreate = newP.canUpdate = newP.canDelete = false;
-      return newP;
-    }));
+    setPermissions(prev => {
+      const targetMod = ALL_APP_MODULES.find(m => m.code === moduleCode);
+      const isParent = targetMod && targetMod.subModules && targetMod.subModules.length > 0;
+      
+      let nextPerms = prev.map(p => {
+        if (p.module !== moduleCode) return p;
+        let newP = { ...p, [field]: !p[field] };
+        if ((field === "canCreate" || field === "canUpdate" || field === "canDelete") && newP[field])
+          newP.canRead = true;
+        if (field === "canRead" && !newP.canRead)
+          newP.canCreate = newP.canUpdate = newP.canDelete = false;
+        return newP;
+      });
+
+      if (isParent) {
+        const parentPerm = nextPerms.find(p => p.module === moduleCode);
+        if (parentPerm) {
+          const newVal = parentPerm[field];
+          const subCodes = targetMod.subModules.map(sm => sm.code);
+          nextPerms = nextPerms.map(p => {
+            if (!subCodes.includes(p.module)) return p;
+            let newP = { ...p, [field]: newVal };
+            if ((field === "canCreate" || field === "canUpdate" || field === "canDelete") && newP[field])
+              newP.canRead = true;
+            if (field === "canRead" && !newP.canRead)
+              newP.canCreate = newP.canUpdate = newP.canDelete = false;
+            return newP;
+          });
+        }
+      }
+      return nextPerms;
+    });
   };
 
   const handleSavePerms = async () => {
@@ -65,35 +95,44 @@ export function RolesClient({ initialRoles }: any) {
     <>
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
       {/* Roles List */}
-      <div className="lg:col-span-1 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-fit">
-        <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
-          <h3 className="font-bold text-slate-700 flex items-center gap-2">
-            <Shield className="w-5 h-5 text-[#00A19A]"/> Nhóm Quyền
+      <div className="lg:col-span-1 bg-white rounded-3xl shadow-lg border border-slate-100/90 overflow-hidden flex flex-col h-fit backdrop-blur-md">
+        <div className="p-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+          <h3 className="font-black text-slate-800 text-sm tracking-wide flex items-center gap-2">
+            <Shield className="w-5 h-5 text-[#00A19A] animate-pulse"/> NHÓM QUYỀN
           </h3>
           <button 
              onClick={() => { setModalMode('ADD'); setFormData({ code: '', name: '', description: '' }); setModalOpen(true); }}
-             className="text-[#00A19A] hover:bg-indigo-100 p-1.5 rounded-lg transition-colors">
+             className="text-white bg-[#00A19A] hover:bg-[#008c85] p-2 rounded-xl transition-all shadow-md shadow-teal-100 active:scale-90">
             <Plus className="w-4 h-4"/>
           </button>
         </div>
-        <div className="p-2 space-y-1 overflow-y-auto max-h-[calc(100vh-200px)]">
+        <div className="p-3 space-y-1.5 overflow-y-auto max-h-[60vh] custom-scrollbar">
           {roles.map((r: any) => (
-            <div key={r.code} className={`group relative flex items-stretch w-full rounded-xl transition-all duration-200 ${activeRole === r.code ? "bg-indigo-50 border border-indigo-100 shadow-sm" : "hover:bg-slate-50 border border-transparent"}`}>
-              <button onClick={() => switchRole(r.code)} className="flex-1 text-left px-4 py-3">
-                <div className={`font-semibold text-sm ${activeRole === r.code ? "text-indigo-700" : "text-slate-700"}`}>{r.name}</div>
-                <div className="text-xs text-slate-500 mt-1 line-clamp-1">{r.description || r.code}</div>
+            <div key={r.code} className={`group relative flex items-stretch w-full rounded-2xl transition-all duration-300 border ${
+              activeRole === r.code 
+                ? "bg-gradient-to-r from-teal-50/55 to-emerald-50/10 border-teal-200/80 shadow-md shadow-teal-50" 
+                : "hover:bg-slate-50/80 border-transparent"
+            }`}>
+              <button onClick={() => switchRole(r.code)} className="flex-1 text-left px-4 py-3.5">
+                <div className="flex items-center justify-between">
+                  <div className={`font-bold text-sm ${activeRole === r.code ? "text-slate-800" : "text-slate-700"}`}>{r.name}</div>
+                  {r.isSystem && (
+                    <span className="text-[9px] font-black tracking-widest text-[#00A19A] bg-teal-50 px-2 py-0.5 rounded-full uppercase leading-none select-none">Hệ thống</span>
+                  )}
+                </div>
+                <div className="text-xs font-semibold text-slate-400 mt-1 line-clamp-1 leading-snug">{r.description || r.code}</div>
               </button>
               
               {!r.isSystem && (
-                <div className="opacity-0 group-hover:opacity-100 flex flex-col justify-center gap-1 px-2 border-l border-slate-200 transition-opacity">
-                  <button onClick={() => { setModalMode('EDIT'); setFormData({ code: r.code, name: r.name, description: r.description || '' }); setModalOpen(true); }} className="p-1.5 text-slate-400 hover:text-[#00A19A] hover:bg-white rounded-lg"><Edit className="w-3.5 h-3.5" /></button>
+                <div className="opacity-0 group-hover:opacity-100 flex flex-col justify-center gap-1.5 px-3 border-l border-slate-100 transition-all duration-200">
+                  <button onClick={() => { setModalMode('EDIT'); setFormData({ code: r.code, name: r.name, description: r.description || '' }); setModalOpen(true); }} className="p-2 text-slate-400 hover:text-[#00A19A] hover:bg-slate-100 rounded-lg transition-all"><Edit className="w-3.5 h-3.5" /></button>
                   <button onClick={async () => { 
                       if(confirm('Bạn có chắc muốn xóa nhóm quyền này?')) {
                          const res = await deleteRole(r.code);
                          if(res.success) window.location.reload();
                          else alert("Lỗi: " + res.error);
                       }
-                  }} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-white rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>
+                  }} className="p-2 text-slate-400 hover:text-red-600 hover:bg-rose-50 rounded-lg transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
                 </div>
               )}
             </div>
@@ -102,7 +141,7 @@ export function RolesClient({ initialRoles }: any) {
       </div>
 
       {/* Permissions Matrix */}
-      <div className="lg:col-span-3 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="lg:col-span-3 bg-white rounded-3xl shadow-lg border border-slate-100 overflow-hidden backdrop-blur-md">
         <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50/50">
           <div>
             <h3 className="font-bold text-slate-800 text-lg tracking-tight">Ma Trận Phân Quyền</h3>
@@ -119,15 +158,15 @@ export function RolesClient({ initialRoles }: any) {
           </button>
         </div>
 
-        <div className="overflow-x-auto custom-scrollbar flex-1">
+        <div className="overflow-x-auto custom-scrollbar flex-1 relative max-h-[70vh]">
           <table className="w-full text-left whitespace-nowrap border-collapse">
             <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-200">
-                <th className="px-6 py-4 font-bold text-slate-700 text-xs uppercase tracking-wider w-[40%]">Chức năng / Module</th>
-                <th className="px-4 py-4 font-bold text-slate-600 text-[10px] uppercase tracking-widest text-center">Xem</th>
-                <th className="px-4 py-4 font-bold text-slate-600 text-[10px] uppercase tracking-widest text-center">Thêm</th>
-                <th className="px-4 py-4 font-bold text-slate-600 text-[10px] uppercase tracking-widest text-center">Sửa</th>
-                <th className="px-4 py-4 font-bold text-slate-600 text-[10px] uppercase tracking-widest text-center">Xóa</th>
+              <tr className="bg-slate-50/80 border-b border-slate-200 sticky top-0 z-30 backdrop-blur-md">
+                <th className="px-6 py-4.5 font-bold text-slate-700 text-xs uppercase tracking-wider w-[40%] bg-slate-50/90">Chức năng / Module</th>
+                <th className="px-4 py-4.5 font-bold text-slate-600 text-[10px] uppercase tracking-widest text-center bg-slate-50/90 w-[15%]">Xem</th>
+                <th className="px-4 py-4.5 font-bold text-slate-600 text-[10px] uppercase tracking-widest text-center bg-slate-50/90 w-[15%]">Thêm</th>
+                <th className="px-4 py-4.5 font-bold text-slate-600 text-[10px] uppercase tracking-widest text-center bg-slate-50/90 w-[15%]">Sửa</th>
+                <th className="px-4 py-4.5 font-bold text-slate-600 text-[10px] uppercase tracking-widest text-center bg-slate-50/90 w-[15%]">Xóa</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -135,9 +174,9 @@ export function RolesClient({ initialRoles }: any) {
                 <Fragment key={cat.id}>
                   {/* Category Header Row */}
                   <tr className="group">
-                    <td colSpan={5} className={`px-6 py-3 border-y font-bold text-[10px] uppercase tracking-[0.2em] transition-colors ${colorStyles[cat.color] || colorStyles.slate}`}>
+                    <td colSpan={5} className={`px-6 py-3.5 border-y font-bold text-[10px] uppercase tracking-[0.2em] transition-colors shadow-sm ${colorStyles[cat.color] || colorStyles.slate}`}>
                       <div className="flex items-center gap-2">
-                        <cat.icon className="w-3.5 h-3.5" />
+                        <cat.icon className="w-4 h-4 animate-pulse" />
                         {cat.name}
                       </div>
                     </td>
@@ -145,34 +184,100 @@ export function RolesClient({ initialRoles }: any) {
                   {/* Module Rows */}
                   {cat.modules.map(m => {
                     const p = permissions.find(x => x.module === m.code) || emptyPerm(m.code);
+                    const hasSub = m.subModules && m.subModules.length > 0;
+                    const isExpanded = expandedModules.includes(m.code);
+                    
                     return (
-                      <tr key={m.code} className="hover:bg-slate-50/80 transition-colors group">
-                        <td className="px-8 py-4">
-                          <div className="flex items-center gap-3">
-                             <div className="p-1.5 rounded-lg bg-slate-50 group-hover:bg-white transition-colors border border-slate-100">
-                               <m.icon className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors" />
-                             </div>
-                             <div>
-                               <div className="font-semibold text-slate-700 text-sm">{m.name}</div>
-                               <div className="text-[10px] text-slate-400 font-mono mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">{m.code}</div>
-                             </div>
-                          </div>
-                        </td>
-                        {(["canRead","canCreate","canUpdate","canDelete"] as const).map(field => (
-                          <td key={field} className="px-4 py-4 text-center">
-                            <label className="inline-flex items-center justify-center cursor-pointer p-1">
-                              <input type="checkbox" checked={!!p[field]}
-                                onChange={() => togglePerm(m.code, field)}
-                                className={`w-5 h-5 rounded-md transition-all cursor-pointer focus:ring-offset-2 border-slate-300 focus:ring-2 ${
-                                  field === "canDelete"
-                                    ? "text-red-500 focus:ring-red-400 border-red-200"
-                                    : "text-[#00A19A] focus:ring-indigo-500 border-slate-200"
-                                } shadow-sm`}
-                              />
-                            </label>
+                      <Fragment key={m.code}>
+                        <tr className="hover:bg-slate-50/80 transition-all duration-150 group">
+                          <td className="px-8 py-4.5">
+                            <div className="flex items-center gap-3">
+                               {hasSub ? (
+                                 <button onClick={() => toggleExpand(m.code)} className="p-1.5 hover:bg-slate-100/85 rounded-lg transition-all duration-200 text-slate-400 hover:text-slate-800 mr-0.5 active:scale-90">
+                                   {isExpanded ? <ChevronDown className="w-4 h-4 text-[#00A19A]" /> : <ChevronRight className="w-4 h-4" />}
+                                 </button>
+                               ) : (
+                                 <div className="w-7 h-7 mr-0.5" />
+                               )}
+                               <div className="p-2 rounded-xl bg-slate-50 group-hover:bg-white transition-all duration-200 border border-slate-100/80 group-hover:border-indigo-100 group-hover:shadow-md group-hover:shadow-indigo-50/50">
+                                 <m.icon className="w-4.5 h-4.5 text-slate-400 group-hover:text-[#00A19A] transition-colors" />
+                                </div>
+                                <div>
+                                  <div className={hasSub ? "font-bold text-slate-850 text-sm cursor-pointer select-none hover:text-[#00A19A] transition-colors" : "font-semibold text-slate-700 text-sm"} onClick={hasSub ? () => toggleExpand(m.code) : undefined}>
+                                    {m.name}
+                                  </div>
+                                  <div className="text-[10px] text-slate-400 font-mono mt-0.5 opacity-0 group-hover:opacity-100 transition-all duration-200 leading-none">{m.code}</div>
+                                </div>
+                            </div>
                           </td>
-                        ))}
-                      </tr>
+                          {(["canRead","canCreate","canUpdate","canDelete"] as const).map(field => (
+                            <td key={field} className="px-4 py-4.5 text-center">
+                              <label className="inline-flex items-center justify-center cursor-pointer p-1 active:scale-95 transition-transform select-none">
+                                <input type="checkbox" checked={!!p[field]}
+                                  onChange={() => togglePerm(m.code, field)}
+                                  className="sr-only"
+                                />
+                                <div className={`w-[22px] h-[22px] rounded-lg border flex items-center justify-center transition-all duration-200 shadow-sm ${
+                                  p[field] 
+                                    ? field === "canDelete" 
+                                      ? "bg-rose-500 border-rose-500 text-white scale-105"
+                                      : "bg-[#00A19A] border-[#00A19A] text-white scale-105" 
+                                    : "bg-white border-slate-200 hover:border-slate-350 hover:shadow-md"
+                                }`}>
+                                  {p[field] && (
+                                    <svg className="w-4 h-4 stroke-[3.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  )}
+                                </div>
+                              </label>
+                            </td>
+                          ))}
+                        </tr>
+                        
+                        {/* Render SubModules */}
+                        {hasSub && isExpanded && m.subModules.map(sm => {
+                          const subP = permissions.find(x => x.module === sm.code) || emptyPerm(sm.code);
+                          return (
+                            <tr key={sm.code} className="bg-slate-50/40 hover:bg-slate-100/50 transition-all duration-150 group">
+                              <td className="pl-16 pr-8 py-3.5 border-l-2 border-indigo-400">
+                                <div className="flex items-center gap-3">
+                                   <div className="p-1.5 rounded-lg bg-white border border-slate-100 shadow-sm">
+                                     <CornerDownRight className="w-3.5 h-3.5 text-indigo-500 animate-bounce" style={{ animationDuration: '3s' }} />
+                                   </div>
+                                   <div>
+                                     <div className="font-semibold text-slate-700 text-xs">{sm.name}</div>
+                                     <div className="text-[9px] text-slate-400 font-mono mt-0.5 opacity-0 group-hover:opacity-100 transition-all duration-200 leading-none">{sm.code}</div>
+                                   </div>
+                                </div>
+                              </td>
+                              {(["canRead","canCreate","canUpdate","canDelete"] as const).map(field => (
+                                <td key={field} className="px-4 py-3.5 text-center">
+                                  <label className="inline-flex items-center justify-center cursor-pointer p-1 active:scale-95 transition-transform select-none">
+                                    <input type="checkbox" checked={!!subP[field]}
+                                      onChange={() => togglePerm(sm.code, field)}
+                                      className="sr-only"
+                                    />
+                                    <div className={`w-[19px] h-[19px] rounded-md border flex items-center justify-center transition-all duration-200 shadow-sm ${
+                                      subP[field] 
+                                        ? field === "canDelete" 
+                                          ? "bg-rose-500 border-rose-500 text-white scale-105"
+                                          : "bg-[#00A19A] border-[#00A19A] text-white scale-105" 
+                                        : "bg-white border-slate-200 hover:border-slate-350 hover:shadow-sm"
+                                    }`}>
+                                      {subP[field] && (
+                                        <svg className="w-3.5 h-3.5 stroke-[3.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                      )}
+                                    </div>
+                                  </label>
+                                </td>
+                              ))}
+                            </tr>
+                          );
+                        })}
+                      </Fragment>
                     );
                   })}
                 </Fragment>

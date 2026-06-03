@@ -259,7 +259,8 @@ function TransferOutModal({ onClose, onSaved }: { onClose: () => void, onSaved: 
       const data = await getTransferFormOptionsAction()
       if (data && data.years) {
         setOptions(data)
-        if (data.years.length > 0) setForm(f => ({ ...f, academicYearId: data.years[0].id }))
+        const activeYear = data.years.find((y: any) => !y.isOff) || data.years[0];
+        if (activeYear) setForm(f => ({ ...f, academicYearId: activeYear.id }))
       } else {
         alert("Lỗi tải dữ liệu. Xin thử lại.")
       }
@@ -334,7 +335,7 @@ function TransferOutModal({ onClose, onSaved }: { onClose: () => void, onSaved: 
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Năm học</label>
                 <select required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 transition-colors" value={form.academicYearId} onChange={e => setForm({...form, academicYearId: e.target.value})}>
                   <option value="">Chọn năm học</option>
-                  {options.years.map(y => <option key={y.id} value={y.id}>{y.name}</option>)}
+                  {options.years.filter((y: any) => !y.isOff).map(y => <option key={y.id} value={y.id}>{y.name}</option>)}
                 </select>
               </div>
               <div>
@@ -489,7 +490,8 @@ function ChangeClassModal({ onClose, onSaved }: { onClose: () => void, onSaved: 
       const data = await getTransferFormOptionsAction()
       if (data && data.years) {
         setOptions(data)
-        if (data.years.length > 0) setForm(f => ({ ...f, academicYearId: data.years[0].id }))
+        const activeYear = data.years.find((y: any) => !y.isOff) || data.years[0];
+        if (activeYear) setForm(f => ({ ...f, academicYearId: activeYear.id }))
       }
     } catch(e: any) {
         console.error("Error loading transfer data:", e)
@@ -564,7 +566,7 @@ function ChangeClassModal({ onClose, onSaved }: { onClose: () => void, onSaved: 
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Năm học</label>
                   <select required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 transition-colors" value={form.academicYearId} onChange={e => setForm({...form, academicYearId: e.target.value})}>
                     <option value="">Chọn năm học</option>
-                    {options.years.map(y => <option key={y.id} value={y.id}>{y.name}</option>)}
+                    {options.years.filter((y: any) => !y.isOff).map(y => <option key={y.id} value={y.id}>{y.name}</option>)}
                   </select>
                 </div>
                 <div>
@@ -685,7 +687,8 @@ function TransferInModal({ onClose, onSaved, initialData }: { onClose: () => voi
       const ops = await getTransferFormOptionsAction()
       if (ops && ops.years) {
         setOptions(ops)
-        if (!initialData && ops.years.length > 0) setForm(f => ({ ...f, academicYearId: ops.years[0].id }))
+        const activeYear = ops.years.find((y: any) => !y.isOff) || ops.years[0];
+        if (!initialData && activeYear) setForm(f => ({ ...f, academicYearId: activeYear.id }))
       }
       
       const pds = await getInputAssessmentPeriodsAction()
@@ -802,7 +805,7 @@ function TransferInModal({ onClose, onSaved, initialData }: { onClose: () => voi
                     <label className="block text-xs font-bold text-emerald-600 uppercase tracking-wider mb-2">1. Chọn Kỳ khảo sát ({periods.length})</label>
                     <select className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 font-medium outline-none focus:border-emerald-500 transition-colors" value={selectedPeriod} onChange={e => setSelectedPeriod(e.target.value)}>
                       <option value="">Chọn kỳ...</option>
-                      {periods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                      {periods.filter(p => !form.academicYearId || p.academicYearId === form.academicYearId).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                     </select>
                   </div>
                   <div>
@@ -844,9 +847,18 @@ function TransferInModal({ onClose, onSaved, initialData }: { onClose: () => voi
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Năm học</label>
-                  <select required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-emerald-500 transition-colors" value={form.academicYearId} onChange={e => setForm({...form, academicYearId: e.target.value})}>
+                  <select required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-emerald-500 transition-colors" value={form.academicYearId} onChange={e => {
+                    const yId = e.target.value;
+                    setForm({...form, academicYearId: yId});
+                    const currentPeriodObj = periods.find(p => p.id === selectedPeriod);
+                    if (currentPeriodObj && currentPeriodObj.academicYearId !== yId) {
+                      setSelectedPeriod("");
+                      setBatches([]);
+                      setAssessmentStudents([]);
+                    }
+                  }}>
                     <option value="">Chọn năm học</option>
-                    {options.years.map(y => <option key={y.id} value={y.id}>{y.name}</option>)}
+                    {options.years.filter((y: any) => !y.isOff).map(y => <option key={y.id} value={y.id}>{y.name}</option>)}
                   </select>
                 </div>
                 <div>

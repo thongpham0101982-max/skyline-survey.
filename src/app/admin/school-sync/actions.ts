@@ -87,6 +87,10 @@ export async function syncAcademicYearAction() {
     });
 
     if (dbYear) {
+      await prisma.academicYear.updateMany({
+        where: { id: { not: dbYear.id } },
+        data: { status: "INACTIVE" }
+      });
       dbYear = await prisma.academicYear.update({
         where: { id: dbYear.id },
         data: {
@@ -101,6 +105,9 @@ export async function syncAcademicYearAction() {
         data: dbYear 
       };
     } else {
+      await prisma.academicYear.updateMany({
+        data: { status: "INACTIVE" }
+      });
       dbYear = await prisma.academicYear.create({
         data: {
           name,
@@ -148,9 +155,8 @@ export async function syncServicesAction() {
     let updated = 0;
 
     // Get active academic year to link configs if needed
-    const activeYear = await prisma.academicYear.findFirst({
-      where: { status: "ACTIVE" }
-    });
+    const { getDefaultAcademicYear } = require("@/lib/academicYear");
+    const activeYear = await getDefaultAcademicYear();
     const academicYearId = activeYear?.id || null;
 
     for (const service of services) {
@@ -266,9 +272,8 @@ export async function syncTeacherClassListAction(teacherUserName: string) {
 
     // Synchronize records into SQLite db
     // 1. Get active academic year
-    const activeYear = await prisma.academicYear.findFirst({
-      where: { status: "ACTIVE" }
-    });
+    const { getDefaultAcademicYear } = require("@/lib/academicYear");
+    const activeYear = await getDefaultAcademicYear();
     if (!activeYear) {
       return { success: false, error: "Hệ thống chưa thiết lập năm học hoạt động. Vui lòng đồng bộ Năm học trước!" };
     }

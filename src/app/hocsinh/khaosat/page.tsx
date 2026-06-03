@@ -14,11 +14,12 @@ export default async function StudentSurveyPage() {
     include: { class: true, campus: true, academicYear: true }
   })
 
-  // 2. Get active student surveys
+  // 2. Get active student surveys for the student's current academic year
   const surveys = await prisma.surveyPeriod.findMany({
     where: {
       status: "ACTIVE",
-      targetAudience: "HocSinh"
+      targetAudience: "HocSinh",
+      ...(student ? { academicYearId: student.academicYearId } : {})
     },
     orderBy: { endDate: "asc" }
   })

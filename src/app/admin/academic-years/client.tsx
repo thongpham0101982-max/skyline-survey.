@@ -100,11 +100,11 @@ export function AcademicYearsClient({ initialYears, updateAction, deleteAction, 
             const availableSystems = EDU_SYSTEMS.filter(s => !existingCodes.includes(s.code));
 
             return (
-              <div key={y.id} className={`bg-white rounded-2xl border-2 shadow-sm overflow-hidden transition-all ${isActive ? "border-indigo-400 shadow-[#00A19A]/20" : "border-slate-200"}`}>
+              <div key={y.id} className={`bg-white rounded-2xl border-2 shadow-sm overflow-hidden transition-all ${isActive ? "border-indigo-400 shadow-[#1E8B87]/20" : "border-slate-200"}`}>
                 <div className="p-5 flex flex-col md:flex-row md:items-center gap-4">
                   <div className="flex-shrink-0">
                     {isActive ? (
-                      <div className="w-10 h-10 rounded-xl bg-[#00A19A] flex items-center justify-center"><Star className="w-5 h-5 text-white fill-white" /></div>
+                      <div className="w-10 h-10 rounded-xl bg-[#1E8B87] flex items-center justify-center"><Star className="w-5 h-5 text-white fill-white" /></div>
                     ) : (
                       <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center"><Calendar className="w-5 h-5 text-slate-400" /></div>
                     )}
@@ -122,7 +122,7 @@ export function AcademicYearsClient({ initialYears, updateAction, deleteAction, 
                         <div className="flex items-center gap-3 flex-wrap">
                           <h3 className="font-extrabold text-slate-800 text-xl">{y.name}</h3>
                           {y.isOff && <span className="text-xs font-bold bg-rose-500 text-white px-2.5 py-0.5 rounded-full shadow-sm">Đã khóa (OFF)</span>}
-                          {!y.isOff && isActive && <span className="text-xs font-bold bg-[#00A19A] text-white px-2.5 py-0.5 rounded-full shadow-sm">Đang hoạt động</span>}
+                          {!y.isOff && isActive && <span className="text-xs font-bold bg-[#1E8B87] text-white px-2.5 py-0.5 rounded-full shadow-sm">Đang hoạt động</span>}
 
                         </div>
                         <p className="text-sm text-slate-500 mt-0.5">
@@ -160,12 +160,12 @@ export function AcademicYearsClient({ initialYears, updateAction, deleteAction, 
                         <label className="flex items-center cursor-pointer mr-2">
                           <div className="relative">
                             <input type="checkbox" className="sr-only" checked={!y.isOff} onChange={() => handleToggleOff(y.id, !y.isOff)} disabled={togglingId === y.id} />
-                            <div className={`block w-10 h-6 rounded-full transition-colors ${y.isOff ? 'bg-slate-300' : 'bg-[#00A19A]'}`}></div>
+                            <div className={`block w-10 h-6 rounded-full transition-colors ${y.isOff ? 'bg-slate-300' : 'bg-[#1E8B87]'}`}></div>
                             <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${y.isOff ? '' : 'transform translate-x-4'}`}></div>
                           </div>
                           <div className="ml-2 text-xs font-bold text-slate-500">{y.isOff ? "Đã khóa" : "Mở"}</div>
                         </label>
-                        {!isActive && <button onClick={() => handleSetActive(y.id)} disabled={saving} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-[#00A19A] hover:bg-indigo-100 border border-indigo-200 rounded-lg text-xs font-bold"><Star className="w-3.5 h-3.5" />Đặt Active</button>}
+                        {!isActive && <button onClick={() => handleSetActive(y.id)} disabled={saving || y.isOff} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${y.isOff ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed' : 'bg-teal-50 text-[#1E8B87] hover:bg-teal-100 border border-teal-200'}`}><Star className="w-3.5 h-3.5" />Đặt Active</button>}
                         <button onClick={() => handleEdit(y)} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg"><Edit2 className="w-4 h-4" /></button>
                         <button onClick={() => handleDelete(y.id, y.name)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4" /></button>
                       </>
@@ -183,7 +183,7 @@ export function AcademicYearsClient({ initialYears, updateAction, deleteAction, 
                       <div className="flex gap-2">
                         {availableSystems.map(s => (
                           <button key={s.code} onClick={() => addEduSystem(y.id, s.code, s.name)}
-                            className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium bg-white border border-slate-200 text-[#00A19A] rounded-lg hover:bg-[#00A19A]/10 hover:border-indigo-300 transition-colors">
+                            className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium bg-white border border-slate-200 text-[#1E8B87] rounded-lg hover:bg-[#1E8B87]/10 hover:border-indigo-300 transition-colors">
                             <Plus className="w-3 h-3" /> {s.code}
                           </button>
                         ))}

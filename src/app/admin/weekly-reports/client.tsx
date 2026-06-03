@@ -1,4 +1,5 @@
 "use client"
+import { getDefaultAcademicYearClient } from "@/lib/academicYear"
 import { useState, useEffect } from "react"
 import { FileText, Plus, Trash2, Save, Send, Calendar, MessageSquare, CheckCircle2, Clock, AlertTriangle, MinusCircle, User, BarChart3, Users, TrendingUp, ClipboardList, Table2 } from "lucide-react"
 import { getWeeklyReport, getAllWeeklyReports, saveWeeklyReport, addManagerComment, addManagerItemNote, getConsolidatedReports, getDashboardStats } from "./actions"
@@ -34,7 +35,7 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
   const [activeTab, setActiveTab] = useState<"personal"|"consolidated"|"dashboard">("dashboard")
   const [month, setMonth] = useState(now.getMonth() + 1)
   const [year, setYear] = useState(now.getFullYear())
-  const [academicYearId, setAcademicYearId] = useState(years?.[0]?.id || "")
+  const [academicYearId, setAcademicYearId] = useState(() => getDefaultAcademicYearClient(years)?.id || "")
   const [weeks, setWeeks] = useState<any[]>([])
   const [selectedWeek, setSelectedWeek] = useState(1)
   const [items, setItems] = useState<ReportItem[]>([])
@@ -156,7 +157,7 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
           <div>
             <label className="block text-xs font-bold text-slate-500 mb-1.5">Năm học</label>
             <select value={academicYearId} onChange={e => setAcademicYearId(e.target.value)} className="w-full border rounded-xl p-2.5 text-sm font-medium outline-none focus:ring-2 focus:ring-amber-200 bg-amber-50/50">
-              {(years||[]).map((y: any) => <option key={y.id} value={y.id}>{y.name}</option>)}
+              {(years||[]).filter((y: any) => !y.isOff).map((y: any) => <option key={y.id} value={y.id}>{y.name}</option>)}
             </select>
           </div>
           <div>

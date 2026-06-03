@@ -1,4 +1,5 @@
 "use client"
+import { getDefaultAcademicYearClient } from "@/lib/academicYear"
 import { useState, useEffect } from "react"
 import { ClipboardList, Plus, Bell, Edit, Trash2, AlertTriangle, User, Users, MessageSquare, Send, X, CheckCircle2 } from "lucide-react"
 import { createTask, updateTask, deleteTask, remindTask, updateTaskProgress, getUsersByRole, respondToTask } from "./actions"
@@ -37,7 +38,7 @@ export function TasksClient({ initialTasks, years, roles, currentRole, currentUs
   const [assignedToUserId, setAssignedToUserId] = useState("")
   const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10))
   const [endDate, setEndDate] = useState(new Date().toISOString().slice(0, 10))
-  const [academicYearId, setAcademicYearId] = useState(years?.[0]?.id || "")
+  const [academicYearId, setAcademicYearId] = useState(() => getDefaultAcademicYearClient(years)?.id || "")
   const [roleUsers, setRoleUsers] = useState<any[]>([])
   const [loadingUsers, setLoadingUsers] = useState(false)
 
@@ -192,7 +193,7 @@ export function TasksClient({ initialTasks, years, roles, currentRole, currentUs
             <div>
               <label className="block text-xs font-semibold text-slate-500 mb-1">Năm học</label>
               <select value={academicYearId} onChange={e => setAcademicYearId(e.target.value)} className="w-full border rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-300">
-                {(years || []).map((y: any) => <option key={y.id} value={y.id}>{y.name}</option>)}
+                {(years || []).filter((y: any) => !y.isOff).map((y: any) => <option key={y.id} value={y.id}>{y.name}</option>)}
               </select>
             </div>
             <div>

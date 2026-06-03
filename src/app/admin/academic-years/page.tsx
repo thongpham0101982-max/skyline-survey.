@@ -26,14 +26,109 @@ async function updateAcademicYear(data) {
 
 async function deleteAcademicYear(id) {
   "use server"
-  await prisma.academicYear.delete({ where: { id } }).catch(()=>{})
+  try {
+    await prisma.$transaction(async (tx) => {
+      // 1. TaskComments and TaskAttachments of WorkTasks of this year
+      const taskIds = (await tx.workTask.findMany({ where: { academicYearId: id }, select: { id: true } })).map(t => t.id);
+      if (taskIds.length > 0) {
+        await tx.taskComment.deleteMany({ where: { taskId: { in: taskIds } } });
+        await tx.taskAttachment.deleteMany({ where: { taskId: { in: taskIds } } });
+        await tx.workTask.deleteMany({ where: { academicYearId: id } });
+      }
+
+      // 2. WeeklyReportItems of WeeklyReports of this year
+      const reportIds = (await tx.weeklyReport.findMany({ where: { academicYearId: id }, select: { id: true } })).map(r => r.id);
+      if (reportIds.length > 0) {
+        await tx.weeklyReportItem.deleteMany({ where: { reportId: { in: reportIds } } });
+        await tx.weeklyReport.deleteMany({ where: { academicYearId: id } });
+      }
+
+      // 3. SubjectQuotas of this year
+      await tx.subjectQuota.deleteMany({ where: { academicYearId: id } });
+
+      // 4. TeachingAssignments of this year
+      await tx.teachingAssignment.deleteMany({ where: { academicYearId: id } });
+
+      // 5. InputAssessment periods, batches, students, assignments, scores
+      const periodIds = (await tx.inputAssessmentPeriod.findMany({ where: { academicYearId: id }, select: { id: true } })).map(p => p.id);
+      if (periodIds.length > 0) {
+        await tx.inputAssessmentTeacherAssignment.deleteMany({ where: { periodId: { in: periodIds } } });
+        
+        const studentIds = (await tx.inputAssessmentStudent.findMany({ where: { periodId: { in: periodIds } }, select: { id: true } })).map(s => s.id);
+        if (studentIds.length > 0) {
+          await tx.studentAssessmentScore.deleteMany({ where: { studentId: { in: studentIds } } });
+          await tx.inputAssessmentStudent.deleteMany({ where: { id: { in: studentIds } } });
+        }
+        await tx.inputAssessmentBatch.deleteMany({ where: { periodId: { in: periodIds } } });
+        await tx.inputAssessmentPeriod.deleteMany({ where: { academicYearId: id } });
+      }
+
+      // 6. PreschoolInputAssessment periods, batches, students, assignments, scores
+      const prePeriodIds = (await tx.preschoolInputAssessmentPeriod.findMany({ where: { academicYearId: id }, select: { id: true } })).map(p => p.id);
+      if (prePeriodIds.length > 0) {
+        await (tx as any).preschoolInputAssessmentTeacherAssignment.deleteMany({ where: { periodId: { in: prePeriodIds } } });
+        
+        const preStudentIds = (await (tx as any).preschoolInputAssessmentStudent.findMany({ where: { periodId: { in: prePeriodIds } }, select: { id: true } })).map(s => s.id);
+        if (preStudentIds.length > 0) {
+          await (tx as any).preschoolDevScore.deleteMany({ where: { studentId: { in: preStudentIds } } });
+          await (tx as any).preschoolInputAssessmentStudent.deleteMany({ where: { id: { in: preStudentIds } } });
+        }
+        await (tx as any).preschoolInputAssessmentBatch.deleteMany({ where: { periodId: { in: prePeriodIds } } });
+        await (tx as any).preschoolInputAssessmentPeriod.deleteMany({ where: { academicYearId: id } });
+      }
+
+      // 7. SurveyPeriods, forms, responses, summaries
+      const surveyPeriodIds = (await tx.surveyPeriod.findMany({ where: { academicYearId: id }, select: { id: true } })).map(p => p.id);
+      if (surveyPeriodIds.length > 0) {
+        await tx.surveyQuestion.deleteMany({ where: { surveyPeriodId: { in: surveyPeriodIds } } });
+        await tx.summarySystem.deleteMany({ where: { surveyPeriodId: { in: surveyPeriodIds } } });
+        await tx.summaryByClass.deleteMany({ where: { surveyPeriodId: { in: surveyPeriodIds } } });
+        await tx.summaryByCampus.deleteMany({ where: { surveyPeriodId: { in: surveyPeriodIds } } });
+
+        const formIds = (await tx.surveyForm.findMany({ where: { surveyPeriodId: { in: surveyPeriodIds } }, select: { id: true } })).map(f => f.id);
+        if (formIds.length > 0) {
+          await tx.surveyResponse.deleteMany({ where: { formId: { in: formIds } } });
+          await tx.surveyForm.deleteMany({ where: { id: { in: formIds } } });
+        }
+        await tx.surveyPeriod.deleteMany({ where: { academicYearId: id } });
+      }
+
+      // 8. Students, transfers, parent links
+      const dbStudentIds = (await tx.student.findMany({ where: { academicYearId: id }, select: { id: true } })).map(s => s.id);
+      if (dbStudentIds.length > 0) {
+        await tx.studentTransfer.deleteMany({ where: { studentId: { in: dbStudentIds } } });
+        await tx.parentStudentLink.deleteMany({ where: { studentId: { in: dbStudentIds } } });
+        await tx.student.deleteMany({ where: { academicYearId: id } });
+      }
+
+      // 9. Classes, teacher assignments
+      const classIds = (await tx.class.findMany({ where: { academicYearId: id }, select: { id: true } })).map(c => c.id);
+      if (classIds.length > 0) {
+        await tx.teacherClassAssignment.deleteMany({ where: { classId: { in: classIds } } });
+        await tx.class.deleteMany({ where: { academicYearId: id } });
+      }
+
+      // 10. EducationSystems, configs
+      await tx.educationSystem.deleteMany({ where: { academicYearId: id } });
+      await tx.assessmentConfig.deleteMany({ where: { academicYearId: id } });
+      if ((tx as any).preschoolAssessmentConfig) {
+        await (tx as any).preschoolAssessmentConfig.deleteMany({ where: { academicYearId: id } });
+      }
+
+      // 11. Finally, AcademicYear
+      await tx.academicYear.delete({ where: { id } });
+    });
+  } catch (error: any) {
+    console.error("Failed to delete academic year cascadingly:", error);
+    throw new Error("Không thể xóa năm học này do lỗi dữ liệu liên quan: " + error.message);
+  }
   revalidatePath("/admin/academic-years")
 }
 
 async function setActiveYear(id) {
   "use server"
   await prisma.academicYear.updateMany({ data: { status: "INACTIVE" } })
-  await prisma.academicYear.update({ where: { id }, data: { status: "ACTIVE" } })
+  await prisma.academicYear.update({ where: { id }, data: { status: "ACTIVE", isOff: false } })
   revalidatePath("/admin/academic-years")
   revalidatePath("/admin/teachers")
   revalidatePath("/admin/parents")
@@ -41,7 +136,22 @@ async function setActiveYear(id) {
 
 async function toggleYearOffStatus(id, isOff) {
   "use server"
-  await prisma.academicYear.update({ where: { id }, data: { isOff } })
+  if (isOff) {
+    const activeYear = await prisma.academicYear.findFirst({ where: { id, status: "ACTIVE" } })
+    await prisma.academicYear.update({ where: { id }, data: { isOff, status: "INACTIVE" } })
+    if (activeYear) {
+      const anotherOpenYear = await prisma.academicYear.findFirst({
+        where: { id: { not: id }, isOff: false },
+        orderBy: { startDate: "desc" }
+      })
+      if (anotherOpenYear) {
+        await prisma.academicYear.updateMany({ data: { status: "INACTIVE" } })
+        await prisma.academicYear.update({ where: { id: anotherOpenYear.id }, data: { status: "ACTIVE" } })
+      }
+    }
+  } else {
+    await prisma.academicYear.update({ where: { id }, data: { isOff } })
+  }
   revalidatePath("/admin/academic-years")
 }
 

@@ -12,10 +12,10 @@ export default async function SubjectsPage() {
 
   const years = await prisma.academicYear.findMany({
     orderBy: { startDate: 'desc' },
-    select: { id: true, name: true, status: true }
+    select: { id: true, name: true, status: true, isOff: true }
   })
 
-  const defaultYearId = years.find(y => y.status === "ACTIVE")?.id || years[0]?.id || ""
+  const defaultYearId = years.find(y => y.status === "ACTIVE" && !y.isOff)?.id || years.find(y => !y.isOff)?.id || years[0]?.id || ""
 
   return (
     <div className="space-y-6">

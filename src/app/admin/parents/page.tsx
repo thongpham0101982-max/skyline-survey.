@@ -10,9 +10,9 @@ export default async function ParentAccountsPage() {
 
   const years = await prisma.academicYear.findMany({
     orderBy: { startDate: "desc" },
-    select: { id: true, name: true, status: true }
+    select: { id: true, name: true, status: true, isOff: true }
   })
-  const defaultYearId = years.find(y => y.status === "ACTIVE")?.id || years[0]?.id || null
+  const defaultYearId = years.find(y => y.status === "ACTIVE" && !y.isOff)?.id || years.find(y => !y.isOff)?.id || years[0]?.id || null
 
   const campuses = await prisma.campus.findMany({
     where: isRestricted ? { id: { in: allowedCampusIds } } : { status: "ACTIVE" },

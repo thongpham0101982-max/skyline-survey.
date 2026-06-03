@@ -49,7 +49,7 @@ export default async function AdminClassesPage() {
   })
 
   const academicYears = await prisma.academicYear.findMany({
-    where: { status: "ACTIVE" },
+    orderBy: { startDate: "desc" },
     include: { educationSystems: true }
   })
 

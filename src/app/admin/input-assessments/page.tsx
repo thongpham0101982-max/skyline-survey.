@@ -104,10 +104,8 @@ export default async function InputAssessmentsPage() {
         }).catch(() => []);
       }
       if (pAny.academicYear) {
-        const activeYear = await pAny.academicYear.findFirst({
-          where: { status: "ACTIVE" },
-          include: { educationSystems: true }
-        }).catch(() => null);
+        const { getDefaultAcademicYear } = require("@/lib/academicYear");
+        const activeYear = await getDefaultAcademicYear(pAny);
 
         if (activeYear) {
           eduSystems = activeYear.educationSystems || [];
@@ -165,6 +163,17 @@ export default async function InputAssessmentsPage() {
         teachers={safeJson(teachers)}
         departments={safeJson(departments)}
         currentUser={session?.user ? { id: session.user.id, role: (session.user as any).role, campusIds: liveCampusIds, fullName: session.user.name || '' } : null}
+        rolePermissions={await (async () => {
+          try {
+            const roleCode = (session?.user as any)?.role || "ADMIN";
+            return await prisma.permission.findMany({
+              where: { roleCode }
+            });
+          } catch (e) {
+            console.error("Error fetching permissions for input-assessments page:", e);
+            return [];
+          }
+        })()}
       />
     </div>
   )

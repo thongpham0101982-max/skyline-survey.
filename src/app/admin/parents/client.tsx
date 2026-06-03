@@ -93,7 +93,7 @@ export function ParentAccountsClient({ classes, years, campuses, defaultYearId }
                   <button onClick={() => setFilterYearId("ALL")}
                     className={`px-6 py-2.5 rounded-2xl text-xs font-black transition-all duration-300 ${filterYearId === "ALL" ? "bg-slate-900 text-white shadow-xl scale-105" : "bg-white text-slate-400 border border-slate-100 hover:border-red-200 hover:text-red-500"}`}
                   >Tất cả</button>
-                  {years.map((y: any) => (
+                  {years.filter((y: any) => !y.isOff).map((y: any) => (
                     <button key={y.id} onClick={() => setFilterYearId(y.id)}
                       className={`px-6 py-2.5 rounded-2xl text-xs font-black transition-all duration-300 ${filterYearId === y.id ? "bg-red-600 text-white shadow-xl shadow-red-100 scale-105" : "bg-white text-slate-400 border border-slate-100 hover:border-red-200 hover:text-red-500"}`}
                     >

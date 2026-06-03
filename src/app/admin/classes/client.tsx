@@ -1,4 +1,5 @@
 "use client"
+import { getDefaultAcademicYearClient } from "@/lib/academicYear"
 import { useState, useRef, useEffect } from "react"
 import { Upload, Users, BookOpen, Download, Calendar, Building2, GraduationCap, Layers, Trash2, Edit, X, Save, CheckSquare } from "lucide-react"
 import Link from "next/link"
@@ -14,7 +15,7 @@ const LEVELS = [
 
 export function AdminClassesClient({ initialClasses, campuses, academicYears, teachers, isCampusLocked = false, defaultCampusId = null }: any) {
   const [classes, setClasses] = useState(initialClasses)
-  const [selectedYearId, setSelectedYearId] = useState<string>(academicYears[0]?.id || "")
+  const [selectedYearId, setSelectedYearId] = useState<string>(() => getDefaultAcademicYearClient(academicYears)?.id || "")
   const [selectedCampus, setSelectedCampus] = useState(defaultCampusId || "")
   const [selectedLevel, setSelectedLevel] = useState("")
   const [selectedEduSystem, setSelectedEduSystem] = useState("")
@@ -137,7 +138,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
           <select value={selectedYearId} onChange={e => { setSelectedYearId(e.target.value); setSelectedEduSystem("") }}
             className="border rounded-lg p-2 text-sm min-w-[160px] outline-none focus:ring-2 focus:ring-blue-300">
             {academicYears.length === 0 && <option value="">Chưa có</option>}
-            {academicYears.map((y: any) => <option key={y.id} value={y.id}>{y.name}</option>)}
+            {academicYears.filter((y: any) => !y.isOff).map((y: any) => <option key={y.id} value={y.id}>{y.name}</option>)}
           </select>
         </div>
         <div className="flex items-center gap-2">

@@ -12,7 +12,11 @@ export async function GET(req: Request) {
   try { results.assessmentConfig = await pAny.assessmentConfig.findMany({ take: 1 }); } catch (e: any) { results.assessmentConfig = { error: e.message }; }
   try { results.department = await pAny.department.findMany({ take: 1 }); } catch (e: any) { results.department = { error: e.message }; }
   try { results.teacher = await pAny.teacher.findMany({ take: 1 }); } catch (e: any) { results.teacher = { error: e.message }; }
-  try { results.activeYear = await pAny.academicYear.findFirst({ where: { status: "ACTIVE" }, include: { educationSystems: true } }); } catch (e: any) { results.activeYear = { error: e.message }; }
+  try {
+    const { getDefaultAcademicYear } = require("@/lib/academicYear");
+    const defaultYear = await getDefaultAcademicYear(pAny);
+    results.activeYear = defaultYear ? await pAny.academicYear.findFirst({ where: { id: defaultYear.id }, include: { educationSystems: true } }) : null;
+  } catch (e: any) { results.activeYear = { error: e.message }; }
   
   return NextResponse.json(results);
 }

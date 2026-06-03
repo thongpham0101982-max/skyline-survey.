@@ -22,9 +22,14 @@ async function getParentSurveys(userId: string) {
 
   if (!parent) return { parent: null, surveyTasks: [] }
 
-  // Get active survey periods
+  // Get active survey periods for the default active academic year
+  const { getDefaultAcademicYear } = require("@/lib/academicYear");
+  const defaultYear = await getDefaultAcademicYear();
   const activePeriods = await prisma.surveyPeriod.findMany({
-    where: { isActive: true },
+    where: { 
+      isActive: true,
+      ...(defaultYear ? { academicYearId: defaultYear.id } : {})
+    },
     orderBy: { endDate: 'asc' }
   })
 

@@ -26,7 +26,7 @@ export function AdminSurveysClient({ initialSurveys, years, campuses, createActi
     name: "",
     startDate: "",
     endDate: "",
-    academicYearId: years.find((y: any) => y.status === "ACTIVE")?.id || years[0]?.id || "",
+    academicYearId: years.find((y: any) => y.status === "ACTIVE" && !y.isOff)?.id || years.find((y: any) => !y.isOff)?.id || years[0]?.id || "",
     targetAudience: "PHHS"
   })
 
@@ -51,7 +51,7 @@ export function AdminSurveysClient({ initialSurveys, years, campuses, createActi
       name: "",
       startDate: "",
       endDate: "",
-      academicYearId: years.find((y: any) => y.status === "ACTIVE")?.id || years[0]?.id || "",
+      academicYearId: years.find((y: any) => y.status === "ACTIVE" && !y.isOff)?.id || years.find((y: any) => !y.isOff)?.id || years[0]?.id || "",
       targetAudience: "PHHS"
     })
     setModalType("create")
@@ -283,7 +283,7 @@ export function AdminSurveysClient({ initialSurveys, years, campuses, createActi
                        <div>
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-2 block">Năm học</label>
                           <select value={form.academicYearId} onChange={e => setForm({...form, academicYearId: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                             {years.map((y: any) => <option key={y.id} value={y.id}>{y.name}</option>)}
+                             {years.filter((y: any) => !y.isOff).map((y: any) => <option key={y.id} value={y.id}>{y.name}</option>)}
                           </select>
                        </div>
                        <div>

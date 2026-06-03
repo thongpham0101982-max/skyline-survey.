@@ -1,10 +1,11 @@
 "use client"
+import { getDefaultAcademicYearClient } from "@/lib/academicYear"
 import { useState, useMemo } from "react"
 import { Plus, Trash2, CheckCircle2, User, BookOpen, Layers } from "lucide-react"
 import { saveAssignment, deleteAssignment } from "./actions"
 
 export function TeachingClient({ teachers, classes, subjects, years, initialAssignments }: any) {
-  const [selectedYear, setSelectedYear] = useState(years[0]?.id || "")
+  const [selectedYear, setSelectedYear] = useState(() => getDefaultAcademicYearClient(years)?.id || "")
   const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null)
   const [assignments, setAssignments] = useState(initialAssignments)
   const [loading, setLoading] = useState(false)
@@ -86,7 +87,7 @@ export function TeachingClient({ teachers, classes, subjects, years, initialAssi
         <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
           <div className="font-bold text-slate-700 flex items-center"><Layers className="w-5 h-5 mr-2 text-indigo-500"/>Bảng phân công</div>
           <select value={selectedYear} onChange={e=>setSelectedYear(e.target.value)} className="p-2 rounded-lg border border-slate-200 font-semibold text-sm outline-none">
-            {years.map((y:any) => <option key={y.id} value={y.id}>{y.name}</option>)}
+            {years.filter((y: any) => !y.isOff).map((y:any) => <option key={y.id} value={y.id}>{y.name}</option>)}
           </select>
         </div>
         <div className="overflow-x-auto max-h-[70vh] overflow-y-auto">

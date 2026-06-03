@@ -30,9 +30,15 @@ export default async function ParentDashboard() {
     }
   })
 
-  // 2. Get active PHHS surveys (Target = PHHS)
+  // 2. Get active PHHS surveys for the default active academic year (Target = PHHS)
+  const { getDefaultAcademicYear } = require("@/lib/academicYear");
+  const defaultYear = await getDefaultAcademicYear();
   const surveys = await prisma.surveyPeriod.findMany({
-    where: { status: "ACTIVE", targetAudience: "PHHS" },
+    where: { 
+      status: "ACTIVE", 
+      targetAudience: "PHHS",
+      ...(defaultYear ? { academicYearId: defaultYear.id } : {})
+    },
     orderBy: { endDate: "desc" }
   })
 
