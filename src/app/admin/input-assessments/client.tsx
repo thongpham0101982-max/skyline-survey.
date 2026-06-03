@@ -6102,7 +6102,7 @@ return {
                 <Field label="Hệ Khảo sát">
                   <select value={sForm.surveyFormType} onChange={e=>setSForm(f=>({...f,surveyFormType:e.target.value}))} className={inp}>
                     <option value="">--</option>
-                    {currentEduSystems.map(es => <option key={es.code} value={es.name}>{es.name}</option>)}
+                    {currentEduSystems.map(es => <option key={es.code} value={es.code}>{es.code} - {es.name}</option>)}
                   </select>
                 </Field>
              </div>

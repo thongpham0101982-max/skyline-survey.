@@ -21,15 +21,16 @@ async function PublishSurveyPageContent({ id }: { id: string }) {
     const period = await prisma.surveyPeriod.findUnique({
       where: { id },
       include: {
-        academicYear: { select: { name: true } },
+        academicYear: { select: { name: true, id: true } },
         campus: { select: { campusName: true } }
       }
     })
     
     if (!period) return notFound()
 
-    // Key Change: Include surveyForms count to see what's already published
+    // Filter classes by the survey period's academic year
     const classes = await prisma.class.findMany({
+      where: { academicYearId: period.academicYearId },
       include: { 
         campus: true,
         _count: {
@@ -43,10 +44,18 @@ async function PublishSurveyPageContent({ id }: { id: string }) {
       orderBy: { className: "asc" }
     })
 
+    // Fetch education systems (Hệ học) for this academic year for tab filters
+    const academicYear = await (prisma as any).academicYear.findUnique({
+      where: { id: period.academicYearId },
+      include: { educationSystems: { orderBy: { createdAt: "asc" } } }
+    })
+    const eduSystems = academicYear?.educationSystems || []
+
     const serializedPeriod = JSON.parse(JSON.stringify(period))
     const serializedClasses = JSON.parse(JSON.stringify(classes))
+    const serializedEduSystems = JSON.parse(JSON.stringify(eduSystems))
 
-    return <PublishSurveyClient initialSurvey={serializedPeriod} classes={serializedClasses} />
+    return <PublishSurveyClient initialSurvey={serializedPeriod} classes={serializedClasses} eduSystems={serializedEduSystems} />
   } catch (err: any) {
     return (
       <div className="p-20 text-center">

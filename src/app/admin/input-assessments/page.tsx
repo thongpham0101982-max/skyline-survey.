@@ -106,7 +106,7 @@ export default async function InputAssessmentsPage() {
       }
       if (pAny.educationSystem) {
         eduSystems = await pAny.educationSystem.findMany({
-          where: { status: "ACTIVE" }
+          orderBy: { createdAt: "asc" }
         }).catch(() => []);
       }
       if (pAny.academicYear) {

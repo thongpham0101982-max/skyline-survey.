@@ -11,7 +11,7 @@ export async function POST(req) {
     if (existing) return NextResponse.json({ error: "Hệ học " + code + " đã tồn tại trong năm học này." }, { status: 400 });
 
     const result = await (prisma as any).educationSystem.create({
-      data: { code, name, academicYearId }
+      data: { code, name, academicYearId, status: "ACTIVE" }
     });
     revalidatePath("/admin/academic-years");
     return NextResponse.json(result);
