@@ -2,6 +2,7 @@
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { ClipboardList, ArrowRight, CalendarDays, CheckCircle2, Clock } from "lucide-react"
+import { getDefaultAcademicYear } from "@/lib/academicYear"
 import Link from "next/link"
 
 export default async function StudentSurveyPage() {
@@ -14,12 +15,15 @@ export default async function StudentSurveyPage() {
     include: { class: true, campus: true, academicYear: true }
   })
 
-  // 2. Get active student surveys for the student's current academic year
+  const defaultYear = await getDefaultAcademicYear();
+  const activeYearId = defaultYear?.id || "";
+
+  // 2. Get active student surveys for the default academic year
   const surveys = await prisma.surveyPeriod.findMany({
     where: {
       status: "ACTIVE",
       targetAudience: "HocSinh",
-      ...(student ? { academicYearId: student.academicYearId } : {})
+      academicYearId: activeYearId
     },
     orderBy: { endDate: "asc" }
   })
@@ -48,9 +52,9 @@ export default async function StudentSurveyPage() {
           </div>
           
           <div className="flex gap-4">
-             <div className="bg-blue-50 border border-blue-100 p-4 rounded-3xl text-center min-w-[100px]">
-                <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Cần làm</p>
-                <p className="text-2xl font-black text-blue-600">{surveys.length - submittedIds.size}</p>
+             <div className="bg-teal-50 border border-teal-100 p-4 rounded-3xl text-center min-w-[100px]">
+                <p className="text-[10px] font-black text-[#00A19A] uppercase tracking-widest mb-1">Cần làm</p>
+                <p className="text-2xl font-black text-[#00A19A]">{surveys.length - submittedIds.size}</p>
              </div>
              <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-3xl text-center min-w-[100px]">
                 <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">Hoàn thành</p>
@@ -63,7 +67,7 @@ export default async function StudentSurveyPage() {
       {/* Survey List Section */}
       <div className="space-y-4">
         <h3 className="text-xl font-black text-slate-800 ml-4 flex items-center gap-2">
-           <ClipboardList className="w-5 h-5 text-[#BE1E2E]" />
+           <ClipboardList className="w-5 h-5 text-[#00A19A]" />
            Danh sách khảo sát dành cho học sinh
         </h3>
 
@@ -79,10 +83,10 @@ export default async function StudentSurveyPage() {
             surveys.map((s) => {
               const isDone = submittedIds.has(s.id)
               return (
-                <div key={s.id} className={`group relative bg-white rounded-[2rem] p-6 border transition-all ${isDone ? 'opacity-80 border-slate-100 shadow-none' : 'border-slate-200 shadow-sm hover:shadow-xl hover:border-[#BE1E2E]/20'}`}>
+                <div key={s.id} className={`group relative bg-white rounded-[2rem] p-6 border transition-all ${isDone ? 'opacity-80 border-slate-100 shadow-none' : 'border-slate-200 shadow-sm hover:shadow-xl hover:border-[#00A19A]/20'}`}>
                    <div className="flex flex-col sm:flex-row justify-between items-center gap-6">
                       <div className="flex items-center gap-5 w-full">
-                         <div className={`w-14 h-14 rounded-[1.2rem] flex items-center justify-center transition-colors ${isDone ? 'bg-emerald-50 text-emerald-500' : 'bg-slate-50 text-slate-400 group-hover:bg-[#BE1E2E]/10 group-hover:text-[#BE1E2E]'}`}>
+                         <div className={`w-14 h-14 rounded-[1.2rem] flex items-center justify-center transition-colors ${isDone ? 'bg-emerald-50 text-emerald-500' : 'bg-slate-50 text-slate-400 group-hover:bg-[#00A19A]/10 group-hover:text-[#00A19A]'}`}>
                             {isDone ? <CheckCircle2 className="w-7 h-7" /> : <ClipboardList className="w-7 h-7" />}
                          </div>
                          <div className="flex-1">
@@ -101,7 +105,7 @@ export default async function StudentSurveyPage() {
                         ) : (
                            <Link 
                               href={`/Hocsinh/khaosat/${s.id}`}
-                              className="flex items-center justify-center gap-2 px-8 py-3 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-[#BE1E2E] transition-all hover:scale-105 active:scale-95"
+                              className="flex items-center justify-center gap-2 px-8 py-3 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-[#00A19A] transition-all hover:scale-105 active:scale-95"
                            >
                               Thực hiện ngay <ArrowRight className="w-4 h-4" />
                            </Link>

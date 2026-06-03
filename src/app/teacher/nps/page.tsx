@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
 import { PieChart, TrendingUp, Users } from "lucide-react"
+import { getDefaultAcademicYear } from "@/lib/academicYear"
 
 export default async function TeacherNpsPage() {
   const session = await auth()
@@ -12,12 +13,16 @@ export default async function TeacherNpsPage() {
   const teacher = await prisma.teacher.findUnique({ where: { userId } })
   if (!teacher) return notFound()
 
+  const activeYear = await getDefaultAcademicYear();
+  const activeYearId = activeYear?.id || "";
+
   const classes = await prisma.class.findMany({
     where: {
       OR: [
         { homeroomTeacherId: teacher.id },
         { teachers: { some: { teacherId: teacher.id } } }
-      ]
+      ],
+      academicYearId: activeYearId
     },
     select: { id: true, className: true }
   })
@@ -86,14 +91,14 @@ export default async function TeacherNpsPage() {
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-12">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Phân tích NPS</h1>
-        <p className="text-slate-500 mt-1">Tổng hợp mức độ trung thành và hài lòng của học sinh/phụ huynh.</p>
+        <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Phân tích NPS</h1>
+        <p className="text-slate-500 mt-1">Chỉ số thuộc năm học mặc định: <span className="font-bold text-[#00A19A]">{activeYear?.name || 'N/A'}</span></p>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
         <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 col-span-1 md:col-span-3 flex flex-col items-center justify-center py-12">
            <h2 className="text-xl font-medium text-slate-500 mb-4">Chỉ số NPS Tổng thể (Các lớp của bạn)</h2>
-           <div className="text-6xl font-black text-indigo-600 mb-4">{nps}</div>
+           <div className="text-6xl font-black text-[#00A19A] mb-4">{nps}</div>
            <div className="flex gap-8 text-sm font-medium">
              <div className="text-green-600 flex items-center gap-2"><TrendingUp className="w-4 h-4"/> Promoters (9-10): {promoters}</div>
              <div className="text-slate-500 flex items-center gap-2"><Users className="w-4 h-4"/> Passive (7-8): {passive}</div>

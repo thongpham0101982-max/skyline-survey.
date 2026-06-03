@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { FileText, Calendar, Users } from "lucide-react"
+import { getDefaultAcademicYear } from "@/lib/academicYear"
 
 export default async function TeacherSurveysPage() {
   const session = await auth()
@@ -13,12 +14,16 @@ export default async function TeacherSurveysPage() {
   const teacher = await prisma.teacher.findUnique({ where: { userId } })
   if (!teacher) return notFound()
 
+  const activeYear = await getDefaultAcademicYear();
+  const activeYearId = activeYear?.id || "";
+
   const classes = await prisma.class.findMany({
     where: {
       OR: [
         { homeroomTeacherId: teacher.id },
         { teachers: { some: { teacherId: teacher.id } } }
-      ]
+      ],
+      academicYearId: activeYearId
     },
     select: { id: true }
   })
@@ -41,8 +46,8 @@ export default async function TeacherSurveysPage() {
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-12">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Quản lý Khảo sát</h1>
-        <p className="text-slate-500 mt-1">Các đợt khảo sát đang diễn ra hoặc đã hoàn thành liên quan đến lớp học của bạn.</p>
+        <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Quản lý Khảo sát</h1>
+        <p className="text-slate-500 mt-1">Các đợt khảo sát thuộc năm học mặc định: <span className="font-bold text-[#00A19A]">{activeYear?.name || 'N/A'}</span></p>
       </div>
       
       <div className="grid gap-4 mt-8">
@@ -68,7 +73,7 @@ export default async function TeacherSurveysPage() {
                         <div className={`p-2 rounded-lg ${isActive ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>
                           <FileText className="w-5 h-5" />
                         </div>
-                        <h2 className="text-xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                        <h2 className="text-xl font-bold text-slate-900 group-hover:text-[#00A19A] transition-colors">
                           {survey.name}
                         </h2>
                         {isActive ? (
@@ -97,14 +102,14 @@ export default async function TeacherSurveysPage() {
                       </div>
                       <div className="w-px h-12 bg-slate-200"></div>
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-indigo-600">{completionRate}%</div>
+                        <div className="text-2xl font-bold text-[#00A19A]">{completionRate}%</div>
                         <div className="text-xs font-medium text-slate-500 uppercase tracking-wider mt-1">Tỷ lệ nộp</div>
                       </div>
                     </div>
                   </div>
                 </div>
                 <div className="bg-slate-50 px-6 py-3 border-t border-slate-100 flex justify-end">
-                  <Link href="/teacher/classes" className="text-sm font-medium text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+                  <Link href="/teacher/classes" className="text-sm font-bold text-[#00A19A] hover:text-[#008c85] flex items-center gap-1">
                     Xem chi tiết tại danh sách lớp &rarr;
                   </Link>
                 </div>

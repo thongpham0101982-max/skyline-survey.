@@ -1,6 +1,7 @@
 // @ts-nocheck
 export const dynamic = 'force-dynamic';
 import { requireStudentSession } from '@/lib/student-session'
+import { getDefaultAcademicYear } from '@/lib/academicYear'
 import { prisma } from '@/lib/db'
 import { 
   ClipboardList, CheckCircle2, ArrowRight, CalendarDays, 
@@ -13,11 +14,17 @@ export default async function HsDanhSachPage() {
   const session = await requireStudentSession()
   const now = new Date()
 
+  const activeYear = await getDefaultAcademicYear();
+  const activeYearId = activeYear?.id || "";
+
   // 1. Fetch Assigned Forms
   const forms = await prisma.surveyForm.findMany({
     where: {
       studentId: session.studentId,
-      surveyPeriod: { OR: [{ status: 'ACTIVE' }, { isActive: true }] }
+      surveyPeriod: { 
+        OR: [{ status: 'ACTIVE' }, { isActive: true }],
+        academicYearId: activeYearId
+      }
     },
     include: { surveyPeriod: true },
     orderBy: { surveyPeriod: { endDate: 'asc' } }
@@ -29,6 +36,7 @@ export default async function HsDanhSachPage() {
   const availablePeriods = await prisma.surveyPeriod.findMany({
     where: {
       OR: [{ status: 'ACTIVE' }, { isActive: true }],
+      academicYearId: activeYearId,
       id: { notIn: existingPeriodIds },
       OR: [
         { targetAudience: { contains: 'Hoc' } },

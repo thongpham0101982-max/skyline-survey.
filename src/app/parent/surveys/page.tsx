@@ -43,6 +43,9 @@ async function getParentSurveys(userId: string) {
   
   for (const studentLink of parent.students) {
     const student = studentLink.student
+    if (defaultYear && student.academicYearId !== defaultYear.id && student.class?.academicYearId !== defaultYear.id) {
+      continue;
+    }
     for (const period of activePeriods) {
       const existingForm = existingForms.find(
         f => f.studentId === student.id && f.surveyPeriodId === period.id
@@ -67,13 +70,13 @@ export default async function ParentSurveysPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-slate-900 tracking-tight">My Surveys</h1>
-      <p className="text-slate-500">Please complete the feedback surveys for your children.</p>
+      <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Khảo sát của tôi</h1>
+      <p className="text-slate-500">Vui lòng hoàn thành các khảo sát đóng góp ý kiến cho con em của bạn.</p>
       
       {(surveyTasks ?? []).length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm p-10 text-center border border-slate-100 flex items-center justify-center flex-col">
-          <ClipboardList className="h-10 w-10 text-slate-300 mb-4" />
-          <p className="text-slate-500 text-lg">No active surveys require your attention at this time.</p>
+          <ClipboardList className="h-10 w-10 text-[#00A19A] mb-4" />
+          <p className="text-slate-500 text-lg">Hiện không có đợt khảo sát nào cần bạn thực hiện.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -84,37 +87,37 @@ export default async function ParentSurveysPage() {
                 <div className="p-6 flex-grow">
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <h3 className="font-bold text-xl text-slate-900 mb-1">{task.period.name}</h3>
-                      <p className="text-sm font-medium text-slate-600">Student: <span className="font-bold text-slate-800">{task.student.studentName}</span></p>
-                      <p className="text-sm text-slate-500">Class: {task.student.class?.className || 'N/A'}</p>
+                      <h3 className="font-extrabold text-xl text-slate-800 mb-1">{task.period.name}</h3>
+                      <p className="text-sm font-medium text-slate-600">Học sinh: <span className="font-bold text-[#00A19A]">{task.student.studentName}</span></p>
+                      <p className="text-sm text-slate-500">Lớp: {task.student.class?.className || 'N/A'}</p>
                     </div>
                     {isCompleted ? (
-                      <span className="flex items-center bg-green-50 text-green-700 text-xs font-semibold px-2.5 py-1 rounded-full border border-green-200">
-                        <CheckCircle2 className="w-3 h-3 mr-1" /> Completed
+                      <span className="flex items-center bg-teal-50 text-[#00A19A] text-xs font-bold px-2.5 py-1 rounded-full border border-teal-100">
+                        <CheckCircle2 className="w-3 h-3 mr-1" /> Đã hoàn thành
                       </span>
                     ) : (
-                      <span className="flex items-center bg-amber-50 text-amber-700 text-xs font-semibold px-2.5 py-1 rounded-full border border-amber-200">
-                        <Clock className="w-3 h-3 mr-1" /> Pending
+                      <span className="flex items-center bg-amber-50 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-full border border-amber-200">
+                        <Clock className="w-3 h-3 mr-1" /> Chưa hoàn thành
                       </span>
                     )}
                   </div>
                   
                   <div className="text-sm text-slate-500 mt-4 bg-slate-50 p-3 rounded-lg border border-slate-100">
-                    <p>Deadline: <span className="font-medium text-slate-700">{new Date(task.period.endDate).toLocaleDateString()}</span></p>
+                    <p>Hạn chót: <span className="font-bold text-slate-700">{new Date(task.period.endDate).toLocaleDateString('vi-VN')}</span></p>
                   </div>
                 </div>
                 
                 <div className="bg-slate-50 px-6 py-4 border-t border-slate-100 flex justify-end">
                   {isCompleted ? (
-                    <button disabled className="text-sm font-medium text-slate-400 cursor-not-allowed">
-                      Submitted on {task.form?.submissionDateTime ? new Date(task.form.submissionDateTime).toLocaleDateString() : 'N/A'}
+                    <button disabled className="text-sm font-bold text-slate-400 cursor-not-allowed">
+                      Đã nộp ngày {task.form?.submissionDateTime ? new Date(task.form.submissionDateTime).toLocaleDateString('vi-VN') : 'N/A'}
                     </button>
                   ) : (
                     <Link 
                       href={`/parent/surveys/${task.period.id}?studentId=${task.student.id}`} 
-                      className="text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md transition-colors"
+                      className="text-sm font-bold text-white bg-[#00A19A] hover:bg-[#008c85] px-5 py-2.5 rounded-xl transition-all shadow-md shadow-teal-100"
                     >
-                      Start Survey
+                      Bắt đầu Khảo sát
                     </Link>
                   )}
                 </div>

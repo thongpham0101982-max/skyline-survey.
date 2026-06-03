@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
 import { MessageSquare, Quote } from "lucide-react"
+import { getDefaultAcademicYear } from "@/lib/academicYear"
 
 export default async function TeacherFeedbackPage() {
   const session = await auth()
@@ -12,12 +13,16 @@ export default async function TeacherFeedbackPage() {
   const teacher = await prisma.teacher.findUnique({ where: { userId } })
   if (!teacher) return notFound()
 
+  const activeYear = await getDefaultAcademicYear();
+  const activeYearId = activeYear?.id || "";
+
   const classes = await prisma.class.findMany({
     where: {
       OR: [
         { homeroomTeacherId: teacher.id },
         { teachers: { some: { teacherId: teacher.id } } }
-      ]
+      ],
+      academicYearId: activeYearId
     },
     select: { id: true }
   })
@@ -65,8 +70,8 @@ export default async function TeacherFeedbackPage() {
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-12">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Theo dõi Phản hồi</h1>
-        <p className="text-slate-500 mt-1">Các ý kiến đóng góp dạng văn bản từ học sinh và phụ huynh.</p>
+        <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Theo dõi Phản hồi</h1>
+        <p className="text-slate-500 mt-1">Các ý kiến đóng góp thuộc năm học mặc định: <span className="font-bold text-[#00A19A]">{activeYear?.name || 'N/A'}</span></p>
       </div>
       
       <div className="grid gap-4 mt-8">
@@ -81,7 +86,7 @@ export default async function TeacherFeedbackPage() {
             {feedbacks.map(fb => (
                <div key={fb.id} className="flex items-start gap-4 py-3 bg-white border border-slate-200 hover:bg-slate-50 transition-colors px-4 rounded-xl shadow-sm">
                   <div className="min-w-[120px] pt-1 shrink-0">
-                     <span className="bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-md text-[10px] font-black tracking-wider uppercase border border-indigo-100">
+                     <span className="bg-teal-50 text-[#00A19A] px-2.5 py-1 rounded-md text-[10px] font-black tracking-wider uppercase border border-teal-100">
                         {fb.className}
                      </span>
                      <div className="text-[11px] font-bold text-slate-700 mt-2">{fb.student}</div>
