@@ -606,12 +606,14 @@ model AssessmentSubject {
 
 model EducationSystem {
   id             String       @id @default(cuid())
-  code           String       @unique
+  code           String
   name           String
   academicYearId String
   status         String       @default("ACTIVE")
   createdAt      DateTime     @default(now())
   academicYear   AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+
+  @@unique([code, academicYearId])
 }
 
 model GradeSubjectMapping {
