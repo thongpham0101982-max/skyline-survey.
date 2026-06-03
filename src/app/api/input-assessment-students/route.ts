@@ -113,8 +113,8 @@ export async function POST(req) {
         }
         
         try {
-          const existing = await (prisma as any).inputAssessmentStudent.findUnique({
-            where: { studentCode_periodId: { studentCode: d.studentCode, periodId: d.periodId } }
+          const existing = await (prisma as any).inputAssessmentStudent.findFirst({
+            where: { studentCode: d.studentCode, periodId: d.periodId }
           });
 
           const studentData = {
