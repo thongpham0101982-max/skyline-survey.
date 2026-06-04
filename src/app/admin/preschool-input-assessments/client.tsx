@@ -1226,6 +1226,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   const [cModal, setCModal] = useState(false);
   const [editC, setEditC] = useState<PreschoolChild | null>(null);
   const [cForm, setCForm] = useState({ studentCode: "", fullName: "", dateOfBirth: "", gender: "", grade: "", admissionCampus: "", surveyFormType: "", batchId: "", admissionResult: "" });
+  const [activeAgeGroup, setActiveAgeGroup] = useState("");
   const [importing, setImporting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -1511,10 +1512,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
   }, []);
 
   useEffect(() => {
-    if (tab === "devAssess" && devTab === "manage") {
+    if (tab === "devCriteria") {
       fetchDevAreas(ageGroupFilter, devType);
     }
-  }, [tab, devTab, ageGroupFilter, fetchDevAreas, devType]);
+  }, [tab, ageGroupFilter, fetchDevAreas, devType]);
 
   const fetchStudentSummaries = useCallback(async () => {
     if (!cPeriodId) return;
@@ -1763,19 +1764,24 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     setEvalModal(true);
     setDevLoading(true);
         try {
-      const ageGroup = getSurveyFormAgeGroup(student.grade, student.batch?.startDate);
-      const areasRes = await fetch(`/api/preschool-dev-areas?type=INPUT&ageGroup=${encodeURIComponent(ageGroup)}`);
-      if (areasRes.ok) {
-        setDevAreas(await areasRes.json());
-      }
       const scoresRes = await fetch(`/api/preschool-dev-scores?studentId=${student.id}`);
+      let scoredList = [];
       if (scoresRes.ok) {
-        const scoredList = await scoresRes.json();
+        scoredList = await scoresRes.json();
         const scoreMap: Record<string, { result: string; note: string }> = {};
         for (const sc of scoredList) {
           scoreMap[sc.criteriaId] = { result: sc.result, note: sc.note || "" };
         }
         setStudentScores(scoreMap);
+      }
+
+      const surveyDate = (scoredList && scoredList.length > 0) ? new Date(scoredList[0].createdAt) : new Date();
+      const ageGroup = getSurveyFormAgeGroup(student.grade, surveyDate);
+      setActiveAgeGroup(ageGroup);
+
+      const areasRes = await fetch(`/api/preschool-dev-areas?type=INPUT&ageGroup=${encodeURIComponent(ageGroup)}`);
+      if (areasRes.ok) {
+        setDevAreas(await areasRes.json());
       }
       const targetPeriodId = student.periodId || cPeriodId;
       const targetBatchId = student.batchId || cBatchId;
@@ -2669,8 +2675,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
         const matches = evalAssignments.filter(a => {
       const studentPeriodId = evalStudent.periodId || cPeriodId;
       if (a.periodId !== studentPeriodId) return false;
-      const targetGrade = getSurveyFormAgeGroup(evalStudent.grade, evalStudent.batch?.startDate);
-      if (a.grade !== targetGrade) return false;
+      if (a.grade !== activeAgeGroup) return false;
       return !a.batchId || a.batchId === evalStudent.batchId;
     });
     if (matches.length === 0) return "Chưa phân công";
@@ -2713,6 +2718,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             { id: "children", label: "DS Trẻ", icon: Users },
             { id: "assignments", label: "Phân công", icon: UserCheck },
             { id: "devAssess", label: "Đánh giá PT", icon: Star },
+            { id: "devCriteria", label: "Quản lý Tiêu chí & Lĩnh vực", icon: ClipboardList },
             { id: "reports", label: "Tổng hợp KQKS", icon: BarChart3 },
           ].filter(t => {
             if (isGDCSUser) {
@@ -3263,12 +3269,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             >
               Xét duyệt học thử
             </button>
-            <button
-              onClick={() => setDevTab("manage")}
-              className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${devTab === "manage" ? "bg-teal-500 text-white shadow-sm" : "text-slate-500 hover:bg-teal-50"}`}
-            >
-              Quản lý Tiêu chí & Lĩnh vực
-            </button>
+
             <button
               onClick={() => setDevTab("dgkqHocThu")}
               className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${devTab === "dgkqHocThu" ? "bg-teal-500 text-white shadow-sm" : "text-slate-500 hover:bg-teal-50"}`}
@@ -3982,8 +3983,15 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           )}
 
           {/* Sub-tab: Quản lý Tiêu chí & Lĩnh vực */}
-          {devTab === "manage" && (
+        </div>
+      )}
+
+      {/* Tab: Quản lý Tiêu chí & Lĩnh vực */}
+                {tab === "devCriteria" && (
             <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-black text-slate-600 uppercase tracking-widest flex items-center gap-2"><Settings className="w-4 h-4 text-teal-400" /> Quản lý Tiêu chí &amp; Lĩnh vực Khảo sát</h2>
+          </div>
               <div className="flex gap-2 p-1 bg-slate-100 rounded-xl w-fit mb-2">
                 <button
                   onClick={() => setDevType("INPUT")}
@@ -4202,8 +4210,6 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               )}
             </div>
           )}
-        </div>
-      )}
 
       {/* Tab: Reports */}
       {tab === "reports" && (

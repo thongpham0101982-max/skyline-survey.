@@ -148,10 +148,13 @@ export async function GET(req: NextRequest) {
           else generalResult = s.admissionResult || "Chưa duyệt";
         }
 
+        const firstScore = studentScoresList[0];
+        const surveyDate = firstScore ? firstScore.createdAt : new Date();
+        const sAgeGroup = getSurveyFormAgeGroup(s.grade, surveyDate);
         return {
           ...s,
                     scoredCount: scoreMap[s.id] || 0,
-          totalCriteria: criteriaMap[getSurveyFormAgeGroup(s.grade, s.batch?.startDate)] || 0,
+          totalCriteria: criteriaMap[sAgeGroup] || 0,
           theChatSummary: formatSummary(theChatScores),
           nhanThucSummary: formatSummary(nhanThucScores),
           ngonNguSummary: formatSummary(ngonNguScores),

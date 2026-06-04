@@ -184,10 +184,29 @@ export async function GET(req: any) {
                 });
             }
 
-                        let filteredStudents = students;
+                        const allStudentIds = students.map((s: any) => s.id);
+            // Fetch all scores for all period students first to get timestamps
+            const scores = await (prisma as any).preschoolDevScore.findMany({
+                where: { studentId: { in: allStudentIds } },
+                include: { criteria: { include: { area: true } } }
+            });
+
+            // Group scores by studentId
+            const studentScoresMap: Record<string, any[]> = {};
+            for (const sc of scores) {
+                if (!studentScoresMap[sc.studentId]) {
+                    studentScoresMap[sc.studentId] = [];
+                }
+                studentScoresMap[sc.studentId].push(sc);
+            }
+
+            let filteredStudents = students;
             if (preschoolAssignments.length > 0) {
                 filteredStudents = students.filter(st => {
-                    const mappedGrade = getSurveyFormAgeGroup(st.grade, st.batch?.startDate);
+                    const studentScoresList = studentScoresMap[st.id] || [];
+                    const firstScore = studentScoresList[0];
+                    const surveyDate = firstScore ? firstScore.createdAt : new Date();
+                    const mappedGrade = getSurveyFormAgeGroup(st.grade, surveyDate);
                     const stGrade = mappedGrade.toLowerCase().trim();
                     return preschoolAssignments.some(ta => {
                         const taGrade = (ta.grade || "").toLowerCase().trim();
@@ -196,29 +215,7 @@ export async function GET(req: any) {
                 });
             } else if (!grade && preschoolAssignments.length === 0) {
                 // If teacher has NO preschool assignments for this period, they shouldn't see anyone
-                // But if they reached here, maybe they have one. If preschoolAssignments is empty, return []
                 filteredStudents = [];
-            }
-
-            const studentIds = filteredStudents.map((s: any) => s.id);
-
-            
-            // Fetch all scores for these students
-            const scores = await (prisma as any).preschoolDevScore.findMany({
-                where: { studentId: { in: studentIds } },
-                include: { criteria: { include: { area: true } } }
-            });
-
-            // Count scores per student
-            const scoreCounts = await (prisma as any).preschoolDevScore.groupBy({
-                by: ["studentId"],
-                where: { studentId: { in: studentIds } },
-                _count: { id: true }
-            });
-
-            const scoreMap: Record<string, number> = {};
-            for (const sc of scoreCounts) {
-                scoreMap[sc.studentId] = sc._count.id;
             }
 
             // Get total criteria count per ageGroup/grade
@@ -232,10 +229,13 @@ export async function GET(req: any) {
                 criteriaMap[cc.ageGroup] = cc._count.id;
             }
 
-                        const enriched = filteredStudents.map((s: any) => {
-                const sAgeGroup = getSurveyFormAgeGroup(s.grade, s.batch?.startDate);
+            const enriched = filteredStudents.map((s: any) => {
+                const studentScoresList = studentScoresMap[s.id] || [];
+                const firstScore = studentScoresList[0];
+                const surveyDate = firstScore ? firstScore.createdAt : new Date();
+                const sAgeGroup = getSurveyFormAgeGroup(s.grade, surveyDate);
                 const totalCriteria = criteriaMap[sAgeGroup] || 0;
-                const scoredCount = scoreMap[s.id] || 0;
+                const scoredCount = studentScoresList.length;
                 return {
                     ...s,
                     scoredCount,

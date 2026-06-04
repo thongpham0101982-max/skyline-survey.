@@ -46,20 +46,23 @@ export default function PreschoolEvaluationForm({
     async function loadData() {
       setDevLoading(true)
       try {
-        const ageGroup = getSurveyFormAgeGroup(student.grade, student.batch?.startDate)
-        const areasRes = await fetch(`/api/preschool-dev-areas?ageGroup=${encodeURIComponent(ageGroup)}`)
-        if (areasRes.ok) {
-          setDevAreas(await areasRes.json())
-        }
-
         const scoresRes = await fetch(`/api/preschool-dev-scores?studentId=${student.id}`)
+        let scoredList = []
         if (scoresRes.ok) {
-          const scoredList = await scoresRes.json()
+          scoredList = await scoresRes.json()
           const scoreMap: Record<string, { result: string; note: string }> = {}
           for (const sc of scoredList) {
             scoreMap[sc.criteriaId] = { result: sc.result, note: sc.note || "" }
           }
           setStudentScores(scoreMap)
+        }
+
+        const surveyDate = (scoredList && scoredList.length > 0) ? new Date(scoredList[0].createdAt) : new Date()
+        const ageGroup = getSurveyFormAgeGroup(student.grade, surveyDate)
+        
+        const areasRes = await fetch(`/api/preschool-dev-areas?ageGroup=${encodeURIComponent(ageGroup)}`)
+        if (areasRes.ok) {
+          setDevAreas(await areasRes.json())
         }
       } catch (e) {
         console.error("Error loading evaluation data:", e)
