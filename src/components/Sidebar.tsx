@@ -54,10 +54,7 @@ export function Sidebar({ role, permissionModules, actualRole, taskCount = 0 }: 
     }
   }, [role])
 
-  let title = "Portal"
-  if (role === "ADMIN") title = ""
-  else if (role === "TEACHER") title = "Cổng Giáo viên"
-  else if (role === "PARENT") title = "Cổng Phụ huynh"
+  let title = ""
 
   const checkPermission = (module?: string, requiresAdmin?: boolean) => {
     if (requiresAdmin && !isSuperAdmin) return false

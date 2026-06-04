@@ -20,8 +20,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
           <div className="flex items-center gap-4">
             <div className="hidden md:flex text-sm font-medium text-slate-500">
               <span className="text-[#00A19A] font-bold">Giáo viên</span>
-              <span className="mx-2">/</span>
-              <span>Cổng thông tin</span>
+              
             </div>
           </div>
           <div className="flex items-center gap-4">

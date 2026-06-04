@@ -378,8 +378,8 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     </div>
 )}
 {currentAssignment && (
-                <div className="bg-white rounded-xl shadow-md border-2 border-emerald-100 overflow-hidden mt-6">
-                    <div className="px-6 py-4 border-b bg-[#F0FDFA] flex justify-between items-center">
+                <div className="bg-white rounded-xl shadow-md border-2 border-[#00A19A] overflow-hidden mt-6">
+                    <div className="px-6 py-4 border-b bg-[#00A19A]/10 flex justify-between items-center">
                         <div>
                             <h3 className="font-bold text-slate-800 flex items-center gap-2 text-lg">
                                 <Users className="w-5 h-5 text-[#00A19A]"/>
@@ -391,7 +391,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                             </p>
                         </div>
                         {isLocked && <span className="text-xs font-bold bg-red-100 text-red-700 border border-red-200 px-4 py-1.5 rounded-full shadow-sm mr-2 flex items-center gap-1.5"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg> KHẢO SÁT ĐÃ KHÓA</span>}
-                        <span className={"text-xs font-medium border px-4 py-1.5 rounded-full shadow-sm " + (isLocked ? "bg-slate-100 text-slate-500 border-slate-200" : "bg-emerald-100/50 text-emerald-700 border-emerald-200")}>
+                        <span className={"text-xs font-medium border px-4 py-1.5 rounded-full shadow-sm " + (isLocked ? "bg-slate-100 text-slate-500 border-slate-200" : "bg-[#00A19A]/10 text-[#00A19A] border-[#00A19A]/30")}>
                             {isPsychSubject ? (gradeVal ? `Mẫu chuyên biệt Tâm lý Khối ${gradeVal}` : `Đánh giá Tâm lý`) : isChildDevSubject ? "Cấu hình: 1 cột điểm, 1 cột nhận xét" : `Cấu hình: ${currentAssignment.subject.scoreColumns} cột điểm, ${currentAssignment.subject.commentColumns} cột nhận xét`}
                         </span>
                     </div>
@@ -429,33 +429,33 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                     )}
                     <div className="overflow-x-auto p-4 custom-scrollbar" style={{maxWidth: "100%", width: "100%"}}>
                         <table className="w-full text-xs text-left border-collapse min-w-max">
-                            <thead className="bg-slate-50 border-b-2 border-slate-200">
+                            <thead className="bg-slate-50 border-b-2 border-[#00A19A]">
     <tr>
-        <th className="px-2 py-2 w-12 text-center font-bold text-slate-500 bg-[#F8FAFC] uppercase tracking-wider text-xs md:sticky md:left-0 z-20">STT</th>
-        <th className="px-2 py-2 font-bold text-slate-500 bg-[#F8FAFC] uppercase tracking-wider text-xs whitespace-nowrap text-center">Mã HS KS</th>
-          <th className="px-2 py-2 font-bold text-slate-500 bg-[#F8FAFC] uppercase tracking-wider text-xs whitespace-nowrap text-left">Họ và Tên</th>
-          <th className="px-2 py-2 font-bold text-slate-500 bg-[#F8FAFC] uppercase tracking-wider text-xs whitespace-nowrap text-center">Khối</th>
-          <th className="px-2 py-2 font-bold text-slate-500 bg-[#F8FAFC] uppercase tracking-wider text-xs whitespace-nowrap text-center">Giới tính</th>
-          <th className="px-2 py-2 font-bold text-slate-500 bg-[#F8FAFC] uppercase tracking-wider text-xs whitespace-nowrap text-center">Ngày sinh</th>
-          <th className="px-2 py-2 font-bold text-slate-500 bg-[#F8FAFC] uppercase tracking-wider text-xs whitespace-nowrap text-center">Hệ Khảo sát</th>
-        <th className="px-2 py-2 font-bold text-[#00A19A] bg-[#F8FAFC] uppercase tracking-wider text-xs text-center">
+        <th className="px-2 py-2 w-12 text-center font-bold text-[#00A19A] bg-[#00A19A]/5 border-[#00A19A]/20 uppercase tracking-wider text-xs md:sticky md:left-0 z-20">STT</th>
+        <th className="px-2 py-2 font-bold text-[#00A19A] bg-[#00A19A]/5 border-[#00A19A]/20 uppercase tracking-wider text-xs whitespace-nowrap text-center">Mã HS KS</th>
+          <th className="px-2 py-2 font-bold text-[#00A19A] bg-[#00A19A]/5 border-[#00A19A]/20 uppercase tracking-wider text-xs whitespace-nowrap text-left">Họ và Tên</th>
+          <th className="px-2 py-2 font-bold text-[#00A19A] bg-[#00A19A]/5 border-[#00A19A]/20 uppercase tracking-wider text-xs whitespace-nowrap text-center">Khối</th>
+          <th className="px-2 py-2 font-bold text-[#00A19A] bg-[#00A19A]/5 border-[#00A19A]/20 uppercase tracking-wider text-xs whitespace-nowrap text-center">Giới tính</th>
+          <th className="px-2 py-2 font-bold text-[#00A19A] bg-[#00A19A]/5 border-[#00A19A]/20 uppercase tracking-wider text-xs whitespace-nowrap text-center">Ngày sinh</th>
+          <th className="px-2 py-2 font-bold text-[#00A19A] bg-[#00A19A]/5 border-[#00A19A]/20 uppercase tracking-wider text-xs whitespace-nowrap text-center">Hệ Khảo sát</th>
+        <th className="px-2 py-2 font-bold text-[#00A19A] bg-[#00A19A]/5 border-[#00A19A]/20 uppercase tracking-wider text-xs text-center">
             {isPsychSubject || isChildDevSubject || isThinkingSkillsSubject || isPreschoolSubject ? "Form Khảo sát" : (hideComments ? "Chi tiết Điểm" : "Chi tiết Điểm & Nhận xét")}
         </th>
         {(isChildDevSubject || isThinkingSkillsSubject) && (
-            <th className="px-2 py-2 font-bold text-[#00A19A] bg-[#F8FAFC] uppercase tracking-wider text-xs text-left min-w-[250px]">Nhận xét chung</th>
+            <th className="px-2 py-2 font-bold text-[#00A19A] bg-[#00A19A]/5 border-[#00A19A]/20 uppercase tracking-wider text-xs text-left min-w-[250px]">Nhận xét chung</th>
         )}
         {isPsychSubject && (
             <>
-                <th className="px-2 py-2 font-bold text-[#00A19A] bg-[#F8FAFC] uppercase tracking-wider text-xs text-left min-w-[200px]">Kết luận sơ bộ</th>
-                <th className="px-2 py-2 font-bold text-[#00A19A] bg-[#F8FAFC] uppercase tracking-wider text-xs text-left min-w-[200px]">Khuyến nghị (Nếu có)</th>
+                <th className="px-2 py-2 font-bold text-[#00A19A] bg-[#00A19A]/5 border-[#00A19A]/20 uppercase tracking-wider text-xs text-left min-w-[200px]">Kết luận sơ bộ</th>
+                <th className="px-2 py-2 font-bold text-[#00A19A] bg-[#00A19A]/5 border-[#00A19A]/20 uppercase tracking-wider text-xs text-left min-w-[200px]">Khuyến nghị (Nếu có)</th>
             </>
         )}
-        <th className="px-2 py-2 md:px-4 md:py-4 text-center font-bold text-[#00A19A] bg-[#F8FAFC] uppercase tracking-wider text-xs w-32 md:sticky md:right-0 z-20">Xác nhận</th>
+        <th className="px-2 py-2 md:px-4 md:py-4 text-center font-bold text-[#00A19A] bg-[#00A19A]/5 border-[#00A19A]/20 uppercase tracking-wider text-xs w-32 md:sticky md:right-0 z-20">Xác nhận</th>
     </tr>
 </thead>
-                            <tbody className="divide-y border-b">
+                            <tbody className="divide-y divide-[#00A19A]/20 border-b-2 border-[#00A19A]">
                                 {students.map((st, i) => (
-                                    <tr key={st.id} className="hover:bg-slate-100/30 group border-b border-slate-100 last:border-none transition-colors">
+                                    <tr key={st.id} className="hover:bg-slate-100/30 group border-b border-[#00A19A]/20 last:border-none transition-colors">
                                         <td className="px-2 py-1 md:px-3 md:py-4 text-center text-slate-500 bg-transparent md:sticky md:left-0 z-10 font-medium text-xs">{i+1}</td>
                                         <td className="px-3 py-2 bg-transparent text-center">
                                               <span className="font-mono font-bold text-slate-700 bg-slate-100 px-3 py-1.5 rounded-full text-xs">{st.studentCode}</span>
@@ -673,7 +673,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                 ))}
                                 {students.length === 0 && !loading && (
                                     <tr>
-                                        <td colSpan={8} className="px-4 py-12 text-center text-slate-500 bg-[#F8FAFC]">Chưa có dữ liệu học sinh nào thỏa mãn Khối/Hệ môn học này trong kỳ Khảo sát.</td>
+                                        <td colSpan={8} className="px-4 py-12 text-center text-[#00A19A] bg-[#00A19A]/5 border-[#00A19A]/20">Chưa có dữ liệu học sinh nào thỏa mãn Khối/Hệ môn học này trong kỳ Khảo sát.</td>
                                     </tr>
                                 )}
                             </tbody>
@@ -685,7 +685,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
       {isUnlockRequestOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex justify-center items-center z-50 p-4">
           <div className="bg-white rounded-lg w-full max-w-lg shadow-xl overflow-hidden flex flex-col">
-            <div className="p-5 border-b flex justify-between items-center bg-[#F8FAFC]">
+            <div className="p-5 border-b flex justify-between items-center bg-[#00A19A]/5 border-[#00A19A]/20">
               <h3 className="font-bold text-lg text-slate-800">Yêu cầu Mở khóa Form</h3>
               <button onClick={() => setIsUnlockRequestOpen(false)} className="text-slate-400 hover:text-red-500"><X className="w-5 h-5" /></button>
             </div>
