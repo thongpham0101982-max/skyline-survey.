@@ -235,37 +235,44 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
 
         setSaveStatus(prev => ({ ...prev, [st.id]: "saving" }));
         
-        const payload = {
-            studentId: st.id,
-            subjectId: assignment.subjectId,
-            scores: customScores || st.scoreVals || [],
-            comments: customComments || st.commentVals || []
-        };
+        try {
+            const payload = {
+                studentId: st.id,
+                subjectId: assignment.subjectId,
+                scores: customScores || st.scoreVals || [],
+                comments: customComments || st.commentVals || []
+            };
 
-        const res = await fetch("/api/teacher-assessments", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-        });
+            const res = await fetch("/api/teacher-assessments", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
 
-        if (res.ok) {
-            setSaveStatus(prev => ({ ...prev, [st.id]: "saved" }));
-            
-            // Update local state for this student
-            setStudents(prev => prev.map(s => s.id === st.id ? { 
-                ...s, 
-                scoreVals: customScores || s.scoreVals, 
-                commentVals: customComments || s.commentVals 
-            } : s));
+            if (res.ok) {
+                setSaveStatus(prev => ({ ...prev, [st.id]: "saved" }));
+                
+                // Update local state for this student
+                setStudents(prev => prev.map(s => s.id === st.id ? { 
+                    ...s, 
+                    scoreVals: customScores || s.scoreVals, 
+                    commentVals: customComments || s.commentVals 
+                } : s));
 
-            setTimeout(() => setSaveStatus(prev => ({ ...prev, [st.id]: "" })), 2000);
-            
-            if (customScores) {
-              setIsPsychModalOpen(false);
+                setTimeout(() => setSaveStatus(prev => ({ ...prev, [st.id]: "" })), 2000);
+                
+                if (customScores) {
+                    setIsPsychModalOpen(false);
+                }
+            } else {
+                const errData = await res.json().catch(() => ({}));
+                setSaveStatus(prev => ({ ...prev, [st.id]: "error" }));
+                if (customScores) alert("Có lỗi khi lưu kết quả: " + (errData?.error || res.statusText));
             }
-        } else {
+        } catch (err: any) {
+            console.error('saveStudentScore error:', err);
             setSaveStatus(prev => ({ ...prev, [st.id]: "error" }));
-            if (customScores) alert("Có lỗi khi lưu kết quả!");
+            if (customScores) alert("Có lỗi kết nối khi lưu kết quả!");
         }
     };
 
@@ -798,29 +805,35 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
           <PreschoolEvaluationForm 
             student={activePreschoolStudent}
             onSave={async (studentId, scores, comments) => {
-              const res = await fetch("/api/preschool-dev-scores", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ studentId, scores, ...comments })
-              });
-              if (res.ok) {
-                setIsPreschoolModalOpen(false);
-                // Refetch student list to update scoredCount and totalCriteria progress
-                const assignment = availableAssignments.find(a => a.id === selectedAssignmentId) || assignments.find(a => a.id === selectedAssignmentId);
-                if (assignment) {
-                  const systemCode = "";
-                  const grade = "";
-                  setLoading(true);
-                  const batchQueryParam = selectedBatchId === "all" ? "" : selectedBatchId;
-                  const response = await fetch(`/api/teacher-assessments?action=getStudents&periodId=${assignment.periodId}&grade=${grade}&systemCode=${systemCode}&subjectId=${assignment.subjectId}&batchId=${batchQueryParam}`);
-                  if (response.ok) {
-                    const data = await response.json();
-                    setStudents(data);
+              try {
+                const res = await fetch("/api/preschool-dev-scores", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ studentId, scores, ...comments })
+                });
+                if (res.ok) {
+                  setIsPreschoolModalOpen(false);
+                  // Refetch student list to update scoredCount and totalCriteria progress
+                  const assignment = availableAssignments.find(a => a.id === selectedAssignmentId) || assignments.find(a => a.id === selectedAssignmentId);
+                  if (assignment) {
+                    const systemCode = "";
+                    const grade = "";
+                    setLoading(true);
+                    const batchQueryParam = selectedBatchId === "all" ? "" : selectedBatchId;
+                    const response = await fetch(`/api/teacher-assessments?action=getStudents&periodId=${assignment.periodId}&grade=${grade}&systemCode=${systemCode}&subjectId=${assignment.subjectId}&batchId=${batchQueryParam}`);
+                    if (response.ok) {
+                      const data = await response.json();
+                      if (Array.isArray(data)) setStudents(data);
+                    }
+                    setLoading(false);
                   }
-                  setLoading(false);
+                } else {
+                  const errData = await res.json().catch(() => ({}));
+                  throw new Error(errData?.error || "Lưu kết quả đánh giá mầm non thất bại");
                 }
-              } else {
-                throw new Error("Lưu kết quả đánh giá mầm non thất bại");
+              } catch (err: any) {
+                console.error('Preschool save error:', err);
+                throw err;
               }
             }}
             onClose={() => setIsPreschoolModalOpen(false)}

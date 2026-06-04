@@ -64,8 +64,8 @@ export async function POST(req) {
            periodId: data.periodId,
            batchNumber: parseInt(data.batchNumber),
            name: data.name,
-            startDate: new Date(data.startDate),
-            endDate: new Date(data.endDate),
+            startDate: data.startDate ? new Date(data.startDate) : null,
+            endDate: data.endDate ? new Date(data.endDate) : null,
             campusId: data.campusId || null,
             assignedUserId: data.assignedUserId || null,
             status: data.status || "ACTIVE"

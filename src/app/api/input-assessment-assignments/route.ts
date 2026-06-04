@@ -23,7 +23,7 @@ export async function GET(req) {
     
     return NextResponse.json(assignments);
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error?.message || "Internal Server Error" }, { status: 500 });
   }
 }
 
@@ -33,6 +33,9 @@ export async function POST(req) {
     const { action, periodId, batchId, assignments } = body;
     
     if (action === "BULK_ASSIGN") {
+       if (!Array.isArray(assignments)) {
+           return NextResponse.json({ error: "assignments must be an array" }, { status: 400 });
+       }
        let successCount = 0;
        
        // Override mode: delete existing assignments for the specific teacher in this period & batch
@@ -310,7 +313,7 @@ export async function POST(req) {
 
      return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error?.message || "Internal Server Error" }, { status: 500 });
   }
 }
 
@@ -330,7 +333,7 @@ export async function DELETE(req) {
     await prisma.inputAssessmentTeacherAssignment.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error?.message || "Internal Server Error" }, { status: 500 });
   }
 }
 
@@ -349,6 +352,6 @@ export async function PUT(req) {
     
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error?.message || "Internal Server Error" }, { status: 500 });
   }
 }

@@ -28,14 +28,19 @@ export async function GET(req: any) {
             }
         });
 
-        // Fetch preschool assignments
-        const preschoolAssignments = await (prisma as any).preschoolInputAssessmentTeacherAssignment.findMany({
-            where: whereClause,
+        // Fetch preschool assignments (filter by userId only; academicYear filtered below in memory)
+        const preschoolAssignmentsRaw = await (prisma as any).preschoolInputAssessmentTeacherAssignment.findMany({
+            where: { userId: session.user.id },
             include: {
                 batch: true,
                 period: { include: { assignedUser: true } }
             }
         });
+
+        // Filter by academicYear in-memory (relation filter may not work on preschool model)
+        const preschoolAssignments = academicYearId
+            ? preschoolAssignmentsRaw.filter((a: any) => a.period?.academicYearId === academicYearId)
+            : preschoolAssignmentsRaw;
 
         const mappedPreschool = preschoolAssignments.map((a: any) => ({
             id: a.id,
@@ -120,6 +125,11 @@ export async function GET(req: any) {
         const systemCode = searchParams.get("systemCode");
         const subjectId = searchParams.get("subjectId");
         const batchId = searchParams.get("batchId");
+
+        // Guard: periodId is required
+        if (!periodId) {
+            return NextResponse.json([], { status: 200 });
+        }
 
         if (subjectId === "preschool") {
             const where: any = { periodId };
@@ -384,7 +394,7 @@ export async function GET(req: any) {
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
 
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error?.message || "Internal Server Error" }, { status: 500 });
   }
 }
 
@@ -444,7 +454,7 @@ export async function POST(req: any) {
 
     return NextResponse.json(record);
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error?.message || "Internal Server Error" }, { status: 500 });
   }
 }
 
@@ -470,6 +480,6 @@ export async function PUT(req: any) {
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error?.message || "Internal Server Error" }, { status: 500 });
   }
 }

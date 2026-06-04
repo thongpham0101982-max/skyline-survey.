@@ -91,6 +91,9 @@ export async function POST(req) {
     
 
     if (action === "BULK_CREATE") {
+      if (!Array.isArray(data)) {
+          return NextResponse.json({ error: "data must be an array" }, { status: 400 });
+      }
       const results = [];
       const errors = [];
       
