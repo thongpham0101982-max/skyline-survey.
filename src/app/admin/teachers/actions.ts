@@ -62,6 +62,20 @@ async function assignHomeroomClass(teacherId: string, classId: string | null) {
   }
 }
 
+/** Dong bo UserCampusAssignment cho userId */
+async function syncAdditionalCampuses(userId: string, additionalCampusIds: string[]) {
+  // Delete all existing assignments for this user
+  await prisma.userCampusAssignment.deleteMany({ where: { userId } });
+  // Re-create with the new list (skip empty values)
+  const validIds = additionalCampusIds.filter(Boolean);
+  if (validIds.length > 0) {
+    await prisma.userCampusAssignment.createMany({
+      data: validIds.map(campusId => ({ userId, campusId })),
+      skipDuplicates: true
+    });
+  }
+}
+
 export async function createTeacherAction(data: any) {
   try {
     const campusId = data.campusId || await getDefaultCampusId()
@@ -100,6 +114,11 @@ export async function createTeacherAction(data: any) {
       await assignHomeroomClass(teacher.id, data.homeroomClassId)
     }
 
+    // Sync additional campuses (UserCampusAssignment)
+    const additionalCampuses = Array.isArray(data.additionalCampusIds) ? data.additionalCampusIds : [];
+    const allCampuses = Array.from(new Set([campusId, ...additionalCampuses])).filter(Boolean);
+    await syncAdditionalCampuses(userId, allCampuses);
+
     revalidatePath("/admin/teachers")
     revalidatePath("/admin/classes")
     return { success: true }
@@ -135,6 +154,30 @@ export async function updateTeacherAction(data: any) {
         if (teacherName) userUpdate.fullName = teacherName
         if (data.status !== undefined) userUpdate.status = data.status
         await prisma.user.update({ where: { id: teacher.userId }, data: userUpdate }).catch(() => {})
+      }
+    }
+
+    // Sync additional campuses (UserCampusAssignment)
+    if (Array.isArray(data.additionalCampusIds)) {
+      const teacher = await prisma.teacher.findUnique({ where: { id }, select: { userId: true, campusId: true } });
+      if (teacher) {
+        const finalCampusId = campusId !== undefined ? campusId : teacher.campusId;
+        const allCampuses = Array.from(new Set([finalCampusId, ...data.additionalCampusIds])).filter(Boolean);
+        await syncAdditionalCampuses(teacher.userId, allCampuses);
+      }
+    } else if (campusId !== undefined) {
+      // Primary campus changed, but additional campuses was not sent/modified.
+      // We should make sure the new primary campus is in UserCampusAssignment!
+      const teacher = await prisma.teacher.findUnique({ 
+        where: { id }, 
+        select: { userId: true, campusId: true, user: { include: { campusAssignments: true } } } 
+      });
+      if (teacher) {
+        const currentAdditional = teacher.user.campusAssignments
+          .map(a => a.campusId)
+          .filter(cid => cid !== teacher.campusId); // remove old primary
+        const allCampuses = Array.from(new Set([campusId, ...currentAdditional])).filter(Boolean);
+        await syncAdditionalCampuses(teacher.userId, allCampuses);
       }
     }
 
@@ -185,7 +228,23 @@ export async function importTeachersAction(rows: any[], academicYearId?: string)
 
       const departmentId = await resolveDepartmentId(row.department)
       const mainSubjectId = await resolveSubjectId(row.mainSubject)
-      const campusId = await resolveCampusId(row.campus) || defaultCampusId
+      
+      let campusId = defaultCampusId;
+      let additionalCampusIds = [];
+
+      if (row.campus) {
+        const campusParts = typeof row.campus === "string"
+          ? row.campus.split(/[,;|]/).map(s => s.trim())
+          : [row.campus];
+        
+        const primaryResolved = await resolveCampusId(campusParts[0]);
+        if (primaryResolved) campusId = primaryResolved;
+
+        for (let i = 1; i < campusParts.length; i++) {
+          const cid = await resolveCampusId(campusParts[i]);
+          if (cid) additionalCampusIds.push(cid);
+        }
+      }
 
       const teacher = await prisma.teacher.create({
         data: {
@@ -195,6 +254,10 @@ export async function importTeachersAction(rows: any[], academicYearId?: string)
           campusId, status: "ACTIVE"
         }
       })
+
+      // Sync additional campuses (UserCampusAssignment)
+      const allCampuses = Array.from(new Set([campusId, ...additionalCampusIds])).filter(Boolean);
+      await syncAdditionalCampuses(userId, allCampuses);
 
       if (row.homeroomClass) {
         const matchedClass = await prisma.class.findFirst({

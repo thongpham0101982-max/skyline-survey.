@@ -39,7 +39,18 @@ export default async function TeacherManagerPage() {
     where: teacherWhere,
     orderBy: { teacherName: "asc" },
     include: {
-      user: { select: { email: true, status: true } },
+      user: {
+        select: {
+          id: true,
+          email: true,
+          status: true,
+          campusAssignments: {
+            include: {
+              campus: { select: { id: true, campusName: true, campusCode: true } }
+            }
+          }
+        }
+      },
       departmentRel: { select: { name: true } },
       mainSubjectRel: { select: { subjectName: true } },
       campus: { select: { campusName: true } }
@@ -74,6 +85,11 @@ export default async function TeacherManagerPage() {
     mainSubjectId: t.mainSubjectId || null,
     campus: t.campus?.campusName || null,
     campusId: t.campusId || null,
+    additionalCampuses: t.user?.campusAssignments?.map(ca => ({
+      id: ca.campus.id,
+      campusName: ca.campus.campusName
+    })).filter(ac => ac.id !== t.campusId) || [],
+    additionalCampusIds: t.user?.campusAssignments?.map(ca => ca.campusId).filter(cid => cid !== t.campusId) || [],
     homeroomClass: t.homeroomClass || null,
     homeroomClassId: classHomeroomMap.get(t.id)?.classId || null,
     email: t.email || null,

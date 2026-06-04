@@ -12,9 +12,10 @@ import {
 const EMPTY_NEW = {
   teacherCode: "", teacherName: "",
   email: "", phone: "",
-  dateOfBirth: "", department: "", mainSubject: "", campus: ""
+  dateOfBirth: "", department: "", mainSubject: "", campus: "",
+  additionalCampusIds: []
 }
-const EMPTY_EDIT = { teacherName: "", dateOfBirth: "", department: "", mainSubject: "", campusId: "", status: "ACTIVE" }
+const EMPTY_EDIT = { teacherName: "", dateOfBirth: "", department: "", mainSubject: "", campusId: "", status: "ACTIVE", email: "", additionalCampusIds: [] }
 
 export function TeacherManagerClient({ 
   initialTeachers, years, defaultYearId, classes, departments, subjects, campuses, isCampusLocked = false, defaultCampusId = null 
@@ -78,6 +79,11 @@ export function TeacherManagerClient({
         mainSubject: (subjects || []).find(s => s.subjectName === newForm.mainSubject)?.subjectName || newForm.mainSubject || null,
         campus: selectedCampus?.campusName || null,
         campusId: selectedCampus?.id || null,
+        additionalCampuses: (campuses || []).filter(c => newForm.additionalCampusIds?.includes(c.id)).map(c => ({
+          id: c.id,
+          campusName: c.campusName
+        })),
+        additionalCampusIds: newForm.additionalCampusIds || [],
         homeroomClass: null,
         email: newForm.email || null,
         phone: newForm.phone || null,
@@ -103,7 +109,8 @@ export function TeacherManagerClient({
       mainSubject: t.mainSubject || "",
       campusId: t.campusId || "",
       status: t.status || "ACTIVE",
-      email: t.email || ""
+      email: t.email || "",
+      additionalCampusIds: t.additionalCampusIds || []
     })
   }
 
@@ -120,6 +127,11 @@ export function TeacherManagerClient({
         campusId: editForm.campusId || null,
         email: editForm.email || null,
         campus: (campuses || []).find(c => c.id === editForm.campusId)?.campusName || null,
+        additionalCampuses: (campuses || []).filter(c => editForm.additionalCampusIds?.includes(c.id)).map(c => ({
+          id: c.id,
+          campusName: c.campusName
+        })),
+        additionalCampusIds: editForm.additionalCampusIds || [],
         status: editForm.status
       } : t))
       setEditingId(null)
@@ -303,6 +315,37 @@ export function TeacherManagerClient({
               </select>
             </div>
           </div>
+          {/* Chọn cơ sở phụ */}
+          <div className="mt-4">
+            <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-widest pl-1">Cơ sở làm việc thêm (Chọn nhiều)</label>
+            <div className="flex flex-wrap gap-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
+              {(campuses || []).filter(c => {
+                const selectedCampus = (campuses || []).find(cx => cx.campusName === newForm.campus);
+                return c.id !== selectedCampus?.id;
+              }).map(c => {
+                const isChecked = newForm.additionalCampusIds?.includes(c.id);
+                return (
+                  <label key={c.id} className="flex items-center gap-1.5 cursor-pointer bg-white px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-600 hover:bg-indigo-50 hover:border-[#00A19A]/30 transition-all select-none">
+                    <input type="checkbox" checked={isChecked} onChange={() => {
+                      const current = newForm.additionalCampusIds || [];
+                      if (current.includes(c.id)) {
+                        setNewForm({ ...newForm, additionalCampusIds: current.filter(x => x !== c.id) });
+                      } else {
+                        setNewForm({ ...newForm, additionalCampusIds: [...current, c.id] });
+                      }
+                    }} className="w-3.5 h-3.5 text-indigo-600 rounded focus:ring-indigo-100" />
+                    {c.campusName}
+                  </label>
+                );
+              })}
+              {(campuses || []).filter(c => {
+                const selectedCampus = (campuses || []).find(cx => cx.campusName === newForm.campus);
+                return c.id !== selectedCampus?.id;
+              }).length === 0 && (
+                <span className="text-xs text-slate-400 italic">Không có cơ sở khác</span>
+              )}
+            </div>
+          </div>
           <div className="flex gap-3 mt-6 pt-5 border-t border-slate-100">
             <button onClick={handleCreate} disabled={saving}
               className="px-8 py-2.5 bg-[#00A19A] hover:bg-[#008c85] text-white rounded-xl font-black text-sm shadow-xl shadow-indigo-200 transition-all active:scale-95">
@@ -364,17 +407,58 @@ export function TeacherManagerClient({
                     </td>
                     <td className="px-5 py-4">
                       {isEditing ? (
-                        <select value={editForm.campusId} onChange={e => setEditForm({...editForm, campusId: e.target.value})}
-                          className="border border-indigo-300 rounded-lg px-1.5 py-1.5 text-xs outline-none bg-white font-bold w-32">
-                          <option value="">-- Chọn Cơ sở --</option>
-                          {(campuses || []).map(c => (
-                            <option key={c.id} value={c.id}>{c.campusName}</option>
-                          ))}
-                        </select>
+                        <div className="flex flex-col gap-2">
+                          <select value={editForm.campusId} onChange={e => {
+                            const newCampusId = e.target.value;
+                            setEditForm({
+                              ...editForm, 
+                              campusId: newCampusId,
+                              additionalCampusIds: (editForm.additionalCampusIds || []).filter(x => x !== newCampusId)
+                            });
+                          }}
+                            className="border border-indigo-300 rounded-lg px-1.5 py-1.5 text-xs outline-none bg-white font-bold w-32">
+                            <option value="">-- Chọn Cơ sở --</option>
+                            {(campuses || []).map(c => (
+                              <option key={c.id} value={c.id}>{c.campusName}</option>
+                            ))}
+                          </select>
+                          
+                          {/* Additional campuses selection */}
+                          <div className="flex flex-col gap-1 p-2 bg-slate-50 rounded-lg border border-slate-200 max-h-32 overflow-y-auto w-44">
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Cơ sở làm việc thêm:</p>
+                            {(campuses || []).filter(c => c.id !== editForm.campusId).map(c => {
+                              const isChecked = editForm.additionalCampusIds?.includes(c.id);
+                              return (
+                                <label key={c.id} className="flex items-center gap-1.5 cursor-pointer hover:bg-slate-100 p-0.5 rounded text-[10px] font-bold text-slate-600 select-none">
+                                  <input type="checkbox" checked={isChecked} onChange={() => {
+                                    const current = editForm.additionalCampusIds || [];
+                                    if (current.includes(c.id)) {
+                                      setEditForm({ ...editForm, additionalCampusIds: current.filter(x => x !== c.id) });
+                                    } else {
+                                      setEditForm({ ...editForm, additionalCampusIds: [...current, c.id] });
+                                    }
+                                  }} className="w-3 h-3 text-indigo-600 rounded" />
+                                  {c.campusName}
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </div>
                       ) : (
-                        <div className="flex items-center gap-1.5 text-slate-600 font-bold text-xs">
-                          <Building2 className="w-3.5 h-3.5 text-slate-300" />
-                          {t.campus || "—"}
+                        <div className="flex flex-col gap-1 text-slate-600 font-bold text-xs">
+                          <div className="flex items-center gap-1.5">
+                            <Building2 className="w-3.5 h-3.5 text-slate-300" />
+                            <span className="font-extrabold text-slate-800">{t.campus || "—"}</span>
+                          </div>
+                          {t.additionalCampuses && t.additionalCampuses.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-0.5 pl-5">
+                              {t.additionalCampuses.map((ac) => (
+                                <span key={ac.id} className="text-[9px] bg-slate-100 text-slate-500 border border-slate-200 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
+                                  {ac.campusName}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       )}
                     </td>
