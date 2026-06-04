@@ -82,7 +82,7 @@ export default async function ParentDashboard() {
         {/* Children Selection Logic - Premium Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
            {children.map((child: any) => (
-             <div key={child.id} className="bg-white rounded-[2.5rem] border border-slate-200 p-8 hover:shadow-2xl transition-all group relative overflow-hidden">
+             <div key={child.id} className="bg-white rounded-[2.5rem] border-2 border-teal-100 p-8 hover:shadow-2xl transition-all group relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-full -mr-12 -mt-12 opacity-50 transition-transform group-hover:scale-110" />
                 <div className="relative z-10">
                    <div className="flex justify-between items-start mb-6">

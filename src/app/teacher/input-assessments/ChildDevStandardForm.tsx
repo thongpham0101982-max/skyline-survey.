@@ -112,7 +112,7 @@ export default function ChildDevStandardForm({ student, onSave, isLocked, onClos
             </div>
 
             <div className="flex-1 p-3 md:p-6 max-w-5xl mx-auto w-full space-y-6 pb-24">
-                <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col sm:flex-row gap-5 items-center relative overflow-hidden">
+                <div className="bg-white rounded-2xl p-5 shadow-sm border-2 border-blue-100 flex flex-col sm:flex-row gap-5 items-center relative overflow-hidden">
                     <div className="w-16 h-16 bg-gradient-to-tr from-sky-400 to-blue-600 rounded-full flex items-center justify-center text-white shadow-md shrink-0">
                         <User size={32} />
                     </div>
@@ -137,7 +137,7 @@ export default function ChildDevStandardForm({ student, onSave, isLocked, onClos
                     </div>
                 </div>
 
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="bg-white rounded-2xl shadow-sm border-2 border-amber-100 overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left border-collapse">
                             <thead className="bg-slate-50 border-b border-slate-200">
@@ -255,7 +255,7 @@ export default function ChildDevStandardForm({ student, onSave, isLocked, onClos
                     </div>
                 </div>
 
-                <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+                <div className="bg-white rounded-2xl p-5 shadow-sm border-2 border-indigo-100">
                     <h3 className="font-bold text-slate-800 text-sm mb-3 uppercase tracking-wider flex items-center gap-2">
                         <span className="w-2 h-6 bg-sky-500 rounded-full inline-block"></span>
                         Nhận xét chung

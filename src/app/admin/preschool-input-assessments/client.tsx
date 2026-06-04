@@ -4874,7 +4874,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       {/* Quick Email Modal Overlay */}
       {isEmailModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex justify-center items-center z-[150] p-4 overflow-y-auto no-print">
-          <div className="bg-white rounded-3xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-slate-200 animate-in fade-in zoom-in-95 duration-300">
+          <div className="bg-white rounded-3xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border-2 border-emerald-100 animate-in fade-in zoom-in-95 duration-300">
             {/* Header */}
             <div className="bg-[#0c363f] p-6 text-white shrink-0 relative overflow-hidden border-b border-[#14b8a6]/10">
               <div className="absolute top-0 right-0 p-8 opacity-10">
@@ -4905,7 +4905,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 custom-scrollbar bg-[#f8fafc]">
               
               {/* Recipient Input Configuration Panel */}
-              <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4 text-left">
+              <div className="bg-white p-6 rounded-3xl border-2 border-violet-100/80 shadow-sm space-y-4 text-left">
                 {/* TO field */}
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5 ml-1">Địa chỉ Email người nhận (To) <span className="text-rose-500">*</span></label>
@@ -4982,7 +4982,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               </div>
 
               {/* Email Subject Block */}
-              <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4 text-left">
+              <div className="bg-white p-6 rounded-3xl border-2 border-rose-100/80 shadow-sm space-y-4 text-left">
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5 ml-1">Tiêu đề thư Email gửi đi <span className="text-rose-500">*</span></label>
                   <input 
@@ -5008,7 +5008,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               </div>
 
               {/* Target Students list with Checkboxes */}
-              <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4 text-left">
+              <div className="bg-white p-6 rounded-3xl border-2 border-teal-100/80 shadow-sm space-y-4 text-left">
                 <div className="flex items-center justify-between">
                   <div>
                     <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest block">Danh sách học sinh gửi thư ({emailStudents.filter(s => s.checked !== false).length}/{emailStudents.length} học sinh)</span>

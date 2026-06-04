@@ -126,7 +126,7 @@ export function AchievementsClient({ initialData }) {
   const currentFields = (!isNatureOther && CATEGORIES[formData.nature]) ? CATEGORIES[formData.nature] : [];
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200">
+    <div className="bg-white rounded-2xl shadow-sm border-2 border-amber-100">
       <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 rounded-t-2xl">
         <div className="flex items-center gap-3">
            <GraduationCap className="w-5 h-5 text-indigo-600" />

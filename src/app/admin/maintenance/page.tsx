@@ -28,7 +28,7 @@ export default async function MaintenancePage() {
          <StatCard label="Tổng User" value={stats.users} />
       </div>
 
-      <div className="bg-white rounded-[2rem] p-10 border border-slate-200 shadow-sm space-y-8">
+      <div className="bg-white rounded-[2rem] p-10 border-2 border-amber-100 shadow-sm space-y-8">
          <div className="flex justify-between items-start">
             <div className="space-y-1">
                <h3 className="text-xl font-black text-slate-800">Đồng bộ Tài khoản Portal</h3>
@@ -47,7 +47,7 @@ export default async function MaintenancePage() {
 
 function StatCard({ label, value }: any) {
   return (
-    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm text-center">
+    <div className="bg-white p-6 rounded-2xl border-2 border-indigo-100 shadow-sm text-center">
        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{label}</p>
        <p className="text-3xl font-black text-slate-800">{value}</p>
     </div>

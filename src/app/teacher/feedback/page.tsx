@@ -76,7 +76,7 @@ export default async function TeacherFeedbackPage() {
       
       <div className="grid gap-4 mt-8">
         {feedbacks.length === 0 ? (
-          <div className="bg-white rounded-xl p-12 text-center border border-slate-200">
+          <div className="bg-white rounded-xl p-12 text-center border-2 border-teal-100">
             <MessageSquare className="w-12 h-12 text-slate-300 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-slate-900">Chưa có phản hồi nào</h3>
             <p className="text-slate-500 mt-1">Hiện tại chưa có học sinh nào để lại ý kiến đóng góp, hoặc các ý kiến đều là rỗng ("không", "tốt").</p>

@@ -236,7 +236,7 @@ export function ResultsDashboard({ periodId, periodName, periodCode, questions, 
              { label: 'Tổng số phiếu', val: filteredForms.length, sub: 'Đã hoàn thành', icon: <ClipboardList className="w-5 h-5" />, bg: 'bg-white', text: 'text-slate-900', trend: (stats.completionRate + '% tỷ lệ') },
              { label: 'Phản hồi chi tiết', val: questionAnalytics.reduce((a, b) => a + b.opinions.length, 0), sub: 'Ý kiến đóng góp', icon: <MessageSquare className="w-5 h-5" />, bg: 'bg-white', text: 'text-slate-900', trend: 'Cần phản hồi' }
            ].map((k, i) => (
-             <div key={i} className="group relative bg-white p-7 rounded-[2rem] border border-slate-200/60 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden">
+             <div key={i} className="group relative bg-white p-7 rounded-[2rem] border-2 border-rose-100/60 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-full -mr-10 -mt-10 group-hover:scale-110 transition-transform duration-500" />
                 <div className="relative z-10">
                    <div className="flex justify-between items-center mb-6">

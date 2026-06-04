@@ -186,7 +186,7 @@ export default async function HsDanhSachPage() {
             <div className="grid gap-4">
               {allItems.filter(i => i.status === 'OPEN' || i.status === 'UPCOMING').map(item => (
                 <div key={item.id} 
-                  className="group bg-white rounded-[2rem] border border-slate-200 shadow-sm hover:shadow-xl hover:border-teal-100 transition-all duration-300 p-2 overflow-hidden relative"
+                  className="group bg-white rounded-[2rem] border-2 border-teal-100 shadow-sm hover:shadow-xl hover:border-teal-100 transition-all duration-300 p-2 overflow-hidden relative"
                 >
                   {/* Status Indicator */}
                   <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">

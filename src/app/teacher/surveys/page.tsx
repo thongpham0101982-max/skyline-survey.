@@ -65,7 +65,7 @@ export default async function TeacherSurveysPage() {
             const isActive = survey.isActive;
 
             return (
-              <div key={survey.id} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow group">
+              <div key={survey.id} className="bg-white rounded-xl shadow-sm border-2 border-teal-100 overflow-hidden hover:shadow-md transition-shadow group">
                 <div className="p-6">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex-1">

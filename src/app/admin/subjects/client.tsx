@@ -126,7 +126,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
         </div>
       </div>
 
-      <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200/80 animate-in fade-in slide-in-from-bottom-4 duration-500 border border-slate-200">
+      <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200/80 animate-in fade-in slide-in-from-bottom-4 duration-500 border-2 border-indigo-100">
         <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
           <div>
             <h3 className="font-bold text-slate-700">Danh mục môn học ({displayedSubjects.length})</h3>

@@ -212,7 +212,7 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
   }
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+    <div className="bg-white p-6 rounded-xl shadow-sm border-2 border-emerald-100">
       {/* Modal for Add/Edit */}
       
       {/* Modal for Assign Survey */}

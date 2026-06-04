@@ -38,7 +38,7 @@ export default async function StudentSurveyPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       {/* Student Welcome Card */}
-      <div className="bg-white rounded-[2.5rem] p-8 border border-slate-200 shadow-sm relative overflow-hidden">
+      <div className="bg-white rounded-[2.5rem] p-8 border-2 border-indigo-100 shadow-sm relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-slate-50 rounded-full -mr-20 -mt-20 opacity-50" />
         <div className="relative z-10 flex flex-col md:flex-row justify-between gap-6">
           <div>
@@ -73,7 +73,7 @@ export default async function StudentSurveyPage() {
 
         <div className="grid gap-4">
           {surveys.length === 0 ? (
-            <div className="bg-white rounded-[2rem] p-16 text-center border border-slate-200 border-dashed">
+            <div className="bg-white rounded-[2rem] p-16 text-center border-2 border-emerald-100 border-dashed">
                <div className="bg-slate-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Clock className="w-10 h-10 text-slate-300" />
                </div>

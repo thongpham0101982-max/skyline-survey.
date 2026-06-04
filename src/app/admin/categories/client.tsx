@@ -143,7 +143,7 @@ export function CategoriesClient({ initialCategories }) {
       )}
 
       {/* List */}
-      <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200/80 animate-in fade-in slide-in-from-bottom-4 duration-500 border border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200/80 animate-in fade-in slide-in-from-bottom-4 duration-500 border-2 border-indigo-100 overflow-hidden">
         <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center gap-3">
           <Tag className="w-5 h-5 text-indigo-500" />
           <span className="font-bold text-slate-700">Danh Sach Danh Muc ({categories.length})</span>

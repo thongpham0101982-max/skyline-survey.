@@ -80,7 +80,7 @@ export default function DepartmentsClient() {
         <button onClick={() => { setEditingId(null); setForm({ code: "", name: "", description: "", blockCM: "" }); setIsOpen(true); }} className="px-4 py-2.5 bg-[#00A19A] text-white rounded-xl shadow-sm hover:bg-[#008c85] font-semibold flex items-center gap-2"><Plus className="w-5 h-5"/>Thêm Tổ / Phòng</button>
       </div>
 
-      <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200/80 overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500 overflow-hidden">
+      <div className="bg-white rounded-[1.5rem] shadow-sm border-2 border-violet-100/80 overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500 overflow-hidden">
         <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-wrap gap-3 justify-between items-center">
           <div className="flex flex-wrap gap-3 items-center">
             <div className="relative w-80">

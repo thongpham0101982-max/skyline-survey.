@@ -57,7 +57,7 @@ export function CategoriesClient() {
 
   return (
     <div className="space-y-5">
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border-2 border-rose-100 overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 bg-slate-50/50">
           <h3 className="font-bold text-slate-800 flex items-center gap-2">
             <BookOpen className="w-5 h-5 text-indigo-500" />

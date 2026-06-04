@@ -83,7 +83,7 @@ export default async function ParentSurveysPage() {
           {(surveyTasks ?? []).map((task: any, idx: number) => {
             const isCompleted = task.status === "COMPLETED";
             return (
-              <div key={idx} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow flex flex-col">
+              <div key={idx} className="bg-white rounded-xl shadow-sm border-2 border-rose-100 overflow-hidden hover:shadow-md transition-shadow flex flex-col">
                 <div className="p-6 flex-grow">
                   <div className="flex justify-between items-start mb-4">
                     <div>

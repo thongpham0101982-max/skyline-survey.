@@ -17,7 +17,7 @@ export default async function ChildrenPage() {
       
       <div className="grid gap-6">
         {children.map(child => (
-          <div key={child.id} className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+          <div key={child.id} className="bg-white p-6 rounded-xl shadow-sm border-2 border-violet-100">
             <h2 className="text-xl font-semibold">{child.studentName}</h2>
             <p className="text-slate-500 mt-1">Class: {child.class.className}</p>
             <p className="text-slate-500">Campus: {child.campus.campusName}</p>

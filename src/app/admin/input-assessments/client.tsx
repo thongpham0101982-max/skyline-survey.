@@ -3311,7 +3311,7 @@ return {
               Chế độ xem (Đọc dữ liệu). Các chức năng Thêm mới, Chỉnh sửa và Xóa bị khóa đối với tài khoản này.
             </div>
           )}
-          <div className="flex items-center gap-4 bg-white p-5 rounded-3xl border border-slate-200 shadow-sm">
+          <div className="flex items-center gap-4 bg-white p-5 rounded-3xl border-2 border-teal-100 shadow-sm">
              <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center flex-shrink-0 animate-pulse">
                 <UserCheck className="w-6 h-6 text-indigo-500"/>
              </div>
@@ -3884,7 +3884,7 @@ return {
                 {/* Mobile Card List View */}
                 <div className="md:hidden flex flex-col p-4 gap-4 bg-slate-50/50">
                   {filtStu.map(s => (
-                    <div key={s.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm relative">
+                    <div key={s.id} className="bg-white p-4 rounded-2xl border-2 border-blue-100 shadow-sm relative">
                       <div className="flex justify-between items-start mb-3">
                         <div className="flex flex-col">
                           <span className="font-mono text-xs font-black text-[#00A19A] mb-1">{s.studentCode}</span>
@@ -4043,7 +4043,7 @@ return {
           )}
           {/* TOP PANEL: Form ThemMoi / Sua */}
           {!isReadOnly && (
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-amber-100">
             <div className="flex items-center gap-3 mb-5 border-b pb-4">
               <div className="bg-indigo-100 p-2 rounded-xl text-indigo-600"><Settings className="w-5 h-5"/></div>
               <div>
@@ -4141,7 +4141,7 @@ return {
           )}
 
           {/* BOTTOM PANEL: Table of existing configurations */}
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-sm border-2 border-indigo-100 overflow-hidden">
             <div className="px-6 py-4 border-b bg-slate-50/80 flex justify-between items-center">
               <h4 className="font-bold text-slate-800 flex items-center gap-2"><Layers className="w-4 h-4 text-indigo-500"/> Danh sách Cấu hình đã lưu</h4>
               <button onClick={fetchAllMappings} className="text-xs text-indigo-600 hover:underline font-medium">Làm mới</button>
@@ -5846,7 +5846,7 @@ return {
                                         if (!val) return null;
 
                                         return (
-                                          <div key={colIdx} className="bg-white p-3.5 rounded-2xl border border-slate-200/60 shadow-sm flex items-start gap-3 text-left">
+                                          <div key={colIdx} className="bg-white p-3.5 rounded-2xl border-2 border-emerald-100/60 shadow-sm flex items-start gap-3 text-left">
                                             <div className="w-7 h-7 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 text-xs font-black select-none shrink-0">
                                               {colName.charAt(0)}
                                             </div>
@@ -7175,7 +7175,7 @@ return {
       {/* Email Modal Overlay */}
                   {isEmailModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex justify-center items-center z-[150] p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-slate-200 animate-in fade-in zoom-in-95 duration-300">
+          <div className="bg-white rounded-3xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border-2 border-violet-100 animate-in fade-in zoom-in-95 duration-300">
             {/* Header */}
             <div className="bg-[#0c363f] p-6 text-white shrink-0 relative overflow-hidden border-b border-[#14b8a6]/10">
               <div className="absolute top-0 right-0 p-8 opacity-10">
@@ -7206,7 +7206,7 @@ return {
             <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 custom-scrollbar bg-[#f8fafc]">
               
               {/* Recipient Checkbox Configuration Panel */}
-              <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
+              <div className="bg-white p-6 rounded-3xl border-2 border-rose-100/80 shadow-sm space-y-4">
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                   <div>
                     <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest block">
@@ -7331,7 +7331,7 @@ return {
               </div>
               
               {/* Form Config Card */}
-              <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white p-6 rounded-3xl border-2 border-teal-100/80 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="flex flex-col gap-2">
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">
                     NGƯỜI NHẬN (EMAIL)
@@ -7362,7 +7362,7 @@ return {
               </div>
 
               {/* Attach Letters Option Switch */}
-              <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm flex items-center justify-between transition-all hover:shadow-md">
+              <div className="bg-white p-5 rounded-3xl border-2 border-blue-100/80 shadow-sm flex items-center justify-between transition-all hover:shadow-md">
                 <div className="flex flex-col gap-0.5">
                   <span className="text-xs font-black text-slate-800 uppercase tracking-widest">Có đính kèm File PDF (Thư chúc mừng & Bản cam kết)</span>
                   <span className="text-[11px] text-slate-400 font-semibold leading-relaxed">Tự động tạo và đính kèm liên kết tệp PDF Thư chúc mừng / Bản cam kết cho từng học sinh đạt yêu cầu</span>

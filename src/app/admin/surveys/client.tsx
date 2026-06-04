@@ -113,7 +113,7 @@ export function AdminSurveysClient({ initialSurveys, years, campuses, createActi
         <StatCard title="Tổng Đợt Khảo Sát" value={stats.total} icon={ClipboardList} color="text-[#00A19A]" bg="bg-[#00A19A]/10" />
         <StatCard title="Đang Hoạt Động" value={stats.active} icon={CheckCircle2} color="text-emerald-600" bg="bg-emerald-50" />
         <StatCard title="Sắp Diễn Ra" value={stats.upcoming} icon={Clock} color="text-amber-600" bg="bg-amber-50" />
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 flex flex-col justify-center">
+        <div className="bg-white p-5 rounded-2xl border-2 border-emerald-100 flex flex-col justify-center">
             <button 
               onClick={handleOpenCreate}
               className="w-full flex items-center justify-center gap-2 py-3 bg-[#BE1E2E] hover:bg-[#a01927] text-white rounded-xl text-sm font-bold shadow-lg shadow-red-100 transition-all active:scale-[0.98]"
@@ -321,7 +321,7 @@ export function AdminSurveysClient({ initialSurveys, years, campuses, createActi
 
 function StatCard({ title, value, icon: Icon, color, bg }: any) {
   return (
-    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+    <div className="bg-white p-5 rounded-2xl border-2 border-violet-100 shadow-sm">
       <div className="flex justify-between items-center">
         <div>
            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5">{title}</p>

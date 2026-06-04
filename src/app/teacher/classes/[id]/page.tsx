@@ -124,25 +124,25 @@ export default async function TeacherClassDetailPage({ params }: any) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <div className="bg-white p-6 rounded-xl shadow-sm border-2 border-blue-100">
            <h3 className="text-sm font-medium text-slate-500 mb-2">Tổng số Học sinh</h3>
            <div className="text-3xl font-bold text-slate-900">{totalStudents}</div>
         </div>
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <div className="bg-white p-6 rounded-xl shadow-sm border-2 border-amber-100">
            <h3 className="text-sm font-medium text-slate-500 mb-2">Tỷ lệ Hoàn thành</h3>
            <div className="text-3xl font-bold text-slate-900">{completionRate > 100 ? 100 : completionRate.toFixed(1)}%</div>
         </div>
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <div className="bg-white p-6 rounded-xl shadow-sm border-2 border-indigo-100">
            <h3 className="text-sm font-medium text-slate-500 mb-2">Hài lòng Trung bình</h3>
            <div className="text-3xl font-bold text-slate-900">{averageSatisfaction.toFixed(1)} / 5.0</div>
         </div>
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <div className="bg-white p-6 rounded-xl shadow-sm border-2 border-emerald-100">
            <h3 className="text-sm font-medium text-slate-500 mb-2">Chỉ số NPS</h3>
            <div className="text-3xl font-bold text-slate-900">{nps}</div>
         </div>
       </div>
       
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col mt-8">
+      <div className="bg-white rounded-xl shadow-sm border-2 border-violet-100 p-6 flex flex-col mt-8">
         <h3 className="text-xl font-bold mb-4">Trạng thái Khảo sát theo Học sinh</h3>
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">

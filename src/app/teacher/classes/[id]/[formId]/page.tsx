@@ -48,7 +48,7 @@ export default async function TeacherViewResultPage({ params }: any) {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border-2 border-rose-100 overflow-hidden">
         <div className="p-6 border-b border-slate-100 bg-slate-50">
           <h2 className="font-semibold text-slate-800">Chi tiết câu trả lời</h2>
         </div>

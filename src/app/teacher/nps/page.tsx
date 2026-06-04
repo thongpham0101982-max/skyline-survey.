@@ -96,7 +96,7 @@ export default async function TeacherNpsPage() {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 col-span-1 md:col-span-3 flex flex-col items-center justify-center py-12">
+        <div className="bg-white rounded-xl p-6 shadow-sm border-2 border-violet-100 col-span-1 md:col-span-3 flex flex-col items-center justify-center py-12">
            <h2 className="text-xl font-medium text-slate-500 mb-4">Chỉ số NPS Tổng thể (Các lớp của bạn)</h2>
            <div className="text-6xl font-black text-[#00A19A] mb-4">{nps}</div>
            <div className="flex gap-8 text-sm font-medium">
@@ -110,7 +110,7 @@ export default async function TeacherNpsPage() {
            const t = cData.p + cData.d + cData.pa;
            const score = t > 0 ? Math.round(((cData.p - cData.d) / t) * 100) : 0;
            return (
-             <div key={cData.name} className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+             <div key={cData.name} className="bg-white rounded-xl p-6 shadow-sm border-2 border-rose-100">
                 <h3 className="text-lg font-bold text-slate-800 mb-4">{cData.name}</h3>
                 <div className="text-4xl font-black text-slate-900 mb-4">{score}</div>
                 <div className="space-y-2 text-sm">

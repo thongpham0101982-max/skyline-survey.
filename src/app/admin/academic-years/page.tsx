@@ -180,7 +180,7 @@ export default async function AcademicYearsPage() {
         <p className="text-slate-500 mt-2 text-sm">Mọi tài khoản Phụ huynh và Giáo viên đều thuộc về một Năm học cụ thể.</p>
       </div>
 
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+      <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-blue-100">
         <h2 className="text-base font-bold mb-4 text-slate-800">Tạo Năm học Mới</h2>
         <form action={createAcademicYear} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
           <div>

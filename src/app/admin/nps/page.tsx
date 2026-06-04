@@ -29,7 +29,7 @@ export default async function NpsDashboardPage() {
 
   return (
     <div className="space-y-8 pb-20 animate-in fade-in duration-700">
-      <div className="relative bg-white rounded-[2rem] p-8 border border-slate-200 shadow-sm overflow-hidden">
+      <div className="relative bg-white rounded-[2rem] p-8 border-2 border-rose-100 shadow-sm overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-[#BE1E2E]/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
         <div className="relative z-10 flex items-center gap-4">
           <div className="w-16 h-16 rounded-[1.5rem] bg-[#BE1E2E]/10 flex items-center justify-center">
@@ -52,7 +52,7 @@ export default async function NpsDashboardPage() {
           const submitted = submittedMap[p.id] ?? 0
           const rate = total > 0 ? Math.round((submitted / total) * 100) : 0
           return (
-            <div key={p.id} className="bg-white rounded-[2rem] border border-slate-200 shadow-sm hover:shadow-xl hover:border-indigo-100 transition-all duration-300 p-6 group">
+            <div key={p.id} className="bg-white rounded-[2rem] border-2 border-indigo-100 shadow-sm hover:shadow-xl hover:border-indigo-200 transition-all duration-300 p-6 group">
               <div className="flex flex-col md:flex-row md:items-center gap-6">
                 <div className="w-14 h-14 rounded-[1.2rem] bg-indigo-50 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-300">
                   <ClipboardList className="w-7 h-7 text-indigo-500" />

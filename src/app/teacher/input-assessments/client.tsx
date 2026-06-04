@@ -433,7 +433,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     </div>
 )}
 {currentAssignment && (
-                <div className="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden mt-6">
+                <div className="bg-white rounded-xl shadow-md border-2 border-emerald-100 overflow-hidden mt-6">
                     <div className="px-6 py-4 border-b bg-[#F0FDFA] flex justify-between items-center">
                         <div>
                             <h3 className="font-bold text-slate-800 flex items-center gap-2 text-lg">

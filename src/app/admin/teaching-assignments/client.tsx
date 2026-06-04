@@ -83,7 +83,7 @@ export function TeachingClient({ teachers, classes, subjects, years, initialAssi
   return (
     <div className="flex flex-col lg:flex-row gap-6 items-start">
       {/* LEFT: MAIN TABLE */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 flex-1 w-full overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border-2 border-teal-100 flex-1 w-full overflow-hidden">
         <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
           <div className="font-bold text-slate-700 flex items-center"><Layers className="w-5 h-5 mr-2 text-indigo-500"/>Bảng phân công</div>
           <select value={selectedYear} onChange={e=>setSelectedYear(e.target.value)} className="p-2 rounded-lg border border-slate-200 font-semibold text-sm outline-none">
@@ -117,7 +117,7 @@ export function TeachingClient({ teachers, classes, subjects, years, initialAssi
       </div>
 
       {/* RIGHT: CONFIG PANEL */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 w-full lg:w-[400px] flex-shrink-0 flex flex-col h-[70vh]">
+      <div className="bg-white rounded-2xl shadow-sm border-2 border-blue-100 w-full lg:w-[400px] flex-shrink-0 flex flex-col h-[70vh]">
         <div className="p-4 border-b border-slate-200 bg-[#00A19A] text-white rounded-t-2xl">
           <h3 className="font-bold flex items-center"><User className="w-5 h-5 mr-2"/> Cài đặt phân công</h3>
           <p className="text-indigo-100 text-sm mt-1">{selectedTeacher ? selectedTeacher.teacherName : 'Chọn giáo viên bên trái'}</p>

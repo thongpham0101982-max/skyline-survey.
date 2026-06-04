@@ -160,7 +160,7 @@ export default function SchoolSyncPage() {
       {/* Connection & Configuration Overview Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* API Connection Health Card */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between">
+        <div className="bg-white rounded-3xl p-6 border-2 border-emerald-100 shadow-sm flex flex-col justify-between">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-xs font-black text-slate-400 uppercase tracking-wider">Trạng thái API</span>
@@ -198,7 +198,7 @@ export default function SchoolSyncPage() {
         </div>
 
         {/* Credentials Form Card */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm lg:col-span-2 space-y-4">
+        <div className="bg-white rounded-3xl p-6 border-2 border-violet-100 shadow-sm lg:col-span-2 space-y-4">
           <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
             <Settings className="w-5 h-5 text-indigo-600" />
             Cấu hình & Thử nghiệm xác thực kết nối
@@ -258,7 +258,7 @@ export default function SchoolSyncPage() {
       {/* Synchronization Actions Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Sync Year Block */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between space-y-6">
+        <div className="bg-white rounded-3xl p-6 border-2 border-rose-100 shadow-sm flex flex-col justify-between space-y-6">
           <div className="space-y-3">
             <div className="bg-indigo-50 p-2.5 rounded-2xl text-indigo-600 w-fit">
               <CalendarRange className="w-6 h-6" />
@@ -279,7 +279,7 @@ export default function SchoolSyncPage() {
         </div>
 
         {/* Sync Services Block */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between space-y-6">
+        <div className="bg-white rounded-3xl p-6 border-2 border-teal-100 shadow-sm flex flex-col justify-between space-y-6">
           <div className="space-y-3">
             <div className="bg-sky-50 p-2.5 rounded-2xl text-sky-600 w-fit">
               <Settings className="w-6 h-6" />
@@ -300,7 +300,7 @@ export default function SchoolSyncPage() {
         </div>
 
         {/* Sync Teacher Classroom Block */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between space-y-6">
+        <div className="bg-white rounded-3xl p-6 border-2 border-blue-100 shadow-sm flex flex-col justify-between space-y-6">
           <div className="space-y-3">
             <div className="bg-emerald-50 p-2.5 rounded-2xl text-emerald-600 w-fit">
               <UserCheck className="w-6 h-6" />

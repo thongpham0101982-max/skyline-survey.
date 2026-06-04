@@ -376,7 +376,7 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
         <div className="bg-slate-50 min-h-screen p-3 md:p-6 font-sans text-slate-900 border-x">
             <div className="max-w-5xl mx-auto space-y-4">
                 {/* Header Profile Section */}
-                <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col md:flex-row gap-5 items-center relative overflow-hidden">
+                <div className="bg-white rounded-2xl p-5 shadow-sm border-2 border-violet-100 flex flex-col md:flex-row gap-5 items-center relative overflow-hidden">
                     <div className="w-16 h-16 bg-gradient-to-tr from-indigo-500 to-violet-600 rounded-full flex items-center justify-center text-white shadow-md shrink-0">
                         <User size={32} />
                     </div>
@@ -415,7 +415,7 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
                 )}
 
                 {/* Section Navigation */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-2 overflow-x-auto custom-scrollbar flex gap-2">
+                <div className="bg-white rounded-xl shadow-sm border-2 border-rose-100 p-2 overflow-x-auto custom-scrollbar flex gap-2">
                     {sections.map((section, idx) => (
                         <button
                             key={idx}
@@ -435,7 +435,7 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
                 </div>
 
                 {/* Question List (Compact Layout) */}
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="bg-white rounded-2xl shadow-sm border-2 border-teal-100 overflow-hidden">
                     <div className="bg-slate-50 px-5 py-3 border-b border-slate-200 flex justify-between items-center">
                         <h2 className="font-bold text-slate-700 text-sm flex items-center gap-2">
                             <ChevronRight size={16} className="text-indigo-500" />
@@ -516,7 +516,7 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
                 </div>
 
                 {isScoredForm && (
-                    <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+                    <div className="bg-white rounded-2xl p-5 shadow-sm border-2 border-blue-100">
                         <h3 className="font-bold text-slate-800 text-base mb-4">TỔNG HỢP:</h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-y-3 gap-x-8 mb-4 text-sm font-medium text-slate-700">
                             <div className="flex justify-between border-b border-dashed border-slate-200 pb-1"><span>Mục I :</span> <span className="font-bold text-indigo-600">{calculateSectionScore(0)}</span></div>
@@ -555,7 +555,7 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
 
                 {/* Conclusion and Recommendation */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col h-full">
+                    <div className="bg-white rounded-2xl p-5 shadow-sm border-2 border-amber-100 flex flex-col h-full">
                         <div className="flex items-center gap-2 mb-3">
                             <MessageSquare size={18} className="text-amber-500" />
                             <h3 className="font-bold text-slate-800 text-sm">{isScoredForm ? "C. KẾT LUẬN SƠ BỘ:" : "Kết luận chuyên môn"}</h3>
@@ -569,7 +569,7 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
                         ></textarea>
                     </div>
 
-                    <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col h-full">
+                    <div className="bg-white rounded-2xl p-5 shadow-sm border-2 border-indigo-100 flex flex-col h-full">
                         <div className="flex items-center gap-2 mb-3">
                             <Info size={18} className="text-emerald-500" />
                             <h3 className="font-bold text-slate-800 text-sm">{isScoredForm ? "D. KHUYẾN NGHỊ DÀNH CHO PHỤ HUYNH (NẾU CÓ):" : "Kiến nghị hỗ trợ"}</h3>
@@ -585,7 +585,7 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
                 </div>
 
                 {/* Footer Actions */}
-                <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4 sticky bottom-4 z-10">
+                <div className="bg-white rounded-2xl p-4 shadow-sm border-2 border-emerald-100 flex flex-col sm:flex-row justify-between items-center gap-4 sticky bottom-4 z-10">
                     <div className="flex items-center gap-2 text-slate-500 text-xs font-medium">
                         <AlertCircle size={14} className="text-indigo-500" />
                         Lưu ý kiểm tra kỹ trước khi Xác nhận

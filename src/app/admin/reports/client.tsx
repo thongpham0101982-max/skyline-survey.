@@ -232,7 +232,7 @@ export function TrackingClient({ periods, campuses: initialCampuses = [], defaul
               {!modalLoading && modalData && modalData.responses.length > 0 && (
                 <>
                   {modalData.form && (
-                    <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-center gap-6">
+                    <div className="bg-white rounded-2xl p-5 border-2 border-blue-100 shadow-sm flex items-center gap-6">
                       <div className="flex-1 space-y-1">
                         <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Điểm trung bình</p>
                         <p className="text-3xl font-black text-indigo-600 font-mono">{modalData.form.overallAverageScore?.toFixed(1) || "N/A"}</p>
@@ -359,7 +359,7 @@ export function TrackingClient({ periods, campuses: initialCampuses = [], defaul
       )}
 
       {/* Top Controls & Global Filter */}
-      <div className="bg-white p-8 rounded-[32px] shadow-sm border border-slate-200 space-y-6">
+      <div className="bg-white p-8 rounded-[32px] shadow-sm border-2 border-amber-100 space-y-6">
         <div className="flex items-center justify-between gap-4">
            <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center shadow-inner"><LayoutDashboard className="w-6 h-6" /></div>
@@ -456,7 +456,7 @@ export function TrackingClient({ periods, campuses: initialCampuses = [], defaul
       )}
 
       {!loading && selectedPeriod && filteredData.length === 0 && (
-        <div className="bg-white p-20 text-center rounded-[32px] border border-slate-200 text-slate-500 font-medium">
+        <div className="bg-white p-20 text-center rounded-[32px] border-2 border-indigo-100 text-slate-500 font-medium">
            Không tìm thấy lớp học nào khớp với điều kiện lọc hoặc đợt khảo sát này chưa có dữ liệu.
         </div>
       )}
@@ -465,7 +465,7 @@ export function TrackingClient({ periods, campuses: initialCampuses = [], defaul
       {!loading && filteredData.length > 0 && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
+            <div className="bg-white p-8 rounded-[2rem] border-2 border-blue-100 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
                <div>
                  <p className="text-slate-400 text-[10px] font-black mb-1 uppercase tracking-widest">Tổng HS gán Survey</p>
                  <h3 className="text-4xl font-black text-slate-800 font-mono tracking-tighter">{globalTotal}</h3>
@@ -473,7 +473,7 @@ export function TrackingClient({ periods, campuses: initialCampuses = [], defaul
                <div className="p-4 bg-sky-50 text-sky-600 rounded-2xl shadow-inner"><Users className="w-8 h-8" /></div>
             </div>
             
-            <div className="bg-white p-8 rounded-3xl border border-emerald-100 shadow-sm flex items-center justify-between border-b-4 border-b-emerald-500 hover:shadow-md transition-shadow">
+            <div className="bg-white p-8 rounded-[2rem] border-2 border-emerald-100 shadow-sm flex items-center justify-between border-b-4 border-b-emerald-500 hover:shadow-md transition-shadow">
                <div>
                  <p className="text-emerald-500 text-[10px] font-black mb-1 uppercase tracking-widest">Đã hoàn tất</p>
                  <h3 className="text-4xl font-black text-emerald-700 font-mono tracking-tighter">{globalCompleted}</h3>
@@ -481,7 +481,7 @@ export function TrackingClient({ periods, campuses: initialCampuses = [], defaul
                <div className="p-4 bg-emerald-50 text-emerald-500 rounded-2xl shadow-inner"><CheckCircle2 className="w-8 h-8" /></div>
             </div>
 
-            <div className="bg-white p-8 rounded-3xl border border-rose-100 shadow-sm flex items-center justify-between border-b-4 border-b-rose-500 hover:shadow-md transition-shadow">
+            <div className="bg-white p-8 rounded-[2rem] border-2 border-rose-100 shadow-sm flex items-center justify-between border-b-4 border-b-rose-500 hover:shadow-md transition-shadow">
                <div>
                  <p className="text-rose-500 text-[10px] font-black mb-1 uppercase tracking-widest">Còn trống (Pending)</p>
                  <h3 className="text-4xl font-black text-rose-700 font-mono tracking-tighter">{globalPending}</h3>
@@ -489,7 +489,7 @@ export function TrackingClient({ periods, campuses: initialCampuses = [], defaul
                <div className="p-4 bg-rose-50 text-rose-500 rounded-2xl shadow-inner"><Clock className="w-8 h-8" /></div>
             </div>
 
-            <div className="bg-slate-900 p-8 rounded-3xl shadow-xl flex items-center justify-between border border-slate-800 text-white overflow-hidden relative group">
+            <div className="bg-slate-900 p-8 rounded-[2rem] shadow-xl flex items-center justify-between border-2 border-slate-700 text-white overflow-hidden relative group">
                <div className="z-10">
                  <p className="text-slate-400 text-[10px] font-black mb-1 uppercase tracking-widest">Tiến độ tổng thể</p>
                  <h3 className="text-4xl font-black text-sky-400 font-mono tracking-tighter">{completionRate}%</h3>

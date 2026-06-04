@@ -41,7 +41,7 @@ export function TeacherClassesClient({ initialClasses, academicYears }: { initia
 
       {/* Classes Grid */}
       {filteredClasses.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm p-16 text-center border border-slate-200">
+        <div className="bg-white rounded-xl shadow-sm p-16 text-center border-2 border-teal-100">
           <ClipboardList className="w-12 h-12 text-slate-300 mx-auto mb-4" />
           <h3 className="text-base font-bold text-slate-800">Không có lớp học nào</h3>
           <p className="text-slate-400 text-sm mt-1">Bạn chưa được phân công lớp học nào trong năm học này.</p>
@@ -49,7 +49,7 @@ export function TeacherClassesClient({ initialClasses, academicYears }: { initia
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {filteredClasses.map((c) => (
-            <div key={c.id} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md hover:border-[#00A19A]/30 transition-all group flex flex-col justify-between">
+            <div key={c.id} className="bg-white rounded-2xl shadow-sm border-2 border-teal-100 overflow-hidden hover:shadow-md hover:border-[#00A19A]/30 transition-all group flex flex-col justify-between">
               <div className="p-6">
                 <div className="flex justify-between items-start mb-4">
                   <div>

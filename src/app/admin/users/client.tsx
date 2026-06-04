@@ -122,7 +122,7 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
         )}
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200">
+      <div className="bg-white rounded-2xl shadow-sm border-2 border-amber-100">
         <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50/50">
           <div className="flex items-center gap-4">
              <h3 className="font-bold text-slate-700">Danh sách Tài khoản ({displayedUsers.length})</h3>

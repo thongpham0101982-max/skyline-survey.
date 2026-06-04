@@ -29,7 +29,7 @@ export function StudentTransfersClient() {
     const inTransfers = transfers.filter(t => t.type === "IN")
 
   return (
-    <div className="bg-white rounded-[32px] shadow-sm border border-slate-200 overflow-hidden">
+    <div className="bg-white rounded-[32px] shadow-sm border-2 border-amber-100 overflow-hidden">
       <div className="border-b border-slate-100 p-2 flex gap-2 overflow-x-auto custom-scrollbar">
         <button
           onClick={() => setActiveTab("OUT")}
