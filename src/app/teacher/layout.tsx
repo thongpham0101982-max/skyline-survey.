@@ -1,6 +1,8 @@
 import { Sidebar } from "@/components/Sidebar"
 import { NotificationBell } from "@/components/NotificationBell"
 import { auth } from "@/lib/auth"
+import { UserMenu } from "@/components/UserMenu"
+import { AcademicYearSelector } from "@/components/AcademicYearSelector"
 
 export default async function TeacherLayout({ children }: { children: React.ReactNode }) {
   let session: any = null;
@@ -26,10 +28,9 @@ export default async function TeacherLayout({ children }: { children: React.Reac
             </div>
           </div>
           <div className="flex items-center gap-4">
+             <AcademicYearSelector />
              <NotificationBell />
-             <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#00A19A] to-teal-400 text-white flex items-center justify-center font-bold text-xs shadow-md border-2 border-white cursor-pointer hover:scale-105 transition-transform">
-                {session?.user?.name ? session.user.name.charAt(0).toUpperCase() : 'GV'}
-             </div>
+             <UserMenu session={session} />
           </div>
         </header>
         <div className="p-4 sm:p-6 md:p-8 flex-1 overflow-x-hidden overflow-y-auto bg-slate-50/50">
