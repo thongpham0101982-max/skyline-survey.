@@ -44,8 +44,8 @@ export async function createTask(data: any) {
           userId: data.assignedToUserId,
           title: "[Giao viec] " + data.title,
           message: adminName + " da giao cong viec cho ban. Han chot: " + new Date(data.endDate).toLocaleDateString("vi-VN"),
-          isRead: false
-        }
+          isRead: false,
+          link: "/admin/tasks?taskId=" + task.id}
       })
     } else {
       // Notify all users in the role group
@@ -59,8 +59,8 @@ export async function createTask(data: any) {
             userId: u.id,
             title: "[Giao viec] " + data.title,
             message: adminName + " da giao cong viec cho nhom ban. Han chot: " + new Date(data.endDate).toLocaleDateString("vi-VN"),
-            isRead: false
-          }
+            isRead: false,
+          link: "/admin/tasks?taskId=" + task.id}
         })
       }
     }
@@ -130,8 +130,8 @@ export async function respondToTask(id: string, data: { progress: string; staffN
           userId: admin.id,
           title: "[Cap nhat CV] " + task.title,
           message: userName + " da cap nhat trang thai: " + data.progress + ". Nội dung: " + (data.staffNote || "(khong co ghi chu)"),
-          isRead: false
-        }
+          isRead: false,
+          link: "/admin/tasks?taskId=" + task.id}
       })
     }
 
@@ -170,8 +170,8 @@ export async function remindTask(id: string) {
           userId: u.id,
           title: "[Nhac viec] " + task.title,
           message: "Cong viec duoc giao boi " + task.assignedBy.fullName + ". Han chot: " + new Date(task.endDate).toLocaleDateString("vi-VN"),
-          isRead: false
-        }
+          isRead: false,
+          link: "/admin/tasks?taskId=" + task.id}
       })
       sent++
     }
@@ -217,8 +217,8 @@ export async function checkAndNotifyOverdueTasks() {
               userId: u.id,
               title: "[TRE HAN] " + task.title,
               message: "Cong viec da qua han chot " + new Date(task.endDate).toLocaleDateString("vi-VN") + ". Vui long cap nhat tien do!",
-              isRead: false
-            }
+              isRead: false,
+          link: "/admin/tasks?taskId=" + task.id}
           })
         }
       }
@@ -234,8 +234,8 @@ export async function checkAndNotifyOverdueTasks() {
               userId: admin.id,
               title: "[TRE HAN ADMIN] " + task.title,
               message: "Cong viec giao cho " + task.assignedToRole + " da qua han " + new Date(task.endDate).toLocaleDateString("vi-VN"),
-              isRead: false
-            }
+              isRead: false,
+          link: "/admin/tasks?taskId=" + task.id}
           })
         }
       }

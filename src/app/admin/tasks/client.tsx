@@ -1,6 +1,7 @@
 "use client"
 import { getDefaultAcademicYearClient } from "@/lib/academicYear"
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
+import { useSearchParams } from "next/navigation"
 import { ClipboardList, Plus, Bell, Edit, Trash2, AlertTriangle, User, Users, MessageSquare, Send, X, CheckCircle2 } from "lucide-react"
 import { createTask, updateTask, deleteTask, remindTask, updateTaskProgress, getUsersByRole, respondToTask } from "./actions"
 import { TaskDetailPanel } from "./TaskDetailPanel"
@@ -26,6 +27,7 @@ const STAFF_PROGRESS = [
 ]
 
 export function TasksClient({ initialTasks, years, roles, currentRole, currentUserId }: any) {
+  const searchParams = useSearchParams()
   const [tasks, setTasks] = useState(initialTasks || [])
   const [showForm, setShowForm] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
@@ -50,6 +52,16 @@ export function TasksClient({ initialTasks, years, roles, currentRole, currentUs
   const [detailTask, setDetailTask] = useState<any>(null)
 
   const isAdmin = currentRole === "ADMIN"
+
+  useEffect(() => {
+    const taskId = searchParams?.get("taskId")
+    if (taskId && tasks.length > 0) {
+      const task = tasks.find((t: any) => t.id === taskId)
+      if (task) {
+        setDetailTask(task)
+      }
+    }
+  }, [searchParams, tasks])
 
   useEffect(() => {
     if (!assignedToRole || !showForm) return

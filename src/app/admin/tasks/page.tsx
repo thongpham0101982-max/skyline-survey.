@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import { prisma } from "@/lib/db"
 import { TasksClient } from "./client"
 import { auth } from "@/lib/auth"

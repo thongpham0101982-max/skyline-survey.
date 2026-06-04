@@ -1,4 +1,6 @@
-
+﻿const fs = require('fs');
+const filePath = 'c:\\Users\\Windows 11\\.gemini\\antigravity\\brain\\e243b0d8-3241-4833-8c7a-e612ebbae098\\browser\\Skyline-survey\\src\\components\\UserMenu.tsx';
+const content = `
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -156,3 +158,6 @@ export function UserMenu({ session }: UserMenuProps) {
     </>
   );
 }
+`;
+fs.writeFileSync(filePath, content, 'utf8');
+console.log('Updated UserMenu.tsx to use dropdown and support links');
