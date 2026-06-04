@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
+import { getSurveyFormAgeGroup } from "@/lib/preschool"
 
 export async function GET(req: NextRequest) {
   try {
@@ -30,7 +31,7 @@ export async function GET(req: NextRequest) {
         where.batchId = null;
       }
 
-      const students = await (prisma as any).preschoolInputAssessmentStudent.findMany({
+            const students = await (prisma as any).preschoolInputAssessmentStudent.findMany({
         where,
         select: { 
           id: true, 
@@ -52,7 +53,13 @@ export async function GET(req: NextRequest) {
           gdcsApprovalStatus: true,
           gdcsApprovalComment: true,
           probationaryResult: true,
-          probationaryClass: true
+          probationaryClass: true,
+          batch: {
+            select: {
+              startDate: true,
+              endDate: true
+            }
+          }
         }
       })
 
@@ -143,8 +150,8 @@ export async function GET(req: NextRequest) {
 
         return {
           ...s,
-          scoredCount: scoreMap[s.id] || 0,
-          totalCriteria: criteriaMap[s.grade || ""] || 0,
+                    scoredCount: scoreMap[s.id] || 0,
+          totalCriteria: criteriaMap[getSurveyFormAgeGroup(s.grade, s.batch?.startDate)] || 0,
           theChatSummary: formatSummary(theChatScores),
           nhanThucSummary: formatSummary(nhanThucScores),
           ngonNguSummary: formatSummary(ngonNguScores),

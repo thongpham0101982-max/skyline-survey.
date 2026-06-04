@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { getSurveyFormAgeGroup } from "@/lib/preschool"
 import { Baby, X, CheckCircle, AlertCircle, Save, Sparkles, Heart } from "lucide-react"
 
 interface PreschoolEvaluationFormProps {
@@ -41,11 +42,11 @@ export default function PreschoolEvaluationForm({
   // If approved by both BGH and GDCS, the whole form is locked for editing
   const isAssessmentLocked = isLocked || !!(bghApprovalStatus === "DAT" && gdcsApprovalStatus === "DAT")
 
-  useEffect(() => {
+    useEffect(() => {
     async function loadData() {
       setDevLoading(true)
       try {
-        const ageGroup = student.grade || "18 đến 24 tháng"
+        const ageGroup = getSurveyFormAgeGroup(student.grade, student.batch?.startDate)
         const areasRes = await fetch(`/api/preschool-dev-areas?ageGroup=${encodeURIComponent(ageGroup)}`)
         if (areasRes.ok) {
           setDevAreas(await areasRes.json())

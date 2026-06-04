@@ -2,6 +2,7 @@
 ﻿import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
+import { getSurveyFormAgeGroup } from "@/lib/preschool"
 
 export async function GET(req: any) {
   const session = await auth()
@@ -145,7 +146,7 @@ export async function GET(req: any) {
                 ];
             }
 
-            const students = await (prisma as any).preschoolInputAssessmentStudent.findMany({
+                        const students = await (prisma as any).preschoolInputAssessmentStudent.findMany({
                 where,
                 select: { 
                     id: true, 
@@ -165,7 +166,13 @@ export async function GET(req: any) {
                     bghApprovalComment: true,
                     gdcsApprovalStatus: true,
                     gdcsApprovalComment: true,
-                    surveyFormType: true
+                    surveyFormType: true,
+                    batch: {
+                        select: {
+                            startDate: true,
+                            endDate: true
+                        }
+                    }
                 }
             });
 
@@ -177,10 +184,11 @@ export async function GET(req: any) {
                 });
             }
 
-            let filteredStudents = students;
+                        let filteredStudents = students;
             if (preschoolAssignments.length > 0) {
                 filteredStudents = students.filter(st => {
-                    const stGrade = (st.grade || "").toLowerCase().trim();
+                    const mappedGrade = getSurveyFormAgeGroup(st.grade, st.batch?.startDate);
+                    const stGrade = mappedGrade.toLowerCase().trim();
                     return preschoolAssignments.some(ta => {
                         const taGrade = (ta.grade || "").toLowerCase().trim();
                         return !taGrade || taGrade === "tất cả" || stGrade === taGrade || stGrade.includes(taGrade.replace("khối", "").trim());
@@ -224,8 +232,8 @@ export async function GET(req: any) {
                 criteriaMap[cc.ageGroup] = cc._count.id;
             }
 
-            const enriched = filteredStudents.map((s: any) => {
-                const sAgeGroup = s.grade || "18 đến 24 tháng";
+                        const enriched = filteredStudents.map((s: any) => {
+                const sAgeGroup = getSurveyFormAgeGroup(s.grade, s.batch?.startDate);
                 const totalCriteria = criteriaMap[sAgeGroup] || 0;
                 const scoredCount = scoreMap[s.id] || 0;
                 return {

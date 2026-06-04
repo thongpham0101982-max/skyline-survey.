@@ -2,6 +2,7 @@
 import { getDefaultAcademicYearClient } from "@/lib/academicYear"
 import { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import * as XLSX from "xlsx"
+import { getSurveyFormAgeGroup } from "@/lib/preschool";
 import {
   Baby, Clock, Settings, Users, BarChart3, Calendar,
   Plus, Trash2, Edit2, Search, RefreshCw, ChevronDown, ChevronUp,
@@ -1761,8 +1762,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     setGdcsApprovalComment(student.gdcsApprovalComment || "");
     setEvalModal(true);
     setDevLoading(true);
-    try {
-      const ageGroup = student.grade || "18 đến 24 tháng";
+        try {
+      const ageGroup = getSurveyFormAgeGroup(student.grade, student.batch?.startDate);
       const areasRes = await fetch(`/api/preschool-dev-areas?type=INPUT&ageGroup=${encodeURIComponent(ageGroup)}`);
       if (areasRes.ok) {
         setDevAreas(await areasRes.json());
@@ -1777,7 +1778,15 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
         setStudentScores(scoreMap);
       }
       const targetPeriodId = student.periodId || cPeriodId;
-      const assignRes = await fetch(`/api/preschool-input-assessment-assignments?periodId=${targetPeriodId}`);
+      const targetBatchId = student.batchId || cBatchId;
+      let assignUrl = `/api/preschool-input-assessment-assignments?periodId=${targetPeriodId}`;
+      if (targetBatchId && targetBatchId !== "all") {
+        assignUrl += `&batchId=${targetBatchId}`;
+      }
+      if (ageGroup) {
+        assignUrl += `&grade=${encodeURIComponent(ageGroup)}`;
+      }
+      const assignRes = await fetch(assignUrl);
       if (assignRes.ok) {
         setEvalAssignments(await assignRes.json());
       }
@@ -1995,10 +2004,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
   };
 
 
-  const printProbationaryAssessment = async (student: any) => {
+    const printProbationaryAssessment = async (student: any) => {
     notify("Đang chuẩn bị phiếu in...", "info");
     try {
-      const ageGroup = student.grade || "18 đến 24 tháng";
+      const ageGroup = getSurveyFormAgeGroup(student.grade, student.batch?.startDate);
       const areasRes = await fetch(`/api/preschool-dev-areas?type=PROBATION&ageGroup=${encodeURIComponent(ageGroup)}`);
       let loadedAreas: any[] = [];
       if (areasRes.ok) {
@@ -2197,7 +2206,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     }
   };
 
-  const openProbationary = async (student: any) => {
+    const openProbationary = async (student: any) => {
     setProbStudent(student);
     setProbScores({});
     setProbPeriod(student.probationaryPeriod || "");
@@ -2208,7 +2217,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     setProbModal(true);
     setDevLoading(true);
     try {
-      const ageGroup = student.grade || "18 đến 24 tháng";
+      const ageGroup = getSurveyFormAgeGroup(student.grade, student.batch?.startDate);
       const areasRes = await fetch(`/api/preschool-dev-areas?type=PROBATION&ageGroup=${encodeURIComponent(ageGroup)}`);
       if (areasRes.ok) {
         setDevAreas(await areasRes.json());
@@ -2657,10 +2666,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     if (!evalStudent) return "";
     if (devLoading && !evalAssignments.length) return "Đang tải...";
     if (!evalAssignments.length) return "Chưa phân công";
-    const matches = evalAssignments.filter(a => {
+        const matches = evalAssignments.filter(a => {
       const studentPeriodId = evalStudent.periodId || cPeriodId;
       if (a.periodId !== studentPeriodId) return false;
-      if (a.grade !== evalStudent.grade) return false;
+      const targetGrade = getSurveyFormAgeGroup(evalStudent.grade, evalStudent.batch?.startDate);
+      if (a.grade !== targetGrade) return false;
       return !a.batchId || a.batchId === evalStudent.batchId;
     });
     if (matches.length === 0) return "Chưa phân công";
@@ -3988,7 +3998,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   Tiêu chí Học thử (Probation)
                 </button>
               </div>
-              <div className="flex flex-wrap gap-1.5 bg-teal-50/50 p-1.5 rounded-2xl border border-teal-100 max-w-fit">
+                            <div className="flex flex-wrap gap-1.5 bg-teal-50/50 p-1.5 rounded-2xl border border-teal-100 max-w-fit">
                 {grades.map(g => (
                   <button
                     key={g}
@@ -3999,6 +4009,56 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   </button>
                 ))}
               </div>
+
+              {devType === "INPUT" && (() => {
+                let gd1 = "";
+                let gd2 = "";
+                switch (ageGroupFilter) {
+                  case "18 đến 24 tháng":
+                    gd1 = "Nhà trẻ 18-24 tháng & Nhà trẻ 24-36 tháng";
+                    gd2 = "Nhà trẻ 18-24 tháng";
+                    break;
+                  case "24 đến 36 tháng":
+                    gd1 = "Mẫu giáo bé";
+                    gd2 = "Nhà trẻ 24-36 tháng";
+                    break;
+                  case "Mẫu giáo bé":
+                    gd1 = "Mẫu giáo nhỡ";
+                    gd2 = "Mẫu giáo bé";
+                    break;
+                  case "Mẫu giáo nhỡ":
+                    gd1 = "Mẫu giáo lớn";
+                    gd2 = "Mẫu giáo nhỡ";
+                    break;
+                  case "Mẫu giáo lớn":
+                    gd1 = "Không áp dụng";
+                    gd2 = "Mẫu giáo lớn";
+                    break;
+                }
+                if (!gd1) return null;
+                return (
+                  <div className="bg-gradient-to-r from-violet-50 to-indigo-50/50 border border-violet-100 rounded-2xl p-4 text-xs font-semibold text-violet-800 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 max-w-4xl my-2 animate-fadeIn">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-violet-100 flex items-center justify-center text-violet-600 font-bold shrink-0">ℹ</div>
+                      <div>
+                        <p className="font-bold text-slate-800 text-xs">Ánh xạ Tiêu chí ({ageGroupFilter})</p>
+                        <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-0.5">Hệ thống sẽ tự động gán form này cho các khối dưới đây:</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-4 self-start sm:self-center">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-black text-violet-400 uppercase tracking-wider">Giai đoạn 1 (01/06 - 31/12)</span>
+                        <span className="text-slate-700 font-bold text-xs mt-0.5">{gd1}</span>
+                      </div>
+                      <div className="w-[1px] bg-violet-200 self-stretch" />
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-black text-violet-400 uppercase tracking-wider">Giai đoạn 2 (01/01 - 31/05)</span>
+                        <span className="text-slate-700 font-bold text-xs mt-0.5">{gd2}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {devLoading ? <Spin /> : (
                 <div className="space-y-3">

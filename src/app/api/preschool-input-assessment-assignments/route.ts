@@ -21,7 +21,10 @@ export async function GET(req: NextRequest) {
     const where: any = { periodId };
     
     if (batchId && batchId !== "all" && batchId !== "null") {
-      where.batchId = batchId;
+      where.OR = [
+        { batchId: batchId },
+        { batchId: null }
+      ];
     } else if (batchId === "null") {
       where.batchId = null;
     }

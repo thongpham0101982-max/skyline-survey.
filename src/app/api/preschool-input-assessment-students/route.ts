@@ -338,9 +338,9 @@ export async function GET(req) {
       where.batchId = null;
     }
     
-    const students = await (prisma as any).preschoolInputAssessmentStudent.findMany({
+        const students = await (prisma as any).preschoolInputAssessmentStudent.findMany({
       where,
-      include: { batch: { select: { name: true } } },
+      include: { batch: { select: { name: true, startDate: true, endDate: true } } },
       orderBy: { createdAt: 'desc' }
     });
     
