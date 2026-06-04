@@ -2912,69 +2912,43 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         isStage2 = true;
                       }
                     }
+
+                    const stageTitle = isStage2 ? "Giai đoạn 2 (01/01 - 31/05)" : "Giai đoạn 1 (01/06 - 31/12)";
                     
+                    const mappings = isStage2 ? [
+                      { form: "18 đến 24 tháng", actual: "Nhà trẻ 18-24 tháng" },
+                      { form: "24 đến 36 tháng", actual: "Nhà trẻ 24-36 tháng" },
+                      { form: "Mẫu giáo bé", actual: "Mẫu giáo bé" },
+                      { form: "Mẫu giáo nhỡ", actual: "Mẫu giáo nhỡ" },
+                      { form: "5 đến 6 tuổi", actual: "Mẫu giáo lớn" },
+                    ] : [
+                      { form: "18 đến 24 tháng", actual: "Nhà trẻ 18-24 & 24-36 tháng" },
+                      { form: "24 đến 36 tháng", actual: "Mẫu giáo bé" },
+                      { form: "Mẫu giáo bé", actual: "Mẫu giáo nhỡ" },
+                      { form: "Mẫu giáo nhỡ", actual: "Mẫu giáo lớn" },
+                    ];
+
                     return (
-                      <div className="bg-gradient-to-br from-teal-50/50 via-white to-indigo-50/30 border border-teal-100/80 rounded-2xl p-3.5 space-y-2.5 shadow-xs animate-in fade-in slide-in-from-top-1 duration-200">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
-                          <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider">
-                            Gợi ý chọn Nhóm tuổi ({isStage2 ? "Giai đoạn 2: 01/01 - 31/05" : "Giai đoạn 1: 01/06 - 31/12"})
+                      <div className="bg-gradient-to-br from-[#00A19A]/5 via-white to-teal-50/10 border-l-4 border-l-[#00A19A] border-y border-r border-teal-100 rounded-2xl p-4 space-y-3.5 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
+                        <div className="flex items-center gap-2 border-b border-[#00A19A]/10 pb-2">
+                          <Calendar className="w-4 h-4 text-[#00A19A]" />
+                          <span className="text-[11px] font-black text-slate-800 uppercase tracking-widest">
+                            Quy tắc Ánh xạ Nhóm tuổi ({stageTitle})
                           </span>
                         </div>
-                        <div className="overflow-hidden border border-slate-100 rounded-xl">
-                          <table className="w-full text-left text-[10.5px]">
-                            <thead>
-                              <tr className="bg-teal-50/60 text-slate-500 font-bold border-b border-slate-100">
-                                <th className="p-2 font-black text-[9px] uppercase tracking-wider">Chọn Nhóm tuổi (Form)</th>
-                                <th className="p-2 font-black text-[9px] uppercase tracking-wider">Cho các lớp thực tế</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-50 bg-white/50">
-                              {isStage2 ? (
-                                <>
-                                  <tr>
-                                    <td className="p-2 font-black text-slate-700">18 đến 24 tháng</td>
-                                    <td className="p-2 font-bold text-teal-600">Nhà trẻ 18-24 tháng</td>
-                                  </tr>
-                                  <tr>
-                                    <td className="p-2 font-black text-slate-700">24 đến 36 tháng</td>
-                                    <td className="p-2 font-bold text-teal-600">Nhà trẻ 24-36 tháng</td>
-                                  </tr>
-                                  <tr>
-                                    <td className="p-2 font-black text-slate-700">Mẫu giáo bé</td>
-                                    <td className="p-2 font-bold text-teal-600">Mẫu giáo bé</td>
-                                  </tr>
-                                  <tr>
-                                    <td className="p-2 font-black text-slate-700">Mẫu giáo nhỡ</td>
-                                    <td className="p-2 font-bold text-teal-600">Mẫu giáo nhỡ</td>
-                                  </tr>
-                                  <tr>
-                                    <td className="p-2 font-black text-slate-700">5 đến 6 tuổi</td>
-                                    <td className="p-2 font-bold text-teal-600">Mẫu giáo lớn</td>
-                                  </tr>
-                                </>
-                              ) : (
-                                <>
-                                  <tr>
-                                    <td className="p-2 font-black text-slate-700">18 đến 24 tháng</td>
-                                    <td className="p-2 font-bold text-teal-600">Nhà trẻ 18-24 & 24-36 tháng</td>
-                                  </tr>
-                                  <tr>
-                                    <td className="p-2 font-black text-slate-700">24 đến 36 tháng</td>
-                                    <td className="p-2 font-bold text-teal-600">Mẫu giáo bé</td>
-                                  </tr>
-                                  <tr>
-                                    <td className="p-2 font-black text-slate-700">Mẫu giáo bé</td>
-                                    <td className="p-2 font-bold text-teal-600">Mẫu giáo nhỡ</td>
-                                  </tr>
-                                  <tr>
-                                    <td className="p-2 font-black text-slate-700">Mẫu giáo nhỡ</td>
-                                    <td className="p-2 font-bold text-teal-600">Mẫu giáo lớn</td>
-                                  </tr>
-                                </>
-                              )}
-                            </tbody>
-                          </table>
+                        <div className="space-y-2">
+                          <div className="grid grid-cols-12 gap-2 text-[9px] font-black text-slate-400 uppercase tracking-wider px-2">
+                            <span className="col-span-5">Chọn Nhóm tuổi (Form)</span>
+                            <span className="col-span-1 text-center"></span>
+                            <span className="col-span-6">Cho các lớp thực tế</span>
+                          </div>
+                          {mappings.map((m, idx) => (
+                            <div key={idx} className="grid grid-cols-12 gap-2 items-center bg-white border border-teal-50 px-3 py-2.5 rounded-xl shadow-2xs hover:border-[#00A19A]/30 hover:shadow-xs transition-all duration-200">
+                              <span className="col-span-5 font-black text-slate-700 text-[11px]">{m.form}</span>
+                              <span className="col-span-1 text-slate-300 text-center font-bold">→</span>
+                              <span className="col-span-6 font-extrabold text-[#00A19A] text-[11px]">{m.actual}</span>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     );
@@ -2996,7 +2970,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                             key={g} 
                             className={`flex items-center gap-2.5 p-3 rounded-2xl border cursor-pointer transition-all ${
                               isChecked 
-                                ? "bg-teal-50/70 border-violet-300 text-violet-700 font-bold shadow-sm" 
+                                ? "bg-[#00A19A]/5 border-[#00A19A] text-[#00A19A] font-extrabold shadow-xs" 
                                 : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300"
                             }`}
                           >
@@ -3445,7 +3419,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                   <div className="flex flex-col gap-0.5">
                                     <span className="text-xs font-bold text-slate-600">Lớp: {s.grade || "—"}</span>
                                     {s.resolvedAgeGroup && (
-                                      <span className="text-[10px] font-black text-violet-700 bg-violet-50 border border-violet-100 px-2 py-0.5 rounded-lg w-fit">
+                                      <span className="text-[10px] font-black text-[#00A19A] bg-[#00A19A]/5 border border-teal-100 px-2 py-0.5 rounded-lg w-fit">
                                         Form: {s.resolvedAgeGroup}
                                       </span>
                                     )}
@@ -3949,7 +3923,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                   <div className="flex flex-col gap-0.5">
                                     <span className="text-xs font-bold text-slate-600">Lớp: {s.grade || "—"}</span>
                                     {s.resolvedAgeGroup && (
-                                      <span className="text-[10px] font-black text-violet-700 bg-violet-50 border border-violet-100 px-2 py-0.5 rounded-lg w-fit">
+                                      <span className="text-[10px] font-black text-[#00A19A] bg-[#00A19A]/5 border border-teal-100 px-2 py-0.5 rounded-lg w-fit">
                                         Form: {s.resolvedAgeGroup}
                                       </span>
                                     )}
@@ -4054,7 +4028,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                   <div className="flex flex-col gap-0.5">
                                     <span className="text-xs font-bold text-slate-600">Lớp: {s.grade || "—"}</span>
                                     {s.resolvedAgeGroup && (
-                                      <span className="text-[10px] font-black text-violet-700 bg-violet-50 border border-violet-100 px-2 py-0.5 rounded-lg w-fit">
+                                      <span className="text-[10px] font-black text-[#00A19A] bg-[#00A19A]/5 border border-teal-100 px-2 py-0.5 rounded-lg w-fit">
                                         Form: {s.resolvedAgeGroup}
                                       </span>
                                     )}
