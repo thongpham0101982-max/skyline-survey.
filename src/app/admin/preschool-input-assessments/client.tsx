@@ -2722,7 +2722,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             { id: "reports", label: "Tổng hợp KQKS", icon: BarChart3 },
           ].filter(t => {
             if (isGDCSUser) {
-              return ["children", "devAssess", "reports"].includes(t.id);
+              return ["children", "devAssess", "devCriteria", "reports"].includes(t.id);
             }
             return true;
           }).map(t => (
