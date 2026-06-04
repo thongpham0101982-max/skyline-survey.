@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useState, useEffect } from "react";
-import { LogOut, KeyRound, ChevronDown, Bell, CheckCircle2 } from "lucide-react";
+import { LogOut, KeyRound, ChevronDown, Bell, CheckCircle2, X } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { ChangePasswordModal } from "./ChangePasswordModal";
 import { getUserNotificationsAction, markNotificationsAsReadAction } from "@/lib/notification_actions";
