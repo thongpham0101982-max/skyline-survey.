@@ -279,7 +279,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     return (
         <div className="p-3 md:p-6 max-w-[1400px] mx-auto space-y-4 md:space-y-6">
             
-<div className="bg-[#00A19A] rounded-2xl p-6 md:p-8 shadow-lg relative overflow-hidden">
+<div className="bg-[#00A19A] rounded-lg p-6 md:p-8 shadow-lg relative overflow-hidden">
                 <div className="absolute top-0 right-0 -mt-16 -mr-16 w-64 h-64 bg-white rounded-full mix-blend-overlay filter blur-3xl opacity-20 animate-pulse"></div>
                 <div className="absolute bottom-0 left-0 -mb-16 -ml-16 w-64 h-64 bg-black rounded-full mix-blend-overlay filter blur-3xl opacity-10"></div>
                 
@@ -289,7 +289,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 <h1 className="text-3xl font-black text-white tracking-tight drop-shadow-md">Nhập kết quả Khảo sát</h1>
                 <p className="text-teal-50 font-medium mt-1">Xin chào giáo viên <span className="text-white font-bold">{user?.fullName || "ẩn danh"}</span>!</p>
             </div>
-                        <p className="text-teal-50 mt-2 flex flex-wrap items-center gap-2 text-sm md:text-base font-medium opacity-90">
+                        <p className="text-teal-50 mt-2 flex flex-wrap items-center gap-2 text-xs md:text-base font-medium opacity-90">
                             <span className="bg-white/20 backdrop-blur-md text-white font-bold px-3 py-1 rounded-full shadow-inner shadow-white/10 ring-1 ring-white/30 truncate max-w-[200px] md:max-w-none">
                                 👋 {user?.name || "Thầy/Cô"}
                             </span>
@@ -298,7 +298,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                     </div>
                     
                     <div className="flex-shrink-0 flex gap-4">
-                        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 ring-1 ring-white/20 shadow-xl">
+                        <div className="bg-white/10 backdrop-blur-md rounded-lg p-4 ring-1 ring-white/20 shadow-xl">
                             <div className="text-white/60 text-xs font-bold uppercase tracking-wider mb-1">Môn học</div>
                             <div className="text-white font-black text-xl">{currentAssignment ? currentAssignment.subject.name : "..."}</div>
                         </div>
@@ -306,7 +306,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 </div>
             </div>
 
-            <div className="-mt-6 mx-auto w-[96%] max-w-[1200px] relative z-20 bg-white p-6 rounded-2xl shadow-lg ring-1 ring-slate-200 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="group">
                     <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-slate-500 flex items-center gap-2 ml-1">
                         <CalendarDays className="w-3.5 h-3.5 text-[#00A19A]"/> Kỳ Khảo sát
@@ -315,7 +315,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                         <select 
                             value={selectedPeriodId} 
                             onChange={e => setSelectedPeriodId(e.target.value)}
-                            className="w-full bg-white border border-slate-200 rounded-2xl pl-5 pr-10 py-3.5 outline-none focus:border-[#00A19A] focus:ring-4 focus:ring-[#00A19A]/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
+                            className="w-full bg-white border border-slate-200 rounded-lg pl-5 pr-10 py-1 text-xs outline-none focus:border-[#00A19A] focus:ring-4 focus:ring-[#00A19A]/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
                         >
                             {periods.map(p => (
                                 <option key={p.id} value={p.id}>{p.name}</option>
@@ -337,7 +337,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                             <select 
                                 value={selectedBatchId} 
                                 onChange={e => setSelectedBatchId(e.target.value)}
-                                className="w-full bg-white border border-slate-200 rounded-2xl pl-5 pr-10 py-3.5 outline-none focus:border-[#00A19A] focus:ring-4 focus:ring-[#00A19A]/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
+                                className="w-full bg-white border border-slate-200 rounded-lg pl-5 pr-10 py-1 text-xs outline-none focus:border-[#00A19A] focus:ring-4 focus:ring-[#00A19A]/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
                             >
                                 <option value="all">Tất cả các đợt</option>
                                 {batches.map(b => (
@@ -351,7 +351,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                     </div>
                 )}
 
-                <div className="group lg:col-span-1">
+                <div className="group">
                     <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-slate-500 flex items-center gap-2 ml-1">
                         <BookOpen className="w-3.5 h-3.5 text-[#00A19A]"/> Môn Khảo sát
                     </label>
@@ -359,7 +359,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                         <select 
                             value={selectedAssignmentId} 
                             onChange={e => setSelectedAssignmentId(e.target.value)}
-                            className="w-full bg-white border border-slate-200 rounded-2xl pl-5 pr-10 py-3.5 outline-none focus:border-[#00A19A] focus:ring-4 focus:ring-[#00A19A]/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
+                            className="w-full bg-white border border-slate-200 rounded-lg pl-5 pr-10 py-1 text-xs outline-none focus:border-[#00A19A] focus:ring-4 focus:ring-[#00A19A]/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
                         >
                             {availableAssignments.map(a => (
                                 <option key={a.id} value={a.id}>
@@ -376,14 +376,14 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
             </div>
 
 {currentAssignment && isEnglishAssignment && relatedEnglishAssignments.length > 0 && (
-    <div className="-mt-6 mx-auto w-[92%] bg-white/70 backdrop-blur-md p-3 rounded-2xl shadow-sm border border-slate-300 mb-6 animate-in fade-in slide-in-from-top-4 flex flex-col gap-2 relative z-20">
+    <div className="-mt-6 mx-auto w-[92%] bg-white/70 backdrop-blur-md p-3 rounded-lg shadow-sm border border-slate-300 mb-6 animate-in fade-in slide-in-from-top-4 flex flex-col gap-2 relative z-20">
         <div className="text-xs font-black text-indigo-400 uppercase tracking-widest pl-1">Danh sách Môn Tiếng Anh:</div>
         <div className="flex flex-wrap gap-2">
             {relatedEnglishAssignments.map(a => (
                 <button 
                     key={a.id}
                     onClick={() => setSelectedAssignmentId(a.id)}
-                    className={`flex-1 min-w-[150px] py-3 px-4 rounded-xl font-bold text-sm transition-all shadow-sm flex items-center justify-center gap-2 ${selectedAssignmentId === a.id ? 'bg-indigo-600 text-white shadow-indigo-200 ring-2 ring-indigo-400 ring-offset-1' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'}`}
+                    className={`flex-1 min-w-[150px] py-2 px-4 rounded-xl font-bold text-xs transition-all shadow-sm flex items-center justify-center gap-2 ${selectedAssignmentId === a.id ? 'bg-indigo-600 text-white shadow-indigo-200 ring-2 ring-indigo-400 ring-offset-1' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'}`}
                 >
                     <BookOpen className="w-4 h-4" />
                     {a.subject?.name}
@@ -400,13 +400,13 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                 <Users className="w-5 h-5 text-[#00A19A]"/>
                                 Form nhập kết quả: {currentAssignment.subject.name}
                             </h3>
-                            <p className="text-sm text-slate-500 mt-1 flex items-center gap-2">
+                            <p className="text-xs text-slate-500 mt-1 flex items-center gap-2">
                                 <Layers className="w-3.5 h-3.5"/> Khối: <span className="font-semibold text-slate-700">{currentAssignment.grade || "Tất cả"}</span> | 
                                 Thuộc kỳ khảo sát: <span className="font-semibold text-slate-700">{currentAssignment.period.name} {currentAssignment.batch?.name ? ` - ${currentAssignment.batch.name}` : ""}</span>
                             </p>
                         </div>
-                        {isLocked && <span className="text-sm font-bold bg-red-100 text-red-700 border border-red-200 px-4 py-1.5 rounded-full shadow-sm mr-2 flex items-center gap-1.5"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg> KHẢO SÁT ĐÃ KHÓA</span>}
-                        <span className={"text-sm font-medium border px-4 py-1.5 rounded-full shadow-sm " + (isLocked ? "bg-slate-100 text-slate-500 border-slate-200" : "bg-emerald-100/50 text-emerald-700 border-emerald-200")}>
+                        {isLocked && <span className="text-xs font-bold bg-red-100 text-red-700 border border-red-200 px-4 py-1.5 rounded-full shadow-sm mr-2 flex items-center gap-1.5"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg> KHẢO SÁT ĐÃ KHÓA</span>}
+                        <span className={"text-xs font-medium border px-4 py-1.5 rounded-full shadow-sm " + (isLocked ? "bg-slate-100 text-slate-500 border-slate-200" : "bg-emerald-100/50 text-emerald-700 border-emerald-200")}>
                             {isPsychSubject ? (gradeVal ? `Mẫu chuyên biệt Tâm lý Khối ${gradeVal}` : `Đánh giá Tâm lý`) : isChildDevSubject ? "Cấu hình: 1 cột điểm, 1 cột nhận xét" : `Cấu hình: ${currentAssignment.subject.scoreColumns} cột điểm, ${currentAssignment.subject.commentColumns} cột nhận xét`}
                         </span>
                     </div>
@@ -417,86 +417,86 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                 <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                             </div>
                             <div>
-                                <h3 className="text-sm font-bold text-red-800 mb-1">Hạng mục Khảo sát (Kỳ/Đợt) đã bị khóa điểm</h3>
-                                <p className="text-sm text-red-700 leading-relaxed">
+                                <h3 className="text-xs font-bold text-red-800 mb-1">Hạng mục Khảo sát (Kỳ/Đợt) đã bị khóa điểm</h3>
+                                <p className="text-xs text-red-700 leading-relaxed">
                                     Hạng mục khảo sát (Kỳ hoặc Đợt) này đã được thiết lập sang trạng thái <strong>KHÓA / KẾT THÚC</strong> nên mọi thao tác nhập liệu đều bị cấm. <br/>
                                     Trường hợp các thầy cô cần điều chỉnh điểm số, xin vui lòng liên hệ Người phụ trách đợt khảo sát: <strong>{currentAssignment.period.assignedUser?.fullName || "Admin"}</strong>.
                                 </p>
                                 {currentAssignment.unlockRequestStatus === "REJECTED" && (
-                                    <div className="mt-3 bg-red-100 text-red-700 text-sm px-3 py-2 rounded-lg font-bold inline-block shadow-sm">
+                                    <div className="mt-3 bg-red-100 text-red-700 text-xs px-3 py-1 rounded-lg font-bold inline-block shadow-sm">
                                         ❌ Hệ thống không chấp nhận yêu cầu của bạn.
                                     </div>
                                 )}
                                 {currentAssignment.unlockRequestStatus === "PENDING" ? (
                                     <div className="mt-4 flex items-center gap-2">
-                                        <div className="bg-amber-100 text-amber-700 px-4 py-2 rounded-lg text-sm font-bold shadow-sm inline-flex items-center gap-2">
+                                        <div className="bg-amber-100 text-amber-700 px-4 py-1 rounded-lg text-xs font-bold shadow-sm inline-flex items-center gap-2">
                                             <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357-2H15"></path></svg>
                                             Yêu cầu Mở khóa đang chờ Admin duyệt...
                                         </div>
                                     </div>
                                 ) : (
                                     <div className="mt-4">
-                                        <button onClick={() => setIsUnlockRequestOpen(true)} className="bg-red-600 hover:bg-red-700 text-white shadow-md text-sm font-bold px-4 py-2.5 rounded-xl transition-all">Gửi Yêu cầu Cấp quyền Nhập Điểm</button>
+                                        <button onClick={() => setIsUnlockRequestOpen(true)} className="bg-red-600 hover:bg-red-700 text-white shadow-md text-xs font-bold px-4 py-1.5 rounded-xl transition-all">Gửi Yêu cầu Cấp quyền Nhập Điểm</button>
                                     </div>
                                 )}
                             </div>
                         </div>
                     )}
                     <div className="overflow-x-auto p-4 custom-scrollbar" style={{maxWidth: "100%", width: "100%"}}>
-                        <table className="w-full text-sm text-left border-collapse min-w-max">
+                        <table className="w-full text-xs text-left border-collapse min-w-max">
                             <thead className="bg-slate-50 border-b-2 border-slate-200">
     <tr>
-        <th className="px-3 py-4 w-12 text-center font-bold text-slate-500 bg-[#F8FAFC] uppercase tracking-wider text-xs md:sticky md:left-0 z-20">STT</th>
-        <th className="px-3 py-4 font-bold text-slate-500 bg-[#F8FAFC] uppercase tracking-wider text-xs whitespace-nowrap text-center">Mã HS KS</th>
-          <th className="px-3 py-4 font-bold text-slate-500 bg-[#F8FAFC] uppercase tracking-wider text-xs whitespace-nowrap text-left">Họ và Tên</th>
-          <th className="px-3 py-4 font-bold text-slate-500 bg-[#F8FAFC] uppercase tracking-wider text-xs whitespace-nowrap text-center">Khối</th>
-          <th className="px-3 py-4 font-bold text-slate-500 bg-[#F8FAFC] uppercase tracking-wider text-xs whitespace-nowrap text-center">Giới tính</th>
-          <th className="px-3 py-4 font-bold text-slate-500 bg-[#F8FAFC] uppercase tracking-wider text-xs whitespace-nowrap text-center">Ngày sinh</th>
-          <th className="px-3 py-4 font-bold text-slate-500 bg-[#F8FAFC] uppercase tracking-wider text-xs whitespace-nowrap text-center">Hệ Khảo sát</th>
-        <th className="px-4 py-4 font-bold text-[#00A19A] bg-[#F8FAFC] uppercase tracking-wider text-xs text-center">
+        <th className="px-2 py-2 w-12 text-center font-bold text-slate-500 bg-[#F8FAFC] uppercase tracking-wider text-xs md:sticky md:left-0 z-20">STT</th>
+        <th className="px-2 py-2 font-bold text-slate-500 bg-[#F8FAFC] uppercase tracking-wider text-xs whitespace-nowrap text-center">Mã HS KS</th>
+          <th className="px-2 py-2 font-bold text-slate-500 bg-[#F8FAFC] uppercase tracking-wider text-xs whitespace-nowrap text-left">Họ và Tên</th>
+          <th className="px-2 py-2 font-bold text-slate-500 bg-[#F8FAFC] uppercase tracking-wider text-xs whitespace-nowrap text-center">Khối</th>
+          <th className="px-2 py-2 font-bold text-slate-500 bg-[#F8FAFC] uppercase tracking-wider text-xs whitespace-nowrap text-center">Giới tính</th>
+          <th className="px-2 py-2 font-bold text-slate-500 bg-[#F8FAFC] uppercase tracking-wider text-xs whitespace-nowrap text-center">Ngày sinh</th>
+          <th className="px-2 py-2 font-bold text-slate-500 bg-[#F8FAFC] uppercase tracking-wider text-xs whitespace-nowrap text-center">Hệ Khảo sát</th>
+        <th className="px-2 py-2 font-bold text-[#00A19A] bg-[#F8FAFC] uppercase tracking-wider text-xs text-center">
             {isPsychSubject || isChildDevSubject || isThinkingSkillsSubject || isPreschoolSubject ? "Form Khảo sát" : (hideComments ? "Chi tiết Điểm" : "Chi tiết Điểm & Nhận xét")}
         </th>
         {(isChildDevSubject || isThinkingSkillsSubject) && (
-            <th className="px-4 py-4 font-bold text-[#00A19A] bg-[#F8FAFC] uppercase tracking-wider text-xs text-left min-w-[250px]">Nhận xét chung</th>
+            <th className="px-2 py-2 font-bold text-[#00A19A] bg-[#F8FAFC] uppercase tracking-wider text-xs text-left min-w-[250px]">Nhận xét chung</th>
         )}
         {isPsychSubject && (
             <>
-                <th className="px-4 py-4 font-bold text-[#00A19A] bg-[#F8FAFC] uppercase tracking-wider text-xs text-left min-w-[200px]">Kết luận sơ bộ</th>
-                <th className="px-4 py-4 font-bold text-[#00A19A] bg-[#F8FAFC] uppercase tracking-wider text-xs text-left min-w-[200px]">Khuyến nghị (Nếu có)</th>
+                <th className="px-2 py-2 font-bold text-[#00A19A] bg-[#F8FAFC] uppercase tracking-wider text-xs text-left min-w-[200px]">Kết luận sơ bộ</th>
+                <th className="px-2 py-2 font-bold text-[#00A19A] bg-[#F8FAFC] uppercase tracking-wider text-xs text-left min-w-[200px]">Khuyến nghị (Nếu có)</th>
             </>
         )}
-        <th className="px-2 py-3 md:px-4 md:py-4 text-center font-bold text-[#00A19A] bg-[#F8FAFC] uppercase tracking-wider text-xs w-32 md:sticky md:right-0 z-20">Xác nhận</th>
+        <th className="px-2 py-2 md:px-4 md:py-4 text-center font-bold text-[#00A19A] bg-[#F8FAFC] uppercase tracking-wider text-xs w-32 md:sticky md:right-0 z-20">Xác nhận</th>
     </tr>
 </thead>
                             <tbody className="divide-y border-b">
                                 {students.map((st, i) => (
                                     <tr key={st.id} className="hover:bg-slate-100/30 group border-b border-slate-100 last:border-none transition-colors">
-                                        <td className="px-2 py-2 md:px-3 md:py-4 text-center text-slate-500 bg-transparent md:sticky md:left-0 z-10 font-medium text-sm">{i+1}</td>
-                                        <td className="px-3 py-3 bg-transparent text-center">
+                                        <td className="px-2 py-1 md:px-3 md:py-4 text-center text-slate-500 bg-transparent md:sticky md:left-0 z-10 font-medium text-xs">{i+1}</td>
+                                        <td className="px-3 py-2 bg-transparent text-center">
                                               <span className="font-mono font-bold text-slate-700 bg-slate-100 px-3 py-1.5 rounded-full text-xs">{st.studentCode}</span>
                                           </td>
-                                          <td className="px-3 py-3 bg-transparent text-left">
-                                              <span className="font-bold text-slate-700 text-[13px] whitespace-nowrap">{st.fullName}</span>
+                                          <td className="px-3 py-2 bg-transparent text-left">
+                                              <span className="font-bold text-slate-700 text-xs whitespace-nowrap">{st.fullName}</span>
                                           </td>
-                                          <td className="px-3 py-3 bg-transparent text-center">
+                                          <td className="px-3 py-2 bg-transparent text-center">
               <span className="text-xs font-bold text-slate-500 whitespace-nowrap">{st.grade}</span>
           </td>
-          <td className="px-3 py-3 bg-transparent text-center">
+          <td className="px-3 py-2 bg-transparent text-center">
               <span className="text-xs font-medium text-slate-500 whitespace-nowrap">{st.gender === "M" || st.gender === "Nam" ? "Nam" : st.gender === "F" || st.gender === "Nữ" ? "Nữ" : st.gender || "—"}</span>
           </td>
-                                          <td className="px-3 py-3 bg-transparent text-center">
+                                          <td className="px-3 py-2 bg-transparent text-center">
                                               <span className="text-xs text-slate-500 whitespace-nowrap">{st.dateOfBirth ? new Date(st.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</span>
                                           </td>
-                                          <td className="px-3 py-3 bg-transparent text-center">
+                                          <td className="px-3 py-2 bg-transparent text-center">
                                               <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded-md border border-slate-200 whitespace-nowrap uppercase">{st.surveyFormType || "—"}</span>
                                           </td>
                                         
-                                        <td className="px-4 py-4 bg-transparent">
+                                        <td className="px-2 py-2 bg-transparent">
             {isPreschoolSubject ? (
               <div className="flex flex-col items-center justify-center gap-2">
                   <button 
                     onClick={() => { setActivePreschoolStudent(st); setIsPreschoolModalOpen(true); }}
-                    className="bg-pink-50 hover:bg-pink-600 text-pink-700 hover:text-white font-bold py-2 px-5 rounded-full shadow-sm flex items-center gap-2 transition-all active:scale-95 text-xs border border-pink-100"
+                    className="bg-pink-50 hover:bg-pink-600 text-pink-700 hover:text-white font-bold py-1 px-5 rounded-full shadow-sm flex items-center gap-2 transition-all active:scale-95 text-xs border border-pink-100"
                   >
                     <BookOpen className="w-3.5 h-3.5" /> 
                     Mở Form Đánh giá
@@ -515,7 +515,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
               <div className="flex flex-col items-center justify-center gap-2">
                   <button 
                     onClick={() => { setActiveThinkingSkillsStudent(st); setIsThinkingSkillsModalOpen(true); }}
-                    className="bg-slate-100 hover:bg-indigo-600 text-slate-700 hover:text-white font-bold py-2 px-5 rounded-full shadow-sm flex items-center gap-2 transition-all active:scale-95 text-xs"
+                    className="bg-slate-100 hover:bg-indigo-600 text-slate-700 hover:text-white font-bold py-1 px-5 rounded-full shadow-sm flex items-center gap-2 transition-all active:scale-95 text-xs"
                   >
                     <BookOpen className="w-3.5 h-3.5" /> 
                     Mở Form Đánh giá
@@ -542,7 +542,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
               <div className="flex flex-col items-center justify-center gap-2">
                   <button 
                     onClick={() => { setActiveChildDevStudent(st); setIsChildDevModalOpen(true); }}
-                    className="bg-slate-100 hover:bg-indigo-600 text-slate-700 hover:text-white font-bold py-2 px-5 rounded-full shadow-sm flex items-center gap-2 transition-all active:scale-95 text-xs"
+                    className="bg-slate-100 hover:bg-indigo-600 text-slate-700 hover:text-white font-bold py-1 px-5 rounded-full shadow-sm flex items-center gap-2 transition-all active:scale-95 text-xs"
                   >
                     <BookOpen className="w-3.5 h-3.5" /> 
                     Mở Form Đánh giá
@@ -569,7 +569,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
               <div className="flex flex-col items-center justify-center gap-2">
                   <button 
         onClick={() => { setActivePsychStudent(st); setIsPsychModalOpen(true); }}
-        className="bg-slate-100 hover:bg-indigo-600 text-slate-700 hover:text-white font-bold py-2 px-5 rounded-full shadow-sm flex items-center gap-2 transition-all active:scale-95 text-xs"
+        className="bg-slate-100 hover:bg-indigo-600 text-slate-700 hover:text-white font-bold py-1 px-5 rounded-full shadow-sm flex items-center gap-2 transition-all active:scale-95 text-xs"
     >
         <BookOpen className="w-3.5 h-3.5" /> 
         Mở Form Khối {st.grade || "Cơ bản"}
@@ -618,7 +618,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                         <div key={"sc-input-"+colIdx} className="flex flex-col gap-1.5 w-24 flex-none">
                             <span className="text-[10px] uppercase font-bold text-slate-600 truncate border-b border-slate-200 pb-1" title={cName + maxScoreStr}>{cName}{maxScoreStr && <span className="text-red-500 font-black ml-0.5">{maxScoreStr}</span>}</span>
                             {isTotal ? (
-                                <div className="w-full bg-[#F0FDFA] border border-slate-300 rounded-lg py-2 text-center font-black text-[#00A19A] shadow-inner h-[36px] text-[13px] flex items-center justify-center">
+                                <div className="w-full bg-[#F0FDFA] border border-slate-300 rounded-lg py-1 text-center font-black text-[#00A19A] shadow-inner h-[30px] text-[12px] text-[13px] flex items-center justify-center">
                                     {(st.scoreVals || []).slice(0, colIdx).reduce((sum: number, val: any) => sum + (parseFloat(val) || 0), 0).toLocaleString("vi-VN", {maximumFractionDigits: 2})}
                                 </div>
                             ) : (
@@ -627,7 +627,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                     value={st.scoreVals?.[colIdx] || ""}
                                     onChange={e => handleScoreChange(st.id, colIdx, e.target.value)}
                                     disabled={isLocked}
-                                    className={`w-full border border-slate-300 rounded-lg py-2 text-center font-bold shadow-sm outline-none transition-all h-[36px] text-[13px] ${isLocked ? "bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200" : "bg-white text-slate-800 focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/20 placeholder-slate-300"}`}
+                                    className={`w-full border border-slate-300 rounded-lg py-1 text-center font-bold shadow-sm outline-none transition-all h-[30px] text-[12px] text-[13px] ${isLocked ? "bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200" : "bg-white text-slate-800 focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/20 placeholder-slate-300"}`}
                                     placeholder="-"
                                 />
                             )}
@@ -646,7 +646,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                 value={st.commentVals?.[colIdx] || ""}
                                 onChange={e => handleCommentChange(st.id, colIdx, e.target.value)}
                                 disabled={isLocked}
-                                className={`w-full border border-slate-300 rounded-lg py-2 px-3 text-sm font-medium shadow-sm outline-none transition-all h-[36px] text-[13px] ${isLocked ? "bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200" : "bg-white text-slate-700 focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/20 placeholder-slate-400"}`}
+                                className={`w-full border border-slate-300 rounded-lg py-1 px-3 text-xs font-medium shadow-sm outline-none transition-all h-[30px] text-[12px] text-[13px] ${isLocked ? "bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200" : "bg-white text-slate-700 focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/20 placeholder-slate-400"}`}
                                 placeholder="..."
                             />
                         </div>
@@ -656,7 +656,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
             )}
         </td>
         {(isChildDevSubject || isThinkingSkillsSubject) && (
-            <td className="px-4 py-3 bg-transparent text-left align-top max-w-[250px]">
+            <td className="px-4 py-2 bg-transparent text-left align-top max-w-[250px]">
                 <div className="text-[12px] text-slate-700 whitespace-pre-wrap leading-relaxed max-h-[100px] overflow-y-auto custom-scrollbar font-medium italic">
                     {st.commentVals?.[0] ? `"${st.commentVals[0]}"` : "-"}
                 </div>
@@ -664,19 +664,19 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
         )}
         {isPsychSubject && (
             <>
-                <td className="px-4 py-3 bg-transparent text-left align-top max-w-[250px]">
+                <td className="px-4 py-2 bg-transparent text-left align-top max-w-[250px]">
                     <div className="text-[12px] text-slate-700 whitespace-pre-wrap leading-relaxed max-h-[100px] overflow-y-auto custom-scrollbar font-medium">{st.commentVals?.[0] || "-"}</div>
                 </td>
-                <td className="px-4 py-3 bg-transparent text-left align-top max-w-[250px]">
+                <td className="px-4 py-2 bg-transparent text-left align-top max-w-[250px]">
                     <div className="text-[12px] text-slate-700 whitespace-pre-wrap leading-relaxed max-h-[100px] overflow-y-auto custom-scrollbar font-medium">{st.commentVals?.[1] || "-"}</div>
                 </td>
             </>
         )}
-<td className="px-2 py-2 md:px-4 md:py-4 text-center bg-transparent md:sticky md:right-0 z-10 md:backdrop-blur-sm">
+<td className="px-2 py-1 md:px-4 md:py-4 text-center bg-transparent md:sticky md:right-0 z-10 md:backdrop-blur-sm">
                                             <button 
                                                 onClick={() => saveStudentScore(st)}
                                                 disabled={isLocked || isPsychSubject || isChildDevSubject || isThinkingSkillsSubject || isPreschoolSubject}
-                                                className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-center w-full gap-2 transition-all shadow-sm ${isLocked || isPsychSubject || isChildDevSubject || isThinkingSkillsSubject ? "bg-slate-200 text-slate-400 cursor-not-allowed border-none" : 
+                                                className={`px-3 py-1 rounded-xl text-xs font-bold flex items-center justify-center w-full gap-2 transition-all shadow-sm ${isLocked || isPsychSubject || isChildDevSubject || isThinkingSkillsSubject ? "bg-slate-200 text-slate-400 cursor-not-allowed border-none" : 
                                                     saveStatus[st.id] === "saved" ? "bg-emerald-500 text-white" : 
                                                     saveStatus[st.id] === "saving" ? "bg-slate-200 text-slate-500" :
                                                     "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300"}`}
@@ -699,24 +699,24 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
         
       {isUnlockRequestOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex justify-center items-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-hidden flex flex-col">
+          <div className="bg-white rounded-lg w-full max-w-lg shadow-xl overflow-hidden flex flex-col">
             <div className="p-5 border-b flex justify-between items-center bg-[#F8FAFC]">
               <h3 className="font-bold text-lg text-slate-800">Yêu cầu Mở khóa Form</h3>
               <button onClick={() => setIsUnlockRequestOpen(false)} className="text-slate-400 hover:text-red-500"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Lý do xin mở khóa bổ sung điểm:</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-2">Lý do xin mở khóa bổ sung điểm:</label>
                 <textarea 
                     value={unlockReason} 
                     onChange={e => setUnlockReason(e.target.value)} 
-                    className="w-full border rounded-xl p-3 text-sm focus:border-[#00A19A] outline-none h-32 resize-none" 
+                    className="w-full border rounded-xl p-3 text-xs focus:border-[#00A19A] outline-none h-32 resize-none" 
                     placeholder="VD: Cần chỉnh sửa lại điểm cột Hành vi cho một số học sinh..."
                 />
               </div>
               <div className="flex justify-end gap-3 pt-4">
-                <button onClick={() => setIsUnlockRequestOpen(false)} className="px-5 py-2 hover:bg-slate-100 rounded-xl font-medium text-slate-600">Hủy</button>
-                <button onClick={handleUnlockRequestSubmit} className="px-5 py-2 bg-indigo-600 text-white rounded-xl font-medium shadow-sm hover:bg-indigo-700">Gửi Yêu Cầu</button>
+                <button onClick={() => setIsUnlockRequestOpen(false)} className="px-5 py-1 hover:bg-slate-100 rounded-xl font-medium text-slate-600">Hủy</button>
+                <button onClick={handleUnlockRequestSubmit} className="px-5 py-1 bg-indigo-600 text-white rounded-xl font-medium shadow-sm hover:bg-indigo-700">Gửi Yêu Cầu</button>
               </div>
             </div>
           </div>
@@ -729,7 +729,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
             <h3 className="font-bold text-slate-800">Phiếu Đánh giá Tâm lý Chi tiết</h3>
             <button 
               onClick={() => setIsPsychModalOpen(false)}
-              className="bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-600 px-4 py-2 rounded-xl font-bold transition-all flex items-center gap-2"
+              className="bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-600 px-4 py-1 rounded-xl font-bold transition-all flex items-center gap-2"
             >
               <X className="w-5 h-5" /> Đóng lại
             </button>
