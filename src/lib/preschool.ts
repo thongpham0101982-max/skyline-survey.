@@ -1,6 +1,6 @@
 /**
  * Maps a student's grade and their batch's start date to the correct criteria age group
- * based on the 2026-2027 preschool survey timelines.
+ * based on the 2026-2027 preschool survey timelines (Updated Version).
  */
 export function getSurveyFormAgeGroup(grade?: string | null, batchStartDate?: string | Date | null): string {
   const normalizedGrade = (grade || "").trim();
@@ -26,29 +26,29 @@ export function getSurveyFormAgeGroup(grade?: string | null, batchStartDate?: st
   }
 
   if (isStage2) {
-    // Giai đoạn 2 (01/01 to 31/05):
-    // Nhà trẻ 18-24 tháng -> 18 đến 24 tháng
-    // Nhà trẻ 24-36 tháng -> 24 đến 36 tháng
-    // Mẫu giáo bé -> Mẫu giáo bé
+    // Giai đoạn 2:
+    // 18 đến 24 tháng -> 18 đến 24 tháng
+    // 24 đến 36 tháng -> 24 đến 36 tháng
+    // Mẫu giáo bé -> Mẫu giáo nhỡ
+    // Mẫu giáo nhỡ -> Mẫu giáo lớn
+    // Mẫu giáo lớn -> Mẫu giáo lớn (Trẻ 5 đến 6 tuổi)
+    if (normalizedGrade === "Nhà trẻ 18-24 tháng" || normalizedGrade === "18 đến 24 tháng") return "18 đến 24 tháng";
+    if (normalizedGrade === "Nhà trẻ 24-36 tháng" || normalizedGrade === "24 đến 36 tháng") return "24 đến 36 tháng";
+    if (normalizedGrade === "Mẫu giáo bé") return "Mẫu giáo nhỡ";
+    if (normalizedGrade === "Mẫu giáo nhỡ") return "Mẫu giáo lớn";
+    if (normalizedGrade === "Mẫu giáo lớn") return "Mẫu giáo lớn";
+  } else {
+    // Giai đoạn 1:
+    // 18 đến 24 tháng -> 18 đến 24 tháng
+    // 24 đến 36 tháng -> 18 đến 24 tháng
+    // Mẫu giáo bé -> 24 đến 36 tháng
     // Mẫu giáo nhỡ -> Mẫu giáo nhỡ
     // Mẫu giáo lớn -> Mẫu giáo lớn
     if (normalizedGrade === "Nhà trẻ 18-24 tháng" || normalizedGrade === "18 đến 24 tháng") return "18 đến 24 tháng";
-    if (normalizedGrade === "Nhà trẻ 24-36 tháng" || normalizedGrade === "24 đến 36 tháng") return "24 đến 36 tháng";
-    if (normalizedGrade === "Mẫu giáo bé") return "Mẫu giáo bé";
-    if (normalizedGrade === "Mẫu giáo nhỡ") return "Mẫu giáo nhỡ";
-    if (normalizedGrade === "Mẫu giáo lớn") return "Mẫu giáo lớn";
-  } else {
-    // Giai đoạn 1 (01/06 to 31/12):
-    // Nhà trẻ 18-24 tháng -> 18 đến 24 tháng
-    // Nhà trẻ 24-36 tháng -> 18 đến 24 tháng
-    // Mẫu giáo bé -> 24 đến 36 tháng
-    // Mẫu giáo nhỡ -> Mẫu giáo bé
-    // Mẫu giáo lớn -> Mẫu giáo nhỡ
-    if (normalizedGrade === "Nhà trẻ 18-24 tháng" || normalizedGrade === "18 đến 24 tháng") return "18 đến 24 tháng";
     if (normalizedGrade === "Nhà trẻ 24-36 tháng" || normalizedGrade === "24 đến 36 tháng") return "18 đến 24 tháng";
     if (normalizedGrade === "Mẫu giáo bé") return "24 đến 36 tháng";
-    if (normalizedGrade === "Mẫu giáo nhỡ") return "Mẫu giáo bé";
-    if (normalizedGrade === "Mẫu giáo lớn") return "Mẫu giáo nhỡ";
+    if (normalizedGrade === "Mẫu giáo nhỡ") return "Mẫu giáo nhỡ";
+    if (normalizedGrade === "Mẫu giáo lớn") return "Mẫu giáo lớn";
   }
 
   return normalizedGrade;

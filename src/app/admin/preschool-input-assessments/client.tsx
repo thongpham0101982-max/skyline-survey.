@@ -4013,7 +4013,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               {devType === "INPUT" && (() => {
                 let gd1 = "";
                 let gd2 = "";
-                switch (ageGroupFilter) {
+                                switch (ageGroupFilter) {
                   case "18 đến 24 tháng":
                     gd1 = "Nhà trẻ 18-24 tháng & Nhà trẻ 24-36 tháng";
                     gd2 = "Nhà trẻ 18-24 tháng";
@@ -4023,16 +4023,16 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     gd2 = "Nhà trẻ 24-36 tháng";
                     break;
                   case "Mẫu giáo bé":
+                    gd1 = "Không áp dụng";
+                    gd2 = "Không áp dụng";
+                    break;
+                  case "Mẫu giáo nhỡ":
                     gd1 = "Mẫu giáo nhỡ";
                     gd2 = "Mẫu giáo bé";
                     break;
-                  case "Mẫu giáo nhỡ":
-                    gd1 = "Mẫu giáo lớn";
-                    gd2 = "Mẫu giáo nhỡ";
-                    break;
                   case "Mẫu giáo lớn":
-                    gd1 = "Không áp dụng";
-                    gd2 = "Mẫu giáo lớn";
+                    gd1 = "Mẫu giáo lớn";
+                    gd2 = "Mẫu giáo nhỡ & Mẫu giáo lớn";
                     break;
                 }
                 if (!gd1) return null;
