@@ -211,3 +211,91 @@
 body, button, input, select, textarea, span, div, h1, h2, h3, h4, h5, h6, table, th, td {
   font-family: 'Be Vietnam Pro', sans-serif !important;
 }
+
+/* ==========================================
+   GLOBAL BRAND BUTTON STYLING OVERRIDES
+   ========================================== */
+@layer base {
+  button, 
+  .btn,
+  a[class*="bg-indigo-"],
+  a[class*="bg-violet-"],
+  a[class*="bg-purple-"],
+  a[class*="bg-teal-500"] {
+    /* Gradients */
+    &.bg-gradient-to-r,
+    &.bg-gradient-to-br,
+    &.bg-gradient-to-tr {
+      background-image: linear-gradient(to right, #00A19A, #1E8B87) !important;
+    }
+    
+    /* Solid backgrounds - map purple/violet/indigo/blue/pink/orange/amber to brand green */
+    &[class*="bg-fuchsia-"],
+    &[class*="bg-pink-"],
+    &[class*="bg-rose-"],
+    &[class*="bg-violet-"],
+    &[class*="bg-indigo-"],
+    &[class*="bg-purple-"],
+    &[class*="bg-blue-"],
+    &[class*="bg-amber-"],
+    &[class*="bg-orange-"] {
+      background-color: #00A19A !important;
+      color: #ffffff !important;
+      border-color: #00A19A !important;
+      background-image: none !important;
+    }
+
+    /* Hover states for solid backgrounds */
+    &[class*="bg-fuchsia-"]:hover,
+    &[class*="bg-pink-"]:hover,
+    &[class*="bg-rose-"]:hover,
+    &[class*="bg-violet-"]:hover,
+    &[class*="bg-indigo-"]:hover,
+    &[class*="bg-purple-"]:hover,
+    &[class*="bg-blue-"]:hover,
+    &[class*="bg-amber-"]:hover,
+    &[class*="bg-orange-"]:hover {
+      background-color: #1E8B87 !important;
+      background-image: none !important;
+    }
+
+    /* Focus rings & shadows color overrides */
+    &[class*="shadow-pink-"],
+    &[class*="shadow-violet-"],
+    &[class*="shadow-indigo-"],
+    &[class*="shadow-purple-"],
+    &[class*="shadow-blue-"],
+    &[class*="shadow-orange-"] {
+      --tw-shadow-color: rgba(0, 161, 154, 0.25) !important;
+    }
+
+    /* Light backgrounds (often used for sub-action / detail buttons) */
+    &[class*="bg-teal-5"],
+    &[class*="bg-violet-5"],
+    &[class*="bg-indigo-5"],
+    &[class*="bg-purple-5"] {
+      background-color: rgba(0, 161, 154, 0.05) !important;
+      border-color: rgba(0, 161, 154, 0.15) !important;
+    }
+    
+    &[class*="bg-teal-5"]:hover,
+    &[class*="bg-violet-5"]:hover,
+    &[class*="bg-indigo-5"]:hover,
+    &[class*="bg-purple-5"]:hover {
+      background-color: #00A19A !important;
+      color: #ffffff !important;
+      border-color: #00A19A !important;
+    }
+
+    /* Secondary text links inside buttons */
+    &[class*="text-violet-"],
+    &[class*="text-indigo-"],
+    &[class*="text-purple-"],
+    &[class*="text-blue-"] {
+      /* Keep white text white on solid buttons */
+      &:not([class*="bg-indigo-"]):not([class*="bg-violet-"]):not([class*="bg-purple-"]):not([class*="bg-blue-"]) {
+        color: #00A19A !important;
+      }
+    }
+  }
+}
