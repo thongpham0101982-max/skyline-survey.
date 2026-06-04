@@ -139,7 +139,7 @@ const xetDuyetCols = [
 ];
 
 export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoVuCSUsers, grades: gradesProp, teachers, departments, currentUser }: { academicYears: AcademicYear[]; campuses: Camp[]; giaoVuCSUsers: any[]; grades: string[]; teachers: any[]; departments: any[]; currentUser: any; }) {
-  const grades = gradesProp && gradesProp.length > 0 ? gradesProp : ["18 đến 24 tháng", "24 đến 36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"];
+  const grades = gradesProp && gradesProp.length > 0 ? gradesProp : ["18 đến 24 tháng", "24 đến 36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn", "5 đến 6 tuổi"];
 
   const userRole = (currentUser?.role || "").toUpperCase();
   const isSystemAdmin = userRole === "ADMIN";
@@ -4032,7 +4032,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     break;
                   case "Mẫu giáo lớn":
                     gd1 = "Mẫu giáo lớn";
-                    gd2 = "Mẫu giáo nhỡ & Mẫu giáo lớn";
+                    gd2 = "Mẫu giáo nhỡ";
+                    break;
+                  case "5 đến 6 tuổi":
+                    gd1 = "Không áp dụng";
+                    gd2 = "Mẫu giáo lớn";
                     break;
                 }
                 if (!gd1) return null;

@@ -20,7 +20,7 @@ export default async function PreschoolInputAssessmentsPage() {
     }
   } catch (e) { console.error("campusIds error:", e); }
   
-  const grades = ["18 đến 24 tháng", "24 đến 36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"];
+  const grades = ["18 đến 24 tháng", "24 đến 36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn", "5 đến 6 tuổi"];
   let academicYears: any[] = [], campuses: any[] = [], giaoVuCSUsers: any[] = [], teachers: any[] = [], departments: any[] = [];
   
   try {
