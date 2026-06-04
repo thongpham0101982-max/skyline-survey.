@@ -3,7 +3,6 @@ import { NotificationBell } from "@/components/NotificationBell"
 import { auth } from "@/lib/auth"
 import { UserMenu } from "@/components/UserMenu"
 import { AcademicYearSelector } from "@/components/AcademicYearSelector"
-
 export default async function HocSinhLayout({ children }: { children: React.ReactNode }) {
   let session: any = null;
   try {
@@ -11,9 +10,7 @@ export default async function HocSinhLayout({ children }: { children: React.Reac
   } catch (e) {
     console.error("Auth fail in HocSinhLayout:", e);
   }
-
   const roleCode = (session?.user as any)?.role || "STUDENT"
-
   return (
     <div className="flex min-h-screen bg-slate-50">
       <Sidebar role="STUDENT" actualRole={roleCode} />
@@ -29,7 +26,6 @@ export default async function HocSinhLayout({ children }: { children: React.Reac
           </div>
           <div className="flex items-center gap-4">
              <AcademicYearSelector />
-             <NotificationBell />
              <UserMenu session={session} />
           </div>
         </header>

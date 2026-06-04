@@ -1,9 +1,10 @@
 ﻿"use client";
 
-import { useState } from "react";
-import { LogOut, KeyRound, ChevronDown } from "lucide-react";
+import { useState, useEffect } from "react";
+import { LogOut, KeyRound, ChevronDown, Bell, CheckCircle2 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { ChangePasswordModal } from "./ChangePasswordModal";
+import { getUserNotificationsAction, markNotificationsAsReadAction } from "@/lib/notification_actions";
 
 interface UserMenuProps {
   session: any;
@@ -12,6 +13,24 @@ interface UserMenuProps {
 export function UserMenu({ session }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [notifs, setNotifs] = useState<any[]>([]);
+  const [unread, setUnread] = useState(0);
+  const [showNotifs, setShowNotifs] = useState(false);
+
+  useEffect(() => {
+    getUserNotificationsAction().then(res => {
+      setNotifs(res);
+      setUnread(res.filter((n: any) => !n.isRead).length);
+    });
+  }, []);
+
+  const handleOpenNotifs = () => {
+    setShowNotifs(true);
+    setIsOpen(false);
+    if (unread > 0) {
+      markNotificationsAsReadAction().then(() => setUnread(0));
+    }
+  };
 
   const initial = session?.user?.name ? session.user.name.charAt(0).toUpperCase() : 'U';
 
@@ -22,8 +41,11 @@ export function UserMenu({ session }: UserMenuProps) {
           onClick={() => setIsOpen(!isOpen)}
           className="flex items-center gap-2 cursor-pointer group"
         >
-          <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#135E5B] to-[#1E8B87] text-white flex items-center justify-center font-bold text-sm shadow-md border-2 border-white group-hover:scale-105 transition-transform">
+          <div className="relative w-9 h-9 rounded-full bg-gradient-to-tr from-[#135E5B] to-[#1E8B87] text-white flex items-center justify-center font-bold text-sm shadow-md border-2 border-white group-hover:scale-105 transition-transform">
             {initial}
+            {unread > 0 && (
+              <span className="absolute top-0 right-0 w-3 h-3 bg-rose-500 border-2 border-white rounded-full translate-x-1 -translate-y-1"></span>
+            )}
           </div>
           <ChevronDown className={"w-4 h-4 text-slate-400 transition-transform "} />
         </div>
@@ -34,8 +56,22 @@ export function UserMenu({ session }: UserMenuProps) {
             <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 py-1 z-50 animate-in fade-in slide-in-from-top-2">
               <div className="px-4 py-2 border-b border-slate-50 mb-1">
                 <p className="text-sm font-semibold text-slate-700 truncate">{session?.user?.name || "Người dùng"}</p>
-                <p className="text-xs text-slate-400 truncate">{session?.user?.email || ""}</p>
+                <p className="text-[10px] text-slate-400 truncate">{session?.user?.email || ""}</p>
               </div>
+              
+              <button
+                onClick={handleOpenNotifs}
+                className="w-full flex items-center justify-between px-4 py-2 text-sm text-slate-600 hover:text-[#1E8B87] hover:bg-slate-50 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <Bell className="w-4 h-4" />
+                  Thông báo
+                </div>
+                {unread > 0 && (
+                  <span className="bg-rose-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">{unread}</span>
+                )}
+              </button>
+
               <button
                 onClick={() => {
                   setIsOpen(false);
@@ -46,13 +82,16 @@ export function UserMenu({ session }: UserMenuProps) {
                 <KeyRound className="w-4 h-4" />
                 Đổi mật khẩu
               </button>
-              <button
-                onClick={() => signOut({ callbackUrl: "/login" })}
-                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-              >
-                <LogOut className="w-4 h-4" />
-                Đăng xuất
-              </button>
+              
+              <div className="border-t border-slate-50 mt-1 pt-1">
+                <button
+                  onClick={() => signOut({ callbackUrl: "/login" })}
+                  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Đăng xuất
+                </button>
+              </div>
             </div>
           </>
         )}
@@ -62,6 +101,46 @@ export function UserMenu({ session }: UserMenuProps) {
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
       />
+
+      {showNotifs && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 border border-slate-100">
+            <div className="bg-gradient-to-r from-[#1E8B87] to-[#135E5B] p-4 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-white">
+                <Bell className="w-5 h-5" />
+                <h3 className="font-bold text-base">Thông báo hệ thống</h3>
+              </div>
+              <button 
+                onClick={() => setShowNotifs(false)}
+                className="p-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-white transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            
+            <div className="max-h-[60vh] overflow-y-auto">
+              {notifs.length === 0 ? (
+                <div className="p-8 text-center text-slate-400 font-medium">
+                  <Bell className="w-10 h-10 mx-auto text-slate-200 mb-2" />
+                  Bạn không có thông báo nào.
+                </div>
+              ) : (
+                notifs.map(n => (
+                  <div key={n.id} className={"p-4 border-b border-slate-100 hover:bg-slate-50 transition-colors "}>
+                    <div className="flex items-start justify-between mb-1">
+                      <h4 className="font-bold text-[#1E8B87] flex items-center text-sm"><CheckCircle2 className="w-3.5 h-3.5 mr-1.5 opacity-60"/> {n.title}</h4>
+                      <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap ml-2">
+                        {new Date(n.createdAt).toLocaleDateString("vi-VN")}
+                      </span>
+                    </div>
+                    <p className="text-slate-600 text-xs leading-relaxed">{n.message}</p>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

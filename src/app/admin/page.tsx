@@ -25,7 +25,8 @@ export default function AdminDashboard() {
   useEffect(() => {
     async function fetchMetrics() {
       try {
-        const r = await fetch("/api/check-he-thong?action=getMetrics")
+        const yearId = localStorage.getItem("selectedAcademicYear") || "";
+        const r = await fetch("/api/check-he-thong?action=getMetrics&academicYearId=" + yearId)
         if (r.ok) {
           setMetrics(await r.json())
         }
@@ -36,6 +37,9 @@ export default function AdminDashboard() {
       }
     }
     fetchMetrics()
+
+    window.addEventListener("academicYearChanged", fetchMetrics)
+    return () => window.removeEventListener("academicYearChanged", fetchMetrics)
   }, [])
 
   if (status === "loading" || loading) {
@@ -64,11 +68,11 @@ export default function AdminDashboard() {
       
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5">
         <div>
-          <h1 className="text-3xl font-black text-slate-800 tracking-tight">Tổng quan Hệ thống</h1>
-          <p className="text-slate-500 font-medium mt-1">Số liệu thống kê chi tiết theo phạm vi Cơ sở của bạn.</p>
+          <h1 className="text-2xl font-black text-[#0A3230] tracking-tight">Tổng quan Hệ thống</h1>
+          <p className="text-slate-500 text-sm font-medium mt-0.5">Số liệu thống kê chi tiết theo phạm vi Cơ sở của bạn.</p>
         </div>
         {campusIds.length > 0 && (
-          <span className="px-4 py-1.5 text-xs font-black bg-indigo-50 border border-indigo-100 text-indigo-700 rounded-full uppercase tracking-wider shadow-sm flex items-center gap-1.5 self-start md:self-auto">
+          <span className="px-3 py-1 text-[10px] font-black bg-indigo-50 border border-indigo-100 text-indigo-700 rounded-full uppercase tracking-wider shadow-sm flex items-center gap-1.5 self-start md:self-auto">
             <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse"></span>
             Đang lọc: {campusIds.length} Cơ sở
           </span>
@@ -79,7 +83,7 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         
         {/* CARD 1: TỔNG HỌC SINH */}
-        <div className="relative bg-white rounded-3xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-all duration-300 group overflow-hidden">
+        <div className="relative bg-white rounded-2xl border-2 border-blue-100 p-5 shadow-sm hover:shadow-md transition-all duration-300 group overflow-hidden">
           <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-full -mt-8 -mr-8 mix-blend-multiply filter blur-xl opacity-70 group-hover:scale-110 transition-transform"></div>
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-sm">
@@ -93,7 +97,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* CARD 2: SỐ LỚP CƠ SỞ */}
-        <div className="relative bg-white rounded-3xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-all duration-300 group overflow-hidden">
+        <div className="relative bg-white rounded-2xl border-2 border-indigo-100 p-5 shadow-sm hover:shadow-md transition-all duration-300 group overflow-hidden">
           <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-50 rounded-full -mt-8 -mr-8 mix-blend-multiply filter blur-xl opacity-70 group-hover:scale-110 transition-transform"></div>
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shadow-sm">
@@ -107,7 +111,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* CARD 3: HỌC SINH LƯU CHUYỂN */}
-        <div className="relative bg-white rounded-3xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-all duration-300 group overflow-hidden">
+        <div className="relative bg-white rounded-2xl border-2 border-amber-100 p-5 shadow-sm hover:shadow-md transition-all duration-300 group overflow-hidden">
           <div className="absolute top-0 right-0 w-24 h-24 bg-amber-50 rounded-full -mt-8 -mr-8 mix-blend-multiply filter blur-xl opacity-70 group-hover:scale-110 transition-transform"></div>
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shadow-sm">
@@ -121,7 +125,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* CARD 4: TỶ LỆ HOÀN THÀNH */}
-        <div className="relative bg-white rounded-3xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-all duration-300 group overflow-hidden">
+        <div className="relative bg-white rounded-2xl border-2 border-emerald-100 p-5 shadow-sm hover:shadow-md transition-all duration-300 group overflow-hidden">
           <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-full -mt-8 -mr-8 mix-blend-multiply filter blur-xl opacity-70 group-hover:scale-110 transition-transform"></div>
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shadow-sm">
@@ -139,7 +143,7 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
         
         {/* SECTION LEFT: SURVEY RESULTS BY GRADE */}
-        <div className="bg-white rounded-[2rem] border border-slate-200 p-8 shadow-sm space-y-6">
+        <div className="bg-white rounded-2xl border-2 border-violet-100 p-6 shadow-sm space-y-6">
           <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
             <div className="w-10 h-10 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center">
               <TrendingUp className="w-5 h-5" />
@@ -172,7 +176,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* SECTION RIGHT: ADMISSION RESULTS */}
-        <div className="bg-white rounded-[2rem] border border-slate-200 p-8 shadow-sm space-y-6">
+        <div className="bg-white rounded-2xl border-2 border-emerald-100 p-6 shadow-sm space-y-6">
           <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
             <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
               <Award className="w-5 h-5" />
