@@ -159,11 +159,6 @@ export async function GET(req: any) {
                 }
             });
 
-            ntStudent.findMany({
-                where,
-                // ... select
-            });
-
             // Filter preschool students by teacher's preschool assignments
             let preschoolAssignments = [];
             if (!grade) {

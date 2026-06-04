@@ -165,6 +165,12 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
         fetch(`/api/teacher-assessments?action=getStudents&periodId=${assignment.periodId}&grade=${grade}&systemCode=${systemCode}&subjectId=${assignment.subjectId}&batchId=${batchQueryParam}`)
             .then(res => res.json())
             .then(data => {
+                if (!Array.isArray(data)) {
+                    console.error('API getStudents error:', data);
+                    setStudents([]);
+                    setLoading(false);
+                    return;
+                }
                 const enriched = data.map((st: any) => {
                     if (st.isPreschool) return st;
                     const sc = st.scores?.[0];
@@ -175,6 +181,11 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                     };
                 });
                 setStudents(enriched);
+                setLoading(false);
+            })
+            .catch(err => {
+                console.error('Fetch students error:', err);
+                setStudents([]);
                 setLoading(false);
             });
     }, [selectedAssignmentId, assignments, availableAssignments, selectedBatchId]);
