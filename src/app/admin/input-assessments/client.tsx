@@ -3165,7 +3165,7 @@ return {
 
   const groupedAssignments = useMemo(() => {
     const groups: Record<string, any> = {};
-    const targetAssignments = assignments.filter(a => !asFilterBatchId || a.batchId === asFilterBatchId);
+    const targetAssignments = asFilterBatchId ? assignments.filter(a => a.batchId === asFilterBatchId) : [];
     targetAssignments.forEach(a => {
         const key = `${a.userId}_${a.batchId}`;
         if (!groups[key]) {
@@ -3459,7 +3459,9 @@ return {
              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-2">
                 <div className="flex items-center gap-3">
                    <h3 className="text-base font-black text-slate-800 flex items-center gap-2"><Search className="w-5 h-5 text-indigo-500"/> Danh sách đã Phân công</h3>
-                   <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs font-black">{groupedAssignments.length} nhóm phân công</span>
+                   {asFilterBatchId && (
+                      <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs font-black">{groupedAssignments.length} nhóm phân công</span>
+                   )}
                 </div>
                 {asPeriodId && (
                    <div className="flex flex-wrap items-center gap-3 self-end sm:self-auto bg-slate-50 border border-slate-100 rounded-2xl px-4 py-2">
@@ -3471,25 +3473,35 @@ return {
                             onChange={e=>setAsFilterBatchId(e.target.value)} 
                             className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 transition-all shadow-sm cursor-pointer min-w-[150px]"
                          >
-                            <option value="">-- Tất cả đợt --</option>
+                            <option value="">-- Chọn Đợt --</option>
                             {asSelPeriod?.batches?.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
                          </select>
                       </div>
-                      <button
-                         onClick={sendAllNotifications}
-                         disabled={asNotifyingAll || groupedAssignments.length === 0 || cannotUpdate}
-                         className={"flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-xl text-xs font-black hover:bg-indigo-700 transition-all shadow-sm disabled:opacity-50 " + (cannotUpdate ? "pointer-events-none opacity-40" : "")}
-                         title="Gửi email thông báo phân công cho tất cả giáo viên trong danh sách"
-                      >
-                         {asNotifyingAll ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
-                         Gửi email hàng loạt
-                      </button>
+                      {asFilterBatchId && (
+                         <button
+                            onClick={sendAllNotifications}
+                            disabled={asNotifyingAll || groupedAssignments.length === 0 || cannotUpdate}
+                            className={"flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-xl text-xs font-black hover:bg-indigo-700 transition-all shadow-sm disabled:opacity-50 " + (cannotUpdate ? "pointer-events-none opacity-40" : "")}
+                            title="Gửi email thông báo phân công cho tất cả giáo viên trong danh sách"
+                         >
+                            {asNotifyingAll ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
+                            Gửi email hàng loạt
+                         </button>
+                      )}
                    </div>
                 )}
              </div>
 
              <div className="bg-white border border-slate-200 rounded-[2rem] shadow-sm overflow-hidden">
-                {asLoading ? <Spin/> : assignments.length === 0 ? (
+                {!asFilterBatchId ? (
+                  <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <div className="w-16 h-16 bg-teal-50 rounded-full flex items-center justify-center mb-4">
+                      <Filter className="w-8 h-8 text-[#00A19A]" />
+                    </div>
+                    <p className="font-black text-slate-500 text-sm">Vui lòng chọn Đợt lọc</p>
+                    <p className="text-xs text-slate-400 mt-1 font-medium">Chọn một Đợt ở bộ lọc phía trên để hiển thị danh sách giáo viên đã được phân công</p>
+                  </div>
+                ) : asLoading ? <Spin/> : assignments.length === 0 ? (
                   <Empty icon={UserPlus} text="Chưa có phân công nào" sub="Sử dụng form bên trên để tiến hành phân công GV"/>
                 ) : (
                   <div className="overflow-x-auto">
