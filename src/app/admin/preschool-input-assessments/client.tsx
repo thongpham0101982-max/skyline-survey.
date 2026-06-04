@@ -4023,16 +4023,16 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     gd2 = "Nhà trẻ 24-36 tháng";
                     break;
                   case "Mẫu giáo bé":
-                    gd1 = "Không áp dụng";
-                    gd2 = "Không áp dụng";
-                    break;
-                  case "Mẫu giáo nhỡ":
                     gd1 = "Mẫu giáo nhỡ";
                     gd2 = "Mẫu giáo bé";
                     break;
-                  case "Mẫu giáo lớn":
+                  case "Mẫu giáo nhỡ":
                     gd1 = "Mẫu giáo lớn";
                     gd2 = "Mẫu giáo nhỡ";
+                    break;
+                  case "Mẫu giáo lớn":
+                    gd1 = "Không áp dụng";
+                    gd2 = "Không áp dụng";
                     break;
                   case "5 đến 6 tuổi":
                     gd1 = "Không áp dụng";
