@@ -3441,7 +3441,16 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 <td className="p-4"><span className="font-mono text-xs font-black text-[#00A19A] bg-teal-50 px-2 py-1 rounded-lg">{s.studentCode}</span></td>
                                 <td className="p-4 font-bold text-slate-800 text-sm">{s.fullName}</td>
                                 <td className="p-4 text-sm text-slate-500">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
-                                <td className="p-4"><span className="text-xs font-bold text-purple-700 bg-teal-50 px-2 py-1 rounded-lg border border-teal-100">{s.grade || "—"}</span></td>
+                                <td className="p-4">
+                                  <div className="flex flex-col gap-0.5">
+                                    <span className="text-xs font-bold text-slate-600">Lớp: {s.grade || "—"}</span>
+                                    {s.resolvedAgeGroup && (
+                                      <span className="text-[10px] font-black text-violet-700 bg-violet-50 border border-violet-100 px-2 py-0.5 rounded-lg w-fit">
+                                        Form: {s.resolvedAgeGroup}
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
                                 <td className="p-4">
                                   <div className="flex items-center gap-2">
                                     <div className="w-24 bg-slate-100 h-2 rounded-full overflow-hidden">
@@ -3936,7 +3945,16 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 <td className="p-4"><span className="font-mono text-xs font-black text-[#00A19A] bg-teal-50 px-2 py-1 rounded-lg">{s.studentCode}</span></td>
                                 <td className="p-4 font-bold text-slate-800 text-sm">{s.fullName}</td>
                                 <td className="p-4 text-sm text-slate-500">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
-                                <td className="p-4"><span className="text-xs font-bold text-purple-700 bg-teal-50 px-2 py-1 rounded-lg border border-teal-100">{s.grade || "—"}</span></td>
+                                <td className="p-4">
+                                  <div className="flex flex-col gap-0.5">
+                                    <span className="text-xs font-bold text-slate-600">Lớp: {s.grade || "—"}</span>
+                                    {s.resolvedAgeGroup && (
+                                      <span className="text-[10px] font-black text-violet-700 bg-violet-50 border border-violet-100 px-2 py-0.5 rounded-lg w-fit">
+                                        Form: {s.resolvedAgeGroup}
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
                                 <td className="p-4 text-slate-600 text-sm">{s.probationaryClass || "—"}</td>
                                 <td className="p-4 text-slate-600 text-sm">{s.probationaryTeacher || "—"}</td>
                                 <td className="p-4">{resultBadge()}</td>
@@ -4032,7 +4050,16 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 <td className="p-4"><span className="font-mono text-xs font-black text-[#00A19A] bg-teal-50 px-2 py-1 rounded-lg">{s.studentCode}</span></td>
                                 <td className="p-4 font-bold text-slate-800 text-sm">{s.fullName}</td>
                                 <td className="p-4 text-sm text-slate-500">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
-                                <td className="p-4"><span className="text-xs font-bold text-purple-700 bg-teal-50 px-2 py-1 rounded-lg border border-teal-100">{s.grade || "—"}</span></td>
+                                <td className="p-4">
+                                  <div className="flex flex-col gap-0.5">
+                                    <span className="text-xs font-bold text-slate-600">Lớp: {s.grade || "—"}</span>
+                                    {s.resolvedAgeGroup && (
+                                      <span className="text-[10px] font-black text-violet-700 bg-violet-50 border border-violet-100 px-2 py-0.5 rounded-lg w-fit">
+                                        Form: {s.resolvedAgeGroup}
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
                                 <td className="p-4 text-slate-600 text-sm">{s.admissionCampus || "—"}</td>
                                 <td className="p-4">{resultBadge()}</td>
                                 <td className="p-4">

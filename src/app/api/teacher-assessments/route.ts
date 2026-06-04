@@ -241,6 +241,7 @@ export async function GET(req: any) {
                     scoredCount,
                     totalCriteria,
                     isPreschool: true,
+                    resolvedAgeGroup: sAgeGroup,
                     scoreVals: scoredCount > 0 ? Array(scoredCount).fill("3") : []
                 };
             });

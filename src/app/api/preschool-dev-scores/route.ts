@@ -155,6 +155,7 @@ export async function GET(req: NextRequest) {
           ...s,
                     scoredCount: scoreMap[s.id] || 0,
           totalCriteria: criteriaMap[sAgeGroup] || 0,
+          resolvedAgeGroup: sAgeGroup,
           theChatSummary: formatSummary(theChatScores),
           nhanThucSummary: formatSummary(nhanThucScores),
           ngonNguSummary: formatSummary(ngonNguScores),
