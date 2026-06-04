@@ -55,8 +55,8 @@ export function AcademicYearSelector() {
     window.dispatchEvent(new Event("academicYearChanged"));
   };
 
-  const isDashboard = pathname === "/admin" || pathname === "/teacher" || pathname === "/parent" || pathname === "/hocsinh";
-  if (!isDashboard || loading || years.length === 0) return null;
+  const isPortal = pathname.startsWith("/admin") || pathname.startsWith("/teacher") || pathname.startsWith("/parent") || pathname.startsWith("/hocsinh");
+  if (!isPortal || loading || years.length === 0) return null;
 
   const current = years.find(y => y.id === selectedYear) || years[0];
 
