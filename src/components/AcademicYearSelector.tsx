@@ -1,9 +1,11 @@
 ﻿"use client";
 
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { Calendar, ChevronDown } from "lucide-react";
 
 export function AcademicYearSelector() {
+  const pathname = usePathname();
   const [years, setYears] = useState<any[]>([]);
   const [selectedYear, setSelectedYear] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -47,7 +49,8 @@ export function AcademicYearSelector() {
     window.dispatchEvent(new Event("academicYearChanged"));
   };
 
-  if (loading || years.length === 0) return null;
+  const isDashboard = pathname === "/admin" || pathname === "/teacher" || pathname === "/parent" || pathname === "/hocsinh";
+  if (!isDashboard || loading || years.length === 0) return null;
 
   const current = years.find(y => y.id === selectedYear) || years[0];
 

@@ -1,9 +1,11 @@
 ﻿"use client"
 import { useState, useEffect } from "react"
 import { X, ShieldAlert, KeyRound, CheckCircle2 } from "lucide-react"
+import { ChangePasswordModal } from "./ChangePasswordModal"
 
 export function WelcomeAlert({ name }: { name: string }) {
   const [show, setShow] = useState(false)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   useEffect(() => {
     // Show after a slight delay to feel more interactive
@@ -34,7 +36,7 @@ export function WelcomeAlert({ name }: { name: string }) {
           </div>
 
           <div className="flex items-center gap-3 w-full md:w-auto">
-            <button className="flex-1 md:flex-none px-6 py-3 bg-white text-indigo-700 rounded-xl font-bold text-sm shadow-lg hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
+            <button onClick={() => setIsModalOpen(true)} className="flex-1 md:flex-none px-6 py-3 bg-white text-indigo-700 rounded-xl font-bold text-sm shadow-lg hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
               <KeyRound className="w-4 h-4" />
               Đổi mật khẩu ngay
             </button>
@@ -44,6 +46,7 @@ export function WelcomeAlert({ name }: { name: string }) {
           </div>
         </div>
       </div>
+      <ChangePasswordModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </div>
   )
 }
