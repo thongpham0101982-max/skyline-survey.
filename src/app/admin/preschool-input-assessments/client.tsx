@@ -6,7 +6,7 @@ import { getSurveyFormAgeGroup } from "@/lib/preschool";
 import {
   Baby, Clock, Settings, Users, BarChart3, Calendar,
   Plus, Trash2, Edit2, Search, RefreshCw, ChevronDown, ChevronUp,
-  X, CheckCircle, CheckCircle2, AlertCircle, Download, Upload, Star, Heart, Sparkles, UserCheck, Eye, Send, ClipboardList, Mail, GraduationCap, Phone, Loader2
+  X, CheckCircle, CheckCircle2, AlertCircle, Download, Upload, Star, Heart, Sparkles, UserCheck, Eye, Send, ClipboardList, Mail, GraduationCap, Phone, Loader2, Info
 } from "lucide-react"
 
 interface Period { id: string; code: string; name: string; status: string; startDate?: string; endDate?: string; description?: string; assignedUserId?: string; surveyType?: string; batches: Batch[] }
@@ -1266,6 +1266,11 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   const [aNotifyingId, setANotifyingId] = useState(null);
   const [aNotifyingAll, setANotifyingAll] = useState(false);
   const [evalAssignments, setEvalAssignments] = useState<any[]>([]);
+
+  const aActiveBatch = useMemo(() => {
+    if (!aPeriodId || !aBatchId || aBatchId === "all") return null;
+    return periods.find(p => p.id === aPeriodId)?.batches.find(b => b.id === aBatchId);
+  }, [periods, aPeriodId, aBatchId]);
 
   // Probationary Assessment States
   const [probModal, setProbModal] = useState(false);
@@ -2897,6 +2902,90 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       ))}
                     </select>
                   </Field>
+
+                  {aActiveBatch && (() => {
+                    const dateObj = new Date(aActiveBatch.startDate);
+                    let isStage2 = false;
+                    if (dateObj && !isNaN(dateObj.getTime())) {
+                      const month = dateObj.getMonth();
+                      if (month >= 0 && month <= 4) {
+                        isStage2 = true;
+                      }
+                    }
+                    
+                    return (
+                      <div className="bg-gradient-to-br from-teal-50/50 via-white to-indigo-50/30 border border-teal-100/80 rounded-2xl p-3.5 space-y-2.5 shadow-xs animate-in fade-in slide-in-from-top-1 duration-200">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
+                          <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider">
+                            Gợi ý chọn Nhóm tuổi ({isStage2 ? "Giai đoạn 2: 01/01 - 31/05" : "Giai đoạn 1: 01/06 - 31/12"})
+                          </span>
+                        </div>
+                        <div className="overflow-hidden border border-slate-100 rounded-xl">
+                          <table className="w-full text-left text-[10.5px]">
+                            <thead>
+                              <tr className="bg-teal-50/60 text-slate-500 font-bold border-b border-slate-100">
+                                <th className="p-2 font-black text-[9px] uppercase tracking-wider">Chọn Nhóm tuổi (Form)</th>
+                                <th className="p-2 font-black text-[9px] uppercase tracking-wider">Cho các lớp thực tế</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-50 bg-white/50">
+                              {isStage2 ? (
+                                <>
+                                  <tr>
+                                    <td className="p-2 font-black text-slate-700">18 đến 24 tháng</td>
+                                    <td className="p-2 font-bold text-teal-600">Nhà trẻ 18-24 tháng</td>
+                                  </tr>
+                                  <tr>
+                                    <td className="p-2 font-black text-slate-700">24 đến 36 tháng</td>
+                                    <td className="p-2 font-bold text-teal-600">Nhà trẻ 24-36 tháng</td>
+                                  </tr>
+                                  <tr>
+                                    <td className="p-2 font-black text-slate-700">Mẫu giáo bé</td>
+                                    <td className="p-2 font-bold text-teal-600">Mẫu giáo bé</td>
+                                  </tr>
+                                  <tr>
+                                    <td className="p-2 font-black text-slate-700">Mẫu giáo nhỡ</td>
+                                    <td className="p-2 font-bold text-teal-600">Mẫu giáo nhỡ</td>
+                                  </tr>
+                                  <tr>
+                                    <td className="p-2 font-black text-slate-700">5 đến 6 tuổi</td>
+                                    <td className="p-2 font-bold text-teal-600">Mẫu giáo lớn</td>
+                                  </tr>
+                                </>
+                              ) : (
+                                <>
+                                  <tr>
+                                    <td className="p-2 font-black text-slate-700">18 đến 24 tháng</td>
+                                    <td className="p-2 font-bold text-teal-600">Nhà trẻ 18-24 & 24-36 tháng</td>
+                                  </tr>
+                                  <tr>
+                                    <td className="p-2 font-black text-slate-700">24 đến 36 tháng</td>
+                                    <td className="p-2 font-bold text-teal-600">Mẫu giáo bé</td>
+                                  </tr>
+                                  <tr>
+                                    <td className="p-2 font-black text-slate-700">Mẫu giáo bé</td>
+                                    <td className="p-2 font-bold text-teal-600">Mẫu giáo nhỡ</td>
+                                  </tr>
+                                  <tr>
+                                    <td className="p-2 font-black text-slate-700">Mẫu giáo nhỡ</td>
+                                    <td className="p-2 font-bold text-teal-600">Mẫu giáo lớn</td>
+                                  </tr>
+                                </>
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {!aActiveBatch && (
+                    <div className="bg-slate-50 border border-slate-200/60 rounded-2xl p-3 text-xs text-slate-500 font-medium flex items-start gap-2">
+                      <Info className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                      <p>Chọn một Đợt Khảo sát cụ thể để hiển thị bảng gợi ý ánh xạ nhóm tuổi tương ứng.</p>
+                    </div>
+                  )}
 
                   <Field label="Nhóm tuổi (Khối)" required>
                     <div className="grid grid-cols-2 gap-2 mt-1">
