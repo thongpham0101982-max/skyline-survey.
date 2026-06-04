@@ -57,7 +57,9 @@ export default function TeacherDashboard() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5">
         <div>
           <h1 className="text-2xl font-black text-[#0A3230] tracking-tight">Tổng quan Công việc</h1>
-          <p className="text-slate-500 text-sm font-medium mt-0.5">Thống kê lớp học và nhiệm vụ phân công của bạn.</p>
+          <p className="text-slate-500 text-sm font-medium mt-0.5">
+            Năm học đang hoạt động: <span className="font-bold text-[#00A19A]">{finalMetrics.academicYearName || "---"}</span> | Thống kê lớp học và nhiệm vụ phân công của bạn.
+          </p>
         </div>
       </div>
 

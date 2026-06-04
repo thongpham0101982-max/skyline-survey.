@@ -91,12 +91,19 @@ export async function GET(req: any) {
         });
         const totalClasses = uniqueClasses.size;
         
+        let academicYearName = "";
+        if (academicYearId) {
+            const year = await prisma.academicYear.findUnique({ where: { id: academicYearId } });
+            if (year) academicYearName = year.name;
+        }
+        
         // This is an approximation
         return NextResponse.json({
             totalClasses,
             totalStudents: totalClasses * 25, // Mock data or query real data
             totalAssignments,
-            scoredStudents: 0
+            scoredStudents: 0,
+            academicYearName
         });
     }
     

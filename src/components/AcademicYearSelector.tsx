@@ -24,8 +24,14 @@ export function AcademicYearSelector() {
           if (Array.isArray(data)) {
             setYears(data);
             const active = data.find(y => y.status === "ACTIVE");
-            if (active) setSelectedYear(active.id);
-            else if (data.length > 0) setSelectedYear(data[0].id);
+            const defaultId = active ? active.id : (data.length > 0 ? data[0].id : null);
+            if (defaultId) {
+              setSelectedYear(defaultId);
+              if (!localStorage.getItem("selectedAcademicYear")) {
+                 localStorage.setItem("selectedAcademicYear", defaultId);
+                 window.dispatchEvent(new Event("academicYearChanged"));
+              }
+            }
           }
         } else {
           // Fallback if API doesn't exist or isn't accessible this way

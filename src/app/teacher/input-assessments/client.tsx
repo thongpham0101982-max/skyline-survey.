@@ -240,7 +240,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     const gradeVal = String(currentAssignment?.grade || "").replace("Khối ", "").trim();
     const isPsychSubject = subName.includes("tâm lý") || subCode.includes("tly");
     const isPreschoolSubject = currentAssignment?.isPreschool || currentAssignment?.subjectId === "preschool";
-    const isChildDevSubject = (subNameNormalized.includes("chuẩn phát triển trẻ em") || subNameNormalized.includes("bộ chuẩn phát triển") || subCode.includes("cpt") || subCode.includes("tci")) && (gradeVal === "1" || gradeVal === "Tất cả");
+    const isChildDevSubject = (subNameNormalized.includes("chuẩn phát triển trẻ em") || subNameNormalized.includes("bộ chuẩn phát triển") || subCode.includes("cpt") || subCode.includes("tci")) && (gradeVal === "1" || gradeVal === "Tất cả" || gradeVal === "" || gradeVal === "");
         const isThinkingSkillsSubject = (subNameNormalized.includes("năng lực tư duy") || subCode.includes("nltd")) && (gradeVal === "1" || gradeVal === "Tất cả");
     const hideComments = ["toa", "tvi", "nva"].some(c => subCode.includes(c)) || ["toán", "tiếng việt", "ngữ văn"].some(s => subNameNormalized.includes(s));
 
