@@ -4036,24 +4036,79 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     break;
                 }
                 if (!gd1) return null;
+
+                const renderGradeTags = (gradesStr: string, isPhase1: boolean) => {
+                  if (gradesStr === "Không áp dụng" || !gradesStr) {
+                    return (
+                      <span className="text-slate-400 italic text-xs font-bold mt-2.5 inline-block bg-slate-50 border border-slate-100 rounded-lg px-2.5 py-1">
+                        Không sử dụng ở giai đoạn này
+                      </span>
+                    );
+                  }
+                  const items = gradesStr.split("&").map(x => x.trim());
+                  const tagBg = isPhase1 
+                    ? "bg-teal-50/60 text-teal-800 border-teal-100 hover:bg-teal-100/40" 
+                    : "bg-indigo-50/60 text-indigo-800 border-indigo-100 hover:bg-indigo-100/40";
+                  return (
+                    <div className="flex flex-wrap gap-1.5 mt-2.5">
+                      {items.map(item => (
+                        <span key={item} className={`px-2.5 py-1 text-[11px] font-black rounded-lg border ${tagBg} shadow-sm transition-all select-none`}>
+                          {item}
+                        </span>
+                      ))}
+                    </div>
+                  );
+                };
+
                 return (
-                  <div className="bg-gradient-to-r from-violet-50 to-indigo-50/50 border border-violet-100 rounded-2xl p-4 text-xs font-semibold text-violet-800 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 max-w-4xl my-2 animate-fadeIn">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-xl bg-violet-100 flex items-center justify-center text-violet-600 font-bold shrink-0">ℹ</div>
+                  <div className="bg-gradient-to-br from-teal-50/40 via-white to-indigo-50/20 border border-teal-100/60 rounded-3xl p-5 shadow-sm max-w-4xl my-4 hover:shadow-md transition-all duration-300 relative overflow-hidden animate-fadeIn">
+                    {/* Decorative backdrop blur glow */}
+                    <div className="absolute right-0 top-0 w-32 h-32 bg-teal-100/20 rounded-full blur-2xl pointer-events-none" />
+                    <div className="absolute left-1/3 bottom-0 w-24 h-24 bg-indigo-100/10 rounded-full blur-xl pointer-events-none" />
+
+                    {/* Header */}
+                    <div className="flex items-center gap-3.5 pb-4 border-b border-slate-100">
+                      <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-teal-500 to-indigo-500 flex items-center justify-center text-white font-extrabold shadow-md shadow-teal-100 shrink-0">
+                        <Calendar className="w-5 h-5 text-white" />
+                      </div>
                       <div>
-                        <p className="font-bold text-slate-800 text-xs">Ánh xạ Tiêu chí ({ageGroupFilter})</p>
-                        <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-0.5">Hệ thống sẽ tự động gán form này cho các khối dưới đây:</p>
+                        <h5 className="font-black text-slate-800 text-sm tracking-tight">Cấu hình Ánh xạ Form Khảo sát: Khối {ageGroupFilter}</h5>
+                        <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider mt-0.5">
+                          Hệ thống sẽ tự động gán form này cho các khối dưới đây căn cứ trên mốc thời gian thực tế:
+                        </p>
                       </div>
                     </div>
-                    <div className="flex gap-4 self-start sm:self-center">
-                      <div className="flex flex-col">
-                        <span className="text-[10px] font-black text-violet-400 uppercase tracking-wider">Giai đoạn 1 (01/06 - 31/12)</span>
-                        <span className="text-slate-700 font-bold text-xs mt-0.5">{gd1}</span>
+
+                    {/* Distribution Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                      {/* Giai đoạn 1 */}
+                      <div className="bg-teal-50/20 border border-teal-100/40 rounded-2xl p-4 flex flex-col justify-between hover:border-teal-200/60 transition-all">
+                        <div>
+                          <div className="flex items-center justify-between">
+                            <span className="bg-[#00A19A]/10 text-[#00A19A] px-2.5 py-0.5 rounded-lg text-[9px] font-extrabold uppercase tracking-wider border border-[#00A19A]/20">
+                              Giai đoạn 1
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-semibold">Từ 01/06 đến 31/12</span>
+                          </div>
+                          <div className="mt-1">
+                            {renderGradeTags(gd1, true)}
+                          </div>
+                        </div>
                       </div>
-                      <div className="w-[1px] bg-violet-200 self-stretch" />
-                      <div className="flex flex-col">
-                        <span className="text-[10px] font-black text-violet-400 uppercase tracking-wider">Giai đoạn 2 (01/01 - 31/05)</span>
-                        <span className="text-slate-700 font-bold text-xs mt-0.5">{gd2}</span>
+
+                      {/* Giai đoạn 2 */}
+                      <div className="bg-indigo-50/20 border border-indigo-100/40 rounded-2xl p-4 flex flex-col justify-between hover:border-indigo-200/60 transition-all">
+                        <div>
+                          <div className="flex items-center justify-between">
+                            <span className="bg-indigo-100 text-indigo-700 px-2.5 py-0.5 rounded-lg text-[9px] font-extrabold uppercase tracking-wider border border-indigo-200/20">
+                              Giai đoạn 2
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-semibold">Từ 01/01 đến 31/05</span>
+                          </div>
+                          <div className="mt-1">
+                            {renderGradeTags(gd2, false)}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
