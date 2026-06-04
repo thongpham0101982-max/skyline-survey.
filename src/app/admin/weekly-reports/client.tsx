@@ -1,6 +1,6 @@
 "use client"
 import { getDefaultAcademicYearClient } from "@/lib/academicYear"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { FileText, Plus, Trash2, Save, Send, Calendar, MessageSquare, CheckCircle2, Clock, AlertTriangle, MinusCircle, User, BarChart3, Users, TrendingUp, ClipboardList, Table2 } from "lucide-react"
 import { getWeeklyReport, getAllWeeklyReports, saveWeeklyReport, addManagerComment, addManagerItemNote, getConsolidatedReports, getDashboardStats } from "./actions"
 
@@ -56,6 +56,20 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
   const [chartData, setChartData] = useState<any>({})
 
   const isAdmin = currentRole === "ADMIN"
+
+  const getRoleName = (code: string) => {
+    return roles?.find((r: any) => r.code === code)?.name || code;
+  }
+
+  const groupedStaff = useMemo(() => {
+    const groups: Record<string, any[]> = {};
+    (staffUsers || []).forEach((u: any) => {
+      const rName = getRoleName(u.role);
+      if (!groups[rName]) groups[rName] = [];
+      groups[rName].push(u);
+    });
+    return groups;
+  }, [staffUsers, roles]);
 
   useEffect(() => { setWeeks(getWeeksOfMonth(month, year)) }, [month, year])
   useEffect(() => { if (activeTab === "personal") loadReport() }, [selectedWeek, month, year, viewUserId, activeTab])
@@ -171,7 +185,15 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
           <div className="mt-3 pt-3 border-t border-slate-100">
             <label className="block text-xs font-bold text-slate-500 mb-1.5"><User className="w-3 h-3 inline" /> Xem báo cáo của</label>
             <select value={viewUserId} onChange={e => setViewUserId(e.target.value)} className="w-full border rounded-xl p-2.5 text-sm outline-none focus:ring-2 focus:ring-amber-200 bg-amber-50/50">
-              {(staffUsers||[]).map((u: any) => <option key={u.id} value={u.id}>{u.fullName} ({u.email})</option>)}
+              {Object.entries(groupedStaff).map(([roleName, users]) => (
+                <optgroup key={roleName} label={roleName}>
+                  {users.map((u: any) => (
+                    <option key={u.id} value={u.id}>
+                      {u.fullName} ({u.email})
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
             </select>
           </div>
         )}
