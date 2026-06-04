@@ -299,3 +299,26 @@ body, button, input, select, textarea, span, div, h1, h2, h3, h4, h5, h6, table,
     }
   }
 }
+
+/* ==========================================
+   GLOBAL TYPOGRAPHY OVERRIDES (SLENDER & CLEAN)
+   ========================================== */
+html {
+  font-size: 14px !important; /* Scales down font sizes globally to be medium-small */
+}
+
+/* Force light/slender weight globally for general text */
+body, button, input, select, textarea, span, div, table, th, td {
+  font-family: 'Be Vietnam Pro', sans-serif !important;
+  font-weight: 300 !important; /* Slender / Light weight */
+}
+
+/* Clean, moderately weighted highlights without heavy bold black style */
+h1, h2, h3, h4, h5, h6, strong, b,
+[class*="font-medium"],
+[class*="font-semibold"],
+[class*="font-bold"],
+[class*="font-extrabold"],
+[class*="font-black"] {
+  font-weight: 500 !important; /* Smooth medium weight for headers/highlights */
+}
