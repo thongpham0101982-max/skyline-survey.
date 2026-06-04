@@ -70,11 +70,12 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
         return Array.from(bMap.values());
     }, [assignments, selectedPeriodId]);
 
+    
     const availableAssignments = useMemo(() => {
         if (!Array.isArray(assignments)) return [];
         const filtered = assignments.filter(a => a.periodId === selectedPeriodId && (selectedBatchId === "all" || !a.batchId || a.batchId === selectedBatchId));
         
-        // Deduplicate and modify label for Child Dev Grade 1
+        // Group by subjectId to consolidate the dropdown
         const unique = new Map();
         filtered.forEach(a => {
             const subNameNormalized = (a.subject?.name || "").toLowerCase().normalize("NFC");
@@ -83,67 +84,26 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
             const isChildDev = (subNameNormalized.includes("chuẩn phát triển trẻ em") || subNameNormalized.includes("bộ chuẩn phát triển") || subCode.includes("cpt") || subCode.includes("tci")) && gradeVal === "1";
             
             if (isChildDev) {
-                // Use a unique key based on subject and grade to deduplicate across systems
-                const key = `${a.subjectId}-${gradeVal}`;
+                const key = a.subjectId; // Group ALL Child Dev into one subject
                 if (!unique.has(key)) {
-                    // Create a clone to safely modify the display property without mutating state
-                    unique.set(key, { ...a, overrideSystemLabel: "Tất cả các hệ", overrideSystemCode: "" });
+                    unique.set(key, { ...a, overrideSystemLabel: "", overrideSystemCode: "", grade: "" });
+                }
+            } else if (a.isPreschool) {
+                const key = "preschool";
+                if (!unique.has(key)) {
+                    unique.set(key, { ...a, id: "preschool-all", grade: "", overrideSystemLabel: "", subject: { ...a.subject, name: "Đánh giá Mầm non" } });
                 }
             } else {
-                unique.set(a.id, a);
-            }
-        });
-        
-        const list = Array.from(unique.values());
-        
-        const preschoolList = list.filter(a => a.isPreschool);
-        const nonPreschool = list.filter(a => !a.isPreschool);
-        
-        // Inject a virtual "Tất cả các khối" consolidated option for Preschool teachers if they have multiple assignments
-        let finalPreschoolList = [...preschoolList];
-        if (preschoolList.length > 1) {
-            const firstPre = preschoolList[0];
-            const virtualAll = {
-                ...firstPre,
-                id: "preschool-all-grades",
-                grade: "Tất cả",
-                overrideSystemLabel: "Tất cả",
-                subject: {
-                    ...firstPre.subject,
-                    name: "Đánh giá Mầm non"
+                const key = a.subjectId;
+                if (!unique.has(key)) {
+                    unique.set(key, { ...a, overrideSystemLabel: "", overrideSystemCode: "", grade: "" });
                 }
-            };
-            finalPreschoolList = [virtualAll, ...preschoolList];
-        }
-        
-        // Group non-preschool assignments by subjectId to inject consolidated options
-        const hsGroups = {};
-        nonPreschool.forEach(a => {
-            if (!hsGroups[a.subjectId]) {
-                hsGroups[a.subjectId] = [];
-            }
-            hsGroups[a.subjectId].push(a);
-        });
-        
-        const finalNonPreschoolList = [];
-        Object.entries(hsGroups).forEach(([subjectId, group]) => {
-            if (group.length > 1) {
-                const firstAssign = group[0];
-                const virtualAll = {
-                    ...firstAssign,
-                    id: `hs-all-grades-${subjectId}`,
-                    grade: "Tất cả",
-                    overrideSystemLabel: "Tất cả các hệ",
-                    overrideSystemCode: ""
-                };
-                finalNonPreschoolList.push(virtualAll, ...group);
-            } else {
-                finalNonPreschoolList.push(...group);
             }
         });
         
-        return [...finalPreschoolList, ...finalNonPreschoolList];
+        return Array.from(unique.values());
     }, [assignments, selectedPeriodId, selectedBatchId]);
+
 
     useEffect(() => {
         setSelectedBatchId("all");
@@ -167,8 +127,8 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
         if (!assignment) return;
 
         setLoading(true);
-        const systemCode = assignment.overrideSystemCode !== undefined ? assignment.overrideSystemCode : (assignment.educationSystem || "");
-        const grade = assignment.grade || "";
+        const systemCode = "";
+        const grade = "";
         
         // Dynamic batch parameter based on selected dropdown
         const batchQueryParam = selectedBatchId === "all" ? "" : selectedBatchId;
@@ -403,7 +363,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                         >
                             {availableAssignments.map(a => (
                                 <option key={a.id} value={a.id}>
-                                    {a.subject?.name} - Khối {a.grade || "Tất cả"} ({a.overrideSystemLabel || a.educationSystem || "Tất cả"})
+                                    {a.subject?.name}
                                 </option>
                             ))}
                             {availableAssignments.length === 0 && <option value="">Vui lòng chọn kỳ KS...</option>}
@@ -516,7 +476,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                               <span className="font-mono font-bold text-slate-700 bg-slate-100 px-3 py-1.5 rounded-full text-xs">{st.studentCode}</span>
                                           </td>
                                           <td className="px-3 py-3 bg-transparent text-left">
-                                              <span className="font-bold text-slate-700 text-sm whitespace-nowrap">{st.fullName}</span>
+                                              <span className="font-bold text-slate-700 text-[13px] whitespace-nowrap">{st.fullName}</span>
                                           </td>
                                           <td className="px-3 py-3 bg-transparent text-center">
               <span className="text-xs font-bold text-slate-500 whitespace-nowrap">{st.grade}</span>
@@ -658,7 +618,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                         <div key={"sc-input-"+colIdx} className="flex flex-col gap-1.5 w-24 flex-none">
                             <span className="text-[10px] uppercase font-bold text-slate-600 truncate border-b border-slate-200 pb-1" title={cName + maxScoreStr}>{cName}{maxScoreStr && <span className="text-red-500 font-black ml-0.5">{maxScoreStr}</span>}</span>
                             {isTotal ? (
-                                <div className="w-full bg-[#F0FDFA] border border-slate-300 rounded-lg py-2 text-center font-black text-[#00A19A] shadow-inner h-[42px] flex items-center justify-center">
+                                <div className="w-full bg-[#F0FDFA] border border-slate-300 rounded-lg py-2 text-center font-black text-[#00A19A] shadow-inner h-[36px] text-[13px] flex items-center justify-center">
                                     {(st.scoreVals || []).slice(0, colIdx).reduce((sum: number, val: any) => sum + (parseFloat(val) || 0), 0).toLocaleString("vi-VN", {maximumFractionDigits: 2})}
                                 </div>
                             ) : (
@@ -667,7 +627,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                     value={st.scoreVals?.[colIdx] || ""}
                                     onChange={e => handleScoreChange(st.id, colIdx, e.target.value)}
                                     disabled={isLocked}
-                                    className={`w-full border border-slate-300 rounded-lg py-2 text-center font-bold shadow-sm outline-none transition-all h-[42px] ${isLocked ? "bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200" : "bg-white text-slate-800 focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/20 placeholder-slate-300"}`}
+                                    className={`w-full border border-slate-300 rounded-lg py-2 text-center font-bold shadow-sm outline-none transition-all h-[36px] text-[13px] ${isLocked ? "bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200" : "bg-white text-slate-800 focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/20 placeholder-slate-300"}`}
                                     placeholder="-"
                                 />
                             )}
@@ -686,7 +646,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                 value={st.commentVals?.[colIdx] || ""}
                                 onChange={e => handleCommentChange(st.id, colIdx, e.target.value)}
                                 disabled={isLocked}
-                                className={`w-full border border-slate-300 rounded-lg py-2 px-3 text-sm font-medium shadow-sm outline-none transition-all h-[42px] ${isLocked ? "bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200" : "bg-white text-slate-700 focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/20 placeholder-slate-400"}`}
+                                className={`w-full border border-slate-300 rounded-lg py-2 px-3 text-sm font-medium shadow-sm outline-none transition-all h-[36px] text-[13px] ${isLocked ? "bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200" : "bg-white text-slate-700 focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/20 placeholder-slate-400"}`}
                                 placeholder="..."
                             />
                         </div>
@@ -823,8 +783,8 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 // Refetch student list to update scoredCount and totalCriteria progress
                 const assignment = availableAssignments.find(a => a.id === selectedAssignmentId) || assignments.find(a => a.id === selectedAssignmentId);
                 if (assignment) {
-                  const systemCode = assignment.overrideSystemCode !== undefined ? assignment.overrideSystemCode : (assignment.educationSystem || "");
-                  const grade = assignment.grade || "";
+                  const systemCode = "";
+                  const grade = "";
                   setLoading(true);
                   const batchQueryParam = selectedBatchId === "all" ? "" : selectedBatchId;
                   const response = await fetch(`/api/teacher-assessments?action=getStudents&periodId=${assignment.periodId}&grade=${grade}&systemCode=${systemCode}&subjectId=${assignment.subjectId}&batchId=${batchQueryParam}`);

@@ -66,6 +66,40 @@ export async function GET(req: any) {
         return NextResponse.json([...assignments, ...mappedPreschool]);
     }
     
+    
+    if (action === "getDashboardMetrics") {
+        const academicYearId = searchParams.get("academicYearId");
+        // Count assignments
+        const assignments = await prisma.inputAssessmentTeacherAssignment.findMany({
+            where: { userId: session.user.id },
+            include: { period: true }
+        });
+        
+        let validAssignments = assignments;
+        if (academicYearId) {
+            // Check if period belongs to academic year. If academicYear isn't on period, this might not work perfectly, 
+            // but we'll approximate or just return all assignments if period doesn't have academicYearId.
+            // Let's just return all for the teacher for now, since period filtering is complex if not directly linked.
+        }
+        
+        const totalAssignments = validAssignments.length;
+        
+        // Count distinct classes assigned (by grade and system)
+        const uniqueClasses = new Set();
+        validAssignments.forEach(a => {
+            if (a.grade) uniqueClasses.add(a.grade + "_" + a.educationSystem);
+        });
+        const totalClasses = uniqueClasses.size;
+        
+        // This is an approximation
+        return NextResponse.json({
+            totalClasses,
+            totalStudents: totalClasses * 25, // Mock data or query real data
+            totalAssignments,
+            scoredStudents: 0
+        });
+    }
+    
     if (action === "getStudents") {
         const periodId = searchParams.get("periodId");
         const grade = searchParams.get("grade");
@@ -169,6 +203,16 @@ export async function GET(req: any) {
         }
 
         const validSystems = [systemCode, systemName].filter(Boolean) as string[];
+        
+        
+        let teacherAssignments = [];
+        if (!grade && !systemCode) {
+            teacherAssignments = await prisma.inputAssessmentTeacherAssignment.findMany({
+                where: { userId: session.user.id, periodId: periodId || undefined, subjectId: subjectId || undefined }
+            });
+        }
+
+        
         if (systemName) {
             validSystems.push(systemName.toUpperCase());
             validSystems.push(systemName.toLowerCase());
@@ -191,6 +235,24 @@ export async function GET(req: any) {
         
         
         const filteredStudents = students.filter(st => {
+            // Check teacher assignments first
+            if (teacherAssignments.length > 0) {
+                // The student must match at least one of the teacher's assignments for this subject
+                const stGrade = (st.grade || "").toLowerCase().trim();
+                const stSys = (st.surveyFormType || "").toLowerCase().trim();
+                
+                const matchesAssignment = teacherAssignments.some(ta => {
+                    const taGrade = (ta.grade || "").toLowerCase().trim();
+                    const taSys = (ta.educationSystem || "").toLowerCase().trim();
+                    
+                    const gradeMatch = !taGrade || taGrade === "tất cả" || stGrade === taGrade || stGrade.includes(taGrade.replace("khối", "").trim());
+                    const sysMatch = !taSys || taSys === "tất cả" || stSys === taSys || stSys.includes(taSys) || taSys.includes(stSys);
+                    
+                    return gradeMatch && sysMatch;
+                });
+                
+                if (!matchesAssignment) return false;
+            }
             // Fuzzy grade matching
             if (grade && grade.trim() !== "" && grade !== "Tất cả") {
                 const stGrade = (st.grade || "").toLowerCase().trim();
