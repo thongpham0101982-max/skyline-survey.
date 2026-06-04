@@ -145,7 +145,36 @@ export async function GET(req: any) {
                 }
             });
 
-            const studentIds = students.map((s: any) => s.id);
+            ntStudent.findMany({
+                where,
+                // ... select
+            });
+
+            // Filter preschool students by teacher's preschool assignments
+            let preschoolAssignments = [];
+            if (!grade) {
+                preschoolAssignments = await (prisma as any).preschoolInputAssessmentTeacherAssignment.findMany({
+                    where: { userId: session.user.id, periodId: periodId || undefined }
+                });
+            }
+
+            let filteredStudents = students;
+            if (preschoolAssignments.length > 0) {
+                filteredStudents = students.filter(st => {
+                    const stGrade = (st.grade || "").toLowerCase().trim();
+                    return preschoolAssignments.some(ta => {
+                        const taGrade = (ta.grade || "").toLowerCase().trim();
+                        return !taGrade || taGrade === "tất cả" || stGrade === taGrade || stGrade.includes(taGrade.replace("khối", "").trim());
+                    });
+                });
+            } else if (!grade && preschoolAssignments.length === 0) {
+                // If teacher has NO preschool assignments for this period, they shouldn't see anyone
+                // But if they reached here, maybe they have one. If preschoolAssignments is empty, return []
+                filteredStudents = [];
+            }
+
+            const studentIds = filteredStudents.map((s: any) => s.id);
+
             
             // Fetch all scores for these students
             const scores = await (prisma as any).preschoolDevScore.findMany({
@@ -176,7 +205,7 @@ export async function GET(req: any) {
                 criteriaMap[cc.ageGroup] = cc._count.id;
             }
 
-            const enriched = students.map((s: any) => {
+            const enriched = filteredStudents.map((s: any) => {
                 const sAgeGroup = s.grade || "18 đến 24 tháng";
                 const totalCriteria = criteriaMap[sAgeGroup] || 0;
                 const scoredCount = scoreMap[s.id] || 0;
@@ -205,12 +234,18 @@ export async function GET(req: any) {
         const validSystems = [systemCode, systemName].filter(Boolean) as string[];
         
         
+        
         let teacherAssignments = [];
+        let eduSystemsMap = {};
         if (!grade && !systemCode) {
             teacherAssignments = await prisma.inputAssessmentTeacherAssignment.findMany({
                 where: { userId: session.user.id, periodId: periodId || undefined, subjectId: subjectId || undefined }
             });
+            
+            const sysList = await prisma.educationSystem.findMany();
+            sysList.forEach(s => { eduSystemsMap[s.code.toLowerCase()] = s.name.toLowerCase(); });
         }
+
 
         
         if (systemName) {
@@ -246,7 +281,18 @@ export async function GET(req: any) {
                     const taSys = (ta.educationSystem || "").toLowerCase().trim();
                     
                     const gradeMatch = !taGrade || taGrade === "tất cả" || stGrade === taGrade || stGrade.includes(taGrade.replace("khối", "").trim());
-                    const sysMatch = !taSys || taSys === "tất cả" || stSys === taSys || stSys.includes(taSys) || taSys.includes(stSys);
+                    
+                    let sysMatch = false;
+                    if (!taSys || taSys === "tất cả") {
+                        sysMatch = true;
+                    } else {
+                        const taSysName = eduSystemsMap[taSys] || "";
+                        sysMatch = stSys === taSys || 
+                                   stSys.includes(taSys) || 
+                                   taSys.includes(stSys) ||
+                                   (taSysName && (stSys === taSysName || stSys.includes(taSysName) || taSysName.includes(stSys)));
+                    }
+
                     
                     return gradeMatch && sysMatch;
                 });
