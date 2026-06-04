@@ -12,8 +12,15 @@ export async function GET(req: any) {
     const action = searchParams.get("action");
 
     if (action === "getAssignments") {
+        const academicYearId = searchParams.get("academicYearId");
+        
+        let whereClause = { userId: session.user.id };
+        if (academicYearId) {
+            whereClause.period = { academicYearId: academicYearId };
+        }
+
         const assignments = await prisma.inputAssessmentTeacherAssignment.findMany({
-            where: { userId: session.user.id },
+            where: whereClause,
             include: {
                 subject: true,
                 batch: true,
@@ -23,7 +30,7 @@ export async function GET(req: any) {
 
         // Fetch preschool assignments
         const preschoolAssignments = await (prisma as any).preschoolInputAssessmentTeacherAssignment.findMany({
-            where: { userId: session.user.id },
+            where: whereClause,
             include: {
                 batch: true,
                 period: { include: { assignedUser: true } }

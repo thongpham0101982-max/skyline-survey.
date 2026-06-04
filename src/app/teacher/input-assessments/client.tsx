@@ -30,26 +30,55 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     const [loading, setLoading] = useState(true);
     const [saveStatus, setSaveStatus] = useState<Record<string, string>>({});
 
+
+    const [academicYear, setAcademicYear] = useState<string | null>(null);
+
     useEffect(() => {
-        fetch("/api/teacher-assessments?action=getAssignments")
+        const handleYearChange = () => {
+            setAcademicYear(localStorage.getItem("selectedAcademicYear"));
+        };
+        window.addEventListener("academicYearChanged", handleYearChange);
+        handleYearChange();
+        return () => window.removeEventListener("academicYearChanged", handleYearChange);
+    }, []);
+
+    useEffect(() => {
+        if (academicYear === null) return;
+        setLoading(true);
+        fetch(`/api/teacher-assessments?action=getAssignments&academicYearId=${academicYear}`)
             .then(res => res.json())
             .then(data => {
                 if(Array.isArray(data)) {
                     setAssignments(data);
-                if (data.length > 0) {
+                    if (data.length > 0) {
                         const firstPeriod = data[0].periodId;
                         setSelectedPeriodId(firstPeriod);
                         
                         const firstAssign = data.find((a: any) => a.periodId === firstPeriod);
                         if (firstAssign) setSelectedAssignmentId(firstAssign.id);
+                    } else {
+                        setSelectedPeriodId("");
+                        setSelectedAssignmentId("");
+                        setStudents([]);
                     }
                 } else {
                     console.error('API Error:', data);
                     setAssignments([]);
+                    setSelectedPeriodId("");
+                    setSelectedAssignmentId("");
+                    setStudents([]);
                 }
                 setLoading(false);
+            })
+            .catch(err => {
+                console.error(err);
+                setAssignments([]);
+                setSelectedPeriodId("");
+                setSelectedAssignmentId("");
+                setStudents([]);
+                setLoading(false);
             });
-    }, []);
+    }, [academicYear]);
 
     // Filtered lists
     const periods = useMemo(() => {
