@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db"
 import { CategoriesClient } from "./client"
+import { SurveyTabs } from "@/components/SurveyTabs"
 
 export const metadata = {
   title: "Danh muc Khao sat | Admin Portal",
@@ -16,6 +17,7 @@ export default async function CategoriesPage() {
 
   return (
     <div className="max-w-4xl mx-auto">
+      <SurveyTabs activeTab="categories" />
       <div className="mb-8">
         <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Danh Muc Khao Sat</h1>
         <p className="text-slate-500 mt-2 text-sm">Phan loai cau hoi khao sat theo chu de de to chuc va phan tich du lieu hieu qua hon.</p>

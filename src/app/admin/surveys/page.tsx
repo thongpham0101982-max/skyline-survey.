@@ -2,6 +2,7 @@
 import { AdminSurveysClient } from "./client"
 import { createSurveyPeriodAction, updateSurveyPeriodAction, deleteSurveyPeriodAction, deleteMultipleSurveysAction } from "./actions"
 import { CalendarDays, Sparkles, AlertCircle } from "lucide-react"
+import { SurveyTabs } from "@/components/SurveyTabs"
 
 export const metadata = { title: "Hệ thống Khảo sát | Skyline Academy" }
 
@@ -73,6 +74,8 @@ export default async function AdminSurveysPage() {
           </div>
         )}
       </div>
+
+      <SurveyTabs activeTab="surveys" />
 
       <AdminSurveysClient
         initialSurveys={JSON.parse(JSON.stringify(surveys))}

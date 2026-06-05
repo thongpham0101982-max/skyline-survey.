@@ -29,6 +29,7 @@ export const APP_CATEGORIES = [
       { code: "ROLES", name: "Quản lý Nhóm quyền", icon: Shield, href: "/admin/roles", requiresAdmin: true },
       { code: "USERS", name: "Tài khoản Nhân sự", icon: Users, href: "/admin/users", requiresAdmin: true },
       { code: "CAMPUSES", name: "Quản lý Cơ sở", icon: Building2, href: "/admin/campuses", requiresAdmin: true },
+      { code: "PARENTS", name: "Tài khoản PHHS", icon: UserPlus, href: "/admin/parents" },
       { code: "SCHOOL_SYNC", name: "Đồng bộ API Trường", icon: RefreshCcw, href: "/admin/school-sync" },
     ]
   },
@@ -79,11 +80,19 @@ export const APP_CATEGORIES = [
     color: "amber",
     icon: FileSpreadsheet,
     modules: [
-      { code: "MANAGE_SURVEYS", name: "Quản lý Khảo sát", icon: FileSpreadsheet, href: "/admin/surveys" },
-      { code: "NPS_ANALYSIS", name: "Phân tích NPS", icon: PieChart, href: "/admin/nps" },
-      { code: "SURVEY_CATALOG", name: "Danh mục Khảo sát", icon: Layers, href: "/admin/categories" },
-      { code: "PARENTS", name: "Tài khoản PHHS", icon: UserPlus, href: "/admin/parents" },
-      { code: "FEEDBACK", name: "Theo dõi Phản hồi", icon: PieChart, href: "/admin/reports" },
+      { 
+        code: "MANAGE_SURVEYS", 
+        name: "Quản lý Khảo sát", 
+        icon: FileSpreadsheet, 
+        href: "/admin/surveys",
+        subModules: [
+          { code: "SURVEY_LIST", name: "Quản lý Khảo sát", href: "/admin/surveys" },
+          { code: "SURVEY_CATALOG", name: "Danh mục Khảo sát", href: "/admin/categories" },
+          { code: "SURVEY_RESULTS", name: "Kết quả KS", href: "/admin/surveys/results" },
+          { code: "NPS_ANALYSIS", name: "Phân tích NPS", href: "/admin/nps" },
+          { code: "FEEDBACK", name: "Theo dõi Phản hồi", href: "/admin/reports" }
+        ]
+      }
     ]
   },
   {

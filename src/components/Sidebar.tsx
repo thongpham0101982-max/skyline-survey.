@@ -110,7 +110,11 @@ export function Sidebar({ role, permissionModules, actualRole, taskCount = 0 }: 
             if (visibleModules.length === 0) return null
 
             // Detect if any module in this category is currently active
-            const hasActiveChild = visibleModules.some((m) => pathname === m.href)
+            const hasActiveChild = visibleModules.some((m) => {
+              if (pathname === m.href) return true;
+              if (m.subModules && m.subModules.some((sub) => pathname === sub.href || (sub.href && pathname.startsWith(sub.href + "/")))) return true;
+              return false;
+            })
 
             return (
               <div 
@@ -138,7 +142,7 @@ export function Sidebar({ role, permissionModules, actualRole, taskCount = 0 }: 
                   }`}
                 >
                   {visibleModules.map((m) => {
-                    const isActive = pathname === m.href
+                    const isActive = pathname === m.href || (m.subModules && m.subModules.some((sub) => pathname === sub.href || (sub.href && pathname.startsWith(sub.href + "/"))))
                     return (
                       <Link 
                         key={m.code} 

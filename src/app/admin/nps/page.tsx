@@ -1,6 +1,7 @@
 ﻿import { prisma } from "@/lib/db"
 import Link from "next/link"
 import { BarChart3, ArrowRight, ClipboardList, Sparkles } from "lucide-react"
+import { SurveyTabs } from "@/components/SurveyTabs"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "Dashboard NPS - Skyline" }
@@ -29,6 +30,7 @@ export default async function NpsDashboardPage() {
 
   return (
     <div className="space-y-8 pb-20 animate-in fade-in duration-700">
+      <SurveyTabs activeTab="nps" />
       <div className="relative bg-white rounded-[2rem] p-8 border-2 border-rose-100 shadow-sm overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-[#BE1E2E]/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
         <div className="relative z-10 flex items-center gap-4">
