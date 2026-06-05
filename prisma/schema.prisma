@@ -410,6 +410,7 @@ model WorkTask {
   progress         String           @default("PENDING")
   month            Int?
   academicYearId   String?
+  isImportant      Boolean          @default(false)
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
   staffNote        String?

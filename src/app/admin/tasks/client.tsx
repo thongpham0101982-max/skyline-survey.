@@ -52,6 +52,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
   const [academicYearId, setAcademicYearId] = useState(() => getDefaultAcademicYearClient(years)?.id || "")
   const [roleUsers, setRoleUsers] = useState<any[]>([])
   const [loadingUsers, setLoadingUsers] = useState(false)
+  const [isImportant, setIsImportant] = useState(false)
 
   const handleSaveCategory = async () => {
     if (!catName.trim()) return alert("Vui lòng nhập tên danh mục!")
@@ -113,7 +114,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
   }, [assignedToRole, showForm])
 
   const resetForm = () => {
-    setEditId(null); setTitle(""); setCategory("")
+    setEditId(null); setTitle(""); setCategory(""); setIsImportant(false)
     setAssignedToRole(roles?.[0]?.code || ""); setAssignedToUserId("")
     setStartDate(new Date().toISOString().slice(0, 10))
     setEndDate(new Date().toISOString().slice(0, 10)); setRoleUsers([])
@@ -122,7 +123,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
   const handleSubmit = async () => {
     if (!title.trim()) return alert("Vui lòng nhập nội dung công việc!")
     if (!category.trim()) return alert("Vui lòng nhập danh mục công việc!")
-    const data = { title, category: category.trim(), assignedToRole, assignedToUserId: assignedToUserId || null, startDate, endDate, academicYearId }
+    const data = { title, category: category.trim(), assignedToRole, assignedToUserId: assignedToUserId || null, startDate, endDate, academicYearId, isImportant }
     const res = editId ? await updateTask(editId, data) : await createTask(data)
     if (res.success) window.location.reload()
     else alert("Lỗi: " + res.error)
@@ -135,6 +136,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
     setStartDate(new Date(t.startDate).toISOString().slice(0, 10))
     setEndDate(new Date(t.endDate).toISOString().slice(0, 10))
     setAcademicYearId(t.academicYearId || years?.[0]?.id || "")
+    setIsImportant(t.isImportant || false)
     setShowForm(true)
   }
 
@@ -312,6 +314,18 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
             <label className="block text-xs font-semibold text-slate-500 mb-1">Nội dung cong viec</label>
             <input value={title} onChange={e => setTitle(e.target.value)}
               className="w-full border rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-300" placeholder="Nhap noi dung..." />
+            <div className="flex items-center gap-2 mt-2">
+              <input
+                type="checkbox"
+                id="isImportant"
+                checked={isImportant}
+                onChange={e => setIsImportant(e.target.checked)}
+                className="w-4 h-4 rounded text-red-600 focus:ring-red-500 cursor-pointer"
+              />
+              <label htmlFor="isImportant" className="text-xs font-bold text-red-600 cursor-pointer flex items-center gap-1">
+                <AlertTriangle className="w-3.5 h-3.5 text-red-500" /> Đánh dấu là công việc quan trọng
+              </label>
+            </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
@@ -439,7 +453,14 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
                     </span>
                   </td>
                   <td className="px-4 py-4">
-                    <div className={"font-semibold cursor-pointer hover:text-[#00A19A] transition-colors " + (isOverdue ? "text-red-800" : "text-slate-800")} onClick={() => setDetailTask(t)}>{t.title}</div>
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      {t.isImportant && (
+                        <span className="bg-red-50 border border-red-200 text-red-700 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-0.5 shadow-sm">
+                          <AlertTriangle className="w-3 h-3 text-red-600" /> QUAN TRỌNG
+                        </span>
+                      )}
+                      <div className={"font-semibold cursor-pointer hover:text-[#00A19A] transition-colors " + (isOverdue ? "text-red-800" : "text-slate-800")} onClick={() => setDetailTask(t)}>{t.title}</div>
+                    </div>
                     {t.assignedBy?.fullName && <div className="text-xs text-slate-400 mt-0.5">Boi: {t.assignedBy.fullName}</div>}
                     {hasStaffNote && (
                       <div className="mt-2 bg-emerald-50 border border-emerald-200 rounded-lg p-2">
