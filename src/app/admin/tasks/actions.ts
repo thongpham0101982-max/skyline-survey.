@@ -19,11 +19,36 @@ function resolveUserEmail(u: any) {
 export async function getUsersByRole(roleCode: string) {
   try {
     const users = await prisma.user.findMany({
-      where: { role: roleCode, status: "ACTIVE" },
-      select: { id: true, fullName: true, email: true },
+      where: {
+        status: "ACTIVE",
+        OR: [
+          { role: roleCode },
+          {
+            teacher: {
+              OR: [
+                { departmentRel: { name: roleCode } },
+                { departmentRel: { code: roleCode } },
+                { mainSubjectRel: { subjectName: roleCode } },
+                { mainSubjectRel: { subjectCode: roleCode } }
+              ]
+            }
+          }
+        ]
+      },
+      select: { 
+        id: true, 
+        fullName: true, 
+        email: true,
+        teacher: { select: { email: true } }
+      },
       orderBy: { fullName: "asc" }
     })
-    return { success: true, users }
+    const resolvedUsers = users.map(u => ({
+      id: u.id,
+      fullName: u.fullName,
+      email: resolveUserEmail(u)
+    }))
+    return { success: true, users: resolvedUsers }
   } catch (e: any) {
     return { success: false, users: [], error: e.message }
   }
@@ -68,8 +93,24 @@ export async function createTask(data: any) {
       })
       if (u) targets = [u]
     } else {
+      const groupName = data.assignedToRole || "KT_DBCL"
       targets = await prisma.user.findMany({
-        where: { role: data.assignedToRole || "KT_DBCL", status: "ACTIVE" },
+        where: {
+          status: "ACTIVE",
+          OR: [
+            { role: groupName },
+            {
+              teacher: {
+                OR: [
+                  { departmentRel: { name: groupName } },
+                  { departmentRel: { code: groupName } },
+                  { mainSubjectRel: { subjectName: groupName } },
+                  { mainSubjectRel: { subjectCode: groupName } }
+                ]
+              }
+            }
+          ]
+        },
         select: { 
           id: true, 
           fullName: true, 
@@ -260,8 +301,24 @@ export async function remindTask(id: string) {
     if (task.assignedToUserId && task.assignedToUser) {
       targets = [task.assignedToUser]
     } else {
+      const groupName = task.assignedToRole
       targets = await prisma.user.findMany({
-        where: { role: task.assignedToRole, status: "ACTIVE" },
+        where: {
+          status: "ACTIVE",
+          OR: [
+            { role: groupName },
+            {
+              teacher: {
+                OR: [
+                  { departmentRel: { name: groupName } },
+                  { departmentRel: { code: groupName } },
+                  { mainSubjectRel: { subjectName: groupName } },
+                  { mainSubjectRel: { subjectCode: groupName } }
+                ]
+              }
+            }
+          ]
+        },
         select: { 
           id: true, 
           fullName: true, 
@@ -382,8 +439,24 @@ export async function checkAndNotifyOverdueTasks() {
       if (task.assignedToUserId) {
         targets = [{ id: task.assignedToUserId }]
       } else {
+        const groupName = task.assignedToRole
         targets = await prisma.user.findMany({
-          where: { role: task.assignedToRole },
+          where: {
+            status: "ACTIVE",
+            OR: [
+              { role: groupName },
+              {
+                teacher: {
+                  OR: [
+                    { departmentRel: { name: groupName } },
+                    { departmentRel: { code: groupName } },
+                    { mainSubjectRel: { subjectName: groupName } },
+                    { mainSubjectRel: { subjectCode: groupName } }
+                  ]
+                }
+              }
+            ]
+          },
           select: { id: true }
         })
       }

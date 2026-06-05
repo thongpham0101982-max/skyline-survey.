@@ -296,7 +296,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1"><Users className="w-3 h-3" /> Nhóm quyền thực hiện</label>
+              <label className="block text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1"><Users className="w-3 h-3" /> Tổ / Môn dạy thực hiện</label>
               <div className="w-full border bg-slate-50 rounded-lg p-2.5 text-sm text-slate-600 font-medium select-none">
                 {(roles || []).find((r: any) => r.code === assignedToRole)?.name || assignedToRole || "(Tự động điền theo Danh mục)"}
               </div>
@@ -560,7 +560,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">Nhóm quyền mặc định</label>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Tổ / Môn dạy</label>
                     <select
                       value={catRole}
                       onChange={e => setCatRole(e.target.value)}
@@ -602,7 +602,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
                         <div>
                           <div className="font-semibold text-sm text-slate-700">{c.name}</div>
                           <div className="text-xs text-slate-400 mt-0.5">
-                            Nhóm quyền: {roles.find((r: any) => r.code === c.assignedToRole)?.name || c.assignedToRole}
+                            Tổ / Môn dạy: {roles.find((r: any) => r.code === c.assignedToRole)?.name || c.assignedToRole}
                           </div>
                         </div>
                         <div className="flex items-center gap-1">

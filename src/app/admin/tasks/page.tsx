@@ -17,13 +17,27 @@ export default async function TasksPage() {
 
   let whereClause: any = {}
   if (role !== "ADMIN") {
-    // KT_DBCL and other non-admin users only see:
-    // 1. Tasks assigned specifically to them (by userId)
-    // 2. Tasks assigned to their role group WITHOUT a specific user (whole-group tasks)
+    // Find user's department and subject details
+    const userTeacher = await prisma.teacher.findUnique({
+      where: { userId },
+      select: {
+        departmentRel: { select: { name: true, code: true } },
+        mainSubjectRel: { select: { subjectName: true, subjectCode: true } }
+      }
+    });
+    const deptName = userTeacher?.departmentRel?.name || "";
+    const deptCode = userTeacher?.departmentRel?.code || "";
+    const subjName = userTeacher?.mainSubjectRel?.subjectName || "";
+    const subjCode = userTeacher?.mainSubjectRel?.subjectCode || "";
+
     whereClause = {
       OR: [
         { assignedToUserId: userId },
-        { assignedToRole: role, assignedToUserId: null }
+        { assignedToRole: role, assignedToUserId: null },
+        ...(deptName ? [{ assignedToRole: deptName, assignedToUserId: null }] : []),
+        ...(deptCode ? [{ assignedToRole: deptCode, assignedToUserId: null }] : []),
+        ...(subjName ? [{ assignedToRole: subjName, assignedToUserId: null }] : []),
+        ...(subjCode ? [{ assignedToRole: subjCode, assignedToUserId: null }] : [])
       ]
     }
   }
@@ -42,10 +56,10 @@ export default async function TasksPage() {
       orderBy: { startDate: "desc" },
       select: { id: true, name: true }
     }),
-    prisma.role.findMany({
-      orderBy: { name: "asc" },
+    prisma.department.findMany({
+      where: { name: "KT&ĐBCL" },
       select: { code: true, name: true }
-    }),
+    }).then(depts => depts.length > 0 ? depts.map(d => ({ code: d.name, name: d.name })) : [{ code: "KT&ĐBCL", name: "KT&ĐBCL" }]),
     prisma.taskCategory.findMany({
       orderBy: { name: "asc" }
     })
@@ -54,11 +68,11 @@ export default async function TasksPage() {
   let dbCategories = initialDbCategories;
   if (dbCategories.length === 0) {
     const defaultCats = [
-      { name: "Khảo Sát", assignedToRole: "KT_DBCL" },
-      { name: "Đào Tạo", assignedToRole: "KT_DBCL" },
-      { name: "Hệ Thống", assignedToRole: "ADMIN" },
-      { name: "Nhân Sự", assignedToRole: "ADMIN" },
-      { name: "Khác", assignedToRole: "KT_DBCL" },
+      { name: "Khảo Sát", assignedToRole: "KT&ĐBCL" },
+      { name: "Đào Tạo", assignedToRole: "KT&ĐBCL" },
+      { name: "Hệ Thống", assignedToRole: "KT&ĐBCL" },
+      { name: "Nhân Sự", assignedToRole: "KT&ĐBCL" },
+      { name: "Khác", assignedToRole: "KT&ĐBCL" },
     ]
     try {
       await prisma.taskCategory.createMany({
