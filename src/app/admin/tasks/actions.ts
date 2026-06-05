@@ -4,6 +4,18 @@ import { revalidatePath } from "next/cache"
 import { auth } from "@/lib/auth"
 import { sendEmail } from "@/lib/mail"
 
+function resolveUserEmail(u: any) {
+  let email = u.teacher?.email || u.email;
+  if (email) {
+    email = email.trim();
+    if (!email.includes("@")) {
+      email = `${email}@skylineschool.edu.vn`;
+    }
+  }
+  return email;
+}
+
+
 export async function getUsersByRole(roleCode: string) {
   try {
     const users = await prisma.user.findMany({
@@ -42,18 +54,28 @@ export async function createTask(data: any) {
     const appUrl = process.env.NEXTAUTH_URL || "https://skyline-survey.vercel.app"
     const formattedDate = new Date(task.endDate).toLocaleDateString("vi-VN")
 
-    // Fetch targets with names and emails
-    let targets: { id: string; fullName: string; email: string | null }[] = []
+    // Fetch targets with names and emails (including teacher relation)
+    let targets: any[] = []
     if (data.assignedToUserId) {
       const u = await prisma.user.findUnique({
         where: { id: data.assignedToUserId },
-        select: { id: true, fullName: true, email: true }
+        select: { 
+          id: true, 
+          fullName: true, 
+          email: true,
+          teacher: { select: { email: true } }
+        }
       })
       if (u) targets = [u]
     } else {
       targets = await prisma.user.findMany({
         where: { role: data.assignedToRole || "KT_DBCL", status: "ACTIVE" },
-        select: { id: true, fullName: true, email: true }
+        select: { 
+          id: true, 
+          fullName: true, 
+          email: true,
+          teacher: { select: { email: true } }
+        }
       })
     }
 
@@ -69,7 +91,8 @@ export async function createTask(data: any) {
         }
       })
 
-      if (u.email) {
+      const resolvedEmail = resolveUserEmail(u);
+      if (resolvedEmail) {
         try {
           const emailHtml = `
             <div style="font-family: 'Open Sans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; padding: 40px 20px; color: #334155; line-height: 1.6;">
@@ -126,7 +149,7 @@ export async function createTask(data: any) {
             </div>
           `;
           await sendEmail({
-            to: u.email,
+            to: resolvedEmail,
             subject: `${task.isImportant ? '[QUAN TRỌNG] ' : ''}[Giao việc] ${task.title}`,
             html: emailHtml
           });
@@ -221,22 +244,30 @@ export async function remindTask(id: string) {
       where: { id },
       include: {
         assignedBy: { select: { fullName: true } },
-        assignedToUser: { select: { id: true, fullName: true, email: true } }
+        assignedToUser: { 
+          select: { 
+            id: true, 
+            fullName: true, 
+            email: true,
+            teacher: { select: { email: true } }
+          } 
+        }
       }
     })
     if (!task) return { success: false, error: "Không tìm thấy công việc" }
 
-    let targets: { id: string; fullName: string; email: string | null }[] = []
+    let targets: any[] = []
     if (task.assignedToUserId && task.assignedToUser) {
-      targets = [{
-        id: task.assignedToUserId,
-        fullName: task.assignedToUser.fullName,
-        email: task.assignedToUser.email
-      }]
+      targets = [task.assignedToUser]
     } else {
       targets = await prisma.user.findMany({
         where: { role: task.assignedToRole, status: "ACTIVE" },
-        select: { id: true, fullName: true, email: true }
+        select: { 
+          id: true, 
+          fullName: true, 
+          email: true,
+          teacher: { select: { email: true } }
+        }
       })
     }
 
@@ -257,7 +288,8 @@ export async function remindTask(id: string) {
       })
 
       // 2. Send email reminder
-      if (u.email) {
+      const resolvedEmail = resolveUserEmail(u);
+      if (resolvedEmail) {
         try {
           const emailHtml = `
             <div style="font-family: 'Open Sans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; padding: 40px 20px; color: #334155; line-height: 1.6;">
@@ -314,7 +346,7 @@ export async function remindTask(id: string) {
             </div>
           `;
           await sendEmail({
-            to: u.email,
+            to: resolvedEmail,
             subject: `${task.isImportant ? '[QUAN TRỌNG] ' : ''}[Nhắc việc] ${task.title}`,
             html: emailHtml
           });
