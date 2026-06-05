@@ -4065,27 +4065,27 @@ return {
           )}
           {/* TOP PANEL: Form ThemMoi / Sua */}
           {!isReadOnly && (
-            <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-amber-100">
-            <div className="flex items-center gap-3 mb-5 border-b pb-4">
-              <div className="bg-indigo-100 p-2 rounded-xl text-indigo-600"><Settings className="w-5 h-5"/></div>
+            <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+            <div className="flex items-center gap-3 mb-5 border-b border-slate-200 pb-4">
+              <div className="bg-[#00A19A]/10 p-2 rounded-xl text-[#00A19A]"><Settings className="w-5 h-5"/></div>
               <div>
-                <h3 className="font-bold text-slate-800 text-lg">{editingMappingSubjectId ? "Chỉnh sửa Cấu hình Môn" : "Gán Môn Khảo Sát"}</h3>
-                <p className="text-xs font-medium text-slate-500 mt-0.5">{editingMappingSubjectId ? "Đang chỉnh sửa - thay đổi Khối/Hệ rồi bấm Cập Nhật" : "Chọn Khối, Hệ học và các Môn để cấu hình đồng loạt"}</p>
+                <h3 className="font-black text-slate-800 text-lg">{editingMappingSubjectId ? "Chỉnh sửa Cấu hình Môn" : "Gán Môn Khảo Sát"}</h3>
+                <p className="text-xs font-semibold text-slate-500 mt-0.5">{editingMappingSubjectId ? "Đang chỉnh sửa - thay đổi Khối/Hệ rồi bấm Cập Nhật" : "Chọn Khối, Hệ học và các Môn để cấu hình đồng loạt"}</p>
                 {editingMappingSubjectId && <button onClick={() => { setEditingMappingSubjectId(null); setSelGrades([]); setSelEdus([]); setAssignSelSubjects([]); }} className="text-xs text-red-500 hover:underline font-bold mt-1">✕ Hủy chỉnh sửa</button>}
               </div>
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
               {/* Left: Grade & Edu */}
-              <div className="lg:col-span-5 space-y-6 bg-slate-50/50 p-5 rounded-xl border border-slate-100">
+              <div className="lg:col-span-5 space-y-6 bg-slate-50/60 p-5 rounded-2xl border border-slate-200">
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="block font-bold text-slate-700 text-xs uppercase tracking-wider">Khối:</span>
-                    <button onClick={() => setSelGrades(selGrades.length === grades.length ? [] : [...grades])} className={"text-[10px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-md transition-colors " + (isReadOnly ? "pointer-events-none opacity-40" : "")} disabled={isReadOnly}>Chọn tất cả</button>
+                    <span className="block font-black text-slate-850 text-xs uppercase tracking-wider">Khối:</span>
+                    <button onClick={() => setSelGrades(selGrades.length === grades.length ? [] : [...grades])} className={"text-[10px] font-black uppercase tracking-wider text-[#00A19A] bg-[#00A19A]/10 hover:bg-[#00A19A]/20 px-2.5 py-1 rounded-md transition-colors border border-[#00A19A]/20 " + (isReadOnly ? "pointer-events-none opacity-40" : "")} disabled={isReadOnly}>Chọn tất cả</button>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {grades.map((g: string) => (
-                      <button key={g} onClick={() => toggleGrade(g)} className={`text-xs px-3 py-1.5 rounded-lg font-bold transition-all ${selGrades.includes(g) ? 'bg-indigo-500 text-white shadow-md shadow-indigo-200' : 'bg-white text-slate-600 border border-slate-200 hover:border-indigo-300'} ${isReadOnly ? "pointer-events-none opacity-40" : ""}`} disabled={isReadOnly}>
+                      <button key={g} onClick={() => toggleGrade(g)} className={`text-xs px-3 py-1.5 rounded-lg font-bold transition-all border ${selGrades.includes(g) ? 'bg-[#00A19A] text-white border-[#00A19A] shadow-sm' : 'bg-white text-slate-800 border-slate-300 hover:border-[#00A19A] hover:bg-slate-100/50'} ${isReadOnly ? "pointer-events-none opacity-40" : ""}`} disabled={isReadOnly}>
                         {selGrades.includes(g) && <Check className="w-3 h-3 inline mr-1"/>} K{g}
                       </button>
                     ))}
@@ -4094,12 +4094,12 @@ return {
 
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="block font-bold text-slate-700 text-xs uppercase tracking-wider">Hệ học:</span>
-                    <button onClick={() => setSelEdus(selEdus.length === currentEduSystems.length ? [] : currentEduSystems.map((e: any) => e.code))} className={"text-[10px] font-bold text-purple-600 bg-purple-50 hover:bg-purple-100 px-2.5 py-1 rounded-md transition-colors " + (isReadOnly ? "pointer-events-none opacity-40" : "")} disabled={isReadOnly}>Chọn tất cả</button>
+                    <span className="block font-black text-slate-850 text-xs uppercase tracking-wider">Hệ học:</span>
+                    <button onClick={() => setSelEdus(selEdus.length === currentEduSystems.length ? [] : currentEduSystems.map((e: any) => e.code))} className={"text-[10px] font-black uppercase tracking-wider text-[#00A19A] bg-[#00A19A]/10 hover:bg-[#00A19A]/20 px-2.5 py-1 rounded-md transition-colors border border-[#00A19A]/20 " + (isReadOnly ? "pointer-events-none opacity-40" : "")} disabled={isReadOnly}>Chọn tất cả</button>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {currentEduSystems.map((es: any) => (
-                      <button key={es.code} onClick={() => toggleEdu(es.code)} className={`text-xs px-3 py-1.5 rounded-lg font-bold transition-all ${selEdus.includes(es.code) ? 'bg-purple-500 text-white shadow-md shadow-purple-200' : 'bg-white text-slate-600 border border-slate-200 hover:border-purple-300'} ${isReadOnly ? "pointer-events-none opacity-40" : ""}`} disabled={isReadOnly}>
+                      <button key={es.code} onClick={() => toggleEdu(es.code)} className={`text-xs px-3 py-1.5 rounded-lg font-bold transition-all border ${selEdus.includes(es.code) ? 'bg-[#00A19A] text-white border-[#00A19A] shadow-sm' : 'bg-white text-slate-800 border-slate-300 hover:border-[#00A19A] hover:bg-slate-100/50'} ${isReadOnly ? "pointer-events-none opacity-40" : ""}`} disabled={isReadOnly}>
                         {selEdus.includes(es.code) && <Check className="w-3 h-3 inline mr-1"/>} {es.code}
                       </button>
                     ))}
@@ -4108,14 +4108,14 @@ return {
               </div>
 
               {/* Right: Subjects to Assign */}
-              <div className="lg:col-span-7 bg-slate-50/50 p-5 rounded-xl border border-slate-100 flex flex-col">
+              <div className="lg:col-span-7 bg-slate-50/60 p-5 rounded-2xl border border-slate-200 flex flex-col">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="block font-bold text-slate-700 text-xs uppercase tracking-wider">Chọn Môn Khảo Sát:</span>
-                  <button onClick={() => setAssignSelSubjects(assignSelSubjects.length === subjectsList.length ? [] : subjectsList.map((s:any)=>s.id))} className={"text-[10px] font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-md transition-colors " + (isReadOnly ? "pointer-events-none opacity-40" : "")} disabled={isReadOnly}>Chọn tất cả</button>
+                  <span className="block font-black text-slate-855 text-xs uppercase tracking-wider">Chọn Môn Khảo Sát:</span>
+                  <button onClick={() => setAssignSelSubjects(assignSelSubjects.length === subjectsList.length ? [] : subjectsList.map((s:any)=>s.id))} className={"text-[10px] font-black uppercase tracking-wider text-[#00A19A] bg-[#00A19A]/10 hover:bg-[#00A19A]/20 px-2.5 py-1 rounded-md transition-colors border border-[#00A19A]/20 " + (isReadOnly ? "pointer-events-none opacity-40" : "")} disabled={isReadOnly}>Chọn tất cả</button>
                 </div>
                 <div className="flex flex-wrap gap-2 mb-4 max-h-[150px] overflow-y-auto pr-1">
                   {subjectsList.map((s:any) => (
-                    <button key={s.id} onClick={() => setAssignSelSubjects(p => p.includes(s.id) ? p.filter(x => x !== s.id) : [...p, s.id])} className={`text-xs px-3 py-2 rounded-xl font-bold transition-all border ${assignSelSubjects.includes(s.id) ? 'bg-emerald-500 text-white border-emerald-500 shadow-md shadow-emerald-200' : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-300'} ${isReadOnly ? "pointer-events-none opacity-40" : ""}`} disabled={isReadOnly}>
+                    <button key={s.id} onClick={() => setAssignSelSubjects(p => p.includes(s.id) ? p.filter(x => x !== s.id) : [...p, s.id])} className={`text-xs px-3 py-2 rounded-xl font-bold transition-all border ${assignSelSubjects.includes(s.id) ? 'bg-[#00A19A] text-white border-[#00A19A] shadow-sm' : 'bg-white text-slate-800 border-slate-300 hover:border-[#00A19A] hover:bg-slate-100/50'} ${isReadOnly ? "pointer-events-none opacity-40" : ""}`} disabled={isReadOnly}>
                       {s.name}
                     </button>
                   ))}
@@ -4151,7 +4151,7 @@ return {
                       notify(wasEditing ? "Cập nhật cấu hình thành công!" : "Lưu cấu hình thành công!");
                     }}
                     disabled={mappingLoading || (!selGrades.length || !selEdus.length || !assignSelSubjects.length) || cannotCreate || cannotUpdate}
-                    className={"w-full py-3.5 bg-indigo-600 text-white rounded-xl font-black text-sm uppercase tracking-widest shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:shadow-none flex justify-center items-center gap-2 " + ((cannotCreate || cannotUpdate) ? "pointer-events-none opacity-40" : "")}
+                    className={"w-full py-3.5 bg-[#00A19A] text-white rounded-xl font-black text-sm uppercase tracking-widest hover:bg-[#1E8B87] transition-colors disabled:opacity-50 disabled:shadow-none flex justify-center items-center gap-2 " + ((cannotCreate || cannotUpdate) ? "pointer-events-none opacity-40" : "")}
                   >
                     {mappingLoading ? <FileSpreadsheet className="w-4 h-4 animate-spin"/> : <Check className="w-4 h-4"/>}
                     {editingMappingSubjectId ? "Cập Nhật Cấu Hình" : "Lưu Cấu Hình"}
@@ -4163,20 +4163,20 @@ return {
           )}
 
           {/* BOTTOM PANEL: Table of existing configurations */}
-          <div className="bg-white rounded-2xl shadow-sm border-2 border-indigo-100 overflow-hidden">
-            <div className="px-6 py-4 border-b bg-slate-50/80 flex justify-between items-center">
-              <h4 className="font-bold text-slate-800 flex items-center gap-2"><Layers className="w-4 h-4 text-indigo-500"/> Danh sách Cấu hình đã lưu</h4>
-              <button onClick={fetchAllMappings} className="text-xs text-indigo-600 hover:underline font-medium">Làm mới</button>
+          <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-200 bg-slate-50/80 flex justify-between items-center">
+              <h4 className="font-black text-slate-800 flex items-center gap-2"><Layers className="w-4 h-4 text-[#00A19A]"/> Danh sách Cấu hình đã lưu</h4>
+              <button onClick={fetchAllMappings} className="text-xs text-[#00A19A] hover:underline font-bold">Làm mới</button>
             </div>
             
             {allMappingsLoading ? (
-              <div className="p-8 text-center text-slate-400">Đang tải danh sách...</div>
+              <div className="p-8 text-center text-slate-450 font-semibold">Đang tải danh sách...</div>
             ) : allMappings.length === 0 ? (
-              <div className="p-12 text-center text-slate-400">Chưa có cấu hình môn khảo sát nào.</div>
+              <div className="p-12 text-center text-slate-455 font-semibold">Chưa có cấu hình môn khảo sát nào.</div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50/50 border-b">
+                  <thead className="bg-slate-50 border-b border-slate-200">
                     <tr>
                       <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest w-16">STT</th>
                       <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">Môn Khảo Sát</th>
@@ -4211,31 +4211,31 @@ return {
                               <div className="flex items-center gap-2">
                                 <span className="font-bold text-slate-800 text-base">{g.subject?.name}</span>
                                 {g.subject?.code && <span className="text-xs font-mono text-slate-400">{g.subject.code}</span>}
-                                {g.subject?.subjectType && (
-                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-bold uppercase">
-                                    {g.subject.subjectType === "VIET_NAM" ? "GV VN" : "GV NN"}
+                                {g.subject?.subjectType && g.subject.subjectType === "VIET_NAM" && (
+                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#00A19A]/10 text-[#00A19A] border border-[#00A19A]/20 font-bold uppercase">
+                                    GV VN
                                   </span>
                                 )}
                               </div>
                             </td>
                             <td className="px-6 py-4">
                               {allGrades ? (
-                                <span className="font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-md text-xs">Tất cả Khối</span>
+                                <span className="font-bold text-[#00A19A] bg-[#00A19A]/5 border border-[#00A19A]/20 px-2.5 py-1 rounded-md text-xs">Tất cả Khối</span>
                               ) : (
                                 <div className="flex flex-wrap gap-1.5">
                                   {Array.from(g.grades).sort((a:any, b:any) => parseInt(a) - parseInt(b)).map((grade:any) => (
-                                    <span key={grade} className="font-bold text-slate-700 bg-slate-100 border border-slate-200 px-2 py-1 rounded-md text-xs">K{grade}</span>
+                                    <span key={grade} className="font-bold text-slate-800 bg-slate-100 border border-slate-350 px-2 py-1 rounded-md text-xs">K{grade}</span>
                                   ))}
                                 </div>
                               )}
                             </td>
                             <td className="px-6 py-4">
                               {allEdus ? (
-                                <span className="font-bold text-purple-700 bg-purple-50 border border-purple-100 px-2.5 py-1 rounded-md text-xs">Tất cả Hệ học</span>
+                                <span className="font-bold text-teal-850 bg-teal-50 border border-teal-200 px-2.5 py-1 rounded-md text-xs">Tất cả Hệ học</span>
                               ) : (
                                 <div className="flex flex-wrap gap-1.5">
                                   {Array.from(g.edus).sort().map((edu:any) => (
-                                    <span key={edu} className="font-bold text-purple-700 bg-purple-50 border border-purple-100 px-2 py-1 rounded-md text-xs">{edu}</span>
+                                    <span key={edu} className="font-bold text-teal-850 bg-teal-50 border border-teal-200 px-2 py-1 rounded-md text-xs">{edu}</span>
                                   ))}
                                 </div>
                               )}
@@ -4248,7 +4248,7 @@ return {
                                   setAssignSelSubjects([g.subject?.id]);
                                   setEditingMappingSubjectId(g.subject?.id);
                                   window.scrollTo({ top: 0, behavior: 'smooth' });
-                                }} className={"p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate} title="Chỉnh sửa (Sẽ nạp lên form phía trên)">
+                                }} className={"p-2 text-slate-400 hover:text-[#00A19A] hover:bg-[#00A19A]/5 rounded-lg transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate} title="Chỉnh sửa (Sẽ nạp lên form phía trên)">
                                   <Pencil className="w-4 h-4"/>
                                 </button>
                                 <button onClick={async () => {
@@ -4258,7 +4258,7 @@ return {
                                     }
                                     fetchAllMappings();
                                   }
-                                }} className={"p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete} title="Xóa toàn bộ môn này">
+                                }} className={"p-2 text-slate-400 hover:text-red-655 hover:bg-red-50 rounded-lg transition-all " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete} title="Xóa toàn bộ môn này">
                                   <Trash2 className="w-4 h-4"/>
                                 </button>
                               </div>
@@ -5522,9 +5522,9 @@ return {
                               <span className={`text-[10px] font-black uppercase tracking-wider block shrink-0 max-w-[120px] truncate ${isActive ? "text-[#00A19A]" : "text-slate-400"}`} title={sName}>
                                 {sName}
                               </span>
-                              {subject.subjectType && (
-                                <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border shrink-0 ${subject.subjectType === "VIET_NAM" ? "bg-[#00A19A]/5 text-[#00A19A] border-[#00A19A]/20" : "bg-teal-50 text-[#1E8B87] border-teal-200"}`}>
-                                  {subject.subjectType === "VIET_NAM" ? "GV Việt Nam" : "GV Nước Ngoài"}
+                              {subject.subjectType === "VIET_NAM" && (
+                                <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border shrink-0 bg-[#00A19A]/5 text-[#00A19A] border-[#00A19A]/20">
+                                  GV Việt Nam
                                 </span>
                               )}
                             </div>
@@ -5582,9 +5582,9 @@ return {
                                 <div className="flex items-center gap-2.5">
                                   <h4 className="font-black text-slate-800 text-lg leading-none">{subject.name}</h4>
                                   {subject.code && <span className="font-mono text-[10px] font-black text-slate-400 bg-slate-50 border border-slate-200/50 px-2 py-0.5 rounded-lg select-none">{subject.code}</span>}
-                                  {subject.subjectType && (
-                                    <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full border shadow-sm ${subject.subjectType === "VIET_NAM" ? "bg-indigo-50 text-indigo-700 border-indigo-100" : "bg-violet-50 text-violet-700 border-violet-100"}`}>
-                                      {subject.subjectType === "VIET_NAM" ? "Giáo viên Việt Nam" : "Giáo viên Nước Ngoài"}
+                                  {subject.subjectType === "VIET_NAM" && (
+                                    <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full border shadow-sm bg-[#00A19A]/5 text-[#00A19A] border-[#00A19A]/20`}>
+                                      Giáo viên Việt Nam
                                     </span>
                                   )}
                                 </div>
