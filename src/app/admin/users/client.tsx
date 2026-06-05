@@ -1,7 +1,7 @@
 "use client"
 import { useState } from "react"
 import { Plus, Edit2, Trash2, CheckCircle2, X, Filter } from "lucide-react"
-import { createUser, updateUser, deleteUser, deleteUsers } from "./actions"
+import { createUser, updateUser, deleteUser, deleteUsers, changeUserRoles } from "./actions"
 
 export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked = false, defaultCampusId = null }: any) {
   const [users, setUsers] = useState(initialUsers || []);
@@ -13,6 +13,21 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
   
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [deleting, setDeleting] = useState(false);
+  const [moving, setMoving] = useState(false);
+
+  const handleMoveGroup = async (newRoleCode: string) => {
+    const roleName = roles.find((r: any) => r.code === newRoleCode)?.name || newRoleCode;
+    if (!confirm(`Bạn có chắc chắn muốn chuyển ${selectedIds.length} tài khoản sang Nhóm: ${roleName}?`)) return;
+    setMoving(true);
+    const res = await changeUserRoles(selectedIds, newRoleCode);
+    if (res.success) {
+      alert("Đã chuyển nhóm tài khoản thành công!");
+      window.location.reload();
+    } else {
+      alert("Lỗi: " + (res.error || "Không thể chuyển"));
+    }
+    setMoving(false);
+  }
 
   const startEdit = (u?: any) => {
     if (u) {
@@ -127,10 +142,26 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
           <div className="flex items-center gap-4">
              <h3 className="font-bold text-slate-700">Danh sách Tài khoản ({displayedUsers.length})</h3>
              {selectedIds.length > 0 && (
-               <button onClick={handleDeleteMultiple} disabled={deleting}
-                 className="flex items-center text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 font-semibold py-1.5 px-3 rounded-md border border-red-200 text-sm">
-                 <Trash2 className="w-4 h-4 mr-2" /> {deleting ? "Đang xóa..." : `Xóa ${selectedIds.length} tài khoản`}
-               </button>
+               <div className="flex items-center gap-2.5">
+                 <button onClick={handleDeleteMultiple} disabled={deleting || moving}
+                   className="flex items-center text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 font-semibold py-1.5 px-3 rounded-md border border-red-200 text-sm cursor-pointer transition-all">
+                   <Trash2 className="w-4 h-4 mr-2" /> {deleting ? "Đang xóa..." : `Xóa ${selectedIds.length} tài khoản`}
+                 </button>
+                 <select
+                   onChange={(e) => {
+                     const val = e.target.value;
+                     if (val) handleMoveGroup(val);
+                     e.target.value = "";
+                   }}
+                   disabled={deleting || moving}
+                   className="p-1.5 rounded-md border text-xs bg-white border-slate-300 font-bold text-slate-700 cursor-pointer outline-none focus:border-[#00A19A]"
+                 >
+                   <option value="">-- Chuyển sang Nhóm --</option>
+                   {roles.map((r) => (
+                     <option key={r.code} value={r.code}>{r.name}</option>
+                   ))}
+                 </select>
+               </div>
              )}
           </div>
           <button onClick={() => startEdit()} className="px-4 py-2 bg-[#00A19A] text-white rounded-lg text-sm font-semibold flex items-center hover:bg-[#008c85] shadow-sm transition-all">

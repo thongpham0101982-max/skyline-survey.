@@ -141,3 +141,47 @@ export async function deleteUsers(ids: string[]) {
     return { success: false, error: e.message };
   }
 }
+
+export async function changeUserRoles(userIds: string[], targetRoleCode: string) {
+  try {
+    // 1. Update the role in the User table for all selected user ids
+    await prisma.user.updateMany({
+      where: { id: { in: userIds } },
+      data: { role: targetRoleCode }
+    });
+
+    // 2. If the target role is TEACHER or GV_MN, ensure each user has a Teacher record
+    if (targetRoleCode === "TEACHER" || targetRoleCode === "GV_MN") {
+      const users = await prisma.user.findMany({
+        where: { id: { in: userIds } },
+        include: { teacher: true, campusAssignments: true }
+      });
+
+      const firstCampus = await prisma.campus.findFirst();
+      const defaultCampusId = firstCampus?.id;
+
+      for (const u of users) {
+        if (!u.teacher) {
+          const userCampusId = u.campusAssignments.length > 0 ? u.campusAssignments[0].campusId : defaultCampusId;
+          if (userCampusId) {
+            await prisma.teacher.create({
+              data: {
+                userId: u.id,
+                teacherCode: u.email,
+                teacherName: u.fullName,
+                campusId: userCampusId,
+                status: "ACTIVE"
+              }
+            });
+          }
+        }
+      }
+    }
+
+    revalidatePath("/admin/users");
+    revalidatePath("/admin/teachers");
+    return { success: true };
+  } catch (e: any) {
+    return { success: false, error: e.message };
+  }
+}
