@@ -3,7 +3,7 @@ import { getDefaultAcademicYearClient } from "@/lib/academicYear"
 import { useState, useEffect, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { ClipboardList, Plus, Bell, Edit, Trash2, AlertTriangle, User, Users, MessageSquare, Send, X, CheckCircle2 } from "lucide-react"
-import { createTask, updateTask, deleteTask, remindTask, updateTaskProgress, getUsersByRole, respondToTask } from "./actions"
+import { createTask, updateTask, deleteTask, remindTask, updateTaskProgress, getUsersByRole, respondToTask, deleteTasks } from "./actions"
 import { TaskDetailPanel } from "./TaskDetailPanel"
 
 const CATEGORIES = [
@@ -32,6 +32,7 @@ export function TasksClient({ initialTasks, years, roles, currentRole, currentUs
   const [showForm, setShowForm] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
   const [filterProgress, setFilterProgress] = useState("ALL")
+  const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([])
 
   // Form fields (admin)
   const [title, setTitle] = useState("")
@@ -110,6 +111,18 @@ export function TasksClient({ initialTasks, years, roles, currentRole, currentUs
     else alert("Lỗi: " + res.error)
   }
 
+  const handleBulkDelete = async () => {
+    if (selectedTaskIds.length === 0) return
+    if (!confirm(`Xóa ${selectedTaskIds.length} công việc đã chọn?`)) return
+    const res = await deleteTasks(selectedTaskIds)
+    if (res.success) {
+      setTasks(tasks.filter((t: any) => !selectedTaskIds.includes(t.id)))
+      setSelectedTaskIds([])
+    } else {
+      alert("Lỗi: " + res.error)
+    }
+  }
+
   const handleProgressChange = async (id: string, progress: string) => {
     setTasks(tasks.map((t: any) => t.id === id ? { ...t, progress } : t))
     await updateTaskProgress(id, progress)
@@ -147,10 +160,20 @@ export function TasksClient({ initialTasks, years, roles, currentRole, currentUs
           Điều hành Công việc
         </h1>
         {isAdmin && (
-          <button onClick={() => { resetForm(); setShowForm(!showForm) }}
-            className="flex items-center gap-2 bg-[#00A19A] text-white px-5 py-2.5 rounded-xl hover:bg-[#008c85] transition-colors shadow-sm font-medium">
-            <Plus className="w-4 h-4" /> Giao việc mới
-          </button>
+          <div className="flex items-center gap-2">
+            {selectedTaskIds.length > 0 && (
+              <button 
+                onClick={handleBulkDelete}
+                className="flex items-center gap-2 bg-red-600 text-white px-5 py-2.5 rounded-xl hover:bg-red-700 transition-colors shadow-sm font-medium"
+              >
+                <Trash2 className="w-4 h-4" /> Xóa đã chọn ({selectedTaskIds.length})
+              </button>
+            )}
+            <button onClick={() => { resetForm(); setShowForm(!showForm) }}
+              className="flex items-center gap-2 bg-[#00A19A] text-white px-5 py-2.5 rounded-xl hover:bg-[#008c85] transition-colors shadow-sm font-medium">
+              <Plus className="w-4 h-4" /> Giao việc mới
+            </button>
+          </div>
         )}
       </div>
 
@@ -277,7 +300,7 @@ export function TasksClient({ initialTasks, years, roles, currentRole, currentUs
           </thead>
           <tbody className="divide-y divide-slate-100">
             {displayedTasks.length === 0 && (
-              <tr><td colSpan={7} className="px-5 py-12 text-center text-slate-400">Chưa có công việc nào</td></tr>
+              <tr><td colSpan={isAdmin ? 8 : 7} className="px-5 py-12 text-center text-slate-400">Chưa có công việc nào</td></tr>
             )}
             {displayedTasks.map((t: any, i: number) => {
               const isOverdue = t.progress === "OVERDUE"
@@ -285,8 +308,25 @@ export function TasksClient({ initialTasks, years, roles, currentRole, currentUs
               const roleName = (roles || []).find((r: any) => r.code === t.assignedToRole)?.name || t.assignedToRole
               const assigneeName = t.assignedToUser?.fullName || null
               const hasStaffNote = t.staffNote && t.staffNote.trim()
+              const isSelected = selectedTaskIds.includes(t.id)
               return (
-                <tr key={t.id} className={"transition-colors " + (isOverdue ? "bg-red-50 hover:bg-red-100" : "hover:bg-slate-50")}>
+                <tr key={t.id} className={"transition-colors " + (isOverdue ? "bg-red-50 hover:bg-red-100" : isSelected ? "bg-[#00A19A]/5 hover:bg-[#00A19A]/10" : "hover:bg-slate-50")}>
+                  {isAdmin && (
+                    <td className="px-4 py-4 text-center">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={e => {
+                          if (e.target.checked) {
+                            setSelectedTaskIds([...selectedTaskIds, t.id])
+                          } else {
+                            setSelectedTaskIds(selectedTaskIds.filter(id => id !== t.id))
+                          }
+                        }}
+                        className="w-4 h-4 rounded text-[#00A19A] focus:ring-[#00A19A] cursor-pointer"
+                      />
+                    </td>
+                  )}
                   <td className="px-4 py-4 text-slate-400 text-center">{i + 1}</td>
                   <td className="px-4 py-4">
                     <span className="bg-[#00A19A]/10 text-indigo-700 text-xs px-2 py-1 rounded-full whitespace-nowrap">

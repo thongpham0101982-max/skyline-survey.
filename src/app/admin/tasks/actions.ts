@@ -255,3 +255,17 @@ export async function deleteTask(id: string) {
     return { success: false, error: e.message }
   }
 }
+
+export async function deleteTasks(ids: string[]) {
+  try {
+    await prisma.workTask.deleteMany({
+      where: {
+        id: { in: ids }
+      }
+    })
+    revalidatePath("/admin/tasks")
+    return { success: true }
+  } catch (e: any) {
+    return { success: false, error: e.message }
+  }
+}
