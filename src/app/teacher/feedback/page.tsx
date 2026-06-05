@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
 import { MessageSquare, Quote } from "lucide-react"
+import { SurveyTabs } from "@/components/SurveyTabs"
 import { getDefaultAcademicYear } from "@/lib/academicYear"
 
 export default async function TeacherFeedbackPage() {
@@ -73,6 +74,8 @@ export default async function TeacherFeedbackPage() {
         <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Theo dõi Phản hồi</h1>
         <p className="text-slate-500 mt-1">Các ý kiến đóng góp thuộc năm học mặc định: <span className="font-bold text-[#00A19A]">{activeYear?.name || 'N/A'}</span></p>
       </div>
+      
+      <SurveyTabs activeTab="feedback" role="TEACHER" />
       
       <div className="grid gap-4 mt-8">
         {feedbacks.length === 0 ? (

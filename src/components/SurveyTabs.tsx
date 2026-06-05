@@ -1,13 +1,14 @@
 "use client"
 import Link from 'next/link'
-import { FileSpreadsheet, Layers, BarChart3, PieChart, ClipboardCheck } from 'lucide-react'
+import { FileSpreadsheet, Layers, BarChart3, PieChart, ClipboardCheck, MessageSquare } from 'lucide-react'
 
 interface SurveyTabsProps {
-  activeTab: 'surveys' | 'categories' | 'results' | 'nps' | 'reports'
+  activeTab: 'surveys' | 'categories' | 'results' | 'nps' | 'reports' | 'feedback'
+  role?: 'ADMIN' | 'TEACHER'
 }
 
-export function SurveyTabs({ activeTab }: SurveyTabsProps) {
-  const tabs = [
+export function SurveyTabs({ activeTab, role = 'ADMIN' }: SurveyTabsProps) {
+  const adminTabs = [
     { id: 'surveys', label: 'Quản lý Khảo sát', href: '/admin/surveys', icon: FileSpreadsheet },
     { id: 'categories', label: 'Danh mục Khảo sát', href: '/admin/categories', icon: Layers },
     { id: 'results', label: 'Kết quả KS', href: '/admin/surveys/results', icon: ClipboardCheck },
@@ -15,8 +16,16 @@ export function SurveyTabs({ activeTab }: SurveyTabsProps) {
     { id: 'reports', label: 'Theo dõi Phản hồi', href: '/admin/reports', icon: BarChart3 }
   ]
 
+  const teacherTabs = [
+    { id: 'surveys', label: 'Quản lý Khảo sát', href: '/teacher/surveys', icon: FileSpreadsheet },
+    { id: 'nps', label: 'Phân tích NPS', href: '/teacher/nps', icon: PieChart },
+    { id: 'feedback', label: 'Theo dõi Phản hồi', href: '/teacher/feedback', icon: MessageSquare }
+  ]
+
+  const tabs = role === 'TEACHER' ? teacherTabs : adminTabs
+
   return (
-    <div className="bg-white border border-[#00A19A]/20 shadow-xs rounded-xl px-1.5 py-1.5 mb-6 no-print">
+    <div className="bg-white border border-[#00A99D]/20 shadow-xs rounded-xl px-1.5 py-1.5 mb-6 no-print">
       <div className="flex flex-wrap gap-1">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id
@@ -27,8 +36,8 @@ export function SurveyTabs({ activeTab }: SurveyTabsProps) {
               href={tab.href}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-black transition-all duration-200 border ${
                 isActive
-                  ? 'bg-[#00A19A] text-white border-[#00A19A] shadow-xs'
-                  : 'text-slate-600 border-transparent hover:bg-[#00A19A]/5 hover:text-[#00A19A]'
+                  ? 'bg-[#00A99D] text-white border-[#00A99D] shadow-xs'
+                  : 'text-slate-600 border-transparent hover:bg-[#00A99D]/5 hover:text-[#00A99D]'
               }`}
             >
               <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />

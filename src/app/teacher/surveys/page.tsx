@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { FileText, Calendar, Users } from "lucide-react"
+import { SurveyTabs } from "@/components/SurveyTabs"
 import { getDefaultAcademicYear } from "@/lib/academicYear"
 
 export default async function TeacherSurveysPage() {
@@ -49,6 +50,8 @@ export default async function TeacherSurveysPage() {
         <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Quản lý Khảo sát</h1>
         <p className="text-slate-500 mt-1">Các đợt khảo sát thuộc năm học mặc định: <span className="font-bold text-[#00A19A]">{activeYear?.name || 'N/A'}</span></p>
       </div>
+      
+      <SurveyTabs activeTab="surveys" role="TEACHER" />
       
       <div className="grid gap-4 mt-8">
         {surveys.length === 0 ? (

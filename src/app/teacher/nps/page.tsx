@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
 import { PieChart, TrendingUp, Users } from "lucide-react"
+import { SurveyTabs } from "@/components/SurveyTabs"
 import { getDefaultAcademicYear } from "@/lib/academicYear"
 
 export default async function TeacherNpsPage() {
@@ -94,6 +95,8 @@ export default async function TeacherNpsPage() {
         <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Phân tích NPS</h1>
         <p className="text-slate-500 mt-1">Chỉ số thuộc năm học mặc định: <span className="font-bold text-[#00A19A]">{activeYear?.name || 'N/A'}</span></p>
       </div>
+      
+      <SurveyTabs activeTab="nps" role="TEACHER" />
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
         <div className="bg-white rounded-xl p-6 shadow-sm border-2 border-violet-100 col-span-1 md:col-span-3 flex flex-col items-center justify-center py-12">

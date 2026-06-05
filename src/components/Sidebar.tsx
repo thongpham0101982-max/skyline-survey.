@@ -222,17 +222,17 @@ export function Sidebar({ role, permissionModules, actualRole, taskCount = 0 }: 
                 <div className="px-3 py-2">
                   {!isCollapsed ? <span className="text-[10px] font-bold text-white/60 uppercase tracking-[0.1em]">Khảo sát</span> : <span className="w-full text-center text-white/50 block text-xs">•••</span>}
                 </div>
-                <Link href="/teacher/surveys" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/surveys') ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"}`}>
-                  <FileText className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/surveys') ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
+                <Link 
+                  href="/teacher/surveys" 
+                  onClick={() => setIsOpen(false)} 
+                  className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${
+                    (pathname.includes('/teacher/surveys') || pathname.includes('/teacher/nps') || pathname.includes('/teacher/feedback')) 
+                      ? "bg-white/20 text-white border border-[#135E5B]/30" 
+                      : "text-white/70 hover:text-white hover:bg-white/10"
+                  }`}
+                >
+                  <FileText className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${(pathname.includes('/teacher/surveys') || pathname.includes('/teacher/nps') || pathname.includes('/teacher/feedback')) ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
                   {!isCollapsed && <span>Quản lý Khảo sát</span>}
-                </Link>
-                <Link href="/teacher/nps" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/nps') ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"}`}>
-                  <PieChart className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/nps') ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
-                  {!isCollapsed && <span>Phân tích NPS</span>}
-                </Link>
-                <Link href="/teacher/feedback" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/feedback') ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"}`}>
-                  <MessageSquare className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/feedback') ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
-                  {!isCollapsed && <span>Theo dõi Phản hồi</span>}
                 </Link>
               </div>
             </>
