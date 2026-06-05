@@ -115,6 +115,16 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
                 {r.name}
               </button>
             ))}
+
+            {selectedIds.length > 0 && filterRole !== "ALL" && (
+              <button
+                onClick={() => handleMoveGroup(filterRole)}
+                disabled={moving}
+                className="ml-4 px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold shadow-sm transition-all cursor-pointer flex items-center gap-1.5"
+              >
+                Chuyển {selectedIds.length} tài khoản đã chọn sang Nhóm: {roles.find((r) => r.code === filterRole)?.name}
+              </button>
+            )}
           </div>
         </div>
         
@@ -142,7 +152,7 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
           <div className="flex items-center gap-4">
              <h3 className="font-bold text-slate-700">Danh sách Tài khoản ({displayedUsers.length})</h3>
              {selectedIds.length > 0 && (
-               <div className="flex items-center gap-2.5">
+               <div className="flex items-center gap-2.5 flex-wrap">
                  <button onClick={handleDeleteMultiple} disabled={deleting || moving}
                    className="flex items-center text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 font-semibold py-1.5 px-3 rounded-md border border-red-200 text-sm cursor-pointer transition-all">
                    <Trash2 className="w-4 h-4 mr-2" /> {deleting ? "Đang xóa..." : `Xóa ${selectedIds.length} tài khoản`}
@@ -161,6 +171,15 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
                      <option key={r.code} value={r.code}>{r.name}</option>
                    ))}
                  </select>
+                 {filterRole !== "ALL" && (
+                   <button
+                     onClick={() => handleMoveGroup(filterRole)}
+                     disabled={moving}
+                     className="flex items-center bg-[#00A19A] text-white hover:bg-[#008c85] font-semibold py-1.5 px-3 rounded-md text-sm cursor-pointer transition-all shadow-sm"
+                   >
+                     <CheckCircle2 className="w-4 h-4 mr-1.5" /> Chuyển {selectedIds.length} tài khoản sang nhóm {roles.find((r) => r.code === filterRole)?.name}
+                   </button>
+                 )}
                </div>
              )}
           </div>
