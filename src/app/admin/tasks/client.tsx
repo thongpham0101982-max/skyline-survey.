@@ -37,7 +37,7 @@ export function TasksClient({ initialTasks, years, roles, currentRole, currentUs
 
   // Form fields (admin)
   const [title, setTitle] = useState("")
-  const [category, setCategory] = useState("KHAO_SAT")
+  const [category, setCategory] = useState("")
   const [assignedToRole, setAssignedToRole] = useState(roles?.[0]?.code || "")
   const [assignedToUserId, setAssignedToUserId] = useState("")
   const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10))
@@ -76,7 +76,7 @@ export function TasksClient({ initialTasks, years, roles, currentRole, currentUs
   }, [assignedToRole, showForm])
 
   const resetForm = () => {
-    setEditId(null); setTitle(""); setCategory("KHAO_SAT")
+    setEditId(null); setTitle(""); setCategory("")
     setAssignedToRole(roles?.[0]?.code || ""); setAssignedToUserId("")
     setStartDate(new Date().toISOString().slice(0, 10))
     setEndDate(new Date().toISOString().slice(0, 10)); setRoleUsers([])
@@ -84,14 +84,15 @@ export function TasksClient({ initialTasks, years, roles, currentRole, currentUs
 
   const handleSubmit = async () => {
     if (!title.trim()) return alert("Vui lòng nhập nội dung công việc!")
-    const data = { title, category, assignedToRole, assignedToUserId: assignedToUserId || null, startDate, endDate, academicYearId }
+    if (!category.trim()) return alert("Vui lòng nhập danh mục công việc!")
+    const data = { title, category: category.trim(), assignedToRole, assignedToUserId: assignedToUserId || null, startDate, endDate, academicYearId }
     const res = editId ? await updateTask(editId, data) : await createTask(data)
     if (res.success) window.location.reload()
     else alert("Lỗi: " + res.error)
   }
 
   const handleEdit = (t: any) => {
-    setEditId(t.id); setTitle(t.title); setCategory(t.category || "KHAO_SAT")
+    setEditId(t.id); setTitle(t.title); setCategory(t.category || "")
     setAssignedToRole(t.assignedToRole || roles?.[0]?.code || "")
     setAssignedToUserId(t.assignedToUserId || "")
     setStartDate(new Date(t.startDate).toISOString().slice(0, 10))
@@ -142,6 +143,8 @@ export function TasksClient({ initialTasks, years, roles, currentRole, currentUs
     }
     setSubmitting(false)
   }
+
+  const filterCategories = Array.from(new Set(tasks.map((t: any) => t.category).filter(Boolean))) as string[]
 
   const displayedTasks = tasks.filter((t: any) => {
     const matchProgress = filterProgress === "ALL" || t.progress === filterProgress;
@@ -211,19 +214,19 @@ export function TasksClient({ initialTasks, years, roles, currentRole, currentUs
          >
             Tất cả
          </button>
-         {CATEGORIES.map(c => {
-            const isActive = filterCategory === c.value;
+         {filterCategories.map(cat => {
+            const isActive = filterCategory === cat;
             return (
                <button
-                  key={c.value}
-                  onClick={() => setFilterCategory(c.value)}
+                  key={cat}
+                  onClick={() => setFilterCategory(isActive ? "ALL" : cat)}
                   className={`px-4 py-2 rounded-xl text-xs font-medium transition-all border ${
                      isActive
                         ? "bg-[#00A19A] border-[#00A19A] text-white shadow-sm"
                         : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
                   }`}
                >
-                  {c.label}
+                  {cat}
                </button>
             )
          })}
@@ -236,9 +239,19 @@ export function TasksClient({ initialTasks, years, roles, currentRole, currentUs
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-500 mb-1">Danh mục</label>
-              <select value={category} onChange={e => setCategory(e.target.value)} className="w-full border rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-300">
-                {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-              </select>
+              <input
+                type="text"
+                value={category}
+                onChange={e => setCategory(e.target.value)}
+                className="w-full border rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-300 font-medium"
+                placeholder="Nhập hoặc chọn danh mục..."
+                list="task-categories-datalist"
+              />
+              <datalist id="task-categories-datalist">
+                {Array.from(new Set(["Khảo Sát", "Đào Tạo", "Hệ Thống", "Nhân Sự", "Khác", ...tasks.map((t: any) => t.category).filter(Boolean)])).map(cat => (
+                  <option key={cat} value={cat} />
+                ))}
+              </datalist>
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1"><Users className="w-3 h-3" /> Nhóm quyền</label>
@@ -381,8 +394,8 @@ export function TasksClient({ initialTasks, years, roles, currentRole, currentUs
                   )}
                   <td className="px-4 py-4 text-slate-400 text-center">{i + 1}</td>
                   <td className="px-4 py-4">
-                    <span className="bg-[#00A19A]/10 text-indigo-700 text-xs px-2 py-1 rounded-full whitespace-nowrap">
-                      {CATEGORIES.find(c => c.value === t.category)?.label || t.category}
+                    <span className="bg-[#00A19A]/10 text-[#00A19A] text-xs px-2 py-1 rounded-full whitespace-nowrap font-medium">
+                      {t.category}
                     </span>
                   </td>
                   <td className="px-4 py-4">
