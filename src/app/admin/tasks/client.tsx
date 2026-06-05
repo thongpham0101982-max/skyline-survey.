@@ -89,6 +89,8 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
   const [respondProgress, setRespondProgress] = useState("IN_PROGRESS")
   const [respondNote, setRespondNote] = useState("")
   const [submitting, setSubmitting] = useState(false)
+  const [submittingTask, setSubmittingTask] = useState(false)
+  const [taskToast, setTaskToast] = useState<{msg: string, type: string} | null>(null)
   const [detailTask, setDetailTask] = useState<any>(null)
 
   const isAdmin = currentRole === "ADMIN"
@@ -123,10 +125,22 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
   const handleSubmit = async () => {
     if (!title.trim()) return alert("Vui lòng nhập nội dung công việc!")
     if (!category.trim()) return alert("Vui lòng nhập danh mục công việc!")
+    setSubmittingTask(true)
     const data = { title, category: category.trim(), assignedToRole, assignedToUserId: assignedToUserId || null, startDate, endDate, academicYearId, isImportant }
-    const res = editId ? await updateTask(editId, data) : await createTask(data)
-    if (res.success) window.location.reload()
-    else alert("Lỗi: " + res.error)
+    const res: any = editId ? await updateTask(editId, data) : await createTask(data)
+    setSubmittingTask(false)
+    if (res.success) {
+      if (!editId && (res.sent > 0 || res.emailSent > 0)) {
+        const sentMsg = `${res.sent} thông báo`
+        const emailMsg = res.emailSent > 0 ? ` và ${res.emailSent} email` : ''
+        setTaskToast({ msg: `✅ Đã giao việc thành công! ${sentMsg}${emailMsg}`, type: 'success' })
+        setTimeout(() => { setTaskToast(null); window.location.reload() }, 3500)
+      } else {
+        window.location.reload()
+      }
+    } else {
+      alert("Lỗi: " + res.error)
+    }
   }
 
   const handleEdit = (t: any) => {
@@ -200,6 +214,19 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
 
   return (
     <div className="p-6 space-y-6">
+      {/* Task Toast Notification */}
+      {taskToast && (
+        <div className={`fixed top-6 right-6 z-50 flex items-start gap-3 px-5 py-4 rounded-2xl shadow-2xl border max-w-sm ${
+          taskToast.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-800'
+        }`}>
+          <CheckCircle2 className="w-5 h-5 mt-0.5 flex-shrink-0 text-emerald-600" />
+          <div>
+            <p className="font-semibold text-sm">Thành công</p>
+            <p className="text-xs mt-0.5 opacity-90">{taskToast.msg}</p>
+          </div>
+          <button onClick={() => setTaskToast(null)} className="ml-2 text-current opacity-50 hover:opacity-100"><X className="w-4 h-4" /></button>
+        </div>
+      )}
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold flex items-center gap-3 text-slate-800">
@@ -344,7 +371,13 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
             </div>
           </div>
           <div className="flex gap-3 pt-2">
-            <button onClick={handleSubmit} className="bg-[#00A19A] text-white px-6 py-2.5 rounded-xl hover:bg-[#008c85] font-medium">Lưu</button>
+            <button onClick={handleSubmit} disabled={submittingTask} className="bg-[#00A19A] text-white px-6 py-2.5 rounded-xl hover:bg-[#008c85] font-medium disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2">
+              {submittingTask ? (
+                <><svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>Đang gửi...</>
+              ) : (
+                <><Send className="w-4 h-4" />{editId ? 'Cập nhật' : 'Lưư & Gửi thông báo'}</>
+              )}
+            </button>
             <button onClick={() => setShowForm(false)} className="bg-slate-100 px-6 py-2.5 rounded-xl hover:bg-slate-200 font-medium">Hủy</button>
           </div>
         </div>

@@ -1,4 +1,4 @@
-"use server"
+﻿"use server"
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 import { auth } from "@/lib/auth"
@@ -121,6 +121,8 @@ export async function createTask(data: any) {
     }
 
     // Send notifications and emails
+    let sentCount = 0
+    let emailSentCount = 0
     for (const u of targets) {
       await prisma.notification.create({
         data: {
@@ -201,7 +203,7 @@ export async function createTask(data: any) {
     }
 
     revalidatePath("/admin/tasks")
-    return { success: true }
+    return { success: true, sent: sentCount, emailSent: emailSentCount }
   } catch (e: any) {
     return { success: false, error: e.message }
   }
@@ -225,7 +227,7 @@ export async function updateTask(id: string, data: any) {
       }
     })
     revalidatePath("/admin/tasks")
-    return { success: true }
+    return { success: true, sent: sentCount, emailSent: emailSentCount }
   } catch (e: any) {
     return { success: false, error: e.message }
   }
@@ -713,7 +715,7 @@ export async function createTaskCategory(data: { name: string; assignedToRole: s
       }
     })
     revalidatePath("/admin/tasks")
-    return { success: true }
+    return { success: true, sent: sentCount, emailSent: emailSentCount }
   } catch (e: any) {
     return { success: false, error: e.message }
   }
