@@ -5,30 +5,30 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  /* UNIFY ALL PAGES TO BRAND TEAL COLORS (OVERRIDING INDIGO AND PURPLE GLOBALLY) */
-  --color-indigo-50: #E6F4F3;
-  --color-indigo-100: #CCE9E7;
-  --color-indigo-200: #99D3CF;
-  --color-indigo-300: #66BDB7;
-  --color-indigo-400: #33A79F;
-  --color-indigo-500: #1E8B87; /* Light Brand Teal */
-  --color-indigo-600: #135E5B; /* Dark Brand Teal */
-  --color-indigo-700: #0F4A47;
-  --color-indigo-800: #0A3230;
-  --color-indigo-900: #051A19;
-  --color-indigo-950: #020D0C;
+  /* UNIFY ALL PAGES TO THE NEW PREMIUM BRAND COLORS */
+  --color-indigo-50: #E6F6F5;
+  --color-indigo-100: #CCEBEA;
+  --color-indigo-200: #99D7D4;
+  --color-indigo-300: #66C2BD;
+  --color-indigo-400: #33AEA7;
+  --color-indigo-500: #00A99D; /* Premium Brand Teal */
+  --color-indigo-600: #009085; /* Brand Teal Hover */
+  --color-indigo-700: #007068;
+  --color-indigo-800: #005650;
+  --color-indigo-900: #003B3A; /* Primary Dark */
+  --color-indigo-950: #001F1E;
 
-  --color-purple-50: #E6F4F3;
-  --color-purple-100: #CCE9E7;
-  --color-purple-200: #99D3CF;
-  --color-purple-300: #66BDB7;
-  --color-purple-400: #33A79F;
-  --color-purple-500: #1E8B87;
-  --color-purple-600: #135E5B;
-  --color-purple-700: #0F4A47;
-  --color-purple-800: #0A3230;
-  --color-purple-900: #051A19;
-  --color-purple-950: #020D0C;
+  --color-purple-50: #E6F6F5;
+  --color-purple-100: #CCEBEA;
+  --color-purple-200: #99D7D4;
+  --color-purple-300: #66C2BD;
+  --color-purple-400: #33AEA7;
+  --color-purple-500: #00A99D;
+  --color-purple-600: #009085;
+  --color-purple-700: #007068;
+  --color-purple-800: #005650;
+  --color-purple-900: #003B3A;
+  --color-purple-950: #001F1E;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -64,82 +64,42 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-2xl: 24px;
+  --radius-3xl: 32px;
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
-
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: #F5F7FA; /* Premium Background */
+  --foreground: #0F172A; /* Navy text */
+  --card: #FFFFFF;       /* Surface */
+  --card-foreground: #0F172A;
+  --popover: #FFFFFF;
+  --popover-foreground: #0F172A;
+  --primary: #00A99D;    /* brand primary */
+  --primary-foreground: #FFFFFF;
+  --secondary: #F8FAFC;
+  --secondary-foreground: #0F172A;
+  --muted: #F1F5F9;
+  --muted-foreground: #64748B;
+  --accent: #E6F6F5;
+  --accent-foreground: #00A99D;
+  --destructive: #EF4444;
+  --border: #E2E8F0;
+  --input: #E2E8F0;
+  --ring: rgba(0, 169, 157, 0.15);
+  --radius: 14px;
+  --sidebar: #003B3A; /* Premium Dark Teal Sidebar */
+  --sidebar-foreground: #E6F6F5;
+  --sidebar-primary: #00A99D;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: rgba(255, 255, 255, 0.1);
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+  --sidebar-ring: rgba(0, 169, 157, 0.2);
 }
 
 @layer base {
@@ -153,67 +113,23 @@
     @apply font-sans;
   }
 }
-/* Premium Dashboard Extensions */
+
 @layer components {
   .glass-card {
-    @apply bg-white/70 backdrop-blur-xl border border-white/20 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)];
+    @apply bg-white/80 backdrop-blur-xl border border-white/20 shadow-[0_8px_32px_0_rgba(15,23,42,0.04)];
   }
   
   .premium-gradient-primary {
-    @apply bg-gradient-to-br from-[#1E8B87] via-[#135E5B] to-[#0A3230];
-  }
-  
-  .premium-gradient-success {
-    @apply bg-gradient-to-br from-emerald-500 to-teal-600;
-  }
-  
-  .premium-gradient-warning {
-    @apply bg-gradient-to-br from-amber-400 to-orange-500;
+    @apply bg-gradient-to-br from-[#00A99D] via-[#009085] to-[#003B3A];
   }
   
   .hover-lift {
-    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-lg;
+    @apply transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)];
   }
-  
-  .active-tab-glow {
-    @apply relative after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-1/2 after:h-1 after:bg-[#1E8B87] after:rounded-full after:shadow-[0_0_8px_rgba(30,139,135,0.5)];
-  }
-
-  .premium-table {
-    @apply w-full border-separate border-spacing-0;
-  }
-  
-  .premium-table th {
-    @apply bg-slate-50/50 backdrop-blur-sm sticky top-0 z-10 text-[11px] font-black text-slate-500 uppercase tracking-widest px-6 py-4 border-b border-slate-200;
-  }
-  
-  .premium-table td {
-    @apply px-6 py-4 border-b border-slate-100 transition-colors;
-  }
-  
-  .premium-btn {
-    @apply flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all active:scale-95 shadow-sm;
-  }
-}
-
-/* Custom animations */
-@keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-  100% { transform: translateY(0px); }
-}
-
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-}
-
-/* GUARANTEE UNIFIED ACCENTED VIETNAMESE TYPOGRAPHY ACROSS ALL INTERACTIVE ELEMENTS */
-body, button, input, select, textarea, span, div, h1, h2, h3, h4, h5, h6, table, th, td {
-  font-family: 'Open Sans', sans-serif !important;
 }
 
 /* ==========================================
-   GLOBAL BRAND BUTTON STYLING OVERRIDES
+   GLOBAL BRAND BUTTON STYLING OVERRIDES (STRIPE / LINEAR STYLE)
    ========================================== */
 @layer base {
   button, 
@@ -221,15 +137,17 @@ body, button, input, select, textarea, span, div, h1, h2, h3, h4, h5, h6, table,
   a[class*="bg-indigo-"],
   a[class*="bg-violet-"],
   a[class*="bg-purple-"],
-  a[class*="bg-teal-500"] {
+  a[class*="bg-[#00A19A]"],
+  a[class*="bg-teal-"] {
     /* Gradients */
     &.bg-gradient-to-r,
     &.bg-gradient-to-br,
     &.bg-gradient-to-tr {
-      background-image: linear-gradient(to right, #00A19A, #1E8B87) !important;
+      background-image: linear-gradient(to right, #00A99D, #009085) !important;
+      border: none !important;
     }
     
-    /* Solid backgrounds - map purple/violet/indigo/blue/pink/orange/amber to brand green */
+    /* Solid backgrounds - map purple/violet/indigo/blue/pink/orange/amber to brand teal */
     &[class*="bg-fuchsia-"],
     &[class*="bg-pink-"],
     &[class*="bg-rose-"],
@@ -237,11 +155,10 @@ body, button, input, select, textarea, span, div, h1, h2, h3, h4, h5, h6, table,
     &[class*="bg-indigo-"],
     &[class*="bg-purple-"],
     &[class*="bg-blue-"],
-    &[class*="bg-amber-"],
-    &[class*="bg-orange-"] {
-      background-color: #00A19A !important;
+    &[class*="bg-teal-"] {
+      background-color: #00A99D !important;
       color: #ffffff !important;
-      border-color: #00A19A !important;
+      border-color: #00A99D !important;
       background-image: none !important;
     }
 
@@ -253,9 +170,8 @@ body, button, input, select, textarea, span, div, h1, h2, h3, h4, h5, h6, table,
     &[class*="bg-indigo-"]:hover,
     &[class*="bg-purple-"]:hover,
     &[class*="bg-blue-"]:hover,
-    &[class*="bg-amber-"]:hover,
-    &[class*="bg-orange-"]:hover {
-      background-color: #1E8B87 !important;
+    &[class*="bg-teal-"]:hover {
+      background-color: #009085 !important;
       background-image: none !important;
     }
 
@@ -266,7 +182,7 @@ body, button, input, select, textarea, span, div, h1, h2, h3, h4, h5, h6, table,
     &[class*="shadow-purple-"],
     &[class*="shadow-blue-"],
     &[class*="shadow-orange-"] {
-      --tw-shadow-color: rgba(0, 161, 154, 0.25) !important;
+      --tw-shadow-color: rgba(0, 169, 157, 0.25) !important;
     }
 
     /* Light backgrounds (often used for sub-action / detail buttons) */
@@ -274,106 +190,79 @@ body, button, input, select, textarea, span, div, h1, h2, h3, h4, h5, h6, table,
     &[class*="bg-violet-5"],
     &[class*="bg-indigo-5"],
     &[class*="bg-purple-5"] {
-      background-color: rgba(0, 161, 154, 0.05) !important;
-      border-color: rgba(0, 161, 154, 0.15) !important;
+      background-color: rgba(0, 169, 157, 0.05) !important;
+      border-color: rgba(0, 169, 157, 0.15) !important;
+      color: #00A99D !important;
     }
     
     &[class*="bg-teal-5"]:hover,
     &[class*="bg-violet-5"]:hover,
     &[class*="bg-indigo-5"]:hover,
     &[class*="bg-purple-5"]:hover {
-      background-color: #00A19A !important;
+      background-color: #00A99D !important;
       color: #ffffff !important;
-      border-color: #00A19A !important;
-    }
-
-    /* Secondary text links inside buttons */
-    &[class*="text-violet-"],
-    &[class*="text-indigo-"],
-    &[class*="text-purple-"],
-    &[class*="text-blue-"] {
-      /* Keep white text white on solid buttons */
-      &:not([class*="bg-indigo-"]):not([class*="bg-violet-"]):not([class*="bg-purple-"]):not([class*="bg-blue-"]) {
-        color: #00A19A !important;
-      }
+      border-color: #00A99D !important;
     }
   }
 }
 
 /* ==========================================
-   GLOBAL TYPOGRAPHY OVERRIDES (OPEN SANS MODERN & INTELLECTUAL IMPACT)
+   GLOBAL TYPOGRAPHY OVERRIDES (BE VIETNAM PRO / INTER)
    ========================================== */
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap');
+
 html {
-  font-size: 14px !important; /* Scales down font sizes globally to be medium-small */
+  font-size: 14px !important;
 }
 
 body, button, input, select, textarea, span, div, table, th, td {
-  font-family: 'Open Sans', sans-serif !important;
-  font-weight: 400 !important; /* Confident regular font-weight for premium readability */
+  font-family: 'Be Vietnam Pro', 'Inter', sans-serif !important;
+  font-weight: 500 !important; /* Clean medium font weight for bodies */
 }
 
-/* Accentuate headers, titles, and bold highlights to show leadership and intellectual influence (Opensan Bold style) */
-h1, h2, h3, h4, h5, h6, strong, b,
+h1, h2, h3, h4, h5, h6, th, strong, b,
 [class*="font-semibold"],
 [class*="font-bold"],
 [class*="font-extrabold"],
 [class*="font-black"] {
-  font-family: 'Open Sans', sans-serif !important;
-  font-weight: 700 !important; /* Bold accents for impact and radiating influence */
-  letter-spacing: -0.025em; /* Tight letter spacing for modern executive look */
+  font-family: 'Be Vietnam Pro', 'Inter', sans-serif !important;
+  font-weight: 700 !important; /* Heading font-weight */
+  letter-spacing: -0.025em;
 }
 
 /* ==========================================
    GLOBAL ADMIN PANEL FRAME & BORDER REDESIGN
    ========================================== */
 
-/* 1. Global Reset to Sharp Viền Cứng Corners */
+/* 1. Global Reset to Soft Rounded Corners (14px for inputs/buttons, 24px for cards) */
 .card,
 .panel,
-div[class*="rounded-"],
-dialog,
-form,
-table,
-thead,
-tbody,
-tr,
-th,
-td,
-input,
-select,
-textarea,
-button,
-a,
-[class*="rounded-"] {
-  border-radius: 0px !important;
-}
-
-/* 2. Thin Borders (Border thanh mảnh 1px) on all Panel Cards and Modals */
 div[class*="bg-white"][class*="border"],
 div[class*="bg-slate-50"][class*="border"],
-.card,
-.panel,
 form,
 dialog {
-  border-width: 1px !important;
-  border-style: solid !important;
-  border-color: #00A19A !important; /* Skyline Teal border */
+  border-radius: 24px !important; /* Large 24px radius for main cards */
+  border: 1px solid #E2E8F0 !important; /* Minimal slate border */
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03), 0 1px 2px rgba(15, 23, 42, 0.06) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
-/* Maintain Brand Colors for Highlighting Cards but keep them thin */
-div[class*="border-[#00A19A]"],
-div[class*="border-teal-"] {
-  border-color: #00A19A !important;
+.card:hover,
+div[class*="bg-white"][class*="border"]:hover {
+  box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.05), 0 4px 6px -2px rgba(15, 23, 42, 0.02) !important;
 }
 
-/* 3. Form controls get 1px solid borders */
+/* 2. Inputs get 14px radius and soft border */
 input[type="text"],
 input[type="search"],
 input[type="number"],
 input[type="date"],
 select,
 textarea {
-  border: 1px solid #00A19A !important;
+  border-radius: 14px !important;
+  border: 1px solid #E2E8F0 !important;
+  background-color: #F8FAFC !important;
+  transition: all 0.2s ease-in-out !important;
 }
 
 input[type="text"]:focus,
@@ -382,37 +271,40 @@ input[type="number"]:focus,
 input[type="date"]:focus,
 select:focus,
 textarea:focus {
-  border-color: #00A19A !important;
-  box-shadow: 0 0 0 3px rgba(0, 161, 154, 0.1) !important;
+  background-color: #FFFFFF !important;
+  border-color: #00A99D !important;
+  box-shadow: 0 0 0 4px rgba(0, 169, 157, 0.1) !important;
+  outline: none !important;
 }
 
-/* 4. Thin Grid Lines for Tables (Bảng Quản lý) */
+/* 3. Buttons get 14px radius */
+button,
+.btn,
+a[class*="bg-indigo-"],
+a[class*="bg-[#00A19A]"],
+a[class*="bg-teal-"] {
+  border-radius: 14px !important;
+}
+
+/* 4. Tables: Minimal lines and clean hover states */
 table {
   border-collapse: collapse !important;
-  border: 1px solid #00A19A !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 24px !important;
 }
 
 th, td {
-  border: 1px solid #00A19A !important; /* Thin clean Skyline Teal grid lines */
+  border: none !important;
+  border-bottom: 1px solid #F1F5F9 !important; /* Soft minimal line */
 }
 
 th {
-  background-color: #f8fafc !important; /* Elegant slate-50 table header */
+  background-color: #F8FAFC !important; /* Elegant slate-50 table header */
   font-weight: 700 !important;
+  color: #475569 !important;
+  border-bottom: 2px solid #E2E8F0 !important;
 }
 
-/* 5. Authoritative Typography Font Weights (Hơi đậm) */
-h1, h2, h3, h4, h5, h6, th, strong, b,
-[class*="font-semibold"] {
-  font-family: 'Open Sans', sans-serif !important;
-  font-weight: 600 !important; /* Semibold weight */
-  letter-spacing: -0.015em;
-}
-
-[class*="font-bold"],
-[class*="font-extrabold"],
-[class*="font-black"] {
-  font-family: 'Open Sans', sans-serif !important;
-  font-weight: 700 !important; /* Standard bold weight */
-  letter-spacing: -0.015em;
+tr:hover {
+  background-color: rgba(248, 250, 252, 0.5) !important;
 }

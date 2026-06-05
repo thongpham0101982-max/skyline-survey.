@@ -6391,65 +6391,73 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
         title={`Phiếu đánh giá phát triển: ${evalStudent?.fullName || ""}`}
         size="xl"
         footer={isAssessmentLocked ? (
-          <button onClick={() => setEvalModal(false)} className="w-full py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-none text-xs font-black uppercase tracking-widest transition-all">
+          <button onClick={() => setEvalModal(false)} className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-black uppercase tracking-widest transition-all">
             Đóng
           </button>
         ) : (
           <>
-            <button onClick={() => setEvalModal(false)} className="flex-1 text-xs font-black uppercase text-slate-400 hover:text-slate-600">
+            <button onClick={() => setEvalModal(false)} className="flex-1 text-xs font-black uppercase text-slate-400 hover:text-slate-650 transition-colors py-3">
               Đóng
             </button>
             <button
               onClick={saveEvaluation}
               disabled={savingEval || devLoading}
-              className="flex-1 py-3.5 bg-[#00A19A] text-white rounded-none text-xs font-black uppercase tracking-widest shadow-none shadow-teal-100 disabled:opacity-50"
+              className="flex-1 py-3 bg-[#00A19A] text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-xs hover:bg-[#008f89] hover:scale-[1.01] active:scale-99 transition-all disabled:opacity-50"
             >
               {savingEval ? "Đang lưu..." : "Lưu Đánh Giá"}
             </button>
           </>
         )}
       >
-        <div className="space-y-4">
+        <div className="space-y-6">
           {isAssessmentLocked && (
-            <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-none flex items-center gap-3 shadow-none animate-in fade-in slide-in-from-top-4 duration-300">
+            <div className="bg-gradient-to-r from-emerald-50 to-teal-50/50 border border-emerald-200 text-emerald-800 px-5 py-4 rounded-2xl flex items-center gap-3.5 shadow-xs animate-in fade-in slide-in-from-top-4 duration-300">
               <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0 animate-bounce" />
               <div>
-                <p className="text-xs font-black uppercase tracking-wider">Phiếu đánh giá đã hoàn thành</p>
-                <p className="text-[11px] font-semibold text-emerald-600 mt-0.5">Học sinh đã đạt cả hai bước phê duyệt (BGH &amp; GĐCS). Phiếu ở trạng thái chỉ đọc để lưu trữ.</p>
+                <p className="text-xs font-black uppercase tracking-wider leading-none">Phiếu đánh giá đã hoàn thành</p>
+                <p className="text-[11px] font-semibold text-emerald-600 mt-1.5">Học sinh đã đạt cả hai bước phê duyệt (BGH &amp; GĐCS). Phiếu ở trạng thái chỉ đọc để lưu trữ.</p>
               </div>
             </div>
           )}
 
-          <div className="bg-[#00A19A]/5/50 p-4 rounded-none border border-slate-300 flex flex-wrap justify-between gap-4">
-            <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Học sinh</p>
-              <p className="text-base font-black text-slate-800">{evalStudent?.fullName}</p>
+          <div className="bg-gradient-to-r from-teal-50/30 via-indigo-50/10 to-purple-50/30 p-5 rounded-2xl border border-[#00A19A]/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-xs">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-full bg-teal-100/80 border border-teal-200 flex items-center justify-center text-[#00A19A] shadow-inner shrink-0">
+                <Baby className="w-8 h-8" />
+              </div>
+              <div>
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Học sinh</p>
+                <h4 className="text-xl font-black text-slate-800 tracking-tight leading-none">{evalStudent?.fullName}</h4>
+                <p className="text-xs font-bold text-[#00A19A] font-mono mt-1">{evalStudent?.studentCode}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Mã bé</p>
-              <p className="text-sm font-bold text-[#00A19A] font-mono">{evalStudent?.studentCode}</p>
-            </div>
-            <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nhóm tuổi</p>
-              <p className="text-sm font-bold text-purple-700 bg-[#00A19A]/5 px-2 py-0.5 rounded-none border border-slate-300">{evalStudent?.grade}</p>
-            </div>
-            <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">GV Thực hiện khảo sát</p>
-              <p className="text-sm font-bold text-indigo-700 bg-[#00A19A]/10 px-2 py-0.5 rounded-none border border-[#00A19A]/20">{assignedTeachers}</p>
+            <div className="flex flex-wrap gap-2.5">
+              <div className="bg-purple-50 border border-purple-100 px-3.5 py-2 rounded-xl">
+                <span className="text-[9px] font-black text-purple-400 uppercase tracking-widest block leading-none mb-1">Nhóm tuổi</span>
+                <span className="text-xs font-black text-purple-700">{evalStudent?.grade}</span>
+              </div>
+              <div className="bg-blue-50 border border-blue-100 px-3.5 py-2 rounded-xl">
+                <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest block leading-none mb-1">Cơ sở tuyển sinh</span>
+                <span className="text-xs font-black text-blue-700">{evalStudent?.admissionCampus || "Chưa rõ"}</span>
+              </div>
+              <div className="bg-indigo-50 border border-indigo-100 px-3.5 py-2 rounded-xl">
+                <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest block leading-none mb-1">Giáo viên khảo sát</span>
+                <span className="text-xs font-black text-indigo-700">{assignedTeachers || "Chưa phân công"}</span>
+              </div>
             </div>
           </div>
 
           {devLoading ? <Spin /> : devAreas.length === 0 ? (
-            <div className="text-center py-12 text-slate-400 font-bold text-sm bg-slate-50 rounded-none border border-dashed border-slate-300">
+            <div className="text-center py-12 text-slate-400 font-bold text-sm bg-slate-50 rounded-2xl border border-dashed border-slate-300">
               Chưa cấu hình tiêu chí nào cho nhóm tuổi: {evalStudent?.grade}
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {devAreas.map(area => (
-                <div key={area.id} className="bg-white rounded-none border border-slate-300 shadow-none overflow-hidden">
-                  <div className="px-4 py-3 bg-slate-50/50 border-b border-slate-300 flex items-center justify-between gap-2.5">
+                <div key={area.id} className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden hover:border-[#00A19A]/30 transition-all duration-300">
+                  <div className="px-5 py-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: area.color || "#6366f1" }} />
+                      <div className="w-3.5 h-3.5 rounded-full shadow-xs" style={{ backgroundColor: area.color || "#6366f1" }} />
                       <h4 className="font-black text-slate-800 text-sm uppercase tracking-wide">{area.name}</h4>
                     </div>
                     {(area.code === "THE_CHAT" || area.name?.toLowerCase().includes("thể chất")) && (() => {
@@ -6457,14 +6465,14 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       const bmiClass = bmiVal ? getBMIClassification(bmiVal) : null;
                       if (!bmiVal || !bmiClass) return null;
                       return (
-                        <div className={`flex items-center gap-1.5 px-3 py-1 rounded-none border text-[11px] font-black uppercase tracking-wider animate-in fade-in zoom-in duration-300 ${bmiClass.color}`}>
+                        <div className={`flex items-center gap-1.5 px-3 py-1 rounded-xl border text-[11px] font-black uppercase tracking-wider animate-in fade-in zoom-in duration-300 ${bmiClass.color}`}>
                           <div className={`w-2 h-2 rounded-full animate-pulse ${bmiClass.dot}`} />
                           <span>BMI: {bmiVal.toFixed(1)} ({bmiClass.label})</span>
                         </div>
                       );
                     })()}
                   </div>
-                  <div className="divide-y divide-slate-100 p-4 space-y-4">
+                  <div className="divide-y divide-slate-100 p-6 space-y-6">
                     {area.criteria.map((crit, idx) => {
                       const isTheChat = area.code === "THE_CHAT" || area.code?.includes("THE_CHAT") || area.name?.toLowerCase().includes("thể chất");
                       const isHeight = isTheChat && (crit.code?.endsWith("_01") || crit.name?.toLowerCase().includes("chiều cao"));
@@ -6472,7 +6480,6 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       const isPhysical = isHeight || isWeight;
                       const unit = isHeight ? "cm" : "kg";
 
-                      // Parse note with pipe separator: "110 cm|obs text"
                       const rawNote = studentScores[crit.id]?.note || "";
                       const pipeIdx = rawNote.indexOf("|");
                       const rawMeasure = pipeIdx >= 0 ? rawNote.substring(0, pipeIdx) : rawNote;
@@ -6492,23 +6499,24 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       };
 
                       const radioOpts = [
-                        { key: "CHUA_THE_HIEN", label: "Chưa thể hiện", color: "peer-checked:bg-slate-100 peer-checked:text-slate-700 border-slate-300" },
-                        { key: "DAT", label: "Đạt", color: "peer-checked:bg-emerald-50 peer-checked:text-emerald-700 peer-checked:border-emerald-200 border-slate-300" },
-                        { key: "KHONG_DAT", label: "Không đạt", color: "peer-checked:bg-rose-50 peer-checked:text-rose-700 peer-checked:border-rose-200 border-slate-300" }
+                        { key: "CHUA_THE_HIEN", label: "Chưa thể hiện", color: "peer-checked:bg-slate-100 peer-checked:text-slate-700 peer-checked:border-slate-350 border-slate-200 text-slate-500 hover:bg-slate-50" },
+                        { key: "DAT", label: "Đạt", color: "peer-checked:bg-emerald-500 peer-checked:text-white peer-checked:border-emerald-500 border-slate-200 text-emerald-600 hover:bg-emerald-50/50 hover:text-emerald-700 hover:border-emerald-200" },
+                        { key: "KHONG_DAT", label: "Không đạt", color: "peer-checked:bg-rose-500 peer-checked:text-white peer-checked:border-rose-500 border-slate-200 text-rose-600 hover:bg-rose-50/50 hover:text-rose-700 hover:border-rose-200" }
                       ];
 
                       return (
-                        <div key={crit.id} className="pt-3 first:pt-0">
-                          <p className="text-sm font-bold text-slate-700 flex items-start gap-2">
-                            <span className="font-mono text-xs text-slate-400 font-normal">#{idx+1}</span>
+                        <div key={crit.id} className="pt-5 first:pt-0">
+                          <p className="text-sm font-bold text-slate-800 flex items-start gap-2 leading-relaxed">
+                            <span className="flex-shrink-0 w-5 h-5 rounded-full bg-slate-100 text-slate-500 text-[10px] font-black flex items-center justify-center">
+                              {idx+1}
+                            </span>
                             {crit.name}
                           </p>
 
                           {isPhysical ? (
                             <>
-                              {/* Dedicated numeric measurement input */}
-                              <div className="mt-2.5 flex flex-wrap items-center gap-3">
-                                <div className="flex items-center bg-white border-2 border-slate-300 rounded-none overflow-hidden hover:border-teal-400 focus-within:border-teal-500 focus-within:ring-4 focus-within:ring-teal-100 transition-all shadow-none">
+                              <div className="mt-3 flex flex-wrap items-center gap-3">
+                                <div className="flex items-center bg-white border border-slate-200 rounded-xl overflow-hidden focus-within:border-[#00A19A] focus-within:ring-2 focus-within:ring-[#00A19A]/10 transition-all shadow-xs">
                                   <input
                                     type="number"
                                     step={isHeight ? "1" : "0.1"}
@@ -6518,39 +6526,37 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                     onChange={e => updatePhysical(e.target.value, rawObs)}
                                     placeholder={isHeight ? "0" : "0.0"}
                                     disabled={isAssessmentLocked}
-                                    className="w-24 text-xl font-black text-slate-800 outline-none bg-transparent text-center px-3 py-2.5 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:text-slate-400 disabled:cursor-not-allowed"
+                                    className="w-20 text-lg font-black text-slate-800 outline-none bg-transparent text-center px-2 py-2 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:text-slate-400 disabled:cursor-not-allowed"
                                   />
-                                  <div className="px-3.5 py-2.5 bg-[#00A19A]/5 border-l-2 border-slate-300 text-sm font-black text-[#00A19A] select-none min-w-[48px] text-center">
+                                  <div className="px-3 py-2 bg-slate-50 border-l border-slate-200 text-xs font-black text-slate-500 select-none min-w-[44px] text-center">
                                     {unit}
                                   </div>
                                 </div>
 
-                                {/* BMI live display — shown on weight row */}
                                 {isWeight && (() => {
                                   const bmiVal = calculateBMI();
                                   const bmiClass = bmiVal ? getBMIClassification(bmiVal) : null;
                                   if (!bmiVal || !bmiClass) {
                                     return (
-                                      <div className="flex items-center gap-2 px-3.5 py-2.5 bg-slate-50 rounded-none border border-dashed border-slate-300">
-                                        <span className="text-xs font-black text-slate-400 uppercase tracking-wider">BMI:</span>
+                                      <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">BMI:</span>
                                         <span className="text-sm font-black text-slate-300 font-mono">--</span>
-                                        <span className="text-[10px] text-slate-300">(nhập chiều cao trước)</span>
+                                        <span className="text-[9px] text-slate-400">(nhập chiều cao trước)</span>
                                       </div>
                                     );
                                   }
                                   return (
-                                    <div className={`flex items-center gap-2 px-3.5 py-2.5 rounded-none border font-black animate-in fade-in zoom-in-95 duration-300 ${bmiClass.color}`}>
-                                      <div className={`w-2.5 h-2.5 rounded-full animate-pulse flex-shrink-0 ${bmiClass.dot}`} />
-                                      <span className="text-[11px] uppercase tracking-wider">BMI:</span>
-                                      <span className="text-lg font-mono">{bmiVal.toFixed(1)}</span>
-                                      <span className="text-[11px] opacity-80">— {bmiClass.label}</span>
+                                    <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border font-black animate-in fade-in zoom-in-95 duration-300 ${bmiClass.color}`}>
+                                      <div className={`w-2 h-2 rounded-full animate-pulse flex-shrink-0 ${bmiClass.dot}`} />
+                                      <span className="text-[10px] uppercase tracking-wider">BMI:</span>
+                                      <span className="text-base font-mono">{bmiVal.toFixed(1)}</span>
+                                      <span className="text-[10px] opacity-85">— {bmiClass.label}</span>
                                     </div>
                                   );
                                 })()}
                               </div>
 
-                              {/* Radio buttons */}
-                              <div className="flex flex-wrap gap-3 mt-3">
+                              <div className="flex flex-wrap gap-2.5 mt-3">
                                 {radioOpts.map(opt => (
                                   <label key={opt.key} className={`relative flex items-center ${isAssessmentLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
                                     <input
@@ -6564,27 +6570,25 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                       disabled={isAssessmentLocked}
                                       className="sr-only peer"
                                     />
-                                    <span className={`px-3 py-1.5 rounded-none border text-xs font-bold transition-all peer-checked:ring-2 peer-checked:ring-teal-500/20 ${opt.color}`}>
+                                    <span className={`px-4 py-2 rounded-full border text-xs font-bold transition-all peer-checked:ring-2 peer-checked:ring-teal-500/20 ${opt.color}`}>
                                       {opt.label}
                                     </span>
                                   </label>
                                 ))}
                               </div>
 
-                              {/* Observation note */}
                               <input
                                 type="text"
                                 value={rawObs}
                                 onChange={e => updatePhysical(numStr, e.target.value)}
-                                placeholder={isAssessmentLocked ? "Không có ghi chú" : "Ghi chú quan sát..."}
+                                placeholder={isAssessmentLocked ? "Không có ghi chú" : "Nhập ghi chú quan sát..."}
                                 disabled={isAssessmentLocked}
-                                className="mt-2 w-full bg-slate-50 border border-slate-300 rounded-none px-3.5 py-1.5 text-xs font-medium outline-none focus:border-teal-400 focus:bg-white transition-all disabled:bg-slate-100/50 disabled:cursor-not-allowed disabled:text-slate-500"
+                                className="mt-2.5 w-full bg-slate-50/55 border border-slate-200 rounded-xl px-4 py-2 text-xs font-semibold outline-none focus:border-[#00A19A] focus:bg-white focus:ring-2 focus:ring-[#00A19A]/10 transition-all disabled:bg-slate-100/50 disabled:cursor-not-allowed disabled:text-slate-500"
                               />
                             </>
                           ) : (
                             <>
-                              {/* Standard radio buttons */}
-                              <div className="flex flex-wrap gap-4 mt-2">
+                              <div className="flex flex-wrap gap-2.5 mt-2.5">
                                 {radioOpts.map(opt => (
                                   <label key={opt.key} className={`relative flex items-center ${isAssessmentLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
                                     <input
@@ -6598,14 +6602,13 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                       disabled={isAssessmentLocked}
                                       className="sr-only peer"
                                     />
-                                    <span className={`px-3 py-1.5 rounded-none border text-xs font-bold transition-all peer-checked:ring-2 peer-checked:ring-teal-500/20 ${opt.color}`}>
+                                    <span className={`px-4 py-2 rounded-full border text-xs font-bold transition-all peer-checked:ring-2 peer-checked:ring-teal-500/20 ${opt.color}`}>
                                       {opt.label}
                                     </span>
                                   </label>
                                 ))}
                               </div>
 
-                              {/* Standard note input */}
                               <input
                                 type="text"
                                 value={rawNote}
@@ -6615,7 +6618,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 }))}
                                 placeholder={isAssessmentLocked ? "Không có ghi chú" : "Nhập ghi chú quan sát..."}
                                 disabled={isAssessmentLocked}
-                                className="mt-2 w-full bg-slate-50 border border-slate-300 rounded-none px-3.5 py-1.5 text-xs font-medium outline-none focus:border-teal-400 focus:bg-white transition-all disabled:bg-slate-100/50 disabled:cursor-not-allowed disabled:text-slate-500"
+                                className="mt-2.5 w-full bg-slate-50/55 border border-slate-200 rounded-xl px-4 py-2 text-xs font-semibold outline-none focus:border-[#00A19A] focus:bg-white focus:ring-2 focus:ring-[#00A19A]/10 transition-all disabled:bg-slate-100/50 disabled:cursor-not-allowed disabled:text-slate-500"
                               />
                             </>
                           )}
@@ -6627,49 +6630,47 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               ))}
 
               {/* ĐÁNH GIÁ CHUNG */}
-              <div className="mt-6 rounded-none border border-dashed border-rose-200 bg-gradient-to-br from-rose-50/60 to-pink-50/60 p-5 space-y-4">
+              <div className="mt-8 rounded-3xl border border-rose-100 bg-gradient-to-br from-rose-50/30 via-pink-50/10 to-rose-50/20 p-6 space-y-5 shadow-xs">
                 <div className="flex items-center gap-2 mb-1">
                   <div className="w-2.5 h-2.5 rounded-full bg-rose-400"></div>
                   <h4 className="text-xs font-black text-rose-600 uppercase tracking-widest">ĐÁNH GIÁ CHUNG</h4>
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Đánh giá chuyên môn</label>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Đánh giá chuyên môn</label>
                   <textarea
                     value={devProfComment}
                     onChange={e => setDevProfComment(e.target.value)}
                     rows={3}
                     placeholder={isAssessmentLocked ? "Chưa có nhận xét" : "Nhận xét về sự phát triển chuyên môn của trẻ..."}
                     disabled={isAssessmentLocked}
-                    className="w-full bg-white border border-rose-100 rounded-none px-4 py-2.5 text-xs font-medium outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100 transition-all resize-none placeholder:text-slate-300 disabled:bg-slate-100/50 disabled:cursor-not-allowed disabled:text-slate-500 disabled:border-slate-300"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-200/50 transition-all resize-none placeholder:text-slate-450 disabled:bg-slate-100/50 disabled:cursor-not-allowed disabled:text-slate-500 disabled:border-slate-350 shadow-xs"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Đánh giá tâm lý</label>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Đánh giá tâm lý</label>
                   <textarea
                     value={devPsyComment}
                     onChange={e => setDevPsyComment(e.target.value)}
                     rows={3}
                     placeholder={isAssessmentLocked ? "Chưa có nhận xét" : "Nhận xét về trạng thái tâm lý, cảm xúc của trẻ..."}
                     disabled={isAssessmentLocked}
-                    className="w-full bg-white border border-rose-100 rounded-none px-4 py-2.5 text-xs font-medium outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100 transition-all resize-none placeholder:text-slate-300 disabled:bg-slate-100/50 disabled:cursor-not-allowed disabled:text-slate-500 disabled:border-slate-300"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-200/50 transition-all resize-none placeholder:text-slate-450 disabled:bg-slate-100/50 disabled:cursor-not-allowed disabled:text-slate-500 disabled:border-slate-350 shadow-xs"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Lưu ý quan trọng</label>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Lưu ý quan trọng</label>
                   <textarea
                     value={devNote}
                     onChange={e => setDevNote(e.target.value)}
                     rows={2}
                     placeholder={isAssessmentLocked ? "Không có lưu ý đặc biệt" : "Những điểm cần lưu ý đặc biệt..."}
                     disabled={isAssessmentLocked}
-                    className="w-full bg-white border border-amber-100 rounded-none px-4 py-2.5 text-xs font-medium outline-none focus:border-amber-300 focus:ring-2 focus:ring-amber-100 transition-all resize-none placeholder:text-slate-300 disabled:bg-slate-100/50 disabled:cursor-not-allowed disabled:text-slate-500 disabled:border-slate-300"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-200/50 transition-all resize-none placeholder:text-slate-450 disabled:bg-slate-100/50 disabled:cursor-not-allowed disabled:text-slate-500 disabled:border-slate-350 shadow-xs"
                   />
                 </div>
-
-
               </div>
 
               {/* PHÊ DUYỆT 2 BƯỚC XÉT DUYỆT */}
@@ -6718,31 +6719,31 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 
                 const getCalcBadge = (res: string) => {
                   if (res === "Đạt - Miễn Học Thử") {
-                    return <span className="text-xs font-black px-3 py-1 rounded-none bg-[#00A19A]/5 text-[#00A19A] border border-[#00A19A]/30 flex items-center gap-1">✓ ĐẠT - MIỄN HỌC THỬ</span>;
+                    return <span className="text-xs font-black px-3.5 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1 shadow-xs animate-in fade-in">✓ ĐẠT - MIỄN HỌC THỬ</span>;
                   }
                   if (res === "Đạt - Học Thử" || res === "Học thử") {
-                    return <span className="text-xs font-black px-3 py-1 rounded-none bg-teal-50 text-[#00A19A] border border-teal-300 flex items-center gap-1">★ ĐẠT - HỌC THỬ</span>;
+                    return <span className="text-xs font-black px-3.5 py-1.5 rounded-xl bg-teal-50 text-[#00A19A] border border-teal-200 flex items-center gap-1 shadow-xs animate-in fade-in">★ ĐẠT - HỌC THỬ</span>;
                   }
                   if (res === "Đạt") {
-                    return <span className="text-xs font-black px-3 py-1 rounded-none bg-emerald-50 text-emerald-800 border border-emerald-300 flex items-center gap-1">✓ ĐẠT</span>;
+                    return <span className="text-xs font-black px-3.5 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-250 flex items-center gap-1 shadow-xs animate-in fade-in">✓ ĐẠT</span>;
                   }
                   if (res === "Không đạt") {
-                    return <span className="text-xs font-black px-3 py-1 rounded-none bg-rose-50 text-rose-800 border border-rose-300 flex items-center gap-1">✗ KHÔNG ĐẠT</span>;
+                    return <span className="text-xs font-black px-3.5 py-1.5 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-1 shadow-xs animate-in fade-in">✗ KHÔNG ĐẠT</span>;
                   }
                   if (res === "Ý kiến khác") {
-                    return <span className="text-xs font-black px-3 py-1 rounded-none bg-amber-50 text-amber-800 border border-amber-300 flex items-center gap-1">★ Ý KIẾN KHÁC</span>;
+                    return <span className="text-xs font-black px-3.5 py-1.5 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1 shadow-xs animate-in fade-in">★ Ý KIẾN KHÁC</span>;
                   }
-                  return <span className="text-xs font-black px-3 py-1 rounded-none bg-slate-50 text-slate-500 border border-slate-300">CHƯA DUYỆT</span>;
+                  return <span className="text-xs font-black px-3.5 py-1.5 rounded-xl bg-slate-50 text-slate-500 border border-slate-200">CHƯA DUYỆT</span>;
                 };
 
                 return (
-                  <div className="mt-6 rounded-none border border-slate-300 bg-gradient-to-br from-teal-50/20 to-fuchsia-50/20 p-5 space-y-5 shadow-none">
-                    <div className="flex items-center justify-between border-b border-slate-300/50 pb-3">
+                  <div className="mt-8 rounded-3xl border border-violet-100 bg-gradient-to-br from-teal-50/20 via-violet-50/10 to-fuchsia-50/20 p-6 space-y-6 shadow-xs">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/60 pb-4">
                       <div className="flex items-center gap-2">
                         <Sparkles className="w-4 h-4 text-[#00A19A] animate-pulse" />
                         <h4 className="text-xs font-black text-violet-700 uppercase tracking-widest">PHÊ DUYỆT 2 BƯỚC XÉT DUYỆT</h4>
                       </div>
-                      <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-none border border-slate-300">
+                      <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-xs self-start sm:self-auto">
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                           {bghApprovalStatus && gdcsApprovalStatus ? "Kết quả Duyệt:" : "Kết quả Duyệt (Dự kiến):"}
                         </span>
@@ -6750,28 +6751,28 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       </div>
                     </div>
 
-                    <div className={`grid grid-cols-1 ${showBghSection && showGdcsSection ? 'md:grid-cols-2' : 'md:grid-cols-1'} gap-5`}>
+                    <div className={`grid grid-cols-1 ${showBghSection && showGdcsSection ? 'md:grid-cols-2' : 'md:grid-cols-1'} gap-6`}>
                       {/* BGH MN Column */}
                       {showBghSection && (
-                        <div className={`space-y-3 bg-white p-4 rounded-none border transition-all ${canApproveBGH ? 'border-slate-300' : 'border-slate-300 bg-slate-50/50 opacity-80'}`}>
-                          <div className="flex items-center justify-between border-b border-slate-50 pb-2">
-                            <div className="flex items-center gap-1.5">
-                              <div className={`w-2 h-2 rounded-full ${canApproveBGH ? 'bg-teal-400' : 'bg-slate-300'}`} />
+                        <div className={`space-y-4 bg-white p-5 rounded-2xl border transition-all ${canApproveBGH ? 'border-slate-200 shadow-xs hover:shadow-md' : 'border-slate-200 bg-slate-50/50 opacity-85'}`}>
+                          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <div className="flex items-center gap-2">
+                              <div className={`w-2 h-2 rounded-full ${canApproveBGH ? 'bg-teal-400 animate-pulse' : 'bg-slate-300'}`} />
                               <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider">BAN GIÁM HIỆU MẦM NON</span>
                             </div>
                             {!canApproveBGH && (
-                              <span className="text-[9px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-none flex items-center gap-1" title={
+                              <span className="text-[9px] font-bold text-slate-450 bg-slate-100 px-2 py-1 rounded-lg flex items-center gap-1" title={
                                 !evalStudent?.admissionCampus 
                                   ? "Học sinh chưa có thông tin cơ sở" 
                                   : isBGHUser 
                                     ? `Bạn là BGH của cơ sở khác, học sinh thuộc ${evalStudent.admissionCampus}` 
                                     : "Quyền hạn yêu cầu Ban Giám Hiệu Mầm Non"
                               }>
-                                🔒 Chỉ đọc (BGH)
+                                🔒 Chỉ đọc
                               </span>
                             )}
                             {canApproveBGH && (
-                              <span className="text-[9px] font-bold text-[#00A19A] bg-[#00A19A]/5 px-2 py-0.5 rounded-none">
+                              <span className="text-[9px] font-bold text-[#00A19A] bg-[#00A19A]/5 px-2 py-1 rounded-lg">
                                 ✍️ Quyền duyệt
                               </span>
                             )}
@@ -6779,34 +6780,34 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
                           {/* Helpful Permission Hint for BGH */}
                           {isBGHUser && !hasCampusMatch && evalStudent?.admissionCampus && (
-                            <div className="text-[9px] font-bold text-amber-600 bg-amber-50/70 border border-amber-100 rounded-none p-2 leading-relaxed animate-in fade-in duration-200">
-                              ⚠️ Cơ sở học sinh: <span className="underline">{evalStudent.admissionCampus}</span>. Cơ sở của bạn: <span className="underline">{userCampusNames || "Chưa gán"}</span>. Bạn không có quyền duyệt phiếu cơ sở này.
+                            <div className="text-[9px] font-semibold text-amber-600 bg-amber-50/70 border border-amber-100 rounded-xl p-2.5 leading-relaxed">
+                              ⚠️ Cơ sở học sinh: <span className="underline font-bold">${evalStudent.admissionCampus}</span>. Cơ sở của bạn: <span className="underline font-bold">${userCampusNames || "Chưa gán"}</span>. Bạn không có quyền duyệt phiếu cơ sở này.
                             </div>
                           )}
 
                           {!evalStudent?.admissionCampus && !isSystemAdmin && (
-                            <div className="text-[9px] font-bold text-rose-600 bg-rose-50/70 border border-rose-100 rounded-none p-2 leading-relaxed animate-in fade-in duration-200">
+                            <div className="text-[9px] font-semibold text-rose-600 bg-rose-50/70 border border-rose-100 rounded-xl p-2.5 leading-relaxed">
                               ⚠️ Học sinh chưa được gán Cơ sở. Chỉ Quản trị viên hệ thống có quyền duyệt.
                             </div>
                           )}
 
                           <div className="flex flex-wrap gap-2">
                             {[
-                              { status: "DAT_MIEN_HOC_THU", label: "ĐẠT - MIỄN HỌC THỬ", color: "bg-[#00A19A]/5 text-[#00A19A] border-slate-300 hover:bg-teal-100/50", activeColor: "bg-[#00A19A] text-white border-[#00A19A] shadow-none" },
-                              { status: "DAT_HOC_THU", label: "ĐẠT - HỌC THỬ", color: "bg-[#00A19A]/10 text-[#00A19A] border-[#00A19A]/20 hover:bg-indigo-100/50", activeColor: "bg-[#00A19A] text-white border-[#00A19A] shadow-none" },
-                              { status: "KHONG_DAT", label: "KHÔNG ĐẠT", color: "bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100/50", activeColor: "bg-rose-500 text-white border-rose-500 shadow-none" },
-                              { status: "Y_KIEN_KHAC", label: "Ý KIẾN KHÁC", color: "bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100/50", activeColor: "bg-amber-500 text-white border-amber-500 shadow-none" }
+                              { status: "DAT_MIEN_HOC_THU", label: "ĐẠT - MIỄN HỌC THỬ", color: "bg-[#00A19A]/5 text-[#00A19A] border-slate-200 hover:bg-teal-50", activeColor: "bg-[#00A19A] text-white border-[#00A19A] shadow-xs" },
+                              { status: "DAT_HOC_THU", label: "ĐẠT - HỌC THỬ", color: "bg-[#00A19A]/10 text-[#00A19A] border-[#00A19A]/20 hover:bg-teal-50/80", activeColor: "bg-[#00A19A] text-white border-[#00A19A] shadow-xs" },
+                              { status: "KHONG_DAT", label: "KHÔNG ĐẠT", color: "bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100/50", activeColor: "bg-rose-500 text-white border-rose-500 shadow-xs" },
+                              { status: "Y_KIEN_KHAC", label: "Ý KIẾN KHÁC", color: "bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100/50", activeColor: "bg-amber-500 text-white border-amber-500 shadow-xs" }
                             ].map(opt => (
                               <button
                                 key={opt.status}
                                 type="button"
                                 disabled={!canApproveBGH || isAssessmentLocked}
                                 onClick={() => setBghApprovalStatus(bghApprovalStatus === opt.status ? "" : opt.status)}
-                                className={`px-3 py-1.5 rounded-none border text-[10px] font-black transition-all ${
+                                className={`px-3 py-2 rounded-xl border text-[10px] font-black tracking-wide transition-all ${
                                   bghApprovalStatus === opt.status 
                                     ? opt.activeColor 
-                                    : `${opt.color} text-slate-600 bg-white border-slate-300`
-                                } ${(!canApproveBGH || isAssessmentLocked) ? 'cursor-not-allowed opacity-60' : 'hover:scale-[1.02]'}`}
+                                    : `${opt.color} text-slate-650 bg-white border-slate-200 hover:border-slate-350`
+                                } ${(!canApproveBGH || isAssessmentLocked) ? 'cursor-not-allowed opacity-60' : 'hover:scale-[1.02] active:scale-[0.98]'}`}
                               >
                                 {opt.label}
                               </button>
@@ -6815,7 +6816,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               <button
                                 type="button"
                                 onClick={() => setBghApprovalStatus("")}
-                                className="px-2.5 py-1.5 rounded-none text-[10px] font-black text-rose-600 hover:bg-rose-50 border border-transparent"
+                                className="px-2.5 py-2 rounded-xl text-[10px] font-black text-rose-600 hover:bg-rose-50 transition-all border border-transparent"
                               >
                                 Bỏ chọn
                               </button>
@@ -6827,10 +6828,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                             disabled={!canApproveBGH || isAssessmentLocked}
                             rows={2}
                             placeholder={isAssessmentLocked ? "Chưa có ý kiến phê duyệt của BGH" : canApproveBGH ? "Ý kiến phê duyệt của BGH..." : "Chưa có ý kiến phê duyệt của BGH"}
-                            className={`w-full border rounded-none px-3 py-2 text-xs font-medium outline-none transition-all resize-none placeholder:text-slate-300 ${
+                            className={`w-full border rounded-xl px-4 py-2.5 text-xs font-semibold outline-none transition-all resize-none placeholder:text-slate-400 ${
                               canApproveBGH && !isAssessmentLocked
-                                ? 'bg-slate-50 border-slate-300 focus:border-violet-300 focus:bg-white' 
-                                : 'bg-slate-100/50 border-slate-300 text-slate-500 cursor-not-allowed'
+                                ? 'bg-slate-50 border-slate-200 focus:border-[#00A19A] focus:bg-white focus:ring-2 focus:ring-[#00A19A]/10' 
+                                : 'bg-slate-100/50 border-slate-200 text-slate-500 cursor-not-allowed'
                             }`}
                           />
                         </div>
@@ -6838,27 +6839,27 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
                       {/* GĐCS Column */}
                       {showGdcsSection && (
-                        <div className={`space-y-3 bg-white p-4 rounded-none border transition-all ${canApproveGDCS ? 'border-fuchsia-100' : 'border-slate-300 bg-slate-50/50 opacity-80'}`}>
-                          <div className="flex items-center justify-between border-b border-slate-50 pb-2">
-                            <div className="flex items-center gap-1.5">
-                              <div className={`w-2 h-2 rounded-full ${canApproveGDCS ? 'bg-fuchsia-400' : 'bg-slate-300'}`} />
+                        <div className={`space-y-4 bg-white p-5 rounded-2xl border transition-all ${canApproveGDCS ? 'border-slate-200 shadow-xs hover:shadow-md' : 'border-slate-200 bg-slate-50/50 opacity-85'}`}>
+                          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <div className="flex items-center gap-2">
+                              <div className={`w-2 h-2 rounded-full ${canApproveGDCS ? 'bg-fuchsia-450 animate-pulse' : 'bg-slate-300'}`} />
                               <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider">
                                 {getGdcsLabel(evalStudent?.admissionCampus)}
                               </span>
                             </div>
                             {!canApproveGDCS && (
-                              <span className="text-[9px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-none flex items-center gap-1" title={
+                              <span className="text-[9px] font-bold text-slate-450 bg-slate-100 px-2 py-1 rounded-lg flex items-center gap-1" title={
                                 !evalStudent?.admissionCampus 
                                   ? "Học sinh chưa có thông tin cơ sở" 
                                   : isGDCSUser 
                                     ? `Bạn là GĐCS của ${userCampusNames || "cơ sở khác"}, học sinh thuộc ${evalStudent.admissionCampus}` 
                                     : "Quyền hạn yêu cầu Giám đốc Cơ sở"
                               }>
-                                🔒 Chỉ đọc (GĐCS)
+                                🔒 Chỉ đọc
                               </span>
                             )}
                             {canApproveGDCS && (
-                              <span className="text-[9px] font-bold text-fuchsia-500 bg-fuchsia-50 px-2 py-0.5 rounded-none">
+                              <span className="text-[9px] font-bold text-fuchsia-500 bg-fuchsia-50 px-2 py-1 rounded-lg">
                                 ✍️ Quyền duyệt
                               </span>
                             )}
@@ -6866,34 +6867,34 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
                           {/* Helpful Permission Hint for GĐCS */}
                           {isGDCSUser && !hasCampusMatch && evalStudent?.admissionCampus && (
-                            <div className="text-[9px] font-bold text-amber-600 bg-amber-50/70 border border-amber-100 rounded-none p-2 leading-relaxed animate-in fade-in duration-200">
-                              ⚠️ Cơ sở học sinh: <span className="underline">{evalStudent.admissionCampus}</span>. Cơ sở của bạn: <span className="underline">{userCampusNames || "Chưa gán"}</span>. Bạn không có quyền duyệt phiếu cơ sở này.
+                            <div className="text-[9px] font-semibold text-amber-600 bg-amber-50/70 border border-amber-100 rounded-xl p-2.5 leading-relaxed">
+                              ⚠️ Cơ sở học sinh: <span className="underline font-bold">${evalStudent.admissionCampus}</span>. Cơ sở của bạn: <span className="underline font-bold">${userCampusNames || "Chưa gán"}</span>. Bạn không có quyền duyệt phiếu cơ sở này.
                             </div>
                           )}
 
                           {!evalStudent?.admissionCampus && !isSystemAdmin && (
-                            <div className="text-[9px] font-bold text-rose-600 bg-rose-50/70 border border-rose-100 rounded-none p-2 leading-relaxed animate-in fade-in duration-200">
+                            <div className="text-[9px] font-semibold text-rose-600 bg-rose-50/70 border border-rose-100 rounded-xl p-2.5 leading-relaxed">
                               ⚠️ Học sinh chưa được gán Cơ sở. Chỉ Quản trị viên hệ thống có quyền duyệt.
                             </div>
                           )}
 
                           <div className="flex flex-wrap gap-2">
                             {[
-                              { status: "DAT_MIEN_HOC_THU", label: "ĐẠT - MIỄN HỌC THỬ", color: "bg-[#00A19A]/5 text-[#00A19A] border-slate-300 hover:bg-teal-100/50", activeColor: "bg-[#00A19A] text-white border-[#00A19A] shadow-none" },
-                              { status: "DAT_HOC_THU", label: "ĐẠT - HỌC THỬ", color: "bg-[#00A19A]/10 text-[#00A19A] border-[#00A19A]/20 hover:bg-indigo-100/50", activeColor: "bg-[#00A19A] text-white border-[#00A19A] shadow-none" },
-                              { status: "KHONG_DAT", label: "KHÔNG ĐẠT", color: "bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100/50", activeColor: "bg-rose-500 text-white border-rose-500 shadow-none" },
-                              { status: "Y_KIEN_KHAC", label: "Ý KIẾN KHÁC", color: "bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100/50", activeColor: "bg-amber-500 text-white border-amber-500 shadow-none" }
+                              { status: "DAT_MIEN_HOC_THU", label: "ĐẠT - MIỄN HỌC THỬ", color: "bg-[#00A19A]/5 text-[#00A19A] border-slate-200 hover:bg-teal-50", activeColor: "bg-[#00A19A] text-white border-[#00A19A] shadow-xs" },
+                              { status: "DAT_HOC_THU", label: "ĐẠT - HỌC THỬ", color: "bg-[#00A19A]/10 text-[#00A19A] border-[#00A19A]/20 hover:bg-teal-50/80", activeColor: "bg-[#00A19A] text-white border-[#00A19A] shadow-xs" },
+                              { status: "KHONG_DAT", label: "KHÔNG ĐẠT", color: "bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100/50", activeColor: "bg-rose-500 text-white border-rose-500 shadow-xs" },
+                              { status: "Y_KIEN_KHAC", label: "Ý KIẾN KHÁC", color: "bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100/50", activeColor: "bg-amber-500 text-white border-amber-500 shadow-xs" }
                             ].map(opt => (
                               <button
                                 key={opt.status}
                                 type="button"
                                 disabled={!canApproveGDCS || isAssessmentLocked}
                                 onClick={() => setGdcsApprovalStatus(gdcsApprovalStatus === opt.status ? "" : opt.status)}
-                                className={`px-3 py-1.5 rounded-none border text-[10px] font-black transition-all ${
+                                className={`px-3 py-2 rounded-xl border text-[10px] font-black tracking-wide transition-all ${
                                   gdcsApprovalStatus === opt.status 
                                     ? opt.activeColor 
-                                    : `${opt.color} text-slate-600 bg-white border-slate-300`
-                                } ${(!canApproveGDCS || isAssessmentLocked) ? 'cursor-not-allowed opacity-60' : 'hover:scale-[1.02]'}`}
+                                    : `${opt.color} text-slate-650 bg-white border-slate-200 hover:border-slate-350`
+                                } ${(!canApproveGDCS || isAssessmentLocked) ? 'cursor-not-allowed opacity-60' : 'hover:scale-[1.02] active:scale-[0.98]'}`}
                               >
                                 {opt.label}
                               </button>
@@ -6902,7 +6903,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               <button
                                 type="button"
                                 onClick={() => setGdcsApprovalStatus("")}
-                                className="px-2.5 py-1.5 rounded-none text-[10px] font-black text-rose-600 hover:bg-rose-50 border border-transparent"
+                                className="px-2.5 py-2 rounded-xl text-[10px] font-black text-rose-600 hover:bg-rose-50 transition-all border border-transparent"
                               >
                                 Bỏ chọn
                               </button>
@@ -6914,10 +6915,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                             disabled={!canApproveGDCS || isAssessmentLocked}
                             rows={2}
                             placeholder={isAssessmentLocked ? "Chưa có ý kiến phê duyệt của GĐCS" : canApproveGDCS ? "Ý kiến phê duyệt của GĐCS..." : "Chưa có ý kiến phê duyệt của GĐCS"}
-                            className={`w-full border rounded-none px-3 py-2 text-xs font-medium outline-none transition-all resize-none placeholder:text-slate-300 ${
+                            className={`w-full border rounded-xl px-4 py-2.5 text-xs font-semibold outline-none transition-all resize-none placeholder:text-slate-400 ${
                               canApproveGDCS && !isAssessmentLocked
-                                ? 'bg-slate-50 border-slate-300 focus:border-fuchsia-300 focus:bg-white' 
-                                : 'bg-slate-100/50 border-slate-300 text-slate-500 cursor-not-allowed'
+                                ? 'bg-slate-50 border-slate-200 focus:border-[#00A19A] focus:bg-white focus:ring-2 focus:ring-[#00A19A]/10' 
+                                : 'bg-slate-100/50 border-slate-200 text-slate-500 cursor-not-allowed'
                             }`}
                           />
                         </div>
@@ -6930,7 +6931,6 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           )}
         </div>
       </Modal>
-
       {/* Modal: Đánh giá Học thử */}
       <Modal
         open={probModal}
