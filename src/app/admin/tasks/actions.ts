@@ -269,3 +269,69 @@ export async function deleteTasks(ids: string[]) {
     return { success: false, error: e.message }
   }
 }
+
+export async function getTaskCategories() {
+  try {
+    const categories = await prisma.taskCategory.findMany({
+      orderBy: { name: "asc" }
+    })
+    return { success: true, categories }
+  } catch (e: any) {
+    return { success: false, categories: [], error: e.message }
+  }
+}
+
+export async function createTaskCategory(data: { name: string; assignedToRole: string }) {
+  try {
+    const session = await auth()
+    if (!session?.user || (session.user as any).role !== "ADMIN") {
+      return { success: false, error: "Quyền truy cập bị từ chối" }
+    }
+    await prisma.taskCategory.create({
+      data: {
+        name: data.name.trim(),
+        assignedToRole: data.assignedToRole
+      }
+    })
+    revalidatePath("/admin/tasks")
+    return { success: true }
+  } catch (e: any) {
+    return { success: false, error: e.message }
+  }
+}
+
+export async function updateTaskCategory(id: string, data: { name: string; assignedToRole: string }) {
+  try {
+    const session = await auth()
+    if (!session?.user || (session.user as any).role !== "ADMIN") {
+      return { success: false, error: "Quyền truy cập bị từ chối" }
+    }
+    await prisma.taskCategory.update({
+      where: { id },
+      data: {
+        name: data.name.trim(),
+        assignedToRole: data.assignedToRole
+      }
+    })
+    revalidatePath("/admin/tasks")
+    return { success: true }
+  } catch (e: any) {
+    return { success: false, error: e.message }
+  }
+}
+
+export async function deleteTaskCategory(id: string) {
+  try {
+    const session = await auth()
+    if (!session?.user || (session.user as any).role !== "ADMIN") {
+      return { success: false, error: "Quyền truy cập bị từ chối" }
+    }
+    await prisma.taskCategory.delete({
+      where: { id }
+    })
+    revalidatePath("/admin/tasks")
+    return { success: true }
+  } catch (e: any) {
+    return { success: false, error: e.message }
+  }
+}

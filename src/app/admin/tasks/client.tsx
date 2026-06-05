@@ -3,7 +3,7 @@ import { getDefaultAcademicYearClient } from "@/lib/academicYear"
 import { useState, useEffect, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { ClipboardList, Plus, Bell, Edit, Trash2, AlertTriangle, User, Users, MessageSquare, Send, X, CheckCircle2 } from "lucide-react"
-import { createTask, updateTask, deleteTask, remindTask, updateTaskProgress, getUsersByRole, respondToTask, deleteTasks } from "./actions"
+import { createTask, updateTask, deleteTask, remindTask, updateTaskProgress, getUsersByRole, respondToTask, deleteTasks, createTaskCategory, updateTaskCategory, deleteTaskCategory } from "./actions"
 import { TaskDetailPanel } from "./TaskDetailPanel"
 
 const CATEGORIES = [
@@ -26,7 +26,7 @@ const STAFF_PROGRESS = [
   { value: "COMPLETED", label: "Hoàn thành" },
 ]
 
-export function TasksClient({ initialTasks, years, roles, currentRole, currentUserId }: any) {
+export function TasksClient({ initialTasks, years, roles, dbCategories, currentRole, currentUserId }: any) {
   const searchParams = useSearchParams()
   const [tasks, setTasks] = useState(initialTasks || [])
   const [showForm, setShowForm] = useState(false)
@@ -34,6 +34,43 @@ export function TasksClient({ initialTasks, years, roles, currentRole, currentUs
   const [filterProgress, setFilterProgress] = useState("ALL")
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([])
   const [filterCategory, setFilterCategory] = useState("ALL")
+
+  // Category Manager states
+  const [categoriesList, setCategoriesList] = useState(dbCategories || [])
+  const [showCategoryManager, setShowCategoryManager] = useState(false)
+  const [catName, setCatName] = useState("")
+  const [catRole, setCatRole] = useState(roles?.[0]?.code || "")
+  const [catEditId, setCatEditId] = useState<string | null>(null)
+
+  const handleSaveCategory = async () => {
+    if (!catName.trim()) return alert("Vui lòng nhập tên danh mục!")
+    const data = { name: catName.trim(), assignedToRole: catRole }
+    const res = catEditId ? await updateTaskCategory(catEditId, data) : await createTaskCategory(data)
+    if (res.success) {
+      window.location.reload()
+    } else {
+      alert("Lỗi: " + res.error)
+    }
+  }
+
+  const handleDeleteCategory = async (id: string) => {
+    if (!confirm("Xóa danh mục này?")) return
+    const res = await deleteTaskCategory(id)
+    if (res.success) {
+      window.location.reload()
+    } else {
+      alert("Lỗi: " + res.error)
+    }
+  }
+
+  // Auto assign role based on category select
+  useEffect(() => {
+    if (!category) return;
+    const catObj = categoriesList.find((c: any) => c.name === category);
+    if (catObj) {
+      setAssignedToRole(catObj.assignedToRole);
+    }
+  }, [category, categoriesList]);
 
   // Form fields (admin)
   const [title, setTitle] = useState("")
@@ -144,7 +181,7 @@ export function TasksClient({ initialTasks, years, roles, currentRole, currentUs
     setSubmitting(false)
   }
 
-  const filterCategories = Array.from(new Set(tasks.map((t: any) => t.category).filter(Boolean))) as string[]
+  const filterCategories = categoriesList.map((c: any) => c.name)
 
   const displayedTasks = tasks.filter((t: any) => {
     const matchProgress = filterProgress === "ALL" || t.progress === filterProgress;
@@ -175,6 +212,12 @@ export function TasksClient({ initialTasks, years, roles, currentRole, currentUs
                 className="flex items-center gap-2 bg-red-600 text-white px-5 py-2.5 rounded-xl hover:bg-red-700 transition-colors shadow-sm font-medium"
               >
                 <Trash2 className="w-4 h-4" /> Xóa đã chọn ({selectedTaskIds.length})
+              </button>
+            )}
+            {isAdmin && (
+              <button onClick={() => { setCatEditId(null); setCatName(""); setCatRole(roles?.[0]?.code || ""); setShowCategoryManager(true) }}
+                className="flex items-center gap-2 border border-slate-200 bg-white text-slate-600 px-5 py-2.5 rounded-xl hover:bg-slate-50 transition-colors font-medium">
+                Quản lý Danh mục
               </button>
             )}
             <button onClick={() => { resetForm(); setShowForm(!showForm) }}
@@ -239,25 +282,22 @@ export function TasksClient({ initialTasks, years, roles, currentRole, currentUs
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-500 mb-1">Danh mục</label>
-              <input
-                type="text"
+              <select
                 value={category}
                 onChange={e => setCategory(e.target.value)}
-                className="w-full border rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-300 font-medium"
-                placeholder="Nhập hoặc chọn danh mục..."
-                list="task-categories-datalist"
-              />
-              <datalist id="task-categories-datalist">
-                {Array.from(new Set(["Khảo Sát", "Đào Tạo", "Hệ Thống", "Nhân Sự", "Khác", ...tasks.map((t: any) => t.category).filter(Boolean)])).map(cat => (
-                  <option key={cat} value={cat} />
+                className="w-full border rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-300 bg-white font-medium"
+              >
+                <option value="">-- Chọn danh mục --</option>
+                {categoriesList.map((c: any) => (
+                  <option key={c.id} value={c.name}>{c.name}</option>
                 ))}
-              </datalist>
+              </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1"><Users className="w-3 h-3" /> Nhóm quyền</label>
-              <select value={assignedToRole} onChange={e => setAssignedToRole(e.target.value)} className="w-full border rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-300">
-                {(roles || []).map((r: any) => <option key={r.code} value={r.code}>{r.name}</option>)}
-              </select>
+              <label className="block text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1"><Users className="w-3 h-3" /> Nhóm quyền thực hiện</label>
+              <div className="w-full border bg-slate-50 rounded-lg p-2.5 text-sm text-slate-600 font-medium select-none">
+                {(roles || []).find((r: any) => r.code === assignedToRole)?.name || assignedToRole || "(Tự động điền theo Danh mục)"}
+              </div>
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1"><User className="w-3 h-3" /> Tài khoản (tùy chọn)</label>
@@ -467,6 +507,115 @@ export function TasksClient({ initialTasks, years, roles, currentRole, currentUs
           isAdmin={isAdmin}
           onClose={() => setDetailTask(null)}
         />
+      )}
+      {/* Category Manager Modal */}
+      {showCategoryManager && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="p-5 border-b flex items-center justify-between">
+              <h3 className="font-bold text-lg text-slate-800">Quản lý Danh mục Công việc</h3>
+              <button onClick={() => setShowCategoryManager(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-5 overflow-y-auto space-y-4 flex-1">
+              {/* Add/Edit Section */}
+              <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 space-y-3">
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  {catEditId ? "Cập nhật danh mục" : "Thêm danh mục mới"}
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Tên danh mục</label>
+                    <input
+                      type="text"
+                      value={catName}
+                      onChange={e => setCatName(e.target.value)}
+                      placeholder="Nhập tên..."
+                      className="w-full border rounded-lg p-2 text-sm outline-none bg-white focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Nhóm quyền mặc định</label>
+                    <select
+                      value={catRole}
+                      onChange={e => setCatRole(e.target.value)}
+                      className="w-full border rounded-lg p-2 text-sm outline-none bg-white focus:ring-2 focus:ring-teal-500"
+                    >
+                      {roles.map((r: any) => (
+                        <option key={r.code} value={r.code}>{r.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="flex gap-2 justify-end pt-1">
+                  {catEditId && (
+                    <button
+                      onClick={() => { setCatEditId(null); setCatName(""); setCatRole(roles?.[0]?.code || "") }}
+                      className="px-3 py-1.5 rounded-lg border text-xs font-medium hover:bg-slate-100 transition-all cursor-pointer"
+                    >
+                      Hủy sửa
+                    </button>
+                  )}
+                  <button
+                    onClick={handleSaveCategory}
+                    className="bg-[#00A19A] text-white px-4 py-1.5 rounded-lg text-xs font-medium hover:bg-[#008c85] transition-all cursor-pointer"
+                  >
+                    {catEditId ? "Cập nhật" : "Thêm mới"}
+                  </button>
+                </div>
+              </div>
+
+              {/* List Section */}
+              <div className="space-y-2">
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Danh sách hiện tại</h4>
+                <div className="border rounded-xl overflow-hidden divide-y divide-slate-100 max-h-[35vh] overflow-y-auto bg-white">
+                  {categoriesList.length === 0 ? (
+                    <div className="p-4 text-center text-sm text-slate-400">Chưa có danh mục nào</div>
+                  ) : (
+                    categoriesList.map((c: any) => (
+                      <div key={c.id} className="p-3 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                        <div>
+                          <div className="font-semibold text-sm text-slate-700">{c.name}</div>
+                          <div className="text-xs text-slate-400 mt-0.5">
+                            Nhóm quyền: {roles.find((r: any) => r.code === c.assignedToRole)?.name || c.assignedToRole}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => { setCatEditId(c.id); setCatName(c.name); setCatRole(c.assignedToRole) }}
+                            className="p-1 text-blue-500 hover:bg-blue-50 rounded cursor-pointer"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCategory(c.id)}
+                            className="p-1 text-red-500 hover:bg-red-50 rounded cursor-pointer"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-slate-50 border-t flex justify-end">
+              <button
+                onClick={() => setShowCategoryManager(false)}
+                className="bg-white border text-slate-700 px-5 py-2 rounded-xl text-sm font-medium hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

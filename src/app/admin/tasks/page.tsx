@@ -28,7 +28,7 @@ export default async function TasksPage() {
     }
   }
 
-  const [tasks, years, roles] = await Promise.all([
+  const [tasks, years, roles, initialDbCategories] = await Promise.all([
     prisma.workTask.findMany({
       where: whereClause,
       orderBy: { createdAt: "desc" },
@@ -45,8 +45,32 @@ export default async function TasksPage() {
     prisma.role.findMany({
       orderBy: { name: "asc" },
       select: { code: true, name: true }
+    }),
+    prisma.taskCategory.findMany({
+      orderBy: { name: "asc" }
     })
   ])
+
+  let dbCategories = initialDbCategories;
+  if (dbCategories.length === 0) {
+    const defaultCats = [
+      { name: "Khảo Sát", assignedToRole: "KT_DBCL" },
+      { name: "Đào Tạo", assignedToRole: "KT_DBCL" },
+      { name: "Hệ Thống", assignedToRole: "ADMIN" },
+      { name: "Nhân Sự", assignedToRole: "ADMIN" },
+      { name: "Khác", assignedToRole: "KT_DBCL" },
+    ]
+    try {
+      await prisma.taskCategory.createMany({
+        data: defaultCats
+      });
+      dbCategories = await prisma.taskCategory.findMany({
+        orderBy: { name: "asc" }
+      });
+    } catch (err) {
+      console.error("Auto-seeding TaskCategory failed:", err);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -54,6 +78,7 @@ export default async function TasksPage() {
         initialTasks={JSON.parse(JSON.stringify(tasks))}
         years={years}
         roles={roles}
+        dbCategories={JSON.parse(JSON.stringify(dbCategories))}
         currentRole={role}
         currentUserId={userId}
       />
