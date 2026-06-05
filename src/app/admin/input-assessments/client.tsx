@@ -1022,16 +1022,6 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
   const [retestBatchId, setRetestBatchId] = useState("");
   const [retestRegisterLoading, setRetestRegisterLoading] = useState(false);
 
-  const [activeSubjectId, setActiveSubjectId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (selectedReportStudent && selectedReportStudent.scores && selectedReportStudent.scores.length > 0) {
-      setActiveSubjectId(selectedReportStudent.scores[0].id);
-    } else {
-      setActiveSubjectId(null);
-    }
-  }, [selectedReportStudent?.id, selectedReportStudent?.scores]);
-
   const [mockPreviewStudent, setMockPreviewStudent] = useState<any>(null);
   const [reportForm, setReportForm] = useState({
     admissionResult: "",
@@ -1049,6 +1039,16 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     if (!Array.isArray(reportStudents)) return undefined;
     return reportStudents.find(s => s.id === reportStudentId);
   }, [reportStudents, reportStudentId, mockPreviewStudent]);
+
+  const [activeSubjectId, setActiveSubjectId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (selectedReportStudent && selectedReportStudent.scores && selectedReportStudent.scores.length > 0) {
+      setActiveSubjectId(selectedReportStudent.scores[0].id);
+    } else {
+      setActiveSubjectId(null);
+    }
+  }, [selectedReportStudent?.id, selectedReportStudent?.scores]);
 
   const resolvedStudentCampusObj = useMemo(() => {
     if (!selectedReportStudent) return null;
