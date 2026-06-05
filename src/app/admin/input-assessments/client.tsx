@@ -1022,6 +1022,16 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
   const [retestBatchId, setRetestBatchId] = useState("");
   const [retestRegisterLoading, setRetestRegisterLoading] = useState(false);
 
+  const [activeSubjectId, setActiveSubjectId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (selectedReportStudent && selectedReportStudent.scores && selectedReportStudent.scores.length > 0) {
+      setActiveSubjectId(selectedReportStudent.scores[0].id);
+    } else {
+      setActiveSubjectId(null);
+    }
+  }, [selectedReportStudent?.id, selectedReportStudent?.scores]);
+
   const [mockPreviewStudent, setMockPreviewStudent] = useState<any>(null);
   const [reportForm, setReportForm] = useState({
     admissionResult: "",
@@ -5495,29 +5505,38 @@ return {
                           badgeStyle = "bg-indigo-50 text-indigo-700 border-indigo-200/50";
                         }
 
+                        const isActive = activeSubjectId === sc.id;
+                        const activeClasses = isActive 
+                          ? "border-[#00A19A] bg-[#00A19A]/5 shadow-[0_2px_8px_rgba(0,161,154,0.08)] -translate-y-0.5" 
+                          : "border-slate-200 bg-white hover:border-[#00A19A]/40 hover:-translate-y-0.5";
+
                         return (
-                          <div key={sc.id} className="bg-white rounded-3xl border border-slate-200 p-5 shadow-sm hover:shadow-md hover:border-indigo-300 hover:-translate-y-0.5 transition-all duration-300 flex flex-col justify-between relative overflow-hidden group text-left">
+                          <div 
+                            key={sc.id} 
+                            onClick={() => setActiveSubjectId(sc.id)}
+                            className={`rounded-3xl border p-5 shadow-sm transition-all duration-300 flex flex-col justify-between relative overflow-hidden group text-left cursor-pointer ${activeClasses}`}
+                          >
                             <div className="absolute top-0 right-0 w-24 h-24 bg-slate-50 rounded-full -mt-8 -mr-8 mix-blend-multiply filter blur-xl opacity-60 group-hover:scale-110 transition-transform duration-300"></div>
                             
-                            <div className="flex justify-between items-start mb-4">
-                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block shrink-0 max-w-[120px] truncate" title={sName}>
+                            <div className="flex justify-between items-start mb-4 z-10">
+                              <span className={`text-[10px] font-black uppercase tracking-wider block shrink-0 max-w-[120px] truncate ${isActive ? "text-[#00A19A]" : "text-slate-400"}`} title={sName}>
                                 {sName}
                               </span>
                               {subject.subjectType && (
-                                <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border shrink-0 ${subject.subjectType === "VIET_NAM" ? "bg-indigo-50 text-indigo-600 border-indigo-100/50" : "bg-violet-50 text-violet-600 border-violet-100/50"}`}>
+                                <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border shrink-0 ${subject.subjectType === "VIET_NAM" ? "bg-[#00A19A]/5 text-[#00A19A] border-[#00A19A]/20" : "bg-teal-50 text-[#1E8B87] border-teal-200"}`}>
                                   {subject.subjectType === "VIET_NAM" ? "GV Việt Nam" : "GV Nước Ngoài"}
                                 </span>
                               )}
                             </div>
 
                             <div className="flex items-end justify-between z-10 mt-auto">
-                              <div className={`font-black text-slate-800 tracking-tight leading-none ${sCode.includes("tly") ? "text-sm" : "text-xl"}`}>
+                              <div className={`font-black tracking-tight leading-none ${sCode.includes("tly") ? "text-sm" : "text-xl"} ${isActive ? "text-[#00A19A]" : "text-slate-800"}`}>
                                 {val}
                               </div>
-                              <div className={`px-2 py-1 rounded-xl border font-black text-[9px] uppercase tracking-wider ${badgeStyle} flex items-center gap-1.5 shadow-sm`}>
+                              <div className={`px-2 py-1 rounded-xl border font-black text-[9px] uppercase tracking-wider ${isActive ? "bg-[#00A19A] text-white border-[#00A19A]" : badgeStyle} flex items-center gap-1.5 shadow-sm`}>
                                 {sCode.includes("tly") ? (
                                   <>
-                                    <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse"></span>
+                                    <span className={`w-1.5 h-1.5 rounded-full bg-current animate-pulse ${isActive ? "text-white" : ""}`}></span>
                                     {rawScore}đ
                                   </>
                                 ) : (
@@ -5532,7 +5551,9 @@ return {
 
                     {/* DETAILED CARDS SECTION */}
                     <div className="space-y-6">
-                      {selectedReportStudent.scores.map((sc: any) => {
+                      {selectedReportStudent.scores
+                        .filter((sc: any) => sc.id === activeSubjectId)
+                        .map((sc: any) => {
                         const subject = sc.subject || {};
                         const subName = (subject.name || "").toLowerCase();
                         const subCode = (subject.code || "").toLowerCase();
@@ -5553,9 +5574,7 @@ return {
                           <div key={sc.id} className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden text-left">
                             
                             {/* Card Decorative Accent bar */}
-                            <div className={`absolute top-0 left-0 w-1.5 h-full ${
-                              isPsych ? "bg-indigo-500" : isChildDev ? "bg-teal-500" : isThinkingSkills ? "bg-violet-500" : "bg-indigo-500"
-                            }`}></div>
+                            <div className="absolute top-0 left-0 w-1.5 h-full bg-[#00A19A]"></div>
 
                             {/* Card Header */}
                             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4 mb-5">
