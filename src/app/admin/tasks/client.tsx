@@ -42,6 +42,17 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
   const [catRole, setCatRole] = useState(roles?.[0]?.code || "")
   const [catEditId, setCatEditId] = useState<string | null>(null)
 
+  // Form fields (admin)
+  const [title, setTitle] = useState("")
+  const [category, setCategory] = useState("")
+  const [assignedToRole, setAssignedToRole] = useState(roles?.[0]?.code || "")
+  const [assignedToUserId, setAssignedToUserId] = useState("")
+  const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10))
+  const [endDate, setEndDate] = useState(new Date().toISOString().slice(0, 10))
+  const [academicYearId, setAcademicYearId] = useState(() => getDefaultAcademicYearClient(years)?.id || "")
+  const [roleUsers, setRoleUsers] = useState<any[]>([])
+  const [loadingUsers, setLoadingUsers] = useState(false)
+
   const handleSaveCategory = async () => {
     if (!catName.trim()) return alert("Vui lòng nhập tên danh mục!")
     const data = { name: catName.trim(), assignedToRole: catRole }
@@ -71,17 +82,6 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
       setAssignedToRole(catObj.assignedToRole);
     }
   }, [category, categoriesList]);
-
-  // Form fields (admin)
-  const [title, setTitle] = useState("")
-  const [category, setCategory] = useState("")
-  const [assignedToRole, setAssignedToRole] = useState(roles?.[0]?.code || "")
-  const [assignedToUserId, setAssignedToUserId] = useState("")
-  const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10))
-  const [endDate, setEndDate] = useState(new Date().toISOString().slice(0, 10))
-  const [academicYearId, setAcademicYearId] = useState(() => getDefaultAcademicYearClient(years)?.id || "")
-  const [roleUsers, setRoleUsers] = useState<any[]>([])
-  const [loadingUsers, setLoadingUsers] = useState(false)
 
   // Staff respond form
   const [respondingTaskId, setRespondingTaskId] = useState<string | null>(null)
