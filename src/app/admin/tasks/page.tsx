@@ -2,7 +2,7 @@ import { Suspense } from "react"
 import { prisma } from "@/lib/db"
 import { TasksClient } from "./client"
 import { auth } from "@/lib/auth"
-import { checkAndNotifyOverdueTasks } from "./actions"
+import { checkAndNotifyOverdueTasks, checkAndNotifyUpcomingTasks } from "./actions"
 
 export const metadata = { title: "Dieu hanh Cong viec | Admin Portal" }
 export const dynamic = "force-dynamic"
@@ -13,7 +13,10 @@ export default async function TasksPage() {
   const role = user?.role || "ADMIN"
   const userId = user?.id || ""
 
-  await checkAndNotifyOverdueTasks().catch(() => {})
+  await Promise.all([
+    checkAndNotifyOverdueTasks().catch(() => {}),
+    checkAndNotifyUpcomingTasks().catch(() => {})
+  ])
 
   let whereClause: any = {}
   if (role !== "ADMIN") {

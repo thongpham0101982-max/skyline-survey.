@@ -419,6 +419,171 @@ export async function remindTask(id: string) {
   }
 }
 
+export async function checkAndNotifyUpcomingTasks() {
+  try {
+    const now = new Date()
+    
+    // Find all tasks that are active (progress not COMPLETED, not OVERDUE)
+    // and have a deadline in the future or today.
+    const activeTasks = await prisma.workTask.findMany({
+      where: {
+        progress: { notIn: ["COMPLETED", "OVERDUE"] },
+        endDate: { gte: now }
+      },
+      include: {
+        assignedBy: { select: { fullName: true } },
+        assignedToUser: { 
+          select: { 
+            id: true, 
+            fullName: true, 
+            email: true,
+            teacher: { select: { email: true } }
+          } 
+        }
+      }
+    })
+
+    let sentCount = 0
+
+    for (const task of activeTasks) {
+      const msDiff = task.endDate.getTime() - now.getTime()
+      const daysDiff = msDiff / (1000 * 60 * 60 * 24)
+      
+      // If the task is due in less than 24 hours (or on the same calendar day)
+      if (daysDiff >= 0 && daysDiff <= 1.5) { // Task is due today or tomorrow
+        const reminderType = daysDiff <= 0.5 ? "HÔM NAY" : "NGÀY MAI"
+        const reminderKey = `[Tự động nhắc việc - ${reminderType}] ${task.title}`
+        
+        let targets: any[] = []
+        if (task.assignedToUserId && task.assignedToUser) {
+          targets = [task.assignedToUser]
+        } else {
+          const groupName = task.assignedToRole
+          targets = await prisma.user.findMany({
+            where: {
+              status: "ACTIVE",
+              OR: [
+                { role: groupName },
+                {
+                  teacher: {
+                    OR: [
+                      { departmentRel: { name: groupName } },
+                      { departmentRel: { code: groupName } },
+                      { mainSubjectRel: { subjectName: groupName } },
+                      { mainSubjectRel: { subjectCode: groupName } }
+                    ]
+                  }
+                }
+              ]
+            },
+            select: { 
+              id: true, 
+              fullName: true, 
+              email: true,
+              teacher: { select: { email: true } }
+            }
+          })
+        }
+        
+        for (const u of targets) {
+          const exists = await prisma.notification.findFirst({
+            where: {
+              userId: u.id,
+              title: reminderKey
+            }
+          })
+          
+          if (!exists) {
+            const formattedDate = new Date(task.endDate).toLocaleDateString("vi-VN")
+            
+            // 1. Create in-app notification
+            await prisma.notification.create({
+              data: {
+                userId: u.id,
+                title: reminderKey,
+                message: `Công việc sắp đến hạn chót vào ngày ${formattedDate}. Vui lòng cập nhật tiến độ!`,
+                isRead: false,
+                link: `/admin/tasks?taskId=${task.id}`
+              }
+            })
+            
+            // 2. Send email reminder
+            const resolvedEmail = resolveUserEmail(u)
+            if (resolvedEmail) {
+              try {
+                const appUrl = process.env.NEXTAUTH_URL || "https://skyline-survey.vercel.app"
+                const emailHtml = `
+                  <div style="font-family: 'Open Sans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; padding: 40px 20px; color: #334155; line-height: 1.6;">
+                    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); border: 1px solid #e2e8f0;">
+                      <div style="background-color: ${task.isImportant ? '#ef4444' : '#00A19A'}; padding: 32px 24px; text-align: center;">
+                        <h2 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.025em;">TỰ ĐỘNG NHẮC HẠN CHÓT</h2>
+                        <p style="color: #ffffff; margin: 8px 0 0 0; font-size: 14px; opacity: 0.9;">Hệ thống Điều hành Công việc Skyline</p>
+                      </div>
+                      
+                      <div style="padding: 32px 24px;">
+                        <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 16px; margin-bottom: 24px; border-radius: 8px;">
+                          <span style="color: #b91c1c; font-weight: 700; font-size: 14px; display: block; margin-bottom: 4px;">⚠️ THÔNG BÁO HẠN CHÓT ${reminderType}</span>
+                          <span style="color: #7f1d1d; font-size: 13px;">Công việc được giao cho bạn sắp đến hạn chót hoàn thành vào ngày ${formattedDate}.</span>
+                        </div>
+      
+                        <p style="margin-top: 0; font-size: 16px;">Xin chào <strong>${u.fullName}</strong>,</p>
+                        <p style="font-size: 15px; color: #475569;">Vui lòng hoàn thành công việc sau trước hạn chót:</p>
+                        
+                        <div style="background-color: #f1f5f9; border-left: 4px solid ${task.isImportant ? '#ef4444' : '#00A19A'}; border-radius: 8px; padding: 20px; margin: 24px 0;">
+                          <table style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                              <td style="padding: 4px 0; font-size: 13px; font-weight: 600; color: #64748b; width: 120px; text-transform: uppercase;">Danh mục:</td>
+                              <td style="padding: 4px 0; font-size: 14px; font-weight: 600; color: ${task.isImportant ? '#ef4444' : '#00A19A'};">${task.category || "Công việc"}</td>
+                            </tr>
+                            <tr>
+                              <td style="padding: 4px 0; font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase; vertical-align: top;">Nội dung:</td>
+                              <td style="padding: 4px 0; font-size: 15px; font-weight: 700; color: #1e293b;">${task.title}</td>
+                            </tr>
+                            <tr>
+                              <td style="padding: 4px 0; font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase;">Người giao:</td>
+                              <td style="padding: 4px 0; font-size: 14px; color: #334155;">${task.assignedBy.fullName}</td>
+                            </tr>
+                            <tr>
+                              <td style="padding: 4px 0; font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase;">Hạn chót:</td>
+                              <td style="padding: 4px 0; font-size: 14px; font-weight: 700; color: #ef4444;">${formattedDate}</td>
+                            </tr>
+                          </table>
+                        </div>
+                        
+                        <p style="font-size: 15px; color: #475569; margin-bottom: 24px;">Vui lòng truy cập hệ thống để xem chi tiết và báo cáo kết quả thực hiện.</p>
+                        
+                        <div style="text-align: center; margin: 32px 0 16px 0;">
+                          <a href="${appUrl}/admin/tasks?taskId=${task.id}" style="background-color: ${task.isImportant ? '#ef4444' : '#00A19A'}; color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-size: 15px; font-weight: 700; display: inline-block;">Xem công việc</a>
+                        </div>
+                      </div>
+                      
+                      <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 24px; text-align: center; font-size: 12px; color: #94a3b8;">
+                        <p style="margin: 0;">Email này được gửi tự động từ Hệ thống Khảo sát & Điều hành Skyline.</p>
+                        <p style="margin: 4px 0 0 0;">&copy; ${new Date().getFullYear()} Hệ thống Giáo dục Skyline. All rights reserved.</p>
+                      </div>
+                    </div>
+                  </div>
+                `;
+                await sendEmail({
+                  to: resolvedEmail,
+                  subject: `[NHẮC HẠN CHÓT] ${task.title}`,
+                  html: emailHtml
+                });
+                sentCount++;
+              } catch (emailErr) {
+                console.error(`Failed to send auto email to ${u.email}:`, emailErr);
+              }
+            }
+          }
+        }
+      }
+    }
+    return { success: true, sent: sentCount }
+  } catch (e: any) {
+    return { success: false, error: e.message }
+  }
+}
+
 export async function checkAndNotifyOverdueTasks() {
   try {
     const now = new Date()
