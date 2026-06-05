@@ -33,6 +33,7 @@ export function TasksClient({ initialTasks, years, roles, currentRole, currentUs
   const [editId, setEditId] = useState<string | null>(null)
   const [filterProgress, setFilterProgress] = useState("ALL")
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([])
+  const [filterCategory, setFilterCategory] = useState("ALL")
 
   // Form fields (admin)
   const [title, setTitle] = useState("")
@@ -142,7 +143,11 @@ export function TasksClient({ initialTasks, years, roles, currentRole, currentUs
     setSubmitting(false)
   }
 
-  const displayedTasks = filterProgress === "ALL" ? tasks : tasks.filter((t: any) => t.progress === filterProgress)
+  const displayedTasks = tasks.filter((t: any) => {
+    const matchProgress = filterProgress === "ALL" || t.progress === filterProgress;
+    const matchCategory = filterCategory === "ALL" || t.category === filterCategory;
+    return matchProgress && matchCategory;
+  })
 
   const stats = {
     pending: tasks.filter((t: any) => t.progress === "PENDING").length,
@@ -191,6 +196,37 @@ export function TasksClient({ initialTasks, years, roles, currentRole, currentUs
             <div className="text-xs mt-1 opacity-80">{s.label}</div>
           </div>
         ))}
+      </div>
+
+      {/* Category Filter Tags */}
+      <div className="flex flex-wrap gap-2 items-center bg-white border border-slate-100 rounded-2xl p-4 shadow-sm">
+         <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider mr-2">Danh mục:</span>
+         <button
+            onClick={() => setFilterCategory("ALL")}
+            className={`px-4 py-2 rounded-xl text-xs font-medium transition-all border ${
+               filterCategory === "ALL"
+                  ? "bg-[#00A19A] border-[#00A19A] text-white shadow-sm"
+                  : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+            }`}
+         >
+            Tất cả
+         </button>
+         {CATEGORIES.map(c => {
+            const isActive = filterCategory === c.value;
+            return (
+               <button
+                  key={c.value}
+                  onClick={() => setFilterCategory(c.value)}
+                  className={`px-4 py-2 rounded-xl text-xs font-medium transition-all border ${
+                     isActive
+                        ? "bg-[#00A19A] border-[#00A19A] text-white shadow-sm"
+                        : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                  }`}
+               >
+                  {c.label}
+               </button>
+            )
+         })}
       </div>
 
       {/* Admin Form */}
@@ -289,6 +325,22 @@ export function TasksClient({ initialTasks, years, roles, currentRole, currentUs
         <table className="w-full text-left text-sm whitespace-nowrap border-collapse">
           <thead>
             <tr className="bg-slate-50 border-b">
+              {isAdmin && (
+                <th className="px-4 py-4 text-center w-10">
+                  <input
+                    type="checkbox"
+                    checked={displayedTasks.length > 0 && displayedTasks.every((t: any) => selectedTaskIds.includes(t.id))}
+                    onChange={e => {
+                      if (e.target.checked) {
+                        setSelectedTaskIds(displayedTasks.map((t: any) => t.id))
+                      } else {
+                        setSelectedTaskIds([])
+                      }
+                    }}
+                    className="w-4 h-4 rounded text-[#00A19A] focus:ring-[#00A19A] cursor-pointer"
+                  />
+                </th>
+              )}
               <th className="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase w-12">STT</th>
               <th className="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase">Danh mục</th>
               <th className="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase">Nội dung</th>
