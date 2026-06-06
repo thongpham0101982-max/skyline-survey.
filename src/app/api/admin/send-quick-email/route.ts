@@ -75,12 +75,12 @@ body{margin:0;padding:0;background:#f1f5f9;font-family:'Outfit','Inter',Arial,sa
   <div style="max-width:860px;margin:0 auto;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 10px 30px rgba(0,122,135,.1);border:1px solid #e2e8f0;">
 
     <!-- HEADER -->
-    <div style="background:linear-gradient(135deg,#1E1B4B 0%,#00A6A9 100%);padding:36px 32px;text-align:center;">
-      <div style="display:inline-block;background:rgba(255,255,255,.15);padding:5px 16px;border-radius:50px;margin-bottom:14px;border:1px solid rgba(255,255,255,.3);">
-        <span style="color:#fff;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:2px;">Sky-Line Education System</span>
+    <div style="background:#ffffff;padding:36px 32px;text-align:center;border-bottom:3px solid #00A6A9;">
+      <div style="display:inline-block;background:rgba(0,166,169,0.1);padding:5px 16px;border-radius:50px;margin-bottom:14px;border:1px solid rgba(0,166,169,0.2);">
+        <span style="color:#00A6A9;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:2px;">Sky-Line Education System</span>
       </div>
-      <h1 style="margin:0;color:#fff;font-size:24px;font-weight:800;text-transform:uppercase;">Bao cao Ket qua Khao sat Dau vao KSNL</h1>
-      <p style="margin:8px 0 0;color:#cffafe;font-size:13px;font-weight:500;">He thong Quan ly Khao sat &amp; Danh gia Nang luc</p>
+      <h1 style="margin:0;color:#1E1B4B;font-size:24px;font-weight:800;text-transform:uppercase;">Bao cao Ket qua Khao sat Dau vao KSNL</h1>
+      <p style="margin:8px 0 0;color:#00A6A9;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">HỆ THỐNG KHẢO SÁT NĂNG LỰC ĐẦU VÀO SKY-LINE</p>
     </div>
 
     <!-- KY & DOT -->
