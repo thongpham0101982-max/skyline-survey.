@@ -69,7 +69,7 @@ export async function POST(req: Request) {
       `;
     }).join("");
 
-    const emailHtml =   return `      <!DOCTYPE html>
+    const emailHtml = `      <!DOCTYPE html>
       <html>
       <head>
         <meta charset="utf-8">
