@@ -153,7 +153,7 @@ const extractCommittedSubjects = (student: any) => {
 
 
 
-const renderTemplate = (content: string, student: any) => {
+const renderTemplate = (content: string, student: any, academicYearName?: string) => {
   if (!content) return "";
   const extSubs1 = extractCommittedSubjects(student);
   const comSubs = extSubs1.length > 0 ? extSubs1.join(", ") : "";
@@ -166,7 +166,7 @@ const renderTemplate = (content: string, student: any) => {
     .replace(/\{\{admissionCampus\}\}/g, actualCampusName)
     .replace(/\{\{schoolName\}\}/g, schoolNameFull)
     .replace(/\{\{truong\}\}/g, truongName)
-    .replace(/\{\{academicYear\}\}/g, student?.academicYear || "2025-2026")
+    .replace(/\{\{academicYear\}\}/g, student?.academicYear || academicYearName || "2025-2026")
     .replace(/\{\{surveyFormType\}\}/g, student?.surveyFormType || "")
     .replace(/\{\{hocKy\}\}/g, student?.hocKy || "1")
     .replace(/\{\{committedSubjects\}\}/g, comSubs || "Tiếng Anh")
@@ -862,7 +862,17 @@ export function ReportsClient({
 
       const mergedLogo = mLogo || globalData.logo || campusData.logo || "";
       const mergedBackground = mBg || globalData.background || campusData.background || "";
-      const mergedContent = globalData.content || campusData.content || "";
+      let defaultText = "";
+      if (selectedLevel === "preschool") {
+         if (isCommitment) defaultText = defaultPreschoolCommitment;
+         else if (isInvitation) defaultText = defaultPreschoolInvitation;
+         else defaultText = defaultPreschoolCongratulations;
+      } else {
+         if (isCommitment) defaultText = defaultCamKet;
+         else if (isInvitation) defaultText = defaultThuMoi;
+         else defaultText = defaultThuChucMung;
+      }
+      const mergedContent = globalData.content || campusData.content || defaultText;
       const mergedFooter = mFooter || globalData.footer || campusData.footer || "";
       const campusSig = localStorage.getItem('report_config_signature_' + targetCampus.id) || campusData.signature || mSig || "";
       const campusDir = localStorage.getItem('report_config_director_' + targetCampus.id) || campusData.directorName || targetCampus.manager?.fullName || getCampusDefaultManager(targetCampus.campusName || "");
@@ -1887,7 +1897,8 @@ export function ReportsClient({
       {
         ...selectedReportStudent,
         signatureName: studentCampusConfig?.directorName || selectedReportStudent?.signatureName || ""
-      }
+      },
+      activePeriod?.academicYear?.name
     );
     // Split the paragraph if "Kính mong Phụ huynh..." is in the middle of a paragraph
     let paragraphs: string[] = [];
