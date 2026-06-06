@@ -1161,15 +1161,7 @@ export function ReportsClient({
       if (savedCampus) { try { campusData = JSON.parse(savedCampus); } catch (e) {} }
       if (savedGlobal) { try { globalData = JSON.parse(savedGlobal); } catch (e) {} }
 
-      const mergedTitle = globalData.title || campusData.title || defaultTitle;
-      const mLogo = localStorage.getItem('report_config_master_logo') || "";
-      const mBg = localStorage.getItem('report_config_master_background') || "";
-      const mFooter = localStorage.getItem('report_config_master_footer') || "";
-      const mSig = localStorage.getItem('report_config_master_signature') || "";
-
-      const mergedLogo = mLogo || globalData.logo || campusData.logo || "";
-      const mergedBackground = mBg || globalData.background || campusData.background || "";
-      
+      // MUST declare defaults BEFORE using them (let is not hoisted like var)
       let defaultText = "";
       let defaultTitle = "THƯ CHÚC MỪNG";
       if (selectedLevel === "preschool") {
@@ -1181,6 +1173,15 @@ export function ReportsClient({
          else if (customBaseKey === "thu_moi") { defaultText = defaultThuMoi || ""; defaultTitle = "THƯ MỜI"; }
          else defaultText = defaultThuChucMung;
       }
+
+      const mergedTitle = globalData.title || campusData.title || defaultTitle;
+      const mLogo = localStorage.getItem('report_config_master_logo') || "";
+      const mBg = localStorage.getItem('report_config_master_background') || "";
+      const mFooter = localStorage.getItem('report_config_master_footer') || "";
+      const mSig = localStorage.getItem('report_config_master_signature') || "";
+
+      const mergedLogo = mLogo || globalData.logo || campusData.logo || "";
+      const mergedBackground = mBg || globalData.background || campusData.background || "";
       const mergedContent = globalData.content || campusData.content || defaultText;
       const mergedFooter = mFooter || globalData.footer || campusData.footer || "";
       const campusSig = localStorage.getItem('report_config_signature_' + targetCampus.id) || campusData.signature || mSig || "";
@@ -1281,9 +1282,10 @@ export function ReportsClient({
       
     const { actualCampusName, schoolNameFull, truongName } = getCampusAndSchoolName(student?.admissionCampus);
 
+    const academicYearNameForEmail = activePeriod?.academicYear?.name || "2025-2026";
     const renderedContent = (config.content || "")
       .replace(/{{fullName}}/g, student?.fullName || "")
-      .replace(/{{academicYear}}/g, student?.academicYear || activePeriod?.academicYear?.name || "2025-2026")
+      .replace(/{{academicYear}}/g, student?.academicYear || academicYearNameForEmail)
       .replace(/{{grade}}/g, numericGrade)
       .replace(/{{hocKy}}/g, student?.hocKy || "1")
       .replace(/{{surveyFormType}}/g, student?.surveyFormType || "")
