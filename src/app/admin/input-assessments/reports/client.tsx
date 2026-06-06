@@ -1151,7 +1151,7 @@ export function ReportsClient({
       if (savedCampus) { try { campusData = JSON.parse(savedCampus); } catch (e) {} }
       if (savedGlobal) { try { globalData = JSON.parse(savedGlobal); } catch (e) {} }
 
-      const mergedTitle = globalData.title || campusData.title || "THƯ CHÚC MỪNG";
+      const mergedTitle = globalData.title || campusData.title || defaultTitle;
       const mLogo = localStorage.getItem('report_config_master_logo') || "";
       const mBg = localStorage.getItem('report_config_master_background') || "";
       const mFooter = localStorage.getItem('report_config_master_footer') || "";
@@ -1160,10 +1160,17 @@ export function ReportsClient({
       const mergedLogo = mLogo || globalData.logo || campusData.logo || "";
       const mergedBackground = mBg || globalData.background || campusData.background || "";
       
-      const defaultText = selectedLevel === "preschool"
-        ? defaultPreschoolCongratulations
-        : defaultThuChucMung;
-
+      let defaultText = "";
+      let defaultTitle = "THƯ CHÚC MỪNG";
+      if (selectedLevel === "preschool") {
+         if (customBaseKey === "cam_ket_hoc_tap") { defaultText = defaultPreschoolCommitment || ""; defaultTitle = "BẢN CAM KẾT HỌC TẬP"; }
+         else if (customBaseKey === "thu_moi") { defaultText = defaultPreschoolInvitation || ""; defaultTitle = "THƯ MỜI"; }
+         else defaultText = defaultPreschoolCongratulations;
+      } else {
+         if (customBaseKey === "cam_ket_hoc_tap") { defaultText = defaultCamKet || ""; defaultTitle = "BẢN CAM KẾT HỌC TẬP"; }
+         else if (customBaseKey === "thu_moi") { defaultText = defaultThuMoi || ""; defaultTitle = "THƯ MỜI"; }
+         else defaultText = defaultThuChucMung;
+      }
       const mergedContent = globalData.content || campusData.content || defaultText;
       const mergedFooter = mFooter || globalData.footer || campusData.footer || "";
       const campusSig = localStorage.getItem('report_config_signature_' + targetCampus.id) || campusData.signature || mSig || "";
@@ -1266,6 +1273,7 @@ export function ReportsClient({
 
     const renderedContent = (config.content || "")
       .replace(/{{fullName}}/g, student?.fullName || "")
+      .replace(/{{academicYear}}/g, student?.academicYear || activePeriod?.academicYear?.name || "2025-2026")
       .replace(/{{grade}}/g, numericGrade)
       .replace(/{{hocKy}}/g, student?.hocKy || "1")
       .replace(/{{surveyFormType}}/g, student?.surveyFormType || "")

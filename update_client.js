@@ -1,39 +1,47 @@
 ﻿const fs = require('fs');
-const filePath = 'c:\\Users\\Windows 11\\.gemini\\antigravity\\brain\\e243b0d8-3241-4833-8c7a-e612ebbae098\\browser\\Skyline-survey\\src\\app\\admin\\tasks\\client.tsx';
-let content = fs.readFileSync(filePath, 'utf8');
 
-if (!content.includes('useSearchParams')) {
-  content = content.replace('import { useState, useEffect } from "react"', 'import { useState, useEffect, Suspense } from "react"\nimport { useSearchParams } from "next/navigation"');
-}
+// 1. Update client.tsx (fix {{academicYear}} and fallback logic)
+const clientPath = 'src/app/admin/input-assessments/reports/client.tsx';
+let clientContent = fs.readFileSync(clientPath, 'utf8');
 
-if (!content.includes('const searchParams = useSearchParams()')) {
-  // Instead of replacing inside TasksClient, which is a bit messy, let's wrap it or add it.
-  // Actually, we can just find 'const isAdmin = currentRole === "ADMIN"' and insert before it:
-  // But wait, `useSearchParams` MUST be inside a component. TasksClient is the component.
-  content = content.replace('export function TasksClient({ initialTasks, years, roles, currentRole, currentUserId }: any) {', 
-`export function TasksClient({ initialTasks, years, roles, currentRole, currentUserId }: any) {
-  const searchParams = useSearchParams()`);
-}
+// Fix fallback logic in getStudentCampusConfigForEmail
+const oldFallbackLogic = `      const defaultText = selectedLevel === "preschool"
+        ? defaultPreschoolCongratulations
+        : defaultThuChucMung;
 
-if (!content.includes('// Auto open task details if taskId is in URL')) {
-  content = content.replace('const isAdmin = currentRole === "ADMIN"',
-`const isAdmin = currentRole === "ADMIN"
+      const mergedContent = globalData.content || campusData.content || defaultText;`;
 
-  useEffect(() => {
-    const taskId = searchParams?.get("taskId")
-    if (taskId && tasks.length > 0) {
-      const task = tasks.find((t: any) => t.id === taskId)
-      if (task) {
-        setDetailTask(task)
+const newFallbackLogic = `      let defaultText = "";
+      let defaultTitle = "THƯ CHÚC MỪNG";
+      if (selectedLevel === "preschool") {
+         if (customBaseKey === "cam_ket_hoc_tap") { defaultText = defaultPreschoolCommitment || ""; defaultTitle = "BẢN CAM KẾT HỌC TẬP"; }
+         else if (customBaseKey === "thu_moi") { defaultText = defaultPreschoolInvitation || ""; defaultTitle = "THƯ MỜI"; }
+         else defaultText = defaultPreschoolCongratulations;
+      } else {
+         if (customBaseKey === "cam_ket_hoc_tap") { defaultText = defaultCamKet || ""; defaultTitle = "BẢN CAM KẾT HỌC TẬP"; }
+         else if (customBaseKey === "thu_moi") { defaultText = defaultThuMoi || ""; defaultTitle = "THƯ MỜI"; }
+         else defaultText = defaultThuChucMung;
       }
-    }
-  }, [searchParams, tasks])`);
-}
+      const mergedContent = globalData.content || campusData.content || defaultText;`;
 
-// Ensure the page component export is wrapped in Suspense if it uses useSearchParams in Next.js 14
-// Wait, client.tsx is just the client component. The parent is page.tsx which is a Server Component.
-// Wait, Next.js requires useSearchParams to be wrapped in Suspense in the parent or inside.
-// We can just rely on the existing page structure if it doesn't break, or wrap TasksClient in page.tsx if needed. Let's try without modifying page.tsx first.
+clientContent = clientContent.replace(oldFallbackLogic, newFallbackLogic);
 
-fs.writeFileSync(filePath, content, 'utf8');
-console.log('Added URL param handler to client.tsx');
+// Fix mergedTitle logic
+clientContent = clientContent.replace(
+  'const mergedTitle = globalData.title || campusData.title || "THƯ CHÚC MỪNG";',
+  'const mergedTitle = globalData.title || campusData.title || defaultTitle;'
+);
+
+// Fix academicYear replacement
+const oldReplace = `.replace(/{{fullName}}/g, student?.fullName || "")
+      .replace(/{{grade}}/g, numericGrade)`;
+
+const newReplace = `.replace(/{{fullName}}/g, student?.fullName || "")
+      .replace(/{{academicYear}}/g, student?.academicYear || activePeriod?.academicYear?.name || "2025-2026")
+      .replace(/{{grade}}/g, numericGrade)`;
+
+clientContent = clientContent.replace(oldReplace, newReplace);
+
+fs.writeFileSync(clientPath, clientContent, 'utf8');
+console.log("Updated client.tsx");
+

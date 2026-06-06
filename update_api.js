@@ -1,74 +1,7 @@
-// @ts-nocheck
-import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { sendEmail } from "@/lib/mail";
+﻿const fs = require('fs');
 
-export async function POST(req: Request) {
-  const session = await auth();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  try {
-    const { to, cc, subject, periodName, batchName, students, attachLetters, pdfAttachments } = await req.json();
-
-    if (!to || !students || !Array.isArray(students)) {
-      return NextResponse.json({ error: "Missing required parameters" }, { status: 400 });
-    }
-
-    const host = req.headers.get("host") || "skyline-survey-rh4k.vercel.app";
-    const protocol = req.headers.get("x-forwarded-proto") || "https";
-    const baseUrl = `${protocol}://${host}`;
-
-    const showAttachments = attachLetters === true;
-
-    // Build the gorgeous HTML email body for Preschool
-    const totalStudents = students.length;
-    const totalPassed = students.filter(s => {
-      return (s.probationaryResult === "DAT" || (s.admissionResult || "").toUpperCase().includes("MIỄN") || (s.admissionResult || "").toUpperCase().includes("MIEN"));
-    }).length;
-    const totalPendingOrFailed = totalStudents - totalPassed;
-
-    const rowsHtml = students.map((s, idx) => {
-      const dob = s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—";
-      const r = (s.admissionResult || "").trim();
-      let resText = r || "Chưa xét duyệt";
-      let resColor = "#4b5563", resBg = "#f3f4f6", resBorder = "#e5e7eb";
-
-      if (r.includes("Đạt") && r.includes("cam kết")) {
-        resText = "ĐẠT - CAM KẾT"; resColor = "#b45309"; resBg = "#fef3c7"; resBorder = "#fde68a";
-      } else if (r.includes("Đạt") || r.includes("DAT") || r.includes("MIỄN")) {
-        resText = r.toUpperCase(); resColor = "#047857"; resBg = "#ecfdf5"; resBorder = "#a7f3d0";
-      } else if (r.includes("Không đạt") || r.includes("KHONG DAT")) {
-        resText = "KHÔNG ĐẠT"; resColor = "#b91c1c"; resBg = "#fef2f2"; resBorder = "#fecaca";
-      } else if (r.includes("Học thử")) {
-        resText = "HỌC THỬ"; resColor = "#4338ca"; resBg = "#e0e7ff"; resBorder = "#c7d2fe";
-      }
-
-      const attachmentsTd = showAttachments ? `
-        <td style="padding: 12px 10px; text-align: center;">
-          ${(r.includes("Đạt") || r.includes("DAT") || r.includes("MIỄN")) ? 
-            `<a href="${baseUrl}/admin/input-assessments?studentId=${s.id}&print=chuc_mung" style="display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; color: #ffffff; background-color: #00A6A9; text-decoration: none;">Tải file</a>` 
-            : "—"}
-        </td>
-      ` : "";
-
-      return `
-        <tr style="border-bottom: 1px solid #f1f5f9; background-color: ${idx % 2 === 0 ? '#ffffff' : '#f8fafc'}; color: #334155; font-size: 13px;">
-          <td style="padding: 12px 10px; text-align: center; font-weight: 600;">${idx + 1}</td>
-          <td style="padding: 12px 10px; font-weight: 600; color: #1E1B4B;">${s.fullName || "—"}</td>
-          <td style="padding: 12px 10px; text-align: center;">K${s.grade || "—"}</td>
-          <td style="padding: 12px 10px; text-align: center;">${dob}</td>
-          <td style="padding: 12px 10px; text-align: center;">
-            <span style="display: inline-block; padding: 4px 10px; border-radius: 50px; font-size: 10px; font-weight: 700; color: ${resColor}; background-color: ${resBg}; border: 1px solid ${resBorder}; text-transform: uppercase;">
-              ${resText}
-            </span>
-          </td>
-          <td style="padding: 12px 10px; font-weight: 600; color: #00A6A9;">${s.admissionCampus || "—"}</td>
-          ${attachmentsTd}
-        </tr>
-      `;
-    }).join("");
-
-    const emailHtml =   return `      <!DOCTYPE html>
+const generateBeautifulEmail = (subject, periodName, batchName, totalStudents, totalPassed, totalPendingOrFailed, rowsHtml, showAttachments) => {
+  return `      <!DOCTYPE html>
       <html>
       <head>
         <meta charset="utf-8">
@@ -266,41 +199,74 @@ export async function POST(req: Request) {
           </div>
         </div>
       </body>
-      </html>`;;
-    // Process PDF attachments
-    const mailAttachments = [];
-    if (showAttachments && Array.isArray(pdfAttachments) && pdfAttachments.length > 0) {
-      for (const att of pdfAttachments) {
-        if (att.base64) {
-          mailAttachments.push({
-            filename: att.filename,
-            content: Buffer.from(att.base64, "base64"),
-            contentType: "application/pdf"
-          });
-        }
-      }
-    }
+      </html>`;
+};
 
-    try {
-      await sendEmail({
-        to,
-        cc,
-        subject,
-        html: emailHtml,
-        attachments: mailAttachments
-      });
-      return NextResponse.json({ success: true, sent: true });
-    } catch (err) {
-      console.error("SMTP SEND ERROR:", err);
-      return NextResponse.json({
-        success: true,
-        sent: false,
-        error: err.message || "Failed to send via Office365 SMTP",
-        html: emailHtml,
-      });
-    }
-  } catch (error) {
-    console.error("API ERROR:", error);
-    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+function updateApiRoute(filePath) {
+  if (!fs.existsSync(filePath)) return;
+  
+  let content = fs.readFileSync(filePath, 'utf8');
+
+  // Regex to extract the start of emailHtml declaration to the end of the backticks
+  // It looks like: const emailHtml = ` ... \n    `;
+  
+  const emailHtmlRegex = /const\s+emailHtml\s*=\s*`[\s\S]*?`;/m;
+  
+  if (emailHtmlRegex.test(content)) {
+    const replacement = 'const emailHtml = ' + generateBeautifulEmail.toString().split('\n').slice(1, -1).join('\n') + ';';
+    content = content.replace(emailHtmlRegex, replacement);
+    
+    // Fix rowsHtml for the new simpler table
+    const rowsHtmlRegex = /const rowsHtml = students\.map\(\(s, idx\) => \{[\s\S]*?\}\)\.join\(""\);/m;
+    const newRowsHtml = `const rowsHtml = students.map((s, idx) => {
+      const dob = s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—";
+      const r = (s.admissionResult || "").trim();
+      let resText = r || "Chưa xét duyệt";
+      let resColor = "#4b5563", resBg = "#f3f4f6", resBorder = "#e5e7eb";
+
+      if (r.includes("Đạt") && r.includes("cam kết")) {
+        resText = "ĐẠT - CAM KẾT"; resColor = "#b45309"; resBg = "#fef3c7"; resBorder = "#fde68a";
+      } else if (r.includes("Đạt") || r.includes("DAT") || r.includes("MIỄN")) {
+        resText = r.toUpperCase(); resColor = "#047857"; resBg = "#ecfdf5"; resBorder = "#a7f3d0";
+      } else if (r.includes("Không đạt") || r.includes("KHONG DAT")) {
+        resText = "KHÔNG ĐẠT"; resColor = "#b91c1c"; resBg = "#fef2f2"; resBorder = "#fecaca";
+      } else if (r.includes("Học thử")) {
+        resText = "HỌC THỬ"; resColor = "#4338ca"; resBg = "#e0e7ff"; resBorder = "#c7d2fe";
+      }
+
+      const attachmentsTd = showAttachments ? \`
+        <td style="padding: 12px 10px; text-align: center;">
+          \${(r.includes("Đạt") || r.includes("DAT") || r.includes("MIỄN")) ? 
+            \`<a href="\${baseUrl}/admin/input-assessments?studentId=\${s.id}&print=chuc_mung" style="display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; color: #ffffff; background-color: #00A6A9; text-decoration: none;">Tải file</a>\` 
+            : "—"}
+        </td>
+      \` : "";
+
+      return \`
+        <tr style="border-bottom: 1px solid #f1f5f9; background-color: \${idx % 2 === 0 ? '#ffffff' : '#f8fafc'}; color: #334155; font-size: 13px;">
+          <td style="padding: 12px 10px; text-align: center; font-weight: 600;">\${idx + 1}</td>
+          <td style="padding: 12px 10px; font-weight: 600; color: #1E1B4B;">\${s.fullName || "—"}</td>
+          <td style="padding: 12px 10px; text-align: center;">K\${s.grade || "—"}</td>
+          <td style="padding: 12px 10px; text-align: center;">\${dob}</td>
+          <td style="padding: 12px 10px; text-align: center;">
+            <span style="display: inline-block; padding: 4px 10px; border-radius: 50px; font-size: 10px; font-weight: 700; color: \${resColor}; background-color: \${resBg}; border: 1px solid \${resBorder}; text-transform: uppercase;">
+              \${resText}
+            </span>
+          </td>
+          <td style="padding: 12px 10px; font-weight: 600; color: #00A6A9;">\${s.admissionCampus || "—"}</td>
+          \${attachmentsTd}
+        </tr>
+      \`;
+    }).join("");`;
+    
+    content = content.replace(rowsHtmlRegex, newRowsHtml);
+    
+    fs.writeFileSync(filePath, content, 'utf8');
+    console.log("Updated", filePath);
+  } else {
+    console.log("Could not find emailHtml in", filePath);
   }
 }
+
+updateApiRoute('src/app/api/admin/send-quick-email/route.ts');
+updateApiRoute('src/app/api/admin/preschool-send-quick-email/route.ts');
