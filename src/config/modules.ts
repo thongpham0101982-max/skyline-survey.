@@ -71,7 +71,7 @@ export const APP_CATEGORIES = [
         ]
       },
       { code: "INPUT_ASSESSMENT_REPORTS", name: "Xuất báo cáo", icon: FileSpreadsheet, href: "/admin/input-assessments/reports" },
-      { code: "STUDENT_ACHIEVEMENTS", name: "Thành tích Học sinh", icon: GraduationCap, href: "/admin/achievements" },
+      { code: "STUDENT_INFO", name: "Thông tin HS Khảo sát", icon: Users2, href: "/admin/student-info" },
     ]
   },
   {
