@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { 
   Search, 
   X, 
@@ -16,17 +16,30 @@ import {
   AlertCircle, 
   Calendar, 
   BookOpen, 
-  FileText 
+  FileText,
+  Plus,
+  Upload,
+  Download,
+  Edit2,
+  Trash2,
+  Save
 } from "lucide-react";
+import * as XLSX from "xlsx";
 
 interface StudentInfoClientProps {
   initialGeneralStudents: any[];
   initialPreschoolStudents: any[];
+  generalPeriods: any[];
+  preschoolPeriods: any[];
+  activeYearName: string;
 }
 
 export function StudentInfoClient({ 
   initialGeneralStudents = [], 
-  initialPreschoolStudents = [] 
+  initialPreschoolStudents = [],
+  generalPeriods = [],
+  preschoolPeriods = [],
+  activeYearName = ""
 }: StudentInfoClientProps) {
   const [activeTab, setActiveTab] = useState<"general" | "preschool">("general");
   
@@ -43,7 +56,50 @@ export function StudentInfoClient({
 
   // Selected student for details modal
   const [selectedStudent, setSelectedStudent] = useState<any | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+
+  // Add/Edit student modal states
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [formMode, setFormMode] = useState<"create" | "edit">("create");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [formState, setFormState] = useState<any>({
+    studentCode: "",
+    fullName: "",
+    dateOfBirth: "",
+    gender: "MALE",
+    grade: "",
+    className: "",
+    periodId: "",
+    batchId: "",
+    surveySystem: "",
+    admissionCriteria: "",
+    admissionCampus: "",
+    admissionResult: "",
+    directorNote: "",
+    signatureName: "",
+    // Preschool assessment specifics
+    devProfessionalComment: "",
+    devPsychologyComment: "",
+    devImportantNote: "",
+    devAssessmentResult: ""
+  });
+
+  // Import excel modal states
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const [importPeriodId, setImportPeriodId] = useState("");
+  const [importBatchId, setImportBatchId] = useState("");
+  const [importing, setImporting] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [importSuccessCount, setImportSuccessCount] = useState<number | null>(null);
+  const importInputRef = useRef<HTMLInputElement>(null);
+
+  // Feedback notifications
+  const [notification, setNotification] = useState<{ text: string; type: "success" | "err" } | null>(null);
+
+  const showNotification = (text: string, type: "success" | "err" = "success") => {
+    setNotification({ text, type });
+    setTimeout(() => setNotification(null), 4000);
+  };
 
   // Reset filters when changing tab
   const handleTabChange = (tab: "general" | "preschool") => {
@@ -91,34 +147,16 @@ export function StudentInfoClient({
   // Filtered dataset
   const filteredStudents = useMemo(() => {
     return currentDataset.filter((student) => {
-      // Search text
       if (searchQuery) {
         const query = searchQuery.toLowerCase().trim();
         const matchesName = student.fullName?.toLowerCase().includes(query);
         const matchesCode = student.studentCode?.toLowerCase().includes(query);
         if (!matchesName && !matchesCode) return false;
       }
-
-      // Period filter
-      if (selectedPeriod && student.period?.name !== selectedPeriod) {
-        return false;
-      }
-
-      // Batch filter
-      if (selectedBatch && student.batch?.name !== selectedBatch) {
-        return false;
-      }
-
-      // Result filter
-      if (selectedResult && student.admissionResult !== selectedResult) {
-        return false;
-      }
-
-      // Grade filter
-      if (selectedGrade && student.grade !== selectedGrade) {
-        return false;
-      }
-
+      if (selectedPeriod && student.period?.name !== selectedPeriod) return false;
+      if (selectedBatch && student.batch?.name !== selectedBatch) return false;
+      if (selectedResult && student.admissionResult !== selectedResult) return false;
+      if (selectedGrade && student.grade !== selectedGrade) return false;
       return true;
     });
   }, [currentDataset, searchQuery, selectedPeriod, selectedBatch, selectedResult, selectedGrade]);
@@ -170,41 +208,477 @@ export function StudentInfoClient({
     return "bg-blue-50 text-blue-600 border border-blue-100";
   };
 
-  const handleOpenDetails = (student: any) => {
-    setSelectedStudent(student);
-    setIsModalOpen(true);
+  // Auto generate code helper
+  const handleAutoGenerateCode = async () => {
+    try {
+      const endpoint = activeTab === "general" 
+        ? "/api/input-assessment-students?get_max_code=true" 
+        : "/api/preschool-input-assessment-students?get_max_code=true";
+      const r = await fetch(endpoint);
+      if (r.ok) {
+        const res = await r.json();
+        if (res.nextCode) {
+          if (activeTab === "general") {
+            setFormState(prev => ({ ...prev, studentCode: res.nextCode }));
+          } else {
+            const code = "MN" + res.nextCode.replace(/^\D+/, "");
+            setFormState(prev => ({ ...prev, studentCode: code }));
+          }
+          showNotification("Đã tạo mã học sinh tự động");
+        }
+      }
+    } catch (e) {
+      showNotification("Lỗi khi tự động sinh mã", "err");
+    }
   };
+
+  // Open Create Modal
+  const openCreateModal = () => {
+    setFormMode("create");
+    setEditingId(null);
+    const defaultPeriodId = activeTab === "general" 
+      ? (generalPeriods[0]?.id || "") 
+      : (preschoolPeriods[0]?.id || "");
+    const defaultBatchId = activeTab === "general"
+      ? (generalPeriods[0]?.batches?.[0]?.id || "")
+      : (preschoolPeriods[0]?.batches?.[0]?.id || "");
+
+    setFormState({
+      studentCode: "",
+      fullName: "",
+      dateOfBirth: "",
+      gender: "MALE",
+      grade: activeTab === "general" ? "1" : "Mầm",
+      className: "",
+      periodId: defaultPeriodId,
+      batchId: defaultBatchId,
+      surveySystem: "",
+      admissionCriteria: "",
+      admissionCampus: "",
+      admissionResult: "",
+      directorNote: "",
+      signatureName: "",
+      devProfessionalComment: "",
+      devPsychologyComment: "",
+      devImportantNote: "",
+      devAssessmentResult: ""
+    });
+    setIsFormOpen(true);
+  };
+
+  // Open Edit Modal
+  const openEditModal = (student: any, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setFormMode("edit");
+    setEditingId(student.id);
+    
+    // Format birthdate for HTML date input: YYYY-MM-DD
+    let formattedDob = "";
+    if (student.dateOfBirth) {
+      try {
+        formattedDob = new Date(student.dateOfBirth).toISOString().split("T")[0];
+      } catch {}
+    }
+
+    setFormState({
+      studentCode: student.studentCode || "",
+      fullName: student.fullName || "",
+      dateOfBirth: formattedDob,
+      gender: student.gender || "MALE",
+      grade: student.grade || "",
+      className: student.className || "",
+      periodId: student.periodId || "",
+      batchId: student.batchId || "",
+      surveySystem: student.surveySystem || "",
+      admissionCriteria: student.admissionCriteria || "",
+      admissionCampus: student.admissionCampus || "",
+      admissionResult: student.admissionResult || "",
+      directorNote: student.directorNote || "",
+      signatureName: student.signatureName || "",
+      devProfessionalComment: student.devProfessionalComment || "",
+      devPsychologyComment: student.devPsychologyComment || "",
+      devImportantNote: student.devImportantNote || "",
+      devAssessmentResult: student.devAssessmentResult || ""
+    });
+    setIsFormOpen(true);
+  };
+
+  // Handle Save Student (Create/Edit)
+  const handleSaveStudent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formState.studentCode.trim()) return showNotification("Mã học sinh không được để trống", "err");
+    if (!formState.fullName.trim()) return showNotification("Họ và tên không được để trống", "err");
+    if (!formState.periodId) return showNotification("Kỳ khảo sát là bắt buộc", "err");
+
+    const endpoint = activeTab === "general" 
+      ? "/api/input-assessment-students" 
+      : "/api/preschool-input-assessment-students";
+    
+    const method = formMode === "edit" ? "PUT" : "POST";
+    const bodyData = formMode === "edit"
+      ? { id: editingId, data: formState }
+      : { action: "CREATE", data: formState };
+
+    try {
+      const res = await fetch(endpoint, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(bodyData)
+      });
+      if (res.ok) {
+        showNotification(formMode === "edit" ? "Cập nhật học sinh thành công!" : "Thêm mới học sinh thành công!");
+        setIsFormOpen(false);
+        setTimeout(() => window.location.reload(), 1000);
+      } else {
+        const err = await res.json();
+        showNotification("Lỗi: " + (err.error || "Gửi yêu cầu thất bại"), "err");
+      }
+    } catch (e) {
+      showNotification("Lỗi kết nối máy chủ", "err");
+    }
+  };
+
+  // Handle Delete Student
+  const handleDeleteStudent = async (student: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm(`Bạn có chắc muốn xóa học sinh ${student.fullName} (${student.studentCode}) khỏi hệ thống?`)) return;
+
+    const endpoint = activeTab === "general" 
+      ? `/api/input-assessment-students?id=${student.id}` 
+      : `/api/preschool-input-assessment-students?id=${student.id}`;
+
+    try {
+      const res = await fetch(endpoint, { method: "DELETE" });
+      if (res.ok) {
+        showNotification("Đã xóa học sinh thành công");
+        setTimeout(() => window.location.reload(), 1000);
+      } else {
+        showNotification("Lỗi khi xóa học sinh", "err");
+      }
+    } catch (e) {
+      showNotification("Lỗi kết nối", "err");
+    }
+  };
+
+  // Export filtered students list to Excel
+  const handleExportExcel = () => {
+    if (filteredStudents.length === 0) return showNotification("Không có dữ liệu trong bộ lọc để xuất", "err");
+
+    const dataToExport = filteredStudents.map((s) => {
+      const basic = {
+        "Mã học sinh": s.studentCode || "",
+        "Họ và tên": s.fullName || "",
+        "Ngày sinh": formatDate(s.dateOfBirth),
+        "Giới tính": s.gender === "MALE" || s.gender === "Nam" ? "Nam" : "Nữ",
+        "Kỳ khảo sát": s.period?.name || "",
+        "Đợt khảo sát": s.batch?.name || "",
+        "Kết quả duyệt": s.admissionResult || "Chưa duyệt",
+        "Hệ đào tạo": s.surveySystem || "",
+        "Cơ sở dự tuyển": s.admissionCampus || "",
+        "Ghi chú tuyển sinh": s.directorNote || "",
+      };
+
+      if (activeTab === "general") {
+        return {
+          ...basic,
+          "Khối học": s.grade || "",
+          "Lớp dự tuyển": s.className || "",
+          "Diện tuyển sinh": s.admissionCriteria || "",
+          "Học lực": s.academicRating || "",
+          "Hạnh kiểm": s.conductRating || "",
+          "Điểm Toán": s.mathScore ?? "",
+          "Điểm Văn": s.literatureScore ?? "",
+          "Điểm Anh viết": s.writtenEnglishScore ?? "",
+          "Điểm Anh nói": s.oralEnglishScore ?? "",
+          "Điểm Tâm lý": s.psychologyScore ?? "",
+        };
+      } else {
+        return {
+          ...basic,
+          "Khối học": s.grade || "",
+          "Đánh giá chuyên môn": s.devProfessionalComment || "",
+          "Đánh giá tâm lý": s.devPsychologyComment || "",
+          "Ghi chú quan trọng": s.devImportantNote || "",
+          "Nhận xét chung": s.devAssessmentResult || "",
+          "Trạng thái BGH": s.bghApprovalStatus || "",
+          "Ý kiến BGH": s.bghApprovalComment || "",
+          "Trạng thái GDCS": s.gdcsApprovalStatus || "",
+          "Ý kiến GDCS": s.gdcsApprovalComment || "",
+          "Điểm học thử": s.probationaryScoreText ?? "",
+          "Thời gian học thử": s.probationaryPeriod ?? "",
+          "Lớp học thử": s.probationaryClass ?? "",
+          "Nhận xét học thử": s.probationaryComment ?? "",
+          "Kết quả học thử": s.probationaryResult ?? "",
+        };
+      }
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, activeTab === "general" ? "Phổ thông" : "Mầm non");
+    XLSX.writeFile(workbook, `Danh_Sach_HS_Khao_Sat_${activeTab === "general" ? "Pho_Thong" : "Mam_Non"}.xlsx`);
+    showNotification("Đã xuất file Excel thành công!");
+  };
+
+  // Download template for Excel import
+  const handleDownloadTemplate = () => {
+    let headers = [];
+    let sampleData = [];
+
+    if (activeTab === "general") {
+      headers = [
+        "Mã học sinh", "Họ và tên", "Ngày sinh (dd/mm/yyyy)", "Giới tính (Nam/Nữ)", 
+        "Khối", "Lớp dự tuyển", "Hệ đào tạo", "Diện tuyển sinh"
+      ];
+      sampleData = [
+        ["HS001", "Nguyễn Văn A", "15/08/2018", "Nam", "1", "Lớp 1/1", "Hệ Chất lượng cao", "Diện xét tuyển"],
+        ["HS002", "Trần Thị B", "20/09/2012", "Nữ", "7", "Lớp 7/2", "Hệ Quốc tế", "Diện thi tuyển"]
+      ];
+    } else {
+      headers = [
+        "Mã học sinh", "Họ và tên", "Ngày sinh (dd/mm/yyyy)", "Giới tính (Nam/Nữ)", 
+        "Khối", "Hệ đào tạo", "Diện tuyển sinh"
+      ];
+      sampleData = [
+        ["MN001", "Phạm Quốc C", "10/05/2022", "Nam", "Mầm", "Hệ Chất lượng cao", "Diện xét tuyển"],
+        ["MN002", "Hoàng Ngọc D", "05/12/2023", "Nữ", "Nhà trẻ", "Hệ Chất lượng cao", "Diện xét tuyển"]
+      ];
+    }
+
+    const worksheetData = [headers, ...sampleData];
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Template");
+    XLSX.writeFile(workbook, `Mau_Import_HS_Khao_Sat_${activeTab === "general" ? "Pho_Thong" : "Mam_Non"}.xlsx`);
+    showNotification("Đã tải file Excel mẫu!");
+  };
+
+  // Handle Excel parsing and bulk upload
+  const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!importPeriodId) return showNotification("Vui lòng chọn Kỳ khảo sát đích trước", "err");
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImporting(true);
+    setImportError(null);
+    setImportSuccessCount(null);
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer);
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const rawRows = XLSX.utils.sheet_to_json(worksheet, { defval: "" }) as any[];
+
+      if (rawRows.length === 0) {
+        throw new Error("File Excel không có dữ liệu học sinh");
+      }
+
+      // Helper function to dynamically map values based on keywords
+      const findVal = (row: any, keywords: string[]) => {
+        const keys = Object.keys(row);
+        for (const key of keys) {
+          const k = key.toLowerCase().trim();
+          if (keywords.some(kw => k.includes(kw.toLowerCase()))) return row[key];
+        }
+        return null;
+      };
+
+      const mapped = rawRows.map((row: any) => {
+        // Handle date parsing
+        let parsedDate = null;
+        const rawDate = row["Ngày sinh (dd/mm/yyyy)"] || row["Ngày sinh"] || row["Ngay sinh"] || row["dateOfBirth"] || findVal(row, ["birth", "dob", "sinh"]);
+        if (rawDate) {
+          if (typeof rawDate === "number") {
+            // Excel numeric date serial
+            const date = new Date(Math.round((rawDate - 25569) * 86400 * 1000));
+            parsedDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000).toISOString();
+          } else if (typeof rawDate === "string") {
+            const parts = rawDate.split(/[\/\-]/);
+            if (parts.length === 3 && parts[0].length <= 2) {
+              parsedDate = parts[2] + "-" + parts[1].padStart(2, "0") + "-" + parts[0].padStart(2, "0") + "T00:00:00.000Z";
+            } else {
+              const d = new Date(rawDate);
+              if (!isNaN(d.getTime())) parsedDate = d.toISOString();
+            }
+          }
+        }
+
+        // Map fields
+        const studentCode = String(findVal(row, ["mã học sinh", "mã hs", "ma hs", "ma hoc sinh", "studentcode", "student code", "mã"]) || "").trim();
+        const fullName = String(findVal(row, ["họ và tên", "họ tên", "ho ten", "fullname", "full name", "tên"]) || "").trim();
+        const genderVal = String(findVal(row, ["giới tính", "gioi tinh", "gender"]) || "").trim().toLowerCase();
+        const gender = (genderVal.includes("nam") || genderVal === "male") ? "MALE" : "FEMALE";
+        
+        const grade = String(findVal(row, ["khối", "khoi", "grade"]) || "").trim();
+        const className = String(findVal(row, ["lớp dự tuyển", "lớp", "lop", "class"]) || "").trim();
+        const surveySystem = String(findVal(row, ["hệ đào tạo", "he dao tao", "survey system", "hệ"]) || "").trim();
+        const admissionCriteria = String(findVal(row, ["diện tuyển sinh", "dien tuyen sinh", "criteria"]) || "").trim();
+
+        return {
+          studentCode,
+          fullName,
+          dateOfBirth: parsedDate,
+          gender,
+          grade,
+          className,
+          surveySystem,
+          admissionCriteria,
+          periodId: importPeriodId,
+          batchId: importBatchId || null
+        };
+      });
+
+      // Filter rows that don't have full names
+      const validRows = mapped.filter(r => r.fullName);
+      if (validRows.length === 0) {
+        throw new Error("Không có dòng dữ liệu hợp lệ (Cần có Họ và tên học sinh)");
+      }
+
+      // POST to bulk create
+      const endpoint = activeTab === "general"
+        ? "/api/input-assessment-students"
+        : "/api/preschool-input-assessment-students";
+
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "BULK_CREATE", data: validRows })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setImportSuccessCount(result.created || validRows.length);
+        showNotification(`Đã import thành công ${result.created || validRows.length} học sinh!`);
+        setTimeout(() => window.location.reload(), 1500);
+      } else {
+        const err = await response.json();
+        throw new Error(err.error || "Gửi dữ liệu lên API thất bại");
+      }
+
+    } catch (err: any) {
+      setImportError(err.message || "Đã xảy ra lỗi không xác định");
+      showNotification("Import file thất bại", "err");
+    } finally {
+      setImporting(false);
+      if (importInputRef.current) importInputRef.current.value = "";
+    }
+  };
+
+  // Get current active tab periods list
+  const activePeriodsList = useMemo(() => {
+    return activeTab === "general" ? generalPeriods : preschoolPeriods;
+  }, [activeTab, generalPeriods, preschoolPeriods]);
+
+  // Get active tab period's batch options in form/import
+  const activeFormBatches = useMemo(() => {
+    const selected = activePeriodsList.find(p => p.id === formState.periodId);
+    return selected?.batches || [];
+  }, [formState.periodId, activePeriodsList]);
+
+  const activeImportBatches = useMemo(() => {
+    const selected = activePeriodsList.find(p => p.id === importPeriodId);
+    return selected?.batches || [];
+  }, [importPeriodId, activePeriodsList]);
+
+  // Set default batch when period changes in forms
+  useEffect(() => {
+    if (activeFormBatches.length > 0) {
+      const match = activeFormBatches.find((b: any) => b.id === formState.batchId);
+      if (!match) {
+        setFormState(prev => ({ ...prev, batchId: activeFormBatches[0].id }));
+      }
+    } else {
+      setFormState(prev => ({ ...prev, batchId: "" }));
+    }
+  }, [formState.periodId, activeFormBatches]);
+
+  useEffect(() => {
+    if (activeImportBatches.length > 0) {
+      setImportBatchId(activeImportBatches[0].id);
+    } else {
+      setImportBatchId("");
+    }
+  }, [importPeriodId, activeImportBatches]);
 
   return (
     <div className="space-y-6">
-      {/* Tab Selector */}
-      <div className="flex gap-4 border-b border-slate-200">
-        <button
-          onClick={() => handleTabChange("general")}
-          className={`flex items-center gap-2 px-6 py-3.5 font-bold text-sm transition-all border-b-2 -mb-px rounded-t-xl ${
-            activeTab === "general"
-              ? "border-[#00A6A9] text-[#00A6A9] bg-slate-50/50"
-              : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50/20"
-          }`}
-        >
-          <GraduationCap className="w-5 h-5" />
-          Phổ thông K-12 (${initialGeneralStudents.length})
-        </button>
-        <button
-          onClick={() => handleTabChange("preschool")}
-          className={`flex items-center gap-2 px-6 py-3.5 font-bold text-sm transition-all border-b-2 -mb-px rounded-t-xl ${
-            activeTab === "preschool"
-              ? "border-[#00A6A9] text-[#00A6A9] bg-slate-50/50"
-              : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50/20"
-          }`}
-        >
-          <Baby className="w-5 h-5" />
-          Mầm non (${initialPreschoolStudents.length})
-        </button>
+      
+      {/* Toast Notification */}
+      {notification && (
+        <div className={`fixed top-5 right-5 z-[100] flex items-center gap-2 px-5 py-3.5 rounded-2xl shadow-xl border animate-in slide-in-from-top-4 duration-300 font-semibold text-sm ${
+          notification.type === "success" 
+            ? "bg-emerald-50 text-emerald-800 border-emerald-200" 
+            : "bg-rose-50 text-rose-800 border-rose-200"
+        }`}>
+          {notification.type === "success" ? <CheckCircle2 className="w-5 h-5 text-emerald-600" /> : <XCircle className="w-5 h-5 text-rose-600" />}
+          {notification.text}
+        </div>
+      )}
+
+      {/* Tab Selector & Actions */}
+      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 border-b border-slate-200">
+        <div className="flex gap-4">
+          <button
+            onClick={() => handleTabChange("general")}
+            className={`flex items-center gap-2 px-6 py-3.5 font-bold text-sm transition-all border-b-2 -mb-px rounded-t-xl ${
+              activeTab === "general"
+                ? "border-[#00A6A9] text-[#00A6A9] bg-slate-50/50"
+                : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50/20"
+            }`}
+          >
+            <GraduationCap className="w-5 h-5" />
+            Phổ thông K-12 (${initialGeneralStudents.length})
+          </button>
+          <button
+            onClick={() => handleTabChange("preschool")}
+            className={`flex items-center gap-2 px-6 py-3.5 font-bold text-sm transition-all border-b-2 -mb-px rounded-t-xl ${
+              activeTab === "preschool"
+                ? "border-[#00A6A9] text-[#00A6A9] bg-slate-50/50"
+                : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50/20"
+            }`}
+          >
+            <Baby className="w-5 h-5" />
+            Mầm non (${initialPreschoolStudents.length})
+          </button>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex flex-wrap items-center gap-2 pb-2 sm:pb-0">
+          <button
+            onClick={openCreateModal}
+            className="flex items-center gap-1.5 px-4 py-2 bg-[#00A6A9] hover:bg-[#008c85] text-white rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            Thêm học sinh
+          </button>
+          <button
+            onClick={() => {
+              if (activePeriodsList.length === 0) {
+                return showNotification("Năm học này chưa có kỳ khảo sát để import học sinh", "err");
+              }
+              setImportPeriodId(activePeriodsList[0].id);
+              setImportError(null);
+              setImportSuccessCount(null);
+              setIsImportOpen(true);
+            }}
+            className="flex items-center gap-1.5 px-4 py-2 bg-indigo-650 hover:bg-indigo-750 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl text-xs font-bold border border-indigo-200 shadow-sm transition-all active:scale-95 cursor-pointer"
+          >
+            <Upload className="w-4 h-4" />
+            Import Excel
+          </button>
+          <button
+            onClick={handleExportExcel}
+            className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold border border-slate-200 shadow-sm transition-all active:scale-95 cursor-pointer"
+          >
+            <Download className="w-4 h-4" />
+            Export Excel
+          </button>
+        </div>
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
           <div className="p-3 bg-slate-100 text-slate-600 rounded-xl">
             <Users2 className="w-6 h-6" />
@@ -220,7 +694,7 @@ export function StudentInfoClient({
             <CheckCircle2 className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider font-medium">Đạt / Đạt cam kết / Học thử</p>
+            <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Đạt / Đạt cam kết / Học thử</p>
             <p className="text-2xl font-extrabold text-emerald-600">{statistics.passed}</p>
           </div>
         </div>
@@ -341,7 +815,7 @@ export function StudentInfoClient({
       {/* Main Table */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
+          <table className="w-full text-sm text-left whitespace-nowrap">
             <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-wider border-b border-slate-100">
               <tr>
                 <th className="px-6 py-4 w-28">Mã học sinh</th>
@@ -351,7 +825,7 @@ export function StudentInfoClient({
                 <th className="px-6 py-4 w-24">{activeTab === "general" ? "Khối/Lớp dự tuyển" : "Khối dự tuyển"}</th>
                 <th className="px-6 py-4">Kỳ & Đợt khảo sát</th>
                 <th className="px-6 py-4 w-36">Kết quả duyệt</th>
-                <th className="px-6 py-4 text-center w-24">Xem</th>
+                <th className="px-6 py-4 text-center w-32">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -366,7 +840,10 @@ export function StudentInfoClient({
                   <tr 
                     key={student.id} 
                     className="hover:bg-slate-50/50 transition-colors duration-150 cursor-pointer"
-                    onClick={() => handleOpenDetails(student)}
+                    onClick={() => {
+                      setSelectedStudent(student);
+                      setIsDetailsOpen(true);
+                    }}
                   >
                     <td className="px-6 py-4 font-mono font-bold text-[#00A6A9]">
                       {student.studentCode}
@@ -374,7 +851,7 @@ export function StudentInfoClient({
                     <td className="px-6 py-4 font-semibold text-slate-800">
                       {student.fullName}
                     </td>
-                    <td className="px-6 py-4 text-slate-500 whitespace-nowrap">
+                    <td className="px-6 py-4 text-slate-500">
                       {formatDate(student.dateOfBirth)}
                     </td>
                     <td className="px-6 py-4 text-slate-500">
@@ -401,13 +878,32 @@ export function StudentInfoClient({
                       </span>
                     </td>
                     <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        onClick={() => handleOpenDetails(student)}
-                        className="p-1.5 text-slate-400 hover:text-[#00A6A9] hover:bg-slate-100 rounded-lg transition-all"
-                        title="Xem chi tiết"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
+                      <div className="flex justify-center items-center gap-1.5">
+                        <button
+                          onClick={() => {
+                            setSelectedStudent(student);
+                            setIsDetailsOpen(true);
+                          }}
+                          className="p-1.5 text-slate-400 hover:text-[#00A6A9] hover:bg-slate-100 rounded-lg transition-all"
+                          title="Xem chi tiết"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => openEditModal(student)}
+                          className="p-1.5 text-slate-400 hover:text-[#00A6A9] hover:bg-slate-100 rounded-lg transition-all"
+                          title="Chỉnh sửa"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={(e) => handleDeleteStudent(student, e)}
+                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                          title="Xóa học sinh"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -466,8 +962,416 @@ export function StudentInfoClient({
         )}
       </div>
 
+      {/* Dialog Form: Add / Edit Student */}
+      {isFormOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col animate-in scale-in duration-200">
+            <div className="p-6 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-black text-slate-800">
+                  {formMode === "create" ? "Thêm mới học sinh" : "Chỉnh sửa thông tin học sinh"}
+                </h3>
+                <p className="text-xs text-slate-400 font-semibold uppercase mt-0.5 tracking-wider">
+                  {activeTab === "general" ? "Phân hệ Phổ thông" : "Phân hệ Mầm non"} - Năm học {activeYearName}
+                </p>
+              </div>
+              <button
+                onClick={() => setIsFormOpen(false)}
+                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveStudent} className="p-6 overflow-y-auto space-y-4 flex-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Student Code */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Mã học sinh *</label>
+                  <div className="flex gap-2">
+                    <input
+                      required
+                      type="text"
+                      disabled={formMode === "edit"}
+                      value={formState.studentCode}
+                      onChange={(e) => setFormState({ ...formState, studentCode: e.target.value.toUpperCase().replace(/\s/g, "") })}
+                      placeholder="VD: HS001"
+                      className="flex-1 px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none disabled:bg-slate-100 disabled:text-slate-500"
+                    />
+                    {formMode === "create" && (
+                      <button
+                        type="button"
+                        onClick={handleAutoGenerateCode}
+                        className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition-all active:scale-95"
+                      >
+                        Sinh mã
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Full name */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Họ và tên *</label>
+                  <input
+                    required
+                    type="text"
+                    value={formState.fullName}
+                    onChange={(e) => setFormState({ ...formState, fullName: e.target.value })}
+                    placeholder="VD: Nguyễn Văn A"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
+                  />
+                </div>
+
+                {/* Date of Birth */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Ngày sinh</label>
+                  <input
+                    type="date"
+                    value={formState.dateOfBirth}
+                    onChange={(e) => setFormState({ ...formState, dateOfBirth: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
+                  />
+                </div>
+
+                {/* Gender */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Giới tính</label>
+                  <select
+                    value={formState.gender}
+                    onChange={(e) => setFormState({ ...formState, gender: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer"
+                  >
+                    <option value="MALE">Nam</option>
+                    <option value="FEMALE">Nữ</option>
+                  </select>
+                </div>
+
+                {/* Grade */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Khối học</label>
+                  {activeTab === "general" ? (
+                    <select
+                      value={formState.grade}
+                      onChange={(e) => setFormState({ ...formState, grade: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
+                    >
+                      {["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"].map(g => (
+                        <option key={g} value={g}>Khối {g}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <select
+                      value={formState.grade}
+                      onChange={(e) => setFormState({ ...formState, grade: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
+                    >
+                      {["Nhà trẻ", "Mầm", "Chồi", "Lá"].map(g => (
+                        <option key={g} value={g}>{g}</option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+
+                {/* Classname (General K-12 Only) */}
+                {activeTab === "general" && (
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Lớp dự tuyển</label>
+                    <input
+                      type="text"
+                      value={formState.className}
+                      onChange={(e) => setFormState({ ...formState, className: e.target.value })}
+                      placeholder="VD: Lớp 1/1"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
+                    />
+                  </div>
+                )}
+
+                {/* Target Period selection */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Kỳ khảo sát *</label>
+                  <select
+                    required
+                    value={formState.periodId}
+                    onChange={(e) => setFormState({ ...formState, periodId: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer"
+                  >
+                    <option value="">Chọn Kỳ khảo sát</option>
+                    {activePeriodsList.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Target Batch selection */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Đợt khảo sát</label>
+                  <select
+                    value={formState.batchId}
+                    onChange={(e) => setFormState({ ...formState, batchId: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer"
+                  >
+                    <option value="">Chọn Đợt khảo sát</option>
+                    {activeFormBatches.map((b: any) => (
+                      <option key={b.id} value={b.id}>{b.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Survey System / Education system */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Hệ đào tạo</label>
+                  <input
+                    type="text"
+                    value={formState.surveySystem}
+                    onChange={(e) => setFormState({ ...formState, surveySystem: e.target.value })}
+                    placeholder="VD: Hệ Chất lượng cao"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
+                  />
+                </div>
+
+                {/* Admission Criteria */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Diện tuyển sinh</label>
+                  <input
+                    type="text"
+                    value={formState.admissionCriteria}
+                    onChange={(e) => setFormState({ ...formState, admissionCriteria: e.target.value })}
+                    placeholder="VD: Diện xét học bạ"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
+                  />
+                </div>
+
+                {/* Admission campus */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Cơ sở tuyển sinh</label>
+                  <input
+                    type="text"
+                    value={formState.admissionCampus}
+                    onChange={(e) => setFormState({ ...formState, admissionCampus: e.target.value })}
+                    placeholder="VD: Sky-Line Riverside"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
+                  />
+                </div>
+
+                {/* Admission Result */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Kết quả duyệt tuyển sinh</label>
+                  <select
+                    value={formState.admissionResult}
+                    onChange={(e) => setFormState({ ...formState, admissionResult: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer"
+                  >
+                    <option value="">Chưa duyệt / Khác</option>
+                    <option value="Đạt">Đạt</option>
+                    <option value="Đạt cam kết">Đạt cam kết</option>
+                    <option value="Học thử">Học thử</option>
+                    <option value="Không đạt">Không đạt</option>
+                    <option value="Không đạt - Kiểm tra lại">Không đạt - Kiểm tra lại</option>
+                    <option value="Không đạt - Không kiểm tra lại">Không đạt - Không kiểm tra lại</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Preschool Specific comments fields in Form */}
+              {activeTab === "preschool" && (
+                <div className="border-t border-slate-100 pt-4 space-y-3">
+                  <h4 className="text-xs font-extrabold text-indigo-600 uppercase tracking-wider">Đánh giá ban đầu (Không bắt buộc)</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Nhận xét chuyên môn</label>
+                      <textarea
+                        value={formState.devProfessionalComment}
+                        onChange={(e) => setFormState({ ...formState, devProfessionalComment: e.target.value })}
+                        rows={2}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none resize-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Nhận xét tâm lý</label>
+                      <textarea
+                        value={formState.devPsychologyComment}
+                        onChange={(e) => setFormState({ ...formState, devPsychologyComment: e.target.value })}
+                        rows={2}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none resize-none"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Ghi chú quan trọng</label>
+                    <input
+                      type="text"
+                      value={formState.devImportantNote}
+                      onChange={(e) => setFormState({ ...formState, devImportantNote: e.target.value })}
+                      placeholder="VD: Bé còn rụt rè, khó hòa nhập"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Director note & Signature */}
+              <div className="border-t border-slate-100 pt-4 space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Ý kiến chỉ đạo / Ghi chú của Giám đốc</label>
+                  <textarea
+                    value={formState.directorNote}
+                    onChange={(e) => setFormState({ ...formState, directorNote: e.target.value })}
+                    rows={2}
+                    placeholder="Ghi ý kiến chỉ đạo tuyển sinh..."
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Giám đốc ký tên</label>
+                  <input
+                    type="text"
+                    value={formState.signatureName}
+                    onChange={(e) => setFormState({ ...formState, signatureName: e.target.value })}
+                    placeholder="Tên Giám đốc duyệt"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsFormOpen(false)}
+                  className="px-5 py-2.5 text-slate-600 font-bold hover:bg-slate-100 rounded-xl transition-all"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 bg-[#00A6A9] hover:bg-[#008c85] text-white rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95 cursor-pointer"
+                >
+                  Lưu thông tin
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Dialog Form: Import Excel */}
+      {isImportOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col animate-in zoom-in-95 duration-200">
+            <div className="p-6 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-black text-slate-800">Nhập học sinh từ Excel</h3>
+                <p className="text-xs text-slate-400 font-bold uppercase mt-0.5 tracking-wider">
+                  Phân hệ {activeTab === "general" ? "Phổ thông K-12" : "Mầm non"}
+                </p>
+              </div>
+              <button
+                onClick={() => setIsImportOpen(false)}
+                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {/* Target Period selection */}
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Kỳ khảo sát nhập vào *</label>
+                <select
+                  value={importPeriodId}
+                  onChange={(e) => setImportPeriodId(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
+                >
+                  {activePeriodsList.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Target Batch selection */}
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Đợt khảo sát nhập vào</label>
+                <select
+                  value={importBatchId}
+                  onChange={(e) => setImportBatchId(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
+                >
+                  <option value="">Không phân đợt</option>
+                  {activeImportBatches.map((b: any) => (
+                    <option key={b.id} value={b.id}>{b.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Download template */}
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between">
+                <div className="text-xs font-medium text-slate-500">
+                  Tải file Excel mẫu đúng định dạng chuẩn để nhập dữ liệu.
+                </div>
+                <button
+                  onClick={handleDownloadTemplate}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Mẫu file
+                </button>
+              </div>
+
+              {/* Show Status */}
+              {importing && (
+                <div className="flex items-center justify-center gap-3 p-4 bg-blue-50 text-blue-700 border border-blue-150 rounded-2xl">
+                  <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="text-xs font-bold">Đang xử lý dữ liệu và tải lên hệ thống...</span>
+                </div>
+              )}
+
+              {importError && (
+                <div className="p-4 bg-rose-50 text-rose-800 border border-rose-200 rounded-2xl text-xs font-semibold">
+                  Lỗi: {importError}
+                </div>
+              )}
+
+              {importSuccessCount !== null && (
+                <div className="p-4 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-2xl text-xs font-semibold">
+                  Đã import thành công {importSuccessCount} học sinh vào hệ thống!
+                </div>
+              )}
+
+              <input
+                type="file"
+                ref={importInputRef}
+                accept=".xlsx"
+                className="hidden"
+                onChange={handleImportExcel}
+              />
+
+              {/* Footer buttons */}
+              <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
+                <button
+                  type="button"
+                  disabled={importing}
+                  onClick={() => setIsImportOpen(false)}
+                  className="px-5 py-2.5 text-slate-655 font-bold hover:bg-slate-100 rounded-xl transition-all disabled:opacity-50"
+                >
+                  Đóng
+                </button>
+                <button
+                  type="button"
+                  disabled={importing || !importPeriodId}
+                  onClick={() => importInputRef.current?.click()}
+                  className="flex items-center gap-1.5 px-5 py-2.5 bg-[#00A6A9] hover:bg-[#008c85] text-white rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                >
+                  <Upload className="w-4 h-4" />
+                  Chọn file tải lên
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Details Dialog Modal */}
-      {isModalOpen && selectedStudent && (
+      {isDetailsOpen && selectedStudent && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-50 p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl w-full max-w-4xl max-h-[85vh] overflow-hidden shadow-2xl flex flex-col animate-in slide-in-from-bottom-4 duration-300">
             {/* Modal Header */}
@@ -481,12 +1385,24 @@ export function StudentInfoClient({
                   <span className="text-slate-400 font-mono text-sm font-bold">({selectedStudent.studentCode})</span>
                 </h3>
               </div>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex gap-2 items-center">
+                <button
+                  onClick={() => {
+                    setIsDetailsOpen(false);
+                    openEditModal(selectedStudent);
+                  }}
+                  className="p-2 text-slate-400 hover:text-[#00A6A9] hover:bg-slate-100 rounded-xl transition-all"
+                  title="Chỉnh sửa"
+                >
+                  <Edit2 className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setIsDetailsOpen(false)}
+                  className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             {/* Modal Body */}
@@ -707,7 +1623,7 @@ export function StudentInfoClient({
             {/* Modal Footer */}
             <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
               <button
-                onClick={() => setIsModalOpen(false)}
+                onClick={() => setIsDetailsOpen(false)}
                 className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-bold transition-all shadow-sm"
               >
                 Đóng thông tin
