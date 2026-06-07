@@ -814,6 +814,21 @@ export function StudentInfoClient({
             <Plus className="w-4 h-4" />
             {activeTab === "general" ? "Thêm mới" : "Thêm bé"}
           </button>
+          <button
+            onClick={() => {
+              if (activePeriodsList.length === 0) {
+                return showNotification("Năm học này chưa có kỳ khảo sát để import học sinh", "err");
+              }
+              setImportPeriodId(activePeriodsList[0].id);
+              setImportError(null);
+              setImportSuccessCount(null);
+              setIsImportOpen(true);
+            }}
+            className="flex items-center gap-1.5 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl text-xs font-bold border border-indigo-200 shadow-sm transition-all active:scale-95 cursor-pointer"
+          >
+            <Upload className="w-4 h-4" />
+            Nhập Excel
+          </button>
 
           <button
             onClick={handleExportExcel}
