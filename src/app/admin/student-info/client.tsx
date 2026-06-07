@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, Fragment } from "react";
 import { 
   Search, 
   X, 
@@ -58,6 +58,9 @@ export function StudentInfoClient({
   const [selectedStudent, setSelectedStudent] = useState<any | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
+  // Multi-select state
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
   // Add/Edit student modal states
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<"create" | "edit">("create");
@@ -66,7 +69,7 @@ export function StudentInfoClient({
     studentCode: "",
     fullName: "",
     dateOfBirth: "",
-    gender: "MALE",
+    gender: "Nam",
     grade: "",
     className: "",
     periodId: "",
@@ -77,6 +80,14 @@ export function StudentInfoClient({
     admissionResult: "",
     directorNote: "",
     signatureName: "",
+    // K-12 specific
+    surveyFormType: "",
+    kqHocTap: "",
+    kqRenLuyen: "",
+    hoSoCtQuocTe: "",
+    hocKy: "",
+    targetType: "",
+    kqgdTieuHoc: "",
     // Preschool assessment specifics
     devProfessionalComment: "",
     devPsychologyComment: "",
@@ -109,6 +120,7 @@ export function StudentInfoClient({
     setSelectedBatch("");
     setSelectedResult("");
     setSelectedGrade("");
+    setSelectedIds([]);
     setCurrentPage(1);
   };
 
@@ -160,6 +172,11 @@ export function StudentInfoClient({
       return true;
     });
   }, [currentDataset, searchQuery, selectedPeriod, selectedBatch, selectedResult, selectedGrade]);
+
+  // Reset selected checkboxes if filtered dataset changes
+  useEffect(() => {
+    setSelectedIds([]);
+  }, [filteredStudents]);
 
   // Statistics
   const statistics = useMemo(() => {
@@ -247,7 +264,7 @@ export function StudentInfoClient({
       studentCode: "",
       fullName: "",
       dateOfBirth: "",
-      gender: "MALE",
+      gender: "Nam",
       grade: activeTab === "general" ? "1" : "Mầm",
       className: "",
       periodId: defaultPeriodId,
@@ -258,6 +275,13 @@ export function StudentInfoClient({
       admissionResult: "",
       directorNote: "",
       signatureName: "",
+      surveyFormType: "",
+      kqHocTap: "",
+      kqRenLuyen: "",
+      hoSoCtQuocTe: "",
+      hocKy: "",
+      targetType: "",
+      kqgdTieuHoc: "",
       devProfessionalComment: "",
       devPsychologyComment: "",
       devImportantNote: "",
@@ -284,7 +308,7 @@ export function StudentInfoClient({
       studentCode: student.studentCode || "",
       fullName: student.fullName || "",
       dateOfBirth: formattedDob,
-      gender: student.gender || "MALE",
+      gender: student.gender || "Nam",
       grade: student.grade || "",
       className: student.className || "",
       periodId: student.periodId || "",
@@ -295,6 +319,13 @@ export function StudentInfoClient({
       admissionResult: student.admissionResult || "",
       directorNote: student.directorNote || "",
       signatureName: student.signatureName || "",
+      surveyFormType: student.surveyFormType || "",
+      kqHocTap: student.kqHocTap || "",
+      kqRenLuyen: student.kqRenLuyen || "",
+      hoSoCtQuocTe: student.hoSoCtQuocTe || "",
+      hocKy: student.hocKy || "",
+      targetType: student.targetType || "",
+      kqgdTieuHoc: student.kqgdTieuHoc || "",
       devProfessionalComment: student.devProfessionalComment || "",
       devPsychologyComment: student.devPsychologyComment || "",
       devImportantNote: student.devImportantNote || "",
@@ -360,6 +391,29 @@ export function StudentInfoClient({
     }
   };
 
+  // Bulk Delete
+  const handleDeleteSelected = async () => {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`Bạn có chắc chắn muốn xóa ${selectedIds.length} học sinh đã chọn khỏi hệ thống?`)) return;
+
+    const endpoint = activeTab === "general"
+      ? `/api/input-assessment-students?ids=${selectedIds.join(",")}`
+      : `/api/preschool-input-assessment-students?ids=${selectedIds.join(",")}`;
+
+    try {
+      const res = await fetch(endpoint, { method: "DELETE" });
+      if (res.ok) {
+        showNotification(`Đã xóa thành công ${selectedIds.length} học sinh!`);
+        setSelectedIds([]);
+        setTimeout(() => window.location.reload(), 1000);
+      } else {
+        showNotification("Lỗi khi thực hiện xóa nhiều dòng", "err");
+      }
+    } catch (e) {
+      showNotification("Lỗi kết nối", "err");
+    }
+  };
+
   // Export filtered students list to Excel
   const handleExportExcel = () => {
     if (filteredStudents.length === 0) return showNotification("Không có dữ liệu trong bộ lọc để xuất", "err");
@@ -369,7 +423,7 @@ export function StudentInfoClient({
         "Mã học sinh": s.studentCode || "",
         "Họ và tên": s.fullName || "",
         "Ngày sinh": formatDate(s.dateOfBirth),
-        "Giới tính": s.gender === "MALE" || s.gender === "Nam" ? "Nam" : "Nữ",
+        "Giới tính": s.gender || "",
         "Kỳ khảo sát": s.period?.name || "",
         "Đợt khảo sát": s.batch?.name || "",
         "Kết quả duyệt": s.admissionResult || "Chưa duyệt",
@@ -428,20 +482,22 @@ export function StudentInfoClient({
     if (activeTab === "general") {
       headers = [
         "Mã học sinh", "Họ và tên", "Ngày sinh (dd/mm/yyyy)", "Giới tính (Nam/Nữ)", 
-        "Khối", "Lớp dự tuyển", "Hệ đào tạo", "Diện tuyển sinh"
+        "Khối", "Lớp dự tuyển", "Hệ đào tạo", "Diện tuyển sinh", "Hệ khảo sát", 
+        "Học kỳ / Năm tuyển sinh", "Đối tượng tuyển sinh", "Học bạ tiểu học / THCS",
+        "Kết quả học tập", "Kết quả rèn luyện", "Hồ sơ chi tiết quốc tế"
       ];
       sampleData = [
-        ["HS001", "Nguyễn Văn A", "15/08/2018", "Nam", "1", "Lớp 1/1", "Hệ Chất lượng cao", "Diện xét tuyển"],
-        ["HS002", "Trần Thị B", "20/09/2012", "Nữ", "7", "Lớp 7/2", "Hệ Quốc tế", "Diện thi tuyển"]
+        ["HS001", "Nguyễn Văn A", "15/08/2018", "Nam", "1", "Lớp 1/1", "Hệ Chất lượng cao", "Diện xét tuyển", "CLC", "Kỳ I 2026", "Học sinh mới", "Đầy đủ", "Tốt", "Tốt", ""],
+        ["HS002", "Trần Thị B", "20/09/2012", "Nữ", "7", "Lớp 7/2", "Hệ Quốc tế", "Diện thi tuyển", "QT", "Kỳ I 2026", "Học sinh mới", "Đầy đủ", "Khá", "Tốt", "Bảng điểm QT"]
       ];
     } else {
       headers = [
         "Mã học sinh", "Họ và tên", "Ngày sinh (dd/mm/yyyy)", "Giới tính (Nam/Nữ)", 
-        "Khối", "Hệ đào tạo", "Diện tuyển sinh"
+        "Khối", "Hệ đào tạo", "Diện tuyển sinh", "Hệ khảo sát", "Cơ sở"
       ];
       sampleData = [
-        ["MN001", "Phạm Quốc C", "10/05/2022", "Nam", "Mầm", "Hệ Chất lượng cao", "Diện xét tuyển"],
-        ["MN002", "Hoàng Ngọc D", "05/12/2023", "Nữ", "Nhà trẻ", "Hệ Chất lượng cao", "Diện xét tuyển"]
+        ["MN001", "Phạm Quốc C", "10/05/2022", "Nam", "Mầm", "Hệ Chất lượng cao", "Diện xét tuyển", "CLC", "Sky-Line Riverside"],
+        ["MN002", "Hoàng Ngọc D", "05/12/2023", "Nữ", "Nhà trẻ", "Hệ Chất lượng cao", "Diện xét tuyển", "CLC", "Sky-Line Riverside"]
       ];
     }
 
@@ -505,15 +561,33 @@ export function StudentInfoClient({
         }
 
         // Map fields
-        const studentCode = String(findVal(row, ["mã học sinh", "mã hs", "ma hs", "ma hoc sinh", "studentcode", "student code", "mã"]) || "").trim();
+        const studentCode = String(findVal(row, ["mã học sinh", "mã bé", "mã hs", "ma hs", "ma hoc sinh", "studentcode", "student code", "mã"]) || "").trim();
         const fullName = String(findVal(row, ["họ và tên", "họ tên", "ho ten", "fullname", "full name", "tên"]) || "").trim();
-        const genderVal = String(findVal(row, ["giới tính", "gioi tinh", "gender"]) || "").trim().toLowerCase();
-        const gender = (genderVal.includes("nam") || genderVal === "male") ? "MALE" : "FEMALE";
         
-        const grade = String(findVal(row, ["khối", "khoi", "grade"]) || "").trim();
+        const genderVal = String(findVal(row, ["giới tính", "gioi tinh", "gender"]) || "").trim().toLowerCase();
+        let gender = "Nam";
+        if (genderVal.includes("nữ") || genderVal === "female" || genderVal === "f") {
+          gender = "Nữ";
+        } else if (genderVal.includes("nam") || genderVal === "male" || genderVal === "m") {
+          gender = "Nam";
+        } else if (genderVal) {
+          gender = genderVal; // Keep raw text if not clearly M/F
+        }
+        
+        const grade = String(findVal(row, ["khối", "nhóm tuổi", "khoi", "grade"]) || "").trim();
         const className = String(findVal(row, ["lớp dự tuyển", "lớp", "lop", "class"]) || "").trim();
         const surveySystem = String(findVal(row, ["hệ đào tạo", "he dao tao", "survey system", "hệ"]) || "").trim();
         const admissionCriteria = String(findVal(row, ["diện tuyển sinh", "dien tuyen sinh", "criteria"]) || "").trim();
+        const surveyFormType = String(findVal(row, ["hệ khảo sát", "he khao sat", "surveyformtype"]) || "").trim();
+        const admissionCampus = String(findVal(row, ["cơ sở", "campus", "cs"]) || "").trim();
+        
+        // K-12 specific columns
+        const hocKy = String(findVal(row, ["học kỳ / năm tuyển sinh", "học kỳ", "hoc ky", "semester"]) || "").trim();
+        const targetType = String(findVal(row, ["đối tượng tuyển sinh", "đối tượng", "doi tuong", "target type"]) || "").trim();
+        const kqgdTieuHoc = String(findVal(row, ["học bạ tiểu học / thcs", "học bạ", "hoc ba"]) || "").trim();
+        const kqHocTap = String(findVal(row, ["kết quả học tập", "kq học tập", "kq hoc tap", "học lực", "hoc luc"]) || "").trim();
+        const kqRenLuyen = String(findVal(row, ["kết quả rèn luyện", "kq rèn luyện", "kq ren luyen", "hạnh kiểm", "hanh kiem"]) || "").trim();
+        const hoSoCtQuocTe = String(findVal(row, ["hồ sơ chi tiết quốc tế", "hồ sơ quốc tế", "hồ sơ", "ho so"]) || "").trim();
 
         return {
           studentCode,
@@ -524,6 +598,14 @@ export function StudentInfoClient({
           className,
           surveySystem,
           admissionCriteria,
+          surveyFormType,
+          admissionCampus,
+          hocKy,
+          targetType,
+          kqgdTieuHoc,
+          kqHocTap,
+          kqRenLuyen,
+          hoSoCtQuocTe,
           periodId: importPeriodId,
           batchId: importBatchId || null
         };
@@ -549,7 +631,7 @@ export function StudentInfoClient({
       if (response.ok) {
         const result = await response.json();
         setImportSuccessCount(result.created || validRows.length);
-        showNotification(`Đã import thành công ${result.created || validRows.length} học sinh!`);
+        showNotification(`Đã import thành công sm${result.created || validRows.length} học sinh!`);
         setTimeout(() => window.location.reload(), 1500);
       } else {
         const err = await response.json();
@@ -645,12 +727,21 @@ export function StudentInfoClient({
 
         {/* Action Buttons */}
         <div className="flex flex-wrap items-center gap-2 pb-2 sm:pb-0">
+          {selectedIds.length > 0 && (
+            <button
+              onClick={handleDeleteSelected}
+              className="flex items-center gap-1.5 px-4 py-2 bg-rose-550 hover:bg-rose-600 text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-xl text-xs font-bold border border-rose-250 shadow-sm transition-all active:scale-95 cursor-pointer"
+            >
+              <Trash2 className="w-4 h-4" />
+              Xóa đã chọn ({selectedIds.length})
+            </button>
+          )}
           <button
             onClick={openCreateModal}
             className="flex items-center gap-1.5 px-4 py-2 bg-[#00A6A9] hover:bg-[#008c85] text-white rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            Thêm học sinh
+            {activeTab === "general" ? "Thêm mới" : "Thêm bé"}
           </button>
           <button
             onClick={() => {
@@ -665,7 +756,7 @@ export function StudentInfoClient({
             className="flex items-center gap-1.5 px-4 py-2 bg-indigo-650 hover:bg-indigo-750 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl text-xs font-bold border border-indigo-200 shadow-sm transition-all active:scale-95 cursor-pointer"
           >
             <Upload className="w-4 h-4" />
-            Import Excel
+            Nhập Excel
           </button>
           <button
             onClick={handleExportExcel}
@@ -815,101 +906,251 @@ export function StudentInfoClient({
       {/* Main Table */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left whitespace-nowrap">
-            <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-wider border-b border-slate-100">
-              <tr>
-                <th className="px-6 py-4 w-28">Mã học sinh</th>
-                <th className="px-6 py-4">Họ và tên</th>
-                <th className="px-6 py-4 w-24">Ngày sinh</th>
-                <th className="px-6 py-4 w-20">Giới tính</th>
-                <th className="px-6 py-4 w-24">{activeTab === "general" ? "Khối/Lớp dự tuyển" : "Khối dự tuyển"}</th>
-                <th className="px-6 py-4">Kỳ & Đợt khảo sát</th>
-                <th className="px-6 py-4 w-36">Kết quả duyệt</th>
-                <th className="px-6 py-4 text-center w-32">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700">
-              {paginatedStudents.length === 0 ? (
+          {activeTab === "general" ? (
+            /* Phổ thông K-12 Table (Matched style of original general assessments) */
+            <table className="w-full text-sm text-left whitespace-nowrap">
+              <thead className="bg-[#00A19A]/5 border-b border-slate-200">
                 <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center text-slate-400 font-medium">
-                    Không tìm thấy dữ liệu học sinh phù hợp.
-                  </td>
+                  <th className="px-5 py-4 w-12 text-center">
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4 rounded text-[#00A6A9] accent-[#00A6A9]"
+                      checked={filteredStudents.length > 0 && selectedIds.length === filteredStudents.length}
+                      onChange={(e) => setSelectedIds(e.target.checked ? filteredStudents.map(s => s.id) : [])}
+                    />
+                  </th>
+                  <th className="px-5 py-4 w-28 text-[10px] font-black text-slate-400 uppercase tracking-widest">Mã học sinh</th>
+                  <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Họ và tên</th>
+                  <th className="px-3 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-16">Khối</th>
+                  <th className="px-3 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-16">Giới tính</th>
+                  <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-24">Ngày sinh</th>
+                  <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-20">Hệ KS</th>
+                  <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-24">Học lực</th>
+                  <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-24">Hạnh kiểm</th>
+                  <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-28">Học bạ</th>
+                  <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Học kỳ / Năm TS</th>
+                  <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Đối tượng TS</th>
+                  <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Kết quả duyệt</th>
+                  <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-32">Thao tác</th>
                 </tr>
-              ) : (
-                paginatedStudents.map((student) => (
-                  <tr 
-                    key={student.id} 
-                    className="hover:bg-slate-50/50 transition-colors duration-150 cursor-pointer"
-                    onClick={() => {
-                      setSelectedStudent(student);
-                      setIsDetailsOpen(true);
-                    }}
-                  >
-                    <td className="px-6 py-4 font-mono font-bold text-[#00A6A9]">
-                      {student.studentCode}
-                    </td>
-                    <td className="px-6 py-4 font-semibold text-slate-800">
-                      {student.fullName}
-                    </td>
-                    <td className="px-6 py-4 text-slate-500">
-                      {formatDate(student.dateOfBirth)}
-                    </td>
-                    <td className="px-6 py-4 text-slate-500">
-                      {student.gender === "MALE" || student.gender === "Nam" ? "Nam" : "Nữ"}
-                    </td>
-                    <td className="px-6 py-4 font-medium">
-                      {activeTab === "general" ? (
-                        student.className ? `${student.className} (Khối ${student.grade || "-"})` : `Khối ${student.grade || "-"}`
-                      ) : (
-                        `Khối ${student.grade || "-"}`
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-slate-800 font-medium text-xs">
-                        {student.period?.name || "-"}
-                      </div>
-                      <div className="text-slate-400 text-[10px] uppercase font-bold mt-0.5">
-                        {student.batch?.name || "-"}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold inline-block border ${getResultBadgeClass(student.admissionResult)}`}>
-                        {student.admissionResult || "Chưa duyệt"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex justify-center items-center gap-1.5">
-                        <button
-                          onClick={() => {
-                            setSelectedStudent(student);
-                            setIsDetailsOpen(true);
-                          }}
-                          className="p-1.5 text-slate-400 hover:text-[#00A6A9] hover:bg-slate-100 rounded-lg transition-all"
-                          title="Xem chi tiết"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => openEditModal(student)}
-                          className="p-1.5 text-slate-400 hover:text-[#00A6A9] hover:bg-slate-100 rounded-lg transition-all"
-                          title="Chỉnh sửa"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={(e) => handleDeleteStudent(student, e)}
-                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
-                          title="Xóa học sinh"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-slate-700">
+                {paginatedStudents.length === 0 ? (
+                  <tr>
+                    <td colSpan={14} className="px-6 py-12 text-center text-slate-400 font-medium">
+                      Không tìm thấy dữ liệu học sinh phù hợp.
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  paginatedStudents.map((s, idx) => (
+                    <tr 
+                      key={s.id} 
+                      className={`group hover:bg-slate-50 transition-colors cursor-pointer ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}
+                      onClick={() => {
+                        setSelectedStudent(s);
+                        setIsDetailsOpen(true);
+                      }}
+                    >
+                      <td className="px-5 py-3.5 text-center" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          className="w-4 h-4 rounded text-[#00A6A9] accent-[#00A6A9]"
+                          checked={selectedIds.includes(s.id)}
+                          onChange={(e) => setSelectedIds(prev => e.target.checked ? [...prev, s.id] : prev.filter(id => id !== s.id))}
+                        />
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <span className="font-mono text-xs font-black text-[#00A19A] bg-[#00A19A]/10 border border-[#00A19A]/20 px-2.5 py-1 rounded-md">
+                          {s.studentCode}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold text-slate-800">{s.fullName}</span>
+                          <span className="text-[10px] font-semibold text-slate-400 mt-0.5">{s.surveySystem || "Chưa xếp hệ"}</span>
+                        </div>
+                      </td>
+                      <td className="px-3 py-3.5 text-center text-xs font-bold text-slate-500 bg-slate-50/50 group-hover:bg-transparent">
+                        {s.grade}
+                      </td>
+                      <td className="px-3 py-3.5 text-center text-xs font-bold text-slate-500">
+                        {s.gender || "-"}
+                      </td>
+                      <td className="px-4 py-3.5 text-center">
+                        <span className="text-xs font-semibold text-slate-655">{formatDate(s.dateOfBirth)}</span>
+                      </td>
+                      <td className="px-4 py-3.5 text-center">
+                        <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-600 border border-indigo-100">
+                          {s.surveyFormType || "-"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.kqHocTap || "-"}</td>
+                      <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.kqRenLuyen || "-"}</td>
+                      <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.kqgdTieuHoc || "-"}</td>
+                      <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.hocKy || "-"}</td>
+                      <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.targetType || "-"}</td>
+                      <td className="px-4 py-3.5 text-center">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${getResultBadgeClass(s.admissionResult)}`}>
+                          {s.admissionResult || "Chưa duyệt"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 text-center" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex justify-center items-center gap-1.5">
+                          <button
+                            onClick={() => {
+                              setSelectedStudent(s);
+                              setIsDetailsOpen(true);
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-[#00A6A9] hover:bg-slate-100 rounded-lg transition-all"
+                            title="Xem chi tiết"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => openEditModal(s)}
+                            className="p-1.5 text-slate-400 hover:text-[#00A6A9] hover:bg-slate-100 rounded-lg transition-all"
+                            title="Chỉnh sửa"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={(e) => handleDeleteStudent(s, e)}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                            title="Xóa học sinh"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          ) : (
+            /* Mầm non Preschool Table (Matched style of original preschool Ds Trẻ) */
+            <table className="w-full text-left text-sm whitespace-nowrap border-collapse">
+              <thead className="bg-[#00A19A]/5 border-b border-slate-300">
+                <tr>
+                  <th className="p-4 w-12 text-center">
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4 rounded accent-[#00A19A]"
+                      checked={filteredStudents.length > 0 && selectedIds.length === filteredStudents.length}
+                      onChange={(e) => setSelectedIds(e.target.checked ? filteredStudents.map(c => c.id) : [])}
+                    />
+                  </th>
+                  <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-14">STT</th>
+                  <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-28">Mã bé</th>
+                  <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Họ và tên</th>
+                  <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-24">Ngày sinh</th>
+                  <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-24">Giới tính</th>
+                  <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-28">Nhóm tuổi</th>
+                  <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-36">Cơ sở</th>
+                  <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-36">Kết quả</th>
+                  <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-32 text-center">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-teal-50">
+                {paginatedStudents.length === 0 ? (
+                  <tr>
+                    <td colSpan={10} className="p-12 text-center text-slate-400 font-medium">
+                      Không tìm thấy dữ liệu học sinh phù hợp.
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedStudents.map((child, i) => (
+                    <tr 
+                      key={child.id} 
+                      className={`hover:bg-[#00A19A]/5/30 transition-colors cursor-pointer ${selectedIds.includes(child.id) ? "bg-[#00A19A]/5/50" : ""}`}
+                      onClick={() => {
+                        setSelectedStudent(child);
+                        setIsDetailsOpen(true);
+                      }}
+                    >
+                      <td className="p-4 text-center" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          className="w-4 h-4 rounded accent-[#00A19A]"
+                          checked={selectedIds.includes(child.id)}
+                          onChange={(e) => setSelectedIds(prev => e.target.checked ? [...prev, child.id] : prev.filter(id => id !== child.id))}
+                        />
+                      </td>
+                      <td className="p-4 text-slate-400 text-sm">{(currentPage - 1) * pageSize + i + 1}</td>
+                      <td className="p-4">
+                        <span className="font-mono text-xs font-black text-[#00A19A] bg-[#00A19A]/5 px-2 py-1 rounded-none">
+                          {child.studentCode}
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-500 to-fuchsia-400 flex items-center justify-center text-white font-black text-xs shadow-none">
+                            {child.fullName?.charAt(0)}
+                          </div>
+                          <span className="font-bold text-slate-800 text-sm">{child.fullName}</span>
+                        </div>
+                      </td>
+                      <td className="p-4 text-sm text-slate-500">
+                        {formatDate(child.dateOfBirth)}
+                      </td>
+                      <td className="p-4">
+                        {child.gender ? (
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-none border ${child.gender === "Nữ" || child.gender === "F" || child.gender === "FEMALE" ? "bg-teal-50 text-[#00A19A] border-teal-200" : "bg-blue-50 text-blue-700 border-blue-200"}`}>
+                            {child.gender === "MALE" || child.gender === "Nam" || child.gender === "M" ? "Nam" : "Nữ"}
+                          </span>
+                        ) : (
+                          <span className="text-slate-300">—</span>
+                        )}
+                      </td>
+                      <td className="p-4">
+                        <span className="text-xs font-bold text-purple-700 bg-[#00A19A]/5 px-2 py-1 rounded-none border border-slate-300">
+                          {child.grade || "—"}
+                        </span>
+                      </td>
+                      <td className="p-4 text-xs font-semibold text-slate-600">
+                        {child.admissionCampus || "—"}
+                      </td>
+                      <td className="p-4">
+                        {child.admissionResult ? (
+                          <span className={`text-[10px] font-black px-2.5 py-1 rounded-none border ${child.admissionResult === "Học thử" ? "bg-[#00A19A]/5 text-[#00A19A] border-[#00A19A]/30" : child.admissionResult.toUpperCase().includes("ĐẠT") && !child.admissionResult.toUpperCase().includes("KHÔNG") ? "bg-emerald-50 text-emerald-800 border-emerald-300" : child.admissionResult.toUpperCase().includes("KHÔNG") ? "bg-rose-50 text-rose-800 border-rose-300" : "bg-amber-50 text-amber-800 border-amber-300"}`}>
+                            {child.admissionResult}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-slate-300">Chưa</span>
+                        )}
+                      </td>
+                      <td className="p-4 text-center" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex justify-center gap-1">
+                          <button
+                            onClick={() => {
+                              setSelectedStudent(child);
+                              setIsDetailsOpen(true);
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-[#00A6A9] hover:bg-slate-100 rounded-lg transition-all"
+                            title="Xem chi tiết"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => openEditModal(child)}
+                            className="p-2 text-slate-300 hover:text-[#00A19A] hover:bg-[#00A19A]/5 rounded-none transition-all"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={(e) => handleDeleteStudent(child, e)}
+                            className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-none transition-all"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          )}
         </div>
 
         {/* Pagination Controls */}
@@ -969,7 +1210,7 @@ export function StudentInfoClient({
             <div className="p-6 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
               <div>
                 <h3 className="text-lg font-black text-slate-800">
-                  {formMode === "create" ? "Thêm mới học sinh" : "Chỉnh sửa thông tin học sinh"}
+                  {formMode === "create" ? (activeTab === "general" ? "Thêm mới học sinh" : "Thêm bé") : "Chỉnh sửa thông tin học sinh"}
                 </h3>
                 <p className="text-xs text-slate-400 font-semibold uppercase mt-0.5 tracking-wider">
                   {activeTab === "general" ? "Phân hệ Phổ thông" : "Phân hệ Mầm non"} - Năm học {activeYearName}
@@ -1042,14 +1283,16 @@ export function StudentInfoClient({
                     onChange={(e) => setFormState({ ...formState, gender: e.target.value })}
                     className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer"
                   >
-                    <option value="MALE">Nam</option>
-                    <option value="FEMALE">Nữ</option>
+                    <option value="Nam">Nam</option>
+                    <option value="Nữ">Nữ</option>
                   </select>
                 </div>
 
                 {/* Grade */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Khối học</label>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+                    {activeTab === "general" ? "Khối học" : "Nhóm tuổi"}
+                  </label>
                   {activeTab === "general" ? (
                     <select
                       value={formState.grade}
@@ -1094,7 +1337,7 @@ export function StudentInfoClient({
                     required
                     value={formState.periodId}
                     onChange={(e) => setFormState({ ...formState, periodId: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
                   >
                     <option value="">Chọn Kỳ khảo sát</option>
                     {activePeriodsList.map((p) => (
@@ -1160,7 +1403,7 @@ export function StudentInfoClient({
                   <select
                     value={formState.admissionResult}
                     onChange={(e) => setFormState({ ...formState, admissionResult: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
                   >
                     <option value="">Chưa duyệt / Khác</option>
                     <option value="Đạt">Đạt</option>
@@ -1171,12 +1414,88 @@ export function StudentInfoClient({
                     <option value="Không đạt - Không kiểm tra lại">Không đạt - Không kiểm tra lại</option>
                   </select>
                 </div>
+
+                {/* K-12 specific additional fields */}
+                {activeTab === "general" && (
+                  <Fragment>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Hệ khảo sát</label>
+                      <input
+                        type="text"
+                        value={formState.surveyFormType}
+                        onChange={(e) => setFormState({ ...formState, surveyFormType: e.target.value })}
+                        placeholder="VD: CLC hoặc QT"
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Học kỳ / Năm tuyển sinh</label>
+                      <input
+                        type="text"
+                        value={formState.hocKy}
+                        onChange={(e) => setFormState({ ...formState, hocKy: e.target.value })}
+                        placeholder="VD: Kỳ I 2026"
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Đối tượng tuyển sinh</label>
+                      <input
+                        type="text"
+                        value={formState.targetType}
+                        onChange={(e) => setFormState({ ...formState, targetType: e.target.value })}
+                        placeholder="VD: Học sinh mới"
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Học bạ tiểu học / THCS</label>
+                      <input
+                        type="text"
+                        value={formState.kqgdTieuHoc}
+                        onChange={(e) => setFormState({ ...formState, kqgdTieuHoc: e.target.value })}
+                        placeholder="VD: Đạt / Đầy đủ"
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Kết quả học tập (xếp loại)</label>
+                      <input
+                        type="text"
+                        value={formState.kqHocTap}
+                        onChange={(e) => setFormState({ ...formState, kqHocTap: e.target.value })}
+                        placeholder="VD: Tốt / Khá"
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Kết quả rèn luyện (xếp loại)</label>
+                      <input
+                        type="text"
+                        value={formState.kqRenLuyen}
+                        onChange={(e) => setFormState({ ...formState, kqRenLuyen: e.target.value })}
+                        placeholder="VD: Tốt"
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Hồ sơ chi tiết quốc tế</label>
+                      <input
+                        type="text"
+                        value={formState.hoSoCtQuocTe}
+                        onChange={(e) => setFormState({ ...formState, hoSoCtQuocTe: e.target.value })}
+                        placeholder="Nhập ghi chú hồ sơ..."
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
+                      />
+                    </div>
+                  </Fragment>
+                )}
               </div>
 
               {/* Preschool Specific comments fields in Form */}
               {activeTab === "preschool" && (
                 <div className="border-t border-slate-100 pt-4 space-y-3">
-                  <h4 className="text-xs font-extrabold text-indigo-600 uppercase tracking-wider">Đánh giá ban đầu (Không bắt buộc)</h4>
+                  <h4 className="text-xs font-extrabold text-indigo-600 uppercase tracking-wider">Đánh giá phát triển mầm non (Không bắt buộc)</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Nhận xét chuyên môn</label>
@@ -1207,6 +1526,16 @@ export function StudentInfoClient({
                       className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
                     />
                   </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Đánh giá chung</label>
+                    <input
+                      type="text"
+                      value={formState.devAssessmentResult}
+                      onChange={(e) => setFormState({ ...formState, devAssessmentResult: e.target.value })}
+                      placeholder="VD: Đạt khảo sát"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
+                    />
+                  </div>
                 </div>
               )}
 
@@ -1223,12 +1552,12 @@ export function StudentInfoClient({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Giám đốc ký tên</label>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Giám đốc tuyển sinh ký duyệt</label>
                   <input
                     type="text"
                     value={formState.signatureName}
                     onChange={(e) => setFormState({ ...formState, signatureName: e.target.value })}
-                    placeholder="Tên Giám đốc duyệt"
+                    placeholder="Họ tên Giám đốc tuyển sinh"
                     className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
                   />
                 </div>
@@ -1421,7 +1750,7 @@ export function StudentInfoClient({
                   <div>
                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Giới tính</label>
                     <span className="text-sm font-semibold text-slate-700 mt-0.5 block">
-                      {selectedStudent.gender === "MALE" || selectedStudent.gender === "Nam" ? "Nam" : "Nữ"}
+                      {selectedStudent.gender || "—"}
                     </span>
                   </div>
                   <div>
@@ -1508,10 +1837,14 @@ export function StudentInfoClient({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                     <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
                       <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Học bạ tiểu học / THCS</label>
                       <span className="text-sm text-slate-600 mt-1 block">{selectedStudent.kqgdTieuHoc || "-"}</span>
+                    </div>
+                    <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kết quả rèn luyện</label>
+                      <span className="text-sm text-slate-600 mt-1 block">{selectedStudent.kqRenLuyen || "-"}</span>
                     </div>
                     <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
                       <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Hồ sơ chi tiết quốc tế</label>
