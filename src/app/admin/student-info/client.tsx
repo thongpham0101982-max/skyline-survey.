@@ -495,46 +495,50 @@ export function StudentInfoClient({
     }
   };
 
-  // Export filtered students list to Excel
+  // Export filtered students list to Excel aligned with forms 100%
   const handleExportExcel = () => {
     if (filteredStudents.length === 0) return showNotification("Không có dữ liệu trong bộ lọc để xuất", "err");
 
     const dataToExport = filteredStudents.map((s) => {
-      const basic = {
-        "Mã học sinh": s.studentCode || "",
-        "Họ và tên": s.fullName || "",
-        "Ngày sinh": formatDate(s.dateOfBirth),
-        "Giới tính": s.gender || "",
-        "Kỳ khảo sát": s.period?.name || "",
-        "Đợt khảo sát": s.batch?.name || "",
-        "Kết quả duyệt": s.admissionResult || "Chưa duyệt",
-        "Hệ đào tạo": s.surveySystem || "",
-        "Cơ sở dự tuyển": s.admissionCampus || "",
-        "Ghi chú tuyển sinh": s.directorNote || "",
-      };
-
       if (activeTab === "general") {
         return {
-          ...basic,
-          "Khối học": s.grade || "",
-          "Lớp dự tuyển": s.className || "",
-          "Diện tuyển sinh": s.admissionCriteria || "",
-          "Học lực": s.kqHocTap || "",
-          "Hạnh kiểm": s.kqRenLuyen || "",
-          "Học bạ": s.kqgdTieuHoc || "",
-          "Hệ Khảo sát": s.surveyFormType || "",
-          "Hồ sơ / Bảng điểm": s.hoSoCtQuocTe || "",
+          "Mã HS KS": s.studentCode || "",
+          "Họ và Tên": s.fullName || "",
+          "Ngày sinh": formatDate(s.dateOfBirth),
+          "Giới tính": s.gender || "",
+          "Khối": s.grade || "",
+          "Học kỳ / Năm TS": s.hocKy || "",
+          "Hồ sơ/Bảng điểm": s.hoSoCtQuocTe || "",
+          "Kỳ khảo sát": s.period?.name || "",
+          "Đợt khảo sát": s.batch?.name || "",
           "Đối tượng Tuyển sinh": s.targetType || "",
+          "Diện Khảo sát": s.admissionCriteria || "",
+          "Hình thức KS": s.surveySystem || "",
+          "Kết quả Học tập": s.kqHocTap || "",
+          "Kết quả Rèn luyện": s.kqRenLuyen || "",
+          "Hệ Khảo sát": s.surveyFormType || "",
+          "Ý kiến chỉ đạo / Ghi chú của Giám đốc": s.directorNote || "",
+          "Kết quả xét duyệt tuyển sinh": s.admissionResult || "",
+          "Giám đốc tuyển sinh ký duyệt": s.signatureName || "",
         };
       } else {
         return {
-          ...basic,
+          "Mã bé": s.studentCode || "",
+          "Họ và tên": s.fullName || "",
+          "Ngày sinh": formatDate(s.dateOfBirth),
+          "Giới tính": s.gender || "",
           "Nhóm tuổi": s.grade || "",
-          "Hệ khảo sát": s.surveyFormType || "",
-          "Đánh giá chuyên môn": s.devProfessionalComment || "",
-          "Đánh giá tâm lý": s.devPsychologyComment || "",
+          "Cơ sở": s.admissionCampus || "",
+          "Kỳ khảo sát": s.period?.name || "",
+          "Đợt KS": s.batch?.name || "",
+          "Hệ KS": s.surveyFormType || "",
+          "Nhận xét chuyên môn": s.devProfessionalComment || "",
+          "Nhận xét tâm lý": s.devPsychologyComment || "",
           "Ghi chú quan trọng": s.devImportantNote || "",
-          "Nhận xét chung": s.devAssessmentResult || "",
+          "Đánh giá chung": s.devAssessmentResult || "",
+          "Ý kiến chỉ đạo / Ghi chú của Giám đốc": s.directorNote || "",
+          "Kết quả xét duyệt tuyển sinh": s.admissionResult || "",
+          "Giám đốc tuyển sinh ký duyệt": s.signatureName || "",
         };
       }
     });
