@@ -557,15 +557,15 @@ export function StudentInfoClient({
       ws = XLSX.utils.json_to_sheet([
         { 
           "Mã HS KS": "", 
-          "Họ và Tên *": "Nguyễn Văn A", 
+          "Họ và Tên": "Nguyễn Văn A", 
           "Ngày sinh": "20/05/2010",
           "Giới tính": "Nam",
           "Khối": "6",
           "Học kỳ / Năm TS": "HK1",
           "Hệ Khảo sát": "",
-          "Hồ sơ / Bảng điểm": "",
+          "Hồ sơ/Bảng điểm": "",
           "Đối tượng Tuyển sinh": "",
-          "Diện khảo sát": "",
+          "Diện Khảo sát": "",
           "Hình thức KS": "",
           "Kết quả Học tập": "",
           "Kết quả Rèn luyện": ""
@@ -653,13 +653,13 @@ export function StudentInfoClient({
 
         if (activeTab === "general") {
           const studentCode = String(row["Mã HS KS"] || findVal(row, ["mã hs", "ma hs", "mã"]) || "").trim();
-          const fullName = String(row["Họ và Tên *"] || row["Họ và tên"] || findVal(row, ["họ tên", "tên", "fullname"]) || "").trim();
+          const fullName = String(row["Họ và Tên"] || row["Họ và Tên *"] || row["Họ và tên"] || findVal(row, ["họ tên", "tên", "fullname"]) || "").trim();
           const grade = String(row["Khối"] || findVal(row, ["khối", "grade"]) || "").trim();
           const hocKy = String(row["Học kỳ / Năm TS"] || findVal(row, ["học kỳ", "hoc ky"]) || "").trim();
           const surveyFormType = String(row["Hệ Khảo sát"] || findVal(row, ["hệ khảo sát", "he khao sat"]) || "").trim();
-          const hoSoCtQuocTe = String(row["Hồ sơ / Bảng điểm"] || findVal(row, ["hồ sơ", "bảng điểm"]) || "").trim();
+          const hoSoCtQuocTe = String(row["Hồ sơ/Bảng điểm"] || row["Hồ sơ / Bảng điểm"] || findVal(row, ["hồ sơ", "bảng điểm"]) || "").trim();
           const targetType = String(row["Đối tượng Tuyển sinh"] || findVal(row, ["đối tượng", "doi tuong"]) || "").trim();
-          const admissionCriteria = String(row["Diện khảo sát"] || findVal(row, ["diện", "criteria"]) || "").trim();
+          const admissionCriteria = String(row["Diện Khảo sát"] || row["Diện khảo sát"] || findVal(row, ["diện", "criteria"]) || "").trim();
           const surveySystem = String(row["Hình thức KS"] || findVal(row, ["hình thức", "hinh thuc"]) || "").trim();
           const kqHocTap = String(row["Kết quả Học tập"] || findVal(row, ["học lực", "học tập"]) || "").trim();
           const kqRenLuyen = String(row["Kết quả Rèn luyện"] || findVal(row, ["hạnh kiểm", "rèn luyện"]) || "").trim();
@@ -702,10 +702,16 @@ export function StudentInfoClient({
         }
       });
 
-      // Filter rows that don't have full names or student code
-      const validRows = mapped.filter(r => r.fullName && r.studentCode);
+      // Filter rows: General K-12 only requires full name (API will auto generate code), Preschool requires both
+      const validRows = activeTab === "general"
+        ? mapped.filter(r => r.fullName)
+        : mapped.filter(r => r.fullName && r.studentCode);
+        
       if (validRows.length === 0) {
-        throw new Error("Không có dòng dữ liệu hợp lệ (Cần có Mã học sinh và Họ & tên)");
+        const errorMsg = activeTab === "general" 
+          ? "Không có dòng dữ liệu hợp lệ (Cần có Họ và tên)" 
+          : "Không có dòng dữ liệu hợp lệ (Cần có Mã học sinh và Họ & tên)";
+        throw new Error(errorMsg);
       }
 
       const endpoint = activeTab === "general"
