@@ -495,7 +495,7 @@ export function StudentInfoClient({
     }
   };
 
-  // Export filtered students list to Excel aligned with forms 100%
+  // Export filtered students list to Excel aligned with forms 100% (without admin/approval fields)
   const handleExportExcel = () => {
     if (filteredStudents.length === 0) return showNotification("Không có dữ liệu trong bộ lọc để xuất", "err");
 
@@ -517,9 +517,6 @@ export function StudentInfoClient({
           "Kết quả Học tập": s.kqHocTap || "",
           "Kết quả Rèn luyện": s.kqRenLuyen || "",
           "Hệ Khảo sát": s.surveyFormType || "",
-          "Ý kiến chỉ đạo / Ghi chú của Giám đốc": s.directorNote || "",
-          "Kết quả xét duyệt tuyển sinh": s.admissionResult || "",
-          "Giám đốc tuyển sinh ký duyệt": s.signatureName || "",
         };
       } else {
         return {
@@ -536,9 +533,6 @@ export function StudentInfoClient({
           "Nhận xét tâm lý": s.devPsychologyComment || "",
           "Ghi chú quan trọng": s.devImportantNote || "",
           "Đánh giá chung": s.devAssessmentResult || "",
-          "Ý kiến chỉ đạo / Ghi chú của Giám đốc": s.directorNote || "",
-          "Kết quả xét duyệt tuyển sinh": s.admissionResult || "",
-          "Giám đốc tuyển sinh ký duyệt": s.signatureName || "",
         };
       }
     });
