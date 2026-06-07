@@ -32,7 +32,9 @@ interface StudentInfoClientProps {
   generalPeriods: any[];
   preschoolPeriods: any[];
   activeYearName: string;
+  activeYearId: string;
   configs: any[];
+  preschoolConfigs: any[];
   eduSystems: any[];
   campuses: any[];
   grades: string[];
@@ -46,12 +48,19 @@ export function StudentInfoClient({
   generalPeriods = [],
   preschoolPeriods = [],
   activeYearName = "",
+  activeYearId = "",
   configs = [],
+  preschoolConfigs = [],
   eduSystems = [],
   campuses = [],
   grades = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"]
 }: StudentInfoClientProps) {
   const [activeTab, setActiveTab] = useState<"general" | "preschool">("general");
+  
+  const currentEduSystems = useMemo(() => {
+    if (!activeYearId) return eduSystems;
+    return eduSystems.filter((es: any) => es.academicYearId === activeYearId);
+  }, [eduSystems, activeYearId]);
   
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState("");
@@ -1647,7 +1656,7 @@ export function StudentInfoClient({
                         className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
                       >
                         <option value="">-- Chọn Hệ KS --</option>
-                        {configs.filter(c => c.categoryType === "system").map(c => (
+                        {preschoolConfigs.filter(c => c.categoryType === "system").map(c => (
                           <option key={c.code} value={c.name}>{c.name}</option>
                         ))}
                       </select>

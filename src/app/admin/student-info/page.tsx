@@ -12,6 +12,7 @@ export default async function StudentInfoPage() {
   let preschoolPeriods = [];
   let activeYear = null;
   let configs = [];
+  let preschoolConfigs = [];
   let eduSystems = [];
   let campuses = [];
   let grades = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"];
@@ -23,6 +24,17 @@ export default async function StudentInfoPage() {
 
     if (pAny.assessmentConfig) {
       configs = await pAny.assessmentConfig.findMany({
+        orderBy: [{ categoryType: "asc" }, { sortOrder: "asc" }]
+      }).catch(() => []);
+    }
+
+    if (pAny.preschoolAssessmentConfig) {
+      preschoolConfigs = await pAny.preschoolAssessmentConfig.findMany({
+        where: {
+          categoryType: {
+            notIn: ["target", "LOAI_TUYEN_SINH", "DOI_TUONG_TS", "loai_tuyen_sinh", "doi_tuong_ts", "target_type", "TARGET_TYPE", "targetType"]
+          }
+        },
         orderBy: [{ categoryType: "asc" }, { sortOrder: "asc" }]
       }).catch(() => []);
     }
@@ -130,7 +142,9 @@ export default async function StudentInfoPage() {
         generalPeriods={safeJson(generalPeriods)}
         preschoolPeriods={safeJson(preschoolPeriods)}
         activeYearName={activeYear ? activeYear.name : ""}
+        activeYearId={activeYear ? activeYear.id : ""}
         configs={safeJson(configs)}
+        preschoolConfigs={safeJson(preschoolConfigs)}
         eduSystems={safeJson(eduSystems)}
         campuses={safeJson(campuses)}
         grades={safeJson(grades)}
