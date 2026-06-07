@@ -502,21 +502,17 @@ export function StudentInfoClient({
     const dataToExport = filteredStudents.map((s) => {
       if (activeTab === "general") {
         return {
-          "Mã HS KS": s.studentCode || "",
-          "Họ và Tên": s.fullName || "",
-          "Ngày sinh": formatDate(s.dateOfBirth),
-          "Giới tính": s.gender || "",
+          "Mã học sinh": s.studentCode || "",
+          "Họ và tên": s.fullName || "",
           "Khối": s.grade || "",
+          "Giới tính": s.gender || "",
+          "Ngày sinh": formatDate(s.dateOfBirth),
+          "Hệ KS": s.surveyFormType || "",
+          "Học lực": s.kqHocTap || "",
+          "Hạnh kiểm": s.kqRenLuyen || "",
+          "Học bạ": s.kqgdTieuHoc || "",
           "Học kỳ / Năm TS": s.hocKy || "",
-          "Hồ sơ/Bảng điểm": s.hoSoCtQuocTe || "",
-          "Kỳ khảo sát": s.period?.name || "",
-          "Đợt khảo sát": s.batch?.name || "",
-          "Đối tượng Tuyển sinh": s.targetType || "",
-          "Diện Khảo sát": s.admissionCriteria || "",
-          "Hình thức KS": s.surveySystem || "",
-          "Kết quả Học tập": s.kqHocTap || "",
-          "Kết quả Rèn luyện": s.kqRenLuyen || "",
-          "Hệ Khảo sát": s.surveyFormType || "",
+          "Đối tượng TS": s.targetType || "",
         };
       } else {
         return {
@@ -550,22 +546,20 @@ export function StudentInfoClient({
     if (activeTab === "general") {
       ws = XLSX.utils.json_to_sheet([
         { 
-          "Mã HS KS": "", 
-          "Họ và Tên": "Nguyễn Văn A", 
-          "Ngày sinh": "20/05/2010",
-          "Giới tính": "Nam",
+          "Mã học sinh": "", 
+          "Họ và tên": "Nguyễn Văn A", 
           "Khối": "6",
+          "Giới tính": "Nam",
+          "Ngày sinh": "20/05/2010",
+          "Hệ KS": "",
+          "Học lực": "",
+          "Hạnh kiểm": "",
+          "Học bạ": "",
           "Học kỳ / Năm TS": "HK1",
-          "Hệ Khảo sát": "",
-          "Hồ sơ/Bảng điểm": "",
-          "Đối tượng Tuyển sinh": "",
-          "Diện Khảo sát": "",
-          "Hình thức KS": "",
-          "Kết quả Học tập": "",
-          "Kết quả Rèn luyện": ""
+          "Đối tượng TS": ""
         }
       ]);
-      ws["!cols"] = [{ wch: 15 }, { wch: 25 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 20 }, { wch: 15 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }];
+      ws["!cols"] = [{ wch: 15 }, { wch: 25 }, { wch: 10 }, { wch: 10 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 20 }, { wch: 20 }, { wch: 20 }];
     } else {
       ws = XLSX.utils.json_to_sheet([
         { 
@@ -646,17 +640,18 @@ export function StudentInfoClient({
         }
 
         if (activeTab === "general") {
-          const studentCode = String(row["Mã HS KS"] || findVal(row, ["mã hs", "ma hs", "mã"]) || "").trim();
-          const fullName = String(row["Họ và Tên"] || row["Họ và Tên *"] || row["Họ và tên"] || findVal(row, ["họ tên", "tên", "fullname"]) || "").trim();
+          const studentCode = String(row["Mã học sinh"] || row["Mã HS KS"] || findVal(row, ["mã hs", "ma hs", "mã"]) || "").trim();
+          const fullName = String(row["Họ và tên"] || row["Họ và Tên"] || row["Họ và Tên *"] || findVal(row, ["họ tên", "tên", "fullname"]) || "").trim();
           const grade = String(row["Khối"] || findVal(row, ["khối", "grade"]) || "").trim();
           const hocKy = String(row["Học kỳ / Năm TS"] || findVal(row, ["học kỳ", "hoc ky"]) || "").trim();
-          const surveyFormType = String(row["Hệ Khảo sát"] || findVal(row, ["hệ khảo sát", "he khao sat"]) || "").trim();
-          const hoSoCtQuocTe = String(row["Hồ sơ/Bảng điểm"] || row["Hồ sơ / Bảng điểm"] || findVal(row, ["hồ sơ", "bảng điểm"]) || "").trim();
-          const targetType = String(row["Đối tượng Tuyển sinh"] || findVal(row, ["đối tượng", "doi tuong"]) || "").trim();
+          const surveyFormType = String(row["Hệ KS"] || row["Hệ Khảo sát"] || findVal(row, ["hệ khảo sát", "he khao sat"]) || "").trim();
+          const hoSoCtQuocTe = String(row["Học bạ"] || row["Hồ sơ/Bảng điểm"] || row["Hồ sơ / Bảng điểm"] || findVal(row, ["hồ sơ", "bảng điểm"]) || "").trim();
+          const kqgdTieuHoc = String(row["Học bạ"] || findVal(row, ["học bạ", "hoc ba"]) || "").trim();
+          const targetType = String(row["Đối tượng TS"] || row["Đối tượng Tuyển sinh"] || findVal(row, ["đối tượng", "doi tuong"]) || "").trim();
           const admissionCriteria = String(row["Diện Khảo sát"] || row["Diện khảo sát"] || findVal(row, ["diện", "criteria"]) || "").trim();
           const surveySystem = String(row["Hình thức KS"] || findVal(row, ["hình thức", "hinh thuc"]) || "").trim();
-          const kqHocTap = String(row["Kết quả Học tập"] || findVal(row, ["học lực", "học tập"]) || "").trim();
-          const kqRenLuyen = String(row["Kết quả Rèn luyện"] || findVal(row, ["hạnh kiểm", "rèn luyện"]) || "").trim();
+          const kqHocTap = String(row["Học lực"] || row["Kết quả Học tập"] || findVal(row, ["học lực", "học tập"]) || "").trim();
+          const kqRenLuyen = String(row["Hạnh kiểm"] || row["Kết quả Rèn luyện"] || findVal(row, ["hạnh kiểm", "rèn luyện"]) || "").trim();
 
           return {
             studentCode,
@@ -667,6 +662,7 @@ export function StudentInfoClient({
             hocKy,
             surveyFormType,
             hoSoCtQuocTe,
+            kqgdTieuHoc,
             targetType,
             admissionCriteria,
             surveySystem,
