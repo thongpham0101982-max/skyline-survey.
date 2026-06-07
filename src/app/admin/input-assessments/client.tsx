@@ -3279,8 +3279,7 @@ return {
             { id:"subjects",             label:"M\u00f4n KS",     tip:"M\u00f4n kh\u1ea3o s\u00e1t",        icon:BookOpen },
             { id:"mapping",              label:"C\u1ea5u h\u00ecnh",   tip:"C\u1ea5u h\u00ecnh theo Kh\u1ed1i",  icon:Layers },
             { id:"students",             label:"H\u1ecdc sinh",   tip:"DS HS kh\u1ea3o s\u00e1t",      icon:Users },
-            { id:"assignments",          label:"Ph\u00e2n c\u00f4ng",  tip:"Ph\u00e2n c\u00f4ng GV",        icon:UserCheck },
-            { id:"reports",              label:"Tổng hợp KQKS",    tip:"Tổng hợp kết quả khảo sát",    icon:BarChart3 },
+            { id:"reports",              label:"T\u1ed5ng h\u1ee3p KQKS",    tip:"T\u1ed5ng h\u1ee3p k\u1ebft qu\u1ea3 kh\u1ea3o s\u00e1t",    icon:BarChart3 },
           ].map(t => {
             const p = getTabPermissions(t.id);
             const canRead = p.canRead;

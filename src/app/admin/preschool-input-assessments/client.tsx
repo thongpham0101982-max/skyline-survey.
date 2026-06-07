@@ -2726,7 +2726,6 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             { id: "periods", label: "Kỳ KS", icon: Clock },
             { id: "categories", label: "Danh mục", icon: Settings },
             { id: "children", label: "DS Trẻ", icon: Users },
-            { id: "assignments", label: "Phân công", icon: UserCheck },
             { id: "devAssess", label: "Đánh giá PT", icon: Star },
             { id: "devCriteria", label: "Quản lý Tiêu chí & Lĩnh vực", icon: ClipboardList },
             { id: "reports", label: "Tổng hợp KQKS", icon: BarChart3 },
