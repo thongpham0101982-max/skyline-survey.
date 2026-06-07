@@ -499,9 +499,12 @@ export function StudentInfoClient({
   const handleExportExcel = () => {
     if (filteredStudents.length === 0) return showNotification("Không có dữ liệu trong bộ lọc để xuất", "err");
 
-    const dataToExport = filteredStudents.map((s) => {
+    const dataToExport = filteredStudents.map((s, index) => {
       if (activeTab === "general") {
         return {
+          "STT": index + 1,
+          "Kỳ khảo sát": s.period?.name || "",
+          "Đợt khảo sát": s.batch?.name || "",
           "Mã học sinh": s.studentCode || "",
           "Họ và tên": s.fullName || "",
           "Khối": s.grade || "",
@@ -513,22 +516,20 @@ export function StudentInfoClient({
           "Học bạ": s.kqgdTieuHoc || "",
           "Học kỳ / Năm TS": s.hocKy || "",
           "Đối tượng TS": s.targetType || "",
+          "Kết quả duyệt": s.admissionResult || "Chưa duyệt",
         };
       } else {
         return {
+          "STT": index + 1,
+          "Kỳ khảo sát": s.period?.name || "",
+          "Đợt khảo sát": s.batch?.name || "",
           "Mã bé": s.studentCode || "",
           "Họ và tên": s.fullName || "",
           "Ngày sinh": formatDate(s.dateOfBirth),
           "Giới tính": s.gender || "",
           "Nhóm tuổi": s.grade || "",
           "Cơ sở": s.admissionCampus || "",
-          "Kỳ khảo sát": s.period?.name || "",
-          "Đợt KS": s.batch?.name || "",
-          "Hệ KS": s.surveyFormType || "",
-          "Nhận xét chuyên môn": s.devProfessionalComment || "",
-          "Nhận xét tâm lý": s.devPsychologyComment || "",
-          "Ghi chú quan trọng": s.devImportantNote || "",
-          "Đánh giá chung": s.devAssessmentResult || "",
+          "Kết quả": s.admissionResult || "Chưa duyệt",
         };
       }
     });
@@ -813,21 +814,7 @@ export function StudentInfoClient({
             <Plus className="w-4 h-4" />
             {activeTab === "general" ? "Thêm mới" : "Thêm bé"}
           </button>
-          <button
-            onClick={() => {
-              if (activePeriodsList.length === 0) {
-                return showNotification("Năm học này chưa có kỳ khảo sát để import học sinh", "err");
-              }
-              setImportPeriodId(activePeriodsList[0].id);
-              setImportError(null);
-              setImportSuccessCount(null);
-              setIsImportOpen(true);
-            }}
-            className="flex items-center gap-1.5 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-605 text-indigo-600 rounded-xl text-xs font-bold border border-indigo-200 shadow-sm transition-all active:scale-95 cursor-pointer"
-          >
-            <Upload className="w-4 h-4" />
-            Nhập Excel
-          </button>
+
           <button
             onClick={handleExportExcel}
             className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold border border-slate-200 shadow-sm transition-all active:scale-95 cursor-pointer"
