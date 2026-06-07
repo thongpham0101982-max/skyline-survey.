@@ -1664,49 +1664,51 @@ export function StudentInfoClient({
                   </div>
 
                   {/* Preschool Specific Comments */}
-                  <div className="border-t border-slate-100 pt-4 space-y-3">
-                    <h4 className="text-xs font-extrabold text-indigo-650 text-indigo-600 uppercase tracking-wider">Đánh giá phát triển mầm non (Không bắt buộc)</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {formMode === "edit" && (
+                    <div className="border-t border-slate-100 pt-4 space-y-3">
+                      <h4 className="text-xs font-extrabold text-indigo-650 text-indigo-600 uppercase tracking-wider">Đánh giá phát triển mầm non (Không bắt buộc)</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Nhận xét chuyên môn</label>
+                          <textarea
+                            value={formState.devProfessionalComment}
+                            onChange={(e) => setFormState({ ...formState, devProfessionalComment: e.target.value })}
+                            rows={2}
+                            className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none resize-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Nhận xét tâm lý</label>
+                          <textarea
+                            value={formState.devPsychologyComment}
+                            onChange={(e) => setFormState({ ...formState, devPsychologyComment: e.target.value })}
+                            rows={2}
+                            className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none resize-none"
+                          />
+                        </div>
+                      </div>
                       <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Nhận xét chuyên môn</label>
-                        <textarea
-                          value={formState.devProfessionalComment}
-                          onChange={(e) => setFormState({ ...formState, devProfessionalComment: e.target.value })}
-                          rows={2}
-                          className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none resize-none"
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Ghi chú quan trọng</label>
+                        <input
+                          type="text"
+                          value={formState.devImportantNote}
+                          onChange={(e) => setFormState({ ...formState, devImportantNote: e.target.value })}
+                          placeholder="VD: Bé còn rụt rè, khó hòa nhập"
+                          className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Nhận xét tâm lý</label>
-                        <textarea
-                          value={formState.devPsychologyComment}
-                          onChange={(e) => setFormState({ ...formState, devPsychologyComment: e.target.value })}
-                          rows={2}
-                          className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none resize-none"
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Đánh giá chung</label>
+                        <input
+                          type="text"
+                          value={formState.devAssessmentResult}
+                          onChange={(e) => setFormState({ ...formState, devAssessmentResult: e.target.value })}
+                          placeholder="VD: Đạt khảo sát"
+                          className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
                         />
                       </div>
                     </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Ghi chú quan trọng</label>
-                      <input
-                        type="text"
-                        value={formState.devImportantNote}
-                        onChange={(e) => setFormState({ ...formState, devImportantNote: e.target.value })}
-                        placeholder="VD: Bé còn rụt rè, khó hòa nhập"
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Đánh giá chung</label>
-                      <input
-                        type="text"
-                        value={formState.devAssessmentResult}
-                        onChange={(e) => setFormState({ ...formState, devAssessmentResult: e.target.value })}
-                        placeholder="VD: Đạt khảo sát"
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
-                      />
-                    </div>
-                  </div>
+                  )}
                 </div>
               )}
 
