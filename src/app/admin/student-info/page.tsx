@@ -11,11 +11,34 @@ export default async function StudentInfoPage() {
   let generalPeriods = [];
   let preschoolPeriods = [];
   let activeYear = null;
+  let configs = [];
+  let eduSystems = [];
+  let campuses = [];
+  let grades = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"];
 
   try {
     const pAny = prisma as any;
     activeYear = await getDefaultAcademicYear(pAny);
     const activeYearId = activeYear ? activeYear.id : null;
+
+    if (pAny.assessmentConfig) {
+      configs = await pAny.assessmentConfig.findMany({
+        orderBy: [{ categoryType: "asc" }, { sortOrder: "asc" }]
+      }).catch(() => []);
+    }
+
+    if (pAny.educationSystem) {
+      eduSystems = await pAny.educationSystem.findMany({
+        orderBy: { createdAt: "asc" }
+      }).catch(() => []);
+    }
+
+    if (pAny.campus) {
+      campuses = await pAny.campus.findMany({
+        where: { status: "ACTIVE" },
+        orderBy: { campusName: "asc" }
+      }).catch(() => []);
+    }
 
     if (activeYearId) {
       generalStudents = await pAny.inputAssessmentStudent.findMany({
@@ -55,6 +78,29 @@ export default async function StudentInfoPage() {
         include: { batches: { select: { id: true, name: true } } },
         orderBy: { name: 'asc' }
       });
+
+      if (pAny.class) {
+        const uniqueGrades = await pAny.class.findMany({
+          where: { academicYearId: activeYearId },
+          select: { grade: true },
+          distinct: ["grade"],
+          orderBy: { grade: "asc" }
+        }).catch(() => []);
+        
+        try {
+          const dbGrades = uniqueGrades.map((g: any) => g.grade).filter(Boolean);
+          if (dbGrades.length > 0) {
+            grades = dbGrades.sort((a: any, b: any) => {
+              const na = parseInt(a);
+              const nb = parseInt(b);
+              if (isNaN(na) || isNaN(nb)) return String(a).localeCompare(String(b));
+              return na - nb;
+            });
+          }
+        } catch (sortError) {
+          console.error("Sorting grades error handled:", sortError);
+        }
+      }
     }
   } catch (error) {
     console.error("Fetch Student Info Error:", error);
@@ -84,6 +130,10 @@ export default async function StudentInfoPage() {
         generalPeriods={safeJson(generalPeriods)}
         preschoolPeriods={safeJson(preschoolPeriods)}
         activeYearName={activeYear ? activeYear.name : ""}
+        configs={safeJson(configs)}
+        eduSystems={safeJson(eduSystems)}
+        campuses={safeJson(campuses)}
+        grades={safeJson(grades)}
       />
     </div>
   )
