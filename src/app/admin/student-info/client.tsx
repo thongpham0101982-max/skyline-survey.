@@ -1711,58 +1711,60 @@ export function StudentInfoClient({
               )}
 
               {/* Common approval result and notes (student info administrative actions) */}
-              <div className="border-t border-slate-100 pt-4 space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in fade-in duration-200">
-                  <div>
-                    <label className="block text-xs font-bold text-[#00A6A9] uppercase tracking-wider mb-1">Kết quả xét duyệt tuyển sinh</label>
-                    <select
-                      value={formState.admissionResult}
-                      onChange={(e) => setFormState({ ...formState, admissionResult: e.target.value })}
-                      className="w-full px-3 py-2 border border-[#00A6A9]/30 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white font-bold text-slate-700"
-                    >
-                      {activeTab === "general" ? (
-                        <Fragment>
-                          <option value="">Chưa duyệt / Khác</option>
-                          <option value="Đạt">Đạt</option>
-                          <option value="Đạt cam kết">Đạt cam kết</option>
-                          <option value="Học thử">Học thử</option>
-                          <option value="Không đạt">Không đạt</option>
-                          <option value="Không đạt - Kiểm tra lại">Không đạt - Kiểm tra lại</option>
-                          <option value="Không đạt - Không kiểm tra lại">Không đạt - Không kiểm tra lại</option>
-                        </Fragment>
-                      ) : (
-                        <Fragment>
-                          <option value="">Chưa duyệt</option>
-                          <option value="Đạt">Đạt</option>
-                          <option value="Không đạt">Không đạt</option>
-                          <option value="Học thử">Học thử</option>
-                        </Fragment>
-                      )}
-                    </select>
+              {formMode === "edit" && (
+                <div className="border-t border-slate-100 pt-4 space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in fade-in duration-200">
+                    <div>
+                      <label className="block text-xs font-bold text-[#00A6A9] uppercase tracking-wider mb-1">Kết quả xét duyệt tuyển sinh</label>
+                      <select
+                        value={formState.admissionResult}
+                        onChange={(e) => setFormState({ ...formState, admissionResult: e.target.value })}
+                        className="w-full px-3 py-2 border border-[#00A6A9]/30 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white font-bold text-slate-700"
+                      >
+                        {activeTab === "general" ? (
+                          <Fragment>
+                            <option value="">Chưa duyệt / Khác</option>
+                            <option value="Đạt">Đạt</option>
+                            <option value="Đạt cam kết">Đạt cam kết</option>
+                            <option value="Học thử">Học thử</option>
+                            <option value="Không đạt">Không đạt</option>
+                            <option value="Không đạt - Kiểm tra lại">Không đạt - Kiểm tra lại</option>
+                            <option value="Không đạt - Không kiểm tra lại">Không đạt - Không kiểm tra lại</option>
+                          </Fragment>
+                        ) : (
+                          <Fragment>
+                            <option value="">Chưa duyệt</option>
+                            <option value="Đạt">Đạt</option>
+                            <option value="Không đạt">Không đạt</option>
+                            <option value="Học thử">Học thử</option>
+                          </Fragment>
+                        )}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Giám đốc tuyển sinh ký duyệt</label>
+                      <input
+                        type="text"
+                        value={formState.signatureName}
+                        onChange={(e) => setFormState({ ...formState, signatureName: e.target.value })}
+                        placeholder="Họ tên Giám đốc tuyển sinh"
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
+                      />
+                    </div>
                   </div>
+
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Giám đốc tuyển sinh ký duyệt</label>
-                    <input
-                      type="text"
-                      value={formState.signatureName}
-                      onChange={(e) => setFormState({ ...formState, signatureName: e.target.value })}
-                      placeholder="Họ tên Giám đốc tuyển sinh"
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Ý kiến chỉ đạo / Ghi chú của Giám đốc</label>
+                    <textarea
+                      value={formState.directorNote}
+                      onChange={(e) => setFormState({ ...formState, directorNote: e.target.value })}
+                      rows={2}
+                      placeholder="Ghi ý kiến chỉ đạo tuyển sinh..."
                       className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
                     />
                   </div>
                 </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Ý kiến chỉ đạo / Ghi chú của Giám đốc</label>
-                  <textarea
-                    value={formState.directorNote}
-                    onChange={(e) => setFormState({ ...formState, directorNote: e.target.value })}
-                    rows={2}
-                    placeholder="Ghi ý kiến chỉ đạo tuyển sinh..."
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
-                  />
-                </div>
-              </div>
+              )}
 
               <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
                 <button
