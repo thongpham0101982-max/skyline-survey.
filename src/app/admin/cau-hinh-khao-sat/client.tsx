@@ -51,10 +51,18 @@ export function SurveyConfigClient({
   const router = useRouter()
   const pathname = usePathname()
 
+  const userRole = (currentUser?.role || "").toUpperCase()
+  const isAdminOrExamBoard = userRole === "ADMIN" || userRole === "KT_DBCL"
+  const isGDCSOrGiaoVu = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(userRole)
+
   // Kiểm tra quyền truy cập dựa trên permission module code và vai trò
-  const isSuperAdmin = currentUser?.role === "ADMIN"
-  const hasK12Permission = isSuperAdmin || rolePermissions.some((p: any) => p.module === "INPUT_ASSESSMENTS" && p.canRead)
-  const hasPreschoolPermission = isSuperAdmin || rolePermissions.some((p: any) => p.module === "PRESCHOOL_INPUT_ASSESSMENTS" && p.canRead)
+  const hasK12Permission = isAdminOrExamBoard || 
+                           isGDCSOrGiaoVu || 
+                           rolePermissions.some((p: any) => p.module === "INPUT_ASSESSMENTS" && p.canRead)
+
+  const hasPreschoolPermission = isAdminOrExamBoard || 
+                                 isGDCSOrGiaoVu || 
+                                 rolePermissions.some((p: any) => p.module === "PRESCHOOL_INPUT_ASSESSMENTS" && p.canRead)
 
   // Xác định tab đang hoạt động
   const paramTab = searchParams.get("tab") || initialTab
