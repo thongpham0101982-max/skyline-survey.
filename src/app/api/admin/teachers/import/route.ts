@@ -49,24 +49,30 @@ export async function POST(req: NextRequest) {
     const result = []
     for (const row of dataRows) {
       const firstCell = String(row[0] || "").trim()
-      if (firstCell.toLowerCase() === "stt" || firstCell.toLowerCase() === "ma gv" || firstCell.toLowerCase() === "mã gv") continue
+      // Skip headers
+      if (
+        firstCell.toLowerCase() === "stt" || 
+        firstCell.toLowerCase() === "ma gv" || 
+        firstCell.toLowerCase() === "mã gv" ||
+        firstCell === "1" // Skip sample row if parsed
+      ) {
+        continue
+      }
       
       const teacherCode = String(row[1] || "").trim()
       const teacherName = String(row[2] || "").trim()
-      const dateOfBirthStr = row[3];
+      const email = String(row[3] || "").trim()
       const department = String(row[4] || "").trim()
-      const mainSubject = String(row[5] || "").trim()
+      const campus = String(row[5] || "").trim()
 
       if (!teacherCode || !teacherName) continue
       
-      const dateOfBirth = parseDateString(dateOfBirthStr);
-
       result.push({
         teacherCode,
         teacherName,
-        dateOfBirth,
+        email: email || undefined,
         department: department || undefined,
-        mainSubject: mainSubject || undefined
+        campus: campus || undefined
       })
     }
 
