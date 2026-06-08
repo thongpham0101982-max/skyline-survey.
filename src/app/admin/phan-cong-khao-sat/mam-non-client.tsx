@@ -236,14 +236,14 @@ export function PhanCongMamNonClient({
     const mappings = isStage2 ? [
       { form: "18 đến 24 tháng", actual: "Nhà trẻ 18-24 tháng" },
       { form: "24 đến 36 tháng", actual: "Nhà trẻ 24-36 tháng" },
-      { form: "Mẫu giáo bé", actual: "Mẫu giáo bé" },
-      { form: "Mẫu giáo nhỡ", actual: "Mẫu giáo nhỡ" },
+      { form: "3 đến 4 tuổi", actual: "Mẫu giáo bé" },
+      { form: "4 đến 5 tuổi", actual: "Mẫu giáo nhỡ" },
       { form: "5 đến 6 tuổi", actual: "Mẫu giáo lớn" },
     ] : [
       { form: "18 đến 24 tháng", actual: "Nhà trẻ 18-24 & 24-36 tháng" },
       { form: "24 đến 36 tháng", actual: "Mẫu giáo bé" },
-      { form: "Mẫu giáo bé", actual: "Mẫu giáo nhỡ" },
-      { form: "Mẫu giáo nhỡ", actual: "Mẫu giáo lớn" },
+      { form: "3 đến 4 tuổi", actual: "Mẫu giáo nhỡ" },
+      { form: "4 đến 5 tuổi", actual: "Mẫu giáo lớn" },
     ]
     return { stageTitle, mappings }
   }, [aActiveBatch])

@@ -42,9 +42,25 @@ export default async function SurveyConfigPage({ searchParams }: { searchParams:
         console.log("Auto-seeding criteria for '12 đến 18 tháng'...");
         await seedPreschool1218(pAny);
       }
+
+      // Auto-migration for age groups:
+      // 1. Rename "Mẫu giáo bé" -> "3 đến 4 tuổi"
+      await pAny.preschoolDevCriteria.updateMany({
+        where: { ageGroup: "Mẫu giáo bé" },
+        data: { ageGroup: "3 đến 4 tuổi" }
+      });
+      // 2. Rename "Mẫu giáo nhỡ" -> "4 đến 5 tuổi"
+      await pAny.preschoolDevCriteria.updateMany({
+        where: { ageGroup: "Mẫu giáo nhỡ" },
+        data: { ageGroup: "4 đến 5 tuổi" }
+      });
+      // 3. Delete "Mẫu giáo lớn"
+      await pAny.preschoolDevCriteria.deleteMany({
+        where: { ageGroup: "Mẫu giáo lớn" }
+      });
     }
   } catch (seedError) {
-    console.error("Auto-seeding 12-18 months error:", seedError);
+    console.error("Auto-seeding 12-18 months and migration error:", seedError);
   }
 
   // --- FETCH CHUNG ---
@@ -63,7 +79,7 @@ export default async function SurveyConfigPage({ searchParams }: { searchParams:
   let configs: any[] = [];
 
   // --- FETCH MẦM NON RIÊNG ---
-  const gradesPreschool = ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn", "5 đến 6 tuổi"];
+  const gradesPreschool = ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "3 đến 4 tuổi", "4 đến 5 tuổi", "5 đến 6 tuổi"];
 
   try {
     const pAny = prisma as any;

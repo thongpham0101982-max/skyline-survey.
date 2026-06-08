@@ -144,7 +144,7 @@ const xetDuyetCols = [
 ];
 
 export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoVuCSUsers, grades: gradesProp, teachers, departments, currentUser }: { academicYears: AcademicYear[]; campuses: Camp[]; giaoVuCSUsers: any[]; grades: string[]; teachers: any[]; departments: any[]; currentUser: any; }) {
-  const grades = gradesProp && gradesProp.length > 0 ? gradesProp : ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn", "5 đến 6 tuổi"];
+  const grades = gradesProp && gradesProp.length > 0 ? gradesProp : ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "3 đến 4 tuổi", "4 đến 5 tuổi", "5 đến 6 tuổi"];
 
   const userRole = (currentUser?.role || "").toUpperCase();
   const isSystemAdmin = userRole === "ADMIN";
@@ -1461,9 +1461,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     if (months >= 12 && months < 18) suggest = "12 đến 18 tháng";
     else if (months >= 18 && months <= 24) suggest = "18 đến 24 tháng";
     else if (months > 24 && months <= 36) suggest = "24 đến 36 tháng";
-    else if (months > 36 && months <= 48) suggest = "Mẫu giáo bé";
-    else if (months > 48 && months <= 60) suggest = "Mẫu giáo nhỡ";
-    else if (months > 60) suggest = "Mẫu giáo lớn";
+    else if (months > 36 && months <= 48) suggest = "3 đến 4 tuổi";
+    else if (months > 48 && months <= 60) suggest = "4 đến 5 tuổi";
+    else if (months > 60) suggest = "5 đến 6 tuổi";
 
     return { months, suggest, surveyDateStr: source };
   }, [periods, cPeriodId]);
@@ -2923,14 +2923,14 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     const mappings = isStage2 ? [
                       { form: "18 đến 24 tháng", actual: "Nhà trẻ 18-24 tháng" },
                       { form: "24 đến 36 tháng", actual: "Nhà trẻ 24-36 tháng" },
-                      { form: "Mẫu giáo bé", actual: "Mẫu giáo bé" },
-                      { form: "Mẫu giáo nhỡ", actual: "Mẫu giáo nhỡ" },
+                      { form: "3 đến 4 tuổi", actual: "Mẫu giáo bé" },
+                      { form: "4 đến 5 tuổi", actual: "Mẫu giáo nhỡ" },
                       { form: "5 đến 6 tuổi", actual: "Mẫu giáo lớn" },
                     ] : [
                       { form: "18 đến 24 tháng", actual: "Nhà trẻ 18-24 & 24-36 tháng" },
                       { form: "24 đến 36 tháng", actual: "Mẫu giáo bé" },
-                      { form: "Mẫu giáo bé", actual: "Mẫu giáo nhỡ" },
-                      { form: "Mẫu giáo nhỡ", actual: "Mẫu giáo lớn" },
+                      { form: "3 đến 4 tuổi", actual: "Mẫu giáo nhỡ" },
+                      { form: "4 đến 5 tuổi", actual: "Mẫu giáo lớn" },
                     ];
 
                     return (
@@ -4125,17 +4125,13 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     gd1 = "Mẫu giáo bé";
                     gd2 = "Nhà trẻ 24-36 tháng";
                     break;
-                  case "Mẫu giáo bé":
+                  case "3 đến 4 tuổi":
                     gd1 = "Mẫu giáo nhỡ";
                     gd2 = "Mẫu giáo bé";
                     break;
-                  case "Mẫu giáo nhỡ":
+                  case "4 đến 5 tuổi":
                     gd1 = "Mẫu giáo lớn";
                     gd2 = "Mẫu giáo nhỡ";
-                    break;
-                  case "Mẫu giáo lớn":
-                    gd1 = "Không áp dụng";
-                    gd2 = "Không áp dụng";
                     break;
                   case "5 đến 6 tuổi":
                     gd1 = "Không áp dụng";
