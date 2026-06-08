@@ -4680,7 +4680,7 @@ return {
                 className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black tracking-tight transition-all duration-300 ${reportsSubTab === "results" ? "bg-white text-indigo-600 shadow-sm scale-[1.02]" : "text-slate-500 hover:text-slate-800"}`}
               >
                 <Users className="w-3.5 h-3.5 text-indigo-500"/>
-                Kết quả chi tiết môn học
+                Xét duyệt KQ
               </button>
             </div>
             <div className="flex-1 flex justify-end w-full md:w-auto"></div>
