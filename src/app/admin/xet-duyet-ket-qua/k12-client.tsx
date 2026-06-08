@@ -245,7 +245,7 @@ const renderTemplate = (template, student) => {
 
 
 // ========= MAIN =========
-export function InputAssessmentsClient({ academicYears = [], campuses = [], examBoardUsers = [], subjects: initialSubjects = [], eduSystems = [], configs: initialConfigs = [], grades = [], teachers = [], departments = [], giaoVuCSUsers = [], gdcsUsers = [], currentUser = null, rolePermissions = [] }: Props) {
+export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoardUsers = [], subjects: initialSubjects = [], eduSystems = [], configs: initialConfigs = [], grades = [], teachers = [], departments = [], giaoVuCSUsers = [], gdcsUsers = [], currentUser = null, rolePermissions = [] }: Props) {
   const TAB_PERMISSION_MAP: Record<string, string> = {
     periods: "INPUT_ASSESSMENTS_PERIODS",
     categories: "INPUT_ASSESSMENTS_CATEGORIES",
@@ -288,23 +288,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     return { canRead: true, canCreate: true, canUpdate: true, canDelete: true };
   };
 
-  const [tab, setTab] = useState(() => {
-    const userRole = (currentUser?.role || "").toUpperCase();
-    const isGDCS = ["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole);
-    
-    const hasPeriods = userRole === "ADMIN" || userRole === "KT_DBCL" || (rolePermissions && rolePermissions.some(p => p.module === "INPUT_ASSESSMENTS_PERIODS" && p.canRead));
-    if (hasPeriods) return "periods";
-    
-    const hasStudents = userRole === "ADMIN" || userRole === "KT_DBCL" || (rolePermissions && rolePermissions.some(p => p.module === "INPUT_ASSESSMENTS_STUDENTS" && p.canRead)) || isGDCS;
-    if (hasStudents) return "students";
-    
-    const allTabs = ["periods", "categories", "subjects", "mapping", "students", "assignments", "reports"];
-    for (const t of allTabs) {
-      const p = getTabPermissions(t);
-      if (p.canRead) return t;
-    }
-    return "students";
-  });
+  const [tab, setTab] = useState("reports");
 
   const tabPerms = getTabPermissions(tab);
   const cannotCreate = !tabPerms.canCreate;
@@ -3258,8 +3242,8 @@ return {
             <ClipboardCheck className="w-4 h-4 text-white"/>
           </div>
           <div className="min-w-0">
-            <h1 className="text-base font-black text-slate-800 tracking-tight leading-tight truncate">KSNL đầu vào Phổ thông</h1>
-            <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest hidden sm:block">Hệ thống khảo sát & phân công giáo viên</p>
+            <h1 className="text-base font-black text-slate-800 tracking-tight leading-tight truncate">Xét duyệt K-12</h1>
+            <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest hidden sm:block">Tổng hợp kết quả khảo sát & xét duyệt học sinh phổ thông</p>
           </div>
         </div>
         <div className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 rounded-lg border border-slate-200 flex-shrink-0">
@@ -3267,47 +3251,6 @@ return {
           <select value={yearId} onChange={e=>{setYearId(e.target.value); setSPeriodId(""); setAsPeriodId(""); setStudents([]); setAssignments([])}} className="bg-transparent text-xs font-bold text-slate-700 outline-none cursor-pointer max-w-[140px] sm:max-w-none">
             {academicYears.filter(ay=>!ay.isOff).map(ay=><option key={ay.id} value={ay.id}>Năm học {ay.name}</option>)}
           </select>
-        </div>
-      </div>
-
-      {/* TAB NAV - icon + label, wraps to fit, no overflow */}
-      <div className="bg-white border border-slate-200 shadow-sm rounded-xl px-1 py-1">
-        <div className="flex flex-wrap gap-0.5">
-          {[
-            { id:"periods",              label:"K\u1ef3 KS",      tip:"K\u1ef3 kh\u1ea3o s\u00e1t",        icon:Clock },
-            { id:"categories",           label:"Danh m\u1ee5c",   tip:"Danh m\u1ee5c",            icon:Settings },
-            { id:"subjects",             label:"M\u00f4n KS",     tip:"M\u00f4n kh\u1ea3o s\u00e1t",        icon:BookOpen },
-            { id:"mapping",              label:"C\u1ea5u h\u00ecnh",   tip:"C\u1ea5u h\u00ecnh theo Kh\u1ed1i",  icon:Layers },
-            { id:"students",             label:"H\u1ecdc sinh",   tip:"DS HS kh\u1ea3o s\u00e1t",      icon:Users },
-
-          ].map(t => {
-            const p = getTabPermissions(t.id);
-            const canRead = p.canRead;
-            const isTabReadOnly = canRead && !p.canCreate && !p.canUpdate && !p.canDelete;
-            return (
-              <button
-                key={t.id}
-                onClick={() => { if (canRead) setTab(t.id); }}
-                title={!canRead ? "Bạn không có quyền xem chức năng này" : isTabReadOnly ? `${t.tip} (Chỉ xem)` : t.tip}
-                className={"flex flex-col sm:flex-row items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-2 sm:py-2.5 rounded-lg text-[9px] sm:text-[11px] font-bold transition-all duration-200 min-w-[44px] sm:min-w-0 " + 
-                  (!canRead 
-                    ? "opacity-35 cursor-not-allowed select-none" 
-                    : (tab===t.id 
-                        ? (isTabReadOnly ? "bg-amber-600 text-white shadow-sm" : "bg-indigo-600 text-white shadow-sm") 
-                        : (isTabReadOnly 
-                            ? "text-slate-500 hover:bg-slate-50 hover:text-slate-700 border border-dashed border-amber-300/40" 
-                            : "text-slate-500 hover:bg-slate-100 hover:text-slate-700"
-                          )
-                      )
-                  )}
-              >
-                {!canRead && <Lock className="w-3 h-3 text-slate-400 mr-0.5" />}
-                {isTabReadOnly && <Lock className="w-3.5 h-3.5 text-amber-500 mr-0.5 flex-shrink-0" />}
-                <t.icon className={"w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 " + (tab===t.id ? "text-white" : (isTabReadOnly ? "text-amber-500/80" : "text-slate-400"))}/>
-                <span className="leading-tight text-center whitespace-nowrap">{t.label}</span>
-              </button>
-            );
-          })}
         </div>
       </div>
 

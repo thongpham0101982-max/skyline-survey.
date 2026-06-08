@@ -17,7 +17,8 @@ import {
   ArrowRightLeft,
   Baby,
   RefreshCcw,
-  UserCheck
+  UserCheck,
+  CheckCircle2
 } from "lucide-react"
 
 export const APP_CATEGORIES = [
@@ -81,6 +82,16 @@ export const APP_CATEGORIES = [
         subModules: [
           { code: "PHAN_CONG_K12", name: "Phân công K-12" },
           { code: "PHAN_CONG_MAM_NON", name: "Phân công Mầm non" }
+        ]
+      },
+      {
+        code: "XET_DUYET_KET_QUA",
+        name: "Xét duyệt Kết quả",
+        icon: CheckCircle2,
+        href: "/admin/xet-duyet-ket-qua",
+        subModules: [
+          { code: "INPUT_ASSESSMENTS_REPORTS", name: "Xét duyệt K-12" },
+          { code: "XET_DUYET_MAM_NON", name: "Xét duyệt Mầm non" }
         ]
       }
     ]

@@ -143,7 +143,7 @@ const xetDuyetCols = [
   { id: "actions", label: "Thao tác", width: "w-[350px] min-w-[350px]" }
 ];
 
-export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoVuCSUsers, grades: gradesProp, teachers, departments, currentUser }: { academicYears: AcademicYear[]; campuses: Camp[]; giaoVuCSUsers: any[]; grades: string[]; teachers: any[]; departments: any[]; currentUser: any; }) {
+export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, grades: gradesProp, teachers, departments, currentUser }: { academicYears: AcademicYear[]; campuses: Camp[]; giaoVuCSUsers: any[]; grades: string[]; teachers: any[]; departments: any[]; currentUser: any; }) {
   const grades = gradesProp && gradesProp.length > 0 ? gradesProp : ["18 đến 24 tháng", "24 đến 36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn", "5 đến 6 tuổi"];
 
   const userRole = (currentUser?.role || "").toUpperCase();
@@ -172,7 +172,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
     return `GIÁM ĐỐC CƠ SỞ (${campusName})`;
   };
 
-  const [tab, setTab] = useState(isGDCSUser ? "children" : "periods");
+  const [tab, setTab] = useState("devAssess");
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [isInvitation, setIsInvitation] = useState(true);
   const [isCommitment, setIsCommitment] = useState(false);
@@ -2707,8 +2707,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             <Baby className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-base font-black text-slate-800 tracking-tight">Quản lý KSNL Đầu vào Mầm non</h1>
-            <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest hidden sm:block">Hệ thống khảo sát năng lực đầu vào bậcc Mầm non</p>
+            <h1 className="text-base font-black text-slate-800 tracking-tight">Xét duyệt Mầm non</h1>
+            <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest hidden sm:block">Xét duyệt & đánh giá phát triển học sinh bậc Mầm non</p>
           </div>
         </div>
         <div className="flex items-center gap-1.5 px-3 py-2 bg-[#00A19A]/5 rounded-none border border-slate-300">
@@ -2716,30 +2716,6 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           <select value={yearId} onChange={e => { setYearId(e.target.value); setCPeriodId(""); setChildren([]); }} className="bg-transparent text-xs font-bold text-slate-700 outline-none cursor-pointer">
             {academicYears.filter(ay => !ay.isOff).map(ay => <option key={ay.id} value={ay.id}>Năm học {ay.name}</option>)}
           </select>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="bg-white border-2 border-[#00A19A] shadow-none rounded-none p-1">
-        <div className="flex flex-wrap gap-0.5">
-          {[
-            { id: "periods", label: "Kỳ KS", icon: Clock },
-            { id: "categories", label: "Danh mục", icon: Settings },
-            { id: "children", label: "DS Trẻ", icon: Users },
-
-            { id: "devCriteria", label: "Quản lý Tiêu chí & Lĩnh vực", icon: ClipboardList },
-            { id: "reports", label: "Tổng hợp KQKS", icon: BarChart3 },
-          ].filter(t => {
-            if (isGDCSUser) {
-              return ["children", "devAssess", "devCriteria", "reports"].includes(t.id);
-            }
-            return true;
-          }).map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)} className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-none text-[11px] font-bold transition-all duration-200 ${tab === t.id ? "bg-[#00A19A] text-white shadow-none" : "text-slate-500 hover:bg-[#00A19A]/5 hover:text-[#00A19A]"}`}>
-              <t.icon className={`w-4 h-4 ${tab === t.id ? "text-white" : "text-slate-400"}`} />
-              <span className="hidden sm:inline">{t.label}</span>
-            </button>
-          ))}
         </div>
       </div>
 
