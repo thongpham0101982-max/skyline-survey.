@@ -5534,10 +5534,44 @@ return {
                                 badgeStyle = "bg-indigo-50 text-indigo-700 border-indigo-200/50";
                               }
 
+                              const sNameLower = sName.toLowerCase().normalize("NFC");
+                              const isEnglish = sNameLower.includes("tiếng anh") || sCode.includes("eng") || sCode.includes("esl") || sc.id === "tong_diem_tieng_anh";
+                              const isNLTD = sNameLower.includes("năng lực tư duy") || sCode.includes("nltd");
+                              const isToan = sNameLower.includes("toán") || sCode.includes("math") || sCode.includes("mth");
+                              const isTiengVietNguVan = sNameLower.includes("tiếng việt") || sNameLower.includes("ngữ văn") || sCode.includes("lit") || sCode.includes("vie") || sCode.includes("van");
+
                               const isActive = activeSubjectId === sc.id;
-                              const activeClasses = isActive 
-                                ? "border-[#00A19A] bg-[#00A19A]/5 shadow-[0_2px_8px_rgba(0,161,154,0.08)] -translate-y-0.5" 
-                                : "border-slate-200 bg-white hover:border-[#00A19A]/40 hover:-translate-y-0.5";
+                              let activeClasses = "";
+                              let textLabelClass = "";
+                              let textValClass = "";
+                              let badgeClass = "";
+
+                              if (isEnglish || isNLTD) {
+                                activeClasses = isActive 
+                                  ? "border-violet-600 bg-violet-600 text-white shadow-[0_4px_12px_rgba(124,58,237,0.2)] -translate-y-0.5" 
+                                  : "border-violet-200 bg-violet-50/50 text-violet-900 hover:bg-violet-100/60 hover:border-violet-300 hover:-translate-y-0.5";
+                                textLabelClass = isActive ? "text-violet-100" : "text-violet-500 font-bold";
+                                textValClass = isActive ? "text-white" : "text-violet-900";
+                                badgeClass = isActive 
+                                  ? "bg-white/20 text-white border-white/20" 
+                                  : (badgeStyle.replace("bg-indigo-50", "bg-violet-100/50").replace("text-indigo-700", "text-violet-700").replace("border-indigo-200", "border-violet-200"));
+                              } else if (isToan || isTiengVietNguVan) {
+                                activeClasses = isActive 
+                                  ? "border-[#00A19A] bg-[#00A19A] text-white shadow-[0_4px_12px_rgba(0,161,154,0.2)] -translate-y-0.5" 
+                                  : "border-[#00A19A]/20 bg-[#00A19A]/5 text-[#008c85] hover:bg-[#00A19A]/10 hover:border-[#00A19A]/40 hover:-translate-y-0.5";
+                                textLabelClass = isActive ? "text-teal-100" : "text-[#00A19A] font-bold";
+                                textValClass = isActive ? "text-white" : "text-[#008c85]";
+                                badgeClass = isActive 
+                                  ? "bg-white/20 text-white border-white/20" 
+                                  : "bg-[#00A19A]/10 text-[#008c85] border-[#00A19A]/20";
+                              } else {
+                                activeClasses = isActive 
+                                  ? "border-[#00A19A] bg-[#00A19A]/5 shadow-[0_2px_8px_rgba(0,161,154,0.08)] -translate-y-0.5" 
+                                  : "border-slate-200 bg-white hover:border-[#00A19A]/40 hover:-translate-y-0.5";
+                                textLabelClass = isActive ? "text-[#00A19A]" : "text-slate-400";
+                                textValClass = isActive ? "text-[#00A19A]" : "text-slate-800";
+                                badgeClass = isActive ? "bg-[#00A19A] text-white border-[#00A19A]" : badgeStyle;
+                              }
 
                               return (
                                 <div 
@@ -5548,24 +5582,24 @@ return {
                                   <div className="absolute top-0 right-0 w-24 h-24 bg-slate-50 rounded-full -mt-8 -mr-8 mix-blend-multiply filter blur-xl opacity-60 group-hover:scale-110 transition-transform duration-300"></div>
                                   
                                   <div className="flex justify-between items-start mb-4 z-10">
-                                    <span className={`text-[10px] font-black uppercase tracking-wider block shrink-0 max-w-[120px] truncate ${isActive ? "text-[#00A19A]" : "text-slate-400"}`} title={sName}>
+                                    <span className={`text-[10px] font-black uppercase tracking-wider block shrink-0 max-w-[120px] truncate ${textLabelClass}`} title={sName}>
                                       {sName}
                                     </span>
                                     {subject.subjectType === "VIET_NAM" && sc.id !== "tong_diem_tieng_anh" && (
-                                      <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border shrink-0 bg-[#00A19A]/5 text-[#00A19A] border-[#00A19A]/20">
+                                      <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border shrink-0 ${isActive ? "bg-white/20 text-white border-white/20" : "bg-[#00A19A]/5 text-[#00A19A] border-[#00A19A]/20"}`}>
                                         GV Việt Nam
                                       </span>
                                     )}
                                   </div>
 
                                   <div className="flex items-end justify-between z-10 mt-auto">
-                                    <div className={`font-black tracking-tight leading-none ${sCode.includes("tly") ? "text-sm" : "text-xl"} ${isActive ? "text-[#00A19A]" : "text-slate-800"}`}>
+                                    <div className={`font-black tracking-tight leading-none ${sCode.includes("tly") ? "text-sm" : "text-xl"} ${textValClass}`}>
                                       {val}
                                     </div>
-                                    <div className={`px-2 py-1 rounded-xl border font-black text-[9px] uppercase tracking-wider ${isActive ? "bg-[#00A19A] text-white border-[#00A19A]" : badgeStyle} flex items-center gap-1.5 shadow-sm`}>
+                                    <div className={`px-2 py-1 rounded-xl border font-black text-[9px] uppercase tracking-wider ${badgeClass} flex items-center gap-1.5 shadow-sm`}>
                                       {sCode.includes("tly") ? (
                                         <>
-                                          <span className={`w-1.5 h-1.5 rounded-full bg-current animate-pulse ${isActive ? "text-white" : ""}`}></span>
+                                          <span className={`w-1.5 h-1.5 rounded-full bg-current animate-pulse`}></span>
                                           {rawScore}đ
                                         </>
                                       ) : (
@@ -5589,11 +5623,11 @@ return {
                                     : "—";
                                     
                                   return (
-                                    <div key={sc.id} className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden text-left">
-                                      <div className="absolute top-0 left-0 w-1.5 h-full bg-[#00A19A]"></div>
+                                    <div key={sc.id} className="bg-violet-50/20 border border-violet-200 p-6 rounded-3xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden text-left">
+                                      <div className="absolute top-0 left-0 w-1.5 h-full bg-violet-600"></div>
                                       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4 mb-5">
                                         <div>
-                                          <h4 className="font-black text-slate-800 text-lg leading-none">Tổng điểm Tiếng Anh</h4>
+                                          <h4 className="font-black text-violet-900 text-lg leading-none">Tổng điểm Tiếng Anh</h4>
                                           <p className="text-xs text-slate-400 font-semibold mt-2.5">
                                             Tổng hợp kết quả môn Tiếng Anh (Vấn đáp + Viết)
                                           </p>
@@ -5633,6 +5667,24 @@ return {
                                 const isChildDev = subNameNormalized.includes("chuẩn phát triển") || subNameNormalized.includes("bộ chuẩn phát triển") || subCode.includes("cpt") || subCode.includes("tci");
                                 const isThinkingSkills = subNameNormalized.includes("năng lực tư duy") || subCode.includes("nltd");
 
+                                const isEnglish = subName.includes("tiếng anh") || subCode.includes("eng") || subCode.includes("esl");
+                                const isToan = subName.includes("toán") || subCode.includes("math") || subCode.includes("mth");
+                                const isTiengVietNguVan = subName.includes("tiếng việt") || subName.includes("ngữ văn") || subCode.includes("lit") || subCode.includes("vie") || subCode.includes("van");
+
+                                let detailCardClass = "bg-white border border-slate-200";
+                                let accentBarClass = "bg-[#00A19A]";
+                                let headerTextClass = "text-slate-800";
+
+                                if (isEnglish || isThinkingSkills) {
+                                  detailCardClass = "bg-violet-50/20 border-violet-200";
+                                  accentBarClass = "bg-violet-600";
+                                  headerTextClass = "text-violet-900";
+                                } else if (isToan || isTiengVietNguVan) {
+                                  detailCardClass = "bg-[#00A19A]/5 border-[#00A19A]/20";
+                                  accentBarClass = "bg-[#00A19A]";
+                                  headerTextClass = "text-[#008c85]";
+                                }
+
                                 let scoreVals = [];
                                 let commentVals = [];
                                 try { if (sc.scores) { const parsed = JSON.parse(sc.scores); scoreVals = Array.isArray(parsed) ? parsed : [parsed]; } } catch { scoreVals = [sc.scores]; }
@@ -5642,10 +5694,10 @@ return {
                                 try { if (subject.columnNames) { const parsed = JSON.parse(subject.columnNames); parsedCols = { scores: Array.isArray(parsed.scores) ? parsed.scores : [], comments: Array.isArray(parsed.comments) ? parsed.comments : [] }; } } catch {}
 
                                 return (
-                                  <div key={sc.id} className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden text-left">
+                                  <div key={sc.id} className={`${detailCardClass} rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden text-left`}>
                                     
                                     {/* Card Decorative Accent bar */}
-                                    <div className="absolute top-0 left-0 w-1.5 h-full bg-[#00A19A]"></div>
+                                    <div className={`absolute top-0 left-0 w-1.5 h-full ${accentBarClass}`}></div>
 
                                     {/* Card Header */}
                                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4 mb-5">
