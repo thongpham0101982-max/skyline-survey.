@@ -40,7 +40,7 @@ interface StudentInfoClientProps {
   grades: string[];
 }
 
-const preschoolGrades = ["18 đến 24 tháng", "24 đến 36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn", "5 đến 6 tuổi"];
+const preschoolGrades = ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn", "5 đến 6 tuổi"];
 
 export function StudentInfoClient({ 
   initialGeneralStudents = [], 
@@ -292,7 +292,8 @@ export function StudentInfoClient({
 
     // Suggest grade
     let suggest = "";
-    if (months >= 18 && months <= 24) suggest = "18 đến 24 tháng";
+    if (months >= 12 && months < 18) suggest = "12 đến 18 tháng";
+    else if (months >= 18 && months <= 24) suggest = "18 đến 24 tháng";
     else if (months > 24 && months <= 36) suggest = "24 đến 36 tháng";
     else if (months > 36 && months <= 48) suggest = "Mẫu giáo bé";
     else if (months > 48 && months <= 60) suggest = "Mẫu giáo nhỡ";
@@ -346,7 +347,7 @@ export function StudentInfoClient({
       fullName: "",
       dateOfBirth: "",
       gender: "Nam",
-      grade: activeTab === "general" ? (grades[0] || "1") : "18 đến 24 tháng",
+      grade: activeTab === "general" ? (grades[0] || "1") : "12 đến 18 tháng",
       className: "",
       periodId: defaultPeriodId,
       batchId: defaultBatchId,

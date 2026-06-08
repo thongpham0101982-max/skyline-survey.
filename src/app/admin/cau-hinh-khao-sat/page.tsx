@@ -47,7 +47,7 @@ export default async function SurveyConfigPage({ searchParams }: { searchParams:
   let configs: any[] = [];
 
   // --- FETCH MẦM NON RIÊNG ---
-  const gradesPreschool = ["18 đến 24 tháng", "24 đến 36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn", "5 đến 6 tuổi"];
+  const gradesPreschool = ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn", "5 đến 6 tuổi"];
 
   try {
     const pAny = prisma as any;

@@ -144,7 +144,7 @@ const xetDuyetCols = [
 ];
 
 export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoVuCSUsers, grades: gradesProp, teachers, departments, currentUser }: { academicYears: AcademicYear[]; campuses: Camp[]; giaoVuCSUsers: any[]; grades: string[]; teachers: any[]; departments: any[]; currentUser: any; }) {
-  const grades = gradesProp && gradesProp.length > 0 ? gradesProp : ["18 đến 24 tháng", "24 đến 36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn", "5 đến 6 tuổi"];
+  const grades = gradesProp && gradesProp.length > 0 ? gradesProp : ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn", "5 đến 6 tuổi"];
 
   const userRole = (currentUser?.role || "").toUpperCase();
   const isSystemAdmin = userRole === "ADMIN";
@@ -902,7 +902,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   // useMemos depending on cBatchId moved below
 // Đánh giá phát triển
   const [devTab, setDevTab] = useState<"assess" | "xetDuyet" | "manage" | "dgkqHocThu" | "xuatThuChucMung">("assess");
-  const [ageGroupFilter, setAgeGroupFilter] = useState("18 đến 24 tháng");
+  const [ageGroupFilter, setAgeGroupFilter] = useState("12 đến 18 tháng");
   
   // Đánh giá học sinh
   const [evalStudent, setEvalStudent] = useState<PreschoolChild | null>(null);
@@ -969,7 +969,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   // Quản lý tiêu chí / lĩnh vực
   const [criteriaModal, setCriteriaModal] = useState(false);
   const [editCriteria, setEditCriteria] = useState<DevCriteria | null>(null);
-  const [criteriaForm, setCriteriaForm] = useState({ areaId: "", code: "", name: "", ageGroup: "18 đến 24 tháng" });
+  const [criteriaForm, setCriteriaForm] = useState({ areaId: "", code: "", name: "", ageGroup: "12 đến 18 tháng" });
   const [savingCriteria, setSavingCriteria] = useState(false);
   const [expAreaId, setExpAreaId] = useState<string | null>(null);
   const [yearId, setYearId] = useState(() => {
@@ -1261,7 +1261,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   // Assignments States
   const [aPeriodId, setAPeriodId] = useState(cPeriodId || "");
   const [aBatchId, setABatchId] = useState(cBatchId || "all");
-  const [aGrades, setAGrades] = useState<string[]>(["18 đến 24 tháng"]);
+  const [aGrades, setAGrades] = useState<string[]>(["12 đến 18 tháng"]);
   const [aDeptId, setADeptId] = useState("");
   const [aSelectedTeachers, setASelectedTeachers] = useState([]);
   const [aSearchTeacher, setASearchTeacher] = useState("");
@@ -1458,7 +1458,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
     // 3. Suggest grade
     let suggest = "";
-    if (months >= 18 && months <= 24) suggest = "18 đến 24 tháng";
+    if (months >= 12 && months < 18) suggest = "12 đến 18 tháng";
+    else if (months >= 18 && months <= 24) suggest = "18 đến 24 tháng";
     else if (months > 24 && months <= 36) suggest = "24 đến 36 tháng";
     else if (months > 36 && months <= 48) suggest = "Mẫu giáo bé";
     else if (months > 48 && months <= 60) suggest = "Mẫu giáo nhỡ";
