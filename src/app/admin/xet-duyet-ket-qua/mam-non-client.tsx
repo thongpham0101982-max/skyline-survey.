@@ -144,7 +144,8 @@ const xetDuyetCols = [
 ];
 
 export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, grades: gradesProp, teachers, departments, currentUser }: { academicYears: AcademicYear[]; campuses: Camp[]; giaoVuCSUsers: any[]; grades: string[]; teachers: any[]; departments: any[]; currentUser: any; }) {
-  const grades = gradesProp && gradesProp.length > 0 ? gradesProp : ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "3 đến 4 tuổi", "4 đến 5 tuổi", "5 đến 6 tuổi"];
+  const grades = gradesProp && gradesProp.length > 0 ? gradesProp : ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"];
+  const criteriaGrades = ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "3 đến 4 tuổi", "4 đến 5 tuổi", "5 đến 6 tuổi"];
 
   const userRole = (currentUser?.role || "").toUpperCase();
   const isSystemAdmin = userRole === "ADMIN";
@@ -1461,9 +1462,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     if (months >= 12 && months < 18) suggest = "12 đến 18 tháng";
     else if (months >= 18 && months <= 24) suggest = "18 đến 24 tháng";
     else if (months > 24 && months <= 36) suggest = "24 đến 36 tháng";
-    else if (months > 36 && months <= 48) suggest = "3 đến 4 tuổi";
-    else if (months > 48 && months <= 60) suggest = "4 đến 5 tuổi";
-    else if (months > 60) suggest = "5 đến 6 tuổi";
+    else if (months > 36 && months <= 48) suggest = "Mẫu giáo bé";
+    else if (months > 48 && months <= 60) suggest = "Mẫu giáo nhỡ";
+    else if (months > 60) suggest = "Mẫu giáo lớn";
 
     return { months, suggest, surveyDateStr: source };
   }, [periods, cPeriodId]);
@@ -4078,7 +4079,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 </button>
               </div>
                             <div className="flex flex-wrap gap-1.5 bg-[#00A19A]/5/50 p-1.5 rounded-none border border-slate-300 max-w-fit">
-                {grades.map(g => (
+                {criteriaGrades.map(g => (
                   <button
                     key={g}
                     onClick={() => setAgeGroupFilter(g)}

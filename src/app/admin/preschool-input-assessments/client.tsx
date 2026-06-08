@@ -1461,9 +1461,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     if (months >= 12 && months < 18) suggest = "12 đến 18 tháng";
     else if (months >= 18 && months <= 24) suggest = "18 đến 24 tháng";
     else if (months > 24 && months <= 36) suggest = "24 đến 36 tháng";
-    else if (months > 36 && months <= 48) suggest = "3 đến 4 tuổi";
-    else if (months > 48 && months <= 60) suggest = "4 đến 5 tuổi";
-    else if (months > 60) suggest = "5 đến 6 tuổi";
+    else if (months > 36 && months <= 48) suggest = "Mẫu giáo bé";
+    else if (months > 48 && months <= 60) suggest = "Mẫu giáo nhỡ";
+    else if (months > 60) suggest = "Mẫu giáo lớn";
 
     return { months, suggest, surveyDateStr: source };
   }, [periods, cPeriodId]);
@@ -2921,13 +2921,15 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     const stageTitle = isStage2 ? "Giai đoạn 2 (01/01 - 31/05)" : "Giai đoạn 1 (01/06 - 31/12)";
                     
                     const mappings = isStage2 ? [
-                      { form: "18 đến 24 tháng", actual: "Nhà trẻ 18-24 tháng" },
-                      { form: "24 đến 36 tháng", actual: "Nhà trẻ 24-36 tháng" },
+                      { form: "12 đến 18 tháng", actual: "12 đến 18 tháng" },
+                      { form: "18 đến 24 tháng", actual: "18 đến 24 tháng" },
+                      { form: "24 đến 36 tháng", actual: "24 đến 36 tháng" },
                       { form: "3 đến 4 tuổi", actual: "Mẫu giáo bé" },
                       { form: "4 đến 5 tuổi", actual: "Mẫu giáo nhỡ" },
                       { form: "5 đến 6 tuổi", actual: "Mẫu giáo lớn" },
                     ] : [
-                      { form: "18 đến 24 tháng", actual: "Nhà trẻ 18-24 & 24-36 tháng" },
+                      { form: "12 đến 18 tháng", actual: "12 đến 18 tháng" },
+                      { form: "18 đến 24 tháng", actual: "18 đến 24 tháng & 24 đến 36 tháng" },
                       { form: "24 đến 36 tháng", actual: "Mẫu giáo bé" },
                       { form: "3 đến 4 tuổi", actual: "Mẫu giáo nhỡ" },
                       { form: "4 đến 5 tuổi", actual: "Mẫu giáo lớn" },

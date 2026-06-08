@@ -42,7 +42,7 @@ export default async function XetDuyetKetQuaPage() {
   let configs: any[] = [];
   let teachers: any[] = [];
   let departments: any[] = [];
-  const preschoolGrades = ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "3 đến 4 tuổi", "4 đến 5 tuổi", "5 đến 6 tuổi"];
+  const preschoolGrades = ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"];
   
   try {
     const pAny = prisma as any;

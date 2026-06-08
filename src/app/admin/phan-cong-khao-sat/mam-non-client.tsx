@@ -234,13 +234,15 @@ export function PhanCongMamNonClient({
     const isStage2 = !isNaN(dateObj.getTime()) && dateObj.getMonth() >= 0 && dateObj.getMonth() <= 4
     const stageTitle = isStage2 ? "Giai đoạn 2 (01/01 - 31/05)" : "Giai đoạn 1 (01/06 - 31/12)"
     const mappings = isStage2 ? [
-      { form: "18 đến 24 tháng", actual: "Nhà trẻ 18-24 tháng" },
-      { form: "24 đến 36 tháng", actual: "Nhà trẻ 24-36 tháng" },
+      { form: "12 đến 18 tháng", actual: "12 đến 18 tháng" },
+      { form: "18 đến 24 tháng", actual: "18 đến 24 tháng" },
+      { form: "24 đến 36 tháng", actual: "24 đến 36 tháng" },
       { form: "3 đến 4 tuổi", actual: "Mẫu giáo bé" },
       { form: "4 đến 5 tuổi", actual: "Mẫu giáo nhỡ" },
       { form: "5 đến 6 tuổi", actual: "Mẫu giáo lớn" },
     ] : [
-      { form: "18 đến 24 tháng", actual: "Nhà trẻ 18-24 & 24-36 tháng" },
+      { form: "12 đến 18 tháng", actual: "12 đến 18 tháng" },
+      { form: "18 đến 24 tháng", actual: "18 đến 24 tháng & 24 đến 36 tháng" },
       { form: "24 đến 36 tháng", actual: "Mẫu giáo bé" },
       { form: "3 đến 4 tuổi", actual: "Mẫu giáo nhỡ" },
       { form: "4 đến 5 tuổi", actual: "Mẫu giáo lớn" },

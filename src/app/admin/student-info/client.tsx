@@ -40,7 +40,7 @@ interface StudentInfoClientProps {
   grades: string[];
 }
 
-const preschoolGrades = ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "3 đến 4 tuổi", "4 đến 5 tuổi", "5 đến 6 tuổi"];
+const preschoolGrades = ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"];
 
 export function StudentInfoClient({ 
   initialGeneralStudents = [], 
@@ -295,9 +295,9 @@ export function StudentInfoClient({
     if (months >= 12 && months < 18) suggest = "12 đến 18 tháng";
     else if (months >= 18 && months <= 24) suggest = "18 đến 24 tháng";
     else if (months > 24 && months <= 36) suggest = "24 đến 36 tháng";
-    else if (months > 36 && months <= 48) suggest = "3 đến 4 tuổi";
-    else if (months > 48 && months <= 60) suggest = "4 đến 5 tuổi";
-    else if (months > 60) suggest = "5 đến 6 tuổi";
+    else if (months > 36 && months <= 48) suggest = "Mẫu giáo bé";
+    else if (months > 48 && months <= 60) suggest = "Mẫu giáo nhỡ";
+    else if (months > 60) suggest = "Mẫu giáo lớn";
 
     return { months, suggest, surveyDateStr: source };
   }, [preschoolPeriods, formState.periodId]);
