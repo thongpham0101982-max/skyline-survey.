@@ -73,16 +73,16 @@ export const APP_CATEGORIES = [
       },
       { code: "INPUT_ASSESSMENT_REPORTS", name: "Xuất báo cáo", icon: FileSpreadsheet, href: "/admin/input-assessments/reports" },
       { code: "STUDENT_INFO", name: "Thông tin HS Khảo sát", icon: Users2, href: "/admin/student-info" },
-    ]
-  },
-  {
-    id: "PHAN_CONG_KS",
-    name: "Phân công Khảo sát",
-    color: "indigo",
-    icon: UserCheck,
-    modules: [
-      { code: "PHAN_CONG_K12",     name: "Phân công K-12",     icon: GraduationCap, href: "/admin/phan-cong-k12" },
-      { code: "PHAN_CONG_MAM_NON", name: "Phân công Mầm non",  icon: Baby,          href: "/admin/phan-cong-mam-non" },
+      {
+        code: "PHAN_CONG_KHAO_SAT",
+        name: "Phân công khảo sát",
+        icon: UserCheck,
+        href: "/admin/phan-cong-khao-sat",
+        subModules: [
+          { code: "PHAN_CONG_K12", name: "Phân công K-12" },
+          { code: "PHAN_CONG_MAM_NON", name: "Phân công Mầm non" }
+        ]
+      }
     ]
   },
   {
