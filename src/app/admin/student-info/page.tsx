@@ -61,7 +61,8 @@ export default async function StudentInfoPage() {
         },
         include: {
           period: { select: { id: true, name: true, academicYearId: true } },
-          batch: { select: { id: true, name: true } }
+          batch: { select: { id: true, name: true } },
+          enrollmentClass: { select: { className: true } }
         },
         orderBy: { createdAt: 'desc' }
       });
@@ -74,7 +75,8 @@ export default async function StudentInfoPage() {
         },
         include: {
           period: { select: { id: true, name: true, academicYearId: true } },
-          batch: { select: { id: true, name: true } }
+          batch: { select: { id: true, name: true } },
+          enrollmentClass: { select: { className: true } }
         },
         orderBy: { createdAt: 'desc' }
       });

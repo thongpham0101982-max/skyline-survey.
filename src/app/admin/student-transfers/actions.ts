@@ -310,3 +310,222 @@ export async function updateTransferInAction(id: string, data: any) {
   }
 }
 
+export async function confirmEnrollmentAction(studentId: string, isPreschool: boolean) {
+  try {
+    const session = await auth()
+    const userId = (session?.user as any)?.id
+    if (!userId) return { success: false, error: "Unauthorized" }
+
+    let student;
+    if (isPreschool) {
+      student = await prisma.preschoolInputAssessmentStudent.update({
+        where: { id: studentId },
+        data: { enrollmentStatus: "PENDING" },
+        include: { period: true }
+      });
+    } else {
+      student = await prisma.inputAssessmentStudent.update({
+        where: { id: studentId },
+        data: { enrollmentStatus: "PENDING" },
+        include: { period: true }
+      });
+    }
+
+    if (!student) return { success: false, error: "Không tìm thấy học sinh" }
+
+    // Notify all GIÁO VỤ (Academic Staff) assigned to the student's campus
+    const campusId = student.period?.campusId;
+    let targetGiaoVuUsers = [];
+    if (campusId) {
+      targetGiaoVuUsers = await prisma.user.findMany({
+        where: {
+          role: { in: ["GĐ_CS", "GIAO_VU", "GDCS", "GIAO_VU_CS"] },
+          campusAssignments: {
+            some: { campusId }
+          }
+        }
+      });
+    }
+    // Fallback: Notify all GIÁO VỤ if none found for campus
+    if (targetGiaoVuUsers.length === 0) {
+      targetGiaoVuUsers = await prisma.user.findMany({
+        where: {
+          role: { in: ["GĐ_CS", "GIAO_VU", "GDCS", "GIAO_VU_CS"] }
+        }
+      });
+    }
+
+    // Create notifications
+    const title = "Yêu cầu xếp lớp mới";
+    const message = `Học sinh ${student.fullName} (Mã KS: ${student.studentCode}) đạt kết quả tuyển sinh, đang chờ giáo vụ tổ chức nhập học và xếp lớp.`;
+    const link = "/admin/student-transfers";
+
+    for (const gv of targetGiaoVuUsers) {
+      await prisma.notification.create({
+        data: {
+          userId: gv.id,
+          title,
+          message,
+          link
+        }
+      });
+    }
+
+    revalidatePath("/admin/student-transfers")
+    revalidatePath("/admin/student-info")
+    return { success: true }
+  } catch (e: any) {
+    console.error("confirmEnrollmentAction Error:", e)
+    return { success: false, error: e.message }
+  }
+}
+
+export async function getPendingEnrollmentsAction() {
+  try {
+    const session = await auth()
+    if (!session) return []
+
+    const generalPending = await prisma.inputAssessmentStudent.findMany({
+      where: { enrollmentStatus: "PENDING" },
+      include: {
+        period: {
+          select: { id: true, name: true, campusId: true, campus: { select: { campusName: true } } }
+        }
+      }
+    });
+
+    const preschoolPending = await prisma.preschoolInputAssessmentStudent.findMany({
+      where: { enrollmentStatus: "PENDING" },
+      include: {
+        period: {
+          select: { id: true, name: true, campusId: true, campus: { select: { campusName: true } } }
+        }
+      }
+    });
+
+    return [
+      ...generalPending.map((x: any) => ({
+        id: x.id,
+        studentCode: x.studentCode,
+        fullName: x.fullName,
+        dateOfBirth: x.dateOfBirth,
+        gender: x.gender,
+        grade: x.grade,
+        createdAt: x.createdAt,
+        admissionCampus: x.admissionCampus || x.period?.campus?.campusName || "",
+        campusId: x.period?.campusId || "",
+        isPreschool: false,
+        period: x.period
+      })),
+      ...preschoolPending.map((x: any) => ({
+        id: x.id,
+        studentCode: x.studentCode,
+        fullName: x.fullName,
+        dateOfBirth: x.dateOfBirth,
+        gender: x.gender,
+        grade: x.grade,
+        createdAt: x.createdAt,
+        admissionCampus: x.admissionCampus || x.period?.campus?.campusName || "",
+        campusId: x.period?.campusId || "",
+        isPreschool: true,
+        period: x.period
+      }))
+    ];
+  } catch (e: any) {
+    console.error("getPendingEnrollmentsAction Error:", e);
+    return [];
+  }
+}
+
+export async function completeEnrollmentAction(id: string, isPreschool: boolean, data: any) {
+  try {
+    const session = await auth()
+    const userId = (session?.user as any)?.id
+    if (!userId) return { success: false, error: "Unauthorized" }
+
+    if (!data.classId || !data.academicYearId || !data.campusId || !data.transferDate) {
+      return { success: false, error: "Thiếu thông tin bắt buộc" }
+    }
+
+    let candidate;
+    if (isPreschool) {
+      candidate = await prisma.preschoolInputAssessmentStudent.findUnique({
+        where: { id }
+      });
+    } else {
+      candidate = await prisma.inputAssessmentStudent.findUnique({
+        where: { id }
+      });
+    }
+
+    if (!candidate) {
+      return { success: false, error: "Không tìm thấy học sinh khảo sát" }
+    }
+
+    return await prisma.$transaction(async (tx) => {
+      // 1. Create official student in Student table
+      const newStudent = await tx.student.create({
+        data: {
+          studentCode: data.studentCode || candidate.studentCode,
+          studentName: data.studentName || candidate.fullName,
+          dateOfBirth: candidate.dateOfBirth,
+          gender: candidate.gender,
+          classId: data.classId,
+          campusId: data.campusId,
+          academicYearId: data.academicYearId,
+          status: "ACTIVE"
+        }
+      });
+
+      // Fetch class info for recording
+      const destClass = await tx.class.findUnique({
+        where: { id: data.classId },
+        include: { campus: true }
+      });
+      const destName = destClass ? destClass.className + " (" + destClass.campus.campusName + ")" : data.classId;
+
+      // 2. Create studentTransfer record of type "IN"
+      await tx.studentTransfer.create({
+        data: {
+          studentId: newStudent.id,
+          type: "IN",
+          transferDate: new Date(data.transferDate),
+          semester: data.semester || null,
+          destinationSchool: destName,
+          reason: data.reason || null,
+          createdById: userId,
+        }
+      });
+
+      // 3. Update candidate enrollment info
+      if (isPreschool) {
+        await tx.preschoolInputAssessmentStudent.update({
+          where: { id },
+          data: {
+            enrollmentStatus: "COMPLETED",
+            enrollmentClassId: data.classId,
+            enrollmentDate: new Date(data.transferDate),
+            enrollmentCode: data.studentCode
+          }
+        });
+      } else {
+        await tx.inputAssessmentStudent.update({
+          where: { id },
+          data: {
+            enrollmentStatus: "COMPLETED",
+            enrollmentClassId: data.classId,
+            enrollmentDate: new Date(data.transferDate),
+            enrollmentCode: data.studentCode
+          }
+        });
+      }
+
+      return { success: true }
+    });
+  } catch (e: any) {
+    console.error("completeEnrollmentAction Error:", e);
+    return { success: false, error: e.message }
+  }
+}
+
+

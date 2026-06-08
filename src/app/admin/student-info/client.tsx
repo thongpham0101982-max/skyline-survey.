@@ -22,8 +22,10 @@ import {
   Download,
   Edit2,
   Trash2,
-  Sparkles
+  Sparkles,
+  UserCheck
 } from "lucide-react";
+import { confirmEnrollmentAction } from "../student-transfers/actions";
 import * as XLSX from "xlsx";
 
 interface StudentInfoClientProps {
@@ -470,6 +472,22 @@ export function StudentInfoClient({
       }
     } catch (e) {
       showNotification("Lỗi kết nối", "err");
+    }
+  };
+
+  const handleConfirmEnrollment = async (student: any, isPreschool = false) => {
+    if (!confirm(`Xác nhận nhập học cho học sinh ${student.fullName} (Mã KS: ${student.studentCode})?\nHành động này sẽ gửi một phiếu yêu cầu đến Tổ Giáo vụ để tiến hành xếp lớp.`)) return;
+
+    try {
+      const res = await confirmEnrollmentAction(student.id, isPreschool);
+      if (res.success) {
+        showNotification("Đã gửi yêu cầu nhập học đến Tổ Giáo vụ!");
+        setTimeout(() => window.location.reload(), 1000);
+      } else {
+        showNotification("Lỗi: " + (res.error || "Không thể thực hiện"), "err");
+      }
+    } catch (e: any) {
+      showNotification("Lỗi kết nối: " + e.message, "err");
     }
   };
 
@@ -1039,7 +1057,14 @@ export function StudentInfoClient({
                       </td>
                       <td className="px-5 py-3.5">
                         <div className="flex flex-col">
-                          <span className="text-sm font-bold text-slate-800">{s.fullName}</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm font-bold text-slate-800">{s.fullName}</span>
+                            {s.enrollmentStatus === "COMPLETED" && (
+                              <span className="px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200 rounded">
+                                Lớp: {s.enrollmentClass?.className || s.enrollmentClassId || ""}
+                              </span>
+                            )}
+                          </div>
                           <span className="text-[10px] font-semibold text-slate-400 mt-0.5">{s.surveySystem || "Chưa xếp hệ"}</span>
                         </div>
                       </td>
@@ -1069,6 +1094,27 @@ export function StudentInfoClient({
                       </td>
                       <td className="px-4 py-3.5 text-center" onClick={(e) => e.stopPropagation()}>
                         <div className="flex justify-center items-center gap-1.5">
+                          {s.admissionResult && (s.admissionResult.toUpperCase() === "ĐẠT" || s.admissionResult.toUpperCase() === "ĐẠT CAM KẾT") && (
+                            <>
+                              {!s.enrollmentStatus ? (
+                                <button
+                                  onClick={() => handleConfirmEnrollment(s)}
+                                  className="p-1.5 text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 rounded-lg transition-all"
+                                  title="Xác nhận Nhập học"
+                                >
+                                  <UserCheck className="w-4 h-4" />
+                                </button>
+                              ) : s.enrollmentStatus === "PENDING" ? (
+                                <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200" title="Chờ xếp lớp">
+                                  Chờ nhập học
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200" title={`Nhập học vào ${s.enrollmentClass?.className || s.enrollmentClassId || ""}`}>
+                                  Đã nhập học
+                                </span>
+                              )}
+                            </>
+                          )}
                           <button
                             onClick={() => {
                               setSelectedStudent(s);
@@ -1160,7 +1206,16 @@ export function StudentInfoClient({
                           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-500 to-fuchsia-400 flex items-center justify-center text-white font-black text-xs shadow-none">
                             {child.fullName?.charAt(0)}
                           </div>
-                          <span className="font-bold text-slate-800 text-sm">{child.fullName}</span>
+                          <div className="flex flex-col">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-bold text-slate-800 text-sm">{child.fullName}</span>
+                              {child.enrollmentStatus === "COMPLETED" && (
+                                <span className="px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200 rounded">
+                                  Lớp: {child.enrollmentClass?.className || child.enrollmentClassId || ""}
+                                </span>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </td>
                       <td className="p-4 text-sm text-slate-500">
@@ -1193,7 +1248,28 @@ export function StudentInfoClient({
                         )}
                       </td>
                       <td className="p-4 text-center" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex justify-center gap-1">
+                        <div className="flex justify-center gap-1 items-center">
+                          {child.admissionResult && (child.admissionResult.toUpperCase() === "ĐẠT" || child.admissionResult.toUpperCase() === "ĐẠT CAM KẾT") && (
+                            <>
+                              {!child.enrollmentStatus ? (
+                                <button
+                                  onClick={() => handleConfirmEnrollment(child, true)}
+                                  className="p-1.5 text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 rounded-lg transition-all"
+                                  title="Xác nhận Nhập học"
+                                >
+                                  <UserCheck className="w-4 h-4" />
+                                </button>
+                              ) : child.enrollmentStatus === "PENDING" ? (
+                                <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200" title="Chờ xếp lớp">
+                                  Chờ nhập học
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200" title={`Nhập học vào ${child.enrollmentClass?.className || child.enrollmentClassId || ""}`}>
+                                  Đã nhập học
+                                </span>
+                              )}
+                            </>
+                          )}
                           <button
                             onClick={() => {
                               setSelectedStudent(child);

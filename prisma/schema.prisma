@@ -132,6 +132,8 @@ model Class {
   surveyForms         SurveyForm[]
   teachers            TeacherClassAssignment[]
   teachingAssignments TeachingAssignment[]
+  generalEnrollments  InputAssessmentStudent[] @relation("GeneralEnrollmentClass")
+  preschoolEnrollments PreschoolInputAssessmentStudent[] @relation("PreschoolEnrollmentClass")
 }
 
 model TeacherClassAssignment {
@@ -551,6 +553,12 @@ model InputAssessmentStudent {
   period              InputAssessmentPeriod    @relation(fields: [periodId], references: [id], onDelete: Cascade)
   scores              StudentAssessmentScore[]
 
+  enrollmentStatus    String?
+  enrollmentClassId   String?
+  enrollmentDate      DateTime?
+  enrollmentCode      String?
+  enrollmentClass     Class?                   @relation("GeneralEnrollmentClass", fields: [enrollmentClassId], references: [id], onDelete: SetNull)
+
   @@unique([studentCode, periodId, batchId])
   @@index([periodId])
   @@index([batchId])
@@ -790,6 +798,12 @@ model PreschoolInputAssessmentStudent {
   probationaryTeacher    String?
   batch                  PreschoolInputAssessmentBatch? @relation(fields: [batchId], references: [id], onDelete: SetNull)
   period                 PreschoolInputAssessmentPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+
+  enrollmentStatus       String?
+  enrollmentClassId      String?
+  enrollmentDate         DateTime?
+  enrollmentCode         String?
+  enrollmentClass        Class?                         @relation("PreschoolEnrollmentClass", fields: [enrollmentClassId], references: [id], onDelete: SetNull)
 
   @@unique([studentCode, periodId, batchId])
   @@index([periodId])
