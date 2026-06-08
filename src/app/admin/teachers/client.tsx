@@ -174,7 +174,7 @@ export function TeacherManagerClient({
   }
 
   const downloadTemplate = () => {
-    const csv = "STT,Mã GV,Họ và tên,Email,Tổ chuyên môn,Cơ sở\n1,GV001,Nguyễn Văn A,nguyenvana@skylineschool.edu.vn,Tổ Tự Nhiên,CS1"
+    const csv = "STT,Mã GV,Họ và tên,Email nhận thông báo,Cơ sở,Tổ chuyên môn\n1,GV001,Nguyễn Văn A,nguyenvana@skylineschool.edu.vn,CS1,Tổ Tự Nhiên"
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")

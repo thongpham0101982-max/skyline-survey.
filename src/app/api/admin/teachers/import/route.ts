@@ -62,8 +62,8 @@ export async function POST(req: NextRequest) {
       const teacherCode = String(row[1] || "").trim()
       const teacherName = String(row[2] || "").trim()
       const email = String(row[3] || "").trim()
-      const department = String(row[4] || "").trim()
-      const campus = String(row[5] || "").trim()
+      const campus = String(row[4] || "").trim()
+      const department = String(row[5] || "").trim()
 
       if (!teacherCode || !teacherName) continue
       
