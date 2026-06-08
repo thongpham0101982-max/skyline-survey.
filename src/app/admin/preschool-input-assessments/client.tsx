@@ -6708,7 +6708,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   
                   // Fallback
                   if (devResult === "DAT") return "Đạt";
-                  if (devResult === "KHONG_DAT") return "Không đạt";
+                  if (devResult === "KHONG_DAT") return "Chưa duyệt";
                   if (devResult === "HOC_THU") return "Học thử";
                   return "Chưa duyệt";
                 };

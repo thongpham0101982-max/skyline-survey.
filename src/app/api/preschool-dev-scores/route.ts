@@ -143,7 +143,7 @@ export async function GET(req: NextRequest) {
           generalResult = s.admissionResult || "Chưa duyệt";
         } else {
           if (s.devAssessmentResult === "DAT") generalResult = "Đạt"
-          else if (s.devAssessmentResult === "KHONG_DAT") generalResult = "Không đạt"
+          else if (s.devAssessmentResult === "KHONG_DAT") generalResult = "Chưa duyệt"
           else if (s.devAssessmentResult === "HOC_THU") generalResult = "Học thử"
           else generalResult = s.admissionResult || "Chưa duyệt";
         }
@@ -303,7 +303,7 @@ export async function POST(req: NextRequest) {
       if (finalDevResult === "DAT") {
         finalAdmissionResult = "Đạt"
       } else if (finalDevResult === "KHONG_DAT") {
-        finalAdmissionResult = "Không đạt"
+        finalAdmissionResult = "Chưa duyệt"
       } else if (finalDevResult === "HOC_THU") {
         finalAdmissionResult = "Học thử"
       } else {
