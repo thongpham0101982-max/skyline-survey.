@@ -5394,452 +5394,596 @@ return {
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-6">
-                    {/* PREMIUM QUICK SCORE DASHBOARD MATRIX */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {(selectedReportStudent.scores || []).map((sc: any) => {
-                        const subject = sc.subject || {};
-                        const sName = subject.name || "Môn học";
-                        const sCode = (subject.code || "").toLowerCase();
-                        let val = "—";
-                        let rawScore = "";
-                        let badgeStyle = "bg-slate-50 text-slate-600 border-slate-200";
-
-                        try {
-                          if (sc.scores) {
-                            const parsed = JSON.parse(sc.scores);
-                            const vArr = Array.isArray(parsed) ? parsed : [parsed];
-                            if (sCode.includes("tly")) {
-                              const scNum = parseFloat(vArr[6] || vArr[20] || "0");
-                              rawScore = scNum.toString();
-                              let lvl = "Bình thường";
-                              badgeStyle = "bg-emerald-50 text-emerald-700 border-emerald-200/50";
-                              if (scNum > 15 && scNum <= 31) {
-                                lvl = "Dấu hiệu nhẹ";
-                                badgeStyle = "bg-blue-50 text-blue-700 border-blue-200/50";
-                              } else if (scNum > 31 && scNum <= 47) {
-                                lvl = "Dấu hiệu vừa";
-                                badgeStyle = "bg-amber-50 text-amber-700 border-amber-200/50";
-                              } else if (scNum > 47 && scNum <= 63) {
-                                lvl = "Nguy cơ cao";
-                                badgeStyle = "bg-orange-50 text-orange-700 border-orange-200/50";
-                              } else if (scNum > 63) {
-                                lvl = "Nguy cơ rất cao";
-                                badgeStyle = "bg-rose-50 text-rose-700 border-rose-200/50";
+                                    <div className="space-y-6">
+                    {(() => {
+                      const scoresList = [...(selectedReportStudent.scores || [])];
+                      
+                      const getNumericGrade = (g) => {
+                        if (!g) return null;
+                        const match = g.toString().match(/\d+/);
+                        return match ? parseInt(match[0], 10) : null;
+                      };
+                      const isGrade1 = getNumericGrade(selectedReportStudent.grade) === 1;
+                      
+                      const hasEnglish = scoresList.some((sc) => {
+                        const sName = (sc.subject?.name || "").toLowerCase().normalize("NFC");
+                        const sCode = (sc.subject?.code || "").toLowerCase();
+                        return sName.includes("tiếng anh") || sCode.includes("eng") || sCode.includes("esl");
+                      });
+                      
+                      let oralScoreVal = null;
+                      let writtenScoreVal = null;
+                      let oralScoreText = "—";
+                      let writtenScoreText = "—";
+                      
+                      if (!isGrade1 && hasEnglish) {
+                        scoresList.forEach((sc) => {
+                          const sName = (sc.subject?.name || "").toLowerCase().normalize("NFC");
+                          const sCode = (sc.subject?.code || "").toLowerCase();
+                          if (sName.includes("tiếng anh") || sCode.includes("eng") || sCode.includes("esl")) {
+                            let scoreVal = undefined;
+                            try {
+                              if (sc.scores) {
+                                const parsed = JSON.parse(sc.scores);
+                                const vArr = Array.isArray(parsed) ? parsed : [parsed];
+                                scoreVal = vArr.find(x => x !== undefined && x !== "" && x !== null);
                               }
-                              val = lvl;
-                            } else if (sCode.includes("tci") || sCode.includes("cpt")) {
-                              const passedCount = vArr.filter(x => x === "3").length;
-                              val = passedCount + "/" + vArr.length + " Đạt";
-                              badgeStyle = passedCount >= vArr.length * 0.7 ? "bg-emerald-50 text-emerald-700 border-emerald-200/50" : "bg-amber-50 text-amber-700 border-amber-200/50";
-                            } else if (sCode.includes("nltd")) {
-                              const pct = parseFloat(vArr[4] || "0");
-                              val = pct + "%";
-                              badgeStyle = pct >= 80 ? "bg-indigo-50 text-indigo-700 border-indigo-200/50" : pct >= 50 ? "bg-blue-50 text-blue-700 border-blue-200/50" : "bg-rose-50 text-rose-700 border-rose-200/50";
-                            } else {
-                              const firstVal = vArr.find(x => x !== undefined && x !== "" && x !== null);
-                              val = firstVal !== undefined ? firstVal.toString() : "—";
-                              badgeStyle = "bg-indigo-50 text-indigo-700 border-indigo-200/50";
+                            } catch {}
+                            
+                            if (sName.includes("vấn đáp") || sName.includes("nói") || sCode.includes("speaking") || sCode.includes("oral") || sCode.includes("vd")) {
+                              if (scoreVal !== undefined && scoreVal !== null && scoreVal !== "") {
+                                oralScoreVal = parseFloat(scoreVal);
+                                oralScoreText = scoreVal.toString();
+                              }
+                            } else if (sName.includes("viết") || sCode.includes("writing") || sCode.includes("written") || sCode.includes("vt")) {
+                              if (scoreVal !== undefined && scoreVal !== null && scoreVal !== "") {
+                                writtenScoreVal = parseFloat(scoreVal);
+                                writtenScoreText = scoreVal.toString();
+                              }
                             }
                           }
-                        } catch {
-                          val = sc.scores || "—";
-                          badgeStyle = "bg-indigo-50 text-indigo-700 border-indigo-200/50";
+                        });
+                        
+                        let totalVal = "—";
+                        if (oralScoreVal !== null || writtenScoreVal !== null) {
+                          totalVal = ((oralScoreVal || 0) + (writtenScoreVal || 0)).toString();
                         }
+                        
+                        if (!scoresList.some(s => s.id === "tong_diem_tieng_anh")) {
+                          scoresList.push({
+                            id: "tong_diem_tieng_anh",
+                            isVirtual: true,
+                            scores: JSON.stringify([totalVal]),
+                            subject: {
+                              id: "tong_diem_tieng_anh",
+                              code: "eng_total",
+                              name: "Tổng điểm Tiếng Anh",
+                              subjectType: "VIET_NAM",
+                              scoreColumns: 1,
+                              commentColumns: 0,
+                              columnNames: JSON.stringify({ scores: ["Tổng điểm Tiếng Anh"], comments: [] })
+                            }
+                          });
+                        }
+                      }
+                      
+                      return (
+                        <>
+                          {/* PREMIUM QUICK SCORE DASHBOARD MATRIX */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {scoresList.map((sc) => {
+                              const subject = sc.subject || {};
+                              const sName = subject.name || "Môn học";
+                              const sCode = (subject.code || "").toLowerCase();
+                              let val = "—";
+                              let rawScore = "";
+                              let badgeStyle = "bg-slate-50 text-slate-600 border-slate-200";
 
-                        const isActive = activeSubjectId === sc.id;
-                        const activeClasses = isActive 
-                          ? "border-[#00A19A] bg-[#00A19A]/5 shadow-[0_2px_8px_rgba(0,161,154,0.08)] -translate-y-0.5" 
-                          : "border-slate-200 bg-white hover:border-[#00A19A]/40 hover:-translate-y-0.5";
+                              try {
+                                if (sc.scores) {
+                                  const parsed = JSON.parse(sc.scores);
+                                  const vArr = Array.isArray(parsed) ? parsed : [parsed];
+                                  if (sCode.includes("tly")) {
+                                    const scNum = parseFloat(vArr[6] || vArr[20] || "0");
+                                    rawScore = scNum.toString();
+                                    let lvl = "Bình thường";
+                                    badgeStyle = "bg-emerald-50 text-emerald-700 border-emerald-200/50";
+                                    if (scNum > 15 && scNum <= 31) {
+                                      lvl = "Dấu hiệu nhẹ";
+                                      badgeStyle = "bg-blue-50 text-blue-700 border-blue-200/50";
+                                    } else if (scNum > 31 && scNum <= 47) {
+                                      lvl = "Dấu hiệu vừa";
+                                      badgeStyle = "bg-amber-50 text-amber-700 border-amber-200/50";
+                                    } else if (scNum > 47 && scNum <= 63) {
+                                      lvl = "Nguy cơ cao";
+                                      badgeStyle = "bg-orange-50 text-orange-700 border-orange-200/50";
+                                    } else if (scNum > 63) {
+                                      lvl = "Nguy cơ rất cao";
+                                      badgeStyle = "bg-rose-50 text-rose-700 border-rose-200/50";
+                                    }
+                                    val = lvl;
+                                  } else if (sCode.includes("tci") || sCode.includes("cpt")) {
+                                    const passedCount = vArr.filter(x => x === "3").length;
+                                    val = passedCount + "/" + vArr.length + " Đạt";
+                                    badgeStyle = passedCount >= vArr.length * 0.7 ? "bg-emerald-50 text-emerald-700 border-emerald-200/50" : "bg-amber-50 text-amber-700 border-amber-200/50";
+                                  } else if (sCode.includes("nltd")) {
+                                    const pct = parseFloat(vArr[4] || "0");
+                                    val = pct + "%";
+                                    badgeStyle = pct >= 80 ? "bg-indigo-50 text-indigo-700 border-indigo-200/50" : pct >= 50 ? "bg-blue-50 text-blue-700 border-blue-200/50" : "bg-rose-50 text-rose-700 border-rose-200/50";
+                                  } else {
+                                    const firstVal = vArr.find(x => x !== undefined && x !== "" && x !== null);
+                                    val = firstVal !== undefined ? firstVal.toString() : "—";
+                                    badgeStyle = "bg-indigo-50 text-indigo-700 border-indigo-200/50";
+                                    
+                                    if (!isGrade1) {
+                                      const sNameLower = sName.toLowerCase().normalize("NFC");
+                                      if (sNameLower.includes("tiếng anh") || sCode.includes("eng") || sCode.includes("esl")) {
+                                        if (sNameLower.includes("vấn đáp") || sNameLower.includes("nói") || sCode.includes("speaking") || sCode.includes("oral") || sCode.includes("vd")) {
+                                          val = firstVal !== undefined ? `${firstVal}/30` : "—/30";
+                                        } else if (sNameLower.includes("viết") || sCode.includes("writing") || sCode.includes("written") || sCode.includes("vt")) {
+                                          val = firstVal !== undefined ? `${firstVal}/70` : "—/70";
+                                        } else if (sc.id === "tong_diem_tieng_anh") {
+                                          val = firstVal !== undefined && firstVal !== "—" ? `${firstVal}/100` : "—/100";
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              } catch {
+                                val = sc.scores || "—";
+                                badgeStyle = "bg-indigo-50 text-indigo-700 border-indigo-200/50";
+                              }
 
-                        return (
-                          <div 
-                            key={sc.id} 
-                            onClick={() => setActiveSubjectId(sc.id)}
-                            className={`rounded-3xl border p-5 shadow-sm transition-all duration-300 flex flex-col justify-between relative overflow-hidden group text-left cursor-pointer ${activeClasses}`}
-                          >
-                            <div className="absolute top-0 right-0 w-24 h-24 bg-slate-50 rounded-full -mt-8 -mr-8 mix-blend-multiply filter blur-xl opacity-60 group-hover:scale-110 transition-transform duration-300"></div>
-                            
-                            <div className="flex justify-between items-start mb-4 z-10">
-                              <span className={`text-[10px] font-black uppercase tracking-wider block shrink-0 max-w-[120px] truncate ${isActive ? "text-[#00A19A]" : "text-slate-400"}`} title={sName}>
-                                {sName}
-                              </span>
-                              {subject.subjectType === "VIET_NAM" && (
-                                <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border shrink-0 bg-[#00A19A]/5 text-[#00A19A] border-[#00A19A]/20">
-                                  GV Việt Nam
-                                </span>
-                              )}
-                            </div>
+                              const isActive = activeSubjectId === sc.id;
+                              const activeClasses = isActive 
+                                ? "border-[#00A19A] bg-[#00A19A]/5 shadow-[0_2px_8px_rgba(0,161,154,0.08)] -translate-y-0.5" 
+                                : "border-slate-200 bg-white hover:border-[#00A19A]/40 hover:-translate-y-0.5";
 
-                            <div className="flex items-end justify-between z-10 mt-auto">
-                              <div className={`font-black tracking-tight leading-none ${sCode.includes("tly") ? "text-sm" : "text-xl"} ${isActive ? "text-[#00A19A]" : "text-slate-800"}`}>
-                                {val}
-                              </div>
-                              <div className={`px-2 py-1 rounded-xl border font-black text-[9px] uppercase tracking-wider ${isActive ? "bg-[#00A19A] text-white border-[#00A19A]" : badgeStyle} flex items-center gap-1.5 shadow-sm`}>
-                                {sCode.includes("tly") ? (
-                                  <>
-                                    <span className={`w-1.5 h-1.5 rounded-full bg-current animate-pulse ${isActive ? "text-white" : ""}`}></span>
-                                    {rawScore}đ
-                                  </>
-                                ) : (
-                                  <>Điểm số</>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* DETAILED CARDS SECTION */}
-                    <div className="space-y-6">
-                      {selectedReportStudent.scores
-                        .filter((sc: any) => sc.id === activeSubjectId)
-                        .map((sc: any) => {
-                        const subject = sc.subject || {};
-                        const subName = (subject.name || "").toLowerCase();
-                        const subCode = (subject.code || "").toLowerCase();
-                        const subNameNormalized = subName.normalize("NFC");
-                        const isPsych = subName.includes("tâm lý") || subCode.includes("tly");
-                        const isChildDev = subNameNormalized.includes("chuẩn phát triển") || subNameNormalized.includes("bộ chuẩn phát triển") || subCode.includes("cpt") || subCode.includes("tci");
-                        const isThinkingSkills = subNameNormalized.includes("năng lực tư duy") || subCode.includes("nltd");
-
-                        let scoreVals = [];
-                        let commentVals = [];
-                        try { if (sc.scores) { const parsed = JSON.parse(sc.scores); scoreVals = Array.isArray(parsed) ? parsed : [parsed]; } } catch { scoreVals = [sc.scores]; }
-                        try { if (sc.comments) { const parsed = JSON.parse(sc.comments); commentVals = Array.isArray(parsed) ? parsed : [parsed]; } } catch { commentVals = [sc.comments]; }
-
-                        let parsedCols = { scores: [], comments: [] };
-                        try { if (subject.columnNames) { const parsed = JSON.parse(subject.columnNames); parsedCols = { scores: Array.isArray(parsed.scores) ? parsed.scores : [], comments: Array.isArray(parsed.comments) ? parsed.comments : [] }; } } catch {}
-
-                        return (
-                          <div key={sc.id} className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden text-left">
-                            
-                            {/* Card Decorative Accent bar */}
-                            <div className="absolute top-0 left-0 w-1.5 h-full bg-[#00A19A]"></div>
-
-                            {/* Card Header */}
-                            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4 mb-5">
-                              <div>
-                                <div className="flex items-center gap-2.5">
-                                  <h4 className="font-black text-slate-800 text-lg leading-none">{subject.name}</h4>
-                                  {subject.code && <span className="font-mono text-[10px] font-black text-slate-400 bg-slate-50 border border-slate-200/50 px-2 py-0.5 rounded-lg select-none">{subject.code}</span>}
-                                  {subject.subjectType === "VIET_NAM" && (
-                                    <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full border shadow-sm bg-[#00A19A]/5 text-[#00A19A] border-[#00A19A]/20`}>
-                                      Giáo viên Việt Nam
+                              return (
+                                <div 
+                                  key={sc.id} 
+                                  onClick={() => setActiveSubjectId(sc.id)}
+                                  className={`rounded-3xl border p-5 shadow-sm transition-all duration-300 flex flex-col justify-between relative overflow-hidden group text-left cursor-pointer ${activeClasses}`}
+                                >
+                                  <div className="absolute top-0 right-0 w-24 h-24 bg-slate-50 rounded-full -mt-8 -mr-8 mix-blend-multiply filter blur-xl opacity-60 group-hover:scale-110 transition-transform duration-300"></div>
+                                  
+                                  <div className="flex justify-between items-start mb-4 z-10">
+                                    <span className={`text-[10px] font-black uppercase tracking-wider block shrink-0 max-w-[120px] truncate ${isActive ? "text-[#00A19A]" : "text-slate-400"}`} title={sName}>
+                                      {sName}
                                     </span>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-2 text-xs text-slate-400 font-semibold mt-2.5">
-                                  <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-black text-[9px] border shadow-inner select-none shrink-0">
-                                    {sc.teacherName?.charAt(0) || "—"}
+                                    {subject.subjectType === "VIET_NAM" && sc.id !== "tong_diem_tieng_anh" && (
+                                      <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border shrink-0 bg-[#00A19A]/5 text-[#00A19A] border-[#00A19A]/20">
+                                        GV Việt Nam
+                                      </span>
+                                    )}
                                   </div>
-                                  <span>Giáo viên chấm: <strong className="text-slate-600 font-bold">{sc.teacherName || "Chưa xác định"}</strong></span>
-                                  <span className="text-slate-200">•</span>
-                                  <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5"/> Cập nhật: {new Date(sc.updatedAt).toLocaleDateString("vi-VN")}</span>
-                                </div>
-                              </div>
-                            </div>
 
-                            {/* Card Content depending on Subject Type */}
-                            {isPsych ? (
-                              <div className="space-y-5">
-                                {/* Visual Diagnostic Psychology Score Scale */}
-                                {(() => {
-                                  const score = parseFloat(scoreVals[6] || scoreVals[20] || "0");
-                                  
-                                  const levels = [
-                                    { name: "Bình thường", min: 0, max: 15, bg: "bg-emerald-50 text-emerald-700 border-emerald-100", activeBg: "bg-emerald-500", scaleBg: "bg-emerald-100" },
-                                    { name: "Dấu hiệu nhẹ", min: 16, max: 31, bg: "bg-blue-50 text-blue-700 border-blue-100", activeBg: "bg-blue-500", scaleBg: "bg-blue-100" },
-                                    { name: "Dấu hiệu vừa", min: 32, max: 47, bg: "bg-amber-50 text-amber-700 border-amber-100", activeBg: "bg-amber-500", scaleBg: "bg-amber-100" },
-                                    { name: "Nguy cơ cao", min: 48, max: 63, bg: "bg-orange-50 text-orange-700 border-orange-100", activeBg: "bg-orange-500", scaleBg: "bg-orange-100" },
-                                    { name: "Nguy cơ rất cao", min: 64, max: 80, bg: "bg-rose-50 text-rose-700 border-rose-100", activeBg: "bg-rose-500", scaleBg: "bg-rose-100" }
-                                  ];
-                                  
-                                  const activeLvl = levels.find(l => score >= l.min && score <= l.max) || levels[0];
-                                  
+                                  <div className="flex items-end justify-between z-10 mt-auto">
+                                    <div className={`font-black tracking-tight leading-none ${sCode.includes("tly") ? "text-sm" : "text-xl"} ${isActive ? "text-[#00A19A]" : "text-slate-800"}`}>
+                                      {val}
+                                    </div>
+                                    <div className={`px-2 py-1 rounded-xl border font-black text-[9px] uppercase tracking-wider ${isActive ? "bg-[#00A19A] text-white border-[#00A19A]" : badgeStyle} flex items-center gap-1.5 shadow-sm`}>
+                                      {sCode.includes("tly") ? (
+                                        <>
+                                          <span className={`w-1.5 h-1.5 rounded-full bg-current animate-pulse ${isActive ? "text-white" : ""}`}></span>
+                                          {rawScore}đ
+                                        </>
+                                      ) : (
+                                        <>{sc.id === "tong_diem_tieng_anh" ? "Tổng điểm" : "Điểm số"}</>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          {/* DETAILED CARDS SECTION */}
+                          <div className="space-y-6">
+                            {scoresList
+                              .filter((sc) => sc.id === activeSubjectId)
+                              .map((sc) => {
+                                if (sc.id === "tong_diem_tieng_anh") {
+                                  const totalVal = oralScoreVal !== null || writtenScoreVal !== null 
+                                    ? ((oralScoreVal || 0) + (writtenScoreVal || 0)).toString() 
+                                    : "—";
+                                    
                                   return (
-                                    <div className="space-y-4">
-                                      {/* Diagnosis Badge Box */}
-                                      <div className="flex items-center justify-between bg-slate-50 border border-slate-200/80 rounded-2xl p-4 shadow-inner">
+                                    <div key={sc.id} className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden text-left">
+                                      <div className="absolute top-0 left-0 w-1.5 h-full bg-[#00A19A]"></div>
+                                      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4 mb-5">
                                         <div>
-                                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tổng điểm đánh giá</span>
-                                          <div className="text-2xl font-black text-indigo-700 mt-1">{score} Điểm</div>
-                                        </div>
-                                        <div className={`px-4 py-2.5 rounded-2xl border font-black text-xs uppercase tracking-wider shadow-sm flex items-center gap-2 ${activeLvl.bg}`}>
-                                          <span className={`w-2 h-2 rounded-full ${activeLvl.activeBg} animate-pulse`}></span>
-                                          Chẩn đoán: {activeLvl.name}
+                                          <h4 className="font-black text-slate-800 text-lg leading-none">Tổng điểm Tiếng Anh</h4>
+                                          <p className="text-xs text-slate-400 font-semibold mt-2.5">
+                                            Tổng hợp kết quả môn Tiếng Anh (Vấn đáp + Viết)
+                                          </p>
                                         </div>
                                       </div>
-
-                                      {/* Interactive Diagnostic Gauge Scale */}
-                                      <div className="space-y-2">
-                                        <div className="flex items-center justify-between">
-                                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-455">Thang đo chẩn đoán lâm sàng</span>
-                                          <span className="text-[10px] font-bold text-slate-400">Điểm tối đa: 80</span>
+                                      <div className="space-y-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-left">
+                                          <div className="border rounded-2xl px-4 py-3 text-center shadow-sm flex flex-col justify-between bg-slate-50 border-slate-200/60 text-slate-600">
+                                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 truncate block leading-tight">Tiếng Anh (Vấn đáp)</span>
+                                            <div className="text-xl font-black mt-2 leading-none text-slate-800">
+                                              {oralScoreText !== "—" ? `${oralScoreText}/30` : "—/30"}
+                                            </div>
+                                          </div>
+                                          <div className="border rounded-2xl px-4 py-3 text-center shadow-sm flex flex-col justify-between bg-slate-50 border-slate-200/60 text-slate-600">
+                                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 truncate block leading-tight">Tiếng Anh (Viết)</span>
+                                            <div className="text-xl font-black mt-2 leading-none text-slate-800">
+                                              {writtenScoreText !== "—" ? `${writtenScoreText}/70` : "—/70"}
+                                            </div>
+                                          </div>
+                                          <div className="border rounded-2xl px-4 py-3 text-center shadow-sm flex flex-col justify-between bg-indigo-50/50 border-indigo-150 text-indigo-700">
+                                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 truncate block leading-tight">Tổng điểm</span>
+                                            <div className="text-xl font-black mt-2 leading-none text-indigo-700">
+                                              {totalVal !== "—" ? `${totalVal}/100` : "—/100"}
+                                            </div>
+                                          </div>
                                         </div>
-                                        <div className="grid grid-cols-5 gap-1.5">
-                                          {levels.map(l => {
-                                            const isActive = activeLvl.name === l.name;
+                                      </div>
+                                    </div>
+                                  );
+                                }
+
+                                const subject = sc.subject || {};
+                                const subName = (subject.name || "").toLowerCase();
+                                const subCode = (subject.code || "").toLowerCase();
+                                const subNameNormalized = subName.normalize("NFC");
+                                const isPsych = subName.includes("tâm lý") || subCode.includes("tly");
+                                const isChildDev = subNameNormalized.includes("chuẩn phát triển") || subNameNormalized.includes("bộ chuẩn phát triển") || subCode.includes("cpt") || subCode.includes("tci");
+                                const isThinkingSkills = subNameNormalized.includes("năng lực tư duy") || subCode.includes("nltd");
+
+                                let scoreVals = [];
+                                let commentVals = [];
+                                try { if (sc.scores) { const parsed = JSON.parse(sc.scores); scoreVals = Array.isArray(parsed) ? parsed : [parsed]; } } catch { scoreVals = [sc.scores]; }
+                                try { if (sc.comments) { const parsed = JSON.parse(sc.comments); commentVals = Array.isArray(parsed) ? parsed : [parsed]; } } catch { commentVals = [sc.comments]; }
+
+                                let parsedCols = { scores: [], comments: [] };
+                                try { if (subject.columnNames) { const parsed = JSON.parse(subject.columnNames); parsedCols = { scores: Array.isArray(parsed.scores) ? parsed.scores : [], comments: Array.isArray(parsed.comments) ? parsed.comments : [] }; } } catch {}
+
+                                return (
+                                  <div key={sc.id} className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden text-left">
+                                    
+                                    {/* Card Decorative Accent bar */}
+                                    <div className="absolute top-0 left-0 w-1.5 h-full bg-[#00A19A]"></div>
+
+                                    {/* Card Header */}
+                                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4 mb-5">
+                                      <div>
+                                        <div className="flex items-center gap-2.5">
+                                          <h4 className="font-black text-slate-800 text-lg leading-none">{subject.name}</h4>
+                                          {subject.code && <span className="font-mono text-[10px] font-black text-slate-400 bg-slate-50 border border-slate-200/50 px-2 py-0.5 rounded-lg select-none">{subject.code}</span>}
+                                          {subject.subjectType === "VIET_NAM" && (
+                                            <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full border shadow-sm bg-[#00A19A]/5 text-[#00A19A] border-[#00A19A]/20`}>
+                                              Giáo viên Việt Nam
+                                            </span>
+                                          )}
+                                        </div>
+                                        <div className="flex items-center gap-2 text-xs text-slate-400 font-semibold mt-2.5">
+                                          <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-black text-[9px] border shadow-inner select-none shrink-0">
+                                            {sc.teacherName?.charAt(0) || "—"}
+                                          </div>
+                                          <span>Giáo viên chấm: <strong className="text-slate-600 font-bold">{sc.teacherName || "Chưa xác định"}</strong></span>
+                                          <span className="text-slate-200">•</span>
+                                          <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5"/> Cập nhật: {new Date(sc.updatedAt).toLocaleDateString("vi-VN")}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* Card Content depending on Subject Type */}
+                                    {isPsych ? (
+                                      <div className="space-y-5">
+                                        {/* Visual Diagnostic Psychology Score Scale */}
+                                        {(() => {
+                                          const score = parseFloat(scoreVals[6] || scoreVals[20] || "0");
+                                          
+                                          const levels = [
+                                            { name: "Bình thường", min: 0, max: 15, bg: "bg-emerald-50 text-emerald-700 border-emerald-100", activeBg: "bg-emerald-500", scaleBg: "bg-emerald-100" },
+                                            { name: "Dấu hiệu nhẹ", min: 16, max: 31, bg: "bg-blue-50 text-blue-700 border-blue-100", activeBg: "bg-blue-500", scaleBg: "bg-blue-100" },
+                                            { name: "Dấu hiệu vừa", min: 32, max: 47, bg: "bg-amber-50 text-amber-700 border-amber-100", activeBg: "bg-amber-500", scaleBg: "bg-amber-100" },
+                                            { name: "Nguy cơ cao", min: 48, max: 63, bg: "bg-orange-50 text-orange-700 border-orange-100", activeBg: "bg-orange-500", scaleBg: "bg-orange-100" },
+                                            { name: "Nguy cơ rất cao", min: 64, max: 80, bg: "bg-rose-50 text-rose-700 border-rose-100", activeBg: "bg-rose-500", scaleBg: "bg-rose-100" }
+                                          ];
+                                          
+                                          const activeLvl = levels.find(l => score >= l.min && score <= l.max) || levels[0];
+                                          
+                                          return (
+                                            <div className="space-y-4">
+                                              {/* Diagnosis Badge Box */}
+                                              <div className="flex items-center justify-between bg-slate-50 border border-slate-200/80 rounded-2xl p-4 shadow-inner">
+                                                <div>
+                                                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tổng điểm đánh giá</span>
+                                                  <div className="text-2xl font-black text-indigo-700 mt-1">{score} Điểm</div>
+                                                </div>
+                                                <div className={`px-4 py-2.5 rounded-2xl border font-black text-xs uppercase tracking-wider shadow-sm flex items-center gap-2 ${activeLvl.bg}`}>
+                                                  <span className={`w-2 h-2 rounded-full ${activeLvl.activeBg} animate-pulse`}></span>
+                                                  Chẩn đoán: {activeLvl.name}
+                                                </div>
+                                              </div>
+
+                                              {/* Interactive Diagnostic Gauge Scale */}
+                                              <div className="space-y-2">
+                                                <div className="flex items-center justify-between">
+                                                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-455">Thang đo chẩn đoán lâm sàng</span>
+                                                  <span className="text-[10px] font-bold text-slate-400">Điểm tối đa: 80</span>
+                                                </div>
+                                                <div className="grid grid-cols-5 gap-1.5">
+                                                  {levels.map(l => {
+                                                    const isActive = activeLvl.name === l.name;
+                                                    return (
+                                                      <div key={l.name} className="space-y-1">
+                                                        <div className={`h-2.5 rounded-full ${isActive ? l.activeBg : l.scaleBg} transition-all duration-500 ${isActive ? "shadow-md shadow-indigo-100 scale-y-110" : ""}`}></div>
+                                                        <div className="text-center">
+                                                          <span className={`text-[8px] leading-tight font-black block truncate ${isActive ? "text-slate-800 font-bold scale-[1.02]" : "text-slate-400"}`}>
+                                                            {l.name}
+                                                          </span>
+                                                          <span className="text-[7px] text-slate-355 font-semibold block mt-0.5">{l.min}-{l.max}</span>
+                                                        </div>
+                                                      </div>
+                                                    );
+                                                  })}
+                                                </div>
+                                              </div>
+                                            </div>
+                                          );
+                                        })()}
+
+                                        {/* Comments / Recommendations */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                                          <div className="space-y-1.5 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-455 flex items-center gap-1.5">
+                                              <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>
+                                              Kết luận sơ bộ từ chuyên viên
+                                            </span>
+                                            <p className={`text-sm font-medium leading-relaxed whitespace-pre-wrap ${commentVals[0] ? "text-slate-700" : "text-slate-450 italic"}`}>
+                                              {commentVals[0] ? `"${commentVals[0]}"` : "Chưa cập nhật nội dung nhận định chi tiết."}
+                                            </p>
+                                          </div>
+                                          
+                                          <div className="space-y-1.5 bg-amber-50/30 p-4 rounded-2xl border border-amber-100/50">
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-amber-600 flex items-center gap-1.5">
+                                              <Info className="w-3.5 h-3.5 text-amber-500" />
+                                              Khuyến nghị dành cho phụ huynh
+                                            </span>
+                                            <p className={`text-sm font-medium leading-relaxed whitespace-pre-wrap ${commentVals[1] ? "text-amber-800" : "text-slate-400 italic"}`}>
+                                              {commentVals[1] ? `"${commentVals[1]}"` : "Chưa có khuyến nghị cụ thể từ chuyên viên."}
+                                            </p>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ) : isChildDev ? (
+                                      <div className="space-y-5">
+                                        {/* Segmented Metrics Row */}
+                                        <div className="grid grid-cols-3 gap-3">
+                                          <div className="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-3.5 text-center shadow-inner">
+                                            <div className="text-[10px] font-black uppercase tracking-wider text-emerald-600 flex items-center justify-center gap-1"><Check className="w-3.5 h-3.5"/> Đạt</div>
+                                            <div className="text-2xl font-black text-emerald-700 mt-1">{(Array.isArray(scoreVals) ? scoreVals : []).filter(v => v === "3").length}</div>
+                                          </div>
+                                          <div className="bg-rose-50/50 border border-rose-100 rounded-2xl p-3.5 text-center shadow-inner">
+                                            <div className="text-[10px] font-black uppercase tracking-wider text-rose-600 flex items-center justify-center gap-1"><AlertCircle className="w-3.5 h-3.5"/> Không đạt</div>
+                                            <div className="text-2xl font-black text-rose-700 mt-1">{(Array.isArray(scoreVals) ? scoreVals : []).filter(v => v === "2").length}</div>
+                                          </div>
+                                          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 text-center shadow-inner">
+                                            <div className="text-[10px] font-black uppercase tracking-wider text-slate-500 flex items-center justify-center gap-1"><Info className="w-3.5 h-3.5"/> Không làm</div>
+                                            <div className="text-2xl font-black text-slate-600 mt-1">{(Array.isArray(scoreVals) ? scoreVals : []).filter(v => v === "1").length}</div>
+                                          </div>
+                                        </div>
+
+                                        {/* Chi tiết tiêu chí không đạt hoặc không làm */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                                          {scoreVals.some(v => v === "2") ? (
+                                            <div className="bg-rose-50/20 border border-rose-100 rounded-2xl p-4">
+                                              <span className="text-[10px] font-black uppercase tracking-widest text-rose-600 mb-3 block flex items-center gap-1.5"><AlertCircle className="w-4 h-4 text-rose-500"/> Chi tiết tiêu chí Không đạt</span>
+                                              <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 scrollbar-thin">
+                                                {scoreVals.map((v, idx) => v === "2" ? (
+                                                  <div key={idx} className="flex items-start gap-2.5 text-xs font-bold text-rose-800 leading-normal bg-white border border-rose-100/50 p-2.5 rounded-xl shadow-sm">
+                                                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0"></span>
+                                                    <span className="font-medium text-slate-700">
+                                                      {parsedCols.scores[idx] || [
+                                                        "Chỉ số 65. Có thói quen chào hỏi, cảm ơn, xin phép và xưng hô lễ phép với người lớn",
+                                                        "Chỉ số 74. Tập trung chú ý thực hiện nhiệm vụ và hoạt động.",
+                                                        "Chỉ số 16. Nhận biết về tên gọi, đặc điểm bên ngoài, giới tính, sở thích, điểm mạnh, điểm yếu của bản thân.",
+                                                        "Chỉ số 14. Nhận ra tình huống nguy hiểm và biết cách xử lý phù hợp.",
+                                                        "Chỉ số 33. Sử dụng lời nói, hành vi lịch sự trong giao tiếp.",
+                                                        "Chỉ số 31. Nghe và phản hồi thông tin đơn giản.",
+                                                        "Chỉ số 48. Gọi tên các ngày trong tuần theo thứ tự.",
+                                                        "Chỉ số 47. Xác định được vị trí (trong, ngoài, trên, dưới, sau, phải, trái) của một vật so với một vật khác.",
+                                                        "Chỉ số 51. Phân loại một số sự vật thành nhóm theo đặc điểm chung và gọi tên nhóm.",
+                                                        "Chỉ số 45. Xác định một số hình phẳng và hình khối đơn giản trong cuộc sống xung quanh.",
+                                                        "Chỉ số 42,43. Tách, gộp số lượng trong phạm vi 10; so sánh, thêm bớt số lượng trong phạm vi 10.",
+                                                        "Chỉ số 38. Nhận biết và gọi tên chữ cái trong bảng chữ cái Tiếng Việt.",
+                                                        "Chỉ số 41. Bắt chước hành vi “viết”",
+                                                        "Chỉ số 9. Thực hiện các việc tự phục vụ không cần sự giúp đỡ.",
+                                                        "Chỉ số 60. Thể hiện ý tưởng, cảm xúc của bản thân thông qua hát, vận động theo nhạc.",
+                                                        "Chỉ số 61. Tô màu kín, không chờm ra ngoài đường viền các hình có chi tiết nhỏ."
+                                                      ][idx] || `Tiêu chí ${idx + 1}`}
+                                                    </span>
+                                                  </div>
+                                                ) : null)}
+                                              </div>
+                                            </div>
+                                          ) : (
+                                            <div className="bg-emerald-50/20 border border-emerald-100 rounded-2xl p-5 text-center flex flex-col justify-center items-center gap-2">
+                                              <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+                                              <p className="text-xs font-black text-emerald-800 uppercase tracking-wider">Hoàn thành tốt!</p>
+                                              <p className="text-xs text-slate-555 font-semibold">Học sinh hoàn thành xuất sắc, không có tiêu chí nào Không Đạt.</p>
+                                            </div>
+                                          )}
+
+                                          {scoreVals.some(v => v === "1") && (
+                                            <div className="bg-slate-55 border border-slate-200 rounded-2xl p-4">
+                                              <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3 block flex items-center gap-1.5"><Info className="w-4 h-4 text-slate-400"/> Chi tiết tiêu chí Không làm</span>
+                                              <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 scrollbar-thin">
+                                                {scoreVals.map((v, idx) => v === "1" ? (
+                                                  <div key={idx} className="flex items-start gap-2.5 text-xs font-bold text-slate-750 leading-normal bg-white border border-slate-200/65 p-2.5 rounded-xl shadow-sm">
+                                                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0"></span>
+                                                    <span className="font-medium text-slate-555">
+                                                      {parsedCols.scores[idx] || [
+                                                        "Chỉ số 65. Có thói quen chào hỏi, cảm ơn, xin phép và xưng hô lễ phép với người lớn",
+                                                        "Chỉ số 74. Tập trung chú ý thực hiện nhiệm vụ và hoạt động.",
+                                                        "Chỉ số 16. Nhận biết về tên gọi, đặc điểm bên ngoài, giới tính, sở thích, điểm mạnh, điểm yếu của bản thân.",
+                                                        "Chỉ số 14. Nhận ra tình huống nguy hiểm và biết cách xử lý phù hợp.",
+                                                        "Chỉ số 33. Sử dụng lời nói, hành vi lịch sự trong giao tiếp.",
+                                                        "Chỉ số 31. Nghe và phản hồi thông tin đơn giản.",
+                                                        "Chỉ số 48. Gọi tên các ngày trong tuần theo thứ tự.",
+                                                        "Chỉ số 47. Xác định được vị trí (trong, ngoài, trên, dưới, sau, phải, trái) của một vật so với một vật khác.",
+                                                        "Chỉ số 51. Phân loại một số sự vật thành nhóm theo đặc điểm chung và gọi tên nhóm.",
+                                                        "Chỉ số 45. Xác định một số hình phẳng và hình khối đơn giản trong cuộc sống xung quanh.",
+                                                        "Chỉ số 42,43. Tách, gộp số lượng trong phạm vi 10; so sánh, thêm bớt số lượng trong phạm vi 10.",
+                                                        "Chỉ số 38. Nhận biết và gọi tên chữ cái trong bảng chữ cái Tiếng Việt.",
+                                                        "Chỉ số 41. Bắt chước hành vi “viết”",
+                                                        "Chỉ số 9. Thực hiện các việc tự phục vụ không cần sự giúp đỡ.",
+                                                        "Chỉ số 60. Thể hiện ý tưởng, cảm xúc của bản thân thông qua hát, vận động theo nhạc.",
+                                                        "Chỉ số 61. Tô màu kín, không chờm ra ngoài đường viền các hình có chi tiết nhỏ."
+                                                      ][idx] || `Tiêu chí ${idx + 1}`}
+                                                    </span>
+                                                  </div>
+                                                ) : null)}
+                                              </div>
+                                            </div>
+                                          )}
+                                        </div>
+
+                                        {commentVals[0] && (
+                                          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 relative text-left">
+                                            <span className="block text-[10px] font-black uppercase tracking-widest text-slate-455 mb-1.5">Nhận xét tổng quan từ giáo viên</span>
+                                            <p className="text-sm font-semibold text-slate-700 italic leading-relaxed">"{commentVals[0]}"</p>
+                                          </div>
+                                        )}
+                                      </div>
+                                    ) : isThinkingSkills ? (
+                                      <div className="space-y-5">
+                                        {/* Gorgeous Thinking Skills Progress Matrix */}
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                          {[
+                                            { label: "Năng lực Logic", val: scoreVals[0], color: "text-indigo-600 bg-indigo-50 border-indigo-100", barColor: "bg-indigo-500" },
+                                            { label: "Năng lực Lập tưởng", val: scoreVals[1], color: "text-violet-600 bg-violet-50 border-violet-100", barColor: "bg-violet-500" },
+                                            { label: "Năng lực Phản biện", val: scoreVals[2], color: "text-cyan-600 bg-cyan-50 border-cyan-100", barColor: "bg-cyan-500" },
+                                            { label: "Giải quyết Vấn đề", val: scoreVals[3], color: "text-teal-600 bg-teal-50 border-teal-100", barColor: "bg-teal-500" }
+                                          ].map(item => {
+                                            let pctVal = 0;
+                                            if (item.val) {
+                                              const textVal = item.val.toString();
+                                              if (textVal.includes("/")) {
+                                                const [n, d] = textVal.split("/").map(Number);
+                                                if (d > 0) pctVal = (n / d) * 100;
+                                              } else if (textVal.includes("%")) {
+                                                pctVal = parseFloat(textVal);
+                                              } else {
+                                                const parsed = parseFloat(textVal);
+                                                if (!isNaN(parsed)) pctVal = parsed <= 10 ? parsed * 10 : parsed;
+                                              }
+                                            }
+                                            
                                             return (
-                                              <div key={l.name} className="space-y-1">
-                                                <div className={`h-2.5 rounded-full ${isActive ? l.activeBg : l.scaleBg} transition-all duration-500 ${isActive ? "shadow-md shadow-indigo-100 scale-y-110" : ""}`}></div>
-                                                <div className="text-center">
-                                                  <span className={`text-[8px] leading-tight font-black block truncate ${isActive ? "text-slate-800 font-bold scale-[1.02]" : "text-slate-400"}`}>
-                                                    {l.name}
-                                                  </span>
-                                                  <span className="text-[7px] text-slate-355 font-semibold block mt-0.5">{l.min}-{l.max}</span>
+                                              <div key={item.label} className={`border rounded-2xl p-3.5 text-center flex flex-col justify-between shadow-sm relative overflow-hidden group ${item.color}`}>
+                                                <span className="text-[10px] font-black uppercase tracking-wider text-slate-555 block leading-tight">{item.label}</span>
+                                                <div className="text-lg font-black text-slate-800 mt-2 mb-2 leading-none">{item.val || "—"}</div>
+                                                
+                                                {/* Micro Progress Bar */}
+                                                <div className="w-full bg-slate-100 rounded-full h-1.5 mt-auto">
+                                                  <div className={`h-1.5 rounded-full ${item.barColor}`} style={{ width: `${Math.min(pctVal || 0, 100)}%` }}></div>
                                                 </div>
                                               </div>
                                             );
                                           })}
                                         </div>
-                                      </div>
-                                    </div>
-                                  );
-                                })()}
 
-                                {/* Comments / Recommendations */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                                  <div className="space-y-1.5 bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-455 flex items-center gap-1.5">
-                                      <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>
-                                      Kết luận sơ bộ từ chuyên viên
-                                    </span>
-                                    <p className={`text-sm font-medium leading-relaxed whitespace-pre-wrap ${commentVals[0] ? "text-slate-700" : "text-slate-450 italic"}`}>
-                                      {commentVals[0] ? `"${commentVals[0]}"` : "Chưa cập nhật nội dung nhận định chi tiết."}
-                                    </p>
-                                  </div>
-                                  
-                                  <div className="space-y-1.5 bg-amber-50/30 p-4 rounded-2xl border border-amber-100/50">
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-amber-600 flex items-center gap-1.5">
-                                      <Info className="w-3.5 h-3.5 text-amber-500" />
-                                      Khuyến nghị dành cho phụ huynh
-                                    </span>
-                                    <p className={`text-sm font-medium leading-relaxed whitespace-pre-wrap ${commentVals[1] ? "text-amber-800" : "text-slate-400 italic"}`}>
-                                      {commentVals[1] ? `"${commentVals[1]}"` : "Chưa có khuyến nghị cụ thể từ chuyên viên."}
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-                            ) : isChildDev ? (
-                              <div className="space-y-5">
-                                {/* Segmented Metrics Row */}
-                                <div className="grid grid-cols-3 gap-3">
-                                  <div className="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-3.5 text-center shadow-inner">
-                                    <div className="text-[10px] font-black uppercase tracking-wider text-emerald-600 flex items-center justify-center gap-1"><Check className="w-3.5 h-3.5"/> Đạt</div>
-                                    <div className="text-2xl font-black text-emerald-700 mt-1">{(Array.isArray(scoreVals) ? scoreVals : []).filter(v => v === "3").length}</div>
-                                  </div>
-                                  <div className="bg-rose-50/50 border border-rose-100 rounded-2xl p-3.5 text-center shadow-inner">
-                                    <div className="text-[10px] font-black uppercase tracking-wider text-rose-600 flex items-center justify-center gap-1"><AlertCircle className="w-3.5 h-3.5"/> Không đạt</div>
-                                    <div className="text-2xl font-black text-rose-700 mt-1">{(Array.isArray(scoreVals) ? scoreVals : []).filter(v => v === "2").length}</div>
-                                  </div>
-                                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 text-center shadow-inner">
-                                    <div className="text-[10px] font-black uppercase tracking-wider text-slate-500 flex items-center justify-center gap-1"><Info className="w-3.5 h-3.5"/> Không làm</div>
-                                    <div className="text-2xl font-black text-slate-600 mt-1">{(Array.isArray(scoreVals) ? scoreVals : []).filter(v => v === "1").length}</div>
-                                  </div>
-                                </div>
-
-                                {/* Chi tiết tiêu chí không đạt hoặc không làm */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                                  {scoreVals.some(v => v === "2") ? (
-                                    <div className="bg-rose-50/20 border border-rose-100 rounded-2xl p-4">
-                                      <span className="text-[10px] font-black uppercase tracking-widest text-rose-600 mb-3 block flex items-center gap-1.5"><AlertCircle className="w-4 h-4 text-rose-500"/> Chi tiết tiêu chí Không đạt</span>
-                                      <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 scrollbar-thin">
-                                        {scoreVals.map((v, idx) => v === "2" ? (
-                                          <div key={idx} className="flex items-start gap-2.5 text-xs font-bold text-rose-800 leading-normal bg-white border border-rose-100/50 p-2.5 rounded-xl shadow-sm">
-                                            <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0"></span>
-                                            <span className="font-medium text-slate-700">
-                                              {parsedCols.scores[idx] || [
-                                                "Chỉ số 65. Có thói quen chào hỏi, cảm ơn, xin phép và xưng hô lễ phép với người lớn",
-                                                "Chỉ số 74. Tập trung chú ý thực hiện nhiệm vụ và hoạt động.",
-                                                "Chỉ số 16. Nhận biết về tên gọi, đặc điểm bên ngoài, giới tính, sở thích, điểm mạnh, điểm yếu của bản thân.",
-                                                "Chỉ số 14. Nhận ra tình huống nguy hiểm và biết cách xử lý phù hợp.",
-                                                "Chỉ số 33. Sử dụng lời nói, hành vi lịch sự trong giao tiếp.",
-                                                "Chỉ số 31. Nghe và phản hồi thông tin đơn giản.",
-                                                "Chỉ số 48. Gọi tên các ngày trong tuần theo thứ tự.",
-                                                "Chỉ số 47. Xác định được vị trí (trong, ngoài, trên, dưới, sau, phải, trái) của một vật so với một vật khác.",
-                                                "Chỉ số 51. Phân loại một số sự vật thành nhóm theo đặc điểm chung và gọi tên nhóm.",
-                                                "Chỉ số 45. Xác định một số hình phẳng và hình khối đơn giản trong cuộc sống xung quanh.",
-                                                "Chỉ số 42,43. Tách, gộp số lượng trong phạm vi 10; so sánh, thêm bớt số lượng trong phạm vi 10.",
-                                                "Chỉ số 38. Nhận biết và gọi tên chữ cái trong bảng chữ cái Tiếng Việt.",
-                                                "Chỉ số 41. Bắt chước hành vi “viết”",
-                                                "Chỉ số 9. Thực hiện các việc tự phục vụ không cần sự giúp đỡ.",
-                                                "Chỉ số 60. Thể hiện ý tưởng, cảm xúc của bản thân thông qua hát, vận động theo nhạc.",
-                                                "Chỉ số 61. Tô màu kín, không chờm ra ngoài đường viền các hình có chi tiết nhỏ."
-                                              ][idx] || `Tiêu chí ${idx + 1}`}
-                                            </span>
-                                          </div>
-                                        ) : null)}
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    <div className="bg-emerald-50/20 border border-emerald-100 rounded-2xl p-5 text-center flex flex-col justify-center items-center gap-2">
-                                      <CheckCircle2 className="w-8 h-8 text-emerald-500" />
-                                      <p className="text-xs font-black text-emerald-800 uppercase tracking-wider">Hoàn thành tốt!</p>
-                                      <p className="text-xs text-slate-500 font-semibold">Học sinh hoàn thành xuất sắc, không có tiêu chí nào Không Đạt.</p>
-                                    </div>
-                                  )}
-
-                                  {scoreVals.some(v => v === "1") && (
-                                    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
-                                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3 block flex items-center gap-1.5"><Info className="w-4 h-4 text-slate-400"/> Chi tiết tiêu chí Không làm</span>
-                                      <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 scrollbar-thin">
-                                        {scoreVals.map((v, idx) => v === "1" ? (
-                                          <div key={idx} className="flex items-start gap-2.5 text-xs font-bold text-slate-750 leading-normal bg-white border border-slate-200/65 p-2.5 rounded-xl shadow-sm">
-                                            <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0"></span>
-                                            <span className="font-medium text-slate-500">
-                                              {parsedCols.scores[idx] || [
-                                                "Chỉ số 65. Có thói quen chào hỏi, cảm ơn, xin phép và xưng hô lễ phép với người lớn",
-                                                "Chỉ số 74. Tập trung chú ý thực hiện nhiệm vụ và hoạt động.",
-                                                "Chỉ số 16. Nhận biết về tên gọi, đặc điểm bên ngoài, giới tính, sở thích, điểm mạnh, điểm yếu của bản thân.",
-                                                "Chỉ số 14. Nhận ra tình huống nguy hiểm và biết cách xử lý phù hợp.",
-                                                "Chỉ số 33. Sử dung lời nói, hành vi lịch sự trong giao tiếp.",
-                                                "Chỉ số 31. Nghe và phản hồi thông tin đơn giản.",
-                                                "Chỉ số 48. Gọi tên các ngày trong tuần theo thứ tự.",
-                                                "Chỉ số 47. Xác định được vị trí (trong, ngoài, trên, dưới, sau, phải, trái) của một vật so với một vật khác.",
-                                                "Chỉ số 51. Phân loại một số sự vật thành nhóm theo đặc điểm chung và gọi tên nhóm.",
-                                                "Chỉ số 45. Xác định một số hình phẳng và hình khối đơn giản trong cuộc sống xung quanh.",
-                                                "Chỉ số 42,43. Tách, gộp số lượng trong phạm vi 10; so sánh, thêm bớt số lượng trong phạm vi 10.",
-                                                "Chỉ số 38. Nhận biết và gọi tên chữ cái trong bảng chữ cái Tiếng Việt.",
-                                                "Chỉ số 41. Bắt chước hành vi “viết”",
-                                                "Chỉ số 9. Thực hiện các việc tự phục vụ không cần sự giúp đỡ.",
-                                                "Chỉ số 60. Thể hiện ý tưởng, cảm xúc của bản thân thông qua hát, vận động theo nhạc.",
-                                                "Chỉ số 61. Tô màu kín, không chờm ra ngoài đường viền các hình có chi tiết nhỏ."
-                                              ][idx] || `Tiêu chí ${idx + 1}`}
-                                            </span>
-                                          </div>
-                                        ) : null)}
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-
-                                {commentVals[0] && (
-                                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 relative text-left">
-                                    <span className="block text-[10px] font-black uppercase tracking-widest text-slate-450 mb-1.5">Nhận xét tổng quan từ giáo viên</span>
-                                    <p className="text-sm font-semibold text-slate-700 italic leading-relaxed">"{commentVals[0]}"</p>
-                                  </div>
-                                )}
-                              </div>
-                            ) : isThinkingSkills ? (
-                              <div className="space-y-5">
-                                {/* Gorgeous Thinking Skills Progress Matrix */}
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                  {[
-                                    { label: "Năng lực Logic", val: scoreVals[0], color: "text-indigo-600 bg-indigo-50 border-indigo-100", barColor: "bg-indigo-500" },
-                                    { label: "Năng lực Lập tưởng", val: scoreVals[1], color: "text-violet-600 bg-violet-50 border-violet-100", barColor: "bg-violet-500" },
-                                    { label: "Năng lực Phản biện", val: scoreVals[2], color: "text-cyan-600 bg-cyan-50 border-cyan-100", barColor: "bg-cyan-500" },
-                                    { label: "Giải quyết Vấn đề", val: scoreVals[3], color: "text-teal-600 bg-teal-50 border-teal-100", barColor: "bg-teal-500" }
-                                  ].map(item => {
-                                    let pctVal = 0;
-                                    if (item.val) {
-                                      const textVal = item.val.toString();
-                                      if (textVal.includes("/")) {
-                                        const [n, d] = textVal.split("/").map(Number);
-                                        if (d > 0) pctVal = (n / d) * 100;
-                                      } else if (textVal.includes("%")) {
-                                        pctVal = parseFloat(textVal);
-                                      } else {
-                                        const parsed = parseFloat(textVal);
-                                        if (!isNaN(parsed)) pctVal = parsed <= 10 ? parsed * 10 : parsed;
-                                      }
-                                    }
-                                    
-                                    return (
-                                      <div key={item.label} className={`border rounded-2xl p-3.5 text-center flex flex-col justify-between shadow-sm relative overflow-hidden group ${item.color}`}>
-                                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 block leading-tight">{item.label}</span>
-                                        <div className="text-lg font-black text-slate-800 mt-2 mb-2 leading-none">{item.val || "—"}</div>
-                                        
-                                        {/* Micro Progress Bar */}
-                                        <div className="w-full bg-slate-100 rounded-full h-1.5 mt-auto">
-                                          <div className={`h-1.5 rounded-full ${item.barColor}`} style={{ width: `${Math.min(pctVal || 0, 100)}%` }}></div>
-                                        </div>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-
-                                {/* Premium overall challenge completion indicator */}
-                                <div className="bg-gradient-to-r from-indigo-50 to-violet-50/50 border border-indigo-100 rounded-2xl p-4 flex items-center justify-between shadow-sm text-left">
-                                  <div className="flex items-center gap-2">
-                                    <div className="p-2.5 bg-indigo-500 text-white rounded-xl shadow-md shadow-indigo-100 shrink-0">
-                                      <BarChart3 className="w-4 h-4"/>
-                                    </div>
-                                    <div>
-                                      <span className="text-[10px] font-black uppercase tracking-widest text-indigo-500">Tỷ lệ hoàn thành thử thách</span>
-                                      <p className="text-xs text-slate-550 font-bold mt-0.5">Mức độ hoàn thành các nhiệm vụ tư duy</p>
-                                    </div>
-                                  </div>
-                                  <div className="text-right">
-                                    <span className="text-2xl font-black text-indigo-700">{scoreVals[4] || "0"}%</span>
-                                    <div className="w-28 bg-slate-100 rounded-full h-2 mt-1 border border-slate-200/50 overflow-hidden shadow-inner shrink-0">
-                                      <div className="bg-indigo-600 h-2 rounded-full" style={{ width: `${scoreVals[4] || 0}%` }}></div>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {commentVals[0] && (
-                                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 relative text-left">
-                                    <span className="block text-[10px] font-black uppercase tracking-widest text-slate-450 mb-1.5">Nhận xét tổng quan</span>
-                                    <p className="text-sm font-semibold text-slate-700 italic leading-relaxed">"{commentVals[0]}"</p>
-                                  </div>
-                                )}
-                              </div>
-                            ) : (
-                              <div className="space-y-4">
-                                {/* Display standard scores columns in premium structured layout */}
-                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 text-left">
-                                  {Array.from({length: (subject.scoreColumns ?? 1)}).map((_, colIdx) => {
-                                    let colName = "Điểm " + (colIdx + 1);
-                                    if (parsedCols.scores && parsedCols.scores[colIdx]) colName = parsedCols.scores[colIdx];
-                                    const isTotal = colName.toLowerCase().includes("tổng");
-                                    const val = scoreVals[colIdx];
-                                    
-                                    return (
-                                      <div key={colIdx} className={`border rounded-2xl px-4 py-3 text-center shadow-sm flex flex-col justify-between ${isTotal ? "bg-indigo-50/50 border-indigo-150 text-indigo-700" : "bg-slate-50 border-slate-200/60 text-slate-600"}`}>
-                                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 truncate block leading-tight">{colName}</span>
-                                        <div className={`text-xl font-black mt-2 leading-none ${isTotal ? "text-indigo-700" : "text-slate-800"}`}>
-                                          {val !== undefined && val !== "" ? val : "—"}
-                                        </div>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-
-                                {/* Display standard comments comments columns */}
-                                {commentVals.length > 0 && commentVals.some(v => v) && (
-                                  <div className="space-y-3 bg-slate-50 p-5 rounded-3xl border border-slate-100/70 text-left">
-                                    <span className="block text-[10px] font-black uppercase tracking-widest text-slate-450 mb-2">Ý kiến nhận xét từ Giáo viên bộ môn</span>
-                                    <div className="space-y-3">
-                                      {Array.from({length: (subject.commentColumns ?? 1)}).map((_, colIdx) => {
-                                        let colName = "Nhận xét";
-                                        if (parsedCols.comments && parsedCols.comments[colIdx]) colName = parsedCols.comments[colIdx];
-                                        const val = commentVals[colIdx];
-                                        if (!val) return null;
-
-                                        return (
-                                          <div key={colIdx} className="bg-white p-3.5 rounded-2xl border-2 border-emerald-100/60 shadow-sm flex items-start gap-3 text-left">
-                                            <div className="w-7 h-7 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 text-xs font-black select-none shrink-0">
-                                              {colName.charAt(0)}
+                                        {/* Premium overall challenge completion indicator */}
+                                        <div className="bg-gradient-to-r from-indigo-50 to-violet-50/50 border border-indigo-100 rounded-2xl p-4 flex items-center justify-between shadow-sm text-left">
+                                          <div className="flex items-center gap-2">
+                                            <div className="p-2.5 bg-indigo-500 text-white rounded-xl shadow-md shadow-indigo-100 shrink-0">
+                                              <BarChart3 className="w-4 h-4"/>
                                             </div>
-                                            <div className="flex-1">
-                                              <span className="text-[9px] font-black uppercase tracking-wider text-indigo-600 block mb-0.5">{colName}</span>
-                                              <p className="text-sm font-semibold text-slate-700 italic leading-relaxed">"{val}"</p>
+                                            <div>
+                                              <span className="text-[10px] font-black uppercase tracking-widest text-indigo-555">Tỷ lệ hoàn thành thử thách</span>
+                                              <p className="text-xs text-slate-555 font-bold mt-0.5">Mức độ hoàn thành các nhiệm vụ tư duy</p>
                                             </div>
                                           </div>
-                                        );
-                                      })}
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            )}
+                                          <div className="text-right">
+                                            <span className="text-2xl font-black text-indigo-750">{scoreVals[4] || "0"}%</span>
+                                            <div className="w-28 bg-slate-100 rounded-full h-2 mt-1 border border-slate-200/50 overflow-hidden shadow-inner shrink-0">
+                                              <div className="bg-indigo-600 h-2 rounded-full" style={{ width: `${scoreVals[4] || 0}%` }}></div>
+                                            </div>
+                                          </div>
+                                        </div>
 
+                                        {commentVals[0] && (
+                                          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 relative text-left">
+                                            <span className="block text-[10px] font-black uppercase tracking-widest text-slate-455 mb-1.5">Nhận xét tổng quan</span>
+                                            <p className="text-sm font-semibold text-slate-700 italic leading-relaxed">"{commentVals[0]}"</p>
+                                          </div>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <div className="space-y-4">
+                                        {/* Display standard scores columns in premium structured layout */}
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 text-left">
+                                          {Array.from({length: (subject.scoreColumns ?? 1)}).map((_, colIdx) => {
+                                            let colName = "Điểm " + (colIdx + 1);
+                                            if (parsedCols.scores && parsedCols.scores[colIdx]) colName = parsedCols.scores[colIdx];
+                                            const isTotal = colName.toLowerCase().includes("tổng");
+                                            const val = scoreVals[colIdx];
+                                            
+                                            let displayVal = val !== undefined && val !== "" && val !== null ? val : "—";
+                                            if (!isGrade1) {
+                                              const sNameLower = subName.toLowerCase().normalize("NFC");
+                                              if (sNameLower.includes("tiếng anh") || subCode.includes("eng") || subCode.includes("esl")) {
+                                                if (sNameLower.includes("vấn đáp") || sNameLower.includes("nói") || subCode.includes("speaking") || subCode.includes("oral") || subCode.includes("vd")) {
+                                                  displayVal = val !== undefined && val !== "" && val !== null ? `${val}/30` : "—/30";
+                                                } else if (sNameLower.includes("viết") || subCode.includes("writing") || subCode.includes("written") || subCode.includes("vt")) {
+                                                  displayVal = val !== undefined && val !== "" && val !== null ? `${val}/70` : "—/70";
+                                                }
+                                              }
+                                            }
+                                            
+                                            return (
+                                              <div key={colIdx} className={`border rounded-2xl px-4 py-3 text-center shadow-sm flex flex-col justify-between ${isTotal ? "bg-indigo-50/50 border-indigo-150 text-indigo-700" : "bg-slate-50 border-slate-200/60 text-slate-600"}`}>
+                                                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 truncate block leading-tight">{colName}</span>
+                                                <div className={`text-xl font-black mt-2 leading-none ${isTotal ? "text-indigo-700" : "text-slate-800"}`}>
+                                                  {displayVal}
+                                                </div>
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+
+                                        {/* Display standard comments comments columns */}
+                                        {commentVals.length > 0 && commentVals.some(v => v) && (
+                                          <div className="space-y-3 bg-slate-50 p-5 rounded-3xl border border-slate-100/70 text-left">
+                                            <span className="block text-[10px] font-black uppercase tracking-widest text-slate-455 mb-2">Ý kiến nhận xét từ Giáo viên bộ môn</span>
+                                            <div className="space-y-3">
+                                              {Array.from({length: (subject.commentColumns ?? 1)}).map((_, colIdx) => {
+                                                let colName = "Nhận xét";
+                                                if (parsedCols.comments && parsedCols.comments[colIdx]) colName = parsedCols.comments[colIdx];
+                                                const val = commentVals[colIdx];
+                                                if (!val) return null;
+
+                                                return (
+                                                  <div key={colIdx} className="bg-white p-3.5 rounded-2xl border-2 border-emerald-100/60 shadow-sm flex items-start gap-3 text-left">
+                                                    <div className="w-7 h-7 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 text-xs font-black select-none shrink-0">
+                                                      {colName.charAt(0)}
+                                                    </div>
+                                                    <div className="flex-1">
+                                                      <span className="text-[9px] font-black uppercase tracking-wider text-indigo-600 block mb-0.5">{colName}</span>
+                                                      <p className="text-sm font-semibold text-slate-700 italic leading-relaxed">"{val}"</p>
+                                                    </div>
+                                                  </div>
+                                                );
+                                              })}
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+
+                                  </div>
+                                );
+                              })}
                           </div>
-                        );
-                      })}
-                    </div>
+                        </>
+                      );
+                    })()}
                   </div>
                 )}
               </div>
