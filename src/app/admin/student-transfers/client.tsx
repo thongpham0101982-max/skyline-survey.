@@ -1,10 +1,44 @@
 "use client"
 import { useState, useEffect } from "react"
-import { ArrowRightLeft, ArrowRightToLine, ArrowLeftToLine, Search, Plus, X, Loader2, UserCheck } from "lucide-react"
-import { getTransferFormOptionsAction, getClassesByCampusAndYearAction, getStudentsByClassAction, createTransferOutAction, getTransfersAction, createChangeClassAction, updateTransferInAction, getInputAssessmentStudentsAction, getInputAssessmentPeriodsAction, getInputAssessmentBatchesAction, getInputAssessmentStudentsByPeriodAction, getPendingEnrollmentsAction, completeEnrollmentAction } from "./actions"
+import { ArrowRightLeft, ArrowRightToLine, ArrowLeftToLine, Search, Plus, X, Loader2, UserCheck, GraduationCap, Baby } from "lucide-react"
+import { 
+  getTransferFormOptionsAction, 
+  getClassesByCampusAndYearAction, 
+  getStudentsByClassAction, 
+  createTransferOutAction, 
+  getTransfersAction, 
+  createChangeClassAction, 
+  updateTransferInAction, 
+  getInputAssessmentStudentsAction, 
+  getInputAssessmentPeriodsAction, 
+  getInputAssessmentBatchesAction, 
+  getInputAssessmentStudentsByPeriodAction, 
+  getPendingEnrollmentsAction, 
+  completeEnrollmentAction,
+  getPreschoolInputAssessmentPeriodsAction,
+  getPreschoolInputAssessmentBatchesAction,
+  getPreschoolInputAssessmentStudentsByPeriodAction
+} from "./actions"
+
+const isClassPreschool = (c: any) => {
+  if (!c) return false;
+  const lvl = (c.level || "").toLowerCase();
+  const name = (c.className || "").toLowerCase();
+  return lvl.includes("mam") || lvl.includes("mầm") || lvl.includes("preschool") ||
+         name.includes("mam") || name.includes("mầm") || name.includes("preschool") ||
+         name.includes("nhóm") || name.includes("nhom") ||
+         name.includes("chồi") || name.includes("choi") ||
+         name.includes("lá") || name.includes("la");
+};
+
+const checkIsPreschoolStudent = (student: any) => {
+  if (!student) return false;
+  return isClassPreschool(student.class);
+};
 
 export function StudentTransfersClient() {
   const [activeTab, setActiveTab] = useState<"OUT" | "IN" | "CHANGE_CLASS">("OUT")
+  const [activeSubTab, setActiveSubTab] = useState<"general" | "preschool">("general")
   const [showOutModal, setShowOutModal] = useState(false)
   const [showChangeModal, setShowChangeModal] = useState(false)
   const [showInModal, setShowInModal] = useState(false)
@@ -28,47 +62,84 @@ export function StudentTransfersClient() {
     setLoadingList(false)
   }
 
-  const outTransfers = transfers.filter(t => t.type === "OUT")
-  const changeTransfers = transfers.filter(t => t.type === "CHANGE_CLASS")
-  const inTransfers = transfers.filter(t => t.type === "IN")
+
+  const filteredTransfers = transfers.filter(t => {
+    const isPreschool = checkIsPreschoolStudent(t.student);
+    return activeSubTab === "preschool" ? isPreschool : !isPreschool;
+  });
+
+  const outTransfers = filteredTransfers.filter(t => t.type === "OUT")
+  const changeTransfers = filteredTransfers.filter(t => t.type === "CHANGE_CLASS")
+  const inTransfers = filteredTransfers.filter(t => t.type === "IN")
+
+  const filteredPendingRequests = pendingRequests.filter(req => {
+    return activeSubTab === "preschool" ? req.isPreschool : !req.isPreschool;
+  });
 
   return (
-    <div className="bg-white rounded-[32px] shadow-sm border-2 border-amber-100 overflow-hidden">
-      <div className="border-b border-slate-100 p-2 flex gap-2 overflow-x-auto custom-scrollbar">
+    <div className="space-y-6">
+      {/* Primary Sub-Tabs */}
+      <div className="flex gap-4 border-b border-slate-200">
         <button
-          onClick={() => setActiveTab("OUT")}
-          className={`flex items-center px-6 py-4 text-sm font-bold rounded-2xl transition-all whitespace-nowrap ${
-            activeTab === "OUT"
-              ? "bg-rose-50 text-rose-600 border-b-4 border-rose-500 shadow-sm"
-              : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+          onClick={() => setActiveSubTab("general")}
+          className={`flex items-center gap-2 px-6 py-3.5 font-bold text-sm transition-all border-b-2 -mb-px rounded-t-xl ${
+            activeSubTab === "general"
+              ? "border-[#00A6A9] text-[#00A6A9] bg-slate-50/50"
+              : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50/20"
           }`}
         >
-          <ArrowRightToLine className="w-5 h-5 mr-3" />
-          Chuyển đi
+          <GraduationCap className="w-5 h-5" />
+          Phổ thông K-12
         </button>
         <button
-          onClick={() => setActiveTab("IN")}
-          className={`flex items-center px-6 py-4 text-sm font-bold rounded-2xl transition-all whitespace-nowrap ${
-            activeTab === "IN"
-              ? "bg-emerald-50 text-emerald-600 border-b-4 border-emerald-500 shadow-sm"
-              : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+          onClick={() => setActiveSubTab("preschool")}
+          className={`flex items-center gap-2 px-6 py-3.5 font-bold text-sm transition-all border-b-2 -mb-px rounded-t-xl ${
+            activeSubTab === "preschool"
+              ? "border-[#00A6A9] text-[#00A6A9] bg-slate-50/50"
+              : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50/20"
           }`}
         >
-          <ArrowLeftToLine className="w-5 h-5 mr-3" />
-          Chuyển đến
-        </button>
-        <button
-          onClick={() => setActiveTab("CHANGE_CLASS")}
-          className={`flex items-center px-6 py-4 text-sm font-bold rounded-2xl transition-all whitespace-nowrap ${
-            activeTab === "CHANGE_CLASS"
-              ? "bg-[#00A19A]/10 text-[#00A19A] border-b-4 border-indigo-500 shadow-sm"
-              : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
-          }`}
-        >
-          <ArrowRightLeft className="w-5 h-5 mr-3" />
-          Chuyển lớp
+          <Baby className="w-5 h-5" />
+          Mầm non
         </button>
       </div>
+
+      <div className="bg-white rounded-[32px] shadow-sm border-2 border-amber-100 overflow-hidden">
+        <div className="border-b border-slate-100 p-2 flex gap-2 overflow-x-auto custom-scrollbar">
+          <button
+            onClick={() => setActiveTab("OUT")}
+            className={`flex items-center px-6 py-4 text-sm font-bold rounded-2xl transition-all whitespace-nowrap ${
+              activeTab === "OUT"
+                ? "bg-rose-50 text-rose-600 border-b-4 border-rose-500 shadow-sm"
+                : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+            }`}
+          >
+            <ArrowRightToLine className="w-5 h-5 mr-3" />
+            Chuyển đi
+          </button>
+          <button
+            onClick={() => setActiveTab("IN")}
+            className={`flex items-center px-6 py-4 text-sm font-bold rounded-2xl transition-all whitespace-nowrap ${
+              activeTab === "IN"
+                ? "bg-emerald-50 text-emerald-600 border-b-4 border-emerald-500 shadow-sm"
+                : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+            }`}
+          >
+            <ArrowLeftToLine className="w-5 h-5 mr-3" />
+            Chuyển đến
+          </button>
+          <button
+            onClick={() => setActiveTab("CHANGE_CLASS")}
+            className={`flex items-center px-6 py-4 text-sm font-bold rounded-2xl transition-all whitespace-nowrap ${
+              activeTab === "CHANGE_CLASS"
+                ? "bg-[#00A19A]/10 text-[#00A19A] border-b-4 border-indigo-500 shadow-sm"
+                : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+            }`}
+          >
+            <ArrowRightLeft className="w-5 h-5 mr-3" />
+            Chuyển lớp
+          </button>
+        </div>
 
       <div className="p-8">
         <div className="flex items-center justify-between mb-6">
@@ -178,7 +249,7 @@ export function StudentTransfersClient() {
           ) : (
             <div className="space-y-8">
               {/* Pending Enrollment Requests Section */}
-              {pendingRequests.length > 0 && (
+              {filteredPendingRequests.length > 0 && (
                 <div className="bg-amber-50/30 border-2 border-dashed border-amber-200 rounded-3xl p-6">
                   <div className="flex items-center gap-2 mb-4">
                     <span className="flex h-2.5 w-2.5 relative">
@@ -186,7 +257,7 @@ export function StudentTransfersClient() {
                       <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
                     </span>
                     <h3 className="text-base font-black text-slate-800 uppercase tracking-wider">
-                      Danh sách Yêu cầu Nhập học chờ xử lý ({pendingRequests.length})
+                      Danh sách Yêu cầu Nhập học chờ xử lý ({filteredPendingRequests.length})
                     </h3>
                   </div>
                   <div className="border border-amber-100 bg-white rounded-2xl overflow-hidden shadow-sm">
@@ -202,7 +273,7 @@ export function StudentTransfersClient() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {pendingRequests.map(req => (
+                        {filteredPendingRequests.map(req => (
                           <tr key={req.id} className="hover:bg-slate-50/50">
                             <td className="p-4 font-medium text-slate-700">
                               {new Date(req.createdAt).toLocaleDateString('vi-VN')}
@@ -297,10 +368,11 @@ export function StudentTransfersClient() {
         )}
       </div>
 
-{showOutModal && <TransferOutModal onClose={() => setShowOutModal(false)} onSaved={loadTransfers} />}
-      {showChangeModal && <ChangeClassModal onClose={() => setShowChangeModal(false)} onSaved={loadTransfers} />}
+{showOutModal && <TransferOutModal activeSubTab={activeSubTab} onClose={() => setShowOutModal(false)} onSaved={loadTransfers} />}
+      {showChangeModal && <ChangeClassModal activeSubTab={activeSubTab} onClose={() => setShowChangeModal(false)} onSaved={loadTransfers} />}
       {showInModal && (
         <TransferInModal 
+          activeSubTab={activeSubTab}
           initialData={editingTransfer} 
           enrollmentRequest={selectedRequest}
           onClose={() => { 
@@ -312,10 +384,11 @@ export function StudentTransfersClient() {
         />
       )}
     </div>
+    </div>
   )
 }
 
-function TransferOutModal({ onClose, onSaved }: { onClose: () => void, onSaved: () => void }) {
+function TransferOutModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "general" | "preschool", onClose: () => void, onSaved: () => void }) {
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   
@@ -403,6 +476,11 @@ function TransferOutModal({ onClose, onSaved }: { onClose: () => void, onSaved: 
       .catch(e => console.error("Lỗi tải tỉnh thành", e))
   }, [])
 
+  const filteredClasses = classes.filter(c => {
+    const isPre = isClassPreschool(c);
+    return activeSubTab === "preschool" ? isPre : !isPre;
+  });
+
   return (
     <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl shadow-xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]">
@@ -440,7 +518,7 @@ function TransferOutModal({ onClose, onSaved }: { onClose: () => void, onSaved: 
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Lớp học</label>
                 <select required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 transition-colors" value={form.classId} onChange={e => setForm({...form, classId: e.target.value})}>
                   <option value="">Chọn lớp học</option>
-                  {classes.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
+                  {filteredClasses.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
                 </select>
               </div>
               <div>
@@ -550,7 +628,7 @@ function TransferOutModal({ onClose, onSaved }: { onClose: () => void, onSaved: 
   )
 }
 
-function ChangeClassModal({ onClose, onSaved }: { onClose: () => void, onSaved: () => void }) {
+function ChangeClassModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "general" | "preschool", onClose: () => void, onSaved: () => void }) {
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   
@@ -631,6 +709,16 @@ function ChangeClassModal({ onClose, onSaved }: { onClose: () => void, onSaved: 
     }
   }
 
+  const filteredClasses = classes.filter(c => {
+    const isPre = isClassPreschool(c);
+    return activeSubTab === "preschool" ? isPre : !isPre;
+  });
+
+  const filteredDestClasses = destClasses.filter(c => {
+    const isPre = isClassPreschool(c);
+    return activeSubTab === "preschool" ? isPre : !isPre;
+  });
+
   return (
     <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl shadow-xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh]">
@@ -671,7 +759,7 @@ function ChangeClassModal({ onClose, onSaved }: { onClose: () => void, onSaved: 
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Lớp hiện tại</label>
                   <select required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 transition-colors" value={form.classId} onChange={e => setForm({...form, classId: e.target.value})}>
                     <option value="">Chọn lớp học</option>
-                    {classes.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
+                    {filteredClasses.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
                   </select>
                 </div>
                 <div>
@@ -699,7 +787,7 @@ function ChangeClassModal({ onClose, onSaved }: { onClose: () => void, onSaved: 
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Lớp chuyển đến</label>
                   <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 transition-colors" value={form.destClassId} onChange={e => setForm({...form, destClassId: e.target.value})}>
                     <option value="">Chọn lớp</option>
-                    {destClasses.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
+                    {filteredDestClasses.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
                   </select>
                 </div>
               </div>
@@ -741,7 +829,7 @@ function ChangeClassModal({ onClose, onSaved }: { onClose: () => void, onSaved: 
     </div>
   )
 }
-function TransferInModal({ onClose, onSaved, initialData, enrollmentRequest }: { onClose: () => void, onSaved: () => void, initialData?: any, enrollmentRequest?: any }) {
+function TransferInModal({ activeSubTab, onClose, onSaved, initialData, enrollmentRequest }: { activeSubTab: "general" | "preschool", onClose: () => void, onSaved: () => void, initialData?: any, enrollmentRequest?: any }) {
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   
@@ -792,7 +880,8 @@ function TransferInModal({ onClose, onSaved, initialData, enrollmentRequest }: {
         }
       }
       
-      const pds = await getInputAssessmentPeriodsAction()
+      const isPreTarget = enrollmentRequest ? enrollmentRequest.isPreschool : (activeSubTab === "preschool");
+      const pds = await (isPreTarget ? getPreschoolInputAssessmentPeriodsAction() : getInputAssessmentPeriodsAction())
       setPeriods(pds)
 
       if (enrollmentRequest) {
@@ -839,7 +928,12 @@ function TransferInModal({ onClose, onSaved, initialData, enrollmentRequest }: {
 
   useEffect(() => {
     if (selectedPeriod) {
-      getInputAssessmentBatchesAction(selectedPeriod).then(setBatches)
+      const isPreTarget = enrollmentRequest ? enrollmentRequest.isPreschool : (activeSubTab === "preschool");
+      if (isPreTarget) {
+        getPreschoolInputAssessmentBatchesAction(selectedPeriod).then(setBatches)
+      } else {
+        getInputAssessmentBatchesAction(selectedPeriod).then(setBatches)
+      }
       setAssessmentStudents([])
       setSelectedBatch("")
       loadStudents(selectedPeriod, "")
@@ -853,7 +947,8 @@ function TransferInModal({ onClose, onSaved, initialData, enrollmentRequest }: {
   }, [selectedBatch])
 
   async function loadStudents(pId: string, bId: string) {
-    const data = await getInputAssessmentStudentsByPeriodAction(pId, bId)
+    const isPreTarget = enrollmentRequest ? enrollmentRequest.isPreschool : (activeSubTab === "preschool");
+    const data = await (isPreTarget ? getPreschoolInputAssessmentStudentsByPeriodAction(pId, bId) : getInputAssessmentStudentsByPeriodAction(pId, bId))
     setAssessmentStudents(data)
   }
 
@@ -886,7 +981,10 @@ function TransferInModal({ onClose, onSaved, initialData, enrollmentRequest }: {
       } else if (initialData) {
         res = await updateTransferInAction(initialData.id, form);
       } else {
-        res = await createTransferInAction(form);
+        res = await createTransferInAction({
+          ...form,
+          isPreschool: activeSubTab === "preschool"
+        });
       }
       
       if (res.success) {
@@ -901,6 +999,12 @@ function TransferInModal({ onClose, onSaved, initialData, enrollmentRequest }: {
     }
     setSaving(false)
   }
+
+  const filteredClasses = classes.filter(c => {
+    const isPreschoolTarget = enrollmentRequest ? enrollmentRequest.isPreschool : (activeSubTab === "preschool");
+    const isPre = isClassPreschool(c);
+    return isPreschoolTarget ? isPre : !isPre;
+  });
 
   return (
     <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
@@ -1016,7 +1120,7 @@ function TransferInModal({ onClose, onSaved, initialData, enrollmentRequest }: {
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Lớp học</label>
                   <select required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-emerald-500 transition-colors" value={form.classId} onChange={e => setForm({...form, classId: e.target.value})}>
                     <option value="">Chọn lớp học</option>
-                    {classes.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
+                    {filteredClasses.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
                   </select>
                 </div>
               </div>

@@ -194,7 +194,7 @@ export async function getInputAssessmentBatchesAction(periodId: string) {
 
 export async function getInputAssessmentStudentsByPeriodAction(periodId: string, batchId?: string) {
   try {
-    const where = { periodId };
+    const where = { periodId } as any;
     if (batchId && batchId !== "all") where.batchId = batchId;
     
     const students = await prisma.inputAssessmentStudent.findMany({
@@ -209,6 +209,50 @@ export async function getInputAssessmentStudentsByPeriodAction(periodId: string,
   }
 }
 
+export async function getPreschoolInputAssessmentPeriodsAction() {
+  try {
+    const periods = await prisma.preschoolInputAssessmentPeriod.findMany({
+      orderBy: { createdAt: "desc" },
+      select: { id: true, name: true, academicYearId: true }
+    });
+    return periods;
+  } catch (error) {
+    console.error("Error fetching preschool periods:", error);
+    return [];
+  }
+}
+
+export async function getPreschoolInputAssessmentBatchesAction(periodId: string) {
+  try {
+    const batches = await prisma.preschoolInputAssessmentBatch.findMany({
+      where: { periodId },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true }
+    });
+    return batches;
+  } catch (error) {
+    console.error("Error fetching preschool batches:", error);
+    return [];
+  }
+}
+
+export async function getPreschoolInputAssessmentStudentsByPeriodAction(periodId: string, batchId?: string) {
+  try {
+    const where = { periodId } as any;
+    if (batchId && batchId !== "all") where.batchId = batchId;
+    
+    const students = await prisma.preschoolInputAssessmentStudent.findMany({
+      where,
+      orderBy: { fullName: "asc" },
+      select: { id: true, studentCode: true, fullName: true, dateOfBirth: true }
+    });
+    return JSON.parse(JSON.stringify(students));
+  } catch (error) {
+    console.error("Error fetching preschool students by period:", error);
+    return [];
+  }
+}
+
 export async function createTransferInAction(data: any) {
   try {
     const session = await auth()
@@ -218,9 +262,17 @@ export async function createTransferInAction(data: any) {
       return { success: false, error: "Thiếu thông tin bắt buộc" }
     }
 
-    const assessmentStudent = await prisma.inputAssessmentStudent.findUnique({
-      where: { id: data.assessmentStudentId }
-    });
+    const isPreschool = !!data.isPreschool;
+    let assessmentStudent;
+    if (isPreschool) {
+      assessmentStudent = await prisma.preschoolInputAssessmentStudent.findUnique({
+        where: { id: data.assessmentStudentId }
+      });
+    } else {
+      assessmentStudent = await prisma.inputAssessmentStudent.findUnique({
+        where: { id: data.assessmentStudentId }
+      });
+    }
 
     if (!assessmentStudent) {
       return { success: false, error: "Không tìm thấy học sinh KSĐV" }
@@ -233,6 +285,7 @@ export async function createTransferInAction(data: any) {
           studentCode: data.studentCode || assessmentStudent.studentCode,
           studentName: data.studentName || assessmentStudent.fullName,
           dateOfBirth: assessmentStudent.dateOfBirth,
+          gender: assessmentStudent.gender,
           classId: data.classId,
           campusId: data.campusId,
           academicYearId: data.academicYearId,
@@ -256,6 +309,29 @@ export async function createTransferInAction(data: any) {
           createdById: userId,
         }
       });
+
+      // Update candidate enrollment info to COMPLETED
+      if (isPreschool) {
+        await tx.preschoolInputAssessmentStudent.update({
+          where: { id: data.assessmentStudentId },
+          data: {
+            enrollmentStatus: "COMPLETED",
+            enrollmentClassId: data.classId,
+            enrollmentDate: new Date(data.transferDate),
+            enrollmentCode: data.studentCode || assessmentStudent.studentCode
+          }
+        });
+      } else {
+        await tx.inputAssessmentStudent.update({
+          where: { id: data.assessmentStudentId },
+          data: {
+            enrollmentStatus: "COMPLETED",
+            enrollmentClassId: data.classId,
+            enrollmentDate: new Date(data.transferDate),
+            enrollmentCode: data.studentCode || assessmentStudent.studentCode
+          }
+        });
+      }
 
       return { success: true }
     })
