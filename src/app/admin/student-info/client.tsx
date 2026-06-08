@@ -1996,38 +1996,76 @@ export function StudentInfoClient({
                     <BookOpen className="w-3.5 h-3.5 text-[#00A6A9]" />
                     Kết quả điểm khảo sát năng lực
                   </h4>
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                    <div className="bg-white p-4 rounded-2xl border border-slate-200 text-center">
-                      <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Điểm Toán</span>
-                      <span className="text-2xl font-black text-[#1E1B4B] mt-1 block">
-                        {selectedStudent.mathScore !== null && selectedStudent.mathScore !== undefined ? selectedStudent.mathScore : "-"}
-                      </span>
-                    </div>
-                    <div className="bg-white p-4 rounded-2xl border border-slate-200 text-center">
-                      <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Điểm Ngữ văn</span>
-                      <span className="text-2xl font-black text-[#1E1B4B] mt-1 block">
-                        {selectedStudent.literatureScore !== null && selectedStudent.literatureScore !== undefined ? selectedStudent.literatureScore : "-"}
-                      </span>
-                    </div>
-                    <div className="bg-white p-4 rounded-2xl border border-slate-200 text-center">
-                      <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tiếng Anh viết</span>
-                      <span className="text-2xl font-black text-[#1E1B4B] mt-1 block">
-                        {selectedStudent.writtenEnglishScore !== null && selectedStudent.writtenEnglishScore !== undefined ? selectedStudent.writtenEnglishScore : "-"}
-                      </span>
-                    </div>
-                    <div className="bg-white p-4 rounded-2xl border border-slate-200 text-center">
-                      <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tiếng Anh nói</span>
-                      <span className="text-2xl font-black text-[#1E1B4B] mt-1 block">
-                        {selectedStudent.oralEnglishScore !== null && selectedStudent.oralEnglishScore !== undefined ? selectedStudent.oralEnglishScore : "-"}
-                      </span>
-                    </div>
-                    <div className="bg-white p-4 rounded-2xl border border-slate-200 text-center">
-                      <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Điểm Tâm lý</span>
-                      <span className="text-2xl font-black text-[#1E1B4B] mt-1 block">
-                        {selectedStudent.psychologyScore !== null && selectedStudent.psychologyScore !== undefined ? selectedStudent.psychologyScore : "-"}
-                      </span>
-                    </div>
-                  </div>
+                  {(() => {
+                    const getNumericGrade = (g: string) => {
+                      if (!g) return null;
+                      const match = String(g).match(/\d+/);
+                      return match ? parseInt(match[0], 10) : null;
+                    };
+                    const isGrade1 = getNumericGrade(selectedStudent.grade) === 1;
+                    
+                    let writtenDisplay: React.ReactNode = selectedStudent.writtenEnglishScore !== null && selectedStudent.writtenEnglishScore !== undefined ? selectedStudent.writtenEnglishScore : "-";
+                    let oralDisplay: React.ReactNode = selectedStudent.oralEnglishScore !== null && selectedStudent.oralEnglishScore !== undefined ? selectedStudent.oralEnglishScore : "-";
+                    let totalScore: number | null = null;
+                    
+                    if (!isGrade1) {
+                      if (selectedStudent.writtenEnglishScore !== null && selectedStudent.writtenEnglishScore !== undefined && selectedStudent.writtenEnglishScore !== "") {
+                        writtenDisplay = `${selectedStudent.writtenEnglishScore}/70`;
+                      }
+                      if (selectedStudent.oralEnglishScore !== null && selectedStudent.oralEnglishScore !== undefined && selectedStudent.oralEnglishScore !== "") {
+                        oralDisplay = `${selectedStudent.oralEnglishScore}/30`;
+                      }
+                      
+                      const wScore = parseFloat(selectedStudent.writtenEnglishScore);
+                      const oScore = parseFloat(selectedStudent.oralEnglishScore);
+                      if (!isNaN(wScore) || !isNaN(oScore)) {
+                        totalScore = (isNaN(wScore) ? 0 : wScore) + (isNaN(oScore) ? 0 : oScore);
+                      }
+                    }
+                    
+                    return (
+                      <div className={`grid grid-cols-2 ${totalScore !== null ? "md:grid-cols-6" : "md:grid-cols-5"} gap-4`}>
+                        <div className="bg-white p-4 rounded-2xl border border-slate-200 text-center">
+                          <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Điểm Toán</span>
+                          <span className="text-2xl font-black text-[#1E1B4B] mt-1 block">
+                            {selectedStudent.mathScore !== null && selectedStudent.mathScore !== undefined ? selectedStudent.mathScore : "-"}
+                          </span>
+                        </div>
+                        <div className="bg-white p-4 rounded-2xl border border-slate-200 text-center">
+                          <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Điểm Ngữ văn</span>
+                          <span className="text-2xl font-black text-[#1E1B4B] mt-1 block">
+                            {selectedStudent.literatureScore !== null && selectedStudent.literatureScore !== undefined ? selectedStudent.literatureScore : "-"}
+                          </span>
+                        </div>
+                        <div className="bg-white p-4 rounded-2xl border border-slate-200 text-center">
+                          <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tiếng Anh viết</span>
+                          <span className="text-2xl font-black text-[#1E1B4B] mt-1 block">
+                            {writtenDisplay}
+                          </span>
+                        </div>
+                        <div className="bg-white p-4 rounded-2xl border border-slate-200 text-center">
+                          <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tiếng Anh nói</span>
+                          <span className="text-2xl font-black text-[#1E1B4B] mt-1 block">
+                            {oralDisplay}
+                          </span>
+                        </div>
+                        {totalScore !== null && (
+                          <div className="bg-indigo-50/50 p-4 rounded-2xl border-2 border-indigo-150 text-center flex flex-col justify-center">
+                            <span className="block text-[10px] font-bold text-indigo-600 uppercase tracking-wider">Tổng điểm Tiếng Anh</span>
+                            <span className="text-2xl font-black text-indigo-700 mt-1 block">
+                              {totalScore}/100
+                            </span>
+                          </div>
+                        )}
+                        <div className="bg-white p-4 rounded-2xl border border-slate-200 text-center">
+                          <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Điểm Tâm lý</span>
+                          <span className="text-2xl font-black text-[#1E1B4B] mt-1 block">
+                            {selectedStudent.psychologyScore !== null && selectedStudent.psychologyScore !== undefined ? selectedStudent.psychologyScore : "-"}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                     <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
