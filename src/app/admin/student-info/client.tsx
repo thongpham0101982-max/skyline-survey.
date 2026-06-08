@@ -1094,7 +1094,7 @@ export function StudentInfoClient({
                       </td>
                       <td className="px-4 py-3.5 text-center" onClick={(e) => e.stopPropagation()}>
                         <div className="flex justify-center items-center gap-1.5">
-                          {s.admissionResult && (s.admissionResult.toUpperCase() === "ĐẠT" || s.admissionResult.toUpperCase() === "ĐẠT CAM KẾT") && (
+                          {s.admissionResult && s.admissionResult.toUpperCase().includes("ĐẠT") && !s.admissionResult.toUpperCase().includes("KHÔNG") && (
                             <>
                               {!s.enrollmentStatus ? (
                                 <button
@@ -1249,7 +1249,7 @@ export function StudentInfoClient({
                       </td>
                       <td className="p-4 text-center" onClick={(e) => e.stopPropagation()}>
                         <div className="flex justify-center gap-1 items-center">
-                          {child.admissionResult && (child.admissionResult.toUpperCase() === "ĐẠT" || child.admissionResult.toUpperCase() === "ĐẠT CAM KẾT") && (
+                          {child.admissionResult && child.admissionResult.toUpperCase().includes("ĐẠT") && !child.admissionResult.toUpperCase().includes("KHÔNG") && (
                             <>
                               {!child.enrollmentStatus ? (
                                 <button
