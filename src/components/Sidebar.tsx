@@ -56,10 +56,15 @@ export function Sidebar({ role, permissionModules, actualRole, taskCount = 0 }: 
 
   let title = ""
 
-  const checkPermission = (module?: string, requiresAdmin?: boolean) => {
+  const checkPermission = (module?: string, requiresAdmin?: boolean, subModules?: any[]) => {
     if (requiresAdmin && !isSuperAdmin) return false
     if (!isSuperAdmin && module) {
-      return permissionModules?.includes(module) || false
+      const hasParent = permissionModules?.includes(module) || false
+      if (hasParent) return true
+      if (subModules && subModules.length > 0) {
+        return subModules.some((sub) => permissionModules?.includes(sub.code))
+      }
+      return false
     }
     return true
   }
@@ -106,7 +111,7 @@ export function Sidebar({ role, permissionModules, actualRole, taskCount = 0 }: 
           )}
 
           {role === "ADMIN" && APP_CATEGORIES.map((cat) => {
-            const visibleModules = cat.modules.filter((m) => checkPermission(m.code, m.requiresAdmin))
+            const visibleModules = cat.modules.filter((m) => checkPermission(m.code, m.requiresAdmin, m.subModules))
             if (visibleModules.length === 0) return null
 
             // Detect if any module in this category is currently active
