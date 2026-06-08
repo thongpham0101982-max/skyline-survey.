@@ -6791,10 +6791,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
                           <div className="flex flex-wrap gap-2">
                             {[
-                              { status: "DAT_MIEN_HOC_THU", label: "ĐẠT - MIỄN HỌC THỬ", color: "bg-[#00A19A]/5 text-[#00A19A] border-slate-200 hover:bg-teal-50", activeColor: "bg-[#00A19A] text-white border-[#00A19A] shadow-xs" },
-                              { status: "DAT_HOC_THU", label: "ĐẠT - HỌC THỬ", color: "bg-[#00A19A]/10 text-[#00A19A] border-[#00A19A]/20 hover:bg-teal-50/80", activeColor: "bg-[#00A19A] text-white border-[#00A19A] shadow-xs" },
-                              { status: "KHONG_DAT", label: "KHÔNG ĐẠT", color: "bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100/50", activeColor: "bg-rose-500 text-white border-rose-500 shadow-xs" },
-                              { status: "Y_KIEN_KHAC", label: "Ý KIẾN KHÁC", color: "bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100/50", activeColor: "bg-amber-500 text-white border-amber-500 shadow-xs" }
+                              { status: "DAT_MIEN_HOC_THU", label: "ĐẠT - MIỄN HỌC THỬ", color: "text-emerald-600 border-emerald-300 hover:bg-emerald-50/40 hover:border-emerald-400", activeColor: "bg-emerald-500 text-white border-emerald-500 shadow-xs" },
+                              { status: "DAT_HOC_THU", label: "ĐẠT - HỌC THỬ", color: "text-[#00A19A] border-[#00A19A]/30 hover:bg-teal-50/40 hover:border-[#00A19A]/50", activeColor: "bg-[#00A19A] text-white border-[#00A19A] shadow-xs" },
+                              { status: "KHONG_DAT", label: "KHÔNG ĐẠT", color: "text-rose-600 border-rose-300 hover:bg-rose-50/40 hover:border-rose-400", activeColor: "bg-rose-500 text-white border-rose-500 shadow-xs" },
+                              { status: "Y_KIEN_KHAC", label: "Ý KIẾN KHÁC", color: "text-amber-600 border-amber-300 hover:bg-amber-50/40 hover:border-amber-400", activeColor: "bg-amber-500 text-white border-amber-500 shadow-xs" }
                             ].map(opt => (
                               <button
                                 key={opt.status}
@@ -6804,7 +6804,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 className={`px-3 py-2 rounded-xl border text-[10px] font-black tracking-wide transition-all ${
                                   bghApprovalStatus === opt.status 
                                     ? opt.activeColor 
-                                    : `${opt.color} text-slate-650 bg-white border-slate-200 hover:border-slate-350`
+                                    : `bg-white ${opt.color}`
                                 } ${(!canApproveBGH || isAssessmentLocked) ? 'cursor-not-allowed opacity-60' : 'hover:scale-[1.02] active:scale-[0.98]'}`}
                               >
                                 {opt.label}
@@ -6878,10 +6878,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
                           <div className="flex flex-wrap gap-2">
                             {[
-                              { status: "DAT_MIEN_HOC_THU", label: "ĐẠT - MIỄN HỌC THỬ", color: "bg-[#00A19A]/5 text-[#00A19A] border-slate-200 hover:bg-teal-50", activeColor: "bg-[#00A19A] text-white border-[#00A19A] shadow-xs" },
-                              { status: "DAT_HOC_THU", label: "ĐẠT - HỌC THỬ", color: "bg-[#00A19A]/10 text-[#00A19A] border-[#00A19A]/20 hover:bg-teal-50/80", activeColor: "bg-[#00A19A] text-white border-[#00A19A] shadow-xs" },
-                              { status: "KHONG_DAT", label: "KHÔNG ĐẠT", color: "bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100/50", activeColor: "bg-rose-500 text-white border-rose-500 shadow-xs" },
-                              { status: "Y_KIEN_KHAC", label: "Ý KIẾN KHÁC", color: "bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100/50", activeColor: "bg-amber-500 text-white border-amber-500 shadow-xs" }
+                              { status: "DAT_MIEN_HOC_THU", label: "ĐẠT - MIỄN HỌC THỬ", color: "text-emerald-600 border-emerald-300 hover:bg-emerald-50/40 hover:border-emerald-400", activeColor: "bg-emerald-500 text-white border-emerald-500 shadow-xs" },
+                              { status: "DAT_HOC_THU", label: "ĐẠT - HỌC THỬ", color: "text-[#00A19A] border-[#00A19A]/30 hover:bg-teal-50/40 hover:border-[#00A19A]/50", activeColor: "bg-[#00A19A] text-white border-[#00A19A] shadow-xs" },
+                              { status: "KHONG_DAT", label: "KHÔNG ĐẠT", color: "text-rose-600 border-rose-300 hover:bg-rose-50/40 hover:border-rose-400", activeColor: "bg-rose-500 text-white border-rose-500 shadow-xs" },
+                              { status: "Y_KIEN_KHAC", label: "Ý KIẾN KHÁC", color: "text-amber-600 border-amber-300 hover:bg-amber-50/40 hover:border-amber-400", activeColor: "bg-amber-500 text-white border-amber-500 shadow-xs" }
                             ].map(opt => (
                               <button
                                 key={opt.status}
@@ -6891,7 +6891,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 className={`px-3 py-2 rounded-xl border text-[10px] font-black tracking-wide transition-all ${
                                   gdcsApprovalStatus === opt.status 
                                     ? opt.activeColor 
-                                    : `${opt.color} text-slate-650 bg-white border-slate-200 hover:border-slate-350`
+                                    : `bg-white ${opt.color}`
                                 } ${(!canApproveGDCS || isAssessmentLocked) ? 'cursor-not-allowed opacity-60' : 'hover:scale-[1.02] active:scale-[0.98]'}`}
                               >
                                 {opt.label}
