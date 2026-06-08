@@ -18,50 +18,6 @@ export default async function SurveyConfigPage({ searchParams }: { searchParams:
   const isGDCS = user?.role === 'GDCS';
   const allowedCampusIds = user?.campusIds || [];
   let liveCampusIds = [...allowedCampusIds];
-  try {
-    if (user?.id) {
-      const dbAssignments = await prisma.userCampusAssignment.findMany({
-        where: { userId: user.id }
-      });
-      if (dbAssignments.length > 0) {
-        liveCampusIds = dbAssignments.map(a => a.campusId);
-      }
-    }
-  } catch (liveError) {
-    console.error("Live campusIds fetch error handled:", liveError);
-  }
-
-  // Auto-seeding for "12 đến 18 tháng" preschool criteria
-  try {
-    const pAny = prisma as any;
-    if (pAny.preschoolDevCriteria) {
-      const count1218 = await pAny.preschoolDevCriteria.count({
-        where: { ageGroup: "12 đến 18 tháng" }
-      });
-      if (count1218 === 0) {
-        console.log("Auto-seeding criteria for '12 đến 18 tháng'...");
-        await seedPreschool1218(pAny);
-      }
-
-      // Auto-migration for age groups:
-      // 1. Rename "Mẫu giáo bé" -> "3 đến 4 tuổi"
-      await pAny.preschoolDevCriteria.updateMany({
-        where: { ageGroup: "Mẫu giáo bé" },
-        data: { ageGroup: "3 đến 4 tuổi" }
-      });
-      // 2. Rename "Mẫu giáo nhỡ" -> "4 đến 5 tuổi"
-      await pAny.preschoolDevCriteria.updateMany({
-        where: { ageGroup: "Mẫu giáo nhỡ" },
-        data: { ageGroup: "4 đến 5 tuổi" }
-      });
-      // 3. Delete "Mẫu giáo lớn"
-      await pAny.preschoolDevCriteria.deleteMany({
-        where: { ageGroup: "Mẫu giáo lớn" }
-      });
-    }
-  } catch (seedError) {
-    console.error("Auto-seeding 12-18 months and migration error:", seedError);
-  }
 
   // --- FETCH CHUNG ---
   let academicYears: any[] = [];
@@ -77,6 +33,7 @@ export default async function SurveyConfigPage({ searchParams }: { searchParams:
   let eduSystems: any[] = [];
   let gradesK12: string[] = ["1","2","3","4","5","6","7","8","9","10","11","12"];
   let configs: any[] = [];
+  let rolePermissions: any[] = [];
 
   // --- FETCH MẦM NON RIÊNG ---
   const gradesPreschool = ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "3 đến 4 tuổi", "4 đến 5 tuổi", "5 đến 6 tuổi"];
@@ -84,36 +41,53 @@ export default async function SurveyConfigPage({ searchParams }: { searchParams:
   try {
     const pAny = prisma as any;
     if (pAny) {
-      // Bảng chung
-      if (pAny.academicYear) {
-        academicYears = await pAny.academicYear.findMany({ orderBy: { startDate: "desc" } }).catch(() => []);
-      }
-      if (pAny.campus) {
-        campuses = await pAny.campus.findMany({ 
-          where: isGDCS ? { id: { in: allowedCampusIds } } : { status: "ACTIVE" }, 
-          include: { 
+      const roleCode = user?.role || "ADMIN";
+
+      // Trigger all fetches in parallel using Promise.all
+      const [
+        dbAssignments,
+        academicYearsResult,
+        campusesResult,
+        giaoVuCSUsersResult,
+        departmentsResult,
+        teachersResult,
+        examBoardUsersResult,
+        gdcsUsersResult,
+        subjectsResult,
+        configsResult,
+        eduSystemsResult,
+        count1218Result,
+        needsMigrationResult,
+        activeYearResult,
+        rolePermissionsResult
+      ] = await Promise.all([
+        // 1. dbAssignments
+        user?.id && pAny.userCampusAssignment ? pAny.userCampusAssignment.findMany({ where: { userId: user.id } }).catch(() => []) : Promise.resolve([]),
+        // 2. academicYears
+        pAny.academicYear ? pAny.academicYear.findMany({ orderBy: { startDate: "desc" } }).catch(() => []) : Promise.resolve([]),
+        // 3. campuses
+        pAny.campus ? pAny.campus.findMany({
+          where: isGDCS ? { id: { in: allowedCampusIds } } : { status: "ACTIVE" },
+          include: {
             manager: {
               include: {
                 teacher: true
               }
-            } 
+            }
           },
-          orderBy: { campusName: "asc" } 
-        }).catch(() => []);
-      }
-      if (pAny.user) {
-        giaoVuCSUsers = await pAny.user.findMany({ 
-          where: { role: { in: ["GĐ_CS", "GIAO_VU", "GDCS", "GIAO_VU_CS"] } }, 
-          select: { id: true, fullName: true } 
-        }).catch(() => []);
-      }
-      if (pAny.department) {
-        departments = await pAny.department.findMany({ 
-          where: { status: "ACTIVE" }, orderBy: { name: "asc" } 
-        }).catch(() => []);
-      }
-      if (pAny.teacher) {
-        teachers = await pAny.teacher.findMany({
+          orderBy: { campusName: "asc" }
+        }).catch(() => []) : Promise.resolve([]),
+        // 4. giaoVuCSUsers
+        pAny.user ? pAny.user.findMany({
+          where: { role: { in: ["GĐ_CS", "GIAO_VU", "GDCS", "GIAO_VU_CS"] } },
+          select: { id: true, fullName: true }
+        }).catch(() => []) : Promise.resolve([]),
+        // 5. departments
+        pAny.department ? pAny.department.findMany({
+          where: { status: "ACTIVE" }, orderBy: { name: "asc" }
+        }).catch(() => []) : Promise.resolve([]),
+        // 6. teachers
+        pAny.teacher ? pAny.teacher.findMany({
           where: { status: "ACTIVE" },
           include: {
             departmentRel: true,
@@ -121,62 +95,103 @@ export default async function SurveyConfigPage({ searchParams }: { searchParams:
             user: true
           },
           orderBy: { teacherName: "asc" }
-        }).catch(() => []);
-      }
-
-      // Bảng K12
-      if (pAny.user) {
-        examBoardUsers = await pAny.user.findMany({ 
-          where: { role: { in: ["KT_DBCL", "ADMIN"] } }, 
-          select: { id: true, fullName: true } 
-        }).catch(() => []);
-
-        gdcsUsers = await pAny.user.findMany({ 
-          where: { role: { in: ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "gdcs", "gđcs", "gđ_cs", "gd_cs"] } }, 
-          select: { id: true, fullName: true, email: true } 
-        }).catch(() => []);
-      }
-      if (pAny.assessmentSubject) {
-        subjects = await pAny.assessmentSubject.findMany({ 
-          where: { status: "ACTIVE" }, orderBy: { sortOrder: "asc" } 
-        }).catch(() => []);
-      }
-      if (pAny.assessmentConfig) {
-        configs = await pAny.assessmentConfig.findMany({ 
-          orderBy: [{ categoryType: "asc" }, { sortOrder: "asc" }] 
-        }).catch(() => []);
-      }
-      if (pAny.educationSystem) {
-        eduSystems = await pAny.educationSystem.findMany({
+        }).catch(() => []) : Promise.resolve([]),
+        // 7. examBoardUsers
+        pAny.user ? pAny.user.findMany({
+          where: { role: { in: ["KT_DBCL", "ADMIN"] } },
+          select: { id: true, fullName: true }
+        }).catch(() => []) : Promise.resolve([]),
+        // 8. gdcsUsers
+        pAny.user ? pAny.user.findMany({
+          where: { role: { in: ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "gdcs", "gđcs", "gđ_cs", "gd_cs"] } },
+          select: { id: true, fullName: true, email: true }
+        }).catch(() => []) : Promise.resolve([]),
+        // 9. subjects
+        pAny.assessmentSubject ? pAny.assessmentSubject.findMany({
+          where: { status: "ACTIVE" }, orderBy: { sortOrder: "asc" }
+        }).catch(() => []) : Promise.resolve([]),
+        // 10. configs
+        pAny.assessmentConfig ? pAny.assessmentConfig.findMany({
+          orderBy: [{ categoryType: "asc" }, { sortOrder: "asc" }]
+        }).catch(() => []) : Promise.resolve([]),
+        // 11. eduSystems
+        pAny.educationSystem ? pAny.educationSystem.findMany({
           orderBy: { createdAt: "asc" }
-        }).catch(() => []);
-      }
-      if (pAny.academicYear) {
-        const activeYear = await getDefaultAcademicYear(pAny);
+        }).catch(() => []) : Promise.resolve([]),
+        // 12. count1218
+        pAny.preschoolDevCriteria ? pAny.preschoolDevCriteria.count({ where: { ageGroup: "12 đến 18 tháng" } }).catch(() => 0) : Promise.resolve(0),
+        // 13. needsMigration
+        pAny.preschoolDevCriteria ? pAny.preschoolDevCriteria.findFirst({
+          where: { ageGroup: { in: ["Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"] } }
+        }).catch(() => null) : Promise.resolve(null),
+        // 14. activeYear
+        pAny.academicYear ? getDefaultAcademicYear(pAny).catch(() => null) : Promise.resolve(null),
+        // 15. rolePermissions
+        pAny.permission ? pAny.permission.findMany({ where: { roleCode } }).catch(() => []) : Promise.resolve([])
+      ]);
 
-        if (activeYear) {
-          if (pAny.class) {
-            const uniqueGrades = await pAny.class.findMany({
-              where: { academicYearId: activeYear.id },
-              select: { grade: true },
-              distinct: ["grade"],
-              orderBy: { grade: "asc" }
-            }).catch(() => []);
-            
-            try {
-              const dbGrades = uniqueGrades.map((g: any) => g.grade).filter(Boolean);
-              if (dbGrades.length > 0) {
-                gradesK12 = dbGrades.sort((a: any, b: any) => {
-                  const na = parseInt(a);
-                  const nb = parseInt(b);
-                  if (isNaN(na) || isNaN(nb)) return String(a).localeCompare(String(b));
-                  return na - nb;
-                });
-              }
-            } catch (sortError) {
-              console.error("Sorting grades error handled:", sortError);
-            }
+      // Assign results
+      academicYears = academicYearsResult;
+      campuses = campusesResult;
+      giaoVuCSUsers = giaoVuCSUsersResult;
+      departments = departmentsResult;
+      teachers = teachersResult;
+      examBoardUsers = examBoardUsersResult;
+      gdcsUsers = gdcsUsersResult;
+      subjects = subjectsResult;
+      configs = configsResult;
+      eduSystems = eduSystemsResult;
+      rolePermissions = rolePermissionsResult;
+
+      if (dbAssignments && dbAssignments.length > 0) {
+        liveCampusIds = dbAssignments.map((a: any) => a.campusId);
+      }
+
+      // Run auto-seeding if needed
+      if (count1218Result === 0 && pAny.preschoolDevCriteria) {
+        console.log("Auto-seeding criteria for '12 đến 18 tháng'...");
+        await seedPreschool1218(pAny);
+      }
+
+      // Run auto-migration if needed
+      if (needsMigrationResult && pAny.preschoolDevCriteria) {
+        console.log("Auto-migration needed for age groups. Running updates...");
+        await Promise.all([
+          pAny.preschoolDevCriteria.updateMany({
+            where: { ageGroup: "Mẫu giáo bé" },
+            data: { ageGroup: "3 đến 4 tuổi" }
+          }),
+          pAny.preschoolDevCriteria.updateMany({
+            where: { ageGroup: "Mẫu giáo nhỡ" },
+            data: { ageGroup: "4 đến 5 tuổi" }
+          }),
+          pAny.preschoolDevCriteria.deleteMany({
+            where: { ageGroup: "Mẫu giáo lớn" }
+          })
+        ]);
+      }
+
+      // Fetch gradesK12 if activeYear exists
+      if (activeYearResult && pAny.class) {
+        const uniqueGrades = await pAny.class.findMany({
+          where: { academicYearId: activeYearResult.id },
+          select: { grade: true },
+          distinct: ["grade"],
+          orderBy: { grade: "asc" }
+        }).catch(() => []);
+        
+        try {
+          const dbGrades = uniqueGrades.map((g: any) => g.grade).filter(Boolean);
+          if (dbGrades.length > 0) {
+            gradesK12 = dbGrades.sort((a: any, b: any) => {
+              const na = parseInt(a);
+              const nb = parseInt(b);
+              if (isNaN(na) || isNaN(nb)) return String(a).localeCompare(String(b));
+              return na - nb;
+            });
           }
+        } catch (sortError) {
+          console.error("Sorting grades error handled:", sortError);
         }
       }
     }
@@ -192,19 +207,6 @@ export default async function SurveyConfigPage({ searchParams }: { searchParams:
       return [];
     }
   }
-
-  // Lấy rolePermissions cho K12
-  const rolePermissions = await (async () => {
-    try {
-      const roleCode = (session?.user as any)?.role || "ADMIN";
-      return await prisma.permission.findMany({
-        where: { roleCode }
-      });
-    } catch (e) {
-      console.error("Error fetching permissions for survey-config page:", e);
-      return [];
-    }
-  })();
 
   const currentUser = session?.user 
     ? { 
