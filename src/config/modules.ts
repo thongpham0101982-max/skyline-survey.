@@ -56,13 +56,14 @@ export const APP_CATEGORIES = [
     color: "emerald",
     icon: ClipboardList,
     modules: [
-      { code: "PRESCHOOL_INPUT_ASSESSMENTS", name: "KSNL Đầu vào Mầm non", icon: Baby, href: "/admin/preschool-input-assessments" },
-      { 
-        code: "INPUT_ASSESSMENTS", 
-        name: "KSNL đầu vào Phổ thông", 
-        icon: ClipboardList, 
-        href: "/admin/input-assessments",
+      {
+        code: "CAU_HINH_KHAO_SAT",
+        name: "Cấu hình Khảo sát",
+        icon: Settings,
+        href: "/admin/cau-hinh-khao-sat",
         subModules: [
+          { code: "PRESCHOOL_INPUT_ASSESSMENTS", name: "KSNL Đầu vào Mầm non" },
+          { code: "INPUT_ASSESSMENTS", name: "KSNL đầu vào Phổ thông" },
           { code: "INPUT_ASSESSMENTS_PERIODS", name: "Kỳ KS" },
           { code: "INPUT_ASSESSMENTS_CATEGORIES", name: "Danh mục" },
           { code: "INPUT_ASSESSMENTS_SUBJECTS", name: "Môn KS" },
