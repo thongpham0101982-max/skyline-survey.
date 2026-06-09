@@ -68,6 +68,7 @@ export default async function PhanCongKhaoSatPage() {
     if (activeYear) {
       if (pAny.inputAssessmentPeriod) {
         k12Periods = await pAny.inputAssessmentPeriod.findMany({
+          where: { academicYearId: activeYear.id },
           include: { batches: { select: { id: true, name: true, campusId: true } } },
           orderBy: { name: "asc" }
         }).catch(() => []);
@@ -75,6 +76,7 @@ export default async function PhanCongKhaoSatPage() {
 
       if (pAny.preschoolInputAssessmentPeriod) {
         preschoolPeriods = await pAny.preschoolInputAssessmentPeriod.findMany({
+          where: { academicYearId: activeYear.id },
           include: { batches: { select: { id: true, name: true, startDate: true, campusId: true } } },
           orderBy: { name: "asc" }
         }).catch(() => []);
