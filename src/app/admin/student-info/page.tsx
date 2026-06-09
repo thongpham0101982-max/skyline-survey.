@@ -82,13 +82,11 @@ export default async function StudentInfoPage() {
       });
 
       generalPeriods = await pAny.inputAssessmentPeriod.findMany({
-        where: { academicYearId: activeYearId },
         include: { batches: { select: { id: true, name: true } } },
         orderBy: { name: 'asc' }
       });
 
       preschoolPeriods = await pAny.preschoolInputAssessmentPeriod.findMany({
-        where: { academicYearId: activeYearId },
         include: { batches: { select: { id: true, name: true } } },
         orderBy: { name: 'asc' }
       });

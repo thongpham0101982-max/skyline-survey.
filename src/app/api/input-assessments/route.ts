@@ -12,12 +12,10 @@ export async function GET(req) {
     const { searchParams } = new URL(req.url);
     const academicYearId = searchParams.get("academicYearId");
     
-    if (!academicYearId) {
-       return NextResponse.json({ error: "Missing academicYearId" }, { status: 400 });
-    }
+    const whereClause = academicYearId ? { academicYearId } : {};
     
     const periods = await (prisma as any).inputAssessmentPeriod.findMany({
-      where: { academicYearId },
+      where: whereClause,
       include: {
         InputAssessmentTeacherAssignment: { select: { id: true, unlockRequestStatus: true, unlockReason: true, user: { select: { fullName: true, id: true } } } },
         assignedUser: { select: { fullName: true } },

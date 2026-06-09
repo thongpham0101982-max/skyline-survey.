@@ -32,12 +32,10 @@ export async function GET(req) {
     
     const academicYearId = searchParams.get("academicYearId");
     
-    if (!academicYearId) {
-       return NextResponse.json({ error: "Missing academicYearId" }, { status: 400 });
-    }
+    const whereClause = academicYearId ? { academicYearId } : {};
     
     const periods = await (prisma as any).preschoolInputAssessmentPeriod.findMany({
-      where: { academicYearId },
+      where: whereClause,
       include: {
         assignedUser: { select: { fullName: true } },
         batches: {

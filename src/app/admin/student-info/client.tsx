@@ -254,6 +254,14 @@ export function StudentInfoClient({
     return activeTab === "general" ? generalPeriods : preschoolPeriods;
   }, [activeTab, generalPeriods, preschoolPeriods]);
 
+  const uniquePeriodNames = useMemo(() => {
+    const names = new Set();
+    activePeriodsList.forEach((p) => {
+      if (p.name) names.add(p.name);
+    });
+    return Array.from(names).sort();
+  }, [activePeriodsList]);
+
   // Get active tab period's batch options in form/import
   const activeFormBatches = useMemo(() => {
     const selected = activePeriodsList.find(p => p.id === formState.periodId);
@@ -985,8 +993,8 @@ export function StudentInfoClient({
             className="px-3 py-2 rounded-xl text-sm border border-slate-200 focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer text-slate-700 font-medium"
           >
             <option value="">Tất cả Kỳ khảo sát</option>
-            {filterOptions.periods.map((p) => (
-              <option key={p} value={p}>{p}</option>
+            {uniquePeriodNames.map((name) => (
+              <option key={name} value={name}>{name}</option>
             ))}
           </select>
 
