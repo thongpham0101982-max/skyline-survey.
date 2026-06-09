@@ -2576,19 +2576,21 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     setEditC(null);
     let genCode = "MN001";
     try { const r = await fetch("/api/preschool-input-assessment-students?get_max_code=true"); if (r.ok) { const res = await r.json(); if (res.nextCode) genCode = "MN" + res.nextCode.replace(/^\D+/, ""); } } catch {}
-    const initBatch = cBatchId || (periods.find(p => p.id === cPeriodId)?.batches?.[0]?.id || "");
+    const initPeriod = cPeriodId && cPeriodId !== "all" ? cPeriodId : (periods[0]?.id || "");
+    const initBatch = cBatchId || (periods.find(p => p.id === initPeriod)?.batches?.[0]?.id || "");
     const batch = periods.flatMap(p => p.batches || []).find(b => b.id === initBatch);
     const campus = campuses.find(c => c.id === batch?.campusId);
     const initCampus = campus ? campus.campusName : "";
-    setCForm({ studentCode: genCode, fullName: "", dateOfBirth: "", gender: "", grade: "", admissionCampus: initCampus, surveyFormType: "", batchId: initBatch, admissionResult: "" });
+    setCForm({ studentCode: genCode, fullName: "", dateOfBirth: "", gender: "", grade: "", admissionCampus: initCampus, surveyFormType: "", periodId: initPeriod, batchId: initBatch, admissionResult: "" });
     setCModal(true);
   };
-  const openEditChild = (child: PreschoolChild) => { setEditC(child); setCForm({ studentCode: child.studentCode, fullName: child.fullName, dateOfBirth: child.dateOfBirth?.slice(0,10) || "", gender: child.gender || "", grade: child.grade || "", admissionCampus: child.admissionCampus || "", surveyFormType: child.surveyFormType || "", batchId: child.batchId || "", admissionResult: child.admissionResult || "" }); setCModal(true); };
+  const openEditChild = (child: PreschoolChild) => { setEditC(child); setCForm({ studentCode: child.studentCode, fullName: child.fullName, dateOfBirth: child.dateOfBirth?.slice(0,10) || "", gender: child.gender || "", grade: child.grade || "", admissionCampus: child.admissionCampus || "", surveyFormType: child.surveyFormType || "", periodId: child.periodId || "", batchId: child.batchId || "", admissionResult: child.admissionResult || "" }); setCModal(true); };
   const saveChild = async () => {
     if (!cForm.studentCode.trim() || !cForm.fullName.trim()) return notify("Cần nhập Mã bé và Họ tên", "err");
+    if (!cForm.periodId) return notify("Vui lòng chọn Kỳ khảo sát", "err");
     const r = editC
       ? await fetch("/api/preschool-input-assessment-students", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: editC.id, data: cForm }) })
-      : await fetch("/api/preschool-input-assessment-students", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "CREATE", data: { ...cForm, periodId: cPeriodId, batchId: cForm.batchId || cBatchId || null } }) });
+      : await fetch("/api/preschool-input-assessment-students", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "CREATE", data: { ...cForm, periodId: cForm.periodId, batchId: cForm.batchId || null } }) });
     if (r.ok) { setCModal(false); fetchChildren(); notify(editC ? "Đã cập nhật bé" : "Đã thêm bé mới"); } else notify("Lỗi", "err");
   };
   const doDeleteChild = async (id: string) => { await fetch(`/api/preschool-input-assessment-students?id=${id}`, { method: "DELETE" }); fetchChildren(); notify("Đã xóa"); };
@@ -4908,9 +4910,31 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               {campuses.map(c => <option key={c.campusName} value={c.campusName}>{c.campusName}</option>)}
             </select>
           </Field>
+                    <Field label="Kỳ Khảo sát" required>
+            <select
+              value={cForm.periodId || ""}
+              onChange={e => {
+                const pIdVal = e.target.value;
+                const newPeriod = periods.find(p => p.id === pIdVal);
+                const defaultBatchId = newPeriod?.batches?.[0]?.id || "";
+                const batch = newPeriod?.batches?.[0];
+                const campus = campuses.find(c => c.id === batch?.campusId);
+                setCForm(prev => ({
+                  ...prev,
+                  periodId: pIdVal,
+                  batchId: defaultBatchId,
+                  admissionCampus: campus ? campus.campusName : ""
+                }));
+              }}
+              className={inp}
+            >
+              <option value="">-- Chọn Kỳ --</option>
+              {periods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+          </Field>
           <Field label="Đợt KS">
             <select
-              value={cForm.batchId}
+              value={cForm.batchId || ""}
               onChange={e => {
                 const bIdVal = e.target.value;
                 setCForm(prev => {
@@ -4932,7 +4956,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               className={inp}
             >
               <option value="">-- Không gán --</option>
-              {selPeriod?.batches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+              {periods.find(p => p.id === cForm.periodId)?.batches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
             </select>
           </Field>
           <Field label="Hệ KS">

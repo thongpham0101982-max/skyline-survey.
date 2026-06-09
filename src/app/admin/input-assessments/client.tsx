@@ -2883,7 +2883,8 @@ ${reportForm.directorNote}`;
 
     const openAddStudent = async () => {
     setEditS(null);
-    const initialBatchId = sBatchId || (selPeriod?.batches?.[0]?.id || "");
+    const initPeriodId = sPeriodId && sPeriodId !== "all" ? sPeriodId : (visiblePeriods[0]?.id || "");
+    const initialBatchId = sBatchId || (visiblePeriods.find(p => p.id === initPeriodId)?.batches?.[0]?.id || "");
     
     let genCode = "HS001";
     try {
@@ -2906,16 +2907,17 @@ ${reportForm.directorNote}`;
       genCode = "HS" + nextNum.toString().padStart(3, "0");
     }
 
-    setSForm({ studentCode: genCode, fullName: "", dateOfBirth: "", grade: "", admissionCriteria: "", className: "", hocKy: "", kqgdTieuHoc: "", kqHocTap: "", kqRenLuyen: "", targetType: "", surveySystem: "", hoSoCtQuocTe: "", surveyFormType: "", gender: "", batchId: initialBatchId });
+    setSForm({ studentCode: genCode, fullName: "", dateOfBirth: "", grade: "", admissionCriteria: "", className: "", hocKy: "", kqgdTieuHoc: "", kqHocTap: "", kqRenLuyen: "", targetType: "", surveySystem: "", hoSoCtQuocTe: "", surveyFormType: "", gender: "", periodId: initPeriodId, batchId: initialBatchId });
     setSModal(true);
   }
-  const openEditStudent = (s:Student) => { setEditS(s); setSForm({ studentCode:s.studentCode, fullName:s.fullName, dateOfBirth:s.dateOfBirth?.slice(0,10)||"", grade:s.grade||"", admissionCriteria:s.admissionCriteria||"", className:s.className||"", hocKy:s.hocKy||"", kqgdTieuHoc:s.kqgdTieuHoc||"", kqHocTap:s.kqHocTap||"", kqRenLuyen:s.kqRenLuyen||"", targetType:s.targetType||"", surveySystem:s.surveySystem||"", hoSoCtQuocTe:s.hoSoCtQuocTe||"", surveyFormType:s.surveyFormType||"" , gender:s.gender||"", batchId:s.batchId||"" }); setSModal(true) }
+  const openEditStudent = (s:Student) => { setEditS(s); setSForm({ studentCode:s.studentCode, fullName:s.fullName, dateOfBirth:s.dateOfBirth?.slice(0,10)||"", grade:s.grade||"", admissionCriteria:s.admissionCriteria||"", className:s.className||"", hocKy:s.hocKy||"", kqgdTieuHoc:s.kqgdTieuHoc||"", kqHocTap:s.kqHocTap||"", kqRenLuyen:s.kqRenLuyen||"", targetType:s.targetType||"", surveySystem:s.surveySystem||"", hoSoCtQuocTe:s.hoSoCtQuocTe||"", surveyFormType:s.surveyFormType||"" , gender:s.gender||"", periodId:s.periodId||"", batchId:s.batchId||"" }); setSModal(true) }
   const saveStudent = async () => {
     if (editS ? cannotUpdate : cannotCreate) return;
     if (!sForm.studentCode.trim()||!sForm.fullName.trim()) return notify("Cần nhập Mã HS và Họ tên","err")
+    if (!sForm.periodId) return notify("Vui lòng chọn Kỳ khảo sát", "err");
     const r = editS
       ? await fetch("/api/input-assessment-students", { method:"PUT", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id:editS.id, data:sForm }) })
-      : await fetch("/api/input-assessment-students", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"CREATE", data:{...sForm, periodId:sPeriodId, batchId:sForm.batchId || sBatchId || null} }) })
+      : await fetch("/api/input-assessment-students", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"CREATE", data:{...sForm, periodId:sForm.periodId, batchId:sForm.batchId || null} }) })
     if (r.ok) { setSModal(false); fetchStudents(); notify(editS?"Đã cập nhật học sinh":"Đã thêm học sinh") }
     else notify("Lỗi","err")
   }
@@ -6241,20 +6243,42 @@ return {
                </Field>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-               <Field label="Hồ sơ/Bảng điểm">
-                 <select value={sForm.hoSoCtQuocTe} onChange={e=>setSForm(f=>({...f,hoSoCtQuocTe:e.target.value}))} className={inp}>
-                   <option value="">--</option>
-                   {configs.filter(c => c.categoryType === "HS_HT_HOC_SINH").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                 </select>
-               </Field>
-               <Field label="Đợt khảo sát">
-                 <select value={sForm.batchId} onChange={e=>setSForm(f=>({...f,batchId:e.target.value}))} className={inp}>
-                   <option value="">-- Không có / Mặc định --</option>
-                   {selPeriod?.batches?.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
-                 </select>
-               </Field>
-            </div>
+                         <div className="grid grid-cols-2 gap-4">
+                <Field label="Kỳ khảo sát" required>
+                  <select 
+                    value={sForm.periodId || ""} 
+                    onChange={e => {
+                      const newPeriodId = e.target.value;
+                      const newPeriod = visiblePeriods.find(p => p.id === newPeriodId);
+                      const defaultBatchId = newPeriod?.batches?.[0]?.id || "";
+                      setSForm(f => ({ ...f, periodId: newPeriodId, batchId: defaultBatchId }));
+                    }} 
+                    className={inp}
+                  >
+                    <option value="">-- Chọn Kỳ khảo sát --</option>
+                    {visiblePeriods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                </Field>
+                <Field label="Đợt khảo sát">
+                  <select 
+                    value={sForm.batchId || ""} 
+                    onChange={e => setSForm(f => ({ ...f, batchId: e.target.value }))} 
+                    className={inp}
+                  >
+                    <option value="">-- Không có / Mặc định --</option>
+                    {visiblePeriods.find(p => p.id === sForm.periodId)?.batches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                  </select>
+                </Field>
+             </div>
+
+             <div className="grid grid-cols-2 gap-4">
+                <Field label="Hồ sơ/Bảng điểm">
+                  <select value={sForm.hoSoCtQuocTe} onChange={e=>setSForm(f=>({...f,hoSoCtQuocTe:e.target.value}))} className={inp}>
+                    <option value="">--</option>
+                    {configs.filter(c => c.categoryType === "HS_HT_HOC_SINH").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                  </select>
+                </Field>
+             </div>
 
            <div className="space-y-4">
              <Field label="Đối tượng Tuyển sinh">
