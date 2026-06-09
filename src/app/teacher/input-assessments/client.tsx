@@ -283,22 +283,24 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     const assignedGradesText = useMemo(() => {
         if (!currentAssignment || !Array.isArray(assignments)) return "Tất cả";
         const matches = assignments.filter(a => 
+            a &&
             a.periodId === selectedPeriodId &&
             (selectedBatchId === "all" || !a.batchId || a.batchId === selectedBatchId) &&
             a.subjectId === currentAssignment.subjectId
         );
-        const grades = Array.from(new Set(matches.map(a => a.grade).filter(Boolean)));
+        const grades = Array.from(new Set(matches.map(a => a && a.grade).filter(Boolean)));
         return grades.length > 0 ? grades.join(", ") : "Tất cả";
     }, [assignments, selectedPeriodId, selectedBatchId, currentAssignment]);
 
     const assignedSystemsText = useMemo(() => {
         if (!currentAssignment || !Array.isArray(assignments)) return "Tất cả";
         const matches = assignments.filter(a => 
+            a &&
             a.periodId === selectedPeriodId &&
             (selectedBatchId === "all" || !a.batchId || a.batchId === selectedBatchId) &&
             a.subjectId === currentAssignment.subjectId
         );
-        const systems = Array.from(new Set(matches.map(a => a.educationSystem).filter(Boolean)));
+        const systems = Array.from(new Set(matches.map(a => a && a.educationSystem).filter(Boolean)));
         return systems.length > 0 ? systems.join(", ") : "Tất cả";
     }, [assignments, selectedPeriodId, selectedBatchId, currentAssignment]);
     
