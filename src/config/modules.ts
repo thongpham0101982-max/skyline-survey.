@@ -74,7 +74,6 @@ export const APP_CATEGORIES = [
         ]
       },
       { code: "INPUT_ASSESSMENT_REPORTS", name: "Xuất báo cáo", icon: FileSpreadsheet, href: "/admin/input-assessments/reports" },
-      { code: "NHAP_HS_KHAO_SAT", name: "Nhập HS Khảo sát", icon: UserPlus, href: "/admin/nhap-hs-khao-sat" },
       { code: "STUDENT_INFO", name: "Tổng hợp KQ & Xử lý nhập học", icon: Users2, href: "/admin/student-info" },
       {
         code: "PHAN_CONG_KHAO_SAT",

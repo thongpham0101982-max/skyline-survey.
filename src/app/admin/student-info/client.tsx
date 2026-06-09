@@ -27,6 +27,8 @@ import {
 } from "lucide-react";
 import { confirmEnrollmentAction } from "../student-transfers/actions";
 import * as XLSX from "xlsx";
+import { InputAssessmentsClient } from "../input-assessments/client";
+import { PreschoolInputAssessmentsClient } from "../preschool-input-assessments/client";
 
 interface StudentInfoClientProps {
   initialGeneralStudents: any[];
@@ -40,6 +42,18 @@ interface StudentInfoClientProps {
   eduSystems: any[];
   campuses: any[];
   grades: string[];
+  
+  // NEW PROPS FOR EMBEDDING
+  academicYears: any[];
+  examBoardUsers: any[];
+  giaoVuCSUsers: any[];
+  gdcsUsers: any[];
+  subjects: any[];
+  teachers: any[];
+  departments: any[];
+  currentUser: any;
+  rolePermissions: any[];
+  gradesPreschool: string[];
 }
 
 const preschoolGrades = ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"];
@@ -55,7 +69,18 @@ export function StudentInfoClient({
   preschoolConfigs = [],
   eduSystems = [],
   campuses = [],
-  grades = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"]
+  grades = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"],
+  
+  academicYears = [],
+  examBoardUsers = [],
+  giaoVuCSUsers = [],
+  gdcsUsers = [],
+  subjects = [],
+  teachers = [],
+  departments = [],
+  currentUser = null,
+  rolePermissions = [],
+  gradesPreschool = []
 }: StudentInfoClientProps) {
   const [activeTab, setActiveTab] = useState<"general" | "preschool">("general");
   const [subTab, setSubTab] = useState<"input" | "result">("input");
@@ -851,42 +876,6 @@ export function StudentInfoClient({
 
         {/* Action Buttons */}
         <div className="flex flex-wrap items-center gap-2 pb-2 sm:pb-0">
-          {subTab === "input" && selectedIds.length > 0 && (
-            <button
-              onClick={handleDeleteSelected}
-              className="flex items-center gap-1.5 px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-bold border border-rose-200 shadow-sm transition-all active:scale-95 cursor-pointer"
-            >
-              <Trash2 className="w-4 h-4" />
-              Xóa đã chọn ({selectedIds.length})
-            </button>
-          )}
-          {subTab === "input" && (
-            <>
-              <button
-                onClick={openCreateModal}
-                className="flex items-center gap-1.5 px-4 py-2 bg-[#00A6A9] hover:bg-[#008c85] text-white rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer"
-              >
-                <Plus className="w-4 h-4" />
-                {activeTab === "general" ? "Thêm mới" : "Thêm bé"}
-              </button>
-              <button
-                onClick={() => {
-                  if (activePeriodsList.length === 0) {
-                    return showNotification("Năm học này chưa có kỳ khảo sát để import học sinh", "err");
-                  }
-                  setImportPeriodId(activePeriodsList[0].id);
-                  setImportError(null);
-                  setImportSuccessCount(null);
-                  setIsImportOpen(true);
-                }}
-                className="flex items-center gap-1.5 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl text-xs font-bold border border-indigo-200 shadow-sm transition-all active:scale-95 cursor-pointer"
-              >
-                <Upload className="w-4 h-4" />
-                Nhập Excel
-              </button>
-            </>
-          )}
-
           {subTab === "result" && (
             <button
               onClick={handleExportExcel}
@@ -974,8 +963,42 @@ export function StudentInfoClient({
       </div>
       )}
 
-      {/* Filters & Search Control Panel */}
-      <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+      {subTab === "input" ? (
+        <div className="transition-all duration-300">
+          {activeTab === "general" ? (
+            <InputAssessmentsClient
+              academicYears={academicYears}
+              campuses={campuses}
+              examBoardUsers={examBoardUsers}
+              giaoVuCSUsers={giaoVuCSUsers}
+              gdcsUsers={gdcsUsers}
+              subjects={subjects}
+              eduSystems={eduSystems}
+              grades={grades}
+              configs={configs}
+              teachers={teachers}
+              departments={departments}
+              currentUser={currentUser}
+              rolePermissions={rolePermissions}
+              mode="input"
+            />
+          ) : (
+            <PreschoolInputAssessmentsClient
+              academicYears={academicYears}
+              campuses={campuses}
+              giaoVuCSUsers={giaoVuCSUsers}
+              grades={gradesPreschool}
+              teachers={teachers}
+              departments={departments}
+              currentUser={currentUser}
+              mode="input"
+            />
+          )}
+        </div>
+      ) : (
+        <>
+          {/* Filters & Search Control Panel */}
+          <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
         <div className="flex items-center gap-2 text-[#1E1B4B] font-bold text-sm">
           <Filter className="w-4 h-4 text-[#00A6A9]" />
           Bộ lọc & Tìm kiếm nhanh
@@ -1458,6 +1481,8 @@ export function StudentInfoClient({
           </div>
         )}
       </div>
+        </>
+      )}
 
       {/* Dialog Form: Add / Edit Student */}
       {isFormOpen && (
