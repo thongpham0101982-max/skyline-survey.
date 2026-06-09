@@ -1016,7 +1016,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   // Children/Students
   const [children, setChildren] = useState<PreschoolChild[]>([]);
   const [cLoading, setCLoading] = useState(false);
-  const [cPeriodId, setCPeriodId] = useState("");
+  const [cPeriodId, setCPeriodId] = useState("all");
   const [cBatchId, setCBatchId] = useState("");
 
   // useMemos that depend on cBatchId - must be AFTER declaration to avoid TDZ crash in production
@@ -1480,7 +1480,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     setPLoading(true);
     try {
       const r = await fetch(`/api/preschool-input-assessments?academicYearId=${yearId}`);
-      if (r.ok) { const d: Period[] = await r.json(); setPeriods(d); if (!cPeriodId && d.length > 0) { setCPeriodId(d[0].id); setRptPeriodId(d[0].id); } }
+      if (r.ok) { const d: Period[] = await r.json(); setPeriods(d); if (!cPeriodId && d.length > 0) { setCPeriodId("all"); setRptPeriodId(d[0].id); } }
     } catch (e) {
       console.error("fetchPeriods error:", e);
     } finally { setPLoading(false); }
@@ -1492,7 +1492,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     if (!cPeriodId) return;
     setCLoading(true);
     try {
-      let url = `/api/preschool-input-assessment-students?periodId=${cPeriodId}`;
+      let url = `/api/preschool-input-assessment-students?`;
+      if (cPeriodId === "all") url += `fetch_all=true`;
+      else url += `periodId=${cPeriodId}`;
       if (cBatchId) url += `&batchId=${cBatchId}`;
       const r = await fetch(url);
       if (r.ok) setChildren(await r.json());
@@ -3269,6 +3271,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Kỳ KS:</label>
               <select value={cPeriodId} onChange={e => { setCPeriodId(e.target.value); setCBatchId(""); }} className="border border-slate-300 rounded-none p-2 text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-violet-300 min-w-[160px]">
                 <option value="">-- Chọn Kỳ --</option>
+                <option value="all">-- Tất cả các kỳ --</option>
                 {periods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
             </div>
@@ -3291,8 +3294,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             <div className="flex items-center gap-2">
               <button onClick={downloadTemplate} className="flex items-center gap-1.5 px-4 py-2 text-xs font-black text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-none border border-blue-100 transition-all"><Download className="w-4 h-4" /> Tải mẫu</button>
               <input type="file" ref={fileRef} onChange={handleImport} accept=".xlsx,.xls,.csv" className="hidden" />
-              <button onClick={() => fileRef.current?.click()} disabled={importing || !cPeriodId} className="flex items-center gap-1.5 px-4 py-2 text-xs font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-none border border-emerald-100 transition-all disabled:opacity-50"><Upload className="w-4 h-4" /> {importing ? "Đang import..." : "Import Excel"}</button>
-              <button onClick={openAddChild} disabled={!cPeriodId} className="flex items-center gap-1.5 px-4 py-2 text-xs font-black text-white bg-[#00A19A] hover:bg-[#00A19A]-700 rounded-none shadow-none shadow-teal-100 transition-all disabled:opacity-50"><Plus className="w-4 h-4" /> Thêm bé</button>
+              <button onClick={() => fileRef.current?.click()} disabled={importing || !cPeriodId || cPeriodId === "all"} className="flex items-center gap-1.5 px-4 py-2 text-xs font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-none border border-emerald-100 transition-all disabled:opacity-50"><Upload className="w-4 h-4" /> {importing ? "Đang import..." : "Import Excel"}</button>
+              <button onClick={openAddChild} disabled={!cPeriodId || cPeriodId === "all"} className="flex items-center gap-1.5 px-4 py-2 text-xs font-black text-white bg-[#00A19A] hover:bg-[#00A19A]-700 rounded-none shadow-none shadow-teal-100 transition-all disabled:opacity-50"><Plus className="w-4 h-4" /> Thêm bé</button>
             </div>
           </div>
 

@@ -999,7 +999,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
   // ───────── STUDENTS STATE ─────────
   const [students, setStudents] = useState<Student[]>([])
   const [sLoading, setSLoading] = useState(false)
-  const [sPeriodId, setSPeriodId] = useState("")
+  const [sPeriodId, setSPeriodId] = useState("all")
   const [sBatchId, setSBatchId] = useState("")
   const [sSearch, setSSearch] = useState("")
   const [importing, setImporting] = useState(false)
@@ -2702,8 +2702,8 @@ ${reportForm.directorNote}`;
 
   useEffect(() => {
     if (visiblePeriods.length > 0) {
-      if (!sPeriodId || !visiblePeriods.some(p => p.id === sPeriodId)) {
-        setSPeriodId(visiblePeriods[0].id);
+      if (sPeriodId !== "all" && (!sPeriodId || !visiblePeriods.some(p => p.id === sPeriodId))) {
+        setSPeriodId("all");
       }
       if (!asPeriodId || !visiblePeriods.some(p => p.id === asPeriodId)) {
         setAsPeriodId(visiblePeriods[0].id);
@@ -2724,7 +2724,7 @@ ${reportForm.directorNote}`;
         const d = await r.json()
         setPeriods(d)
         if (d.length) {
-          if (!sPeriodId) setSPeriodId(d[0].id)
+          if (!sPeriodId) setSPeriodId("all")
           if (!asPeriodId) setAsPeriodId(d[0].id)
         }
       }
