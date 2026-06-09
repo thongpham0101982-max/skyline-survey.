@@ -245,7 +245,7 @@ const renderTemplate = (template, student) => {
 
 
 // ========= MAIN =========
-export function InputAssessmentsClient({ academicYears = [], campuses = [], examBoardUsers = [], subjects: initialSubjects = [], eduSystems = [], configs: initialConfigs = [], grades = [], teachers = [], departments = [], giaoVuCSUsers = [], gdcsUsers = [], currentUser = null, rolePermissions = [] }: Props) {
+export function InputAssessmentsClient({ academicYears = [], campuses = [], examBoardUsers = [], subjects: initialSubjects = [], eduSystems = [], configs: initialConfigs = [], grades = [], teachers = [], departments = [], giaoVuCSUsers = [], gdcsUsers = [], currentUser = null, rolePermissions = [], mode = "config" }: Props & { mode?: "config" | "input" }) {
   const TAB_PERMISSION_MAP: Record<string, string> = {
     periods: "INPUT_ASSESSMENTS_PERIODS",
     categories: "INPUT_ASSESSMENTS_CATEGORIES",
@@ -289,21 +289,19 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
   };
 
   const [tab, setTab] = useState(() => {
+    if (mode === "input") return "students";
     const userRole = (currentUser?.role || "").toUpperCase();
     const isGDCS = ["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole);
     
     const hasPeriods = userRole === "ADMIN" || userRole === "KT_DBCL" || (rolePermissions && rolePermissions.some(p => p.module === "INPUT_ASSESSMENTS_PERIODS" && p.canRead));
     if (hasPeriods) return "periods";
     
-    const hasStudents = userRole === "ADMIN" || userRole === "KT_DBCL" || (rolePermissions && rolePermissions.some(p => p.module === "INPUT_ASSESSMENTS_STUDENTS" && p.canRead)) || isGDCS;
-    if (hasStudents) return "students";
-    
-    const allTabs = ["periods", "categories", "subjects", "mapping", "students", "assignments", "reports"];
+    const allTabs = ["periods", "categories", "subjects", "mapping", "assignments", "reports"];
     for (const t of allTabs) {
       const p = getTabPermissions(t);
       if (p.canRead) return t;
     }
-    return "students";
+    return "periods";
   });
 
   const tabPerms = getTabPermissions(tab);
@@ -3271,6 +3269,7 @@ return {
       </div>
 
       {/* TAB NAV - icon + label, wraps to fit, no overflow */}
+      {mode !== "input" && (
       <div className="bg-white border border-slate-200 shadow-sm rounded-xl px-1 py-1">
         <div className="flex flex-wrap gap-0.5">
           {[
@@ -3280,7 +3279,7 @@ return {
             { id:"mapping",              label:"C\u1ea5u h\u00ecnh",   tip:"C\u1ea5u h\u00ecnh theo Kh\u1ed1i",  icon:Layers },
             { id:"students",             label:"H\u1ecdc sinh",   tip:"DS HS kh\u1ea3o s\u00e1t",      icon:Users },
 
-          ].map(t => {
+          ].filter(t => mode === "input" ? t.id === "students" : t.id !== "students").map(t => {
             const p = getTabPermissions(t.id);
             const canRead = p.canRead;
             const isTabReadOnly = canRead && !p.canCreate && !p.canUpdate && !p.canDelete;
@@ -3310,6 +3309,7 @@ return {
           })}
         </div>
       </div>
+      )}
 
       {/* ===== TAB: ASSIGNMENTS (PHÂN CÔNG) ===== */}
       {tab==="assignments" && (

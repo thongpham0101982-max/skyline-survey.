@@ -143,7 +143,7 @@ const xetDuyetCols = [
   { id: "actions", label: "Thao tác", width: "w-[350px] min-w-[350px]" }
 ];
 
-export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoVuCSUsers, grades: gradesProp, teachers, departments, currentUser }: { academicYears: AcademicYear[]; campuses: Camp[]; giaoVuCSUsers: any[]; grades: string[]; teachers: any[]; departments: any[]; currentUser: any; }) {
+export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoVuCSUsers, grades: gradesProp, teachers, departments, currentUser, mode = "config" }: { academicYears: AcademicYear[]; campuses: Camp[]; giaoVuCSUsers: any[]; grades: string[]; teachers: any[]; departments: any[]; currentUser: any; mode?: "config" | "input"; }) {
   const grades = gradesProp && gradesProp.length > 0 ? gradesProp : ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "3 đến 4 tuổi", "4 đến 5 tuổi", "5 đến 6 tuổi"];
 
   const userRole = (currentUser?.role || "").toUpperCase();
@@ -172,7 +172,10 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
     return `GIÁM ĐỐC CƠ SỞ (${campusName})`;
   };
 
-  const [tab, setTab] = useState(isGDCSUser ? "children" : "periods");
+  const [tab, setTab] = useState(() => {
+    if (mode === "input") return "children";
+    return isGDCSUser ? "devCriteria" : "periods";
+  });
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [isInvitation, setIsInvitation] = useState(true);
   const [isCommitment, setIsCommitment] = useState(false);
@@ -2721,6 +2724,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       </div>
 
       {/* Tabs */}
+      {mode !== "input" && (
       <div className="bg-white border-2 border-[#00A19A] shadow-none rounded-none p-1">
         <div className="flex flex-wrap gap-0.5">
           {[
@@ -2731,10 +2735,13 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             { id: "devCriteria", label: "Quản lý Tiêu chí & Lĩnh vực", icon: ClipboardList },
             { id: "reports", label: "Tổng hợp KQKS", icon: BarChart3 },
           ].filter(t => {
-            if (isGDCSUser) {
-              return ["children", "devAssess", "devCriteria", "reports"].includes(t.id);
+            if (mode === "input") {
+              return t.id === "children";
             }
-            return true;
+            if (isGDCSUser) {
+              return ["devCriteria", "reports"].includes(t.id);
+            }
+            return t.id !== "children";
           }).map(t => (
             <button key={t.id} onClick={() => setTab(t.id)} className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-none text-[11px] font-bold transition-all duration-200 ${tab === t.id ? "bg-[#00A19A] text-white shadow-none" : "text-slate-500 hover:bg-[#00A19A]/5 hover:text-[#00A19A]"}`}>
               <t.icon className={`w-4 h-4 ${tab === t.id ? "text-white" : "text-slate-400"}`} />
@@ -2743,6 +2750,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           ))}
         </div>
       </div>
+      )}
 
       {/* Tab: Periods */}
       {tab === "periods" && (

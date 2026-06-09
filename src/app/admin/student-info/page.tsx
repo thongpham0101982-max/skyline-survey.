@@ -2,7 +2,7 @@ import { prisma } from "@/lib/db"
 import { getDefaultAcademicYear } from "@/lib/academicYear"
 import { StudentInfoClient } from "./client"
 
-export const metadata = { title: "Thông tin HS Khảo sát | Admin Portal" }
+export const metadata = { title: "Tổng hợp KQ & Xử lý nhập học | Admin Portal" }
 export const dynamic = "force-dynamic";
 
 export default async function StudentInfoPage() {
@@ -132,7 +132,7 @@ export default async function StudentInfoPage() {
   return (
     <div className="space-y-6">
       <div className="mb-4">
-        <h1 className="text-2xl font-black text-slate-900 tracking-tight">Thông tin HS Khảo sát</h1>
+        <h1 className="text-2xl font-black text-slate-900 tracking-tight">Tổng hợp KQ & Xử lý nhập học</h1>
         <p className="text-slate-500 mt-1 text-sm font-medium">
           Năm học đang hoạt động: <span className="text-[#00A6A9] font-bold">{activeYear ? activeYear.name : "Không xác định"}</span>. 
           Tra cứu thông tin, kết quả khảo sát đầu vào của học sinh Phổ thông và Mầm non.
