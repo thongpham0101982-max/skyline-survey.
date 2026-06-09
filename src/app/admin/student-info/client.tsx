@@ -262,6 +262,27 @@ export function StudentInfoClient({
     return Array.from(names).sort();
   }, [activePeriodsList]);
 
+  const uniqueBatchNames = useMemo(() => {
+    const names = new Set();
+    if (selectedPeriod) {
+      const period = activePeriodsList.find(p => p.name === selectedPeriod);
+      if (period?.batches) {
+        period.batches.forEach((b) => {
+          if (b.name) names.add(b.name);
+        });
+      }
+    } else {
+      activePeriodsList.forEach((p) => {
+        if (p.batches) {
+          p.batches.forEach((b) => {
+            if (b.name) names.add(b.name);
+          });
+        }
+      });
+    }
+    return Array.from(names).sort();
+  }, [selectedPeriod, activePeriodsList]);
+
   // Get active tab period's batch options in form/import
   const activeFormBatches = useMemo(() => {
     const selected = activePeriodsList.find(p => p.id === formState.periodId);
@@ -988,6 +1009,7 @@ export function StudentInfoClient({
             value={selectedPeriod}
             onChange={(e) => {
               setSelectedPeriod(e.target.value);
+              setSelectedBatch(""); // Reset batch when period changes
               setCurrentPage(1);
             }}
             className="px-3 py-2 rounded-xl text-sm border border-slate-200 focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer text-slate-700 font-medium"
@@ -1008,8 +1030,8 @@ export function StudentInfoClient({
             className="px-3 py-2 rounded-xl text-sm border border-slate-200 focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer text-slate-700 font-medium"
           >
             <option value="">Tất cả Đợt</option>
-            {filterOptions.batches.map((b) => (
-              <option key={b} value={b}>{b}</option>
+            {uniqueBatchNames.map((name) => (
+              <option key={name} value={name}>{name}</option>
             ))}
           </select>
 
