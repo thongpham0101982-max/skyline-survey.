@@ -1531,7 +1531,7 @@ export function StudentInfoClient({
                     />
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Giới tính</label>
                       <select
@@ -1557,6 +1557,9 @@ export function StudentInfoClient({
                         ))}
                       </select>
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Học kỳ / Năm TS</label>
                       <select
@@ -1570,9 +1573,6 @@ export function StudentInfoClient({
                         ))}
                       </select>
                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Hồ sơ/Bảng điểm</label>
                       <select
@@ -1583,6 +1583,23 @@ export function StudentInfoClient({
                         <option value="">--</option>
                         {configs.filter(c => c.categoryType === "HS_HT_HOC_SINH").map(c => (
                           <option key={c.id} value={c.name}>{c.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Kỳ khảo sát *</label>
+                      <select
+                        required
+                        value={formState.periodId}
+                        onChange={(e) => setFormState({ ...formState, periodId: e.target.value, batchId: "" })}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
+                      >
+                        <option value="">-- Chọn Kỳ khảo sát --</option>
+                        {generalPeriods.map((p) => (
+                          <option key={p.id} value={p.id}>{p.name}</option>
                         ))}
                       </select>
                     </div>
@@ -1804,6 +1821,20 @@ export function StudentInfoClient({
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Kỳ khảo sát *</label>
+                      <select
+                        required
+                        value={formState.periodId}
+                        onChange={(e) => setFormState({ ...formState, periodId: e.target.value, batchId: "" })}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
+                      >
+                        <option value="">-- Chọn Kỳ khảo sát --</option>
+                        {preschoolPeriods.map((p) => (
+                          <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Đợt KS</label>
                       <select
                         value={formState.batchId}
@@ -1834,6 +1865,9 @@ export function StudentInfoClient({
                         ))}
                       </select>
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Hệ KS</label>
                       <select
