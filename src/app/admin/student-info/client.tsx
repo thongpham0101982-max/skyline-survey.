@@ -83,7 +83,7 @@ export function StudentInfoClient({
   gradesPreschool = []
 }: StudentInfoClientProps) {
   const [activeTab, setActiveTab] = useState<"general" | "preschool">("general");
-  const [subTab, setSubTab] = useState<"input" | "result">("input");
+  const [subTab, setSubTab] = useState<"input" | "info" | "result">("input");
 
   useEffect(() => {
     setSelectedIds([]);
@@ -876,6 +876,42 @@ export function StudentInfoClient({
 
         {/* Action Buttons */}
         <div className="flex flex-wrap items-center gap-2 pb-2 sm:pb-0">
+          {subTab === "info" && selectedIds.length > 0 && (
+            <button
+              onClick={handleDeleteSelected}
+              className="flex items-center gap-1.5 px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-bold border border-rose-200 shadow-sm transition-all active:scale-95 cursor-pointer"
+            >
+              <Trash2 className="w-4 h-4" />
+              Xóa đã chọn ({selectedIds.length})
+            </button>
+          )}
+          {subTab === "info" && (
+            <>
+              <button
+                onClick={openCreateModal}
+                className="flex items-center gap-1.5 px-4 py-2 bg-[#00A6A9] hover:bg-[#008c85] text-white rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                {activeTab === "general" ? "Thêm mới" : "Thêm bé"}
+              </button>
+              <button
+                onClick={() => {
+                  if (activePeriodsList.length === 0) {
+                    return showNotification("Năm học này chưa có kỳ khảo sát để import học sinh", "err");
+                  }
+                  setImportPeriodId(activePeriodsList[0].id);
+                  setImportError(null);
+                  setImportSuccessCount(null);
+                  setIsImportOpen(true);
+                }}
+                className="flex items-center gap-1.5 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl text-xs font-bold border border-indigo-200 shadow-sm transition-all active:scale-95 cursor-pointer"
+              >
+                <Upload className="w-4 h-4" />
+                Nhập Excel
+              </button>
+            </>
+          )}
+
           {subTab === "result" && (
             <button
               onClick={handleExportExcel}
@@ -902,6 +938,19 @@ export function StudentInfoClient({
           }`}
         >
           Nhập TT Học sinh
+        </button>
+        <button
+          onClick={() => {
+            setSubTab("info");
+            setCurrentPage(1);
+          }}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold transition-all duration-300 ${
+            subTab === "info"
+              ? "bg-[#00A6A9] text-white shadow-sm"
+              : "text-slate-650 hover:bg-slate-200/60 hover:text-slate-800"
+          }`}
+        >
+          TT HS Khảo sát
         </button>
         <button
           onClick={() => {
@@ -1100,7 +1149,7 @@ export function StudentInfoClient({
             <table className="w-full text-sm text-left whitespace-nowrap">
               <thead className="bg-[#00A19A]/5 border-b border-slate-200">
                 <tr>
-                  {subTab === "input" && (
+                  {subTab === "info" && (
                     <th className="px-5 py-4 w-12 text-center">
                       <input
                         type="checkbox"
@@ -1116,7 +1165,7 @@ export function StudentInfoClient({
                   <th className="px-3 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-16">Giới tính</th>
                   <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-24">Ngày sinh</th>
                   <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-20">Hệ KS</th>
-                  {subTab === "input" && (
+                  {subTab === "info" && (
                     <>
                       <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-24">Học lực</th>
                       <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-24">Hạnh kiểm</th>
@@ -1134,7 +1183,7 @@ export function StudentInfoClient({
               <tbody className="divide-y divide-slate-100 text-slate-700">
                 {paginatedStudents.length === 0 ? (
                   <tr>
-                    <td colSpan={subTab === "input" ? 14 : 9} className="px-6 py-12 text-center text-slate-400 font-medium">
+                    <td colSpan={subTab === "info" ? 14 : 9} className="px-6 py-12 text-center text-slate-400 font-medium">
                       Không tìm thấy dữ liệu học sinh phù hợp.
                     </td>
                   </tr>
@@ -1148,7 +1197,7 @@ export function StudentInfoClient({
                         setIsDetailsOpen(true);
                       }}
                     >
-                      {subTab === "input" && (
+                      {subTab === "info" && (
                         <td className="px-5 py-3.5 text-center" onClick={(e) => e.stopPropagation()}>
                           <input
                             type="checkbox"
@@ -1190,7 +1239,7 @@ export function StudentInfoClient({
                           {s.surveyFormType || "-"}
                         </span>
                       </td>
-                      {subTab === "input" && (
+                      {subTab === "info" && (
                         <>
                           <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.kqHocTap || "-"}</td>
                           <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.kqRenLuyen || "-"}</td>
@@ -1239,7 +1288,7 @@ export function StudentInfoClient({
                           >
                             <Eye className="w-4 h-4" />
                           </button>
-                          {subTab === "input" && (
+                          {subTab === "info" && (
                             <>
                               <button
                                 onClick={() => openEditModal(s)}
@@ -1269,7 +1318,7 @@ export function StudentInfoClient({
             <table className="w-full text-left text-sm whitespace-nowrap border-collapse">
               <thead className="bg-[#00A19A]/5 border-b border-slate-300">
                 <tr>
-                  {subTab === "input" && (
+                  {subTab === "info" && (
                     <th className="p-4 w-12 text-center">
                       <input
                         type="checkbox"
@@ -1309,7 +1358,7 @@ export function StudentInfoClient({
                         setIsDetailsOpen(true);
                       }}
                     >
-                      {subTab === "input" && (
+                      {subTab === "info" && (
                         <td className="p-4 text-center" onClick={(e) => e.stopPropagation()}>
                           <input
                             type="checkbox"
@@ -1406,7 +1455,7 @@ export function StudentInfoClient({
                           >
                             <Eye className="w-4 h-4" />
                           </button>
-                          {subTab === "input" && (
+                          {subTab === "info" && (
                             <>
                               <button
                                 onClick={() => openEditModal(child)}
