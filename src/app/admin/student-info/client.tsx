@@ -58,6 +58,11 @@ export function StudentInfoClient({
   grades = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"]
 }: StudentInfoClientProps) {
   const [activeTab, setActiveTab] = useState<"general" | "preschool">("general");
+  const [subTab, setSubTab] = useState<"input" | "result">("input");
+
+  useEffect(() => {
+    setSelectedIds([]);
+  }, [subTab, activeTab]);
   
   const currentEduSystems = useMemo(() => {
     if (!activeYearId) return eduSystems;
@@ -817,7 +822,7 @@ export function StudentInfoClient({
 
         {/* Action Buttons */}
         <div className="flex flex-wrap items-center gap-2 pb-2 sm:pb-0">
-          {selectedIds.length > 0 && (
+          {subTab === "input" && selectedIds.length > 0 && (
             <button
               onClick={handleDeleteSelected}
               className="flex items-center gap-1.5 px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-bold border border-rose-200 shadow-sm transition-all active:scale-95 cursor-pointer"
@@ -826,40 +831,77 @@ export function StudentInfoClient({
               Xóa đã chọn ({selectedIds.length})
             </button>
           )}
-          <button
-            onClick={openCreateModal}
-            className="flex items-center gap-1.5 px-4 py-2 bg-[#00A6A9] hover:bg-[#008c85] text-white rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            {activeTab === "general" ? "Thêm mới" : "Thêm bé"}
-          </button>
-          <button
-            onClick={() => {
-              if (activePeriodsList.length === 0) {
-                return showNotification("Năm học này chưa có kỳ khảo sát để import học sinh", "err");
-              }
-              setImportPeriodId(activePeriodsList[0].id);
-              setImportError(null);
-              setImportSuccessCount(null);
-              setIsImportOpen(true);
-            }}
-            className="flex items-center gap-1.5 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl text-xs font-bold border border-indigo-200 shadow-sm transition-all active:scale-95 cursor-pointer"
-          >
-            <Upload className="w-4 h-4" />
-            Nhập Excel
-          </button>
+          {subTab === "input" && (
+            <>
+              <button
+                onClick={openCreateModal}
+                className="flex items-center gap-1.5 px-4 py-2 bg-[#00A6A9] hover:bg-[#008c85] text-white rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                {activeTab === "general" ? "Thêm mới" : "Thêm bé"}
+              </button>
+              <button
+                onClick={() => {
+                  if (activePeriodsList.length === 0) {
+                    return showNotification("Năm học này chưa có kỳ khảo sát để import học sinh", "err");
+                  }
+                  setImportPeriodId(activePeriodsList[0].id);
+                  setImportError(null);
+                  setImportSuccessCount(null);
+                  setIsImportOpen(true);
+                }}
+                className="flex items-center gap-1.5 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl text-xs font-bold border border-indigo-200 shadow-sm transition-all active:scale-95 cursor-pointer"
+              >
+                <Upload className="w-4 h-4" />
+                Nhập Excel
+              </button>
+            </>
+          )}
 
-          <button
-            onClick={handleExportExcel}
-            className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold border border-slate-200 shadow-sm transition-all active:scale-95 cursor-pointer"
-          >
-            <Download className="w-4 h-4" />
-            Export Excel
-          </button>
+          {subTab === "result" && (
+            <button
+              onClick={handleExportExcel}
+              className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold border border-slate-200 shadow-sm transition-all active:scale-95 cursor-pointer"
+            >
+              <Download className="w-4 h-4" />
+              Export Excel
+            </button>
+          )}
         </div>
       </div>
 
+      {/* Sub-tab Selector */}
+      <div className="flex bg-slate-100/80 p-1 rounded-xl w-fit gap-1 border border-slate-200/50">
+        <button
+          onClick={() => {
+            setSubTab("input");
+            setCurrentPage(1);
+          }}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold transition-all duration-300 ${
+            subTab === "input"
+              ? "bg-[#00A6A9] text-white shadow-sm"
+              : "text-slate-650 hover:bg-slate-200/60 hover:text-slate-800"
+          }`}
+        >
+          Nhập TT Học sinh
+        </button>
+        <button
+          onClick={() => {
+            setSubTab("result");
+            setCurrentPage(1);
+          }}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold transition-all duration-300 ${
+            subTab === "result"
+              ? "bg-[#00A6A9] text-white shadow-sm"
+              : "text-slate-650 hover:bg-slate-200/60 hover:text-slate-800"
+          }`}
+        >
+          Kết quả và nhập học
+        </button>
+      </div>
+
       {/* Statistics Cards */}
+      {subTab === "result" && (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
           <div className="p-3 bg-slate-100 text-slate-600 rounded-xl">
@@ -901,6 +943,7 @@ export function StudentInfoClient({
           </div>
         </div>
       </div>
+      )}
 
       {/* Filters & Search Control Panel */}
       <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
@@ -908,7 +951,7 @@ export function StudentInfoClient({
           <Filter className="w-4 h-4 text-[#00A6A9]" />
           Bộ lọc & Tìm kiếm nhanh
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
+        <div className={`grid grid-cols-1 sm:grid-cols-2 ${subTab === "result" ? "md:grid-cols-5" : "md:grid-cols-4"} gap-3`}>
           {/* Search bar */}
           <div className="relative">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -978,19 +1021,21 @@ export function StudentInfoClient({
           </select>
 
           {/* Result Filter */}
-          <select
-            value={selectedResult}
-            onChange={(e) => {
-              setSelectedResult(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="px-3 py-2 rounded-xl text-sm border border-slate-200 focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer text-slate-700 font-medium"
-          >
-            <option value="">Tất cả Kết quả</option>
-            {filterOptions.results.map((r) => (
-              <option key={r} value={r}>{r}</option>
-            ))}
-          </select>
+          {subTab === "result" && (
+            <select
+              value={selectedResult}
+              onChange={(e) => {
+                setSelectedResult(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="px-3 py-2 rounded-xl text-sm border border-slate-200 focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer text-slate-700 font-medium"
+            >
+              <option value="">Tất cả Kết quả</option>
+              {filterOptions.results.map((r) => (
+                <option key={r} value={r}>{r}</option>
+              ))}
+            </select>
+          )}
         </div>
       </div>
 
@@ -1002,33 +1047,41 @@ export function StudentInfoClient({
             <table className="w-full text-sm text-left whitespace-nowrap">
               <thead className="bg-[#00A19A]/5 border-b border-slate-200">
                 <tr>
-                  <th className="px-5 py-4 w-12 text-center">
-                    <input
-                      type="checkbox"
-                      className="w-4 h-4 rounded text-[#00A6A9] accent-[#00A6A9]"
-                      checked={filteredStudents.length > 0 && selectedIds.length === filteredStudents.length}
-                      onChange={(e) => setSelectedIds(e.target.checked ? filteredStudents.map(s => s.id) : [])}
-                    />
-                  </th>
+                  {subTab === "input" && (
+                    <th className="px-5 py-4 w-12 text-center">
+                      <input
+                        type="checkbox"
+                        className="w-4 h-4 rounded text-[#00A6A9] accent-[#00A6A9]"
+                        checked={filteredStudents.length > 0 && selectedIds.length === filteredStudents.length}
+                        onChange={(e) => setSelectedIds(e.target.checked ? filteredStudents.map(s => s.id) : [])}
+                      />
+                    </th>
+                  )}
                   <th className="px-5 py-4 w-28 text-[10px] font-black text-slate-400 uppercase tracking-widest">Mã học sinh</th>
                   <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Họ và tên</th>
                   <th className="px-3 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-16">Khối</th>
                   <th className="px-3 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-16">Giới tính</th>
                   <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-24">Ngày sinh</th>
                   <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-20">Hệ KS</th>
-                  <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-24">Học lực</th>
-                  <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-24">Hạnh kiểm</th>
-                  <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-28">Học bạ</th>
-                  <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Học kỳ / Năm TS</th>
-                  <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Đối tượng TS</th>
-                  <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Kết quả duyệt</th>
+                  {subTab === "input" && (
+                    <>
+                      <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-24">Học lực</th>
+                      <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-24">Hạnh kiểm</th>
+                      <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-28">Học bạ</th>
+                      <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Học kỳ / Năm TS</th>
+                      <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Đối tượng TS</th>
+                    </>
+                  )}
+                  {subTab === "result" && (
+                    <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Kết quả duyệt</th>
+                  )}
                   <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-32">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
                 {paginatedStudents.length === 0 ? (
                   <tr>
-                    <td colSpan={14} className="px-6 py-12 text-center text-slate-400 font-medium">
+                    <td colSpan={subTab === "input" ? 14 : 9} className="px-6 py-12 text-center text-slate-400 font-medium">
                       Không tìm thấy dữ liệu học sinh phù hợp.
                     </td>
                   </tr>
@@ -1042,14 +1095,16 @@ export function StudentInfoClient({
                         setIsDetailsOpen(true);
                       }}
                     >
-                      <td className="px-5 py-3.5 text-center" onClick={(e) => e.stopPropagation()}>
-                        <input
-                          type="checkbox"
-                          className="w-4 h-4 rounded text-[#00A6A9] accent-[#00A6A9]"
-                          checked={selectedIds.includes(s.id)}
-                          onChange={(e) => setSelectedIds(prev => e.target.checked ? [...prev, s.id] : prev.filter(id => id !== s.id))}
-                        />
-                      </td>
+                      {subTab === "input" && (
+                        <td className="px-5 py-3.5 text-center" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 rounded text-[#00A6A9] accent-[#00A6A9]"
+                            checked={selectedIds.includes(s.id)}
+                            onChange={(e) => setSelectedIds(prev => e.target.checked ? [...prev, s.id] : prev.filter(id => id !== s.id))}
+                          />
+                        </td>
+                      )}
                       <td className="px-5 py-3.5">
                         <span className="font-mono text-xs font-black text-[#00A19A] bg-[#00A19A]/10 border border-[#00A19A]/20 px-2.5 py-1 rounded-md">
                           {s.studentCode}
@@ -1082,19 +1137,25 @@ export function StudentInfoClient({
                           {s.surveyFormType || "-"}
                         </span>
                       </td>
-                      <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.kqHocTap || "-"}</td>
-                      <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.kqRenLuyen || "-"}</td>
-                      <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.kqgdTieuHoc || "-"}</td>
-                      <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.hocKy || "-"}</td>
-                      <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.targetType || "-"}</td>
-                      <td className="px-4 py-3.5 text-center">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${getResultBadgeClass(s.admissionResult)}`}>
-                          {s.admissionResult || "Chưa duyệt"}
-                        </span>
-                      </td>
+                      {subTab === "input" && (
+                        <>
+                          <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.kqHocTap || "-"}</td>
+                          <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.kqRenLuyen || "-"}</td>
+                          <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.kqgdTieuHoc || "-"}</td>
+                          <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.hocKy || "-"}</td>
+                          <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.targetType || "-"}</td>
+                        </>
+                      )}
+                      {subTab === "result" && (
+                        <td className="px-4 py-3.5 text-center">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${getResultBadgeClass(s.admissionResult)}`}>
+                            {s.admissionResult || "Chưa duyệt"}
+                          </span>
+                        </td>
+                      )}
                       <td className="px-4 py-3.5 text-center" onClick={(e) => e.stopPropagation()}>
                         <div className="flex justify-center items-center gap-1.5">
-                          {s.admissionResult && s.admissionResult.toUpperCase().includes("ĐẠT") && !s.admissionResult.toUpperCase().includes("KHÔNG") && (
+                          {subTab === "result" && s.admissionResult && s.admissionResult.toUpperCase().includes("ĐẠT") && !s.admissionResult.toUpperCase().includes("KHÔNG") && (
                             <>
                               {!s.enrollmentStatus ? (
                                 <button
@@ -1125,20 +1186,24 @@ export function StudentInfoClient({
                           >
                             <Eye className="w-4 h-4" />
                           </button>
-                          <button
-                            onClick={() => openEditModal(s)}
-                            className="p-1.5 text-slate-400 hover:text-[#00A6A9] hover:bg-slate-100 rounded-lg transition-all"
-                            title="Chỉnh sửa"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={(e) => handleDeleteStudent(s, e)}
-                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
-                            title="Xóa học sinh"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          {subTab === "input" && (
+                            <>
+                              <button
+                                onClick={() => openEditModal(s)}
+                                className="p-1.5 text-slate-400 hover:text-[#00A6A9] hover:bg-slate-100 rounded-lg transition-all"
+                                title="Chỉnh sửa"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={(e) => handleDeleteStudent(s, e)}
+                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                                title="Xóa học sinh"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -1151,14 +1216,16 @@ export function StudentInfoClient({
             <table className="w-full text-left text-sm whitespace-nowrap border-collapse">
               <thead className="bg-[#00A19A]/5 border-b border-slate-300">
                 <tr>
-                  <th className="p-4 w-12 text-center">
-                    <input
-                      type="checkbox"
-                      className="w-4 h-4 rounded accent-[#00A19A]"
-                      checked={filteredStudents.length > 0 && selectedIds.length === filteredStudents.length}
-                      onChange={(e) => setSelectedIds(e.target.checked ? filteredStudents.map(c => c.id) : [])}
-                    />
-                  </th>
+                  {subTab === "input" && (
+                    <th className="p-4 w-12 text-center">
+                      <input
+                        type="checkbox"
+                        className="w-4 h-4 rounded accent-[#00A19A]"
+                        checked={filteredStudents.length > 0 && selectedIds.length === filteredStudents.length}
+                        onChange={(e) => setSelectedIds(e.target.checked ? filteredStudents.map(c => c.id) : [])}
+                      />
+                    </th>
+                  )}
                   <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-14">STT</th>
                   <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-28">Mã bé</th>
                   <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Họ và tên</th>
@@ -1166,7 +1233,9 @@ export function StudentInfoClient({
                   <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-24">Giới tính</th>
                   <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-28">Nhóm tuổi</th>
                   <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-36">Cơ sở</th>
-                  <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-36">Kết quả</th>
+                  {subTab === "result" && (
+                    <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-36">Kết quả</th>
+                  )}
                   <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-32 text-center">Thao tác</th>
                 </tr>
               </thead>
@@ -1187,14 +1256,16 @@ export function StudentInfoClient({
                         setIsDetailsOpen(true);
                       }}
                     >
-                      <td className="p-4 text-center" onClick={(e) => e.stopPropagation()}>
-                        <input
-                          type="checkbox"
-                          className="w-4 h-4 rounded accent-[#00A19A]"
-                          checked={selectedIds.includes(child.id)}
-                          onChange={(e) => setSelectedIds(prev => e.target.checked ? [...prev, child.id] : prev.filter(id => id !== child.id))}
-                        />
-                      </td>
+                      {subTab === "input" && (
+                        <td className="p-4 text-center" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 rounded accent-[#00A19A]"
+                            checked={selectedIds.includes(child.id)}
+                            onChange={(e) => setSelectedIds(prev => e.target.checked ? [...prev, child.id] : prev.filter(id => id !== child.id))}
+                          />
+                        </td>
+                      )}
                       <td className="p-4 text-slate-400 text-sm">{(currentPage - 1) * pageSize + i + 1}</td>
                       <td className="p-4">
                         <span className="font-mono text-xs font-black text-[#00A19A] bg-[#00A19A]/5 px-2 py-1 rounded-none">
@@ -1238,18 +1309,20 @@ export function StudentInfoClient({
                       <td className="p-4 text-xs font-semibold text-slate-600">
                         {child.admissionCampus || "—"}
                       </td>
-                      <td className="p-4">
-                        {child.admissionResult ? (
-                          <span className={`text-[10px] font-black px-2.5 py-1 rounded-none border ${child.admissionResult === "Học thử" ? "bg-[#00A19A]/5 text-[#00A6A9] border-[#00A6A9]/30" : child.admissionResult.toUpperCase().includes("ĐẠT") && !child.admissionResult.toUpperCase().includes("KHÔNG") ? "bg-emerald-50 text-emerald-800 border-emerald-300" : child.admissionResult.toUpperCase().includes("KHÔNG") ? "bg-rose-50 text-rose-800 border-rose-300" : "bg-amber-50 text-amber-800 border-amber-300"}`}>
-                            {child.admissionResult}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-slate-300">Chưa duyệt</span>
-                        )}
-                      </td>
+                      {subTab === "result" && (
+                        <td className="p-4">
+                          {child.admissionResult ? (
+                            <span className={`text-[10px] font-black px-2.5 py-1 rounded-none border ${child.admissionResult === "Học thử" ? "bg-[#00A19A]/5 text-[#00A6A9] border-[#00A6A9]/30" : child.admissionResult.toUpperCase().includes("ĐẠT") && !child.admissionResult.toUpperCase().includes("KHÔNG") ? "bg-emerald-50 text-emerald-800 border-emerald-300" : child.admissionResult.toUpperCase().includes("KHÔNG") ? "bg-rose-50 text-rose-800 border-rose-300" : "bg-amber-50 text-amber-800 border-amber-300"}`}>
+                              {child.admissionResult}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-slate-300">Chưa duyệt</span>
+                          )}
+                        </td>
+                      )}
                       <td className="p-4 text-center" onClick={(e) => e.stopPropagation()}>
                         <div className="flex justify-center gap-1 items-center">
-                          {child.admissionResult && child.admissionResult.toUpperCase().includes("ĐẠT") && !child.admissionResult.toUpperCase().includes("KHÔNG") && (
+                          {subTab === "result" && child.admissionResult && child.admissionResult.toUpperCase().includes("ĐẠT") && !child.admissionResult.toUpperCase().includes("KHÔNG") && (
                             <>
                               {!child.enrollmentStatus ? (
                                 <button
@@ -1280,18 +1353,22 @@ export function StudentInfoClient({
                           >
                             <Eye className="w-4 h-4" />
                           </button>
-                          <button
-                            onClick={() => openEditModal(child)}
-                            className="p-2 text-slate-300 hover:text-[#00A19A] hover:bg-[#00A19A]/5 rounded-none transition-all"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={(e) => handleDeleteStudent(child, e)}
-                            className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-none transition-all"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          {subTab === "input" && (
+                            <>
+                              <button
+                                onClick={() => openEditModal(child)}
+                                className="p-2 text-slate-300 hover:text-[#00A19A] hover:bg-[#00A19A]/5 rounded-none transition-all"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={(e) => handleDeleteStudent(child, e)}
+                                className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-none transition-all"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
