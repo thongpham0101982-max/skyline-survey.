@@ -279,6 +279,28 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     if (loading && assignments.length === 0) return <div className="p-8 text-center text-slate-500">Đang tải...</div>;
 
     const currentAssignment = availableAssignments.find(a => a.id === selectedAssignmentId) || assignments.find(a => a.id === selectedAssignmentId);
+
+    const assignedGradesText = useMemo(() => {
+        if (!currentAssignment || !Array.isArray(assignments)) return "Tất cả";
+        const matches = assignments.filter(a => 
+            a.periodId === selectedPeriodId &&
+            (selectedBatchId === "all" || !a.batchId || a.batchId === selectedBatchId) &&
+            a.subjectId === currentAssignment.subjectId
+        );
+        const grades = Array.from(new Set(matches.map(a => a.grade).filter(Boolean)));
+        return grades.length > 0 ? grades.join(", ") : "Tất cả";
+    }, [assignments, selectedPeriodId, selectedBatchId, currentAssignment]);
+
+    const assignedSystemsText = useMemo(() => {
+        if (!currentAssignment || !Array.isArray(assignments)) return "Tất cả";
+        const matches = assignments.filter(a => 
+            a.periodId === selectedPeriodId &&
+            (selectedBatchId === "all" || !a.batchId || a.batchId === selectedBatchId) &&
+            a.subjectId === currentAssignment.subjectId
+        );
+        const systems = Array.from(new Set(matches.map(a => a.educationSystem).filter(Boolean)));
+        return systems.length > 0 ? systems.join(", ") : "Tất cả";
+    }, [assignments, selectedPeriodId, selectedBatchId, currentAssignment]);
     
     // Detection logic for Psychology Grades 1-5
     const subName = (currentAssignment?.subject?.name || "").toLowerCase();
@@ -433,7 +455,12 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                 Form nhập kết quả: {currentAssignment.subject.name}
                             </h3>
                             <p className="text-xs text-slate-500 mt-1 flex items-center gap-2">
-                                <Layers className="w-3.5 h-3.5"/> Khối: <span className="font-semibold text-slate-700">{currentAssignment.grade || "Tất cả"}</span> | 
+                                <Layers className="w-3.5 h-3.5"/> 
+                                {isPreschoolSubject ? (
+                                    <>Độ tuổi: <span className="font-semibold text-slate-700">{assignedGradesText}</span></>
+                                ) : (
+                                    <>Khối: <span className="font-semibold text-slate-700">{assignedGradesText}</span> | Hệ học: <span className="font-semibold text-slate-700">{assignedSystemsText}</span></>
+                                )} | 
                                 Thuộc kỳ khảo sát: <span className="font-semibold text-slate-700">{currentAssignment.period.name} {currentAssignment.batch?.name ? ` - ${currentAssignment.batch.name}` : ""}</span>
                             </p>
                         </div>
