@@ -176,8 +176,8 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                     const sc = st.scores?.[0];
                     return {
                         ...st,
-                        scoreVals: sc?.scores ? JSON.parse(sc.scores) : [],
-                        commentVals: sc?.comments ? JSON.parse(sc.comments) : []
+                        scoreVals: sc?.scores ? (() => { const p = JSON.parse(sc.scores); return Array.isArray(p) ? p : (typeof p === 'object' && p !== null ? Object.values(p) : [p]) })() : [],
+                        commentVals: sc?.comments ? (() => { const p = JSON.parse(sc.comments); return Array.isArray(p) ? p : (typeof p === 'object' && p !== null ? Object.values(p) : [p]) })() : []
                     };
                 });
                 setStudents(enriched);
