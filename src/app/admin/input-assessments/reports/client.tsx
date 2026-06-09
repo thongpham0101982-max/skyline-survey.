@@ -604,7 +604,12 @@ export function ReportsClient({
 
   const activePeriods = useMemo(() => {
     const raw = selectedLevel === "preschool" ? preschoolPeriods : generalPeriods;
-    return raw.filter((p: any) => p.academicYearId === yearId);
+    return raw
+      .filter((p: any) => p.academicYearId === yearId)
+      .map((p: any) => ({
+        ...p,
+        batches: (p.batches || []).filter((b: any) => b.status === "ACTIVE")
+      }));
   }, [selectedLevel, preschoolPeriods, generalPeriods, yearId]);
 
   // Unified loading of configuration

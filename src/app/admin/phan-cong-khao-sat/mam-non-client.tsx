@@ -100,7 +100,12 @@ export function PhanCongMamNonClient({
   const [yearId, setYearId] = useState(defaultYear?.id || "")
 
   // ─── Periods ───
-  const [periods, setPeriods] = useState<any[]>(initialPeriods)
+  const [periods, setPeriods] = useState<any[]>(() => {
+    return initialPeriods.map(p => ({
+      ...p,
+      batches: (p.batches || []).filter((b: any) => b.status === "ACTIVE")
+    }))
+  })
   const [pLoading, setPLoading] = useState(false)
 
   const fetchPeriods = useCallback(async () => {
@@ -108,7 +113,13 @@ export function PhanCongMamNonClient({
     setPLoading(true)
     try {
       const r = await fetch(`/api/preschool-input-assessments?academicYearId=${yearId}`)
-      if (r.ok) setPeriods(await r.json())
+      if (r.ok) {
+        const data = await r.json()
+        setPeriods(data.map((p: any) => ({
+          ...p,
+          batches: (p.batches || []).filter((b: any) => b.status === "ACTIVE")
+        })))
+      }
     } finally { setPLoading(false) }
   }, [yearId])
 

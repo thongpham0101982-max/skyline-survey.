@@ -61,8 +61,8 @@ const preschoolGrades = ["12 đến 18 tháng", "18 đến 24 tháng", "24 đế
 export function StudentInfoClient({ 
   initialGeneralStudents = [], 
   initialPreschoolStudents = [],
-  generalPeriods = [],
-  preschoolPeriods = [],
+  generalPeriods: rawGeneralPeriods = [],
+  preschoolPeriods: rawPreschoolPeriods = [],
   activeYearName = "",
   activeYearId = "",
   configs = [],
@@ -82,6 +82,20 @@ export function StudentInfoClient({
   rolePermissions = [],
   gradesPreschool = []
 }: StudentInfoClientProps) {
+  const generalPeriods = useMemo(() => {
+    return rawGeneralPeriods.map((p: any) => ({
+      ...p,
+      batches: (p.batches || []).filter((b: any) => b.status === "ACTIVE")
+    }));
+  }, [rawGeneralPeriods]);
+
+  const preschoolPeriods = useMemo(() => {
+    return rawPreschoolPeriods.map((p: any) => ({
+      ...p,
+      batches: (p.batches || []).filter((b: any) => b.status === "ACTIVE")
+    }));
+  }, [rawPreschoolPeriods]);
+
   const [activeTab, setActiveTab] = useState<"general" | "preschool">("general");
   const [subTab, setSubTab] = useState<"input" | "info" | "result">("input");
 

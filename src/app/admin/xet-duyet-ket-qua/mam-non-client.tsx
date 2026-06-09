@@ -998,7 +998,14 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
   const notify = (msg: string, type = "ok") => { setToast({ msg, type }); setTimeout(() => setToast(null), 3200); };
 
   // Periods
-  const [periods, setPeriods] = useState<Period[]>([]);
+  const [rawPeriods, setRawPeriods] = useState<Period[]>([]);
+  const periods = useMemo(() => {
+    if (tab === "periods") return rawPeriods;
+    return rawPeriods.map(p => ({
+      ...p,
+      batches: (p.batches || []).filter(b => b.status === "ACTIVE")
+    }));
+  }, [rawPeriods, tab]);
   const [pLoading, setPLoading] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [pModal, setPModal] = useState(false);
@@ -1478,7 +1485,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     setPLoading(true);
     try {
       const r = await fetch(`/api/preschool-input-assessments?academicYearId=${yearId}`);
-      if (r.ok) { const d: Period[] = await r.json(); setPeriods(d); if (!cPeriodId && d.length > 0) { setCPeriodId(d[0].id); setRptPeriodId(d[0].id); } }
+      if (r.ok) { const d: Period[] = await r.json(); setRawPeriods(d); if (!cPeriodId && d.length > 0) { setCPeriodId(d[0].id); setRptPeriodId(d[0].id); } }
     } catch (e) {
       console.error("fetchPeriods error:", e);
     } finally { setPLoading(false); }

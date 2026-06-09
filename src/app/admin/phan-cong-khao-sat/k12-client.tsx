@@ -107,11 +107,16 @@ export function PhanCongK12Client({
   const [pLoading, setPLoading] = useState(false)
 
   const visiblePeriods = useMemo(() => {
-    if (!currentUser?.role) return periods
-    if (isAdmin) return periods
+    const activeBatchesPeriods = periods.map(p => ({
+      ...p,
+      batches: (p.batches || []).filter((b: any) => b.status === "ACTIVE")
+    }))
+
+    if (!currentUser?.role) return activeBatchesPeriods
+    if (isAdmin) return activeBatchesPeriods
     if (["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole)) {
       const allowedIds = currentUser.campusIds || []
-      return periods.map(p => ({
+      return activeBatchesPeriods.map(p => ({
         ...p,
         batches: (p.batches || []).filter((b: any) => {
           if (!b.campusId) {
@@ -125,7 +130,7 @@ export function PhanCongK12Client({
         })
       }))
     }
-    return periods
+    return activeBatchesPeriods
   }, [periods, currentUser, campuses, isAdmin, userRole])
 
   const fetchPeriods = useCallback(async () => {

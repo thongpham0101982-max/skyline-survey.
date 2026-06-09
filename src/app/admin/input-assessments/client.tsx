@@ -948,13 +948,18 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
   const [periods, setPeriods] = useState<Period[]>([])
 
   const visiblePeriods = useMemo(() => {
-    if (!currentUser || !currentUser.role) return periods; // Safe Fallback: Show all periods if session is not loaded yet or null
+    const basePeriods = tab === "periods" ? periods : periods.map(p => ({
+      ...p,
+      batches: (p.batches || []).filter(b => b.status === "ACTIVE")
+    }));
+
+    if (!currentUser || !currentUser.role) return basePeriods; // Safe Fallback: Show all periods if session is not loaded yet or null
     const userRole = (currentUser.role || "").toUpperCase();
-    if (userRole === "ADMIN" || userRole === "KT_DBCL") return periods;
+    if (userRole === "ADMIN" || userRole === "KT_DBCL") return basePeriods;
     
     if (["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole)) {
       const allowedIds = currentUser.campusIds || [];
-      return periods.map(p => {
+      return basePeriods.map(p => {
         const allowedBatches = (p.batches || []).filter(b => {
           if (!b.campusId) {
             // Smart Fallback: Check if batch name contains any allowed campus code/name
@@ -975,8 +980,8 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
       });
     }
     
-    return periods;
-  }, [periods, currentUser, campuses]);
+    return basePeriods;
+  }, [periods, currentUser, campuses, tab]);
 
 
   const [pLoading, setPLoading] = useState(false)
