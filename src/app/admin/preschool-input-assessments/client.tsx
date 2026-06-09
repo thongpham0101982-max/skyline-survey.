@@ -2673,8 +2673,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
   const rptStats = useMemo(() => {
     const total = reportChildren.length;
     const passed = reportChildren.filter(c => c.admissionResult && (c.admissionResult.toUpperCase().includes("ĐẠT") || c.admissionResult === "Học thử")).length;
-    const pending = reportChildren.filter(c => !c.admissionResult).length;
     const failed = reportChildren.filter(c => c.admissionResult && c.admissionResult.toUpperCase().includes("KHÔNG")).length;
+    const pending = total - passed - failed;
     const gradeStats = grades.map(g => ({ grade: g, count: reportChildren.filter(c => c.grade === g).length }));
     return { total, passed, pending, failed, gradeStats };
   }, [reportChildren, grades]);
