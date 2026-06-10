@@ -13,6 +13,8 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     const [selectedPeriodId, setSelectedPeriodId] = useState<string>("");
     const [selectedBatchId, setSelectedBatchId] = useState<string>("all");
     const [selectedAssignmentId, setSelectedAssignmentId] = useState<string>("");
+    const [selectedGrade, setSelectedGrade] = useState<string>("all");
+    const [selectedSystemCode, setSelectedSystemCode] = useState<string>("all");
     const [isUnlockRequestOpen, setIsUnlockRequestOpen] = useState(false);
     const [unlockReason, setUnlockReason] = useState("");
     
@@ -134,8 +136,38 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     }, [assignments, selectedPeriodId, selectedBatchId]);
 
 
+    // Tinh toan danh sach khoi co san dua tren mon dang chon va ky/dot (chi hien voi Pho thong)
+    const availableGradeOptions = useMemo(() => {
+        if (!selectedAssignmentId || !Array.isArray(assignments)) return [];
+        const currentAssign = availableAssignments.find(a => a.id === selectedAssignmentId) || assignments.find(a => a.id === selectedAssignmentId);
+        if (!currentAssign) return [];
+        const subjectId = currentAssign.subjectId;
+        if (!subjectId || subjectId === "preschool" || currentAssign.isPreschool) return [];
+        
+        const relatedAssignments = assignments.filter(a =>
+            a.subjectId === subjectId &&
+            a.periodId === selectedPeriodId &&
+            (selectedBatchId === "all" || !a.batchId || a.batchId === selectedBatchId)
+        );
+        
+        const gradeMap = new Map<string, { grade: string; educationSystem: string }>();
+        relatedAssignments.forEach(a => {
+            const g = (a.grade || "").trim();
+            const sys = (a.educationSystem || "").trim();
+            if (g) {
+                const key = ${g}__;
+                gradeMap.set(key, { grade: g, educationSystem: sys });
+            }
+        });
+        
+        return Array.from(gradeMap.values());
+    }, [selectedAssignmentId, assignments, selectedPeriodId, selectedBatchId, availableAssignments]);
+
+
     useEffect(() => {
         setSelectedBatchId("all");
+        setSelectedGrade("all");
+        setSelectedSystemCode("all");
     }, [selectedPeriodId]);
 
     // Handle cascading select
@@ -147,6 +179,12 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
         }
     }, [selectedPeriodId, availableAssignments]);
 
+    // Reset grade/system filter khi doi mon hoac dot
+    useEffect(() => {
+        setSelectedGrade("all");
+        setSelectedSystemCode("all");
+    }, [selectedAssignmentId, selectedBatchId]);
+
     useEffect(() => {
         if (!selectedAssignmentId) {
             setStudents([]);
@@ -156,13 +194,14 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
         if (!assignment) return;
 
         setLoading(true);
-        const systemCode = "";
-        const grade = "";
+        // Truyen grade va systemCode de loc dung khoi/he khi giao vien chon
+        const gradeParam = selectedGrade !== "all" ? selectedGrade : "";
+        const systemParam = selectedSystemCode !== "all" ? selectedSystemCode : "";
         
         // Dynamic batch parameter based on selected dropdown
         const batchQueryParam = selectedBatchId === "all" ? "" : selectedBatchId;
         
-        fetch(`/api/teacher-assessments?action=getStudents&periodId=${assignment.periodId}&grade=${grade}&systemCode=${systemCode}&subjectId=${assignment.subjectId}&batchId=${batchQueryParam}`)
+        fetch(`/api/teacher-assessments?action=getStudents&periodId=${assignment.periodId}&grade=${encodeURIComponent(gradeParam)}&systemCode=${encodeURIComponent(systemParam)}&subjectId=${assignment.subjectId}&batchId=${batchQueryParam}`)
             .then(res => res.json())
             .then(data => {
                 if (!Array.isArray(data)) {
@@ -188,7 +227,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 setStudents([]);
                 setLoading(false);
             });
-    }, [selectedAssignmentId, assignments, availableAssignments, selectedBatchId]);
+    }, [selectedAssignmentId, assignments, availableAssignments, selectedBatchId, selectedGrade, selectedSystemCode]);
 
     const handleScoreChange = (studentId: string, colIndex: number, val: string) => {
         const assignment = availableAssignments.find(a => a.id === selectedAssignmentId) || assignments.find(a => a.id === selectedAssignmentId);
@@ -406,6 +445,42 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                     </div>
                 </div>
             </div>
+
+            {/* Bo loc Khoi - chi hien khi giao vien duoc phan cong nhieu khoi khac nhau */}
+            {availableGradeOptions.length > 0 && (
+                <div className="bg-gradient-to-r from-[#00A19A]/5 to-teal-50 border border-[#00A19A]/20 rounded-xl p-4 shadow-sm">
+                    <div className="flex flex-col md:flex-row md:items-center gap-3">
+                        <div className="flex items-center gap-2 min-w-fit">
+                            <div className="w-7 h-7 rounded-lg bg-[#00A19A] text-white flex items-center justify-center shadow-sm">
+                                <Layers className="w-3.5 h-3.5" />
+                            </div>
+                            <span className="text-xs font-black text-[#00A19A] uppercase tracking-wider">Loc theo Khoi / He hoc</span>
+                        </div>
+                        <div className="flex flex-wrap gap-2 flex-1">
+                            <button
+                                onClick={() => { setSelectedGrade("all"); setSelectedSystemCode("all"); }}
+                                className={px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm border }
+                            >
+                                Tat ca Khoi
+                            </button>
+                            {availableGradeOptions.map(opt => (
+                                <button
+                                    key={${opt.grade}__}
+                                    onClick={() => { setSelectedGrade(opt.grade); setSelectedSystemCode(opt.educationSystem || "all"); }}
+                                    className={px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm border }
+                                >
+                                    {opt.grade}{opt.educationSystem ?  -  : ""}
+                                </button>
+                            ))}
+                        </div>
+                        {selectedGrade !== "all" && (
+                            <div className="text-[11px] text-[#00A19A] font-semibold bg-[#00A19A]/10 px-3 py-1 rounded-full border border-[#00A19A]/20 whitespace-nowrap">
+                                Dang loc: {selectedGrade}{selectedSystemCode !== "all" ?  - He  : ""}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
 
 {currentAssignment && isEnglishAssignment && relatedEnglishAssignments.length > 0 && (
     <div className="-mt-6 mx-auto w-[92%] bg-white/70 backdrop-blur-md p-3 rounded-lg shadow-sm border border-slate-300 mb-6 animate-in fade-in slide-in-from-top-4 flex flex-col gap-2 relative z-20">
@@ -816,11 +891,11 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                   // Refetch student list to update scoredCount and totalCriteria progress
                   const assignment = availableAssignments.find(a => a.id === selectedAssignmentId) || assignments.find(a => a.id === selectedAssignmentId);
                   if (assignment) {
-                    const systemCode = "";
-                    const grade = "";
+                    const gradeParam = selectedGrade !== "all" ? selectedGrade : "";
+                    const systemParam = selectedSystemCode !== "all" ? selectedSystemCode : "";
                     setLoading(true);
                     const batchQueryParam = selectedBatchId === "all" ? "" : selectedBatchId;
-                    const response = await fetch(`/api/teacher-assessments?action=getStudents&periodId=${assignment.periodId}&grade=${grade}&systemCode=${systemCode}&subjectId=${assignment.subjectId}&batchId=${batchQueryParam}`);
+                    const response = await fetch(`/api/teacher-assessments?action=getStudents&periodId=${assignment.periodId}&grade=${encodeURIComponent(gradeParam)}&systemCode=${encodeURIComponent(systemParam)}&subjectId=${assignment.subjectId}&batchId=${batchQueryParam}`);
                     if (response.ok) {
                       const data = await response.json();
                       if (Array.isArray(data)) setStudents(data);

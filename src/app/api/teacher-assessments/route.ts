@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 ﻿import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
@@ -263,16 +263,14 @@ export async function GET(req: any) {
         
         
         
-        let teacherAssignments = [];
-        let eduSystemsMap = {};
-        if (!grade && !systemCode) {
-            teacherAssignments = await prisma.inputAssessmentTeacherAssignment.findMany({
-                where: { userId: session.user.id, periodId: periodId || undefined, subjectId: subjectId || undefined }
-            });
-            
-            const sysList = await prisma.educationSystem.findMany();
-            sysList.forEach(s => { eduSystemsMap[s.code.toLowerCase()] = s.name.toLowerCase(); });
-        }
+        // Luon load teacherAssignments de kiem tra quyen va loc dung khoi/he
+        const teacherAssignments = await prisma.inputAssessmentTeacherAssignment.findMany({
+            where: { userId: session.user.id, periodId: periodId || undefined, subjectId: subjectId || undefined }
+        });
+        
+        const sysList = await prisma.educationSystem.findMany();
+        const eduSystemsMap: Record<string, string> = {};
+        sysList.forEach(s => { eduSystemsMap[s.code.toLowerCase()] = s.name.toLowerCase(); });
 
 
         
@@ -326,8 +324,11 @@ export async function GET(req: any) {
                 });
                 
                 if (!matchesAssignment) return false;
+            } else if (!grade && !systemCode) {
+                // Neu khong co assignment nao, GV khong nen thay hoc sinh nao
+                return false;
             }
-            // Fuzzy grade matching
+            // Loc theo khoi cu the (neu GV chon tu bo loc Khoi tren UI)
             if (grade && grade.trim() !== "" && grade !== "Tất cả") {
                 const stGrade = (st.grade || "").toLowerCase().trim();
                 const qGrade = grade.toLowerCase().trim();
