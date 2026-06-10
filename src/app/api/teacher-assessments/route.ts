@@ -273,25 +273,23 @@ export async function GET(req: any) {
         
         let teacherAssignments = [];
         let eduSystemsMap = {};
-        if (!grade && !systemCode) {
-            let taWhere: any = {
-                userId: session.user.id,
-                periodId: periodId || undefined,
-                subjectId: subjectId || undefined
-            };
-            if (batchId && batchId !== "all" && batchId !== "null") {
-                taWhere.OR = [
-                    { batchId: batchId },
-                    { batchId: null }
-                ];
-            }
-            teacherAssignments = await prisma.inputAssessmentTeacherAssignment.findMany({
-                where: taWhere
-            });
-            
-            const sysList = await prisma.educationSystem.findMany();
-            sysList.forEach(s => { eduSystemsMap[s.code.toLowerCase()] = s.name.toLowerCase(); });
+        let taWhere: any = {
+            userId: session.user.id,
+            periodId: periodId || undefined,
+            subjectId: subjectId || undefined
+        };
+        if (batchId && batchId !== "all" && batchId !== "null") {
+            taWhere.OR = [
+                { batchId: batchId },
+                { batchId: null }
+            ];
         }
+        teacherAssignments = await prisma.inputAssessmentTeacherAssignment.findMany({
+            where: taWhere
+        });
+        
+        const sysList = await prisma.educationSystem.findMany();
+        sysList.forEach(s => { eduSystemsMap[s.code.toLowerCase()] = s.name.toLowerCase(); });
 
         if (systemName) {
             validSystems.push(systemName.toUpperCase());
