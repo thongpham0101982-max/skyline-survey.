@@ -460,6 +460,30 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                         </div>
                     </div>
                 </div>
+
+                {availableGrades.length > 0 && (
+                    <div className="group animate-fade-in">
+                        <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-slate-500 flex items-center gap-2 ml-1">
+                            <Layers className="w-3.5 h-3.5 text-[#00A19A]"/> Khối lớp
+                        </label>
+                        <div className="relative">
+                            <select 
+                                value={selectedGrade} 
+                                onChange={e => setSelectedGrade(e.target.value)}
+                                className="w-full bg-white border border-slate-200 rounded-lg pl-5 pr-10 py-1 text-xs outline-none focus:border-[#00A19A] focus:ring-4 focus:ring-[#00A19A]/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
+                            >
+                                <option value="all">Tất cả các khối</option>
+                                {availableGrades.map(g => (
+                                    <option key={g} value={g}>Khối {g}</option>
+                                ))}
+                            </select>
+                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A19A] transition-colors">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
             </div>
 
 {currentAssignment && isEnglishAssignment && relatedEnglishAssignments.length > 0 && (
