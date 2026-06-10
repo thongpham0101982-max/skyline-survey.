@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { BookOpen, Users, Save, CheckCircle2, CalendarDays, Layers, X } from "lucide-react";
 import PsychologyAssessmentForm from "./PsychologyAssessmentForm";
 import ChildDevStandardForm from "./ChildDevStandardForm";
@@ -8,7 +9,18 @@ import ThinkingSkillsForm from "./ThinkingSkillsForm";
 import PreschoolEvaluationForm from "./PreschoolEvaluationForm";
 
 export default function TeacherAssessmentsClient({ user }: { user: any }) {
+    const searchParams = useSearchParams();
+    const typeParam = searchParams.get("type");
     const [assignments, setAssignments] = useState<any[]>([]);
+
+    const filteredAssignments = useMemo(() => {
+        if (!typeParam) return assignments;
+        if (typeParam === "preschool") {
+            return assignments.filter(a => a && a.isPreschool);
+        } else {
+            return assignments.filter(a => a && !a.isPreschool);
+        }
+    }, [assignments, typeParam]);
     
     const [selectedPeriodId, setSelectedPeriodId] = useState<string>("");
     const [selectedBatchId, setSelectedBatchId] = useState<string>("all");
@@ -82,27 +94,27 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
 
     // Filtered lists
     const periods = useMemo(() => {
-        if (!Array.isArray(assignments)) return [];
+        if (!Array.isArray(filteredAssignments)) return [];
         const pMap = new Map();
-        assignments.forEach(a => { if (a && a.period) pMap.set(a.periodId, a.period) });
+        filteredAssignments.forEach(a => { if (a && a.period) pMap.set(a.periodId, a.period) });
         return Array.from(pMap.values());
-    }, [assignments]);
+    }, [filteredAssignments]);
 
     const batches = useMemo(() => {
-        if (!Array.isArray(assignments)) return [];
+        if (!Array.isArray(filteredAssignments)) return [];
         const bMap = new Map();
-        assignments.forEach(a => {
+        filteredAssignments.forEach(a => {
             if (a.periodId === selectedPeriodId && a.batch) {
                 bMap.set(a.batchId, a.batch);
             }
         });
         return Array.from(bMap.values());
-    }, [assignments, selectedPeriodId]);
+    }, [filteredAssignments, selectedPeriodId]);
 
     
     const availableAssignments = useMemo(() => {
-        if (!Array.isArray(assignments)) return [];
-        const filtered = assignments.filter(a => a.periodId === selectedPeriodId && (selectedBatchId === "all" || !a.batchId || a.batchId === selectedBatchId));
+        if (!Array.isArray(filteredAssignments)) return [];
+        const filtered = filteredAssignments.filter(a => a.periodId === selectedPeriodId && (selectedBatchId === "all" || !a.batchId || a.batchId === selectedBatchId));
         
         // Group by subjectId to consolidate the dropdown
         const unique = new Map();
@@ -131,7 +143,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
         });
         
         return Array.from(unique.values());
-    }, [assignments, selectedPeriodId, selectedBatchId]);
+    }, [filteredAssignments, selectedPeriodId, selectedBatchId]);
 
 
     useEffect(() => {
@@ -152,7 +164,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
             setStudents([]);
             return;
         }
-        const assignment = availableAssignments.find(a => a.id === selectedAssignmentId) || assignments.find(a => a.id === selectedAssignmentId);
+        const assignment = availableAssignments.find(a => a.id === selectedAssignmentId) || filteredAssignments.find(a => a.id === selectedAssignmentId);
         if (!assignment) return;
 
         setLoading(true);
@@ -188,10 +200,10 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 setStudents([]);
                 setLoading(false);
             });
-    }, [selectedAssignmentId, assignments, availableAssignments, selectedBatchId]);
+    }, [selectedAssignmentId, filteredAssignments, availableAssignments, selectedBatchId]);
 
     const handleScoreChange = (studentId: string, colIndex: number, val: string) => {
-        const assignment = availableAssignments.find(a => a.id === selectedAssignmentId) || assignments.find(a => a.id === selectedAssignmentId);
+        const assignment = availableAssignments.find(a => a.id === selectedAssignmentId) || filteredAssignments.find(a => a.id === selectedAssignmentId);
         if (assignment) {
             const subName = (assignment.subject?.name || "").toLowerCase();
             const numVal = parseFloat(val);
@@ -281,8 +293,8 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     const currentAssignment = availableAssignments.find(a => a.id === selectedAssignmentId) || assignments.find(a => a.id === selectedAssignmentId);
 
     const assignedGradesText = useMemo(() => {
-        if (!currentAssignment || !Array.isArray(assignments)) return "Tất cả";
-        const matches = assignments.filter(a => 
+        if (!currentAssignment || !Array.isArray(filteredAssignments)) return "Tất cả";
+        const matches = filteredAssignments.filter(a => 
             a &&
             a.periodId === selectedPeriodId &&
             (selectedBatchId === "all" || !a.batchId || a.batchId === selectedBatchId) &&
@@ -290,11 +302,11 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
         );
         const grades = Array.from(new Set(matches.map(a => a && a.grade).filter(Boolean)));
         return grades.length > 0 ? grades.join(", ") : "Tất cả";
-    }, [assignments, selectedPeriodId, selectedBatchId, currentAssignment]);
+    }, [filteredAssignments, selectedPeriodId, selectedBatchId, currentAssignment]);
 
     const assignedSystemsText = useMemo(() => {
-        if (!currentAssignment || !Array.isArray(assignments)) return "Tất cả";
-        const matches = assignments.filter(a => 
+        if (!currentAssignment || !Array.isArray(filteredAssignments)) return "Tất cả";
+        const matches = filteredAssignments.filter(a => 
             a &&
             a.periodId === selectedPeriodId &&
             (selectedBatchId === "all" || !a.batchId || a.batchId === selectedBatchId) &&
@@ -302,7 +314,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
         );
         const systems = Array.from(new Set(matches.map(a => a && a.educationSystem).filter(Boolean)));
         return systems.length > 0 ? systems.join(", ") : "Tất cả";
-    }, [assignments, selectedPeriodId, selectedBatchId, currentAssignment]);
+    }, [filteredAssignments, selectedPeriodId, selectedBatchId, currentAssignment]);
     
     // Detection logic for Psychology Grades 1-5
     const subName = (currentAssignment?.subject?.name || "").toLowerCase();
