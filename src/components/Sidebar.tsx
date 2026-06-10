@@ -1,7 +1,7 @@
 "use client"
-import { useState, useEffect, Suspense } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
-import { usePathname, useSearchParams } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
 import { 
   LogOut, 
@@ -26,10 +26,8 @@ interface SidebarProps {
   taskCount?: number
 }
 
-function SidebarContent({ role, permissionModules, actualRole, taskCount = 0 }: SidebarProps) {
+export function Sidebar({ role, permissionModules, actualRole, taskCount = 0 }: SidebarProps) {
   const pathname = usePathname()
-  const searchParams = useSearchParams()
-  const typeParam = searchParams?.get("type")
   const isSuperAdmin = actualRole === "ADMIN" || !permissionModules
   const [isOpen, setIsOpen] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(false)
@@ -196,27 +194,27 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0 }: 
                     {!isCollapsed ? <span className="text-[10px] font-bold text-white/60 uppercase tracking-[0.1em]">Khảo thí</span> : <span className="w-full text-center text-white/50 block text-xs">•••</span>}
                   </div>
                   {loadingAssignments ? (
-                    <Link href="/teacher/input-assessments?type=general" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool' ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"}`}>
-                      <ClipboardCheck className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool' ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
+                    <Link href="/teacher/input-assessments" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/input-assessments') ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"}`}>
+                      <ClipboardCheck className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/input-assessments') ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
                       {!isCollapsed && <span>Đang tải khảo thí...</span>}
                     </Link>
                   ) : (
                     <>
                       {hasPreschool && (
-                        <Link href="/teacher/input-assessments?type=preschool" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/input-assessments') && typeParam === 'preschool' ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"} mb-1`}>
-                          <ClipboardCheck className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/input-assessments') && typeParam === 'preschool' ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
+                        <Link href="/teacher/input-assessments" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/input-assessments') && pathname.includes('preschool') ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"} mb-1`}>
+                          <ClipboardCheck className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/input-assessments') ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
                           {!isCollapsed && <span>KSNL Đầu vào Mầm non</span>}
                         </Link>
                       )}
                       {hasGeneral && (
-                        <Link href="/teacher/input-assessments?type=general" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool' ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"}`}>
-                          <ClipboardCheck className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool' ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
+                        <Link href="/teacher/input-assessments" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/input-assessments') && !pathname.includes('preschool') ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"}`}>
+                          <ClipboardCheck className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/input-assessments') ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
                           {!isCollapsed && <span>KSNL đầu vào Phổ thông</span>}
                         </Link>
                       )}
                       {!hasPreschool && !hasGeneral && (
-                        <Link href="/teacher/input-assessments?type=general" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool' ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"}`}>
-                          <ClipboardCheck className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool' ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
+                        <Link href="/teacher/input-assessments" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/input-assessments') ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"}`}>
+                          <ClipboardCheck className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/input-assessments') ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
                           {!isCollapsed && <span>KSNL đầu vào Phổ thông</span>}
                         </Link>
                       )}
@@ -270,13 +268,4 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0 }: 
       </aside>
     </>
   )
-}
-
-
-export function Sidebar(props: SidebarProps) {
-  return (
-    <Suspense fallback={<aside className="w-64 bg-[#0A3230] h-screen shrink-0" />}>
-      <SidebarContent {...props} />
-    </Suspense>
-  );
 }

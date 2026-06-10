@@ -1,7 +1,6 @@
 ﻿"use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { useSearchParams } from "next/navigation";
 import { BookOpen, Users, Save, CheckCircle2, CalendarDays, Layers, X } from "lucide-react";
 import PsychologyAssessmentForm from "./PsychologyAssessmentForm";
 import ChildDevStandardForm from "./ChildDevStandardForm";
@@ -9,18 +8,7 @@ import ThinkingSkillsForm from "./ThinkingSkillsForm";
 import PreschoolEvaluationForm from "./PreschoolEvaluationForm";
 
 export default function TeacherAssessmentsClient({ user }: { user: any }) {
-    const searchParams = useSearchParams();
-    const typeParam = searchParams.get("type");
     const [assignments, setAssignments] = useState<any[]>([]);
-
-    const filteredAssignments = useMemo(() => {
-        if (!typeParam) return assignments;
-        if (typeParam === "preschool") {
-            return assignments.filter(a => a && a.isPreschool);
-        } else {
-            return assignments.filter(a => a && !a.isPreschool);
-        }
-    }, [assignments, typeParam]);
     
     const [selectedPeriodId, setSelectedPeriodId] = useState<string>("");
     const [selectedBatchId, setSelectedBatchId] = useState<string>("all");
@@ -94,27 +82,27 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
 
     // Filtered lists
     const periods = useMemo(() => {
-        if (!Array.isArray(filteredAssignments)) return [];
+        if (!Array.isArray(assignments)) return [];
         const pMap = new Map();
-        filteredAssignments.forEach(a => { if (a && a.period) pMap.set(a.periodId, a.period) });
+        assignments.forEach(a => { if (a && a.period) pMap.set(a.periodId, a.period) });
         return Array.from(pMap.values());
-    }, [filteredAssignments]);
+    }, [assignments]);
 
     const batches = useMemo(() => {
-        if (!Array.isArray(filteredAssignments)) return [];
+        if (!Array.isArray(assignments)) return [];
         const bMap = new Map();
-        filteredAssignments.forEach(a => {
+        assignments.forEach(a => {
             if (a.periodId === selectedPeriodId && a.batch) {
                 bMap.set(a.batchId, a.batch);
             }
         });
         return Array.from(bMap.values());
-    }, [filteredAssignments, selectedPeriodId]);
+    }, [assignments, selectedPeriodId]);
 
     
     const availableAssignments = useMemo(() => {
-        if (!Array.isArray(filteredAssignments)) return [];
-        const filtered = filteredAssignments.filter(a => a.periodId === selectedPeriodId && (selectedBatchId === "all" || !a.batchId || a.batchId === selectedBatchId));
+        if (!Array.isArray(assignments)) return [];
+        const filtered = assignments.filter(a => a.periodId === selectedPeriodId && (selectedBatchId === "all" || !a.batchId || a.batchId === selectedBatchId));
         
         // Group by subjectId to consolidate the dropdown
         const unique = new Map();
@@ -143,7 +131,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
         });
         
         return Array.from(unique.values());
-    }, [filteredAssignments, selectedPeriodId, selectedBatchId]);
+    }, [assignments, selectedPeriodId, selectedBatchId]);
 
 
     useEffect(() => {
@@ -164,7 +152,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
             setStudents([]);
             return;
         }
-        const assignment = availableAssignments.find(a => a.id === selectedAssignmentId) || filteredAssignments.find(a => a.id === selectedAssignmentId);
+        const assignment = availableAssignments.find(a => a.id === selectedAssignmentId) || assignments.find(a => a.id === selectedAssignmentId);
         if (!assignment) return;
 
         setLoading(true);
@@ -188,8 +176,8 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                     const sc = st.scores?.[0];
                     return {
                         ...st,
-                        scoreVals: sc?.scores ? (() => { const p = JSON.parse(sc.scores); return Array.isArray(p) ? p : (typeof p === 'object' && p !== null ? Object.values(p) : [p]) })() : [],
-                        commentVals: sc?.comments ? (() => { const p = JSON.parse(sc.comments); return Array.isArray(p) ? p : (typeof p === 'object' && p !== null ? Object.values(p) : [p]) })() : []
+                        scoreVals: sc?.scores ? JSON.parse(sc.scores) : [],
+                        commentVals: sc?.comments ? JSON.parse(sc.comments) : []
                     };
                 });
                 setStudents(enriched);
@@ -200,10 +188,10 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 setStudents([]);
                 setLoading(false);
             });
-    }, [selectedAssignmentId, filteredAssignments, availableAssignments, selectedBatchId]);
+    }, [selectedAssignmentId, assignments, availableAssignments, selectedBatchId]);
 
     const handleScoreChange = (studentId: string, colIndex: number, val: string) => {
-        const assignment = availableAssignments.find(a => a.id === selectedAssignmentId) || filteredAssignments.find(a => a.id === selectedAssignmentId);
+        const assignment = availableAssignments.find(a => a.id === selectedAssignmentId) || assignments.find(a => a.id === selectedAssignmentId);
         if (assignment) {
             const subName = (assignment.subject?.name || "").toLowerCase();
             const numVal = parseFloat(val);
@@ -291,30 +279,6 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     if (loading && assignments.length === 0) return <div className="p-8 text-center text-slate-500">Đang tải...</div>;
 
     const currentAssignment = availableAssignments.find(a => a.id === selectedAssignmentId) || assignments.find(a => a.id === selectedAssignmentId);
-
-    const assignedGradesText = useMemo(() => {
-        if (!currentAssignment || !Array.isArray(filteredAssignments)) return "Tất cả";
-        const matches = filteredAssignments.filter(a => 
-            a &&
-            a.periodId === selectedPeriodId &&
-            (selectedBatchId === "all" || !a.batchId || a.batchId === selectedBatchId) &&
-            a.subjectId === currentAssignment.subjectId
-        );
-        const grades = Array.from(new Set(matches.map(a => a && a.grade).filter(Boolean)));
-        return grades.length > 0 ? grades.join(", ") : "Tất cả";
-    }, [filteredAssignments, selectedPeriodId, selectedBatchId, currentAssignment]);
-
-    const assignedSystemsText = useMemo(() => {
-        if (!currentAssignment || !Array.isArray(filteredAssignments)) return "Tất cả";
-        const matches = filteredAssignments.filter(a => 
-            a &&
-            a.periodId === selectedPeriodId &&
-            (selectedBatchId === "all" || !a.batchId || a.batchId === selectedBatchId) &&
-            a.subjectId === currentAssignment.subjectId
-        );
-        const systems = Array.from(new Set(matches.map(a => a && a.educationSystem).filter(Boolean)));
-        return systems.length > 0 ? systems.join(", ") : "Tất cả";
-    }, [filteredAssignments, selectedPeriodId, selectedBatchId, currentAssignment]);
     
     // Detection logic for Psychology Grades 1-5
     const subName = (currentAssignment?.subject?.name || "").toLowerCase();
@@ -330,7 +294,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     // English grouping logic for tabs
     const isEnglishAssignment = subName.includes("tiếng anh") || subCode.includes("eng") || subCode.includes("esl");
     const relatedEnglishAssignments = isEnglishAssignment ? availableAssignments.filter(a => 
-        ((a.subject?.name || "").toLowerCase().includes("tiếng anh") || (a.subject?.code || "").toLowerCase().includes("eng") || (a.subject?.code || "").toLowerCase().includes("esl")) &&
+        (a.subject?.name?.toLowerCase().includes("tiếng anh") || a.subject?.code?.toLowerCase().includes("eng") || a.subject?.code?.toLowerCase().includes("esl")) &&
         a.grade === currentAssignment.grade &&
         a.educationSystem === currentAssignment.educationSystem &&
         a.batchId === currentAssignment.batchId &&
@@ -466,21 +430,16 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                         <div>
                             <h3 className="font-bold text-slate-800 flex items-center gap-2 text-lg">
                                 <Users className="w-5 h-5 text-[#00A19A]"/>
-                                Form nhập kết quả: {currentAssignment.subject?.name}
+                                Form nhập kết quả: {currentAssignment.subject.name}
                             </h3>
                             <p className="text-xs text-slate-500 mt-1 flex items-center gap-2">
-                                <Layers className="w-3.5 h-3.5"/> 
-                                {isPreschoolSubject ? (
-                                    <>Độ tuổi: <span className="font-semibold text-slate-700">{assignedGradesText}</span></>
-                                ) : (
-                                    <>Khối: <span className="font-semibold text-slate-700">{assignedGradesText}</span> | Hệ học: <span className="font-semibold text-slate-700">{assignedSystemsText}</span></>
-                                )} | 
-                                Thuộc kỳ khảo sát: <span className="font-semibold text-slate-700">{currentAssignment.period?.name} {currentAssignment.batch?.name ? ` - ${currentAssignment.batch.name}` : ""}</span>
+                                <Layers className="w-3.5 h-3.5"/> Khối: <span className="font-semibold text-slate-700">{currentAssignment.grade || "Tất cả"}</span> | 
+                                Thuộc kỳ khảo sát: <span className="font-semibold text-slate-700">{currentAssignment.period.name} {currentAssignment.batch?.name ? ` - ${currentAssignment.batch.name}` : ""}</span>
                             </p>
                         </div>
                         {isLocked && <span className="text-xs font-bold bg-red-100 text-red-700 border border-red-200 px-4 py-1.5 rounded-full shadow-sm mr-2 flex items-center gap-1.5"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg> KHẢO SÁT ĐÃ KHÓA</span>}
                         <span className={"text-xs font-medium border px-4 py-1.5 rounded-full shadow-sm " + (isLocked ? "bg-slate-100 text-slate-500 border-slate-200" : "bg-[#00A19A]/10 text-[#00A19A] border-[#00A19A]/30")}>
-                            {isPsychSubject ? (gradeVal ? `Mẫu chuyên biệt Tâm lý Khối ${gradeVal}` : `Đánh giá Tâm lý`) : isChildDevSubject ? "Cấu hình: 1 cột điểm, 1 cột nhận xét" : `Cấu hình: ${currentAssignment.subject?.scoreColumns} cột điểm, ${currentAssignment.subject?.commentColumns} cột nhận xét`}
+                            {isPsychSubject ? (gradeVal ? `Mẫu chuyên biệt Tâm lý Khối ${gradeVal}` : `Đánh giá Tâm lý`) : isChildDevSubject ? "Cấu hình: 1 cột điểm, 1 cột nhận xét" : `Cấu hình: ${currentAssignment.subject.scoreColumns} cột điểm, ${currentAssignment.subject.commentColumns} cột nhận xét`}
                         </span>
                     </div>
 
@@ -493,7 +452,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                 <h3 className="text-xs font-bold text-red-800 mb-1">Hạng mục Khảo sát (Kỳ/Đợt) đã bị khóa điểm</h3>
                                 <p className="text-xs text-red-700 leading-relaxed">
                                     Hạng mục khảo sát (Kỳ hoặc Đợt) này đã được thiết lập sang trạng thái <strong>KHÓA / KẾT THÚC</strong> nên mọi thao tác nhập liệu đều bị cấm. <br/>
-                                    Trường hợp các thầy cô cần điều chỉnh điểm số, xin vui lòng liên hệ Người phụ trách đợt khảo sát: <strong>{currentAssignment.period?.assignedUser?.fullName || "Admin"}</strong>.
+                                    Trường hợp các thầy cô cần điều chỉnh điểm số, xin vui lòng liên hệ Người phụ trách đợt khảo sát: <strong>{currentAssignment.period.assignedUser?.fullName || "Admin"}</strong>.
                                 </p>
                                 {currentAssignment.unlockRequestStatus === "REJECTED" && (
                                     <div className="mt-3 bg-red-100 text-red-700 text-xs px-3 py-1 rounded-lg font-bold inline-block shadow-sm">
@@ -678,11 +637,11 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
               </div>
             ) : (
             <div className="flex flex-wrap gap-4 items-start">
-                {Array.from({length: (currentAssignment.subject?.scoreColumns ?? 1)}).map((_, colIdx) => {
+                {Array.from({length: (currentAssignment.subject.scoreColumns ?? 1)}).map((_, colIdx) => {
                     let cName = "Điểm " + (colIdx+1);
-                    try { if(currentAssignment.subject?.columnNames) { const p = JSON.parse(currentAssignment.subject?.columnNames); if(p.scores && p.scores[colIdx]) cName = p.scores[colIdx]; } } catch(e){}
+                    try { if(currentAssignment.subject.columnNames) { const p = JSON.parse(currentAssignment.subject.columnNames); if(p.scores && p.scores[colIdx]) cName = p.scores[colIdx]; } } catch(e){}
                     const isTotal = cName.toLowerCase().includes("tổng");
-                    const subNameLower = (currentAssignment.subject?.name || "").toLowerCase();
+                    const subNameLower = (currentAssignment.subject.name || "").toLowerCase();
                     let maxScoreStr = "";
                     if (subNameLower.includes("vấn đáp")) maxScoreStr = " (Max 30)";
                     else if (subNameLower.includes("viết")) maxScoreStr = " (Max 70)";
@@ -708,9 +667,9 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                     );
                 })}
 
-                {!hideComments && Array.from({length: (currentAssignment.subject?.commentColumns ?? 1)}).map((_, colIdx) => {
+                {!hideComments && Array.from({length: (currentAssignment.subject.commentColumns ?? 1)}).map((_, colIdx) => {
                     let cName = "Nhận xét " + (colIdx+1);
-                    try { if(currentAssignment.subject?.columnNames) { const p = JSON.parse(currentAssignment.subject?.columnNames); if(p.comments && p.comments[colIdx]) cName = p.comments[colIdx]; } } catch(e){}
+                    try { if(currentAssignment.subject.columnNames) { const p = JSON.parse(currentAssignment.subject.columnNames); if(p.comments && p.comments[colIdx]) cName = p.comments[colIdx]; } } catch(e){}
                     return (
                         <div key={"cm-input-"+colIdx} className="flex flex-col gap-1.5 w-full min-w-[200px] flex-1">
                             <span className="text-[10px] uppercase font-bold text-slate-600 truncate border-b border-slate-200 pb-1" title={cName}>{cName}</span>
