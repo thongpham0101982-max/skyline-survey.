@@ -51,14 +51,14 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
 
     // Unique grades present in the current student list
     const availableGrades = useMemo(() => {
-        const grades = new Set<string>();
+        const grades = new Set();
         students.forEach(s => {
-            if (s.grade) grades.add(s.grade);
+            if (s.grade) grades.add(String(s.grade));
         });
         return Array.from(grades).sort((a, b) => {
             const na = parseInt(a);
             const nb = parseInt(b);
-            if (isNaN(na) || isNaN(nb)) return a.localeCompare(b);
+            if (isNaN(na) || isNaN(nb)) return String(a).localeCompare(String(b));
             return na - nb;
         });
     }, [students]);
