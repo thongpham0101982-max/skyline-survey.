@@ -146,7 +146,7 @@ export async function GET(req: any) {
                 ];
             }
 
-            const students = await (prisma as any).preschoolInputAssessmentStudent.findMany({
+                        const students = await (prisma as any).preschoolInputAssessmentStudent.findMany({
                 where,
                 select: { 
                     id: true, 
@@ -179,19 +179,12 @@ export async function GET(req: any) {
             // Filter preschool students by teacher's preschool assignments
             let preschoolAssignments = [];
             if (!grade) {
-                let taWhere: any = { userId: session.user.id, periodId: periodId || undefined };
-                if (batchId && batchId !== "all" && batchId !== "null") {
-                    taWhere.OR = [
-                        { batchId: batchId },
-                        { batchId: null }
-                    ];
-                }
                 preschoolAssignments = await (prisma as any).preschoolInputAssessmentTeacherAssignment.findMany({
-                    where: taWhere
+                    where: { userId: session.user.id, periodId: periodId || undefined }
                 });
             }
 
-            const allStudentIds = students.map((s: any) => s.id);
+                        const allStudentIds = students.map((s: any) => s.id);
             // Fetch all scores for all period students first to get timestamps
             const scores = await (prisma as any).preschoolDevScore.findMany({
                 where: { studentId: { in: allStudentIds } },
@@ -216,9 +209,6 @@ export async function GET(req: any) {
                     const mappedGrade = getSurveyFormAgeGroup(st.grade, surveyDate);
                     const stGrade = mappedGrade.toLowerCase().trim();
                     return preschoolAssignments.some(ta => {
-                        const batchMatch = !ta.batchId || ta.batchId === st.batchId;
-                        if (!batchMatch) return false;
-
                         const taGrade = (ta.grade || "").toLowerCase().trim();
                         return !taGrade || taGrade === "tất cả" || stGrade === taGrade || stGrade.includes(taGrade.replace("khối", "").trim());
                     });
@@ -271,26 +261,21 @@ export async function GET(req: any) {
 
         const validSystems = [systemCode, systemName].filter(Boolean) as string[];
         
+        
+        
         let teacherAssignments = [];
         let eduSystemsMap = {};
-        let taWhere: any = {
-            userId: session.user.id,
-            periodId: periodId || undefined,
-            subjectId: subjectId || undefined
-        };
-        if (batchId && batchId !== "all" && batchId !== "null") {
-            taWhere.OR = [
-                { batchId: batchId },
-                { batchId: null }
-            ];
+        if (!grade && !systemCode) {
+            teacherAssignments = await prisma.inputAssessmentTeacherAssignment.findMany({
+                where: { userId: session.user.id, periodId: periodId || undefined, subjectId: subjectId || undefined }
+            });
+            
+            const sysList = await prisma.educationSystem.findMany();
+            sysList.forEach(s => { eduSystemsMap[s.code.toLowerCase()] = s.name.toLowerCase(); });
         }
-        teacherAssignments = await prisma.inputAssessmentTeacherAssignment.findMany({
-            where: taWhere
-        });
-        
-        const sysList = await prisma.educationSystem.findMany();
-        sysList.forEach(s => { eduSystemsMap[s.code.toLowerCase()] = s.name.toLowerCase(); });
 
+
+        
         if (systemName) {
             validSystems.push(systemName.toUpperCase());
             validSystems.push(systemName.toLowerCase());
@@ -299,9 +284,8 @@ export async function GET(req: any) {
         const students = await prisma.inputAssessmentStudent.findMany({
             where: {
                 periodId: periodId || undefined,
-                ...(batchId && batchId !== "all" && batchId !== "null"
-                    ? { OR: [{ batchId: batchId }, { batchId: null }] }
-                    : {})
+                
+                ...(batchId ? { OR: [{ batchId: batchId }, { batchId: null }] } : {})
             },
             include: {
                 scores: {
@@ -310,49 +294,42 @@ export async function GET(req: any) {
             }
         });
 
-        // If no teacher assignments exist for this period/subject, the teacher should see no students
-        if (teacherAssignments.length === 0) {
-            return NextResponse.json([]);
-        }
-
         // Filter in memory to bypass any strict case-sensitivity issues of SQLite
+        
+        
         const filteredStudents = students.filter(st => {
             // Check teacher assignments first
-            // The student must match at least one of the teacher's assignments for this subject
-            const stGrade = (st.grade || "").toLowerCase().trim();
-            const stSys = (st.surveyFormType || "").toLowerCase().trim();
-            const stBatchId = st.batchId;
-            
-            const matchesAssignment = teacherAssignments.some(ta => {
-                // 1. Batch Match
-                const batchMatch = !ta.batchId || ta.batchId === stBatchId;
-                if (!batchMatch) return false;
-
-                // 2. Grade Match
-                const taGrade = (ta.grade || "").toLowerCase().trim();
-                const gradeMatch = !taGrade || taGrade === "tất cả" || stGrade === taGrade || stGrade.includes(taGrade.replace("khối", "").trim());
-                if (!gradeMatch) return false;
+            if (teacherAssignments.length > 0) {
+                // The student must match at least one of the teacher's assignments for this subject
+                const stGrade = (st.grade || "").toLowerCase().trim();
+                const stSys = (st.surveyFormType || "").toLowerCase().trim();
                 
-                // 3. System Match
-                const taSys = (ta.educationSystem || "").toLowerCase().trim();
-                let sysMatch = false;
-                if (!taSys || taSys === "tất cả") {
-                    sysMatch = true;
-                } else {
-                    const taSysName = eduSystemsMap[taSys] || "";
-                    sysMatch = stSys === taSys || 
-                               stSys.includes(taSys) || 
-                               taSys.includes(stSys) ||
-                               (taSysName && (stSys === taSysName || stSys.includes(taSysName) || taSysName.includes(stSys)));
-                }
+                const matchesAssignment = teacherAssignments.some(ta => {
+                    const taGrade = (ta.grade || "").toLowerCase().trim();
+                    const taSys = (ta.educationSystem || "").toLowerCase().trim();
+                    
+                    const gradeMatch = !taGrade || taGrade === "tất cả" || stGrade === taGrade || stGrade.includes(taGrade.replace("khối", "").trim());
+                    
+                    let sysMatch = false;
+                    if (!taSys || taSys === "tất cả") {
+                        sysMatch = true;
+                    } else {
+                        const taSysName = eduSystemsMap[taSys] || "";
+                        sysMatch = stSys === taSys || 
+                                   stSys.includes(taSys) || 
+                                   taSys.includes(stSys) ||
+                                   (taSysName && (stSys === taSysName || stSys.includes(taSysName) || taSysName.includes(stSys)));
+                    }
 
-                return sysMatch;
-            });
-            
-            if (!matchesAssignment) return false;
-
+                    
+                    return gradeMatch && sysMatch;
+                });
+                
+                if (!matchesAssignment) return false;
+            }
             // Fuzzy grade matching
             if (grade && grade.trim() !== "" && grade !== "Tất cả") {
+                const stGrade = (st.grade || "").toLowerCase().trim();
                 const qGrade = grade.toLowerCase().trim();
                 const qGradeNum = qGrade.replace("khối", "").trim();
                 
@@ -380,6 +357,7 @@ export async function GET(req: any) {
             
             return true;
         });
+        
 
         return NextResponse.json(filteredStudents);
     }
