@@ -42,6 +42,33 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     const [loading, setLoading] = useState(true);
     const [saveStatus, setSaveStatus] = useState<Record<string, string>>({});
 
+    const [selectedGrade, setSelectedGrade] = useState("all");
+
+    // Reset selected grade when assignment changes
+    useEffect(() => {
+        setSelectedGrade("all");
+    }, [selectedAssignmentId, selectedBatchId]);
+
+    // Unique grades present in the current student list
+    const availableGrades = useMemo(() => {
+        const grades = new Set<string>();
+        students.forEach(s => {
+            if (s.grade) grades.add(s.grade);
+        });
+        return Array.from(grades).sort((a, b) => {
+            const na = parseInt(a);
+            const nb = parseInt(b);
+            if (isNaN(na) || isNaN(nb)) return a.localeCompare(b);
+            return na - nb;
+        });
+    }, [students]);
+
+    // Filter students by selected grade
+    const filteredStudents = useMemo(() => {
+        if (!selectedGrade || selectedGrade === "all") return students;
+        return students.filter(s => s.grade === selectedGrade);
+    }, [students, selectedGrade]);
+
 
     const [academicYear, setAcademicYear] = useState<string | null>(null);
 
@@ -374,7 +401,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 </div>
             </div>
 
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="group">
                     <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-slate-500 flex items-center gap-2 ml-1">
                         <CalendarDays className="w-3.5 h-3.5 text-[#00A19A]"/> Kỳ Khảo sát
@@ -435,6 +462,27 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                 </option>
                             ))}
                             {availableAssignments.length === 0 && <option value="">Vui lòng chọn kỳ KS...</option>}
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A19A] transition-colors">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="group">
+                    <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-slate-500 flex items-center gap-2 ml-1">
+                        <Layers className="w-3.5 h-3.5 text-[#00A19A]"/> Bộ lọc Khối
+                    </label>
+                    <div className="relative">
+                        <select 
+                            value={selectedGrade} 
+                            onChange={e => setSelectedGrade(e.target.value)}
+                            className="w-full bg-white border border-slate-200 rounded-lg pl-5 pr-10 py-1 text-xs outline-none focus:border-[#00A19A] focus:ring-4 focus:ring-[#00A19A]/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
+                        >
+                            <option value="all">Tất cả các khối</option>
+                            {availableGrades.map(g => (
+                                <option key={g} value={g}>Khối {g}</option>
+                            ))}
                         </select>
                         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A19A] transition-colors">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
@@ -542,7 +590,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     </tr>
 </thead>
                             <tbody className="divide-y divide-[#00A19A]/20 border-b-2 border-[#00A19A]">
-                                {students.map((st, i) => (
+                                {filteredStudents.map((st, i) => (
                                     <tr key={st.id} className="hover:bg-slate-100/30 group border-b border-[#00A19A]/20 last:border-none transition-colors">
                                         <td className="px-2 py-1 md:px-3 md:py-4 text-center text-slate-500 bg-transparent md:sticky md:left-0 z-10 font-medium text-xs">{i+1}</td>
                                         <td className="px-3 py-2 bg-transparent text-center">
@@ -759,7 +807,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                         </td>
                                     </tr>
                                 ))}
-                                {students.length === 0 && !loading && (
+                                {filteredStudents.length === 0 && !loading && (
                                     <tr>
                                         <td colSpan={8} className="px-4 py-12 text-center text-[#00A19A] bg-[#00A19A]/5 border-[#00A19A]/20">Chưa có dữ liệu học sinh nào thỏa mãn Khối/Hệ môn học này trong kỳ Khảo sát.</td>
                                     </tr>
