@@ -330,7 +330,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     // English grouping logic for tabs
     const isEnglishAssignment = subName.includes("tiếng anh") || subCode.includes("eng") || subCode.includes("esl");
     const relatedEnglishAssignments = isEnglishAssignment ? availableAssignments.filter(a => 
-        (a.subject?.name?.toLowerCase().includes("tiếng anh") || a.subject?.code?.toLowerCase().includes("eng") || a.subject?.code?.toLowerCase().includes("esl")) &&
+        ((a.subject?.name || "").toLowerCase().includes("tiếng anh") || (a.subject?.code || "").toLowerCase().includes("eng") || (a.subject?.code || "").toLowerCase().includes("esl")) &&
         a.grade === currentAssignment.grade &&
         a.educationSystem === currentAssignment.educationSystem &&
         a.batchId === currentAssignment.batchId &&

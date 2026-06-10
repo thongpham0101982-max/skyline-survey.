@@ -130,7 +130,7 @@ export default function TeacherDashboard() {
             </h3>
           </div>
           <div className="space-y-3">
-            <Link href="/teacher/input-assessments" className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50 hover:bg-[#F0FDFA] hover:border-[#99F6E4] transition-colors group">
+            <Link href="/teacher/input-assessments?type=general" className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50 hover:bg-[#F0FDFA] hover:border-[#99F6E4] transition-colors group">
               <div>
                 <h4 className="font-bold text-slate-700 group-hover:text-[#00A19A]">Nhập kết quả Khảo sát</h4>
                 <p className="text-xs text-slate-500 mt-1">Cập nhật điểm số và nhận xét học sinh</p>

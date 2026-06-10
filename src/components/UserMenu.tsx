@@ -22,8 +22,12 @@ export function UserMenu({ session }: UserMenuProps) {
 
   useEffect(() => {
     getUserNotificationsAction().then(res => {
-      setNotifs(res);
-      setUnread(res.filter((n: any) => !n.isRead).length);
+      if (Array.isArray(res)) {
+        setNotifs(res);
+        setUnread(res.filter((n: any) => !n.isRead).length);
+      }
+    }).catch(err => {
+      console.error("Failed to load notifications:", err);
     });
   }, []);
 
