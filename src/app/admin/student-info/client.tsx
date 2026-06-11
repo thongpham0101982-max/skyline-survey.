@@ -1241,8 +1241,9 @@ export function StudentInfoClient({
                       <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-24">Học lực</th>
                       <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-24">Hạnh kiểm</th>
                       <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-28">Học bạ</th>
-                      <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Học kỳ / Năm TS</th>
+                      <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Học kỳ / Năm TS</th>
                       <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Đối tượng TS</th>
+                      <th className="px-4 py-4 text-center text-[10px] font-black text-[#00A19A] uppercase tracking-widest w-48">Đăng ký Khảo sát lại</th>
                     </>
                   )}
                   {subTab === "result" && (
@@ -1317,6 +1318,19 @@ export function StudentInfoClient({
                           <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.kqgdTieuHoc || "-"}</td>
                           <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.hocKy || "-"}</td>
                           <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.targetType || "-"}</td>
+                          <td className="px-4 py-3.5 text-center" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              onClick={() => {
+                                setRetestStudent(s);
+                                setRetestPeriodId("");
+                                setRetestBatchId("");
+                              }}
+                              className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-200 rounded-xl text-[11px] font-black tracking-wide shadow-sm hover:shadow transition-all duration-200 flex items-center gap-1.5 mx-auto cursor-pointer"
+                            >
+                              <RefreshCw className="w-3.5 h-3.5" />
+                              Đăng ký thi lại
+                            </button>
+                          </td>
                         </>
                       )}
                       {subTab === "result" && (
@@ -1361,17 +1375,7 @@ export function StudentInfoClient({
                           </button>
                           {subTab === "info" && (
                             <>
-                              <button
-                                onClick={() => {
-                                  setRetestStudent(s);
-                                  setRetestPeriodId("");
-                                  setRetestBatchId("");
-                                }}
-                                className="p-1.5 text-indigo-500 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition-all"
-                                title="Đăng ký Khảo sát lại (Thi lại)"
-                              >
-                                <RefreshCw className="w-4 h-4" />
-                              </button>
+
                               <button
                                 onClick={() => openEditModal(s)}
                                 className="p-1.5 text-slate-400 hover:text-[#00A6A9] hover:bg-slate-100 rounded-lg transition-all"

@@ -1010,6 +1010,7 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
   const [retestPeriodId, setRetestPeriodId] = useState("");
   const [retestBatchId, setRetestBatchId] = useState("");
   const [retestRegisterLoading, setRetestRegisterLoading] = useState(false);
+  const [isRetestModalOpen, setIsRetestModalOpen] = useState(false);
 
   const [mockPreviewStudent, setMockPreviewStudent] = useState<any>(null);
   const [reportForm, setReportForm] = useState({
@@ -5322,6 +5323,20 @@ return {
                     Lưu kết quả tổng hợp
                   </button>
 
+                  {selectedReportStudent && selectedReportStudent.admissionResult === "Không đạt - Kiểm tra lại" && (
+                    <button
+                      onClick={() => {
+                        setIsRetestModalOpen(true);
+                        setRetestPeriodId("");
+                        setRetestBatchId("");
+                      }}
+                      className="w-full mt-3 py-3.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-200 rounded-2xl font-black text-xs uppercase tracking-wider transition-all flex justify-center items-center gap-2 cursor-pointer shadow-sm"
+                    >
+                      <RefreshCw className="w-4 h-4"/>
+                      Đăng ký Khảo sát lại (Thi lại)
+                    </button>
+                  )}
+
                   {!selectedReportStudent.admissionResult && (
                     <button
                       onClick={handleSendGdcsApprovalRequest}
@@ -5471,63 +5486,7 @@ return {
                   </div>
                 )}
 
-                {/* REGISTER RETEST CARD */}
-                {selectedReportStudent && selectedReportStudent.admissionResult === "Không đạt - Kiểm tra lại" && (
-                  <div className="bg-white rounded-3xl border-2 border-indigo-500/30 p-6 shadow-md space-y-4 animate-fade-in text-left">
-                    <h4 className="font-black text-slate-800 text-sm flex items-center justify-between border-b pb-3 mb-2">
-                      <span className="flex items-center gap-2">
-                        <RefreshCw className="w-4 h-4 text-indigo-500 shrink-0" />
-                        Đăng ký Khảo sát lại (Thi lại)
-                      </span>
-                    </h4>
-                    
-                    <p className="text-xs text-slate-500 leading-relaxed font-semibold">
-                      Học sinh đã duyệt kết quả <span className="text-rose-600 font-bold">Không đạt - Kiểm tra lại</span>. 
-                      Thực hiện đăng ký học sinh vào một Kỳ/Đợt khảo sát mới để thi lại. 
-                      Mã học sinh <span className="font-bold text-indigo-600">({selectedReportStudent.studentCode})</span> sẽ được giữ nguyên để đối chiếu lịch sử.
-                    </p>
 
-                    <Field label="Kỳ khảo sát mới" required>
-                      <select
-                        value={retestPeriodId}
-                        onChange={e => {
-                          setRetestPeriodId(e.target.value);
-                          setRetestBatchId("");
-                        }}
-                        className={inp}
-                      >
-                        <option value="">-- Chọn Kỳ khảo sát mới --</option>
-                        {visiblePeriods.map(p => (
-                          <option key={p.id} value={p.id}>{p.name}</option>
-                        ))}
-                      </select>
-                    </Field>
-
-                    {retestPeriodId && (
-                      <Field label="Đợt khảo sát mới">
-                        <select
-                          value={retestBatchId}
-                          onChange={e => setRetestBatchId(e.target.value)}
-                          className={inp}
-                        >
-                          <option value="">-- Chọn Đợt khảo sát mới (Tất cả / Lẻ) --</option>
-                          {(visiblePeriods.find(p => p.id === retestPeriodId)?.batches || []).filter(b => b.id !== selectedReportStudent.batchId && b.status === "ACTIVE").map(b => (
-                            <option key={b.id} value={b.id}>{b.name}</option>
-                          ))}
-                        </select>
-                      </Field>
-                    )}
-
-                    <button
-                      onClick={handleRegisterRetest}
-                      disabled={retestRegisterLoading || !retestPeriodId}
-                      className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg shadow-indigo-100 disabled:opacity-50 transition-all flex justify-center items-center gap-2"
-                    >
-                      {retestRegisterLoading ? <Loader2 className="w-4 h-4 animate-spin"/> : <RefreshCw className="w-4 h-4"/>}
-                      Xác nhận đăng ký Khảo sát lại
-                    </button>
-                  </div>
-                )}
               </div>
               {/* SUBJECTS RESULTS DISPLAY */}
               <div className="lg:col-span-8 space-y-6">
@@ -7906,6 +7865,96 @@ return {
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* Dialog Form: Đăng ký Khảo sát lại */}
+      {isRetestModalOpen && selectedReportStudent && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col animate-in zoom-in-95 duration-200">
+            <div className="p-6 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-black text-slate-800">Đăng ký Khảo sát lại</h3>
+                <p className="text-xs text-slate-400 font-bold uppercase mt-0.5 tracking-wider">
+                  Học sinh: {selectedReportStudent.fullName}
+                </p>
+              </div>
+              <button
+                onClick={() => setIsRetestModalOpen(false)}
+                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <p className="text-xs text-slate-500 leading-relaxed font-semibold">
+                Học sinh đã duyệt kết quả <span className="text-rose-600 font-bold">Không đạt - Kiểm tra lại</span>. 
+                Thực hiện đăng ký học sinh vào một Kỳ/Đợt khảo sát mới để thi lại. 
+                Mã học sinh <span className="font-bold text-indigo-600">({selectedReportStudent.studentCode})</span> sẽ được giữ nguyên để đối chiếu lịch sử.
+              </p>
+
+              {/* Target Period selection */}
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Kỳ khảo sát mới *</label>
+                <select
+                  value={retestPeriodId}
+                  onChange={(e) => {
+                    setRetestPeriodId(e.target.value);
+                    setRetestBatchId("");
+                  }}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
+                >
+                  <option value="">-- Chọn Kỳ khảo sát mới --</option>
+                  {visiblePeriods.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Target Batch selection */}
+              {retestPeriodId && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Đợt khảo sát mới</label>
+                  <select
+                    value={retestBatchId}
+                    onChange={(e) => setRetestBatchId(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
+                  >
+                    <option value="">-- Chọn Đợt khảo sát mới (Tất cả / Lẻ) --</option>
+                    {(visiblePeriods.find(p => p.id === retestPeriodId)?.batches || [])
+                      .filter((b: any) => b.id !== selectedReportStudent.batchId && b.status === "ACTIVE")
+                      .map((b: any) => (
+                        <option key={b.id} value={b.id}>{b.name}</option>
+                      ))}
+                  </select>
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2">
+              <button
+                type="button"
+                disabled={retestRegisterLoading}
+                onClick={() => setIsRetestModalOpen(false)}
+                className="px-5 py-2.5 text-slate-600 font-bold hover:bg-slate-100 rounded-xl transition-all disabled:opacity-50 cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                disabled={retestRegisterLoading || !retestPeriodId}
+                onClick={async () => {
+                  await handleRegisterRetest();
+                  setIsRetestModalOpen(false);
+                }}
+                className="flex items-center gap-1.5 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+              >
+                {retestRegisterLoading ? <Loader2 className="w-4 h-4 animate-spin"/> : <RefreshCw className="w-4 h-4"/>}
+                Xác nhận
+              </button>
+            </div>
           </div>
         </div>
       )}
