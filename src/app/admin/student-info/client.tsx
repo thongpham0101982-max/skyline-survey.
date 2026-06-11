@@ -23,7 +23,9 @@ import {
   Edit2,
   Trash2,
   Sparkles,
-  UserCheck
+  UserCheck,
+  RefreshCw,
+  Loader2
 } from "lucide-react";
 import { confirmEnrollmentAction } from "../student-transfers/actions";
 import * as XLSX from "xlsx";
@@ -169,6 +171,12 @@ export function StudentInfoClient({
 
   // Feedback notifications
   const [notification, setNotification] = useState<{ text: string; type: "success" | "err" } | null>(null);
+
+  // Retest registration states
+  const [retestStudent, setRetestStudent] = useState<any | null>(null);
+  const [retestPeriodId, setRetestPeriodId] = useState("");
+  const [retestBatchId, setRetestBatchId] = useState("");
+  const [retestRegisterLoading, setRetestRegisterLoading] = useState(false);
 
   const showNotification = (text: string, type: "success" | "err" = "success") => {
     setNotification({ text, type });
@@ -567,6 +575,49 @@ export function StudentInfoClient({
       }
     } catch (e: any) {
       showNotification("Lỗi kết nối: " + e.message, "err");
+    }
+  };
+
+  const handleRegisterRetest = async () => {
+    if (!retestStudent) return;
+    if (!retestPeriodId) {
+      alert("Vui lòng chọn Kỳ khảo sát mới!");
+      return;
+    }
+    if (retestPeriodId === retestStudent.periodId && retestBatchId === retestStudent.batchId) {
+      alert("Đợt khảo sát mới phải khác với Đợt khảo sát hiện tại!");
+      return;
+    }
+
+    setRetestRegisterLoading(true);
+    try {
+      const res = await fetch("/api/input-assessment-students", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "RETEST_REGISTER",
+          data: {
+            studentId: retestStudent.id,
+            targetPeriodId: retestPeriodId,
+            targetBatchId: retestBatchId || null
+          }
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showNotification("Đăng ký khảo sát lại thành công cho học sinh " + retestStudent.fullName + "!");
+        setRetestStudent(null);
+        setRetestPeriodId("");
+        setRetestBatchId("");
+        setTimeout(() => window.location.reload(), 1000);
+      } else {
+        alert(data.error || "Đăng ký khảo sát lại thất bại!");
+      }
+    } catch (err) {
+      alert("Lỗi kết nối: " + err.message);
+    } finally {
+      setRetestRegisterLoading(false);
     }
   };
 
@@ -1310,6 +1361,17 @@ export function StudentInfoClient({
                           </button>
                           {subTab === "info" && (
                             <>
+                              <button
+                                onClick={() => {
+                                  setRetestStudent(s);
+                                  setRetestPeriodId("");
+                                  setRetestBatchId("");
+                                }}
+                                className="p-1.5 text-indigo-500 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition-all"
+                                title="Đăng ký Khảo sát lại (Thi lại)"
+                              >
+                                <RefreshCw className="w-4 h-4" />
+                              </button>
                               <button
                                 onClick={() => openEditModal(s)}
                                 className="p-1.5 text-slate-400 hover:text-[#00A6A9] hover:bg-slate-100 rounded-lg transition-all"
@@ -2532,6 +2594,93 @@ export function StudentInfoClient({
                 className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-bold transition-all shadow-sm cursor-pointer"
               >
                 Đóng thông tin
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dialog Form: Đăng ký Khảo sát lại */}
+      {retestStudent && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col animate-in zoom-in-95 duration-200">
+            <div className="p-6 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-black text-slate-800">Đăng ký Khảo sát lại</h3>
+                <p className="text-xs text-slate-400 font-bold uppercase mt-0.5 tracking-wider">
+                  Học sinh: {retestStudent.fullName}
+                </p>
+              </div>
+              <button
+                onClick={() => setRetestStudent(null)}
+                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <p className="text-xs text-slate-500 leading-relaxed font-semibold">
+                Học sinh đã duyệt kết quả <span className="text-rose-600 font-bold">Không đạt - Kiểm tra lại</span>. 
+                Thực hiện đăng ký học sinh vào một Kỳ/Đợt khảo sát mới để thi lại. 
+                Mã học sinh <span className="font-bold text-indigo-600">({retestStudent.studentCode})</span> sẽ được giữ nguyên để đối chiếu lịch sử.
+              </p>
+
+              {/* Target Period selection */}
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Kỳ khảo sát mới *</label>
+                <select
+                  value={retestPeriodId}
+                  onChange={(e) => {
+                    setRetestPeriodId(e.target.value);
+                    setRetestBatchId("");
+                  }}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
+                >
+                  <option value="">-- Chọn Kỳ khảo sát mới --</option>
+                  {generalPeriods.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Target Batch selection */}
+              {retestPeriodId && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Đợt khảo sát mới</label>
+                  <select
+                    value={retestBatchId}
+                    onChange={(e) => setRetestBatchId(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
+                  >
+                    <option value="">-- Chọn Đợt khảo sát mới (Tất cả / Lẻ) --</option>
+                    {(generalPeriods.find(p => p.id === retestPeriodId)?.batches || [])
+                      .filter((b: any) => b.id !== retestStudent.batchId && b.status === "ACTIVE")
+                      .map((b: any) => (
+                        <option key={b.id} value={b.id}>{b.name}</option>
+                      ))}
+                  </select>
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2">
+              <button
+                type="button"
+                disabled={retestRegisterLoading}
+                onClick={() => setRetestStudent(null)}
+                className="px-5 py-2.5 text-slate-600 font-bold hover:bg-slate-100 rounded-xl transition-all disabled:opacity-50 cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                disabled={retestRegisterLoading || !retestPeriodId}
+                onClick={handleRegisterRetest}
+                className="flex items-center gap-1.5 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+              >
+                {retestRegisterLoading ? <Loader2 className="w-4 h-4 animate-spin"/> : <RefreshCw className="w-4 h-4"/>}
+                Xác nhận
               </button>
             </div>
           </div>
