@@ -2086,51 +2086,7 @@ ${reportForm.directorNote}`;
     }
   };
 
-  const handleRegisterRetest = async () => {
-    if (!selectedReportStudent) return;
-    if (!retestPeriodId) {
-      alert("Vui lòng chọn Kỳ khảo sát mới!");
-      return;
-    }
-    if (retestPeriodId === selectedReportStudent.periodId && retestBatchId === selectedReportStudent.batchId) {
-      alert("Đợt khảo sát mới phải khác với Đợt khảo sát hiện tại!");
-      return;
-    }
-
-    setRetestRegisterLoading(true);
-    try {
-      const res = await fetch("/api/input-assessment-students", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "RETEST_REGISTER",
-          data: {
-            studentId: selectedReportStudent.id,
-            targetPeriodId: retestPeriodId,
-            targetBatchId: retestBatchId || null
-          }
-        })
-      });
-
-      const data = await res.json();
-      if (res.ok && data.success) {
-        alert("Đã đăng ký khảo sát lại thành công cho học sinh " + selectedReportStudent.fullName + "!");
-        // Refresh history
-        const r = await fetch(`/api/teacher-assessments?action=getRetestHistory&studentCode=${selectedReportStudent.studentCode}`);
-        if (r.ok) {
-          setRetestHistory(await r.json());
-        }
-        setRetestPeriodId("");
-        setRetestBatchId("");
-      } else {
-        alert(data.error || "Đăng ký khảo sát lại thất bại!");
-      }
-    } catch (err) {
-      alert("Lỗi kết nối: " + err.message);
-    } finally {
-      setRetestRegisterLoading(false);
-    }
-  };
+  // handleRegisterRetest removed
 
   const fetchReportData = useCallback(async (pId: string) => {
     if (!pId) return;
@@ -5365,63 +5321,7 @@ return {
                   </div>
                 )}
 
-                {/* REGISTER RETEST CARD */}
-                {selectedReportStudent && selectedReportStudent.admissionResult === "Không đạt - Kiểm tra lại" && (
-                  <div className="bg-white rounded-3xl border-2 border-indigo-500/30 p-6 shadow-md space-y-4 animate-fade-in text-left">
-                    <h4 className="font-black text-slate-800 text-sm flex items-center justify-between border-b pb-3 mb-2">
-                      <span className="flex items-center gap-2">
-                        <RefreshCw className="w-4 h-4 text-indigo-500 shrink-0" />
-                        Đăng ký Khảo sát lại (Thi lại)
-                      </span>
-                    </h4>
-                    
-                    <p className="text-xs text-slate-500 leading-relaxed font-semibold">
-                      Học sinh đã duyệt kết quả <span className="text-rose-600 font-bold">Không đạt - Kiểm tra lại</span>. 
-                      Thực hiện đăng ký học sinh vào một Kỳ/Đợt khảo sát mới để thi lại. 
-                      Mã học sinh <span className="font-bold text-indigo-600">({selectedReportStudent.studentCode})</span> sẽ được giữ nguyên để đối chiếu lịch sử.
-                    </p>
-
-                    <Field label="Kỳ khảo sát mới" required>
-                      <select
-                        value={retestPeriodId}
-                        onChange={e => {
-                          setRetestPeriodId(e.target.value);
-                          setRetestBatchId("");
-                        }}
-                        className={inp}
-                      >
-                        <option value="">-- Chọn Kỳ khảo sát mới --</option>
-                        {visiblePeriods.map(p => (
-                          <option key={p.id} value={p.id}>{p.name}</option>
-                        ))}
-                      </select>
-                    </Field>
-
-                    {retestPeriodId && (
-                      <Field label="Đợt khảo sát mới">
-                        <select
-                          value={retestBatchId}
-                          onChange={e => setRetestBatchId(e.target.value)}
-                          className={inp}
-                        >
-                          <option value="">-- Chọn Đợt khảo sát mới (Tất cả / Lẻ) --</option>
-                          {(visiblePeriods.find(p => p.id === retestPeriodId)?.batches || []).filter(b => b.id !== selectedReportStudent.batchId && b.status === "ACTIVE").map(b => (
-                            <option key={b.id} value={b.id}>{b.name}</option>
-                          ))}
-                        </select>
-                      </Field>
-                    )}
-
-                    <button
-                      onClick={handleRegisterRetest}
-                      disabled={retestRegisterLoading || !retestPeriodId}
-                      className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg shadow-indigo-100 disabled:opacity-50 transition-all flex justify-center items-center gap-2"
-                    >
-                      {retestRegisterLoading ? <Loader2 className="w-4 h-4 animate-spin"/> : <RefreshCw className="w-4 h-4"/>}
-                      Xác nhận đăng ký Khảo sát lại
-                    </button>
-                  </div>
-                )}
+                {/* REGISTER RETEST CARD REMOVED */}
               </div>
               {/* SUBJECTS RESULTS DISPLAY */}
               <div className="lg:col-span-8 space-y-6">

@@ -232,9 +232,15 @@ export function StudentInfoClient({
       if (selectedBatch && student.batch?.name !== selectedBatch) return false;
       if (selectedResult && student.admissionResult !== selectedResult) return false;
       if (selectedGrade && student.grade !== selectedGrade) return false;
+
+      // Filter strictly by "Không đạt - Kiểm tra lại" for the "TT Khảo sát lại" sub-tab (subTab === "info")
+      if (subTab === "info") {
+        if (student.admissionResult !== "Không đạt - Kiểm tra lại") return false;
+      }
+
       return true;
     });
-  }, [currentDataset, searchQuery, selectedPeriod, selectedBatch, selectedResult, selectedGrade]);
+  }, [currentDataset, searchQuery, selectedPeriod, selectedBatch, selectedResult, selectedGrade, subTab]);
 
   // Reset selected checkboxes if filtered dataset changes
   useEffect(() => {
@@ -964,7 +970,7 @@ export function StudentInfoClient({
               : "text-slate-650 hover:bg-slate-200/60 hover:text-slate-800"
           }`}
         >
-          TT HS Khảo sát
+          TT Khảo sát lại
         </button>
         <button
           onClick={() => {
