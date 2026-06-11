@@ -2549,6 +2549,73 @@ ${reportForm.directorNote}`;
       .filter(item => item.id !== fallbackId || item.total > 0);
   }, [filteredReportStudents, reportBatches, campuses]);
 
+  const batchStats = useMemo(() => {
+    if (!Array.isArray(reportStudents)) return [];
+    
+    const map = new Map<string, {
+      batchName: string;
+      total: number;
+      passed: number;
+      failed: number;
+      committed: number;
+      pending: number;
+    }>();
+    
+    reportBatches.forEach(b => {
+      map.set(b.id, {
+        batchName: b.name,
+        total: 0,
+        passed: 0,
+        failed: 0,
+        committed: 0,
+        pending: 0
+      });
+    });
+    
+    const fallbackId = "unassigned";
+    map.set(fallbackId, {
+      batchName: "Khác / Chưa phân đợt",
+      total: 0,
+      passed: 0,
+      failed: 0,
+      committed: 0,
+      pending: 0
+    });
+
+    const targetStudents = filteredReportStudents;
+    
+    targetStudents.forEach(s => {
+      const batchId = s.batchId || fallbackId;
+      let stat = map.get(batchId);
+      if (!stat) {
+        stat = {
+          batchName: reportBatches.find(b => b.id === batchId)?.name || "Khác / Chưa phân đợt",
+          total: 0,
+          passed: 0,
+          failed: 0,
+          committed: 0,
+          pending: 0
+        };
+        map.set(batchId, stat);
+      }
+      
+      stat.total++;
+      if (s.admissionResult === "Đạt" || s.admissionResult === "Học thử") {
+        stat.passed++;
+      } else if (s.admissionResult === "Không đạt" || s.admissionResult === "Không đạt - Kiểm tra lại" || s.admissionResult === "Không đạt - Không kiểm tra lại") {
+        stat.failed++;
+      } else if (s.admissionResult === "Đạt cam kết") {
+        stat.committed++;
+      } else {
+        stat.pending++;
+      }
+    });
+    
+    return Array.from(map.entries())
+      .map(([id, val]) => ({ id, ...val }))
+      .filter(item => item.id !== fallbackId || item.total > 0);
+  }, [filteredReportStudents, reportBatches]);
+
   const overallKPIs = useMemo(() => {
     const total = filteredReportStudents.length;
     let passed = 0;
@@ -4918,6 +4985,97 @@ return {
                     {campusStats.length === 0 && (
                       <tr>
                         <td colSpan={7} className="py-8 text-center text-xs font-bold text-slate-400 uppercase">Không có dữ liệu cơ sở</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            
+            {/* Batch Breakdown Table Card */}
+            <div className="xl:col-span-12 bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6 overflow-hidden flex flex-col justify-between group hover:shadow-md transition-all duration-300">
+              <div className="flex items-center justify-between mb-5 border-b border-slate-100/80 pb-4">
+                <h4 className="font-black text-slate-800 text-sm tracking-tight uppercase flex items-center gap-2.5">
+                  <span className="flex h-2.5 w-2.5 relative">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-violet-600"></span>
+                  </span>
+                  Số liệu phân theo Đợt khảo sát
+                </h4>
+                <span className="text-[9px] font-black bg-violet-50 border border-violet-100 text-violet-600 px-3 py-1 rounded-xl uppercase tracking-wider">Chi tiết các đợt</span>
+              </div>
+              
+              <div className="overflow-x-auto">
+                <table className="w-full text-left whitespace-nowrap table-auto">
+                  <thead>
+                    <tr className="border-b border-slate-100/50">
+                      <th className="pb-3.5 text-[9px] font-black text-slate-400 uppercase tracking-widest pl-2">Đợt khảo sát</th>
+                      <th className="pb-3.5 text-center text-[9px] font-black text-slate-400 uppercase tracking-widest">Tổng HS</th>
+                      <th className="pb-3.5 text-center text-[9px] font-black text-emerald-500 uppercase tracking-widest">Đạt</th>
+                      <th className="pb-3.5 text-center text-[9px] font-black text-amber-500 uppercase tracking-widest">Cam kết</th>
+                      <th className="pb-3.5 text-center text-[9px] font-black text-rose-500 uppercase tracking-widest">Không Đạt</th>
+                      <th className="pb-3.5 text-center text-[9px] font-black text-slate-400 uppercase tracking-widest">Chưa Duyệt</th>
+                      <th className="pb-3.5 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest pr-2">Tỷ lệ duyệt</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {batchStats.map(stat => {
+                      const batchApprovedRate = stat.total > 0 ? Math.round(((stat.total - stat.pending) / stat.total) * 100) : 0;
+                      return (
+                        <tr key={stat.id} className="hover:bg-indigo-50/15 transition-all duration-200 rounded-2xl group/row">
+                          <td className="py-3.5 pl-2">
+                            <div className="flex items-center gap-2">
+                              <div className="w-7 h-7 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 group-hover/row:bg-white group-hover/row:border-violet-100 transition-all duration-200">
+                                <Layers className="w-4 h-4 text-slate-400 group-hover/row:text-violet-600" />
+                              </div>
+                              <span className="text-sm font-black text-slate-700 group-hover/row:text-violet-600 transition-colors">{stat.batchName}</span>
+                            </div>
+                          </td>
+                          <td className="py-3.5 text-center">
+                            <span className="font-bold text-slate-600 text-sm">{stat.total}</span>
+                          </td>
+                          <td className="py-3.5 text-center">
+                            {stat.passed > 0 ? (
+                              <span className="font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-100/60 text-xs inline-block min-w-[32px]">{stat.passed}</span>
+                            ) : (
+                              <span className="text-slate-300 font-bold text-xs">—</span>
+                            )}
+                          </td>
+                          <td className="py-3.5 text-center">
+                            {stat.committed > 0 ? (
+                              <span className="font-black text-amber-700 bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-100/60 text-xs inline-block min-w-[32px]">{stat.committed}</span>
+                            ) : (
+                              <span className="text-slate-300 font-bold text-xs">—</span>
+                            )}
+                          </td>
+                          <td className="py-3.5 text-center">
+                            {stat.failed > 0 ? (
+                              <span className="font-black text-rose-700 bg-rose-50 px-2.5 py-1 rounded-xl border border-rose-100/60 text-xs inline-block min-w-[32px]">{stat.failed}</span>
+                            ) : (
+                              <span className="text-slate-300 font-bold text-xs">—</span>
+                            )}
+                          </td>
+                          <td className="py-3.5 text-center">
+                            {stat.pending > 0 ? (
+                              <span className="font-black text-slate-500 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-200/50 text-xs inline-block min-w-[32px]">{stat.pending}</span>
+                            ) : (
+                              <span className="text-slate-300 font-bold text-xs">—</span>
+                            )}
+                          </td>
+                          <td className="py-3.5 text-right pr-2">
+                            <div className="flex items-center justify-end gap-2.5">
+                              <span className="text-xs font-black text-slate-700">{batchApprovedRate}%</span>
+                              <div className="w-20 h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-100 shadow-inner">
+                                <div className="h-full bg-gradient-to-r from-violet-500 to-indigo-500 rounded-full group-hover/row:from-violet-600 group-hover/row:to-indigo-600 transition-all duration-200" style={{ width: batchApprovedRate + "%" }}></div>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {batchStats.length === 0 && (
+                      <tr>
+                        <td colSpan={7} className="py-8 text-center text-xs font-bold text-slate-400 uppercase">Không có dữ liệu đợt khảo sát</td>
                       </tr>
                     )}
                   </tbody>
