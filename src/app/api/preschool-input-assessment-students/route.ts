@@ -21,7 +21,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     .replace(/\{\{grade\}\}/g, rawGrade)
     .replace(/\{\{admissionCampus\}\}/g, student?.admissionCampus || "")
     .replace(/\{\{signatureName\}\}/g, student?.signatureName || config?.directorName || "Trần Thị Thanh")
-    .replace(/\{\{academicYear\}\}/g, student?.academicYear || "2025-2026");
+    .replace(/\{\{academicYear\}\}/g, student?.academicYear || "2025-2026")
+    .replace(/\{\{devProfessionalComment\}\}/g, student?.devProfessionalComment || "")
+    .replace(/\{\{devPsychologyComment\}\}/g, student?.devPsychologyComment || "")
+    .replace(/\{\{devImportantNote\}\}/g, student?.devImportantNote || "")
+    .replace(/\{\{devAssessmentResult\}\}/g, student?.devAssessmentResult || "");
 
   const paragraphs = renderedContent.split("\n").filter(Boolean);
   const bodyHtml = paragraphs.map((para) => {

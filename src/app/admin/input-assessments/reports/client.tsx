@@ -153,12 +153,72 @@ const extractCommittedSubjects = (student: any) => {
 
 
 
+const getStudentScoresForTemplate = (student) => {
+  let mathVal = student?.mathScore;
+  let literatureVal = student?.literatureScore;
+  let writtenEnglishVal = student?.writtenEnglishScore;
+  let oralEnglishVal = student?.oralEnglishScore;
+  let psychologyVal = student?.psychologyScore;
+
+  const studentScores = student?.scores || [];
+  studentScores.forEach((sc) => {
+    const subject = sc.subject || {};
+    const sName = subject.name || "";
+    const sCode = (subject.code || "").toLowerCase();
+    const sNameLower = sName.toLowerCase().normalize("NFC");
+    
+    let scoreVal = null;
+    try {
+      if (sc.scores) {
+        const parsed = JSON.parse(sc.scores);
+        const vArr = Array.isArray(parsed) ? parsed : [parsed];
+        scoreVal = vArr.find((x) => x !== undefined && x !== "" && x !== null);
+      }
+    } catch (e) {
+      scoreVal = sc.scores;
+    }
+
+    if (scoreVal !== null && scoreVal !== undefined && scoreVal !== "") {
+      if (sNameLower.includes("toán") || sCode.includes("math") || sCode.includes("mth")) {
+        mathVal = scoreVal;
+      } else if (sNameLower.includes("tiếng việt") || sNameLower.includes("ngữ văn") || sCode.includes("lit") || sCode.includes("vie") || sCode.includes("van")) {
+        literatureVal = scoreVal;
+      } else if (sNameLower.includes("tiếng anh") || sCode.includes("eng") || sCode.includes("esl")) {
+        if (sNameLower.includes("viết") || sCode.includes("writing") || sCode.includes("written") || sCode.includes("vt")) {
+          writtenEnglishVal = scoreVal;
+        } else if (sNameLower.includes("vấn đáp") || sNameLower.includes("nói") || sCode.includes("speaking") || sCode.includes("oral") || sCode.includes("vd")) {
+          oralEnglishVal = scoreVal;
+        }
+      } else if (sCode.includes("tly")) {
+        try {
+          if (sc.scores) {
+            const parsed = JSON.parse(sc.scores);
+            const vArr = Array.isArray(parsed) ? parsed : [parsed];
+            psychologyVal = parseFloat(vArr[6] || vArr[20] || "0");
+          }
+        } catch (e) {
+          psychologyVal = parseFloat(sc.scores || "0");
+        }
+      }
+    }
+  });
+
+  return {
+    mathScore: mathVal !== null && mathVal !== undefined ? mathVal : "-",
+    literatureScore: literatureVal !== null && literatureVal !== undefined ? literatureVal : "-",
+    writtenEnglishScore: writtenEnglishVal !== null && writtenEnglishVal !== undefined ? writtenEnglishVal : "-",
+    oralEnglishScore: oralEnglishVal !== null && oralEnglishVal !== undefined ? oralEnglishVal : "-",
+    psychologyScore: psychologyVal !== null && psychologyVal !== undefined ? psychologyVal : "-"
+  };
+};
+
 const renderTemplate = (content: string, student: any, academicYearName?: string) => {
   if (!content) return "";
   const extSubs1 = extractCommittedSubjects(student);
   const comSubs = extSubs1.length > 0 ? extSubs1.join(", ") : "";
     
   const { actualCampusName, schoolNameFull, truongName } = getCampusAndSchoolName(student?.admissionCampus);
+  const scoresObj = getStudentScoresForTemplate(student);
 
   return content
     .replace(/\{\{fullName\}\}/g, student?.fullName || "")
@@ -170,7 +230,16 @@ const renderTemplate = (content: string, student: any, academicYearName?: string
     .replace(/\{\{surveyFormType\}\}/g, student?.surveyFormType || "")
     .replace(/\{\{hocKy\}\}/g, student?.hocKy || "1")
     .replace(/\{\{committedSubjects\}\}/g, comSubs || "Tiếng Anh")
-    .replace(/\{\{signatureName\}\}/g, student?.signatureName || "");
+    .replace(/\{\{signatureName\}\}/g, student?.signatureName || "")
+    .replace(/\{\{mathScore\}\}/g, scoresObj.mathScore)
+    .replace(/\{\{literatureScore\}\}/g, scoresObj.literatureScore)
+    .replace(/\{\{writtenEnglishScore\}\}/g, scoresObj.writtenEnglishScore)
+    .replace(/\{\{oralEnglishScore\}\}/g, scoresObj.oralEnglishScore)
+    .replace(/\{\{psychologyScore\}\}/g, scoresObj.psychologyScore)
+    .replace(/\{\{devProfessionalComment\}\}/g, student?.devProfessionalComment || "")
+    .replace(/\{\{devPsychologyComment\}\}/g, student?.devPsychologyComment || "")
+    .replace(/\{\{devImportantNote\}\}/g, student?.devImportantNote || "")
+    .replace(/\{\{devAssessmentResult\}\}/g, student?.devAssessmentResult || "");
 };
 
 const inp = "w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-400/10 text-sm font-medium text-slate-700 transition-all shadow-sm";

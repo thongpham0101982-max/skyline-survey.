@@ -4,7 +4,7 @@
 let clientC = fs.readFileSync('src/app/admin/roles/client.tsx', 'utf8');
 
 const additionalModules = `  { code: "INPUT_ASSESSMENTS", name: "Quản lý KSNL đầu vào" },
-  { code: "STUDENT_INFO", name: "Thông tin HS Khảo sát" },
+  { code: "STUDENT_INFO", name: "Nhập TT HS, KQKS" },
   { code: "TASKS", name: "Điều hành Công việc" },
   { code: "WEEKLY_REPORTS", name: "Báo cáo Tuần" }
 ];`;

@@ -1333,7 +1333,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       .replace(/\{\{admissionCampus\}\}/g, cleanCampus)
       .replace(/\{\{academicYear\}\}/g, currentAcademicYearName)
       .replace(/\{\{hocKy\}\}/g, student?.hocKy || "1")
-      .replace(/\{\{signatureName\}\}/g, student?.signatureName || "");
+      .replace(/\{\{signatureName\}\}/g, student?.signatureName || "")
+      .replace(/\{\{devProfessionalComment\}\}/g, student?.devProfessionalComment || "")
+      .replace(/\{\{devPsychologyComment\}\}/g, student?.devPsychologyComment || "")
+      .replace(/\{\{devImportantNote\}\}/g, student?.devImportantNote || "")
+      .replace(/\{\{devAssessmentResult\}\}/g, student?.devAssessmentResult || "");
   };
 
   const studentCampusConfig = useMemo(() => {

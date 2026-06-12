@@ -247,21 +247,19 @@ export async function GET(req: any) {
             });
 
             return NextResponse.json(enriched);
-        }
-
-        let systemName = undefined;
+        }        const validSystems = [systemCode].filter(Boolean) as string[];
         if (systemCode) {
-            const eduSys = await prisma.educationSystem.findUnique({
+            const eduSysList = await prisma.educationSystem.findMany({
                 where: { code: systemCode }
             });
-            if (eduSys) {
-                systemName = eduSys.name;
-            }
+            eduSysList.forEach(sys => {
+                if (sys.name) {
+                    validSystems.push(sys.name);
+                    validSystems.push(sys.name.toUpperCase());
+                    validSystems.push(sys.name.toLowerCase());
+                }
+            });
         }
-
-        const validSystems = [systemCode, systemName].filter(Boolean) as string[];
-        
-        
         
         // Luon load teacherAssignments de kiem tra quyen va loc dung khoi/he
         const teacherAssignments = await prisma.inputAssessmentTeacherAssignment.findMany({
@@ -269,25 +267,22 @@ export async function GET(req: any) {
         });
         
         const sysList = await prisma.educationSystem.findMany();
-        const eduSystemsMap: Record<string, string> = {};
-        sysList.forEach(s => { eduSystemsMap[s.code.toLowerCase()] = s.name.toLowerCase(); });
-
-
-        
-        if (systemName) {
-            validSystems.push(systemName.toUpperCase());
-            validSystems.push(systemName.toLowerCase());
-        }
+        const eduSystemsMap: Record<string, Set<string>> = {};
+        sysList.forEach(s => {
+            const code = s.code.toLowerCase();
+            if (!eduSystemsMap[code]) eduSystemsMap[code] = new Set();
+            eduSystemsMap[code].add(s.name.toLowerCase());
+        });
 
         const students = await prisma.inputAssessmentStudent.findMany({
             where: {
                 periodId: periodId || undefined,
                 
                 ...(batchId ? { OR: [{ batchId: batchId }, { batchId: null }] } : {})
-            },
-            include: {
+            },            include: {
                 scores: {
-                    where: { subjectId: subjectId || undefined }
+                    where: { subjectId: subjectId || undefined },
+                    include: { subject: true }
                 }
             }
         });
@@ -306,17 +301,27 @@ export async function GET(req: any) {
                     const taGrade = (ta.grade || "").toLowerCase().trim();
                     const taSys = (ta.educationSystem || "").toLowerCase().trim();
                     
-                    const gradeMatch = !taGrade || taGrade === "tất cả" || stGrade === taGrade || stGrade.includes(taGrade.replace("khối", "").trim());
-                    
-                    let sysMatch = false;
+                    // FIX: So sánh số khối chính xác, tránh lỗi "10".includes("1") = true
+                    const taGradeNum = taGrade.replace("khối", "").trim();
+                    const stGradeNum = stGrade.replace("khối", "").trim();
+                    const gradeMatch = !taGrade || taGrade === "tất cả" || stGrade === taGrade ||
+                        (stGradeNum !== "" && taGradeNum !== "" && stGradeNum === taGradeNum);                    let sysMatch = false;
                     if (!taSys || taSys === "tất cả") {
                         sysMatch = true;
                     } else {
-                        const taSysName = eduSystemsMap[taSys] || "";
+                        const taSysNames = eduSystemsMap[taSys] || new Set();
                         sysMatch = stSys === taSys || 
                                    stSys.includes(taSys) || 
-                                   taSys.includes(stSys) ||
-                                   (taSysName && (stSys === taSysName || stSys.includes(taSysName) || taSysName.includes(stSys)));
+                                   taSys.includes(stSys);
+                        
+                        if (!sysMatch) {
+                            for (const taSysName of taSysNames) {
+                                if (stSys === taSysName || stSys.includes(taSysName) || taSysName.includes(stSys)) {
+                                    sysMatch = true;
+                                    break;
+                                }
+                            }
+                        }
                     }
 
                     
@@ -334,11 +339,10 @@ export async function GET(req: any) {
                 const qGrade = grade.toLowerCase().trim();
                 const qGradeNum = qGrade.replace("khối", "").trim();
                 
+                const stGradeNum = stGrade.replace("khối", "").trim();
                 if (stGrade) {
-                    const matchGrade = stGrade === qGrade || 
-                                       stGrade === qGradeNum || 
-                                       stGrade.includes(qGradeNum) || 
-                                       qGrade.includes(stGrade);
+                    // FIX: So sánh số khối chính xác (không dùng includes)
+                    const matchGrade = stGrade === qGrade || stGradeNum === qGradeNum;
                     if (!matchGrade) return false;
                 }
             }

@@ -1005,6 +1005,121 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
   const [reportsSubTab, setReportsSubTab] = useState("stats"); // stats or results
   const [reportStudents, setReportStudents] = useState<any[]>([]);
   const [retestHistory, setRetestHistory] = useState<any[]>([]);
+  const [bulkSelectedIds, setBulkSelectedIds] = useState<string[]>([]);
+  const [studentSearchQuery, setStudentSearchQuery] = useState("");
+  const [bulkApproving, setBulkApproving] = useState(false);
+
+  // Clear search and selection when period or batch changes
+  useEffect(() => {
+    setBulkSelectedIds([]);
+    setStudentSearchQuery("");
+  }, [reportPeriodId, reportBatchId]);
+
+  const searchedReportStudents = useMemo(() => {
+    const query = studentSearchQuery.toLowerCase().normalize("NFC").trim();
+    if (!query) return filteredReportStudents;
+    return filteredReportStudents.filter(s => 
+      s.fullName?.toLowerCase().normalize("NFC").includes(query) ||
+      s.studentCode?.toLowerCase().includes(query)
+    );
+  }, [filteredReportStudents, studentSearchQuery]);
+
+  const resolveStudentCampusAndManager = (student: any) => {
+    if (!student) return { campusName: "", managerName: "" };
+    let tc = campuses.find(c => 
+      c.campusName && c.campusName === student.admissionCampus
+    );
+    if (!tc && student.batchId) {
+      const b = reportBatches.find(bx => bx.id === student.batchId);
+      if (b?.campusId) {
+        tc = campuses.find(c => c.id === b.campusId);
+      }
+    }
+    
+    let campusName = tc?.campusName || "";
+    let managerName = tc?.manager?.fullName || "";
+    
+    const userRole = (currentUser?.role || "").toUpperCase();
+    const isGDCSUser = ["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole);
+    if (isGDCSUser && currentUser) {
+      managerName = currentUser.fullName || "";
+      const userCampus = campuses.find(c => currentUser.campusIds.includes(c.id));
+      if (userCampus) {
+        campusName = userCampus.campusName;
+      }
+    }
+    
+    return { campusName, managerName };
+  };
+
+  const handleBulkApprove = async () => {
+    if (bulkSelectedIds.length === 0) return;
+    
+    // Check if any selected student is locked
+    const lockedStudents = filteredReportStudents.filter(s => 
+      bulkSelectedIds.includes(s.id) && (s.batch?.status === "LOCKED" || s.batch?.status === "CLOSED")
+    );
+    if (lockedStudents.length > 0) {
+      const names = lockedStudents.map(s => s.fullName).join(", ");
+      alert(`Không thể duyệt hàng loạt vì các học sinh sau thuộc đợt khảo sát đã bị khóa: ${names}`);
+      return;
+    }
+
+    if (!confirm(`Bạn có chắc chắn muốn duyệt "Đạt" cho ${bulkSelectedIds.length} học sinh đã chọn?`)) {
+      return;
+    }
+    
+    setBulkApproving(true);
+    let successCount = 0;
+    let failCount = 0;
+    
+    try {
+      const updatePromises = bulkSelectedIds.map(async (id) => {
+        const student = filteredReportStudents.find(s => s.id === id);
+        if (!student) return;
+        
+        const { campusName, managerName } = resolveStudentCampusAndManager(student);
+        
+        try {
+          const r = await fetch("/api/input-assessment-students", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id: student.id,
+              data: {
+                ...student,
+                admissionResult: "Đạt",
+                admissionCampus: campusName,
+                signatureName: managerName
+              }
+            })
+          });
+          if (r.ok) {
+            successCount++;
+            setReportStudents(prev => prev.map(s => s.id === student.id ? { 
+              ...s, 
+              admissionResult: "Đạt",
+              admissionCampus: campusName,
+              signatureName: managerName
+            } : s));
+          } else {
+            failCount++;
+          }
+        } catch {
+          failCount++;
+        }
+      });
+      
+      await Promise.all(updatePromises);
+      
+      notify(`Đã duyệt "Đạt" thành công cho ${successCount} học sinh!${failCount > 0 ? ` (Thất bại: ${failCount})` : ""}`);
+      setBulkSelectedIds([]);
+    } catch (err) {
+      notify("Có lỗi xảy ra trong quá trình duyệt hàng loạt", "err");
+    } finally {
+      setBulkApproving(false);
+    }
+  };
   const [retestHistoryLoading, setRetestHistoryLoading] = useState(false);
 
   const [retestPeriodId, setRetestPeriodId] = useState("");
@@ -4760,7 +4875,7 @@ return {
           </div>
 
           {/* TOP SELECTORS BAR */}
-          <div className={`bg-white/80 backdrop-blur-md p-6 rounded-3xl shadow-sm border border-slate-200/60 grid grid-cols-1 ${reportsSubTab === "stats" ? "md:grid-cols-2" : "md:grid-cols-3"} gap-6`}>
+          <div className="bg-white/80 backdrop-blur-md p-6 rounded-3xl shadow-sm border border-slate-200/60 grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="group">
               <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-indigo-900/70 flex items-center gap-2 ml-1">
                 <Calendar className="w-3.5 h-3.5 text-indigo-500"/> Kỳ Khảo sát
@@ -4810,28 +4925,6 @@ return {
               </div>
             </div>
 
-            {reportsSubTab === "results" && (
-              <div className="group">
-                <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-indigo-900/70 flex items-center gap-2 ml-1">
-                  <Users className="w-3.5 h-3.5 text-indigo-500"/> Chọn Học sinh ({filteredReportStudents.length})
-                </label>
-                <div className="relative">
-                  <select 
-                    value={reportStudentId} 
-                    onChange={e => setReportStudentId(e.target.value)}
-                    className="w-full bg-white border border-slate-200 rounded-2xl pl-5 pr-10 py-3.5 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
-                  >
-                    {filteredReportStudents.map(s => (
-                      <option key={s.id} value={s.id}>{s.studentCode} - {s.fullName} {s.className ? `(${s.className})` : ""} {s.admissionResult ? `[✓ Đã duyệt: ${s.admissionResult}]` : "[⏳ Chưa duyệt]"}</option>
-                    ))}
-                    {filteredReportStudents.length === 0 && <option value="">Không có học sinh nào</option>}
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-indigo-500 transition-colors">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* VIEW RENDERED CONDITIONALLY */}
@@ -5093,15 +5186,162 @@ return {
               <Loader2 className="w-10 h-10 text-indigo-500 animate-spin mx-auto mb-4 opacity-50"/>
               <p className="font-bold text-slate-400">Đang tải kết quả...</p>
             </div>
-          ) : !selectedReportStudent ? (
+          ) : filteredReportStudents.length === 0 ? (
             <div className="bg-white border border-slate-200 rounded-[2rem] p-12 text-center text-slate-400">
               Chưa có dữ liệu học sinh trong kỳ/đợt khảo sát đã chọn.
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
               
-              {/* STUDENT BRIEF DETAIL CARD */}
-              <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-24 self-start transition-all duration-300">
+              {/* STUDENT LIST SIDEBAR */}
+              <div className="lg:col-span-4 bg-white rounded-3xl border border-slate-200 p-4 shadow-sm space-y-4 lg:sticky lg:top-24 self-start no-print">
+                <div className="flex items-center justify-between border-b pb-3">
+                  <h4 className="font-black text-slate-800 text-sm flex items-center gap-2">
+                    <Users className="w-4 h-4 text-indigo-500" />
+                    Danh sách Học sinh ({searchedReportStudents.length})
+                  </h4>
+                </div>
+
+                {/* Search box */}
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={studentSearchQuery}
+                    onChange={(e) => setStudentSearchQuery(e.target.value)}
+                    placeholder="Tìm kiếm mã HS, tên học sinh..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-10 pr-4 py-2.5 text-xs font-bold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white transition-all"
+                  />
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                  {studentSearchQuery && (
+                    <button
+                      onClick={() => setStudentSearchQuery("")}
+                      className="absolute right-3 top-3 text-slate-400 hover:text-slate-600"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Bulk Actions Header */}
+                <div className="flex items-center justify-between bg-slate-50/50 p-2.5 rounded-2xl border border-slate-100 flex-wrap gap-2 text-xs">
+                  <label className="flex items-center gap-2 font-bold text-slate-600 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={
+                        searchedReportStudents.length > 0 &&
+                        searchedReportStudents.every((s) => bulkSelectedIds.includes(s.id))
+                      }
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setBulkSelectedIds(searchedReportStudents.map((s) => s.id));
+                        } else {
+                          setBulkSelectedIds([]);
+                        }
+                      }}
+                      className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 cursor-pointer"
+                    />
+                    Chọn tất cả
+                  </label>
+
+                  <button
+                    onClick={handleBulkApprove}
+                    disabled={bulkSelectedIds.length === 0 || bulkApproving}
+                    className={`px-3 py-1.5 rounded-xl font-black text-[11px] transition-all flex items-center gap-1.5 shadow-sm ${
+                      bulkSelectedIds.length > 0 && !bulkApproving
+                        ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-100 cursor-pointer"
+                        : "bg-slate-100 text-slate-400 cursor-not-allowed"
+                    }`}
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    {bulkApproving ? "Đang xử lý..." : `Duyệt Đạt (${bulkSelectedIds.length})`}
+                  </button>
+                </div>
+
+                {/* Scrollable list */}
+                <div className="space-y-2 max-h-[500px] xl:max-h-[600px] overflow-y-auto pr-1 scrollbar-thin">
+                  {searchedReportStudents.length === 0 ? (
+                    <div className="text-center py-12 text-slate-400 text-xs font-semibold">
+                      Không tìm thấy học sinh phù hợp.
+                    </div>
+                  ) : (
+                    searchedReportStudents.map((s) => {
+                      const isSelected = s.id === reportStudentId;
+                      const isChecked = bulkSelectedIds.includes(s.id);
+                      
+                      // Determine status badge colors
+                      let badgeClass = "bg-slate-50 text-slate-500 border-slate-200";
+                      let displayResult = s.admissionResult || "Chưa duyệt";
+                      if (s.admissionResult === "Đạt") {
+                        badgeClass = "bg-emerald-50 text-emerald-700 border-emerald-200";
+                      } else if (s.admissionResult?.startsWith("Không đạt")) {
+                        badgeClass = "bg-rose-50 text-rose-700 border-rose-200";
+                      } else if (s.admissionResult === "Đạt cam kết") {
+                        badgeClass = "bg-amber-50 text-amber-700 border-amber-200";
+                      } else if (s.admissionResult) {
+                        badgeClass = "bg-indigo-50 text-indigo-700 border-indigo-200";
+                      }
+
+                      return (
+                        <div
+                          key={s.id}
+                          onClick={() => setReportStudentId(s.id)}
+                          className={`flex items-center gap-3 p-3 rounded-2xl border transition-all cursor-pointer ${
+                            isSelected
+                              ? "bg-indigo-50/50 border-indigo-200 shadow-sm animate-none"
+                              : "bg-white hover:bg-slate-50/50 border-slate-200"
+                          }`}
+                        >
+                          {/* Checkbox */}
+                          <div onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setBulkSelectedIds((prev) => [...prev, s.id]);
+                                } else {
+                                  setBulkSelectedIds((prev) => prev.filter((id) => id !== s.id));
+                                }
+                              }}
+                              className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 cursor-pointer"
+                            />
+                          </div>
+
+                          {/* Info */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="font-mono text-[10px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">
+                                {s.studentCode}
+                              </span>
+                              {s.className && (
+                                <span className="text-[10px] text-slate-400 font-bold">
+                                  Lớp ${s.className}
+                                </span>
+                              )}
+                            </div>
+                            <h5 className="font-black text-slate-700 text-xs mt-1 truncate">
+                              {s.fullName}
+                            </h5>
+                          </div>
+
+                          {/* Status Badge */}
+                          <span className={`px-2 py-0.5 rounded-lg border text-[10px] font-black whitespace-nowrap ${badgeClass}`}>
+                            {displayResult}
+                          </span>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+
+              {/* STUDENT DETAILS & SUBJECT RESULTS (lg:col-span-8) */}
+              <div className="lg:col-span-8 space-y-6">
+                {selectedReportStudent ? (
+                  <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+                    
+                    {/* STUDENT BRIEF DETAIL CARD */}
+                    <div className="xl:col-span-5 space-y-6 xl:sticky xl:top-24 self-start transition-all duration-300">
                 <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full -mt-10 -mr-10 mix-blend-multiply filter blur-2xl opacity-70"></div>
                   
@@ -5489,7 +5729,8 @@ return {
 
               </div>
               {/* SUBJECTS RESULTS DISPLAY */}
-              <div className="lg:col-span-8 space-y-6">
+                    {/* SUBJECTS RESULTS DISPLAY */}
+                    <div className="xl:col-span-7 space-y-6">
                 <div className="flex items-center justify-between bg-white px-6 py-4 rounded-3xl border border-slate-200/80 shadow-sm text-left">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 shadow-inner shrink-0 select-none">
@@ -6161,6 +6402,13 @@ return {
                   </div>
                 )}
               </div>
+            </div>
+          ) : (
+            <div className="bg-white border border-slate-200 rounded-[2rem] p-12 text-center text-slate-400">
+              Vui lòng chọn học sinh từ danh sách bên trái để phê duyệt.
+            </div>
+          )}
+        </div>
 
             </div>
           )}

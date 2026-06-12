@@ -173,7 +173,7 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   };
 
   const [tab, setTab] = useState(() => {
-    if (mode === "input") return "children";
+    if (mode === "input") return "periods";
     return isGDCSUser ? "devCriteria" : "periods";
   });
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
@@ -2716,38 +2716,39 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       {confirm && <ConfirmDialog open={true} onClose={() => setConfirm(null)} onConfirm={confirm.fn} message={confirm.msg} />}
 
       {/* Header */}
-      <div className="bg-white border-2 border-[#00A19A] shadow-none rounded-none px-4 py-3.5 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-teal-600 to-fuchsia-500 rounded-none flex items-center justify-center shadow-none shadow-violet-200">
-            <Baby className="w-5 h-5 text-white" />
+      {mode !== "input" && (
+        <div className="bg-white border-2 border-[#00A19A] shadow-none rounded-none px-4 py-3.5 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-teal-600 to-fuchsia-500 rounded-none flex items-center justify-center shadow-none shadow-violet-200">
+              <Baby className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-base font-black text-slate-800 tracking-tight">Quản lý KSNL Đầu vào Mầm non</h1>
+              <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest hidden sm:block">Hệ thống khảo sát năng lực đầu vào bậcc Mầm non</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-base font-black text-slate-800 tracking-tight">Quản lý KSNL Đầu vào Mầm non</h1>
-            <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest hidden sm:block">Hệ thống khảo sát năng lực đầu vào bậcc Mầm non</p>
+          <div className="flex items-center gap-1.5 px-3 py-2 bg-[#00A19A]/5 rounded-none border border-slate-300">
+            <Calendar className="w-3.5 h-3.5 text-teal-400" />
+            <select value={yearId} onChange={e => { setYearId(e.target.value); setCPeriodId(""); setChildren([]); }} className="bg-transparent text-xs font-bold text-slate-700 outline-none cursor-pointer">
+              {academicYears.filter(ay => !ay.isOff).map(ay => <option key={ay.id} value={ay.id}>Năm học {ay.name}</option>)}
+            </select>
           </div>
         </div>
-        <div className="flex items-center gap-1.5 px-3 py-2 bg-[#00A19A]/5 rounded-none border border-slate-300">
-          <Calendar className="w-3.5 h-3.5 text-teal-400" />
-          <select value={yearId} onChange={e => { setYearId(e.target.value); setCPeriodId(""); setChildren([]); }} className="bg-transparent text-xs font-bold text-slate-700 outline-none cursor-pointer">
-            {academicYears.filter(ay => !ay.isOff).map(ay => <option key={ay.id} value={ay.id}>Năm học {ay.name}</option>)}
-          </select>
-        </div>
-      </div>
+      )}
 
       {/* Tabs */}
-      {mode !== "input" && (
       <div className="bg-white border-2 border-[#00A19A] shadow-none rounded-none p-1">
         <div className="flex flex-wrap gap-0.5">
           {[
-            { id: "periods", label: "Kỳ KS", icon: Clock },
+            { id: "periods", label: "Tạo kỳ Khảo sát", icon: Clock },
             { id: "categories", label: "Danh mục", icon: Settings },
-            { id: "children", label: "DS Trẻ", icon: Users },
+            { id: "children", label: "Danh sách Khảo sát", icon: Users },
 
             { id: "devCriteria", label: "Quản lý Tiêu chí & Lĩnh vực", icon: ClipboardList },
             { id: "reports", label: "Tổng hợp KQKS", icon: BarChart3 },
           ].filter(t => {
             if (mode === "input") {
-              return t.id === "children";
+              return ["periods", "children"].includes(t.id);
             }
             if (isGDCSUser) {
               return ["devCriteria", "reports"].includes(t.id);
@@ -2761,7 +2762,6 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           ))}
         </div>
       </div>
-      )}
 
       {/* Tab: Periods */}
       {tab === "periods" && (

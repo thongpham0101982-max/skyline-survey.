@@ -40,7 +40,14 @@ export async function GET(req) {
     
     const students = await (prisma as any).inputAssessmentStudent.findMany({
       where,
-      include: { batch: { select: { name: true } } },
+      include: { 
+        batch: { select: { name: true, status: true } },
+        scores: {
+          include: {
+            subject: true
+          }
+        }
+      },
       orderBy: { createdAt: 'desc' }
     });
     

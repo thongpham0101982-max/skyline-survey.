@@ -326,16 +326,7 @@ export function PhanCongK12Client({
 
       {/* Content */}
       <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
-        {/* Title card */}
-        <div className="flex items-center gap-4 bg-white p-5 rounded-3xl border-2 border-teal-100 shadow-sm">
-          <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center flex-shrink-0">
-            <UserCheck className="w-6 h-6 text-indigo-500" />
-          </div>
-          <div>
-            <h2 className="text-lg font-black text-slate-800">Phân công Giáo viên Khảo sát</h2>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-0.5">Phổ thông K-12 — Giao nhiệm vụ phụ trách môn thi cho giáo viên từ Tổ chuyên môn</p>
-          </div>
-        </div>
+
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left: Config */}

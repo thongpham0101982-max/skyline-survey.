@@ -275,7 +275,6 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
     const isGrades1to5 = ["1", "2", "3", "4", "5"].includes(currentGrade)
     const isGrades6to12 = ["6", "7", "8", "9", "10", "11", "12"].includes(currentGrade)
     const isScoredForm = isGrades1to5 || isGrades6to12
-
     const [scores, setScores] = useState<number[]>(Array(20).fill(-1))
     const [notes, setNotes] = useState<string[]>(Array(20).fill(""))
     const [conclusion, setConclusion] = useState("")
@@ -283,8 +282,30 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
     const [isSaving, setIsSaving] = useState(false)
     const [activeSection, setActiveSection] = useState(0)
 
+    // Lược sử đánh giá
+    const [historyList, setHistoryList] = useState<any[]>([])
+    const [loadingHistory, setLoadingHistory] = useState(false)
+    const [expandedHistoryId, setExpandedHistoryId] = useState<string | null>(null)
+
     useEffect(() => {
-        const scoreData = student?.scores?.find((sc: any) => sc.subject?.code === 'TLY')
+        if (!student?.studentCode) return
+        setLoadingHistory(true)
+        fetch(`/api/teacher-assessments?action=getRetestHistory&studentCode=${encodeURIComponent(student.studentCode)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (Array.isArray(data)) {
+                    setHistoryList(data)
+                }
+                setLoadingHistory(false)
+            })
+            .catch(err => {
+                console.error("Error fetching student history:", err)
+                setLoadingHistory(false)
+            })
+    }, [student])
+
+    useEffect(() => {
+        const scoreData = student?.scores?.find((sc: any) => sc.subject?.code === 'TLY') || student?.scores?.[0]
         if (scoreData) {
             try {
                 const parsedScores = JSON.parse(scoreData.scores || "[]")
@@ -388,7 +409,7 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
                         <h1 className="text-xl md:text-2xl font-bold text-slate-900 mb-1">{student?.fullName}</h1>
                         <span className="inline-flex items-center gap-1.5 text-xs text-slate-500 font-medium bg-slate-100 px-2 py-0.5 rounded-full"><Sparkles size={12} className="text-amber-500"/> Phiếu đánh giá Tâm lý</span>
                     </div>
-                    <div className="flex flex-col items-center md:items-end gap-1 mt-2 md:mt-0">
+                                        <div className="flex flex-col items-center md:items-end gap-1 mt-2 md:mt-0">
                         <div className="text-3xl font-black text-indigo-600 flex items-baseline gap-1">
                             {totalScore} <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Điểm</span>
                         </div>
@@ -398,6 +419,104 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
                         <div className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">Tiến độ: {progress}%</div>
                     </div>
                 </div>
+
+                {/* Render Lược sử điểm đánh giá */}
+                {(() => {
+                    const pastAssessments = historyList.filter((h: any) => h.id !== student.id);
+                    if (pastAssessments.length === 0) return null;
+                    return (
+                        <div className="bg-white rounded-2xl p-5 shadow-sm border-2 border-indigo-100 space-y-4">
+                            <div className="flex items-center gap-2 pb-3 border-b">
+                                <ClipboardCheck size={18} className="text-indigo-600" />
+                                <h3 className="font-bold text-slate-800 text-sm">Lược sử điểm đánh giá các đợt trước</h3>
+                                <span className="text-[10px] font-bold bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">{pastAssessments.length} đợt</span>
+                            </div>
+                            {loadingHistory ? (
+                                <div className="text-xs text-slate-500 py-2">Đang tải lược sử...</div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {pastAssessments.map((histRec: any) => {
+                                        const scoreData = histRec.scores?.find((sc: any) => sc.subject?.code === 'TLY' || sc.subject?.code?.toLowerCase() === 'tly');
+                                        const scoreVal = (() => {
+                                            if (histRec.psychologyScore !== null && histRec.psychologyScore !== undefined) {
+                                                return histRec.psychologyScore;
+                                            }
+                                            if (!scoreData) return null;
+                                            try {
+                                                const parsed = JSON.parse(scoreData.scores || "[]");
+                                                if (parsed.length >= 7) return Number(parsed[6]);
+                                                if (parsed.length > 0) return parsed.reduce((sum, val) => sum + (Number(val) || 0), 0);
+                                            } catch (e) {}
+                                            return null;
+                                        })();
+
+                                        const comments = (() => {
+                                            if (!scoreData) return [];
+                                            try {
+                                                return JSON.parse(scoreData.comments || "[]");
+                                            } catch (e) { return []; }
+                                        })();
+
+                                        const concl = comments[0] || "—";
+                                        const recom = comments[1] || "—";
+
+                                        if (scoreVal === null) return null;
+
+                                        const isExpanded = expandedHistoryId === histRec.id;
+                                        const evalInfo = getEvaluation(scoreVal);
+
+                                        return (
+                                            <div key={histRec.id} className="border border-slate-200 rounded-xl overflow-hidden shadow-sm transition-all hover:shadow-md bg-slate-50/50">
+                                                <div 
+                                                    onClick={() => setExpandedHistoryId(isExpanded ? null : histRec.id)}
+                                                    className="flex flex-col sm:flex-row sm:items-center justify-between p-4 cursor-pointer gap-3 bg-white"
+                                                >
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="w-2 h-2 rounded-full bg-indigo-500 mt-2 shrink-0"></div>
+                                                        <div>
+                                                            <h4 className="font-bold text-slate-800 text-xs sm:text-sm">{histRec.period?.name || "Kỳ khảo sát"}</h4>
+                                                            <p className="text-[10px] sm:text-xs text-slate-500 mt-0.5">
+                                                                Đợt: <span className="font-semibold">{histRec.batch?.name || "Khảo sát lẻ"}</span> | 
+                                                                Ngày đánh giá: <span className="font-semibold">{histRec.createdAt ? new Date(histRec.createdAt).toLocaleDateString("vi-VN") : "—"}</span>
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-3 shrink-0">
+                                                        <div className="text-right">
+                                                            <span className="text-lg font-black text-indigo-600">{scoreVal}</span>
+                                                            <span className="text-[9px] text-slate-400 font-bold uppercase block -mt-1">Điểm</span>
+                                                        </div>
+                                                        {evalInfo && (
+                                                            <div className={`px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-wide shadow-sm ${evalInfo.bg} ${evalInfo.border} ${evalInfo.color}`}>
+                                                                {evalInfo.level}
+                                                            </div>
+                                                        )}
+                                                        <ChevronRight size={16} className={`text-slate-400 transition-transform ${isExpanded ? "rotate-90" : ""}`} />
+                                                    </div>
+                                                </div>
+
+                                                {isExpanded && (
+                                                    <div className="p-4 border-t border-slate-100 bg-slate-50/30 space-y-3">
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                                                            <div className="bg-white p-3 rounded-lg border border-amber-100">
+                                                                <h5 className="font-bold text-amber-800 mb-1">Kết luận sơ bộ:</h5>
+                                                                <p className="text-slate-700 whitespace-pre-wrap leading-relaxed">{concl}</p>
+                                                            </div>
+                                                            <div className="bg-white p-3 rounded-lg border border-emerald-100">
+                                                                <h5 className="font-bold text-emerald-800 mb-1">Khuyến nghị dành cho phụ huynh:</h5>
+                                                                <p className="text-slate-700 whitespace-pre-wrap leading-relaxed">{recom}</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    );
+                })()}
 
                 
                 {isScoredForm && (

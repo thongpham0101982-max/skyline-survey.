@@ -50,6 +50,7 @@ interface Props {
   gdcsUsers?: any[];
   currentUser?: { id: string; role: string; campusIds: string[]; fullName?: string } | null;
   rolePermissions?: { module: string, canRead: boolean, canCreate: boolean, canUpdate: boolean, canDelete: boolean }[];
+  mode?: "config" | "input";
 }
 
 // ========= CONSTANTS =========
@@ -217,6 +218,65 @@ const getCampusAndSchoolName = (rawCampusCode: string) => {
   return { actualCampusName, schoolNameFull, truongName };
 };
 
+const getStudentScoresForTemplate = (student) => {
+  let mathVal = student?.mathScore;
+  let literatureVal = student?.literatureScore;
+  let writtenEnglishVal = student?.writtenEnglishScore;
+  let oralEnglishVal = student?.oralEnglishScore;
+  let psychologyVal = student?.psychologyScore;
+
+  const studentScores = student?.scores || [];
+  studentScores.forEach((sc) => {
+    const subject = sc.subject || {};
+    const sName = subject.name || "";
+    const sCode = (subject.code || "").toLowerCase();
+    const sNameLower = sName.toLowerCase().normalize("NFC");
+    
+    let scoreVal = null;
+    try {
+      if (sc.scores) {
+        const parsed = JSON.parse(sc.scores);
+        const vArr = Array.isArray(parsed) ? parsed : [parsed];
+        scoreVal = vArr.find((x) => x !== undefined && x !== "" && x !== null);
+      }
+    } catch (e) {
+      scoreVal = sc.scores;
+    }
+
+    if (scoreVal !== null && scoreVal !== undefined && scoreVal !== "") {
+      if (sNameLower.includes("toán") || sCode.includes("math") || sCode.includes("mth")) {
+        mathVal = scoreVal;
+      } else if (sNameLower.includes("tiếng việt") || sNameLower.includes("ngữ văn") || sCode.includes("lit") || sCode.includes("vie") || sCode.includes("van")) {
+        literatureVal = scoreVal;
+      } else if (sNameLower.includes("tiếng anh") || sCode.includes("eng") || sCode.includes("esl")) {
+        if (sNameLower.includes("viết") || sCode.includes("writing") || sCode.includes("written") || sCode.includes("vt")) {
+          writtenEnglishVal = scoreVal;
+        } else if (sNameLower.includes("vấn đáp") || sNameLower.includes("nói") || sCode.includes("speaking") || sCode.includes("oral") || sCode.includes("vd")) {
+          oralEnglishVal = scoreVal;
+        }
+      } else if (sCode.includes("tly")) {
+        try {
+          if (sc.scores) {
+            const parsed = JSON.parse(sc.scores);
+            const vArr = Array.isArray(parsed) ? parsed : [parsed];
+            psychologyVal = parseFloat(vArr[6] || vArr[20] || "0");
+          }
+        } catch (e) {
+          psychologyVal = parseFloat(sc.scores || "0");
+        }
+      }
+    }
+  });
+
+  return {
+    mathScore: mathVal !== null && mathVal !== undefined ? mathVal : "-",
+    literatureScore: literatureVal !== null && literatureVal !== undefined ? literatureVal : "-",
+    writtenEnglishScore: writtenEnglishVal !== null && writtenEnglishVal !== undefined ? writtenEnglishVal : "-",
+    oralEnglishScore: oralEnglishVal !== null && oralEnglishVal !== undefined ? oralEnglishVal : "-",
+    psychologyScore: psychologyVal !== null && psychologyVal !== undefined ? psychologyVal : "-"
+  };
+};
+
 const renderTemplate = (template, student) => {
   if (!template) return "";
   
@@ -229,6 +289,8 @@ const renderTemplate = (template, student) => {
     : (student?.committedSubjects || "");
   
   const { actualCampusName, schoolNameFull, truongName } = getCampusAndSchoolName(student?.admissionCampus);
+  const scoresObj = getStudentScoresForTemplate(student);
+  
   return template
     .replace(/\{\{schoolName\}\}/g, schoolNameFull)
     .replace(/\{\{truong\}\}/g, truongName)
@@ -239,13 +301,18 @@ const renderTemplate = (template, student) => {
     .replace(/\{\{admissionCampus\}\}/g, actualCampusName || "")
     .replace(/\{\{directorNote\}\}/g, student?.directorNote || "")
     .replace(/\{\{committedSubjects\}\}/g, comSubs)
-    .replace(/\{\{signatureName\}\}/g, student?.signatureName || "");
+    .replace(/\{\{signatureName\}\}/g, student?.signatureName || "")
+    .replace(/\{\{mathScore\}\}/g, scoresObj.mathScore)
+    .replace(/\{\{literatureScore\}\}/g, scoresObj.literatureScore)
+    .replace(/\{\{writtenEnglishScore\}\}/g, scoresObj.writtenEnglishScore)
+    .replace(/\{\{oralEnglishScore\}\}/g, scoresObj.oralEnglishScore)
+    .replace(/\{\{psychologyScore\}\}/g, scoresObj.psychologyScore);
 };
 
 
 
 // ========= MAIN =========
-export function InputAssessmentsClient({ academicYears = [], campuses = [], examBoardUsers = [], subjects: initialSubjects = [], eduSystems = [], configs: initialConfigs = [], grades = [], teachers = [], departments = [], giaoVuCSUsers = [], gdcsUsers = [], currentUser = null, rolePermissions = [] }: Props) {
+export function InputAssessmentsClient({ academicYears = [], campuses = [], examBoardUsers = [], subjects: initialSubjects = [], eduSystems = [], configs: initialConfigs = [], grades = [], teachers = [], departments = [], giaoVuCSUsers = [], gdcsUsers = [], currentUser = null, rolePermissions = [], mode = "config" }: Props) {
   const TAB_PERMISSION_MAP: Record<string, string> = {
     periods: "INPUT_ASSESSMENTS_PERIODS",
     categories: "INPUT_ASSESSMENTS_CATEGORIES",
@@ -298,7 +365,9 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     const hasStudents = userRole === "ADMIN" || userRole === "KT_DBCL" || (rolePermissions && rolePermissions.some(p => p.module === "INPUT_ASSESSMENTS_STUDENTS" && p.canRead)) || isGDCS;
     if (hasStudents) return "students";
     
-    const allTabs = ["periods", "categories", "subjects", "mapping", "students", "assignments", "reports"];
+    const allTabs = ["periods", "categories", "subjects", "mapping", "students", "assignments", "reports"].filter(
+      t => !(mode === "input" && ["categories", "subjects", "mapping"].includes(t))
+    );
     for (const t of allTabs) {
       const p = getTabPermissions(t);
       if (p.canRead) return t;
@@ -3208,35 +3277,37 @@ return {
 
       <div className="no-print flex flex-col gap-3 w-full">
       {/* HEADER BAR */}
-      <div className="bg-white border border-slate-200 shadow-sm rounded-xl px-4 py-3 flex items-center justify-between gap-3 min-h-[56px]">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 bg-indigo-600 rounded-lg flex items-center justify-center flex-shrink-0">
-            <ClipboardCheck className="w-4 h-4 text-white"/>
+      {mode !== "input" && (
+        <div className="bg-white border border-slate-200 shadow-sm rounded-xl px-4 py-3 flex items-center justify-between gap-3 min-h-[56px]">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 bg-indigo-600 rounded-lg flex items-center justify-center flex-shrink-0">
+              <ClipboardCheck className="w-4 h-4 text-white"/>
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-base font-black text-slate-800 tracking-tight leading-tight truncate">KSNL đầu vào Phổ thông</h1>
+              <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest hidden sm:block">Hệ thống khảo sát & phân công giáo viên</p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <h1 className="text-base font-black text-slate-800 tracking-tight leading-tight truncate">KSNL đầu vào Phổ thông</h1>
-            <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest hidden sm:block">Hệ thống khảo sát & phân công giáo viên</p>
+          <div className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 rounded-lg border border-slate-200 flex-shrink-0">
+            <Calendar className="w-3.5 h-3.5 text-slate-400"/>
+            <select value={yearId} onChange={e=>{setYearId(e.target.value); setSPeriodId(""); setAsPeriodId(""); setStudents([]); setAssignments([])}} className="bg-transparent text-xs font-bold text-slate-700 outline-none cursor-pointer max-w-[140px] sm:max-w-none">
+              {academicYears.filter(ay=>!ay.isOff).map(ay=><option key={ay.id} value={ay.id}>Năm học {ay.name}</option>)}
+            </select>
           </div>
         </div>
-        <div className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 rounded-lg border border-slate-200 flex-shrink-0">
-          <Calendar className="w-3.5 h-3.5 text-slate-400"/>
-          <select value={yearId} onChange={e=>{setYearId(e.target.value); setSPeriodId(""); setAsPeriodId(""); setStudents([]); setAssignments([])}} className="bg-transparent text-xs font-bold text-slate-700 outline-none cursor-pointer max-w-[140px] sm:max-w-none">
-            {academicYears.filter(ay=>!ay.isOff).map(ay=><option key={ay.id} value={ay.id}>Năm học {ay.name}</option>)}
-          </select>
-        </div>
-      </div>
+      )}
 
       {/* TAB NAV - icon + label, wraps to fit, no overflow */}
       <div className="bg-white border border-slate-200 shadow-sm rounded-xl px-1 py-1">
         <div className="flex flex-wrap gap-0.5">
           {[
-            { id:"periods",              label:"K\u1ef3 KS",      tip:"K\u1ef3 kh\u1ea3o s\u00e1t",        icon:Clock },
+            { id:"periods",              label:"T\u1ea1o k\u1ef3 Kh\u1ea3o s\u00e1t",      tip:"K\u1ef3 kh\u1ea3o s\u00e1t",        icon:Clock },
             { id:"categories",           label:"Danh m\u1ee5c",   tip:"Danh m\u1ee5c",            icon:Settings },
             { id:"subjects",             label:"M\u00f4n KS",     tip:"M\u00f4n kh\u1ea3o s\u00e1t",        icon:BookOpen },
             { id:"mapping",              label:"C\u1ea5u h\u00ecnh",   tip:"C\u1ea5u h\u00ecnh theo Kh\u1ed1i",  icon:Layers },
-            { id:"students",             label:"H\u1ecdc sinh",   tip:"DS HS kh\u1ea3o s\u00e1t",      icon:Users },
+            { id:"students",             label:"Danh s\u00e1ch Kh\u1ea3o s\u00e1t",   tip:"DS HS kh\u1ea3o s\u00e1t",      icon:Users },
 
-          ].map(t => {
+          ].filter(t => !(mode === "input" && ["categories", "subjects", "mapping"].includes(t.id))).map(t => {
             const p = getTabPermissions(t.id);
             const canRead = p.canRead;
             const isTabReadOnly = canRead && !p.canCreate && !p.canUpdate && !p.canDelete;

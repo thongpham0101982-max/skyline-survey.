@@ -2382,20 +2382,69 @@ export function StudentInfoClient({
                     };
                     const isGrade1 = getNumericGrade(selectedStudent.grade) === 1;
                     
-                    let writtenDisplay: React.ReactNode = selectedStudent.writtenEnglishScore !== null && selectedStudent.writtenEnglishScore !== undefined ? selectedStudent.writtenEnglishScore : "-";
-                    let oralDisplay: React.ReactNode = selectedStudent.oralEnglishScore !== null && selectedStudent.oralEnglishScore !== undefined ? selectedStudent.oralEnglishScore : "-";
+                    let mathVal: any = selectedStudent.mathScore;
+                    let literatureVal: any = selectedStudent.literatureScore;
+                    let writtenEnglishVal: any = selectedStudent.writtenEnglishScore;
+                    let oralEnglishVal: any = selectedStudent.oralEnglishScore;
+                    let psychologyVal: any = selectedStudent.psychologyScore;
+
+                    const studentScores = selectedStudent.scores || [];
+                    studentScores.forEach((sc: any) => {
+                      const subject = sc.subject || {};
+                      const sName = subject.name || "";
+                      const sCode = (subject.code || "").toLowerCase();
+                      const sNameLower = sName.toLowerCase().normalize("NFC");
+                      
+                      let scoreVal: any = null;
+                      try {
+                        if (sc.scores) {
+                          const parsed = JSON.parse(sc.scores);
+                          const vArr = Array.isArray(parsed) ? parsed : [parsed];
+                          scoreVal = vArr.find((x: any) => x !== undefined && x !== "" && x !== null);
+                        }
+                      } catch (e) {
+                        scoreVal = sc.scores;
+                      }
+
+                      if (scoreVal !== null && scoreVal !== undefined && scoreVal !== "") {
+                        if (sNameLower.includes("toán") || sCode.includes("math") || sCode.includes("mth")) {
+                          mathVal = scoreVal;
+                        } else if (sNameLower.includes("tiếng việt") || sNameLower.includes("ngữ văn") || sCode.includes("lit") || sCode.includes("vie") || sCode.includes("van")) {
+                          literatureVal = scoreVal;
+                        } else if (sNameLower.includes("tiếng anh") || sCode.includes("eng") || sCode.includes("esl")) {
+                          if (sNameLower.includes("viết") || sCode.includes("writing") || sCode.includes("written") || sCode.includes("vt")) {
+                            writtenEnglishVal = scoreVal;
+                          } else if (sNameLower.includes("vấn đáp") || sNameLower.includes("nói") || sCode.includes("speaking") || sCode.includes("oral") || sCode.includes("vd")) {
+                            oralEnglishVal = scoreVal;
+                          }
+                        } else if (sCode.includes("tly")) {
+                          try {
+                            if (sc.scores) {
+                              const parsed = JSON.parse(sc.scores);
+                              const vArr = Array.isArray(parsed) ? parsed : [parsed];
+                              psychologyVal = parseFloat(vArr[6] || vArr[20] || "0");
+                            }
+                          } catch (e) {
+                            psychologyVal = parseFloat(sc.scores || "0");
+                          }
+                        }
+                      }
+                    });
+
+                    let writtenDisplay: React.ReactNode = writtenEnglishVal !== null && writtenEnglishVal !== undefined ? writtenEnglishVal : "-";
+                    let oralDisplay: React.ReactNode = oralEnglishVal !== null && oralEnglishVal !== undefined ? oralEnglishVal : "-";
                     let totalScore: number | null = null;
                     
                     if (!isGrade1) {
-                      if (selectedStudent.writtenEnglishScore !== null && selectedStudent.writtenEnglishScore !== undefined && selectedStudent.writtenEnglishScore !== "") {
-                        writtenDisplay = `${selectedStudent.writtenEnglishScore}/70`;
+                      if (writtenEnglishVal !== null && writtenEnglishVal !== undefined && writtenEnglishVal !== "") {
+                        writtenDisplay = `${writtenEnglishVal}/70`;
                       }
-                      if (selectedStudent.oralEnglishScore !== null && selectedStudent.oralEnglishScore !== undefined && selectedStudent.oralEnglishScore !== "") {
-                        oralDisplay = `${selectedStudent.oralEnglishScore}/30`;
+                      if (oralEnglishVal !== null && oralEnglishVal !== undefined && oralEnglishVal !== "") {
+                        oralDisplay = `${oralEnglishVal}/30`;
                       }
                       
-                      const wScore = parseFloat(selectedStudent.writtenEnglishScore);
-                      const oScore = parseFloat(selectedStudent.oralEnglishScore);
+                      const wScore = parseFloat(writtenEnglishVal);
+                      const oScore = parseFloat(oralEnglishVal);
                       if (!isNaN(wScore) || !isNaN(oScore)) {
                         totalScore = (isNaN(wScore) ? 0 : wScore) + (isNaN(oScore) ? 0 : oScore);
                       }
@@ -2406,13 +2455,13 @@ export function StudentInfoClient({
                         <div className="bg-white p-4 rounded-2xl border border-slate-200 text-center">
                           <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Điểm Toán</span>
                           <span className="text-2xl font-black text-[#1E1B4B] mt-1 block">
-                            {selectedStudent.mathScore !== null && selectedStudent.mathScore !== undefined ? selectedStudent.mathScore : "-"}
+                            {mathVal !== null && mathVal !== undefined ? mathVal : "-"}
                           </span>
                         </div>
                         <div className="bg-white p-4 rounded-2xl border border-slate-200 text-center">
                           <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Điểm Ngữ văn</span>
                           <span className="text-2xl font-black text-[#1E1B4B] mt-1 block">
-                            {selectedStudent.literatureScore !== null && selectedStudent.literatureScore !== undefined ? selectedStudent.literatureScore : "-"}
+                            {literatureVal !== null && literatureVal !== undefined ? literatureVal : "-"}
                           </span>
                         </div>
                         <div className="bg-white p-4 rounded-2xl border border-slate-200 text-center">
@@ -2438,7 +2487,7 @@ export function StudentInfoClient({
                         <div className="bg-white p-4 rounded-2xl border border-slate-200 text-center">
                           <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Điểm Tâm lý</span>
                           <span className="text-2xl font-black text-[#1E1B4B] mt-1 block">
-                            {selectedStudent.psychologyScore !== null && selectedStudent.psychologyScore !== undefined ? selectedStudent.psychologyScore : "-"}
+                            {psychologyVal !== null && psychologyVal !== undefined ? psychologyVal : "-"}
                           </span>
                         </div>
                       </div>

@@ -155,7 +155,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
             const g = (a.grade || "").trim();
             const sys = (a.educationSystem || "").trim();
             if (g) {
-                const key = ${g}__;
+                const key = `${g}__${sys}`;
                 gradeMap.set(key, { grade: g, educationSystem: sys });
             }
         });
@@ -179,10 +179,19 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
         }
     }, [selectedPeriodId, availableAssignments]);
 
-    // Reset grade/system filter khi doi mon hoac dot
+    // Reset/auto-select grade khi doi mon hoac dot
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
-        setSelectedGrade("all");
-        setSelectedSystemCode("all");
+        // Nếu chỉ có 1 khối/hệ được phân công -> tự động chọn
+        if (availableGradeOptions.length === 1) {
+            setSelectedGrade(availableGradeOptions[0].grade);
+            setSelectedSystemCode(availableGradeOptions[0].educationSystem || "all");
+        } else {
+            setSelectedGrade("all");
+            setSelectedSystemCode("all");
+        }
+    // availableGradeOptions is intentionally excluded - we read its current value
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedAssignmentId, selectedBatchId]);
 
     useEffect(() => {
@@ -454,28 +463,28 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                             <div className="w-7 h-7 rounded-lg bg-[#00A19A] text-white flex items-center justify-center shadow-sm">
                                 <Layers className="w-3.5 h-3.5" />
                             </div>
-                            <span className="text-xs font-black text-[#00A19A] uppercase tracking-wider">Loc theo Khoi / He hoc</span>
+                            <span className="text-xs font-black text-[#00A19A] uppercase tracking-wider">Lọc theo Khối / Hệ học</span>
                         </div>
                         <div className="flex flex-wrap gap-2 flex-1">
                             <button
                                 onClick={() => { setSelectedGrade("all"); setSelectedSystemCode("all"); }}
-                                className={px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm border }
+                                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm border ${selectedGrade === "all" ? "bg-[#00A19A] text-white border-[#00A19A]" : "bg-white text-slate-600 border-slate-200 hover:border-[#00A19A] hover:text-[#00A19A]"}`}
                             >
-                                Tat ca Khoi
+                                Tất cả Khối
                             </button>
                             {availableGradeOptions.map(opt => (
                                 <button
-                                    key={${opt.grade}__}
+                                    key={`${opt.grade}__${opt.educationSystem}`}
                                     onClick={() => { setSelectedGrade(opt.grade); setSelectedSystemCode(opt.educationSystem || "all"); }}
-                                    className={px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm border }
+                                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm border ${(selectedGrade === opt.grade && selectedSystemCode === (opt.educationSystem || "all")) ? "bg-[#00A19A] text-white border-[#00A19A]" : "bg-white text-slate-600 border-slate-200 hover:border-[#00A19A] hover:text-[#00A19A]"}`}
                                 >
-                                    {opt.grade}{opt.educationSystem ?  -  : ""}
+                                    {`Khối ${opt.grade}`}{opt.educationSystem ? ` - ${opt.educationSystem}` : ""}
                                 </button>
                             ))}
                         </div>
                         {selectedGrade !== "all" && (
                             <div className="text-[11px] text-[#00A19A] font-semibold bg-[#00A19A]/10 px-3 py-1 rounded-full border border-[#00A19A]/20 whitespace-nowrap">
-                                Dang loc: {selectedGrade}{selectedSystemCode !== "all" ?  - He  : ""}
+                                Đang lọc: Khối {selectedGrade}{selectedSystemCode !== "all" ? ` - Hệ ${selectedSystemCode}` : ""}
                             </div>
                         )}
                     </div>
@@ -508,7 +517,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                 Form nhập kết quả: {currentAssignment.subject.name}
                             </h3>
                             <p className="text-xs text-slate-500 mt-1 flex items-center gap-2">
-                                <Layers className="w-3.5 h-3.5"/> Khối: <span className="font-semibold text-slate-700">{currentAssignment.grade || "Tất cả"}</span> | 
+                                <Layers className="w-3.5 h-3.5"/> Khối: <span className="font-semibold text-slate-700">{selectedGrade !== "all" ? `Khối ${selectedGrade}` : availableGradeOptions.length === 1 ? `Khối ${availableGradeOptions[0]?.grade}` : (availableGradeOptions.length > 1 ? availableGradeOptions.map(o => `${o.grade}`).join(", ") : "Tất cả")}</span><span className="text-[10px] text-amber-600 font-bold bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 ml-1 uppercase">{selectedSystemCode !== "all" ? selectedSystemCode : availableGradeOptions.length === 1 ? availableGradeOptions[0]?.educationSystem : ""}</span> | 
                                 Thuộc kỳ khảo sát: <span className="font-semibold text-slate-700">{currentAssignment.period.name} {currentAssignment.batch?.name ? ` - ${currentAssignment.batch.name}` : ""}</span>
                             </p>
                         </div>
@@ -598,15 +607,17 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                               <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded-md border border-slate-200 whitespace-nowrap uppercase">{st.surveyFormType || "—"}</span>
                                           </td>
                                         
-                                        <td className="px-2 py-2 bg-transparent">
-            {isPreschoolSubject ? (
+                                        <td className="px-2 py-2 bg-transparent">            {isPreschoolSubject ? (
               <div className="flex flex-col items-center justify-center gap-2">
                   <button 
                     onClick={() => { setActivePreschoolStudent(st); setIsPreschoolModalOpen(true); }}
-                    className="bg-pink-50 hover:bg-pink-600 text-pink-700 hover:text-white font-bold py-1 px-5 rounded-full shadow-sm flex items-center gap-2 transition-all active:scale-95 text-xs border border-pink-100"
+                    className={st.scoredCount > 0 
+                      ? "bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white border border-emerald-200 font-bold py-1 px-5 rounded-full shadow-sm flex items-center gap-2 transition-all active:scale-95 text-xs"
+                      : "bg-pink-50 hover:bg-pink-600 text-pink-700 hover:text-white font-bold py-1 px-5 rounded-full shadow-sm flex items-center gap-2 transition-all active:scale-95 text-xs border border-pink-100"
+                    }
                   >
                     <BookOpen className="w-3.5 h-3.5" /> 
-                    Mở Form Đánh giá
+                    {st.scoredCount > 0 ? "Xem lại Đánh giá" : "Mở Form Đánh giá"}
                   </button>
                   {st.scoredCount > 0 ? (
                       <div className="flex flex-col gap-1 items-center max-w-xs text-center mt-1">
@@ -617,15 +628,17 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                   ) : (
                       <span className="text-[10px] text-slate-400 font-medium">Chưa đánh giá</span>
                   )}
-              </div>
-            ) : isThinkingSkillsSubject ? (
+              </div>            ) : isThinkingSkillsSubject ? (
               <div className="flex flex-col items-center justify-center gap-2">
                   <button 
                     onClick={() => { setActiveThinkingSkillsStudent(st); setIsThinkingSkillsModalOpen(true); }}
-                    className="bg-slate-100 hover:bg-indigo-600 text-slate-700 hover:text-white font-bold py-1 px-5 rounded-full shadow-sm flex items-center gap-2 transition-all active:scale-95 text-xs"
+                    className={st.scoreVals?.length >= 1
+                      ? "bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white border border-emerald-200 font-bold py-1 px-5 rounded-full shadow-sm flex items-center gap-2 transition-all active:scale-95 text-xs"
+                      : "bg-slate-100 hover:bg-indigo-600 text-slate-700 hover:text-white font-bold py-1 px-5 rounded-full shadow-sm flex items-center gap-2 transition-all active:scale-95 text-xs"
+                    }
                   >
                     <BookOpen className="w-3.5 h-3.5" /> 
-                    Mở Form Đánh giá
+                    {st.scoreVals?.length >= 1 ? "Xem lại Đánh giá" : "Mở Form Đánh giá"}
                   </button>
                   {st.scoreVals?.length >= 1 ? (
                       <div className="flex flex-col gap-1 items-center max-w-xs text-center mt-1">
@@ -644,15 +657,17 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                   ) : (
                       <span className="text-[10px] text-slate-400 font-medium">Chưa đánh giá</span>
                   )}
-              </div>
-            ) : isChildDevSubject ? (
+              </div>            ) : isChildDevSubject ? (
               <div className="flex flex-col items-center justify-center gap-2">
                   <button 
                     onClick={() => { setActiveChildDevStudent(st); setIsChildDevModalOpen(true); }}
-                    className="bg-slate-100 hover:bg-indigo-600 text-slate-700 hover:text-white font-bold py-1 px-5 rounded-full shadow-sm flex items-center gap-2 transition-all active:scale-95 text-xs"
+                    className={st.scoreVals?.length >= 1
+                      ? "bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white border border-emerald-200 font-bold py-1 px-5 rounded-full shadow-sm flex items-center gap-2 transition-all active:scale-95 text-xs"
+                      : "bg-slate-100 hover:bg-indigo-600 text-slate-700 hover:text-white font-bold py-1 px-5 rounded-full shadow-sm flex items-center gap-2 transition-all active:scale-95 text-xs"
+                    }
                   >
                     <BookOpen className="w-3.5 h-3.5" /> 
-                    Mở Form Đánh giá
+                    {st.scoreVals?.length >= 1 ? "Xem lại Đánh giá" : "Mở Form Đánh giá"}
                   </button>
                   {st.scoreVals?.length >= 1 ? (
                       <div className="flex flex-col gap-1 items-center max-w-xs text-center mt-1">
@@ -671,16 +686,18 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                   ) : (
                       <span className="text-[10px] text-slate-400 font-medium">Chưa đánh giá</span>
                   )}
-              </div>
-            ) : isPsychSubject ? (
+              </div>            ) : isPsychSubject ? (
               <div className="flex flex-col items-center justify-center gap-2">
                   <button 
-        onClick={() => { setActivePsychStudent(st); setIsPsychModalOpen(true); }}
-        className="bg-slate-100 hover:bg-indigo-600 text-slate-700 hover:text-white font-bold py-1 px-5 rounded-full shadow-sm flex items-center gap-2 transition-all active:scale-95 text-xs"
-    >
-        <BookOpen className="w-3.5 h-3.5" /> 
-        Mở Form Khối {st.grade || "Cơ bản"}
-    </button>
+                    onClick={() => { setActivePsychStudent(st); setIsPsychModalOpen(true); }}
+                    className={st.scoreVals?.length >= 7
+                      ? "bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white border border-emerald-200 font-bold py-1 px-5 rounded-full shadow-sm flex items-center gap-2 transition-all active:scale-95 text-xs"
+                      : "bg-slate-100 hover:bg-indigo-600 text-slate-700 hover:text-white font-bold py-1 px-5 rounded-full shadow-sm flex items-center gap-2 transition-all active:scale-95 text-xs"
+                    }
+                  >
+                    <BookOpen className="w-3.5 h-3.5" /> 
+                    {st.scoreVals?.length >= 7 ? `Xem lại Form Khối ${st.grade || "Cơ bản"}` : `Mở Form Khối ${st.grade || "Cơ bản"}`}
+                  </button>
                   {st.scoreVals?.length >= 7 && (
                     <div className="flex items-center gap-3">
                       <div className="h-10 w-[1px] bg-slate-200"></div>
