@@ -1005,121 +1005,6 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
   const [reportsSubTab, setReportsSubTab] = useState("stats"); // stats or results
   const [reportStudents, setReportStudents] = useState<any[]>([]);
   const [retestHistory, setRetestHistory] = useState<any[]>([]);
-  const [bulkSelectedIds, setBulkSelectedIds] = useState<string[]>([]);
-  const [studentSearchQuery, setStudentSearchQuery] = useState("");
-  const [bulkApproving, setBulkApproving] = useState(false);
-
-  // Clear search and selection when period or batch changes
-  useEffect(() => {
-    setBulkSelectedIds([]);
-    setStudentSearchQuery("");
-  }, [reportPeriodId, reportBatchId]);
-
-  const searchedReportStudents = useMemo(() => {
-    const query = studentSearchQuery.toLowerCase().normalize("NFC").trim();
-    if (!query) return filteredReportStudents;
-    return filteredReportStudents.filter(s => 
-      s.fullName?.toLowerCase().normalize("NFC").includes(query) ||
-      s.studentCode?.toLowerCase().includes(query)
-    );
-  }, [filteredReportStudents, studentSearchQuery]);
-
-  const resolveStudentCampusAndManager = (student: any) => {
-    if (!student) return { campusName: "", managerName: "" };
-    let tc = campuses.find(c => 
-      c.campusName && c.campusName === student.admissionCampus
-    );
-    if (!tc && student.batchId) {
-      const b = reportBatches.find(bx => bx.id === student.batchId);
-      if (b?.campusId) {
-        tc = campuses.find(c => c.id === b.campusId);
-      }
-    }
-    
-    let campusName = tc?.campusName || "";
-    let managerName = tc?.manager?.fullName || "";
-    
-    const userRole = (currentUser?.role || "").toUpperCase();
-    const isGDCSUser = ["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole);
-    if (isGDCSUser && currentUser) {
-      managerName = currentUser.fullName || "";
-      const userCampus = campuses.find(c => currentUser.campusIds.includes(c.id));
-      if (userCampus) {
-        campusName = userCampus.campusName;
-      }
-    }
-    
-    return { campusName, managerName };
-  };
-
-  const handleBulkApprove = async () => {
-    if (bulkSelectedIds.length === 0) return;
-    
-    // Check if any selected student is locked
-    const lockedStudents = filteredReportStudents.filter(s => 
-      bulkSelectedIds.includes(s.id) && (s.batch?.status === "LOCKED" || s.batch?.status === "CLOSED")
-    );
-    if (lockedStudents.length > 0) {
-      const names = lockedStudents.map(s => s.fullName).join(", ");
-      alert(`Không thể duyệt hàng loạt vì các học sinh sau thuộc đợt khảo sát đã bị khóa: ${names}`);
-      return;
-    }
-
-    if (!confirm(`Bạn có chắc chắn muốn duyệt "Đạt" cho ${bulkSelectedIds.length} học sinh đã chọn?`)) {
-      return;
-    }
-    
-    setBulkApproving(true);
-    let successCount = 0;
-    let failCount = 0;
-    
-    try {
-      const updatePromises = bulkSelectedIds.map(async (id) => {
-        const student = filteredReportStudents.find(s => s.id === id);
-        if (!student) return;
-        
-        const { campusName, managerName } = resolveStudentCampusAndManager(student);
-        
-        try {
-          const r = await fetch("/api/input-assessment-students", {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              id: student.id,
-              data: {
-                ...student,
-                admissionResult: "Đạt",
-                admissionCampus: campusName,
-                signatureName: managerName
-              }
-            })
-          });
-          if (r.ok) {
-            successCount++;
-            setReportStudents(prev => prev.map(s => s.id === student.id ? { 
-              ...s, 
-              admissionResult: "Đạt",
-              admissionCampus: campusName,
-              signatureName: managerName
-            } : s));
-          } else {
-            failCount++;
-          }
-        } catch {
-          failCount++;
-        }
-      });
-      
-      await Promise.all(updatePromises);
-      
-      notify(`Đã duyệt "Đạt" thành công cho ${successCount} học sinh!${failCount > 0 ? ` (Thất bại: ${failCount})` : ""}`);
-      setBulkSelectedIds([]);
-    } catch (err) {
-      notify("Có lỗi xảy ra trong quá trình duyệt hàng loạt", "err");
-    } finally {
-      setBulkApproving(false);
-    }
-  };
   const [retestHistoryLoading, setRetestHistoryLoading] = useState(false);
 
   const [retestPeriodId, setRetestPeriodId] = useState("");
@@ -2319,6 +2204,121 @@ ${reportForm.directorNote}`;
     if (!Array.isArray(reportStudents)) return [];
     return reportStudents.filter(s => reportBatchId === "all" || s.batchId === reportBatchId || s.batchId === null || s.batchId === "");
   }, [reportStudents, reportBatchId]);
+  const [bulkSelectedIds, setBulkSelectedIds] = useState<string[]>([]);
+  const [studentSearchQuery, setStudentSearchQuery] = useState("");
+  const [bulkApproving, setBulkApproving] = useState(false);
+
+  // Clear search and selection when period or batch changes
+  useEffect(() => {
+    setBulkSelectedIds([]);
+    setStudentSearchQuery("");
+  }, [reportPeriodId, reportBatchId]);
+
+  const searchedReportStudents = useMemo(() => {
+    const query = studentSearchQuery.toLowerCase().normalize("NFC").trim();
+    if (!query) return filteredReportStudents;
+    return filteredReportStudents.filter(s => 
+      s.fullName?.toLowerCase().normalize("NFC").includes(query) ||
+      s.studentCode?.toLowerCase().includes(query)
+    );
+  }, [filteredReportStudents, studentSearchQuery]);
+
+  const resolveStudentCampusAndManager = (student: any) => {
+    if (!student) return { campusName: "", managerName: "" };
+    let tc = campuses.find(c => 
+      c.campusName && c.campusName === student.admissionCampus
+    );
+    if (!tc && student.batchId) {
+      const b = reportBatches.find(bx => bx.id === student.batchId);
+      if (b?.campusId) {
+        tc = campuses.find(c => c.id === b.campusId);
+      }
+    }
+    
+    let campusName = tc?.campusName || "";
+    let managerName = tc?.manager?.fullName || "";
+    
+    const userRole = (currentUser?.role || "").toUpperCase();
+    const isGDCSUser = ["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole);
+    if (isGDCSUser && currentUser) {
+      managerName = currentUser.fullName || "";
+      const userCampus = campuses.find(c => currentUser.campusIds.includes(c.id));
+      if (userCampus) {
+        campusName = userCampus.campusName;
+      }
+    }
+    
+    return { campusName, managerName };
+  };
+
+  const handleBulkApprove = async () => {
+    if (bulkSelectedIds.length === 0) return;
+    
+    // Check if any selected student is locked
+    const lockedStudents = filteredReportStudents.filter(s => 
+      bulkSelectedIds.includes(s.id) && (s.batch?.status === "LOCKED" || s.batch?.status === "CLOSED")
+    );
+    if (lockedStudents.length > 0) {
+      const names = lockedStudents.map(s => s.fullName).join(", ");
+      alert(`Không thể duyệt hàng loạt vì các học sinh sau thuộc đợt khảo sát đã bị khóa: ${names}`);
+      return;
+    }
+
+    if (!confirm(`Bạn có chắc chắn muốn duyệt "Đạt" cho ${bulkSelectedIds.length} học sinh đã chọn?`)) {
+      return;
+    }
+    
+    setBulkApproving(true);
+    let successCount = 0;
+    let failCount = 0;
+    
+    try {
+      const updatePromises = bulkSelectedIds.map(async (id) => {
+        const student = filteredReportStudents.find(s => s.id === id);
+        if (!student) return;
+        
+        const { campusName, managerName } = resolveStudentCampusAndManager(student);
+        
+        try {
+          const r = await fetch("/api/input-assessment-students", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id: student.id,
+              data: {
+                ...student,
+                admissionResult: "Đạt",
+                admissionCampus: campusName,
+                signatureName: managerName
+              }
+            })
+          });
+          if (r.ok) {
+            successCount++;
+            setReportStudents(prev => prev.map(s => s.id === student.id ? { 
+              ...s, 
+              admissionResult: "Đạt",
+              admissionCampus: campusName,
+              signatureName: managerName
+            } : s));
+          } else {
+            failCount++;
+          }
+        } catch {
+          failCount++;
+        }
+      });
+      
+      await Promise.all(updatePromises);
+      
+      notify(`Đã duyệt "Đạt" thành công cho ${successCount} học sinh!${failCount > 0 ? ` (Thất bại: ${failCount})` : ""}`);
+      setBulkSelectedIds([]);
+    } catch (err) {
+      notify("Có lỗi xảy ra trong quá trình duyệt hàng loạt", "err");
+    } finally {
+      setBulkApproving(false);
+    }
+  };
 
   const modalDocList = useMemo(() => {
     if (typeof window === "undefined" || !selectedReportStudent) return [];
