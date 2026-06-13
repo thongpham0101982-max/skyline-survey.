@@ -131,13 +131,13 @@ export default async function StudentInfoPage() {
         // 14. generalPeriods
         pAny.inputAssessmentPeriod ? pAny.inputAssessmentPeriod.findMany({
           where: activeYearId ? { academicYearId: activeYearId } : {},
-          include: { batches: { select: { id: true, name: true } } },
+          include: { batches: { select: { id: true, name: true, status: true } } },
           orderBy: { name: 'asc' }
         }).catch(() => []) : Promise.resolve([]),
         // 15. preschoolPeriods
         pAny.preschoolInputAssessmentPeriod ? pAny.preschoolInputAssessmentPeriod.findMany({
           where: activeYearId ? { academicYearId: activeYearId } : {},
-          include: { batches: { select: { id: true, name: true } } },
+          include: { batches: { select: { id: true, name: true, status: true } } },
           orderBy: { name: 'asc' }
         }).catch(() => []) : Promise.resolve([])
       ]);
