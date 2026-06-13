@@ -35,6 +35,7 @@ interface Student {
   targetType?: string; hocKy?: string; kqgdTieuHoc?: string; kqHocTap?: string;
   kqRenLuyen?: string; admissionResult?: string; batchId?: string; periodId: string;
   hoSoCtQuocTe?: string; surveyFormType?: string; admissionCampus?: string;
+  registeredCampus?: string;
   }
 interface Assignment {
   id: string; periodId: string; batchId?: string; userId: string; 
@@ -991,24 +992,31 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
   const [toast, setToast] = useState<{msg:string;type:"ok"|"err"}|null>(null)
   const notify = (msg:string, type:"ok"|"err"="ok") => { setToast({msg,type}); setTimeout(()=>setToast(null),3200) }
   const handleDownloadTemplate = () => {
-    const ws = XLSX.utils.json_to_sheet([
-        { 
-          "Mã HS KS": "", 
-          "Họ và Tên *": "Nguyễn Văn A", 
-          "Ngày sinh": "20/05/2010",
-          "Giới tính": "Nam",
-          "Khối": "6",
-          "Học kỳ / Năm TS": "HK1",
-          "Hệ Khảo sát": "",
-          "Hồ sơ / Bảng điểm": "",
-          "Đối tượng Tuyển sinh": "",
-          "Diện khảo sát": "",
-          "Hình thức KS": "",
-          "Kết quả Học tập": "",
-          "Kết quả Rèn luyện": ""
-        }
-      ])
-    ws["!cols"] = [{ wch: 15 }, { wch: 25 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }]
+    const isOpenDay = selPeriod?.name?.toLowerCase().includes("open day");
+    const rowObj: any = { 
+      "Mã HS KS": "", 
+      "Họ và Tên *": "Nguyễn Văn A", 
+      "Ngày sinh": "20/05/2010",
+      "Giới tính": "Nam",
+      "Khối": "6",
+      "Học kỳ / Năm TS": "HK1",
+      "Hệ Khảo sát": "",
+      "Hồ sơ / Bảng điểm": "",
+      "Đối tượng Tuyển sinh": "",
+      "Diện khảo sát": "",
+      "Hình thức KS": "",
+      "Kết quả Học tập": "",
+      "Kết quả Rèn luyện": ""
+    };
+    if (isOpenDay) {
+      rowObj["Đăng ký CS"] = "";
+    }
+    const ws = XLSX.utils.json_to_sheet([rowObj])
+    const cols = [{ wch: 15 }, { wch: 25 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }];
+    if (isOpenDay) {
+      cols.push({ wch: 15 });
+    }
+    ws["!cols"] = cols;
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, "DS_HocSinh")
     XLSX.writeFile(wb, "Mau_Import_HS_KhaoSat.xlsx")
@@ -2674,7 +2682,7 @@ ${reportForm.directorNote}`;
       setReportStudentId("");
     }
   }, [filteredReportStudents, reportStudentId]);
-  const [sForm, setSForm] = useState({ studentCode:"", fullName:"", dateOfBirth:"", gender:"", grade:"", admissionCriteria:"", className:"", hocKy:"", kqgdTieuHoc:"", kqHocTap:"", kqRenLuyen:"", targetType:"", surveySystem:"", hoSoCtQuocTe:"", surveyFormType:"", batchId:"" })
+  const [sForm, setSForm] = useState({ studentCode:"", fullName:"", dateOfBirth:"", gender:"", grade:"", admissionCriteria:"", className:"", hocKy:"", kqgdTieuHoc:"", kqHocTap:"", kqRenLuyen:"", targetType:"", surveySystem:"", hoSoCtQuocTe:"", surveyFormType:"", batchId:"", registeredCampus:"" })
   const fileRef = useRef<HTMLInputElement>(null)
 
 
@@ -2933,16 +2941,16 @@ ${reportForm.directorNote}`;
       genCode = "HS" + nextNum.toString().padStart(3, "0");
     }
 
-    setSForm({ studentCode: genCode, fullName: "", dateOfBirth: "", grade: "", admissionCriteria: "", className: "", hocKy: "", kqgdTieuHoc: "", kqHocTap: "", kqRenLuyen: "", targetType: "", surveySystem: "", hoSoCtQuocTe: "", surveyFormType: "", gender: "", batchId: initialBatchId });
+    setSForm({ studentCode: genCode, fullName: "", dateOfBirth: "", grade: "", admissionCriteria: "", className: "", hocKy: "", kqgdTieuHoc: "", kqHocTap: "", kqRenLuyen: "", targetType: "", surveySystem: "", hoSoCtQuocTe: "", surveyFormType: "", gender: "", batchId: initialBatchId, registeredCampus: "" });
     setSModal(true);
   }
-  const openEditStudent = (s:Student) => { setEditS(s); setSForm({ studentCode:s.studentCode, fullName:s.fullName, dateOfBirth:s.dateOfBirth?.slice(0,10)||"", grade:s.grade||"", admissionCriteria:s.admissionCriteria||"", className:s.className||"", hocKy:s.hocKy||"", kqgdTieuHoc:s.kqgdTieuHoc||"", kqHocTap:s.kqHocTap||"", kqRenLuyen:s.kqRenLuyen||"", targetType:s.targetType||"", surveySystem:s.surveySystem||"", hoSoCtQuocTe:s.hoSoCtQuocTe||"", surveyFormType:s.surveyFormType||"" , gender:s.gender||"", batchId:s.batchId||"" }); setSModal(true) }
+  const openEditStudent = (s:Student) => { setEditS(s); setSForm({ studentCode:s.studentCode, fullName:s.fullName, dateOfBirth:s.dateOfBirth?.slice(0,10)||"", grade:s.grade||"", admissionCriteria:s.admissionCriteria||"", className:s.className||"", hocKy:s.hocKy||"", kqgdTieuHoc:s.kqgdTieuHoc||"", kqHocTap:s.kqHocTap||"", kqRenLuyen:s.kqRenLuyen||"", targetType:s.targetType||"", surveySystem:s.surveySystem||"", hoSoCtQuocTe:s.hoSoCtQuocTe||"", surveyFormType:s.surveyFormType||"" , gender:s.gender||"", batchId:s.batchId||"", registeredCampus:s.registeredCampus||"" }); setSModal(true) }
   const saveStudent = async () => {
     if (editS ? cannotUpdate : cannotCreate) return;
     if (!sForm.studentCode.trim()||!sForm.fullName.trim()) return notify("Cần nhập Mã HS và Họ tên","err")
     const r = editS
       ? await fetch("/api/input-assessment-students", { method:"PUT", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id:editS.id, data:sForm }) })
-      : await fetch("/api/input-assessment-students", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"CREATE", data:{...sForm, periodId:sPeriodId, batchId:sForm.batchId || sBatchId || null} }) })
+      : await fetch("/api/input-assessment-students", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"CREATE", data:{...sForm, periodId:sPeriodId, batchId:sForm.batchId || sBatchId || null, registeredCampus:sForm.registeredCampus || null} }) })
     if (r.ok) { setSModal(false); fetchStudents(); notify(editS?"Đã cập nhật học sinh":"Đã thêm học sinh") }
     else notify("Lỗi","err")
   }
@@ -3029,6 +3037,19 @@ ${reportForm.directorNote}`;
         const targetType = String(findVal(row, ["đối tượng", "doi tuong", "loại tuyển sinh", "loai tuyen sinh", "target type"]) || "").trim();
         const surveyFormType = String(findVal(row, ["hệ khảo sát", "he khao sat", "h? kh?o st"]) || "").trim();
           const hoSoCtQuocTe = String(findVal(row, ["hồ sơ / bảng điểm", "hồ sơ", "ho so"]) || "").trim();
+          const registeredCampusRaw = String(row["Đăng ký CS"] || row["Cơ sở đăng ký"] || findVal(row, ["đăng ký cs", "co so dang ky", "cs dang ky"]) || "").trim();
+          let registeredCampus = null;
+          if (registeredCampusRaw) {
+            const matchedCampus = campuses.find(c => 
+              c.campusCode?.toUpperCase() === registeredCampusRaw.toUpperCase() || 
+              c.campusName?.toUpperCase() === registeredCampusRaw.toUpperCase() || 
+              registeredCampusRaw.toUpperCase().includes(c.campusCode?.toUpperCase()) || 
+              registeredCampusRaw.toUpperCase().includes(c.campusName?.toUpperCase())
+            );
+            if (matchedCampus) {
+              registeredCampus = matchedCampus.id;
+            }
+          }
           const kqHocTap = String(findVal(row, ["kết quả học tập", "kq hoc tap", "k?t qu? h?c t?p"]) || "").trim();
           const kqRenLuyen = String(findVal(row, ["kết quả rèn luyện", "kq ren luyen", "k?t qu? r?n luy?n"]) || "").trim();
 
@@ -3047,7 +3068,8 @@ return {
             kqHocTap,
             kqRenLuyen,
             periodId: sPeriodId,
-          batchId: sBatchId || null
+          batchId: sBatchId || null,
+          registeredCampus: registeredCampus || null
         };
 
       }).filter((r:any) => r.fullName)
@@ -3890,6 +3912,12 @@ return {
                           <th className="px-4 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center">Hồ sơ / Bảng điểm</th>
                           <th className="px-4 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center">Học kỳ / Năm TS</th>
                           <th className="px-4 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center">Đối tượng TS</th>
+                           {selPeriod?.name?.toLowerCase().includes("open day") && (
+                             <>
+                               <th className="px-4 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center">Đăng ký CS</th>
+                               <th className="px-4 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center">Ủy quyền xét duyệt</th>
+                             </>
+                           )}
                           <th className="px-4 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center">Thao tác</th>
                        </tr>
                     </thead>
@@ -3916,6 +3944,16 @@ return {
                            <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.hoSoCtQuocTe || "-"}</td>
                            <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.hocKy || "-"}</td>
                            <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.targetType || "-"}</td>
+                           {selPeriod?.name?.toLowerCase().includes("open day") && (
+                             <>
+                               <td className="px-4 py-3.5 text-center text-xs text-slate-600">
+                                 {campuses.find(c => c.id === s.registeredCampus)?.campusName || s.registeredCampus || "-"}
+                               </td>
+                               <td className="px-4 py-3.5 text-center text-xs text-slate-600 font-bold">
+                                 {campuses.find(c => c.id === s.registeredCampus)?.manager?.fullName || "-"}
+                               </td>
+                             </>
+                           )}
                            
                            <td className="px-4 py-3.5 text-center sticky right-0 bg-white group-hover:bg-slate-50 transition-colors shadow-[-10px_0_15px_-10px_rgba(0,0,0,0.05)] border-l border-slate-100">
                               <div className="flex items-center justify-center gap-1.5">
@@ -3958,9 +3996,25 @@ return {
                           <span className="font-semibold text-slate-700">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString('vi-VN') : "-"}</span>
                         </div>
                         <div>
-                          <span className="text-slate-400 block mb-0.5 text-[10px] uppercase font-bold">Hệ KS</span>
-                          <span className="font-semibold text-[#00A19A]">{s.surveyFormType || "-"}</span>
-                        </div>
+                           <span className="text-slate-400 block mb-0.5 text-[10px] uppercase font-bold">Hệ KS</span>
+                           <span className="font-semibold text-[#00A19A]">{s.surveyFormType || "-"}</span>
+                         </div>
+                         {selPeriod?.name?.toLowerCase().includes("open day") && (
+                           <>
+                             <div>
+                               <span className="text-slate-400 block mb-0.5 text-[10px] uppercase font-bold">Đăng ký CS</span>
+                               <span className="font-semibold text-slate-700">
+                                 {campuses.find(c => c.id === s.registeredCampus)?.campusName || s.registeredCampus || "-"}
+                               </span>
+                             </div>
+                             <div>
+                               <span className="text-slate-400 block mb-0.5 text-[10px] uppercase font-bold">Ủy quyền xét duyệt</span>
+                               <span className="font-semibold text-slate-700">
+                                 {campuses.find(c => c.id === s.registeredCampus)?.manager?.fullName || "-"}
+                               </span>
+                             </div>
+                           </>
+                         )}
                       </div>
                     </div>
                   ))}
@@ -6220,12 +6274,31 @@ return {
                  </select>
                </Field>
                <Field label="Đợt khảo sát">
-                 <select value={sForm.batchId} onChange={e=>setSForm(f=>({...f,batchId:e.target.value}))} className={inp}>
-                   <option value="">-- Không có / Mặc định --</option>
-                   {selPeriod?.batches?.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
-                 </select>
-               </Field>
-            </div>
+                  <select value={sForm.batchId} onChange={e=>setSForm(f=>({...f,batchId:e.target.value}))} className={inp}>
+                    <option value="">-- Không có / Mặc định --</option>
+                    {selPeriod?.batches?.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
+                  </select>
+                </Field>
+             </div>
+
+             {selPeriod?.name?.toLowerCase().includes("open day") && (
+               <div className="grid grid-cols-2 gap-4">
+                 <Field label="Đăng ký CS" required>
+                   <select
+                     required
+                     value={sForm.registeredCampus}
+                     onChange={(e) => setSForm(f => ({ ...f, registeredCampus: e.target.value }))}
+                     className={inp}
+                   >
+                     <option value="">-- Chọn cơ sở đăng ký --</option>
+                     {campuses.map(c => (
+                       <option key={c.id} value={c.id}>{c.campusName}</option>
+                     ))}
+                   </select>
+                 </Field>
+                 <div />
+               </div>
+             )}
 
            <div className="space-y-4">
              <Field label="Đối tượng Tuyển sinh">
