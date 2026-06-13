@@ -78,6 +78,7 @@ export default async function StudentInfoPage() {
         // 3. campuses
         pAny.campus ? pAny.campus.findMany({
           where: isGDCS ? { id: { in: allowedCampusIds } } : { status: "ACTIVE" },
+          include: { manager: true },
           orderBy: { campusName: "asc" }
         }).catch(() => []) : Promise.resolve([]),
         // 4. giaoVuCSUsers

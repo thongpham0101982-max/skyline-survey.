@@ -157,7 +157,8 @@ export function StudentInfoClient({
     devProfessionalComment: "",
     devPsychologyComment: "",
     devImportantNote: "",
-    devAssessmentResult: ""
+    devAssessmentResult: "",
+    registeredCampus: ""
   });
 
   // Import excel modal states
@@ -456,7 +457,8 @@ export function StudentInfoClient({
       devProfessionalComment: "",
       devPsychologyComment: "",
       devImportantNote: "",
-      devAssessmentResult: ""
+      devAssessmentResult: "",
+      registeredCampus: ""
     });
     setIsFormOpen(true);
   };
@@ -500,7 +502,8 @@ export function StudentInfoClient({
       devProfessionalComment: student.devProfessionalComment || "",
       devPsychologyComment: student.devPsychologyComment || "",
       devImportantNote: student.devImportantNote || "",
-      devAssessmentResult: student.devAssessmentResult || ""
+      devAssessmentResult: student.devAssessmentResult || "",
+      registeredCampus: student.registeredCampus || ""
     });
     setIsFormOpen(true);
   };
@@ -665,6 +668,10 @@ export function StudentInfoClient({
           "Học bạ": s.kqgdTieuHoc || "",
           "Học kỳ / Năm TS": s.hocKy || "",
           "Đối tượng TS": s.targetType || "",
+          ...(selectedPeriod?.toLowerCase().includes("open day") && {
+            "Đăng ký CS": campuses.find(c => c.id === s.registeredCampus)?.campusName || s.registeredCampus || "",
+            "Ủy quyền xét duyệt": campuses.find(c => c.id === s.registeredCampus)?.manager?.fullName || ""
+          }),
           "Kết quả duyệt": s.admissionResult || "Chưa duyệt",
         };
       } else {
@@ -797,6 +804,19 @@ export function StudentInfoClient({
           const surveyFormType = String(row["Hệ KS"] || row["Hệ Khảo sát"] || findVal(row, ["hệ khảo sát", "he khao sat"]) || "").trim();
           const hoSoCtQuocTe = String(row["Học bạ"] || row["Hồ sơ/Bảng điểm"] || row["Hồ sơ / Bảng điểm"] || findVal(row, ["hồ sơ", "bảng điểm"]) || "").trim();
           const kqgdTieuHoc = String(row["Học bạ"] || findVal(row, ["học bạ", "hoc ba"]) || "").trim();
+          const registeredCampusRaw = String(row["Đăng ký CS"] || row["Cơ sở đăng ký"] || findVal(row, ["đăng ký cs", "co so dang ky", "cs dang ky"]) || "").trim();
+          let registeredCampus = null;
+          if (registeredCampusRaw) {
+            const matchedCampus = campuses.find(c => 
+              c.campusCode?.toUpperCase() === registeredCampusRaw.toUpperCase() || 
+              c.campusName?.toUpperCase() === registeredCampusRaw.toUpperCase() || 
+              registeredCampusRaw.toUpperCase().includes(c.campusCode?.toUpperCase()) || 
+              registeredCampusRaw.toUpperCase().includes(c.campusName?.toUpperCase())
+            );
+            if (matchedCampus) {
+              registeredCampus = matchedCampus.id;
+            }
+          }
           const targetType = String(row["Đối tượng TS"] || row["Đối tượng Tuyển sinh"] || findVal(row, ["đối tượng", "doi tuong"]) || "").trim();
           const admissionCriteria = String(row["Diện Khảo sát"] || row["Diện khảo sát"] || findVal(row, ["diện", "criteria"]) || "").trim();
           const surveySystem = String(row["Hình thức KS"] || findVal(row, ["hình thức", "hinh thuc"]) || "").trim();
@@ -819,7 +839,8 @@ export function StudentInfoClient({
             kqHocTap,
             kqRenLuyen,
             periodId: importPeriodId,
-            batchId: importBatchId || null
+            batchId: importBatchId || null,
+            registeredCampus: registeredCampus || null
           };
         } else {
           const studentCode = String(row["Mã bé"] || findVal(row, ["mã bé", "mã"]) || "").trim();
@@ -1246,6 +1267,12 @@ export function StudentInfoClient({
                       <th className="px-4 py-4 text-center text-[10px] font-black text-[#00A19A] uppercase tracking-widest w-48">Đăng ký Khảo sát lại</th>
                     </>
                   )}
+                  {selectedPeriod?.toLowerCase().includes("open day") && (
+                    <>
+                      <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-24">Đăng ký CS</th>
+                      <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-32">Ủy quyền xét duyệt</th>
+                    </>
+                  )}
                   {subTab === "result" && (
                     <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Kết quả duyệt</th>
                   )}
@@ -1255,7 +1282,7 @@ export function StudentInfoClient({
               <tbody className="divide-y divide-slate-100 text-slate-700">
                 {paginatedStudents.length === 0 ? (
                   <tr>
-                    <td colSpan={subTab === "info" ? 14 : 9} className="px-6 py-12 text-center text-slate-400 font-medium">
+                    <td colSpan={selectedPeriod?.toLowerCase().includes("open day") ? (subTab === "info" ? 16 : 11) : (subTab === "info" ? 14 : 9)} className="px-6 py-12 text-center text-slate-400 font-medium">
                       Không tìm thấy dữ liệu học sinh phù hợp.
                     </td>
                   </tr>
@@ -1330,6 +1357,16 @@ export function StudentInfoClient({
                               <RefreshCw className="w-3.5 h-3.5" />
                               Đăng ký thi lại
                             </button>
+                          </td>
+                        </>
+                      )}
+                      {selectedPeriod?.toLowerCase().includes("open day") && (
+                        <>
+                          <td className="px-4 py-3.5 text-center text-xs text-slate-650">
+                            {campuses.find(c => c.id === s.registeredCampus)?.campusName || s.registeredCampus || "-"}
+                          </td>
+                          <td className="px-4 py-3.5 text-center text-xs text-slate-650 font-bold">
+                            {campuses.find(c => c.id === s.registeredCampus)?.manager?.fullName || "-"}
                           </td>
                         </>
                       )}
@@ -1747,6 +1784,23 @@ export function StudentInfoClient({
                       </select>
                     </div>
                   </div>
+
+                  {activePeriodsList.find(p => p.id === formState.periodId)?.name?.toLowerCase().includes("open day") && (
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Đăng ký CS *</label>
+                      <select
+                        required
+                        value={formState.registeredCampus}
+                        onChange={(e) => setFormState({ ...formState, registeredCampus: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer"
+                      >
+                        <option value="">-- Chọn cơ sở đăng ký --</option>
+                        {campuses.map(c => (
+                          <option key={c.id} value={c.id}>{c.campusName}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>

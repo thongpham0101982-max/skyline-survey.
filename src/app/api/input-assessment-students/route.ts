@@ -91,6 +91,7 @@ export async function POST(req) {
            literatureScore: data.literatureScore ? parseFloat(data.literatureScore) : null,
            periodId: data.periodId,
            batchId: data.batchId || null,
+           registeredCampus: data.registeredCampus || null,
         }
       });
       return NextResponse.json(result);
@@ -152,6 +153,7 @@ export async function POST(req) {
             mathScore: d.mathScore ? parseFloat(d.mathScore) : null,
             literatureScore: d.literatureScore ? parseFloat(d.literatureScore) : null,
             batchId: d.batchId || null,
+            registeredCampus: d.registeredCampus || null,
           };
 
           let result;
@@ -473,6 +475,7 @@ export async function PUT(req) {
          mathScore: data.mathScore ? parseFloat(data.mathScore) : null,
          literatureScore: data.literatureScore ? parseFloat(data.literatureScore) : null,
          batchId: data.batchId || null,
+         registeredCampus: data.registeredCampus || null,
          ...(data.admissionResult !== undefined && { admissionResult: data.admissionResult }),
          ...(data.directorNote !== undefined && { directorNote: data.directorNote }),
          ...(data.admissionCampus !== undefined && { admissionCampus: data.admissionCampus }),

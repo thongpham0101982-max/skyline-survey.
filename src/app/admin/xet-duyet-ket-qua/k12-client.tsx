@@ -946,6 +946,12 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
     if (["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole)) {
       const allowedIds = currentUser.campusIds || [];
       return basePeriods.map(p => {
+        // Bypass batch filtering if period name is Open Day
+        const isOpenDay = p.name?.toLowerCase().includes("open day");
+        if (isOpenDay) {
+          return p;
+        }
+
         const allowedBatches = (p.batches || []).filter(b => {
           if (!b.campusId) {
             // Smart Fallback: Check if batch name contains any allowed campus code/name
@@ -1042,6 +1048,13 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
 
   const resolvedStudentCampusObj = useMemo(() => {
     if (!selectedReportStudent) return null;
+    
+    const isOpenDay = reportSelPeriod?.name?.toLowerCase().includes("open day");
+    if (isOpenDay && selectedReportStudent.registeredCampus) {
+      const tc = campuses.find(c => c.id === selectedReportStudent.registeredCampus);
+      if (tc) return tc;
+    }
+
     let tc = campuses.find(c => 
       c.campusName && (c.campusName === reportForm.admissionCampus || c.campusName === selectedReportStudent.admissionCampus)
     );
@@ -2037,6 +2050,14 @@ ${reportForm.directorNote}`;
       // Resolve GDCS email
       let csCode = resolvedStudentCampusObj?.campusCode;
       
+      const isOpenDay = reportSelPeriod?.name?.toLowerCase().includes("open day");
+      if (isOpenDay && selectedReportStudent.registeredCampus) {
+        const matchingCampus = campuses.find(c => c.id === selectedReportStudent.registeredCampus);
+        if (matchingCampus) {
+          csCode = matchingCampus.campusCode;
+        }
+      }
+      
       // If we don't have campusCode, try to match from campusName or admissionCampus
       if (!csCode) {
         const campusName = selectedReportStudent.admissionCampus || reportForm.admissionCampus || "";
@@ -2202,8 +2223,24 @@ ${reportForm.directorNote}`;
 
   const filteredReportStudents = useMemo(() => {
     if (!Array.isArray(reportStudents)) return [];
-    return reportStudents.filter(s => reportBatchId === "all" || s.batchId === reportBatchId || s.batchId === null || s.batchId === "");
-  }, [reportStudents, reportBatchId]);
+    
+    // Check if period is Open Day
+    const isOpenDay = reportSelPeriod?.name?.toLowerCase().includes("open day");
+    const userRole = (currentUser?.role || "").toUpperCase();
+    const isGDCS = ["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole);
+    
+    return reportStudents.filter(s => {
+      const matchesBatch = reportBatchId === "all" || s.batchId === reportBatchId || s.batchId === null || s.batchId === "";
+      if (!matchesBatch) return false;
+      
+      if (isOpenDay && isGDCS) {
+        const allowedIds = currentUser?.campusIds || [];
+        return s.registeredCampus && allowedIds.includes(s.registeredCampus);
+      }
+      
+      return true;
+    });
+  }, [reportStudents, reportBatchId, reportSelPeriod, currentUser]);
 
   const modalDocList = useMemo(() => {
     if (typeof window === "undefined" || !selectedReportStudent) return [];
@@ -2648,6 +2685,13 @@ ${reportForm.directorNote}`;
 
     if (userRole === "ADMIN" || userRole === "KT_DBCL") return true;
     if (["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole)) {
+      const isOpenDay = reportSelPeriod?.name?.toLowerCase().includes("open day");
+      if (isOpenDay) {
+        const studentCampusId = selectedReportStudent?.registeredCampus;
+        if (!studentCampusId) return true; // Default to allow if no registeredCampus is selected
+        return currentUser.campusIds.includes(studentCampusId);
+      }
+
       const periodCampusId = reportSelPeriod?.campusId;
       const activeBatch = reportBatches.find(b => b.id === reportBatchId);
       const batchCampusId = activeBatch?.campusId;
@@ -3879,6 +3923,12 @@ return {
                           <th className="px-4 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center">Hồ sơ / Bảng điểm</th>
                           <th className="px-4 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center">Học kỳ / Năm TS</th>
                           <th className="px-4 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center">Đối tượng TS</th>
+                           {selPeriod?.name?.toLowerCase().includes("open day") && (
+                             <>
+                               <th className="px-4 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center">Đăng ký CS</th>
+                               <th className="px-4 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center">Ủy quyền xét duyệt</th>
+                             </>
+                           )}
                           <th className="px-4 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center">Thao tác</th>
                        </tr>
                     </thead>
@@ -3905,6 +3955,16 @@ return {
                            <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.hoSoCtQuocTe || "-"}</td>
                            <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.hocKy || "-"}</td>
                            <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.targetType || "-"}</td>
+                           {selPeriod?.name?.toLowerCase().includes("open day") && (
+                             <>
+                               <td className="px-4 py-3.5 text-center text-xs text-slate-650">
+                                 {campuses.find(c => c.id === s.registeredCampus)?.campusName || s.registeredCampus || "-"}
+                               </td>
+                               <td className="px-4 py-3.5 text-center text-xs text-slate-650 font-bold">
+                                 {campuses.find(c => c.id === s.registeredCampus)?.manager?.fullName || "-"}
+                               </td>
+                             </>
+                           )}
                            
                            <td className="px-4 py-3.5 text-center sticky right-0 bg-white group-hover:bg-slate-50 transition-colors shadow-[-10px_0_15px_-10px_rgba(0,0,0,0.05)] border-l border-slate-100">
                               <div className="flex items-center justify-center gap-1.5">
@@ -5118,6 +5178,22 @@ return {
                       <span className="text-slate-400 font-black uppercase text-[9px] tracking-widest mb-0.5">Ngày sinh</span>
                       <span className="font-bold text-slate-800 text-[13px]">{selectedReportStudent.dateOfBirth ? new Date(selectedReportStudent.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</span>
                     </div>
+                    {reportSelPeriod?.name?.toLowerCase().includes("open day") && (
+                      <>
+                        <div className="flex flex-col">
+                          <span className="text-slate-400 font-black uppercase text-[9px] tracking-widest mb-0.5">Đăng ký CS</span>
+                          <span className="font-bold text-slate-850 text-[13px]">
+                            {campuses.find(c => c.id === selectedReportStudent.registeredCampus)?.campusName || selectedReportStudent.registeredCampus || "—"}
+                          </span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-slate-400 font-black uppercase text-[9px] tracking-widest mb-0.5">Ủy quyền xét duyệt</span>
+                          <span className="font-bold text-slate-850 text-[13px]">
+                            {campuses.find(c => c.id === selectedReportStudent.registeredCampus)?.manager?.fullName || "—"}
+                          </span>
+                        </div>
+                      </>
+                    )}
                     <div className="flex flex-col">
                       <span className="text-slate-400 font-black uppercase text-[9px] tracking-widest mb-0.5">Giới tính</span>
                       <span className="font-bold text-slate-800 text-[13px]">{selectedReportStudent.gender === "M" || selectedReportStudent.gender === "Nam" ? "Nam" : selectedReportStudent.gender === "F" || selectedReportStudent.gender === "Nữ" ? "Nữ" : selectedReportStudent.gender || "—"}</span>
