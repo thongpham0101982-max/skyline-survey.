@@ -147,8 +147,11 @@ export async function POST(req: Request) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Yêu cầu xét duyệt Đợt khảo sát</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-body{margin:0;padding:0;background:#f1f5f9;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;}
+body{margin:0;padding:0;background:#f1f5f9;font-family:'Be Vietnam Pro', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;}
 *{box-sizing:border-box;}
 </style>
 </head>
@@ -256,14 +259,33 @@ body{margin:0;padding:0;background:#f1f5f9;font-family:'Segoe UI',Roboto,Helveti
       </div>
     </div>
 
-    <!-- ACTION BUTTON -->
+    <!-- ACTION BUTTON & INSTRUCTION -->
     <div style="padding: 10px 32px 30px 32px; text-align: center;">
       <p style="margin: 0 0 15px 0; font-size: 13px; color: #64748b; font-style: italic;">
         Vui lòng truy cập cổng thông tin quản lý để thực hiện phê duyệt chính thức kết quả khảo sát cho đợt tuyển sinh này.
       </p>
-      <a href="${baseUrl}/admin/xet-duyet-ket-qua" style="display: inline-block; padding: 12px 28px; border-radius: 12px; font-size: 14px; font-weight: bold; color: #ffffff; background-color: #00A6A9; text-decoration: none; border: 1px solid #007A87; box-shadow: 0 4px 6px -1px rgba(0, 166, 169, 0.2);">
+      <a href="${baseUrl}/admin/xet-duyet-ket-qua" style="display: inline-block; padding: 12px 28px; border-radius: 12px; font-size: 14px; font-weight: bold; color: #ffffff; background-color: #00A6A9; text-decoration: none; border: 1px solid #007A87; box-shadow: 0 4px 6px -1px rgba(0, 166, 169, 0.2); margin-bottom: 25px;">
         Phê Duyệt Kết Quả Khảo Sát
       </a>
+
+      <!-- Premium Login Instruction Box -->
+      <div style="background: #f0fdfa; border: 1px dashed #0d9488; border-radius: 12px; padding: 16px 20px; text-align: left; max-width: 600px; margin: 0 auto;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <td style="vertical-align: top; width: 32px; padding-top: 2px;">
+              <span style="display: inline-block; background: #0d9488; color: #fff; width: 22px; height: 22px; line-height: 22px; border-radius: 50%; text-align: center; font-size: 12px; font-weight: bold;">i</span>
+            </td>
+            <td style="vertical-align: top;">
+              <div style="font-size: 13px; font-weight: 700; color: #0f766e; margin-bottom: 6px;">Hướng dẫn đăng nhập hệ thống:</div>
+              <div style="font-size: 12px; color: #374151; line-height: 1.6;">
+                • Để đăng nhập Hệ thống vui lòng đăng nhập <strong>mã số SKL</strong> của Thầy/Cô.<br>
+                • <strong>Pass:</strong> Trùng với <strong>mã số SKL</strong> của Thầy/Cô.<br>
+                <span style="color: #b91c1c; font-weight: 600; display: block; margin-top: 4px;">* Vui lòng đổi Mật khẩu ngay sau khi đăng nhập để bảo mật thông tin.</span>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </div>
     </div>
 
     <!-- FOOTER -->
