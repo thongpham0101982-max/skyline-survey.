@@ -1071,6 +1071,7 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
 
   // Email States
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [sendingBatchEmail, setSendingBatchEmail] = useState(false);
   const [recipientEmail, setRecipientEmail] = useState("");
   const [emailSubject, setEmailSubject] = useState("");
   const [emailStudents, setEmailStudents] = useState<any[]>([]);
@@ -1810,6 +1811,62 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
       });
     }
   };;;
+
+  const handleSendBatchApprovalEmail = async () => {
+    const activeBatch = reportBatches.find(b => b.id === reportBatchId);
+    if (!activeBatch) return;
+
+    // Resolve GDCS email using the same campus lookup logic
+    const periodCampusId = reportSelPeriod?.campusId;
+    const batchCampusId = activeBatch?.campusId;
+    let targetCampusId = batchCampusId || periodCampusId;
+    
+    if (!targetCampusId) {
+      const fullNameStr = `${activeBatch?.name || ""} ${reportSelPeriod?.name || ""}`;
+      const matchedCampus = campuses.find(c => 
+        fullNameStr.includes(c.campusCode) || 
+        fullNameStr.includes(c.campusName) ||
+        (c.campusCode === "CS3" && fullNameStr.includes("CS3")) ||
+        (c.campusCode === "CS1" && fullNameStr.includes("CS1")) ||
+        (c.campusCode === "CS2" && fullNameStr.includes("CS2"))
+      );
+      if (matchedCampus) {
+        targetCampusId = matchedCampus.id;
+      }
+    }
+
+    const campusObj = campuses.find(c => c.id === targetCampusId);
+    const campusName = campusObj?.campusName || activeBatch?.name?.split("|")[1]?.trim() || "Cơ sở";
+    const gdcsEmail = (campusObj?.campusCode && EMAIL_MAP.gdcs[campusObj.campusCode as keyof typeof EMAIL_MAP.gdcs]) 
+      || EMAIL_MAP.gdcs.CS1;
+
+    const confirmSend = confirm(`Gửi email thông báo cho GĐCS cơ sở ${campusName} để xét duyệt Đợt khảo sát "${activeBatch.name}"?\nEmail nhận: ${gdcsEmail}`);
+    if (!confirmSend) return;
+
+    setSendingBatchEmail(true);
+    try {
+      const res = await fetch("/api/admin/send-batch-approval-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          periodId: reportPeriodId,
+          batchId: reportBatchId,
+          gdcsEmail: gdcsEmail,
+          isPreschool: false
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        alert(`Đã gửi email thông báo xét duyệt Đợt khảo sát thành công đến GĐCS: ${gdcsEmail}!`);
+      } else {
+        alert("Có lỗi xảy ra: " + (data.error || "Không rõ nguyên nhân"));
+      }
+    } catch (err) {
+      alert("Lỗi kết nối: " + err.message);
+    } finally {
+      setSendingBatchEmail(false);
+    }
+  };
 
   const handleSendQuickEmailSubmit = async () => {
     if (!recipientEmail.trim()) {
@@ -4867,6 +4924,18 @@ return {
                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-indigo-500 transition-colors">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
                 </div>
+                {reportBatchId !== "all" && (
+                  <div className="mt-2.5 flex items-center justify-between animate-in fade-in duration-200">
+                    <button
+                      onClick={handleSendBatchApprovalEmail}
+                      disabled={sendingBatchEmail}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-black text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-all border border-indigo-200/50 shadow-sm disabled:opacity-50"
+                    >
+                      {sendingBatchEmail ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
+                      Thông báo GĐCS xét duyệt đợt
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 

@@ -393,6 +393,62 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
     setCheckedEmails(parsedChecked);
   };
 
+  const handleSendBatchApprovalEmail = async () => {
+    const activeBatch = periods.flatMap(p => p.batches || []).find(b => b.id === rptBatchId);
+    if (!activeBatch) return;
+
+    // Resolve GDCS email using campus lookup logic
+    const periodCampusId = periods.find(p => p.id === rptPeriodId)?.campusId;
+    const batchCampusId = activeBatch?.campusId;
+    let targetCampusId = batchCampusId || periodCampusId;
+    
+    if (!targetCampusId) {
+      const fullNameStr = `${activeBatch?.name || ""} ${periods.find(p => p.id === rptPeriodId)?.name || ""}`;
+      const matchedCampus = campuses.find(c => 
+        fullNameStr.includes(c.campusCode || "") || 
+        fullNameStr.includes(c.campusName || "") ||
+        (c.campusCode === "CS3" && fullNameStr.includes("CS3")) ||
+        (c.campusCode === "CS1" && fullNameStr.includes("CS1")) ||
+        (c.campusCode === "CS2" && fullNameStr.includes("CS2"))
+      );
+      if (matchedCampus) {
+        targetCampusId = matchedCampus.id;
+      }
+    }
+
+    const campusObj = campuses.find(c => c.id === targetCampusId);
+    const campusName = campusObj?.campusName || activeBatch?.name?.split("|")[1]?.trim() || "Cơ sở";
+    const gdcsEmail = (campusObj?.campusCode && EMAIL_MAP.gdcs[campusObj.campusCode as keyof typeof EMAIL_MAP.gdcs]) 
+      || EMAIL_MAP.gdcs.CS1;
+
+    const confirmSend = confirm(`Gửi email thông báo cho GĐCS cơ sở ${campusName} để xét duyệt Đợt khảo sát mầm non "${activeBatch.name}"?\nEmail nhận: ${gdcsEmail}`);
+    if (!confirmSend) return;
+
+    setSendingBatchEmail(true);
+    try {
+      const res = await fetch("/api/admin/send-batch-approval-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          periodId: rptPeriodId,
+          batchId: rptBatchId,
+          gdcsEmail: gdcsEmail,
+          isPreschool: true
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        alert(`Đã gửi email thông báo xét duyệt Đợt khảo sát mầm non thành công đến GĐCS: ${gdcsEmail}!`);
+      } else {
+        alert("Có lỗi xảy ra: " + (data.error || "Không rõ nguyên nhân"));
+      }
+    } catch (err) {
+      alert("Lỗi kết nối: " + err.message);
+    } finally {
+      setSendingBatchEmail(false);
+    }
+  };
+
   const handleOpenEmailModal = () => {
     const targetStudents = studentSummaries.filter(s => {
       const result = (s.admissionResult || "").toUpperCase();
@@ -1254,6 +1310,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
   // Reports
   const [rptPeriodId, setRptPeriodId] = useState("");
   const [rptBatchId, setRptBatchId] = useState("all");
+  const [sendingBatchEmail, setSendingBatchEmail] = useState(false);
 
   // Report Config (Cấu hình báo cáo theo cơ sở)
   const [rcCampusId, setRcCampusId] = useState("");
@@ -4308,6 +4365,16 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 {periods.find(p => p.id === rptPeriodId)?.batches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
               </select>
             </div>
+            {rptBatchId !== "all" && (
+              <button
+                onClick={handleSendBatchApprovalEmail}
+                disabled={sendingBatchEmail}
+                className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-[#00A19A] bg-[#00A19A]/5 hover:bg-teal-100 rounded-none border border-slate-300 transition-all disabled:opacity-50 cursor-pointer"
+              >
+                {sendingBatchEmail ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
+                Thông báo GĐCS xét duyệt đợt
+              </button>
+            )}
             <button onClick={() => { setCPeriodId(rptPeriodId); fetchChildren(); }} className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-[#00A19A] bg-[#00A19A]/5 hover:bg-teal-100 rounded-none border border-slate-300"><RefreshCw className="w-4 h-4" /> Cập nhật</button>
           </div>
 
