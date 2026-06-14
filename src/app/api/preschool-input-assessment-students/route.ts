@@ -848,10 +848,20 @@ export async function POST(req) {
 
       // If no specific campus assignments found, fallback to system admins and BGH users
       if (resolvedUsers.length === 0) {
-        const allUsers = await (prisma as any).user.findMany();
+        const targetRoles = ["ADMIN", "KT_DBCL", "BGH MN", "BGH_MN"];
+        const searchRoles = [
+          ...targetRoles,
+          ...targetRoles.map(r => r.toLowerCase()),
+          "Admin", "Kt_Dbcl", "Bgh Mn", "Bgh_Mn"
+        ];
+        const allUsers = await (prisma as any).user.findMany({
+          where: {
+            role: { in: searchRoles }
+          }
+        });
         resolvedUsers = allUsers.filter((u: any) => {
           const role = (u.role || "").toUpperCase();
-          return ["ADMIN", "KT_DBCL", "BGH MN", "BGH_MN"].includes(role);
+          return targetRoles.includes(role);
         });
       }
 
@@ -1103,8 +1113,31 @@ export async function POST(req) {
       }
 
       // Add fallback system users
-      const allUsers = await (prisma as any).user.findMany();
+      const targetRoles = [
+        "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAM_DOC_CS",
+        "KT_DBCL", "BGH MN", "BGH_MN", "BGH", "BAN_GIAM_HIEU",
+        "GIAO_VU", "GIAO_VU_CS", "GVCS",
+        "TU_VAN", "TU_VAN_CS", "TVCS", "TU_VAN_TS"
+      ];
+      const searchRoles = [
+        ...targetRoles,
+        ...targetRoles.map(r => r.toLowerCase()),
+        "Gdcs", "Gđcs", "Gd_cs", "Gđ_cs", "Giam_doc_cs",
+        "Kt_dbcl", "Bgh mn", "Bgh_mn", "Bgh", "Ban_giam_hieu",
+        "Giao_vu", "Giao_vu_cs", "Gvcs",
+        "Tu_van", "Tu_van_cs", "Tvcs", "Tu_van_ts"
+      ];
+
+      const allUsers = await (prisma as any).user.findMany({
+        where: {
+          role: { in: searchRoles }
+        }
+      });
+      const userIds = allUsers.map((u: any) => u.id);
       const allAssignments = await (prisma as any).userCampusAssignment.findMany({
+        where: {
+          userId: { in: userIds }
+        },
         include: { campus: true }
       });
 

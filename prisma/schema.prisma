@@ -503,6 +503,9 @@ model WeeklyReport {
   academicYear   AcademicYear?      @relation(fields: [academicYearId], references: [id])
   user           User               @relation(fields: [userId], references: [id])
   items          WeeklyReportItem[]
+
+  @@index([userId])
+  @@index([academicYearId])
 }
 
 model WeeklyReportItem {
@@ -515,6 +518,8 @@ model WeeklyReportItem {
   managerNote      String?
   createdAt        DateTime     @default(now())
   report           WeeklyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([reportId])
 }
 
 model InputAssessmentStudent {
@@ -610,6 +615,7 @@ model EducationSystem {
   academicYear   AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
 
   @@unique([code, academicYearId])
+  @@index([academicYearId])
 }
 
 model GradeSubjectMapping {
@@ -621,6 +627,7 @@ model GradeSubjectMapping {
   subject         AssessmentSubject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
 
   @@unique([grade, educationSystem, subjectId])
+  @@index([subjectId])
 }
 
 model AssessmentConfig {
@@ -655,6 +662,8 @@ model InputAssessmentTeacherAssignment {
 
   @@unique([periodId, batchId, userId, subjectId, grade, educationSystem])
   @@index([userId])
+  @@index([batchId])
+  @@index([subjectId])
 }
 
 model Department {
@@ -682,6 +691,7 @@ model StudentAssessmentScore {
   student     InputAssessmentStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@unique([studentId, subjectId])
+  @@index([subjectId])
 }
 
 model UserCampusAssignment {
@@ -720,6 +730,9 @@ model StudentTransfer {
 
   createdById String?
   createdBy   User?   @relation(fields: [createdById], references: [id])
+
+  @@index([studentId])
+  @@index([createdById])
 }
 
 model PreschoolInputAssessmentPeriod {
@@ -869,6 +882,7 @@ model PreschoolDevScore {
   criteria   PreschoolDevCriteria @relation(fields: [criteriaId], references: [id], onDelete: Cascade)
 
   @@unique([studentId, criteriaId])
+  @@index([criteriaId])
 }
 
 model PreschoolInputAssessmentTeacherAssignment {
@@ -884,6 +898,7 @@ model PreschoolInputAssessmentTeacherAssignment {
 
   @@unique([periodId, batchId, userId, grade])
   @@index([userId])
+  @@index([batchId])
 }
 
 
