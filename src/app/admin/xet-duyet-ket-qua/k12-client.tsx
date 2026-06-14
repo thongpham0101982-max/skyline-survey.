@@ -1813,38 +1813,41 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
   };;;
 
   const handleSendBatchApprovalEmail = async () => {
-    const activeBatch = reportBatches.find(b => b.id === reportBatchId);
-    if (!activeBatch) return;
-
-    // Resolve GDCS email using the same campus lookup logic
-    const periodCampusId = reportSelPeriod?.campusId;
-    const batchCampusId = activeBatch?.campusId;
-    let targetCampusId = batchCampusId || periodCampusId;
-    
-    if (!targetCampusId) {
-      const fullNameStr = `${activeBatch?.name || ""} ${reportSelPeriod?.name || ""}`;
-      const matchedCampus = campuses.find(c => 
-        fullNameStr.includes(c.campusCode) || 
-        fullNameStr.includes(c.campusName) ||
-        (c.campusCode === "CS3" && fullNameStr.includes("CS3")) ||
-        (c.campusCode === "CS1" && fullNameStr.includes("CS1")) ||
-        (c.campusCode === "CS2" && fullNameStr.includes("CS2"))
-      );
-      if (matchedCampus) {
-        targetCampusId = matchedCampus.id;
-      }
-    }
-
-    const campusObj = campuses.find(c => c.id === targetCampusId);
-    const campusName = campusObj?.campusName || activeBatch?.name?.split("|")[1]?.trim() || "Cơ sở";
-    const gdcsEmail = (campusObj?.campusCode && EMAIL_MAP.gdcs[campusObj.campusCode as keyof typeof EMAIL_MAP.gdcs]) 
-      || EMAIL_MAP.gdcs.CS1;
-
-    const confirmSend = confirm(`Gửi email thông báo cho GĐCS cơ sở ${campusName} để xét duyệt Đợt khảo sát "${activeBatch.name}"?\nEmail nhận: ${gdcsEmail}`);
-    if (!confirmSend) return;
-
-    setSendingBatchEmail(true);
     try {
+      const activeBatch = reportBatches.find(b => b.id === reportBatchId);
+      if (!activeBatch) {
+        alert(`Không tìm thấy đợt khảo sát đã chọn (ID: ${reportBatchId})!`);
+        return;
+      }
+
+      // Resolve GDCS email using the same campus lookup logic
+      const periodCampusId = reportSelPeriod?.campusId;
+      const batchCampusId = activeBatch?.campusId;
+      let targetCampusId = batchCampusId || periodCampusId;
+      
+      if (!targetCampusId) {
+        const fullNameStr = `${activeBatch?.name || ""} ${reportSelPeriod?.name || ""}`;
+        const matchedCampus = campuses.find(c => 
+          (c.campusCode && fullNameStr.includes(c.campusCode)) || 
+          (c.campusName && fullNameStr.includes(c.campusName)) ||
+          (c.campusCode === "CS3" && fullNameStr.includes("CS3")) ||
+          (c.campusCode === "CS1" && fullNameStr.includes("CS1")) ||
+          (c.campusCode === "CS2" && fullNameStr.includes("CS2"))
+        );
+        if (matchedCampus) {
+          targetCampusId = matchedCampus.id;
+        }
+      }
+
+      const campusObj = campuses.find(c => c.id === targetCampusId);
+      const campusName = campusObj?.campusName || activeBatch?.name?.split("|")[1]?.trim() || "Cơ sở";
+      const gdcsEmail = (campusObj?.campusCode && EMAIL_MAP.gdcs[campusObj.campusCode as keyof typeof EMAIL_MAP.gdcs]) 
+        || EMAIL_MAP.gdcs.CS1;
+
+      const confirmSend = confirm(`Gửi email thông báo cho GĐCS cơ sở ${campusName} để xét duyệt Đợt khảo sát "${activeBatch.name}"?\nEmail nhận: ${gdcsEmail}`);
+      if (!confirmSend) return;
+
+      setSendingBatchEmail(true);
       const res = await fetch("/api/admin/send-batch-approval-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1862,7 +1865,8 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
         alert("Có lỗi xảy ra: " + (data.error || "Không rõ nguyên nhân"));
       }
     } catch (err) {
-      alert("Lỗi kết nối: " + err.message);
+      alert("Lỗi xử lý: " + err.message);
+      console.error(err);
     } finally {
       setSendingBatchEmail(false);
     }
