@@ -4924,7 +4924,7 @@ return {
                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-indigo-500 transition-colors">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
                 </div>
-                {reportBatchId !== "all" && (
+                {reportsSubTab === "stats" && reportBatchId !== "all" && (
                   <div className="mt-2.5 flex items-center justify-between animate-in fade-in duration-200">
                     <button
                       onClick={handleSendBatchApprovalEmail}
@@ -5227,1088 +5227,1081 @@ return {
               Chưa có dữ liệu học sinh trong kỳ/đợt khảo sát đã chọn.
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-              
-              {/* STUDENT BRIEF DETAIL CARD */}
-              <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-24 self-start transition-all duration-300">
-                <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full -mt-10 -mr-10 mix-blend-multiply filter blur-2xl opacity-70"></div>
-                  
-                  <div className="flex flex-col items-center text-center pb-6 border-b border-slate-100">
-                    <div className="w-20 h-20 bg-gradient-to-tr from-indigo-600 to-violet-500 rounded-3xl flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-indigo-100 mb-4">
+            <>
+              {/* STUDENT HEADER BANNER (COMPACT & MODERN) */}
+              <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm relative overflow-hidden mb-4 text-left">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-50/50 rounded-full -mt-16 -mr-16 mix-blend-multiply filter blur-3xl opacity-70"></div>
+                
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
+                  {/* Left Part: Avatar & Primary Info */}
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-gradient-to-tr from-indigo-600 to-violet-500 rounded-xl flex items-center justify-center text-white font-black text-lg shadow-md shrink-0">
                       {selectedReportStudent.fullName?.charAt(0)}
                     </div>
-                    <h3 className="font-black text-slate-800 text-lg leading-snug">{selectedReportStudent.fullName}</h3>
-                    <span className="font-mono font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full text-xs mt-2 border border-indigo-100/50">{selectedReportStudent.studentCode}</span>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-black text-slate-800 text-base leading-tight">{selectedReportStudent.fullName}</h3>
+                        <span className="font-mono font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full text-[10px] border border-indigo-100/50">
+                          {selectedReportStudent.studentCode}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 font-semibold mt-0.5">
+                        Đối tượng TS: <strong className="text-slate-600 font-bold">{selectedReportStudent.targetType || "—"}</strong>
+                      </p>
+                    </div>
                   </div>
 
-                  <div className="py-5 border-t border-slate-100 mt-4 grid grid-cols-2 gap-x-3 gap-y-4 text-sm">
+                  {/* Right Part: Grid of Metadata */}
+                  <div className="flex-1 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-y-2 gap-x-3 border-t lg:border-t-0 lg:border-l border-slate-100 pt-3 lg:pt-0 lg:pl-4 text-[11px]">
                     <div className="flex flex-col">
-                      <span className="text-slate-400 font-black uppercase text-[9px] tracking-widest mb-0.5">Ngày sinh</span>
-                      <span className="font-bold text-slate-800 text-[13px]">{selectedReportStudent.dateOfBirth ? new Date(selectedReportStudent.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</span>
+                      <span className="text-slate-400 font-black uppercase text-[7px] tracking-wider mb-0.5">Ngày sinh</span>
+                      <span className="font-bold text-slate-800">{selectedReportStudent.dateOfBirth ? new Date(selectedReportStudent.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</span>
                     </div>
+                    <div className="flex flex-col">
+                      <span className="text-slate-400 font-black uppercase text-[7px] tracking-wider mb-0.5">Giới tính</span>
+                      <span className="font-bold text-slate-800">{selectedReportStudent.gender === "M" || selectedReportStudent.gender === "Nam" ? "Nam" : selectedReportStudent.gender === "F" || selectedReportStudent.gender === "Nữ" ? "Nữ" : selectedReportStudent.gender || "—"}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-slate-400 font-black uppercase text-[7px] tracking-wider mb-0.5">Khối học</span>
+                      <span className="font-black text-slate-900">K{selectedReportStudent.grade || "—"}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-slate-400 font-black uppercase text-[7px] tracking-wider mb-0.5">Hệ Khảo sát</span>
+                      <div>
+                        <span className="font-black text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100/70 text-[9px] inline-block">{selectedReportStudent.surveyFormType || "—"}</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-slate-400 font-black uppercase text-[7px] tracking-wider mb-0.5">Diện Khảo sát</span>
+                      <span className="font-bold text-slate-700 truncate" title={selectedReportStudent.admissionCriteria}>{selectedReportStudent.admissionCriteria || "—"}</span>
+                    </div>
+
                     {reportSelPeriod?.name?.toLowerCase().includes("open day") && (
                       <>
-                        <div className="flex flex-col">
-                          <span className="text-slate-400 font-black uppercase text-[9px] tracking-widest mb-0.5">Đăng ký CS</span>
-                          <span className="font-bold text-slate-850 text-[13px]">
+                        <div className="flex flex-col col-span-2">
+                          <span className="text-slate-400 font-black uppercase text-[7px] tracking-wider mb-0.5">Đăng ký CS</span>
+                          <span className="font-bold text-slate-800">
                             {campuses.find(c => c.id === selectedReportStudent.registeredCampus)?.campusName || selectedReportStudent.registeredCampus || "—"}
                           </span>
                         </div>
-                        <div className="flex flex-col">
-                          <span className="text-slate-400 font-black uppercase text-[9px] tracking-widest mb-0.5">Ủy quyền xét duyệt</span>
-                          <span className="font-bold text-slate-850 text-[13px]">
+                        <div className="flex flex-col col-span-2">
+                          <span className="text-slate-400 font-black uppercase text-[7px] tracking-wider mb-0.5">Ủy quyền xét duyệt</span>
+                          <span className="font-bold text-slate-800">
                             {campuses.find(c => c.id === selectedReportStudent.registeredCampus)?.manager?.fullName || "—"}
                           </span>
                         </div>
                       </>
                     )}
-                    <div className="flex flex-col">
-                      <span className="text-slate-400 font-black uppercase text-[9px] tracking-widest mb-0.5">Giới tính</span>
-                      <span className="font-bold text-slate-800 text-[13px]">{selectedReportStudent.gender === "M" || selectedReportStudent.gender === "Nam" ? "Nam" : selectedReportStudent.gender === "F" || selectedReportStudent.gender === "Nữ" ? "Nữ" : selectedReportStudent.gender || "—"}</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-slate-400 font-black uppercase text-[9px] tracking-widest mb-0.5">Khối học</span>
-                      <span className="font-black text-slate-900 text-sm">K{selectedReportStudent.grade || "—"}</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-slate-400 font-black uppercase text-[9px] tracking-widest mb-0.5">Đối tượng TS</span>
-                      <span className="font-bold text-slate-800 text-[13px] truncate" title={selectedReportStudent.targetType}>{selectedReportStudent.targetType || "—"}</span>
-                    </div>
-                    
-                    <div className="col-span-2 h-px bg-slate-100/50 my-0.5"></div>
-                    
-                    <div className="flex flex-col">
-                      <span className="text-slate-400 font-black uppercase text-[9px] tracking-widest mb-0.5">Hệ Khảo sát</span>
-                      <div>
-                        <span className="font-black text-amber-700 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-100/70 text-[11px] inline-block">{selectedReportStudent.surveyFormType || "—"}</span>
-                      </div>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-slate-400 font-black uppercase text-[9px] tracking-widest mb-0.5">Diện Khảo sát</span>
-                      <span className="font-bold text-slate-700 text-[13px]">{selectedReportStudent.admissionCriteria || "—"}</span>
-                    </div>
-
-                    <div className="col-span-2 bg-slate-50 border border-slate-100 rounded-2xl p-3 space-y-2 mt-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-500 font-black uppercase text-[9px] tracking-widest">Trạng thái duyệt</span>
-                        {selectedReportStudent.admissionResult ? (
-                          <span className="font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-lg border border-emerald-200 text-[10px] flex items-center gap-1 shadow-sm shadow-emerald-100/50 animate-fade-in">
-                            <span className="w-1 h-1 bg-emerald-500 rounded-full animate-pulse"></span>
-                            {selectedReportStudent.admissionResult}
-                          </span>
-                        ) : (
-                          <span className="font-black text-slate-500 bg-white px-2 py-0.5 rounded-lg border border-slate-200 text-[10px]">
-                            Chưa duyệt
-                          </span>
-                        )}
-                      </div>
-                      {selectedReportStudent.signatureName && (
-                        <div className="flex items-center justify-between border-t border-slate-200/50 pt-2 text-[12px]">
-                          <span className="text-slate-400 font-bold">Người ký:</span>
-                          <span className="font-bold text-slate-700">{selectedReportStudent.signatureName}</span>
-                        </div>
-                      )}
-                      {selectedReportStudent.admissionResult && selectedReportStudent.updatedAt && (
-                        <div className="flex items-center justify-between border-t border-slate-200/50 pt-2 text-[12px]">
-                          <span className="text-slate-400 font-bold">Ngày phê duyệt:</span>
-                          <span className="font-bold text-slate-700">{new Date(selectedReportStudent.updatedAt).toLocaleDateString("vi-VN")}</span>
-                        </div>
-                      )}
-                    </div>
                   </div>
-                </div>
 
-                {/* ADMISSION DECISION FORM */}
-                <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4">
-                  <h4 className="font-black text-slate-800 text-sm flex items-center justify-between border-b pb-3 mb-2">
-                    <span className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-500"/>
-                      Xét duyệt Tuyển sinh
-                    </span>
+                  {/* Rightmost Part: Approval Badge */}
+                  <div className="flex items-start lg:items-end flex-col shrink-0 lg:border-l border-slate-100 lg:pl-4 pt-3 lg:pt-0">
+                    <span className="text-slate-400 font-black uppercase text-[7px] tracking-wider mb-0.5 block self-start lg:self-end">Trạng thái duyệt</span>
                     {selectedReportStudent.admissionResult ? (
-                      <span className="px-2.5 py-1 text-[10px] font-black bg-emerald-100 text-emerald-700 rounded-full border border-emerald-200 uppercase tracking-wider flex items-center gap-1 shadow-sm">
-                        <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
-                        Đã duyệt ({selectedReportStudent.admissionResult})
+                      <span className="font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200 text-[11px] flex items-center gap-1 shadow-sm">
+                        <span className="w-1 h-1 bg-emerald-500 rounded-full animate-pulse"></span>
+                        {selectedReportStudent.admissionResult}
                       </span>
                     ) : (
-                      <span className="px-2.5 py-1 text-[10px] font-black bg-slate-100 text-slate-500 rounded-full border border-slate-200 uppercase tracking-wider">
+                      <span className="font-black text-slate-500 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-200 text-[11px]">
                         Chưa duyệt
                       </span>
                     )}
-                  </h4>
-                  
-                  {!canApprove && (
-                    <div className="bg-rose-50 text-rose-600 p-3.5 rounded-2xl text-xs font-semibold border border-rose-100 flex items-center gap-2 animate-pulse mb-2">
-                      <AlertCircle className="w-4 h-4 flex-shrink-0"/>
-                      {selectedReportStudent?.batch?.status === "LOCKED" || selectedReportStudent?.batch?.status === "CLOSED" ? 
-                        "Đợt khảo sát đã BỊ KHÓA. Giáo viên và GĐCS không thể điều chỉnh kết quả!" : 
-                        "Bạn không có quyền xét duyệt kết quả cho cơ sở này."}
-                    </div>
-                  )}
-
-                  <Field label="Kết quả Xét tuyển">
-                    <select 
-                      value={reportForm.admissionResult} 
-                      onChange={e => setReportForm(f => ({ ...f, admissionResult: e.target.value }))}
-                      className={inp}
-                      disabled={!canApprove}
-                    >
-                      <option value="">-- Chưa xét duyệt --</option>
-                      <option value="Đạt">Đạt</option>
-                      <option value="Không đạt">Không đạt</option>
-                      <option value="Không đạt - Kiểm tra lại">Không đạt - Kiểm tra lại</option>
-                      <option value="Không đạt - Không kiểm tra lại">Không đạt - Không kiểm tra lại</option>
-                      <option value="Đạt cam kết">Đạt cam kết</option>
-                      <option value="Học thử">Học thử</option>
-                    </select>
-                  </Field>
-
-                  {reportForm.admissionResult === "Đạt cam kết" && (
-                    <Field label="Môn Cam Kết">
-                      <div className="grid grid-cols-2 gap-2 bg-slate-50 p-4 rounded-2xl border border-slate-200 max-h-48 overflow-y-auto">
-                        {initialSubjects.map(sub => {
-                          const isChecked = reportForm.committedSubjects.includes(sub.name);
-                          return (
-                            <label key={sub.id} className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer hover:text-indigo-600 transition-colors">
-                              <input 
-                                type="checkbox"
-                                checked={isChecked}
-                                disabled={!canApprove}
-                                onChange={() => {
-                                  setReportForm(f => {
-                                    const next = isChecked 
-                                      ? f.committedSubjects.filter(name => name !== sub.name)
-                                      : [...f.committedSubjects, sub.name];
-                                    return { ...f, committedSubjects: next };
-                                  });
-                                }}
-                                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
-                              />
-                              {sub.name}
-                            </label>
-                          );
-                        })}
-                      </div>
-                    </Field>
-                  )}
-
-                  {reportForm.admissionResult === "Không đạt - Kiểm tra lại" && (
-                    <Field label="Môn Kiểm tra lại">
-                      <div className="grid grid-cols-2 gap-2 bg-slate-50 p-4 rounded-2xl border border-slate-200 max-h-48 overflow-y-auto">
-                        {initialSubjects.map(sub => {
-                          const isChecked = reportForm.committedSubjects.includes(sub.name);
-                          return (
-                            <label key={sub.id} className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer hover:text-indigo-600 transition-colors">
-                              <input 
-                                type="checkbox"
-                                checked={isChecked}
-                                disabled={!canApprove}
-                                onChange={() => {
-                                  setReportForm(f => {
-                                    const next = isChecked 
-                                      ? f.committedSubjects.filter(name => name !== sub.name)
-                                      : [...f.committedSubjects, sub.name];
-                                    return { ...f, committedSubjects: next };
-                                  });
-                                }}
-                                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
-                              />
-                              {sub.name}
-                            </label>
-                          );
-                        })}
-                      </div>
-                    </Field>
-                  )}
-
-                  {!(["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes((currentUser?.role || "").toUpperCase())) && (
-                    <>
-                      
-
-                      <Field label="Người duyệt / Phê duyệt">
-                        {selectedReportStudent.admissionResult ? (
-                          <div className="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm font-black text-slate-700 flex items-center gap-2.5 shadow-sm select-none transition-all">
-                            <UserCheck className="w-4 h-4 text-indigo-500" />
-                            {reportForm.signatureName || selectedReportStudent.signatureName || autoCampusDirectorName || "Hệ thống ghi nhận"}
-                          </div>
-                        ) : (
-                          <select 
-                            value={reportForm.signatureName}
-                            onChange={e => setReportForm(f => ({ ...f, signatureName: e.target.value }))}
-                            className={inp}
-                            disabled={!canApprove}
-                          >
-                            <option value="">-- Chọn người phê duyệt --</option>
-                            {gdcsUsers.map(u => (
-                              <option key={u.id} value={u.fullName || u.email}>{u.fullName || u.email}</option>
-                            ))}
-                          </select>
-                        )}
-                      </Field>
-                    </>
-                  )}
-
-                  <Field label="Ý kiến / Ghi chú Hội đồng">
-                    <textarea 
-                      value={reportForm.directorNote}
-                      onChange={e => setReportForm(f => ({ ...f, directorNote: e.target.value }))}
-                      className={`${inp} h-24 resize-none`}
-                      placeholder="Nhập ý kiến hoặc lý do..."
-                      disabled={!canApprove}
-                    />
-                  </Field>
-
-                  <button
-                    onClick={handleSaveReportResult}
-                    disabled={saveReportLoading || !canApprove}
-                    className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg shadow-indigo-100 disabled:opacity-50 transition-all flex justify-center items-center gap-2"
-                  >
-                    {saveReportLoading ? <Loader2 className="w-4 h-4 animate-spin"/> : <Check className="w-4 h-4"/>}
-                    Lưu kết quả tổng hợp
-                  </button>
-
-                  {selectedReportStudent && selectedReportStudent.admissionResult === "Không đạt - Kiểm tra lại" && (
-                    <button
-                      onClick={() => {
-                        setIsRetestModalOpen(true);
-                        setRetestPeriodId("");
-                        setRetestBatchId("");
-                      }}
-                      className="w-full mt-3 py-3.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-200 rounded-2xl font-black text-xs uppercase tracking-wider transition-all flex justify-center items-center gap-2 cursor-pointer shadow-sm"
-                    >
-                      <RefreshCw className="w-4 h-4"/>
-                      Đăng ký Khảo sát lại (Thi lại)
-                    </button>
-                  )}
-
-                  {!selectedReportStudent.admissionResult && (
-                    <button
-                      onClick={handleSendGdcsApprovalRequest}
-                      disabled={sendingApproval || !canApprove}
-                      className="w-full mt-3 py-3.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg shadow-orange-100 hover:shadow-orange-200 active:scale-[0.98] disabled:opacity-50 disabled:scale-100 transition-all flex justify-center items-center gap-2"
-                    >
-                      {sendingApproval ? <Loader2 className="w-4 h-4 animate-spin"/> : <Mail className="w-4 h-4"/>}
-                      Gửi yêu cầu Phê duyệt đến GĐCS
-                    </button>
-                  )}
+                    {selectedReportStudent.signatureName && (
+                      <span className="text-[9px] text-slate-400 font-semibold mt-0.5">
+                        Ký: <strong className="text-slate-600 font-bold">{selectedReportStudent.signatureName}</strong>
+                      </span>
+                    )}
+                  </div>
                 </div>
+              </div>
 
-                {/* RETEST HISTORY TIMELINE CARD */}
-                {Array.isArray(retestHistory) && retestHistory.length > 1 && (
-                  <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4 animate-fade-in text-left">
-                    <h4 className="font-black text-slate-800 text-sm flex items-center justify-between border-b pb-3 mb-2">
-                      <span className="flex items-center gap-2">
-                        <RefreshCw className="w-4 h-4 text-indigo-500 animate-spin-slow shrink-0" />
-                        Lịch sử Khảo sát & Thi lại
+              {/* MAIN 2-COLUMN GRID */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+                
+                {/* LEFT COLUMN: ADMISSION DECISION FORM & RETEST HISTORY */}
+                <div className="lg:col-span-4 space-y-4 lg:sticky lg:top-20 self-start transition-all duration-300">
+                  {/* ADMISSION DECISION FORM */}
+                  <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-3 text-left">
+                    <h4 className="font-black text-slate-800 text-xs flex items-center justify-between border-b pb-2 mb-1">
+                      <span className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500"/>
+                        Xét duyệt Tuyển sinh
                       </span>
-                      <span className="text-[10px] font-black bg-indigo-50 text-indigo-700 border border-indigo-100 px-2 py-0.5 rounded-lg shrink-0 shadow-sm">
-                        {retestHistory.length} Đợt thi
-                      </span>
+                      {selectedReportStudent.admissionResult ? (
+                        <span className="px-2 py-0.5 text-[9px] font-black bg-emerald-100 text-emerald-700 rounded-full border border-emerald-200 uppercase tracking-wider flex items-center gap-1 shadow-sm">
+                          <span className="w-1 h-1 bg-emerald-500 rounded-full animate-pulse"></span>
+                          Đã duyệt
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 text-[9px] font-black bg-slate-100 text-slate-500 rounded-full border border-slate-200 uppercase tracking-wider">
+                          Chưa duyệt
+                        </span>
+                      )}
                     </h4>
                     
-                    <div className="relative pl-4 border-l-2 border-slate-100 space-y-5 my-2 max-h-[380px] overflow-y-auto pr-1 scrollbar-thin">
-                      {retestHistory.filter(Boolean).map((hist, idx) => {
-                        const isCurrent = selectedReportStudent && hist?.id === selectedReportStudent.id;
-                        let sNote = hist?.directorNote || "";
-                        let retestMuns = [];
-                        const matchRetest = sNote.match(/^Môn (?:kiểm tra lại|cam kết): \[(.*?)\](?:\r?\n\r?\n)?/);
-                        if (matchRetest && matchRetest[1]) {
-                          retestMuns = matchRetest[1].split(", ");
-                          sNote = sNote.replace(/^Môn (?:kiểm tra lại|cam kết): \[(.*?)\](?:\r?\n\r?\n)?/, "");
-                        }
+                    {!canApprove && (
+                      <div className="bg-rose-50 text-rose-600 p-2.5 rounded-xl text-[10px] font-semibold border border-rose-100 flex items-center gap-1.5 animate-pulse mb-1">
+                        <AlertCircle className="w-3.5 h-3.5 flex-shrink-0"/>
+                        {selectedReportStudent?.batch?.status === "LOCKED" || selectedReportStudent?.batch?.status === "CLOSED" ? 
+                          "Đợt khảo sát đã BỊ KHÓA." : 
+                          "Bạn không có quyền xét duyệt."}
+                      </div>
+                    )}
 
-                        const parsedScores = Array.isArray(hist?.scores) ? hist.scores : [];
+                    <Field label="Kết quả Xét tuyển">
+                      <select 
+                        value={reportForm.admissionResult} 
+                        onChange={e => setReportForm(f => ({ ...f, admissionResult: e.target.value }))}
+                        className={`${inp} py-1.5 text-xs`}
+                        disabled={!canApprove}
+                      >
+                        <option value="">-- Chưa xét duyệt --</option>
+                        <option value="Đạt">Đạt</option>
+                        <option value="Không đạt">Không đạt</option>
+                        <option value="Không đạt - Kiểm tra lại">Không đạt - Kiểm tra lại</option>
+                        <option value="Không đạt - Không kiểm tra lại">Không đạt - Không kiểm tra lại</option>
+                        <option value="Đạt cam kết">Đạt cam kết</option>
+                        <option value="Học thử">Học thử</option>
+                      </select>
+                    </Field>
 
-                        return (
-                          <div key={hist?.id || idx} className="relative group text-left">
-                            {/* Timeline node dot */}
-                            <span className={`absolute -left-[23px] top-1.5 w-3 h-3 rounded-full border-2 ${
-                              isCurrent ? "bg-indigo-600 border-indigo-200 scale-125 ring-4 ring-indigo-50 animate-pulse" : "bg-slate-300 border-white group-hover:bg-indigo-400 group-hover:scale-110 transition-all duration-300"
-                            }`} />
-                            
-                            <div className="space-y-1.5">
-                              <div className="flex items-center justify-between gap-1.5">
-                                <span className={`text-xs font-black truncate max-w-[150px] ${
-                                  isCurrent ? "text-indigo-700" : "text-slate-600 font-bold"
-                                }`} title={hist?.period?.name}>
-                                  {hist?.period?.name || "Đợt khảo sát"}
-                                </span>
-                                <span className={`text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded border ${
-                                  isCurrent ? "bg-indigo-50 text-indigo-700 border-indigo-100" : "bg-slate-50 text-slate-500 border-slate-200"
-                                }`}>
-                                  {isCurrent ? "Hiện tại" : `Đợt ${retestHistory.length - idx}`}
-                                </span>
-                              </div>
+                    {reportForm.admissionResult === "Đạt cam kết" && (
+                      <Field label="Môn Cam Kết">
+                        <div className="grid grid-cols-2 gap-1.5 bg-slate-50 p-3 rounded-xl border border-slate-200 max-h-36 overflow-y-auto">
+                          {initialSubjects.map(sub => {
+                            const isChecked = reportForm.committedSubjects.includes(sub.name);
+                            return (
+                              <label key={sub.id} className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-700 cursor-pointer hover:text-indigo-600 transition-colors">
+                                <input 
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  disabled={!canApprove}
+                                  onChange={() => {
+                                    setReportForm(f => {
+                                      const next = isChecked 
+                                        ? f.committedSubjects.filter(name => name !== sub.name)
+                                        : [...f.committedSubjects, sub.name];
+                                      return { ...f, committedSubjects: next };
+                                    });
+                                  }}
+                                  className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5"
+                                />
+                                {sub.name}
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </Field>
+                    )}
+
+                    {reportForm.admissionResult === "Không đạt - Kiểm tra lại" && (
+                      <Field label="Môn Kiểm tra lại">
+                        <div className="grid grid-cols-2 gap-1.5 bg-slate-50 p-3 rounded-xl border border-slate-200 max-h-36 overflow-y-auto">
+                          {initialSubjects.map(sub => {
+                            const isChecked = reportForm.committedSubjects.includes(sub.name);
+                            return (
+                              <label key={sub.id} className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-700 cursor-pointer hover:text-indigo-600 transition-colors">
+                                <input 
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  disabled={!canApprove}
+                                  onChange={() => {
+                                    setReportForm(f => {
+                                      const next = isChecked 
+                                        ? f.committedSubjects.filter(name => name !== sub.name)
+                                        : [...f.committedSubjects, sub.name];
+                                      return { ...f, committedSubjects: next };
+                                    });
+                                  }}
+                                  className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5"
+                                />
+                                {sub.name}
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </Field>
+                    )}
+
+                    {!(["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes((currentUser?.role || "").toUpperCase())) && (
+                      <>
+                        <Field label="Người duyệt / Phê duyệt">
+                          {selectedReportStudent.admissionResult ? (
+                            <div className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-black text-slate-700 flex items-center gap-2 shadow-sm select-none transition-all">
+                              <UserCheck className="w-3.5 h-3.5 text-indigo-500" />
+                              {reportForm.signatureName || selectedReportStudent.signatureName || autoCampusDirectorName || "Hệ thống ghi nhận"}
+                            </div>
+                          ) : (
+                            <select 
+                              value={reportForm.signatureName}
+                              onChange={e => setReportForm(f => ({ ...f, signatureName: e.target.value }))}
+                              className={`${inp} py-1.5 text-xs`}
+                              disabled={!canApprove}
+                            >
+                              <option value="">-- Chọn người phê duyệt --</option>
+                              {gdcsUsers.map(u => (
+                                <option key={u.id} value={u.fullName || u.email}>{u.fullName || u.email}</option>
+                              ))}
+                            </select>
+                          )}
+                        </Field>
+                      </>
+                    )}
+
+                    <Field label="Ý kiến / Ghi chú Hội đồng">
+                      <textarea 
+                        value={reportForm.directorNote}
+                        onChange={e => setReportForm(f => ({ ...f, directorNote: e.target.value }))}
+                        className={`${inp} h-16 py-1.5 text-xs resize-none`}
+                        placeholder="Nhập ý kiến hoặc lý do..."
+                        disabled={!canApprove}
+                      />
+                    </Field>
+
+                    <button
+                      onClick={handleSaveReportResult}
+                      disabled={saveReportLoading || !canApprove}
+                      className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-[11px] uppercase tracking-wider shadow-md disabled:opacity-50 transition-all flex justify-center items-center gap-1.5 cursor-pointer"
+                    >
+                      {saveReportLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin"/> : <Check className="w-3.5 h-3.5"/>}
+                      Lưu kết quả tổng hợp
+                    </button>
+
+                    {selectedReportStudent && selectedReportStudent.admissionResult === "Không đạt - Kiểm tra lại" && (
+                      <button
+                        onClick={() => {
+                          setIsRetestModalOpen(true);
+                          setRetestPeriodId("");
+                          setRetestBatchId("");
+                        }}
+                        className="w-full mt-2 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-200 rounded-xl font-black text-[11px] uppercase tracking-wider transition-all flex justify-center items-center gap-1.5 cursor-pointer shadow-sm"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5"/>
+                        Đăng ký Khảo sát lại (Thi lại)
+                      </button>
+                    )}
+
+                    {!selectedReportStudent.admissionResult && (
+                      <button
+                        onClick={handleSendGdcsApprovalRequest}
+                        disabled={sendingApproval || !canApprove}
+                        className="w-full mt-2 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-xl font-black text-[11px] uppercase tracking-wider shadow-md active:scale-[0.98] disabled:opacity-50 disabled:scale-100 transition-all flex justify-center items-center gap-1.5 cursor-pointer"
+                      >
+                        {sendingApproval ? <Loader2 className="w-3.5 h-3.5 animate-spin"/> : <Mail className="w-3.5 h-3.5"/>}
+                        Gửi yêu cầu đến GĐCS
+                      </button>
+                    )}
+                  </div>
+
+                  {/* RETEST HISTORY TIMELINE CARD */}
+                  {Array.isArray(retestHistory) && retestHistory.length > 1 && (
+                    <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-3 animate-fade-in text-left">
+                      <h4 className="font-black text-slate-800 text-xs flex items-center justify-between border-b pb-2 mb-1">
+                        <span className="flex items-center gap-1.5">
+                          <RefreshCw className="w-3.5 h-3.5 text-indigo-500 animate-spin-slow shrink-0" />
+                          Lịch sử Khảo sát & Thi lại
+                        </span>
+                        <span className="text-[9px] font-black bg-indigo-50 text-indigo-700 border border-indigo-100 px-1.5 py-0.5 rounded-lg shrink-0 shadow-sm">
+                          {retestHistory.length} Đợt
+                        </span>
+                      </h4>
+                      
+                      <div className="relative pl-3 border-l-2 border-slate-100 space-y-4 my-1 max-h-[260px] overflow-y-auto pr-1 scrollbar-thin">
+                        {retestHistory.filter(Boolean).map((hist, idx) => {
+                          const isCurrent = selectedReportStudent && hist?.id === selectedReportStudent.id;
+                          let sNote = hist?.directorNote || "";
+                          let retestMuns = [];
+                          const matchRetest = sNote.match(/^Môn (?:kiểm tra lại|cam kết): \[(.*?)\](?:\r?\n\r?\n)?/);
+                          if (matchRetest && matchRetest[1]) {
+                            retestMuns = matchRetest[1].split(", ");
+                            sNote = sNote.replace(/^Môn (?:kiểm tra lại|cam kết): \[(.*?)\](?:\r?\n\r?\n)?/, "");
+                          }
+
+                          const parsedScores = Array.isArray(hist?.scores) ? hist.scores : [];
+
+                          return (
+                            <div key={hist?.id || idx} className="relative group text-left">
+                              {/* Timeline node dot */}
+                              <span className={`absolute -left-[19px] top-1.5 w-2 h-2 rounded-full border ${
+                                isCurrent ? "bg-indigo-600 border-indigo-200 scale-125 ring-2 ring-indigo-50 animate-pulse" : "bg-slate-300 border-white group-hover:bg-indigo-400 transition-all duration-300"
+                              }`} />
                               
-                              <p className="text-[10px] text-slate-400 font-bold leading-none">
-                                {hist?.batch?.name ? hist.batch.name.split("|")[0]?.trim() : "Khảo sát lẻ"} • {hist?.createdAt ? new Date(hist.createdAt).toLocaleDateString("vi-VN") : "—"}
-                              </p>
-
-                              {/* Attempt Result Badge */}
-                              <div className="flex items-center gap-1.5 mt-1">
-                                <span className="text-[9px] font-bold text-slate-400">Kết quả:</span>
-                                {hist?.admissionResult ? (
-                                  <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${
-                                    String(hist.admissionResult).includes("Không đạt")
-                                      ? "bg-rose-50 text-rose-700"
-                                      : String(hist.admissionResult).includes("Đạt cam kết")
-                                      ? "bg-amber-50 text-amber-700"
-                                      : "bg-emerald-50 text-emerald-700"
-                                  }`}>
-                                    {hist.admissionResult}
+                              <div className="space-y-1">
+                                <div className="flex items-center justify-between gap-1">
+                                  <span className={`text-[11px] font-black truncate max-w-[130px] ${
+                                    isCurrent ? "text-indigo-700" : "text-slate-600 font-bold"
+                                  }`} title={hist?.period?.name}>
+                                    {hist?.period?.name || "Đợt khảo sát"}
                                   </span>
-                                ) : (
-                                  <span className="text-[9px] font-black bg-slate-50 text-slate-450 px-2 py-0.5 rounded border border-slate-200/50">Chưa duyệt</span>
+                                  <span className={`text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded border ${
+                                    isCurrent ? "bg-indigo-50 text-indigo-700 border-indigo-100" : "bg-slate-50 text-slate-500 border-slate-200"
+                                  }`}>
+                                    {isCurrent ? "Hiện tại" : `Đợt ${retestHistory.length - idx}`}
+                                  </span>
+                                </div>
+                                
+                                <p className="text-[9px] text-slate-400 font-bold leading-none">
+                                  {hist?.batch?.name ? hist.batch.name.split("|")[0]?.trim() : "Khảo sát lẻ"} • {hist?.createdAt ? new Date(hist.createdAt).toLocaleDateString("vi-VN") : "—"}
+                                </p>
+
+                                {/* Attempt Result Badge */}
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                  <span className="text-[9px] font-bold text-slate-400">Kết quả:</span>
+                                  {hist?.admissionResult ? (
+                                    <span className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.2 rounded ${
+                                      String(hist.admissionResult).includes("Không đạt")
+                                        ? "bg-rose-50 text-rose-700"
+                                        : String(hist.admissionResult).includes("Đạt cam kết")
+                                        ? "bg-amber-50 text-amber-700"
+                                        : "bg-emerald-50 text-emerald-700"
+                                    }`}>
+                                      {hist.admissionResult}
+                                    </span>
+                                  ) : (
+                                    <span className="text-[9px] font-black bg-slate-50 text-slate-450 px-1.5 py-0.2 rounded border border-slate-200/50">Chưa duyệt</span>
+                                  )}
+                                </div>
+
+                                {/* Retest subjects warning */}
+                                {retestMuns.length > 0 && (
+                                  <div className="text-[9px] bg-indigo-50/20 border border-indigo-100/50 p-2 rounded-xl mt-1 space-y-1">
+                                    <span className="font-black text-indigo-600 uppercase tracking-wider text-[8px] block">Môn cần thi lại/cam kết:</span>
+                                    <div className="flex flex-wrap gap-1">
+                                      {retestMuns.map(m => (
+                                        <span key={m} className="bg-indigo-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md shadow-sm">
+                                          {m}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Brief scores list from past attempt */}
+                                {!isCurrent && (parsedScores.length > 0 || hist.psychologyScore != null || hist.mathScore != null || hist.literatureScore != null || hist.writtenEnglishScore != null || hist.oralEnglishScore != null) && (
+                                  <div className="text-[9px] border border-slate-200/50 p-2 rounded-xl mt-1 space-y-1 bg-slate-50/50">
+                                    <span className="font-black text-slate-400 uppercase tracking-wider text-[8px] block">Điểm đợt thi cũ:</span>
+                                    <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[9px] font-bold text-slate-600">
+                                      {hist.psychologyScore != null && <div><span className="text-slate-400 font-normal">Tâm lý:</span> {hist.psychologyScore}đ</div>}
+                                      {hist.mathScore != null && <div><span className="text-slate-400 font-normal">Toán:</span> {hist.mathScore}đ</div>}
+                                      {hist.literatureScore != null && <div><span className="text-slate-400 font-normal">Ngữ Văn:</span> {hist.literatureScore}đ</div>}
+                                      {hist.writtenEnglishScore != null && <div><span className="text-slate-400 font-normal">Anh (viết):</span> {hist.writtenEnglishScore}{hist?.grade?.match(/\d+/)?.[0] === '1' ? '' : '/70'}đ</div>}
+                                      {hist.oralEnglishScore != null && <div><span className="text-slate-400 font-normal">Anh (nói):</span> {hist.oralEnglishScore}{hist?.grade?.match(/\d+/)?.[0] === '1' ? '' : '/30'}đ</div>}
+                                      {parsedScores.filter(Boolean).map((sc, sIdx) => {
+                                        const sub = sc?.subject || {};
+                                        const subCode = (sub?.code || "").toLowerCase();
+                                        let vStr = "—";
+                                        try {
+                                          if (sc?.scores) {
+                                            const parsed = JSON.parse(sc.scores);
+                                            const vArr = Array.isArray(parsed) ? parsed : [parsed];
+                                            if (subCode.includes("tly")) {
+                                              vStr = parseFloat(vArr[6] || vArr[20] || "0") + "đ";
+                                            } else if (subCode.includes("nltd")) {
+                                              vStr = (vArr[4] || "0") + "%";
+                                            } else if (subCode.includes("tci") || subCode.includes("cpt")) {
+                                              vStr = Array.isArray(vArr) ? vArr.filter(x => x === "3").length + " Đạt" : "—";
+                                            } else {
+                                              vStr = vArr.find(x => x !== undefined && x !== "" && x !== null) || "—";
+                                            }
+                                          }
+                                        } catch {}
+                                        return (
+                                          <div key={sc?.id || sIdx} className="flex justify-between items-center border-b border-slate-200/20 pb-0.5">
+                                            <span className="text-slate-400 font-semibold truncate max-w-[80px]" title={sub?.name}>{sub?.name || "Môn"}</span>
+                                            <span className="font-black text-slate-700">{vStr}</span>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {/* Past notes */}
+                                {!isCurrent && sNote && (
+                                  <p className="text-[9px] text-slate-500 italic mt-0.5 font-semibold bg-slate-100/50 p-2 rounded-xl border border-slate-200/50 leading-relaxed">
+                                    "{sNote.trim()}"
+                                  </p>
                                 )}
                               </div>
-
-                              {/* Retest subjects warning */}
-                              {retestMuns.length > 0 && (
-                                <div className="text-[10px] bg-indigo-50/20 border border-indigo-100/50 p-2.5 rounded-2xl mt-1.5 space-y-1.5">
-                                  <span className="font-black text-indigo-600 uppercase tracking-wider text-[8px] block">Môn cần thi lại/cam kết:</span>
-                                  <div className="flex flex-wrap gap-1">
-                                    {retestMuns.map(m => (
-                                      <span key={m} className="bg-indigo-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md shadow-sm">
-                                        {m}
-                                      </span>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Brief scores list from past attempt */}
-                              {!isCurrent && (parsedScores.length > 0 || hist.psychologyScore != null || hist.mathScore != null || hist.literatureScore != null || hist.writtenEnglishScore != null || hist.oralEnglishScore != null) && (
-                                <div className="text-[10px] border border-slate-200/50 p-2.5 rounded-2xl mt-1.5 space-y-1.5 bg-slate-50/50">
-                                  <span className="font-black text-slate-400 uppercase tracking-wider text-[8px] block">Bảng điểm đợt thi cũ:</span>
-                                  <div className="grid grid-cols-2 gap-x-2.5 gap-y-1 text-[9px] font-bold text-slate-600">
-                                    {hist.psychologyScore != null && <div><span className="text-slate-400 font-normal">Tâm lý:</span> {hist.psychologyScore}đ</div>}
-                                    {hist.mathScore != null && <div><span className="text-slate-400 font-normal">Toán:</span> {hist.mathScore}đ</div>}
-                                    {hist.literatureScore != null && <div><span className="text-slate-400 font-normal">Ngữ Văn:</span> {hist.literatureScore}đ</div>}
-                                    {hist.writtenEnglishScore != null && <div><span className="text-slate-400 font-normal">Anh (viết):</span> {hist.writtenEnglishScore}{hist?.grade?.match(/\d+/)?.[0] === '1' ? '' : '/70'}đ</div>}
-                                    {hist.oralEnglishScore != null && <div><span className="text-slate-400 font-normal">Anh (nói):</span> {hist.oralEnglishScore}{hist?.grade?.match(/\d+/)?.[0] === '1' ? '' : '/30'}đ</div>}
-                                    {parsedScores.filter(Boolean).map((sc, sIdx) => {
-                                      const sub = sc?.subject || {};
-                                      const subCode = (sub?.code || "").toLowerCase();
-                                      let vStr = "—";
-                                      try {
-                                        if (sc?.scores) {
-                                          const parsed = JSON.parse(sc.scores);
-                                          const vArr = Array.isArray(parsed) ? parsed : [parsed];
-                                          if (subCode.includes("tly")) {
-                                            vStr = parseFloat(vArr[6] || vArr[20] || "0") + "đ";
-                                          } else if (subCode.includes("nltd")) {
-                                            vStr = (vArr[4] || "0") + "%";
-                                          } else if (subCode.includes("tci") || subCode.includes("cpt")) {
-                                            vStr = Array.isArray(vArr) ? vArr.filter(x => x === "3").length + " Đạt" : "—";
-                                          } else {
-                                            vStr = vArr.find(x => x !== undefined && x !== "" && x !== null) || "—";
-                                          }
-                                        }
-                                      } catch {}
-                                      return (
-                                        <div key={sc?.id || sIdx} className="flex justify-between items-center border-b border-slate-200/20 pb-0.5">
-                                          <span className="text-slate-400 font-semibold truncate max-w-[80px]" title={sub?.name}>{sub?.name || "Môn"}</span>
-                                          <span className="font-black text-slate-700">{vStr}</span>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                </div>
-                              )}
-                              
-                              {/* Past notes */}
-                              {!isCurrent && sNote && (
-                                <p className="text-[10px] text-slate-500 italic mt-1 font-semibold bg-slate-100/50 p-2.5 rounded-2xl border border-slate-200/50 leading-relaxed">
-                                  "{sNote.trim()}"
-                                </p>
-                              )}
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                )}
-
-
-              </div>
-              {/* SUBJECTS RESULTS DISPLAY */}
-              <div className="lg:col-span-8 space-y-6">
-                <div className="flex items-center justify-between bg-white px-6 py-4 rounded-3xl border border-slate-200/80 shadow-sm text-left">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 shadow-inner shrink-0 select-none">
-                      <BookOpen className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h3 className="font-black text-slate-800 text-base leading-snug">Kết quả khảo sát các môn</h3>
-                      <p className="text-xs text-slate-400 font-semibold mt-0.5">Chi tiết nhận định năng lực và đánh giá chuyên môn</p>
-                    </div>
-                  </div>
-                  <span className="text-xs bg-indigo-50 text-indigo-700 border border-indigo-100/50 px-3.5 py-1.5 rounded-full font-black shadow-sm shrink-0">
-                    {(selectedReportStudent.scores || []).length} Môn đã chấm
-                  </span>
+                  )}
                 </div>
 
-                {(!selectedReportStudent.scores || selectedReportStudent.scores.length === 0) ? (
-                  <div className="bg-white border border-slate-200/80 rounded-3xl p-16 text-center text-slate-450 shadow-sm flex flex-col items-center justify-center gap-3">
-                    <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 shadow-inner border border-slate-100">
-                      <BookOpen className="w-8 h-8" />
+                {/* RIGHT COLUMN: SUBJECT RESULTS SUMMARY & ACTIVE SUBJECT DETAILS */}
+                <div className="lg:col-span-8 space-y-4">
+                  <div className="flex items-center justify-between bg-white px-4 py-2.5 rounded-2xl border border-slate-200/80 shadow-sm text-left">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 shadow-inner shrink-0 select-none">
+                        <BookOpen className="w-4.5 h-4.5" />
+                      </div>
+                      <div>
+                        <h3 className="font-black text-slate-800 text-sm leading-snug">Kết quả khảo sát các môn</h3>
+                        <p className="text-[11px] text-slate-400 font-semibold mt-0.5">Chi tiết nhận định năng lực và đánh giá chuyên môn</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-black text-slate-700 text-sm">Chưa có kết quả khảo sát</p>
-                      <p className="text-xs text-slate-400 font-semibold mt-1">Học sinh này chưa có kết quả đánh giá môn học nào từ giáo viên.</p>
-                    </div>
+                    <span className="text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-100/50 px-2.5 py-1 rounded-full font-black shadow-sm shrink-0">
+                      {(selectedReportStudent.scores || []).length} Môn đã chấm
+                    </span>
                   </div>
-                ) : (
-                                    <div className="space-y-6">
-                    {(() => {
-                      const scoresList = [...(selectedReportStudent.scores || [])];
-                      
-                      const getNumericGrade = (g) => {
-                        if (!g) return null;
-                        const match = g.toString().match(/\d+/);
-                        return match ? parseInt(match[0], 10) : null;
-                      };
-                      const isGrade1 = getNumericGrade(selectedReportStudent.grade) === 1;
-                      
-                      const hasEnglish = scoresList.some((sc) => {
-                        const sName = (sc.subject?.name || "").toLowerCase().normalize("NFC");
-                        const sCode = (sc.subject?.code || "").toLowerCase();
-                        return sName.includes("tiếng anh") || sCode.includes("eng") || sCode.includes("esl");
-                      });
-                      
-                      let oralScoreVal = null;
-                      let writtenScoreVal = null;
-                      let oralScoreText = "—";
-                      let writtenScoreText = "—";
-                      
-                      if (!isGrade1 && hasEnglish) {
-                        scoresList.forEach((sc) => {
+
+                  {(!selectedReportStudent.scores || selectedReportStudent.scores.length === 0) ? (
+                    <div className="bg-white border border-slate-200/80 rounded-2xl p-12 text-center text-slate-455 shadow-sm flex flex-col items-center justify-center gap-2">
+                      <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 shadow-inner border border-slate-100">
+                        <BookOpen className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <p className="font-black text-slate-700 text-xs">Chưa có kết quả khảo sát</p>
+                        <p className="text-[11px] text-slate-400 font-semibold mt-0.5">Học sinh này chưa có kết quả đánh giá môn học nào.</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {(() => {
+                        const scoresList = [...(selectedReportStudent.scores || [])];
+                        
+                        const getNumericGrade = (g) => {
+                          if (!g) return null;
+                          const match = g.toString().match(/\d+/);
+                          return match ? parseInt(match[0], 10) : null;
+                        };
+                        const isGrade1 = getNumericGrade(selectedReportStudent.grade) === 1;
+                        
+                        const hasEnglish = scoresList.some((sc) => {
                           const sName = (sc.subject?.name || "").toLowerCase().normalize("NFC");
                           const sCode = (sc.subject?.code || "").toLowerCase();
-                          if (sName.includes("tiếng anh") || sCode.includes("eng") || sCode.includes("esl")) {
-                            let scoreVal = undefined;
-                            try {
-                              if (sc.scores) {
-                                const parsed = JSON.parse(sc.scores);
-                                const vArr = Array.isArray(parsed) ? parsed : [parsed];
-                                scoreVal = vArr.find(x => x !== undefined && x !== "" && x !== null);
-                              }
-                            } catch {}
-                            
-                            if (sName.includes("vấn đáp") || sName.includes("nói") || sCode.includes("speaking") || sCode.includes("oral") || sCode.includes("vd")) {
-                              if (scoreVal !== undefined && scoreVal !== null && scoreVal !== "") {
-                                oralScoreVal = parseFloat(scoreVal);
-                                oralScoreText = scoreVal.toString();
-                              }
-                            } else if (sName.includes("viết") || sCode.includes("writing") || sCode.includes("written") || sCode.includes("vt")) {
-                              if (scoreVal !== undefined && scoreVal !== null && scoreVal !== "") {
-                                writtenScoreVal = parseFloat(scoreVal);
-                                writtenScoreText = scoreVal.toString();
-                              }
-                            }
-                          }
+                          return sName.includes("tiếng anh") || sCode.includes("eng") || sCode.includes("esl");
                         });
                         
-                        let totalVal = "—";
-                        if (oralScoreVal !== null || writtenScoreVal !== null) {
-                          totalVal = ((oralScoreVal || 0) + (writtenScoreVal || 0)).toString();
-                        }
+                        let oralScoreVal = null;
+                        let writtenScoreVal = null;
+                        let oralScoreText = "—";
+                        let writtenScoreText = "—";
                         
-                        if (!scoresList.some(s => s.id === "tong_diem_tieng_anh")) {
-                          scoresList.push({
-                            id: "tong_diem_tieng_anh",
-                            isVirtual: true,
-                            scores: JSON.stringify([totalVal]),
-                            subject: {
-                              id: "tong_diem_tieng_anh",
-                              code: "eng_total",
-                              name: "Tổng điểm Tiếng Anh",
-                              subjectType: "VIET_NAM",
-                              scoreColumns: 1,
-                              commentColumns: 0,
-                              columnNames: JSON.stringify({ scores: ["Tổng điểm Tiếng Anh"], comments: [] })
-                            }
-                          });
-                        }
-                      }
-                      
-                      return (
-                        <>
-                          {/* PREMIUM QUICK SCORE DASHBOARD MATRIX */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {scoresList.map((sc) => {
-                              const subject = sc.subject || {};
-                              const sName = subject.name || "Môn học";
-                              const sCode = (subject.code || "").toLowerCase();
-                              let val = "—";
-                              let rawScore = "";
-                              let badgeStyle = "bg-slate-50 text-slate-600 border-slate-200";
-
+                        if (!isGrade1 && hasEnglish) {
+                          scoresList.forEach((sc) => {
+                            const sName = (sc.subject?.name || "").toLowerCase().normalize("NFC");
+                            const sCode = (sc.subject?.code || "").toLowerCase();
+                            if (sName.includes("tiếng anh") || sCode.includes("eng") || sCode.includes("esl")) {
+                              let scoreVal = undefined;
                               try {
                                 if (sc.scores) {
                                   const parsed = JSON.parse(sc.scores);
                                   const vArr = Array.isArray(parsed) ? parsed : [parsed];
-                                  if (sCode.includes("tly")) {
-                                    const scNum = parseFloat(vArr[6] || vArr[20] || "0");
-                                    rawScore = scNum.toString();
-                                    let lvl = "Bình thường";
-                                    badgeStyle = "bg-emerald-50 text-emerald-700 border-emerald-200/50";
-                                    if (scNum > 15 && scNum <= 31) {
-                                      lvl = "Dấu hiệu nhẹ";
-                                      badgeStyle = "bg-blue-50 text-blue-700 border-blue-200/50";
-                                    } else if (scNum > 31 && scNum <= 47) {
-                                      lvl = "Dấu hiệu vừa";
-                                      badgeStyle = "bg-amber-50 text-amber-700 border-amber-200/50";
-                                    } else if (scNum > 47 && scNum <= 63) {
-                                      lvl = "Nguy cơ cao";
-                                      badgeStyle = "bg-orange-50 text-orange-700 border-orange-200/50";
-                                    } else if (scNum > 63) {
-                                      lvl = "Nguy cơ rất cao";
-                                      badgeStyle = "bg-rose-50 text-rose-700 border-rose-200/50";
-                                    }
-                                    val = lvl;
-                                  } else if (sCode.includes("tci") || sCode.includes("cpt")) {
-                                    const passedCount = vArr.filter(x => x === "3").length;
-                                    val = passedCount + "/" + vArr.length + " Đạt";
-                                    badgeStyle = passedCount >= vArr.length * 0.7 ? "bg-emerald-50 text-emerald-700 border-emerald-200/50" : "bg-amber-50 text-amber-700 border-amber-200/50";
-                                  } else if (sCode.includes("nltd")) {
-                                    const pct = parseFloat(vArr[4] || "0");
-                                    val = pct + "%";
-                                    badgeStyle = pct >= 80 ? "bg-indigo-50 text-indigo-700 border-indigo-200/50" : pct >= 50 ? "bg-blue-50 text-blue-700 border-blue-200/50" : "bg-rose-50 text-rose-700 border-rose-200/50";
-                                  } else {
-                                    const firstVal = vArr.find(x => x !== undefined && x !== "" && x !== null);
-                                    val = firstVal !== undefined ? firstVal.toString() : "—";
-                                    badgeStyle = "bg-indigo-50 text-indigo-700 border-indigo-200/50";
-                                    
-                                    if (!isGrade1) {
-                                      const sNameLower = sName.toLowerCase().normalize("NFC");
-                                      if (sNameLower.includes("tiếng anh") || sCode.includes("eng") || sCode.includes("esl")) {
-                                        if (sNameLower.includes("vấn đáp") || sNameLower.includes("nói") || sCode.includes("speaking") || sCode.includes("oral") || sCode.includes("vd")) {
-                                          val = firstVal !== undefined ? `${firstVal}/30` : "—/30";
-                                        } else if (sNameLower.includes("viết") || sCode.includes("writing") || sCode.includes("written") || sCode.includes("vt")) {
-                                          val = firstVal !== undefined ? `${firstVal}/70` : "—/70";
-                                        } else if (sc.id === "tong_diem_tieng_anh") {
-                                          val = firstVal !== undefined && firstVal !== "—" ? `${firstVal}/100` : "—/100";
-                                        }
-                                      }
-                                    }
-                                  }
+                                  scoreVal = vArr.find(x => x !== undefined && x !== "" && x !== null);
                                 }
-                              } catch {
-                                val = sc.scores || "—";
-                                badgeStyle = "bg-indigo-50 text-indigo-700 border-indigo-200/50";
+                              } catch {}
+                              
+                              if (sName.includes("vấn đáp") || sName.includes("nói") || sCode.includes("speaking") || sCode.includes("oral") || sCode.includes("vd")) {
+                                if (scoreVal !== undefined && scoreVal !== null && scoreVal !== "") {
+                                  oralScoreVal = parseFloat(scoreVal);
+                                  oralScoreText = scoreVal.toString();
+                                }
+                              } else if (sName.includes("viết") || sCode.includes("writing") || sCode.includes("written") || sCode.includes("vt")) {
+                                if (scoreVal !== undefined && scoreVal !== null && scoreVal !== "") {
+                                  writtenScoreVal = parseFloat(scoreVal);
+                                  writtenScoreText = scoreVal.toString();
+                                }
                               }
-
-                              const sNameLower = sName.toLowerCase().normalize("NFC");
-                              const isEnglish = sNameLower.includes("tiếng anh") || sCode.includes("eng") || sCode.includes("esl") || sc.id === "tong_diem_tieng_anh";
-                              const isNLTD = sNameLower.includes("năng lực tư duy") || sCode.includes("nltd");
-                              const isToan = sNameLower.includes("toán") || sCode.includes("math") || sCode.includes("mth");
-                              const isTiengVietNguVan = sNameLower.includes("tiếng việt") || sNameLower.includes("ngữ văn") || sCode.includes("lit") || sCode.includes("vie") || sCode.includes("van");
-
-                              const isActive = activeSubjectId === sc.id;
-                              let activeClasses = "";
-                              let textLabelClass = "";
-                              let textValClass = "";
-                              let badgeClass = "";
-
-                              if (isEnglish || isNLTD) {
-                                activeClasses = isActive 
-                                  ? "border-violet-600 bg-violet-600 text-white shadow-[0_4px_12px_rgba(124,58,237,0.2)] -translate-y-0.5" 
-                                  : "border-violet-200 bg-violet-50/50 text-violet-900 hover:bg-violet-100/60 hover:border-violet-300 hover:-translate-y-0.5";
-                                textLabelClass = isActive ? "text-violet-100" : "text-violet-500 font-bold";
-                                textValClass = isActive ? "text-white" : "text-violet-900";
-                                badgeClass = isActive 
-                                  ? "bg-white/20 text-white border-white/20" 
-                                  : (badgeStyle.replace("bg-indigo-50", "bg-violet-100/50").replace("text-indigo-700", "text-violet-700").replace("border-indigo-200", "border-violet-200"));
-                              } else if (isToan || isTiengVietNguVan) {
-                                activeClasses = isActive 
-                                  ? "border-[#00A19A] bg-[#00A19A] text-white shadow-[0_4px_12px_rgba(0,161,154,0.2)] -translate-y-0.5" 
-                                  : "border-[#00A19A]/20 bg-[#00A19A]/5 text-[#008c85] hover:bg-[#00A19A]/10 hover:border-[#00A19A]/40 hover:-translate-y-0.5";
-                                textLabelClass = isActive ? "text-teal-100" : "text-[#00A19A] font-bold";
-                                textValClass = isActive ? "text-white" : "text-[#008c85]";
-                                badgeClass = isActive 
-                                  ? "bg-white/20 text-white border-white/20" 
-                                  : "bg-[#00A19A]/10 text-[#008c85] border-[#00A19A]/20";
-                              } else {
-                                activeClasses = isActive 
-                                  ? "border-[#00A19A] bg-[#00A19A]/5 shadow-[0_2px_8px_rgba(0,161,154,0.08)] -translate-y-0.5" 
-                                  : "border-slate-200 bg-white hover:border-[#00A19A]/40 hover:-translate-y-0.5";
-                                textLabelClass = isActive ? "text-[#00A19A]" : "text-slate-400";
-                                textValClass = isActive ? "text-[#00A19A]" : "text-slate-800";
-                                badgeClass = isActive ? "bg-[#00A19A] text-white border-[#00A19A]" : badgeStyle;
+                            }
+                          });
+                          
+                          let totalVal = "—";
+                          if (oralScoreVal !== null || writtenScoreVal !== null) {
+                            totalVal = ((oralScoreVal || 0) + (writtenScoreVal || 0)).toString();
+                          }
+                          
+                          if (!scoresList.some(s => s.id === "tong_diem_tieng_anh")) {
+                            scoresList.push({
+                              id: "tong_diem_tieng_anh",
+                              isVirtual: true,
+                              scores: JSON.stringify([totalVal]),
+                              subject: {
+                                id: "tong_diem_tieng_anh",
+                                code: "eng_total",
+                                name: "Tổng điểm Tiếng Anh",
+                                subjectType: "VIET_NAM",
+                                scoreColumns: 1,
+                                commentColumns: 0,
+                                columnNames: JSON.stringify({ scores: ["Tổng điểm Tiếng Anh"], comments: [] })
                               }
+                            });
+                          }
+                        }
+                        
+                        return (
+                          <>
+                            {/* RESULTS SUMMARY TABLE (ALL SCORES & COMMENTS AT A GLANCE) */}
+                            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden text-left">
+                              <div className="px-4 py-2 bg-slate-50/70 border-b border-slate-200 flex justify-between items-center">
+                                <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider">Bảng tổng quan kết quả & Nhận xét</span>
+                                <span className="text-[9px] text-slate-400 font-semibold italic">Nhấp vào từng dòng để xem biểu đồ chi tiết</span>
+                              </div>
+                              <div className="overflow-x-auto">
+                                <table className="w-full text-left table-fixed border-collapse">
+                                  <thead>
+                                    <tr className="border-b border-slate-200/60 bg-slate-50/30">
+                                      <th className="py-2 px-3 text-[9px] font-black text-slate-400 uppercase tracking-wider w-1/4">Môn khảo sát</th>
+                                      <th className="py-2 px-3 text-[9px] font-black text-slate-400 uppercase tracking-wider w-1/4 text-center">Kết quả</th>
+                                      <th className="py-2 px-3 text-[9px] font-black text-slate-400 uppercase tracking-wider w-1/2">Ý kiến nhận xét chính từ giáo viên</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-slate-100">
+                                    {scoresList.map((sc) => {
+                                      const subject = sc.subject || {};
+                                      const sName = subject.name || "Môn học";
+                                      const sCode = (subject.code || "").toLowerCase();
+                                      let val = "—";
+                                      let rawScore = "";
+                                      let badgeColor = "bg-slate-100 text-slate-600 border-slate-200";
 
-                              return (
-                                <div 
-                                  key={sc.id} 
-                                  onClick={() => setActiveSubjectId(sc.id)}
-                                  className={`rounded-3xl border p-5 shadow-sm transition-all duration-300 flex flex-col justify-between relative overflow-hidden group text-left cursor-pointer ${activeClasses}`}
-                                >
-                                  <div className="absolute top-0 right-0 w-24 h-24 bg-slate-50 rounded-full -mt-8 -mr-8 mix-blend-multiply filter blur-xl opacity-60 group-hover:scale-110 transition-transform duration-300"></div>
-                                  
-                                  <div className="flex justify-between items-start mb-4 z-10">
-                                    <span className={`text-[10px] font-black uppercase tracking-wider block shrink-0 max-w-[120px] truncate ${textLabelClass}`} title={sName}>
-                                      {sName}
-                                    </span>
-                                    {subject.subjectType === "VIET_NAM" && sc.id !== "tong_diem_tieng_anh" && (
-                                      <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border shrink-0 ${isActive ? "bg-white/20 text-white border-white/20" : "bg-[#00A19A]/5 text-[#00A19A] border-[#00A19A]/20"}`}>
-                                        GV Việt Nam
-                                      </span>
-                                    )}
-                                  </div>
-
-                                  <div className="flex items-end justify-between z-10 mt-auto">
-                                    <div className={`font-black tracking-tight leading-none ${sCode.includes("tly") ? "text-sm" : "text-xl"} ${textValClass}`}>
-                                      {val}
-                                    </div>
-                                    <div className={`px-2 py-1 rounded-xl border font-black text-[9px] uppercase tracking-wider ${badgeClass} flex items-center gap-1.5 shadow-sm`}>
-                                      {sCode.includes("tly") ? (
-                                        <>
-                                          <span className={`w-1.5 h-1.5 rounded-full bg-current animate-pulse`}></span>
-                                          {rawScore}đ
-                                        </>
-                                      ) : (
-                                        <>{sc.id === "tong_diem_tieng_anh" ? "Tổng điểm" : "Điểm số"}</>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-
-                          {/* DETAILED CARDS SECTION */}
-                          <div className="space-y-6">
-                            {scoresList
-                              .filter((sc) => sc.id === activeSubjectId)
-                              .map((sc) => {
-                                if (sc.id === "tong_diem_tieng_anh") {
-                                  const totalVal = oralScoreVal !== null || writtenScoreVal !== null 
-                                    ? ((oralScoreVal || 0) + (writtenScoreVal || 0)).toString() 
-                                    : "—";
-                                    
-                                  return (
-                                    <div key={sc.id} className="bg-violet-50/20 border border-violet-200 p-6 rounded-3xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden text-left">
-                                      <div className="absolute top-0 left-0 w-1.5 h-full bg-violet-600"></div>
-                                      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4 mb-5">
-                                        <div>
-                                          <h4 className="font-black text-violet-900 text-lg leading-none">Tổng điểm Tiếng Anh</h4>
-                                          <p className="text-xs text-slate-400 font-semibold mt-2.5">
-                                            Tổng hợp kết quả môn Tiếng Anh (Vấn đáp + Viết)
-                                          </p>
-                                        </div>
-                                      </div>
-                                      <div className="space-y-4">
-                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-left">
-                                          <div className="border rounded-2xl px-4 py-3 text-center shadow-sm flex flex-col justify-between bg-slate-50 border-slate-200/60 text-slate-600">
-                                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 truncate block leading-tight">Tiếng Anh (Vấn đáp)</span>
-                                            <div className="text-xl font-black mt-2 leading-none text-slate-800">
-                                              {oralScoreText !== "—" ? `${oralScoreText}/30` : "—/30"}
-                                            </div>
-                                          </div>
-                                          <div className="border rounded-2xl px-4 py-3 text-center shadow-sm flex flex-col justify-between bg-slate-50 border-slate-200/60 text-slate-600">
-                                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 truncate block leading-tight">Tiếng Anh (Viết)</span>
-                                            <div className="text-xl font-black mt-2 leading-none text-slate-800">
-                                              {writtenScoreText !== "—" ? `${writtenScoreText}/70` : "—/70"}
-                                            </div>
-                                          </div>
-                                          <div className="border rounded-2xl px-4 py-3 text-center shadow-sm flex flex-col justify-between bg-indigo-50/50 border-indigo-150 text-indigo-700">
-                                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 truncate block leading-tight">Tổng điểm</span>
-                                            <div className="text-xl font-black mt-2 leading-none text-indigo-700">
-                                              {totalVal !== "—" ? `${totalVal}/100` : "—/100"}
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  );
-                                }
-
-                                const subject = sc.subject || {};
-                                const subName = (subject.name || "").toLowerCase();
-                                const subCode = (subject.code || "").toLowerCase();
-                                const subNameNormalized = subName.normalize("NFC");
-                                const isPsych = subName.includes("tâm lý") || subCode.includes("tly");
-                                const isChildDev = subNameNormalized.includes("chuẩn phát triển") || subNameNormalized.includes("bộ chuẩn phát triển") || subCode.includes("cpt") || subCode.includes("tci");
-                                const isThinkingSkills = subNameNormalized.includes("năng lực tư duy") || subCode.includes("nltd");
-
-                                const isEnglish = subName.includes("tiếng anh") || subCode.includes("eng") || subCode.includes("esl");
-                                const isToan = subName.includes("toán") || subCode.includes("math") || subCode.includes("mth");
-                                const isTiengVietNguVan = subName.includes("tiếng việt") || subName.includes("ngữ văn") || subCode.includes("lit") || subCode.includes("vie") || subCode.includes("van");
-
-                                let detailCardClass = "bg-white border border-slate-200";
-                                let accentBarClass = "bg-[#00A19A]";
-                                let headerTextClass = "text-slate-800";
-
-                                if (isEnglish || isThinkingSkills) {
-                                  detailCardClass = "bg-violet-50/20 border-violet-200";
-                                  accentBarClass = "bg-violet-600";
-                                  headerTextClass = "text-violet-900";
-                                } else if (isToan || isTiengVietNguVan) {
-                                  detailCardClass = "bg-[#00A19A]/5 border-[#00A19A]/20";
-                                  accentBarClass = "bg-[#00A19A]";
-                                  headerTextClass = "text-[#008c85]";
-                                }
-
-                                let scoreVals = [];
-                                let commentVals = [];
-                                try { if (sc.scores) { const parsed = JSON.parse(sc.scores); scoreVals = Array.isArray(parsed) ? parsed : [parsed]; } } catch { scoreVals = [sc.scores]; }
-                                try { if (sc.comments) { const parsed = JSON.parse(sc.comments); commentVals = Array.isArray(parsed) ? parsed : [parsed]; } } catch { commentVals = [sc.comments]; }
-
-                                let parsedCols = { scores: [], comments: [] };
-                                try { if (subject.columnNames) { const parsed = JSON.parse(subject.columnNames); parsedCols = { scores: Array.isArray(parsed.scores) ? parsed.scores : [], comments: Array.isArray(parsed.comments) ? parsed.comments : [] }; } } catch {}
-
-                                return (
-                                  <div key={sc.id} className={`${detailCardClass} rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden text-left`}>
-                                    
-                                    {/* Card Decorative Accent bar */}
-                                    <div className={`absolute top-0 left-0 w-1.5 h-full ${accentBarClass}`}></div>
-
-                                    {/* Card Header */}
-                                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4 mb-5">
-                                      <div>
-                                        <div className="flex items-center gap-2.5">
-                                          <h4 className="font-black text-slate-800 text-lg leading-none">{subject.name}</h4>
-                                          {subject.code && <span className="font-mono text-[10px] font-black text-slate-400 bg-slate-50 border border-slate-200/50 px-2 py-0.5 rounded-lg select-none">{subject.code}</span>}
-                                          {subject.subjectType === "VIET_NAM" && (
-                                            <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full border shadow-sm bg-[#00A19A]/5 text-[#00A19A] border-[#00A19A]/20`}>
-                                              Giáo viên Việt Nam
-                                            </span>
-                                          )}
-                                        </div>
-                                        <div className="flex items-center gap-2 text-xs text-slate-400 font-semibold mt-2.5">
-                                          <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-black text-[9px] border shadow-inner select-none shrink-0">
-                                            {sc.teacherName?.charAt(0) || "—"}
-                                          </div>
-                                          <span>Giáo viên chấm: <strong className="text-slate-600 font-bold">{sc.teacherName || "Chưa xác định"}</strong></span>
-                                          <span className="text-slate-200">•</span>
-                                          <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5"/> Cập nhật: {new Date(sc.updatedAt).toLocaleDateString("vi-VN")}</span>
-                                        </div>
-                                      </div>
-                                    </div>
-
-                                    {/* Card Content depending on Subject Type */}
-                                    {isPsych ? (
-                                      <div className="space-y-5">
-                                        {/* Visual Diagnostic Psychology Score Scale */}
-                                        {(() => {
-                                          const score = parseFloat(scoreVals[6] || scoreVals[20] || "0");
-                                          
-                                          const levels = [
-                                            { name: "Bình thường", min: 0, max: 15, bg: "bg-emerald-50 text-emerald-700 border-emerald-100", activeBg: "bg-emerald-500", scaleBg: "bg-emerald-100" },
-                                            { name: "Dấu hiệu nhẹ", min: 16, max: 31, bg: "bg-blue-50 text-blue-700 border-blue-100", activeBg: "bg-blue-500", scaleBg: "bg-blue-100" },
-                                            { name: "Dấu hiệu vừa", min: 32, max: 47, bg: "bg-amber-50 text-amber-700 border-amber-100", activeBg: "bg-amber-500", scaleBg: "bg-amber-100" },
-                                            { name: "Nguy cơ cao", min: 48, max: 63, bg: "bg-orange-50 text-orange-700 border-orange-100", activeBg: "bg-orange-500", scaleBg: "bg-orange-100" },
-                                            { name: "Nguy cơ rất cao", min: 64, max: 80, bg: "bg-rose-50 text-rose-700 border-rose-100", activeBg: "bg-rose-500", scaleBg: "bg-rose-100" }
-                                          ];
-                                          
-                                          const activeLvl = levels.find(l => score >= l.min && score <= l.max) || levels[0];
-                                          
-                                          return (
-                                            <div className="space-y-4">
-                                              {/* Diagnosis Badge Box */}
-                                              <div className="flex items-center justify-between bg-slate-50 border border-slate-200/80 rounded-2xl p-4 shadow-inner">
-                                                <div>
-                                                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tổng điểm đánh giá</span>
-                                                  <div className="text-2xl font-black text-indigo-700 mt-1">{score} Điểm</div>
-                                                </div>
-                                                <div className={`px-4 py-2.5 rounded-2xl border font-black text-xs uppercase tracking-wider shadow-sm flex items-center gap-2 ${activeLvl.bg}`}>
-                                                  <span className={`w-2 h-2 rounded-full ${activeLvl.activeBg} animate-pulse`}></span>
-                                                  Chẩn đoán: {activeLvl.name}
-                                                </div>
-                                              </div>
-
-                                              {/* Interactive Diagnostic Gauge Scale */}
-                                              <div className="space-y-2">
-                                                <div className="flex items-center justify-between">
-                                                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-455">Thang đo chẩn đoán lâm sàng</span>
-                                                  <span className="text-[10px] font-bold text-slate-400">Điểm tối đa: 80</span>
-                                                </div>
-                                                <div className="grid grid-cols-5 gap-1.5">
-                                                  {levels.map(l => {
-                                                    const isActive = activeLvl.name === l.name;
-                                                    return (
-                                                      <div key={l.name} className="space-y-1">
-                                                        <div className={`h-2.5 rounded-full ${isActive ? l.activeBg : l.scaleBg} transition-all duration-500 ${isActive ? "shadow-md shadow-indigo-100 scale-y-110" : ""}`}></div>
-                                                        <div className="text-center">
-                                                          <span className={`text-[8px] leading-tight font-black block truncate ${isActive ? "text-slate-800 font-bold scale-[1.02]" : "text-slate-400"}`}>
-                                                            {l.name}
-                                                          </span>
-                                                          <span className="text-[7px] text-slate-355 font-semibold block mt-0.5">{l.min}-{l.max}</span>
-                                                        </div>
-                                                      </div>
-                                                    );
-                                                  })}
-                                                </div>
-                                              </div>
-                                            </div>
-                                          );
-                                        })()}
-
-                                        {/* Comments / Recommendations */}
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                                          <div className="space-y-1.5 bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-455 flex items-center gap-1.5">
-                                              <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>
-                                              Kết luận sơ bộ từ chuyên viên
-                                            </span>
-                                            <p className={`text-sm font-medium leading-relaxed whitespace-pre-wrap ${commentVals[0] ? "text-slate-700" : "text-slate-450 italic"}`}>
-                                              {commentVals[0] ? `"${commentVals[0]}"` : "Chưa cập nhật nội dung nhận định chi tiết."}
-                                            </p>
-                                          </div>
-                                          
-                                          <div className="space-y-1.5 bg-amber-50/30 p-4 rounded-2xl border border-amber-100/50">
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-amber-600 flex items-center gap-1.5">
-                                              <Info className="w-3.5 h-3.5 text-amber-500" />
-                                              Khuyến nghị dành cho phụ huynh
-                                            </span>
-                                            <p className={`text-sm font-medium leading-relaxed whitespace-pre-wrap ${commentVals[1] ? "text-amber-800" : "text-slate-400 italic"}`}>
-                                              {commentVals[1] ? `"${commentVals[1]}"` : "Chưa có khuyến nghị cụ thể từ chuyên viên."}
-                                            </p>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    ) : isChildDev ? (
-                                      <div className="space-y-5">
-                                        {/* Segmented Metrics Row */}
-                                        <div className="grid grid-cols-3 gap-3">
-                                          <div className="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-3.5 text-center shadow-inner">
-                                            <div className="text-[10px] font-black uppercase tracking-wider text-emerald-600 flex items-center justify-center gap-1"><Check className="w-3.5 h-3.5"/> Đạt</div>
-                                            <div className="text-2xl font-black text-emerald-700 mt-1">{(Array.isArray(scoreVals) ? scoreVals : []).filter(v => v === "3").length}</div>
-                                          </div>
-                                          <div className="bg-rose-50/50 border border-rose-100 rounded-2xl p-3.5 text-center shadow-inner">
-                                            <div className="text-[10px] font-black uppercase tracking-wider text-rose-600 flex items-center justify-center gap-1"><AlertCircle className="w-3.5 h-3.5"/> Không đạt</div>
-                                            <div className="text-2xl font-black text-rose-700 mt-1">{(Array.isArray(scoreVals) ? scoreVals : []).filter(v => v === "2").length}</div>
-                                          </div>
-                                          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 text-center shadow-inner">
-                                            <div className="text-[10px] font-black uppercase tracking-wider text-slate-500 flex items-center justify-center gap-1"><Info className="w-3.5 h-3.5"/> Không làm</div>
-                                            <div className="text-2xl font-black text-slate-600 mt-1">{(Array.isArray(scoreVals) ? scoreVals : []).filter(v => v === "1").length}</div>
-                                          </div>
-                                        </div>
-
-                                        {/* Chi tiết tiêu chí không đạt hoặc không làm */}
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                                          {scoreVals.some(v => v === "2") ? (
-                                            <div className="bg-rose-50/20 border border-rose-100 rounded-2xl p-4">
-                                              <span className="text-[10px] font-black uppercase tracking-widest text-rose-600 mb-3 block flex items-center gap-1.5"><AlertCircle className="w-4 h-4 text-rose-500"/> Chi tiết tiêu chí Không đạt</span>
-                                              <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 scrollbar-thin">
-                                                {scoreVals.map((v, idx) => v === "2" ? (
-                                                  <div key={idx} className="flex items-start gap-2.5 text-xs font-bold text-rose-800 leading-normal bg-white border border-rose-100/50 p-2.5 rounded-xl shadow-sm">
-                                                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0"></span>
-                                                    <span className="font-medium text-slate-700">
-                                                      {parsedCols.scores[idx] || [
-                                                        "Chỉ số 65. Có thói quen chào hỏi, cảm ơn, xin phép và xưng hô lễ phép với người lớn",
-                                                        "Chỉ số 74. Tập trung chú ý thực hiện nhiệm vụ và hoạt động.",
-                                                        "Chỉ số 16. Nhận biết về tên gọi, đặc điểm bên ngoài, giới tính, sở thích, điểm mạnh, điểm yếu của bản thân.",
-                                                        "Chỉ số 14. Nhận ra tình huống nguy hiểm và biết cách xử lý phù hợp.",
-                                                        "Chỉ số 33. Sử dụng lời nói, hành vi lịch sự trong giao tiếp.",
-                                                        "Chỉ số 31. Nghe và phản hồi thông tin đơn giản.",
-                                                        "Chỉ số 48. Gọi tên các ngày trong tuần theo thứ tự.",
-                                                        "Chỉ số 47. Xác định được vị trí (trong, ngoài, trên, dưới, sau, phải, trái) của một vật so với một vật khác.",
-                                                        "Chỉ số 51. Phân loại một số sự vật thành nhóm theo đặc điểm chung và gọi tên nhóm.",
-                                                        "Chỉ số 45. Xác định một số hình phẳng và hình khối đơn giản trong cuộc sống xung quanh.",
-                                                        "Chỉ số 42,43. Tách, gộp số lượng trong phạm vi 10; so sánh, thêm bớt số lượng trong phạm vi 10.",
-                                                        "Chỉ số 38. Nhận biết và gọi tên chữ cái trong bảng chữ cái Tiếng Việt.",
-                                                        "Chỉ số 41. Bắt chước hành vi “viết”",
-                                                        "Chỉ số 9. Thực hiện các việc tự phục vụ không cần sự giúp đỡ.",
-                                                        "Chỉ số 60. Thể hiện ý tưởng, cảm xúc của bản thân thông qua hát, vận động theo nhạc.",
-                                                        "Chỉ số 61. Tô màu kín, không chờm ra ngoài đường viền các hình có chi tiết nhỏ."
-                                                      ][idx] || `Tiêu chí ${idx + 1}`}
-                                                    </span>
-                                                  </div>
-                                                ) : null)}
-                                              </div>
-                                            </div>
-                                          ) : (
-                                            <div className="bg-emerald-50/20 border border-emerald-100 rounded-2xl p-5 text-center flex flex-col justify-center items-center gap-2">
-                                              <CheckCircle2 className="w-8 h-8 text-emerald-500" />
-                                              <p className="text-xs font-black text-emerald-800 uppercase tracking-wider">Hoàn thành tốt!</p>
-                                              <p className="text-xs text-slate-555 font-semibold">Học sinh hoàn thành xuất sắc, không có tiêu chí nào Không Đạt.</p>
-                                            </div>
-                                          )}
-
-                                          {scoreVals.some(v => v === "1") && (
-                                            <div className="bg-slate-55 border border-slate-200 rounded-2xl p-4">
-                                              <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3 block flex items-center gap-1.5"><Info className="w-4 h-4 text-slate-400"/> Chi tiết tiêu chí Không làm</span>
-                                              <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 scrollbar-thin">
-                                                {scoreVals.map((v, idx) => v === "1" ? (
-                                                  <div key={idx} className="flex items-start gap-2.5 text-xs font-bold text-slate-750 leading-normal bg-white border border-slate-200/65 p-2.5 rounded-xl shadow-sm">
-                                                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0"></span>
-                                                    <span className="font-medium text-slate-555">
-                                                      {parsedCols.scores[idx] || [
-                                                        "Chỉ số 65. Có thói quen chào hỏi, cảm ơn, xin phép và xưng hô lễ phép với người lớn",
-                                                        "Chỉ số 74. Tập trung chú ý thực hiện nhiệm vụ và hoạt động.",
-                                                        "Chỉ số 16. Nhận biết về tên gọi, đặc điểm bên ngoài, giới tính, sở thích, điểm mạnh, điểm yếu của bản thân.",
-                                                        "Chỉ số 14. Nhận ra tình huống nguy hiểm và biết cách xử lý phù hợp.",
-                                                        "Chỉ số 33. Sử dụng lời nói, hành vi lịch sự trong giao tiếp.",
-                                                        "Chỉ số 31. Nghe và phản hồi thông tin đơn giản.",
-                                                        "Chỉ số 48. Gọi tên các ngày trong tuần theo thứ tự.",
-                                                        "Chỉ số 47. Xác định được vị trí (trong, ngoài, trên, dưới, sau, phải, trái) của một vật so với một vật khác.",
-                                                        "Chỉ số 51. Phân loại một số sự vật thành nhóm theo đặc điểm chung và gọi tên nhóm.",
-                                                        "Chỉ số 45. Xác định một số hình phẳng và hình khối đơn giản trong cuộc sống xung quanh.",
-                                                        "Chỉ số 42,43. Tách, gộp số lượng trong phạm vi 10; so sánh, thêm bớt số lượng trong phạm vi 10.",
-                                                        "Chỉ số 38. Nhận biết và gọi tên chữ cái trong bảng chữ cái Tiếng Việt.",
-                                                        "Chỉ số 41. Bắt chước hành vi “viết”",
-                                                        "Chỉ số 9. Thực hiện các việc tự phục vụ không cần sự giúp đỡ.",
-                                                        "Chỉ số 60. Thể hiện ý tưởng, cảm xúc của bản thân thông qua hát, vận động theo nhạc.",
-                                                        "Chỉ số 61. Tô màu kín, không chờm ra ngoài đường viền các hình có chi tiết nhỏ."
-                                                      ][idx] || `Tiêu chí ${idx + 1}`}
-                                                    </span>
-                                                  </div>
-                                                ) : null)}
-                                              </div>
-                                            </div>
-                                          )}
-                                        </div>
-
-                                        {commentVals[0] && (
-                                          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 relative text-left">
-                                            <span className="block text-[10px] font-black uppercase tracking-widest text-slate-455 mb-1.5">Nhận xét tổng quan từ giáo viên</span>
-                                            <p className="text-sm font-semibold text-slate-700 italic leading-relaxed">"{commentVals[0]}"</p>
-                                          </div>
-                                        )}
-                                      </div>
-                                    ) : isThinkingSkills ? (
-                                      <div className="space-y-5">
-                                        {/* Gorgeous Thinking Skills Progress Matrix */}
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                          {[
-                                            { label: "Năng lực Logic", val: scoreVals[0], color: "text-indigo-600 bg-indigo-50 border-indigo-100", barColor: "bg-indigo-500" },
-                                            { label: "Năng lực Lập tưởng", val: scoreVals[1], color: "text-violet-600 bg-violet-50 border-violet-100", barColor: "bg-violet-500" },
-                                            { label: "Năng lực Phản biện", val: scoreVals[2], color: "text-cyan-600 bg-cyan-50 border-cyan-100", barColor: "bg-cyan-500" },
-                                            { label: "Giải quyết Vấn đề", val: scoreVals[3], color: "text-teal-600 bg-teal-50 border-teal-100", barColor: "bg-teal-500" }
-                                          ].map(item => {
-                                            let pctVal = 0;
-                                            if (item.val) {
-                                              const textVal = item.val.toString();
-                                              if (textVal.includes("/")) {
-                                                const [n, d] = textVal.split("/").map(Number);
-                                                if (d > 0) pctVal = (n / d) * 100;
-                                              } else if (textVal.includes("%")) {
-                                                pctVal = parseFloat(textVal);
-                                              } else {
-                                                const parsed = parseFloat(textVal);
-                                                if (!isNaN(parsed)) pctVal = parsed <= 10 ? parsed * 10 : parsed;
-                                              }
+                                      try {
+                                        if (sc.scores) {
+                                          const parsed = JSON.parse(sc.scores);
+                                          const vArr = Array.isArray(parsed) ? parsed : [parsed];
+                                          if (sCode.includes("tly")) {
+                                            const scNum = parseFloat(vArr[6] || vArr[20] || "0");
+                                            rawScore = scNum.toString();
+                                            let lvl = "Bình thường";
+                                            badgeColor = "bg-emerald-50 text-emerald-700 border-emerald-200/50";
+                                            if (scNum > 15 && scNum <= 31) {
+                                              lvl = "Dấu hiệu nhẹ";
+                                              badgeColor = "bg-blue-50 text-blue-700 border-blue-200/50";
+                                            } else if (scNum > 31 && scNum <= 47) {
+                                              lvl = "Dấu hiệu vừa";
+                                              badgeColor = "bg-amber-50 text-amber-700 border-amber-200/50";
+                                            } else if (scNum > 47 && scNum <= 63) {
+                                              lvl = "Nguy cơ cao";
+                                              badgeColor = "bg-orange-50 text-orange-700 border-orange-200/50";
+                                            } else if (scNum > 63) {
+                                              lvl = "Nguy cơ rất cao";
+                                              badgeColor = "bg-rose-50 text-rose-700 border-rose-200/50";
                                             }
+                                            val = lvl;
+                                          } else if (sCode.includes("tci") || sCode.includes("cpt")) {
+                                            const passedCount = vArr.filter(x => x === "3").length;
+                                            val = passedCount + "/" + vArr.length + " Đạt";
+                                            badgeColor = passedCount >= vArr.length * 0.7 ? "bg-emerald-50 text-emerald-700 border-emerald-200/50" : "bg-amber-50 text-amber-700 border-amber-200/50";
+                                          } else if (sCode.includes("nltd")) {
+                                            const pct = parseFloat(vArr[4] || "0");
+                                            val = pct + "%";
+                                            badgeColor = pct >= 80 ? "bg-indigo-50 text-indigo-700 border-indigo-200/50" : pct >= 50 ? "bg-blue-50 text-blue-700 border-blue-200/50" : "bg-rose-50 text-rose-700 border-rose-200/50";
+                                          } else {
+                                            const firstVal = vArr.find(x => x !== undefined && x !== "" && x !== null);
+                                            val = firstVal !== undefined ? firstVal.toString() : "—";
+                                            badgeColor = "bg-indigo-50 text-indigo-700 border-indigo-200/50";
                                             
-                                            return (
-                                              <div key={item.label} className={`border rounded-2xl p-3.5 text-center flex flex-col justify-between shadow-sm relative overflow-hidden group ${item.color}`}>
-                                                <span className="text-[10px] font-black uppercase tracking-wider text-slate-555 block leading-tight">{item.label}</span>
-                                                <div className="text-lg font-black text-slate-800 mt-2 mb-2 leading-none">{item.val || "—"}</div>
-                                                
-                                                {/* Micro Progress Bar */}
-                                                <div className="w-full bg-slate-100 rounded-full h-1.5 mt-auto">
-                                                  <div className={`h-1.5 rounded-full ${item.barColor}`} style={{ width: `${Math.min(pctVal || 0, 100)}%` }}></div>
-                                                </div>
-                                              </div>
-                                            );
-                                          })}
-                                        </div>
-
-                                        {/* Premium overall challenge completion indicator */}
-                                        <div className="bg-gradient-to-r from-indigo-50 to-violet-50/50 border border-indigo-100 rounded-2xl p-4 flex items-center justify-between shadow-sm text-left">
-                                          <div className="flex items-center gap-2">
-                                            <div className="p-2.5 bg-indigo-500 text-white rounded-xl shadow-md shadow-indigo-100 shrink-0">
-                                              <BarChart3 className="w-4 h-4"/>
-                                            </div>
-                                            <div>
-                                              <span className="text-[10px] font-black uppercase tracking-widest text-indigo-555">Tỷ lệ hoàn thành thử thách</span>
-                                              <p className="text-xs text-slate-555 font-bold mt-0.5">Mức độ hoàn thành các nhiệm vụ tư duy</p>
-                                            </div>
-                                          </div>
-                                          <div className="text-right">
-                                            <span className="text-2xl font-black text-indigo-750">{scoreVals[4] || "0"}%</span>
-                                            <div className="w-28 bg-slate-100 rounded-full h-2 mt-1 border border-slate-200/50 overflow-hidden shadow-inner shrink-0">
-                                              <div className="bg-indigo-600 h-2 rounded-full" style={{ width: `${scoreVals[4] || 0}%` }}></div>
-                                            </div>
-                                          </div>
-                                        </div>
-
-                                        {commentVals[0] && (
-                                          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 relative text-left">
-                                            <span className="block text-[10px] font-black uppercase tracking-widest text-slate-455 mb-1.5">Nhận xét tổng quan</span>
-                                            <p className="text-sm font-semibold text-slate-700 italic leading-relaxed">"{commentVals[0]}"</p>
-                                          </div>
-                                        )}
-                                      </div>
-                                    ) : (
-                                      <div className="space-y-4">
-                                        {/* Display standard scores columns in premium structured layout */}
-                                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 text-left">
-                                          {Array.from({length: (subject.scoreColumns ?? 1)}).map((_, colIdx) => {
-                                            let colName = "Điểm " + (colIdx + 1);
-                                            if (parsedCols.scores && parsedCols.scores[colIdx]) colName = parsedCols.scores[colIdx];
-                                            const isTotal = colName.toLowerCase().includes("tổng");
-                                            const val = scoreVals[colIdx];
-                                            
-                                            let displayVal = val !== undefined && val !== "" && val !== null ? val : "—";
                                             if (!isGrade1) {
-                                              const sNameLower = subName.toLowerCase().normalize("NFC");
-                                              if (sNameLower.includes("tiếng anh") || subCode.includes("eng") || subCode.includes("esl")) {
-                                                if (sNameLower.includes("vấn đáp") || sNameLower.includes("nói") || subCode.includes("speaking") || subCode.includes("oral") || subCode.includes("vd")) {
-                                                  displayVal = val !== undefined && val !== "" && val !== null ? `${val}/30` : "—/30";
-                                                } else if (sNameLower.includes("viết") || subCode.includes("writing") || subCode.includes("written") || subCode.includes("vt")) {
-                                                  displayVal = val !== undefined && val !== "" && val !== null ? `${val}/70` : "—/70";
+                                              const sNameLower = sName.toLowerCase().normalize("NFC");
+                                              if (sNameLower.includes("tiếng anh") || sCode.includes("eng") || sCode.includes("esl")) {
+                                                if (sNameLower.includes("vấn đáp") || sNameLower.includes("nói") || sCode.includes("speaking") || sCode.includes("oral") || sCode.includes("vd")) {
+                                                  val = firstVal !== undefined ? `${firstVal}/30` : "—/30";
+                                                } else if (sNameLower.includes("viết") || sCode.includes("writing") || sCode.includes("written") || sCode.includes("vt")) {
+                                                  val = firstVal !== undefined ? `${firstVal}/70` : "—/70";
+                                                } else if (sc.id === "tong_diem_tieng_anh") {
+                                                  val = firstVal !== undefined && firstVal !== "—" ? `${firstVal}/100` : "—/100";
                                                 }
                                               }
                                             }
+                                          }
+                                        }
+                                      } catch {
+                                        val = sc.scores || "—";
+                                        badgeColor = "bg-indigo-50 text-indigo-700 border-indigo-200/50";
+                                      }
+
+                                      // Extract primary comment
+                                      let commentPreview = "—";
+                                      try {
+                                        if (sc.comments) {
+                                          const parsed = JSON.parse(sc.comments);
+                                          const commentVals = Array.isArray(parsed) ? parsed : [parsed];
+                                          const firstComment = commentVals.find(c => c && c.trim() !== "");
+                                          if (firstComment) commentPreview = firstComment;
+                                        }
+                                      } catch {}
+
+                                      const isActive = activeSubjectId === sc.id;
+
+                                      return (
+                                        <tr 
+                                          key={sc.id} 
+                                          onClick={() => setActiveSubjectId(sc.id)}
+                                          className={`cursor-pointer transition-all duration-200 group/row ${
+                                            isActive 
+                                              ? "bg-indigo-50/50 border-l-4 border-indigo-600 font-bold" 
+                                              : "hover:bg-slate-50/60 border-l-4 border-transparent"
+                                          }`}
+                                        >
+                                          <td className="py-1.5 px-3">
+                                            <div className="flex flex-col">
+                                              <span className={`text-[11px] ${isActive ? "text-indigo-900 font-black" : "text-slate-700 font-bold group-hover/row:text-indigo-600"}`}>
+                                                {sName}
+                                              </span>
+                                              {sc.teacherName && (
+                                                <span className="text-[9px] text-slate-400 font-semibold mt-0.5">
+                                                  GV: {sc.teacherName}
+                                                </span>
+                                              )}
+                                            </div>
+                                          </td>
+                                          <td className="py-1.5 px-3 text-center">
+                                            <span className={`px-2 py-0.5 rounded-lg border text-[10px] font-black inline-block shadow-sm ${badgeColor}`}>
+                                              {sCode.includes("tly") && rawScore ? `${val} (${rawScore}đ)` : val}
+                                            </span>
+                                          </td>
+                                          <td className="py-1.5 px-3">
+                                            <p className={`text-[11px] leading-relaxed truncate group-hover/row:whitespace-normal group-hover/row:line-clamp-none line-clamp-1 italic ${
+                                              commentPreview !== "—" ? "text-slate-600" : "text-slate-400"
+                                            }`} title={commentPreview !== "—" ? commentPreview : undefined}>
+                                              {commentPreview !== "—" ? `"${commentPreview}"` : "Chưa có nhận xét"}
+                                            </p>
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+
+                            {/* DETAILED CARDS SECTION */}
+                            <div className="space-y-4">
+                              {scoresList
+                                .filter((sc) => sc.id === activeSubjectId)
+                                .map((sc) => {
+                                  if (sc.id === "tong_diem_tieng_anh") {
+                                    const totalVal = oralScoreVal !== null || writtenScoreVal !== null 
+                                      ? ((oralScoreVal || 0) + (writtenScoreVal || 0)).toString() 
+                                      : "—";
+                                      
+                                    return (
+                                      <div key={sc.id} className="bg-violet-50/20 border border-violet-200 p-4 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden text-left animate-fade-in">
+                                        <div className="absolute top-0 left-0 w-1.5 h-full bg-violet-600"></div>
+                                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3 mb-4">
+                                          <div>
+                                            <h4 className="font-black text-violet-900 text-sm leading-none">Tổng điểm Tiếng Anh</h4>
+                                            <p className="text-[11px] text-slate-400 font-semibold mt-1.5">
+                                              Tổng hợp kết quả môn Tiếng Anh (Vấn đáp + Viết)
+                                            </p>
+                                          </div>
+                                        </div>
+                                        <div className="space-y-3">
+                                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
+                                            <div className="border rounded-xl px-3 py-2 text-center shadow-sm flex flex-col justify-between bg-slate-50 border-slate-200/60 text-slate-600">
+                                              <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 truncate block leading-tight">Tiếng Anh (Vấn đáp)</span>
+                                              <div className="text-lg font-black mt-1 leading-none text-slate-800">
+                                                {oralScoreText !== "—" ? `${oralScoreText}/30` : "—/30"}
+                                              </div>
+                                            </div>
+                                            <div className="border rounded-xl px-3 py-2 text-center shadow-sm flex flex-col justify-between bg-slate-50 border-slate-200/60 text-slate-600">
+                                              <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 truncate block leading-tight">Tiếng Anh (Viết)</span>
+                                              <div className="text-lg font-black mt-1 leading-none text-slate-800">
+                                                {writtenScoreText !== "—" ? `${writtenScoreText}/70` : "—/70"}
+                                              </div>
+                                            </div>
+                                            <div className="border rounded-xl px-3 py-2 text-center shadow-sm flex flex-col justify-between bg-indigo-50/50 border-indigo-150 text-indigo-700">
+                                              <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 truncate block leading-tight">Tổng điểm</span>
+                                              <div className="text-lg font-black mt-1 leading-none text-indigo-700">
+                                                {totalVal !== "—" ? `${totalVal}/100` : "—/100"}
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  }
+
+                                  const subject = sc.subject || {};
+                                  const subName = (subject.name || "").toLowerCase();
+                                  const subCode = (subject.code || "").toLowerCase();
+                                  const subNameNormalized = subName.normalize("NFC");
+                                  const isPsych = subName.includes("tâm lý") || subCode.includes("tly");
+                                  const isChildDev = subNameNormalized.includes("chuẩn phát triển") || subNameNormalized.includes("bộ chuẩn phát triển") || subCode.includes("cpt") || subCode.includes("tci");
+                                  const isThinkingSkills = subNameNormalized.includes("năng lực tư duy") || subCode.includes("nltd");
+
+                                  const isEnglish = subName.includes("tiếng anh") || subCode.includes("eng") || subCode.includes("esl");
+                                  const isToan = subName.includes("toán") || subCode.includes("math") || subCode.includes("mth");
+                                  const isTiengVietNguVan = subName.includes("tiếng việt") || subName.includes("ngữ văn") || subCode.includes("lit") || subCode.includes("vie") || subCode.includes("van");
+
+                                  let detailCardClass = "bg-white border border-slate-200";
+                                  let accentBarClass = "bg-[#00A19A]";
+                                  let headerTextClass = "text-slate-800";
+
+                                  if (isEnglish || isThinkingSkills) {
+                                    detailCardClass = "bg-violet-50/20 border-violet-200";
+                                    accentBarClass = "bg-violet-600";
+                                    headerTextClass = "text-violet-900";
+                                  } else if (isToan || isTiengVietNguVan) {
+                                    detailCardClass = "bg-[#00A19A]/5 border-[#00A19A]/20";
+                                    accentBarClass = "bg-[#00A19A]";
+                                    headerTextClass = "text-[#008c85]";
+                                  }
+
+                                  let scoreVals = [];
+                                  let commentVals = [];
+                                  try { if (sc.scores) { const parsed = JSON.parse(sc.scores); scoreVals = Array.isArray(parsed) ? parsed : [parsed]; } } catch { scoreVals = [sc.scores]; }
+                                  try { if (sc.comments) { const parsed = JSON.parse(sc.comments); commentVals = Array.isArray(parsed) ? parsed : [parsed]; } } catch { commentVals = [sc.comments]; }
+
+                                  let parsedCols = { scores: [], comments: [] };
+                                  try { if (subject.columnNames) { const parsed = JSON.parse(subject.columnNames); parsedCols = { scores: Array.isArray(parsed.scores) ? parsed.scores : [], comments: Array.isArray(parsed.comments) ? parsed.comments : [] }; } } catch {}
+
+                                  return (
+                                    <div key={sc.id} className={`${detailCardClass} rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden text-left animate-fade-in`}>
+                                      
+                                      {/* Card Decorative Accent bar */}
+                                      <div className={`absolute top-0 left-0 w-1.5 h-full ${accentBarClass}`}></div>
+
+                                      {/* Card Header */}
+                                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3 mb-4">
+                                        <div>
+                                          <div className="flex items-center gap-2">
+                                            <h4 className="font-black text-slate-800 text-sm leading-none">{subject.name}</h4>
+                                            {subject.code && <span className="font-mono text-[9px] font-black text-slate-400 bg-slate-50 border border-slate-200/50 px-1.5 py-0.5 rounded-lg select-none">{subject.code}</span>}
+                                            {subject.subjectType === "VIET_NAM" && (
+                                              <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border shadow-sm bg-[#00A19A]/5 text-[#00A19A] border-[#00A19A]/20`}>
+                                                Giáo viên Việt Nam
+                                              </span>
+                                            )}
+                                          </div>
+                                          <div className="flex items-center gap-2 text-[11px] text-slate-400 font-semibold mt-1.5">
+                                            <div className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-black text-[8px] border shadow-inner select-none shrink-0">
+                                              {sc.teacherName?.charAt(0) || "—"}
+                                            </div>
+                                            <span>GV chấm: <strong className="text-slate-600 font-bold">{sc.teacherName || "Chưa xác định"}</strong></span>
+                                            <span className="text-slate-200">•</span>
+                                            <span className="flex items-center gap-0.5"><Clock className="w-3 h-3"/> Cập nhật: {new Date(sc.updatedAt).toLocaleDateString("vi-VN")}</span>
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      {/* Card Content depending on Subject Type */}
+                                      {isPsych ? (
+                                        <div className="space-y-4">
+                                          {/* Visual Diagnostic Psychology Score Scale */}
+                                          {(() => {
+                                            const score = parseFloat(scoreVals[6] || scoreVals[20] || "0");
+                                            
+                                            const levels = [
+                                              { name: "Bình thường", min: 0, max: 15, bg: "bg-emerald-50 text-emerald-700 border-emerald-100", activeBg: "bg-emerald-500", scaleBg: "bg-emerald-100" },
+                                              { name: "Dấu hiệu nhẹ", min: 16, max: 31, bg: "bg-blue-50 text-blue-700 border-blue-100", activeBg: "bg-blue-500", scaleBg: "bg-blue-100" },
+                                              { name: "Dấu hiệu vừa", min: 32, max: 47, bg: "bg-amber-50 text-amber-700 border-amber-100", activeBg: "bg-amber-500", scaleBg: "bg-amber-100" },
+                                              { name: "Nguy cơ cao", min: 48, max: 63, bg: "bg-orange-50 text-orange-700 border-orange-100", activeBg: "bg-orange-500", scaleBg: "bg-orange-100" },
+                                              { name: "Nguy cơ rất cao", min: 64, max: 80, bg: "bg-rose-50 text-rose-700 border-rose-100", activeBg: "bg-rose-500", scaleBg: "bg-rose-100" }
+                                            ];
+                                            
+                                            const activeLvl = levels.find(l => score >= l.min && score <= l.max) || levels[0];
                                             
                                             return (
-                                              <div key={colIdx} className={`border rounded-2xl px-4 py-3 text-center shadow-sm flex flex-col justify-between ${isTotal ? "bg-indigo-50/50 border-indigo-150 text-indigo-700" : "bg-slate-50 border-slate-200/60 text-slate-600"}`}>
-                                                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 truncate block leading-tight">{colName}</span>
-                                                <div className={`text-xl font-black mt-2 leading-none ${isTotal ? "text-indigo-700" : "text-slate-800"}`}>
-                                                  {displayVal}
+                                              <div className="space-y-3">
+                                                {/* Diagnosis Badge Box */}
+                                                <div className="flex items-center justify-between bg-slate-50 border border-slate-200/80 rounded-xl p-3 shadow-inner">
+                                                  <div>
+                                                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Tổng điểm đánh giá</span>
+                                                    <div className="text-lg font-black text-indigo-700 mt-0.5">{score} Điểm</div>
+                                                  </div>
+                                                  <div className={`px-3 py-1.5 rounded-xl border font-black text-[11px] uppercase tracking-wider shadow-sm flex items-center gap-1.5 ${activeLvl.bg}`}>
+                                                    <span className={`w-1.5 h-1.5 rounded-full ${activeLvl.activeBg} animate-pulse`}></span>
+                                                    Chẩn đoán: {activeLvl.name}
+                                                  </div>
+                                                </div>
+
+                                                {/* Interactive Diagnostic Gauge Scale */}
+                                                <div className="space-y-1.5">
+                                                  <div className="flex items-center justify-between">
+                                                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-455">Thang đo chẩn đoán lâm sàng</span>
+                                                    <span className="text-[9px] font-bold text-slate-400">Điểm tối đa: 80</span>
+                                                  </div>
+                                                  <div className="grid grid-cols-5 gap-1">
+                                                    {levels.map(l => {
+                                                      const isActive = activeLvl.name === l.name;
+                                                      return (
+                                                        <div key={l.name} className="space-y-1">
+                                                          <div className={`h-1.5 rounded-full ${isActive ? l.activeBg : l.scaleBg} transition-all duration-500 ${isActive ? "shadow-md scale-y-110" : ""}`}></div>
+                                                          <div className="text-center">
+                                                            <span className={`text-[7px] leading-tight font-black block truncate ${isActive ? "text-slate-800 font-bold" : "text-slate-400"}`}>
+                                                              {l.name}
+                                                            </span>
+                                                            <span className="text-[6px] text-slate-355 font-semibold block mt-0.5">{l.min}-{l.max}</span>
+                                                          </div>
+                                                        </div>
+                                                      );
+                                                    })}
+                                                  </div>
                                                 </div>
                                               </div>
                                             );
-                                          })}
-                                        </div>
+                                          })()}
 
-                                        {/* Display standard comments comments columns */}
-                                        {commentVals.length > 0 && commentVals.some(v => v) && (
-                                          <div className="space-y-3 bg-slate-50 p-5 rounded-3xl border border-slate-100/70 text-left">
-                                            <span className="block text-[10px] font-black uppercase tracking-widest text-slate-455 mb-2">Ý kiến nhận xét từ Giáo viên bộ môn</span>
-                                            <div className="space-y-3">
-                                              {Array.from({length: (subject.commentColumns ?? 1)}).map((_, colIdx) => {
-                                                let colName = "Nhận xét";
-                                                if (parsedCols.comments && parsedCols.comments[colIdx]) colName = parsedCols.comments[colIdx];
-                                                const val = commentVals[colIdx];
-                                                if (!val) return null;
-
-                                                return (
-                                                  <div key={colIdx} className="bg-white p-3.5 rounded-2xl border-2 border-emerald-100/60 shadow-sm flex items-start gap-3 text-left">
-                                                    <div className="w-7 h-7 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 text-xs font-black select-none shrink-0">
-                                                      {colName.charAt(0)}
-                                                    </div>
-                                                    <div className="flex-1">
-                                                      <span className="text-[9px] font-black uppercase tracking-wider text-indigo-600 block mb-0.5">{colName}</span>
-                                                      <p className="text-sm font-semibold text-slate-700 italic leading-relaxed">"{val}"</p>
-                                                    </div>
-                                                  </div>
-                                                );
-                                              })}
+                                          {/* Comments / Recommendations */}
+                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-left">
+                                            <div className="space-y-1 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                              <span className="text-[9px] font-black uppercase tracking-widest text-slate-455 flex items-center gap-1">
+                                                <span className="w-1 h-1 bg-indigo-500 rounded-full"></span>
+                                                Kết luận sơ bộ từ chuyên viên
+                                              </span>
+                                              <p className={`text-xs font-medium leading-relaxed whitespace-pre-wrap ${commentVals[0] ? "text-slate-700" : "text-slate-450 italic"}`}>
+                                                {commentVals[0] ? `"${commentVals[0]}"` : "Chưa cập nhật nội dung nhận định."}
+                                              </p>
+                                            </div>
+                                            
+                                            <div className="space-y-1 bg-amber-50/30 p-3 rounded-xl border border-amber-100/50">
+                                              <span className="text-[9px] font-black uppercase tracking-widest text-amber-600 flex items-center gap-1">
+                                                <Info className="w-3 h-3 text-amber-500" />
+                                                Khuyến nghị phụ huynh
+                                              </span>
+                                              <p className={`text-xs font-medium leading-relaxed whitespace-pre-wrap ${commentVals[1] ? "text-amber-800" : "text-slate-400 italic"}`}>
+                                                {commentVals[1] ? `"${commentVals[1]}"` : "Chưa có khuyến nghị cụ thể."}
+                                              </p>
                                             </div>
                                           </div>
-                                        )}
-                                      </div>
-                                    )}
+                                        </div>
+                                      ) : isChildDev ? (
+                                        <div className="space-y-4">
+                                          {/* Segmented Metrics Row */}
+                                          <div className="grid grid-cols-3 gap-2">
+                                            <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-2 text-center shadow-inner">
+                                              <div className="text-[9px] font-black uppercase tracking-wider text-emerald-600 flex items-center justify-center gap-0.5"><Check className="w-3 h-3"/> Đạt</div>
+                                              <div className="text-xl font-black text-emerald-700 mt-0.5">{(Array.isArray(scoreVals) ? scoreVals : []).filter(v => v === "3").length}</div>
+                                            </div>
+                                            <div className="bg-rose-50/50 border border-rose-100 rounded-xl p-2 text-center shadow-inner">
+                                              <div className="text-[9px] font-black uppercase tracking-wider text-rose-600 flex items-center justify-center gap-0.5"><AlertCircle className="w-3 h-3"/> Không đạt</div>
+                                              <div className="text-xl font-black text-rose-700 mt-0.5">{(Array.isArray(scoreVals) ? scoreVals : []).filter(v => v === "2").length}</div>
+                                            </div>
+                                            <div className="bg-slate-50 border border-slate-200 rounded-xl p-2 text-center shadow-inner">
+                                              <div className="text-[9px] font-black uppercase tracking-wider text-slate-500 flex items-center justify-center gap-0.5"><Info className="w-3 h-3"/> Không làm</div>
+                                              <div className="text-xl font-black text-slate-600 mt-0.5">{(Array.isArray(scoreVals) ? scoreVals : []).filter(v => v === "1").length}</div>
+                                            </div>
+                                          </div>
 
-                                  </div>
-                                );
-                              })}
-                          </div>
-                        </>
-                      );
-                    })()}
-                  </div>
-                )}
+                                          {/* Chi tiết tiêu chí không đạt hoặc không làm */}
+                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-left">
+                                            {scoreVals.some(v => v === "2") ? (
+                                              <div className="bg-rose-50/20 border border-rose-100 rounded-xl p-3">
+                                                <span className="text-[9px] font-black uppercase tracking-widest text-rose-600 mb-2 block flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5 text-rose-500"/> Tiêu chí Không đạt</span>
+                                                <div className="space-y-1.5 max-h-[160px] overflow-y-auto pr-1 scrollbar-thin">
+                                                  {scoreVals.map((v, idx) => v === "2" ? (
+                                                    <div key={idx} className="flex items-start gap-2 text-[11px] font-bold text-rose-800 leading-normal bg-white border border-rose-100/50 p-2 rounded-lg shadow-sm">
+                                                      <span className="mt-1.5 w-1 h-1 rounded-full bg-rose-500 shrink-0"></span>
+                                                      <span className="font-medium text-slate-700">
+                                                        {parsedCols.scores[idx] || [
+                                                          "Chỉ số 65. Có thói quen chào hỏi, cảm ơn, xin phép và xưng hô lễ phép với người lớn",
+                                                          "Chỉ số 74. Tập trung chú ý thực hiện nhiệm vụ và hoạt động.",
+                                                          "Chỉ số 16. Nhận biết về tên gọi, đặc điểm bên ngoài, giới tính, sở thích, điểm mạnh, điểm yếu của bản thân.",
+                                                          "Chỉ số 14. Nhận ra tình huống nguy hiểm và biết cách xử lý phù hợp.",
+                                                          "Chỉ số 33. Sử dụng lời nói, hành vi lịch sự trong giao tiếp.",
+                                                          "Chỉ số 31. Nghe và phản hồi thông tin đơn giản.",
+                                                          "Chỉ số 48. Gọi tên các ngày trong tuần theo thứ tự.",
+                                                          "Chỉ số 47. Xác định được vị trí (trong, ngoài, trên, dưới, sau, phải, trái) của một vật so với một vật khác.",
+                                                          "Chỉ số 51. Phân loại một số sự vật thành nhóm theo đặc điểm chung và gọi tên nhóm.",
+                                                          "Chỉ số 45. Xác định một số hình phẳng và hình khối đơn giản trong cuộc sống xung quanh.",
+                                                          "Chỉ số 42,43. Tách, gộp số lượng trong phạm vi 10; so sánh, thêm bớt số lượng trong phạm vi 10.",
+                                                          "Chỉ số 38. Nhận biết và gọi tên chữ cái trong bảng chữ cái Tiếng Việt.",
+                                                          "Chỉ số 41. Bắt chước hành vi “viết”",
+                                                          "Chỉ số 9. Thực hiện các việc tự phục vụ không cần sự giúp đỡ.",
+                                                          "Chỉ số 60. Thể hiện ý tưởng, cảm xúc của bản thân thông qua hát, vận động theo nhạc.",
+                                                          "Chỉ số 61. Tô màu kín, không chờm ra ngoài đường viền các hình có chi tiết nhỏ."
+                                                        ][idx] || `Tiêu chí ${idx + 1}`}
+                                                      </span>
+                                                    </div>
+                                                  ) : null)}
+                                                </div>
+                                              </div>
+                                            ) : (
+                                              <div className="bg-emerald-50/20 border border-emerald-100 rounded-xl p-4 text-center flex flex-col justify-center items-center gap-1.5">
+                                                <CheckCircle2 className="w-6 h-6 text-emerald-500" />
+                                                <p className="text-[10px] font-black text-emerald-800 uppercase tracking-wider">Hoàn thành tốt!</p>
+                                                <p className="text-[11px] text-slate-555 font-semibold">Học sinh hoàn thành xuất sắc, không có tiêu chí nào Không Đạt.</p>
+                                              </div>
+                                            )}
+
+                                            {scoreVals.some(v => v === "1") && (
+                                              <div className="bg-slate-55 border border-slate-200 rounded-xl p-3">
+                                                <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2 block flex items-center gap-1"><Info className="w-3.5 h-3.5 text-slate-400"/> Tiêu chí Không làm</span>
+                                                <div className="space-y-1.5 max-h-[160px] overflow-y-auto pr-1 scrollbar-thin">
+                                                  {scoreVals.map((v, idx) => v === "1" ? (
+                                                    <div key={idx} className="flex items-start gap-2 text-[11px] font-bold text-slate-750 leading-normal bg-white border border-slate-200/65 p-2 rounded-lg shadow-sm">
+                                                      <span className="mt-1.5 w-1 h-1 rounded-full bg-slate-400 shrink-0"></span>
+                                                      <span className="font-medium text-slate-555">
+                                                        {parsedCols.scores[idx] || [
+                                                          "Chỉ số 65. Có thói quen chào hỏi, cảm ơn, xin phép và xưng hô lễ phép với người lớn",
+                                                          "Chỉ số 74. Tập trung chú ý thực hiện nhiệm vụ và hoạt động.",
+                                                          "Chỉ số 16. Nhận biết về tên gọi, đặc điểm bên ngoài, giới tính, sở thích, điểm mạnh, điểm yếu của bản thân.",
+                                                          "Chỉ số 14. Nhận ra tình huống nguy hiểm và biết cách xử lý phù hợp.",
+                                                          "Chỉ số 33. Sử dụng lời nói, hành vi lịch sự trong giao tiếp.",
+                                                          "Chỉ số 31. Nghe và phản hồi thông tin đơn giản.",
+                                                          "Chỉ số 48. Gọi tên các ngày trong tuần theo thứ tự.",
+                                                          "Chỉ số 47. Xác định được vị trí (trong, ngoài, trên, dưới, sau, phải, trái) của một vật so với một vật khác.",
+                                                          "Chỉ số 51. Phân loại một số sự vật thành nhóm theo đặc điểm chung và gọi tên nhóm.",
+                                                          "Chỉ số 45. Xác định một số hình phẳng và hình khối đơn giản trong cuộc sống xung quanh.",
+                                                          "Chỉ số 42,43. Tách, gộp số lượng trong phạm vi 10; so sánh, thêm bớt số lượng trong phạm vi 10.",
+                                                          "Chỉ số 38. Nhận biết và gọi tên chữ cái trong bảng chữ cái Tiếng Việt.",
+                                                          "Chỉ số 41. Bắt chước hành vi “viết”",
+                                                          "Chỉ số 9. Thực hiện các việc tự phục vụ không cần sự giúp đỡ.",
+                                                          "Chỉ số 60. Thể hiện ý tưởng, cảm xúc của bản thân thông qua hát, vận động theo nhạc.",
+                                                          "Chỉ số 61. Tô màu kín, không chờm ra ngoài đường viền các hình có chi tiết nhỏ."
+                                                        ][idx] || `Tiêu chí ${idx + 1}`}
+                                                      </span>
+                                                    </div>
+                                                  ) : null)}
+                                                </div>
+                                              </div>
+                                            )}
+                                          </div>
+
+                                          {commentVals[0] && (
+                                            <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 relative text-left">
+                                              <span className="block text-[9px] font-black uppercase tracking-widest text-slate-455 mb-1">Nhận xét từ giáo viên</span>
+                                              <p className="text-xs font-semibold text-slate-700 italic leading-relaxed">"{commentVals[0]}"</p>
+                                            </div>
+                                          )}
+                                        </div>
+                                      ) : isThinkingSkills ? (
+                                        <div className="space-y-4">
+                                          {/* Gorgeous Thinking Skills Progress Matrix */}
+                                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                            {[
+                                              { label: "Logic", val: scoreVals[0], color: "text-indigo-600 bg-indigo-50 border-indigo-100", barColor: "bg-indigo-500" },
+                                              { label: "Sáng tạo", val: scoreVals[1], color: "text-violet-600 bg-violet-50 border-violet-100", barColor: "bg-violet-500" },
+                                              { label: "Phản biện", val: scoreVals[2], color: "text-cyan-600 bg-cyan-50 border-cyan-100", barColor: "bg-cyan-500" },
+                                              { label: "Giải quyết VĐ", val: scoreVals[3], color: "text-teal-600 bg-teal-50 border-teal-100", barColor: "bg-teal-500" }
+                                            ].map(item => {
+                                              let pctVal = 0;
+                                              if (item.val) {
+                                                const textVal = item.val.toString();
+                                                if (textVal.includes("/")) {
+                                                  const [n, d] = textVal.split("/").map(Number);
+                                                  if (d > 0) pctVal = (n / d) * 100;
+                                                } else if (textVal.includes("%")) {
+                                                  pctVal = parseFloat(textVal);
+                                                } else {
+                                                  const parsed = parseFloat(textVal);
+                                                  if (!isNaN(parsed)) pctVal = parsed <= 10 ? parsed * 10 : parsed;
+                                                }
+                                              }
+                                              
+                                              return (
+                                                <div key={item.label} className={`border rounded-xl p-2.5 text-center flex flex-col justify-between shadow-sm relative overflow-hidden group ${item.color}`}>
+                                                  <span className="text-[9px] font-black uppercase tracking-wider text-slate-555 block leading-tight">{item.label}</span>
+                                                  <div className="text-base font-black text-slate-800 mt-1 mb-1 leading-none">{item.val || "—"}</div>
+                                                  
+                                                  {/* Micro Progress Bar */}
+                                                  <div className="w-full bg-slate-100 rounded-full h-1 mt-auto">
+                                                    <div className={`h-1 rounded-full ${item.barColor}`} style={{ width: `${Math.min(pctVal || 0, 100)}%` }}></div>
+                                                  </div>
+                                                </div>
+                                              );
+                                            })}
+                                          </div>
+
+                                          {/* Premium overall challenge completion indicator */}
+                                          <div className="bg-gradient-to-r from-indigo-50 to-violet-50/50 border border-indigo-100 rounded-xl p-3 flex items-center justify-between shadow-sm text-left">
+                                            <div className="flex items-center gap-2">
+                                              <div className="p-2 bg-indigo-500 text-white rounded-lg shadow-md shrink-0">
+                                                <BarChart3 className="w-3.5 h-3.5"/>
+                                              </div>
+                                              <div>
+                                                <span className="text-[9px] font-black uppercase tracking-widest text-indigo-555">Hoàn thành thử thách</span>
+                                                <p className="text-[10px] text-slate-555 font-bold mt-0.5">Mức độ hoàn thành nhiệm vụ</p>
+                                              </div>
+                                            </div>
+                                            <div className="text-right">
+                                              <span className="text-lg font-black text-indigo-750">{scoreVals[4] || "0"}%</span>
+                                              <div className="w-20 bg-slate-100 rounded-full h-1.5 mt-0.5 border border-slate-200/50 overflow-hidden shadow-inner shrink-0">
+                                                <div className="bg-indigo-600 h-1.5 rounded-full" style={{ width: `${scoreVals[4] || 0}%` }}></div>
+                                              </div>
+                                            </div>
+                                          </div>
+
+                                          {commentVals[0] && (
+                                            <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 relative text-left">
+                                              <span className="block text-[9px] font-black uppercase tracking-widest text-slate-455 mb-1">Nhận xét tổng quan</span>
+                                              <p className="text-xs font-semibold text-slate-700 italic leading-relaxed">"{commentVals[0]}"</p>
+                                            </div>
+                                          )}
+                                        </div>
+                                      ) : (
+                                        <div className="space-y-3">
+                                          {/* Display standard scores columns in premium structured layout */}
+                                          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 text-left">
+                                            {Array.from({length: (subject.scoreColumns ?? 1)}).map((_, colIdx) => {
+                                              let colName = "Điểm " + (colIdx + 1);
+                                              if (parsedCols.scores && parsedCols.scores[colIdx]) colName = parsedCols.scores[colIdx];
+                                              const isTotal = colName.toLowerCase().includes("tổng");
+                                              const val = scoreVals[colIdx];
+                                              
+                                              let displayVal = val !== undefined && val !== "" && val !== null ? val : "—";
+                                              if (!isGrade1) {
+                                                const sNameLower = subName.toLowerCase().normalize("NFC");
+                                                if (sNameLower.includes("tiếng anh") || subCode.includes("eng") || subCode.includes("esl")) {
+                                                  if (sNameLower.includes("vấn đáp") || sNameLower.includes("nói") || subCode.includes("speaking") || subCode.includes("oral") || subCode.includes("vd")) {
+                                                    displayVal = val !== undefined && val !== "" && val !== null ? `${val}/30` : "—/30";
+                                                  } else if (sNameLower.includes("viết") || sCode.includes("writing") || sCode.includes("written") || sCode.includes("vt")) {
+                                                    displayVal = val !== undefined && val !== "" && val !== null ? `${val}/70` : "—/70";
+                                                  }
+                                                }
+                                              }
+                                              
+                                              return (
+                                                <div key={colIdx} className={`border rounded-xl px-3 py-2 text-center shadow-sm flex flex-col justify-between ${isTotal ? "bg-indigo-50/50 border-indigo-150 text-indigo-700" : "bg-slate-50 border-slate-200/60 text-slate-600"}`}>
+                                                  <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 truncate block leading-tight">{colName}</span>
+                                                  <div className={`text-lg font-black mt-1 leading-none ${isTotal ? "text-indigo-700" : "text-slate-800"}`}>
+                                                    {displayVal}
+                                                  </div>
+                                                </div>
+                                              );
+                                            })}
+                                          </div>
+
+                                          {/* Display standard comments comments columns */}
+                                          {commentVals.length > 0 && commentVals.some(v => v) && (
+                                            <div className="space-y-2.5 bg-slate-50 p-4 rounded-2xl border border-slate-100/70 text-left">
+                                              <span className="block text-[9px] font-black uppercase tracking-widest text-slate-455 mb-1.5">Nhận xét bộ môn</span>
+                                              <div className="space-y-2">
+                                                {Array.from({length: (subject.commentColumns ?? 1)}).map((_, colIdx) => {
+                                                  let colName = "Nhận xét";
+                                                  if (parsedCols.comments && parsedCols.comments[colIdx]) colName = parsedCols.comments[colIdx];
+                                                  const val = commentVals[colIdx];
+                                                  if (!val) return null;
+
+                                                  return (
+                                                    <div key={colIdx} className="bg-white p-2.5 rounded-xl border-2 border-emerald-100/60 shadow-sm flex items-start gap-2.5 text-left animate-fade-in">
+                                                      <div className="w-6 h-6 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 text-[10px] font-black select-none shrink-0">
+                                                        {colName.charAt(0)}
+                                                      </div>
+                                                      <div className="flex-1">
+                                                        <span className="text-[8px] font-black uppercase tracking-wider text-indigo-600 block mb-0.5">{colName}</span>
+                                                        <p className="text-xs font-semibold text-slate-700 italic leading-relaxed">"{val}"</p>
+                                                      </div>
+                                                    </div>
+                                                  );
+                                                })}
+                                              </div>
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
+
+                                    </div>
+                                  );
+                                })}
+                            </div>
+
+                          </>
+                        );
+                      })()}
+                    </div>
+                  )}
+                </div>
+
               </div>
-
-            </div>
+            </>
           )}
+
 
 
             </div>
