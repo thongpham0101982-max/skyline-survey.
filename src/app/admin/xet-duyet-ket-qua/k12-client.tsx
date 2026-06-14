@@ -1844,7 +1844,15 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
       const gdcsEmail = (campusObj?.campusCode && EMAIL_MAP.gdcs[campusObj.campusCode as keyof typeof EMAIL_MAP.gdcs]) 
         || EMAIL_MAP.gdcs.CS1;
 
-      const confirmSend = window.confirm(`Gửi email thông báo cho GĐCS cơ sở ${campusName} để xét duyệt Đợt khảo sát "${activeBatch.name}"?\nEmail nhận: ${gdcsEmail}`);
+      const isOpenDay = reportSelPeriod?.name?.toLowerCase().includes("open day");
+      let confirmMsg = "";
+      if (isOpenDay) {
+        confirmMsg = `Kỳ khảo sát Open Day sẽ tự động gửi email thông báo xét duyệt đến Giám đốc của từng Cơ sở đăng ký của học sinh trong Đợt khảo sát "${activeBatch.name}". Bạn có chắc chắn muốn gửi?`;
+      } else {
+        confirmMsg = `Gửi email thông báo cho GĐCS cơ sở ${campusName} để xét duyệt Đợt khảo sát "${activeBatch.name}"?\nEmail nhận: ${gdcsEmail}`;
+      }
+      
+      const confirmSend = window.confirm(confirmMsg);
       if (!confirmSend) return;
 
       setSendingBatchEmail(true);
@@ -1860,7 +1868,12 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        alert(`Đã gửi email thông báo xét duyệt Đợt khảo sát thành công đến GĐCS: ${gdcsEmail}!`);
+        if (data.groupedSent) {
+          const sentDetails = Object.entries(data.groupedSent).map(([email, count]) => `${email} (${count} học sinh)`).join("\n");
+          alert(`Đã gửi email thông báo xét duyệt Đợt khảo sát thành công đến các GĐCS:\n${sentDetails}`);
+        } else {
+          alert(`Đã gửi email thông báo xét duyệt Đợt khảo sát thành công đến GĐCS: ${gdcsEmail}!`);
+        }
       } else {
         alert("Có lỗi xảy ra: " + (data.error || "Không rõ nguyên nhân"));
       }

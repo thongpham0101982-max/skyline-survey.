@@ -85,59 +85,62 @@ export async function POST(req: Request) {
     const protocol = req.headers.get("x-forwarded-proto") || "https";
     const baseUrl = `${protocol}://${host}`;
 
-    const rowsHtml = students.map((s, idx) => {
-      const dob = s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—";
-      let resultText = s.admissionResult || "Chưa xét duyệt";
-      let resColor = "#4b5563", resBg = "#f3f4f6", resBorder = "#e5e7eb";
+    const isOpenDay = !isPreschool && (periodName.toLowerCase().includes("open day") || periodName.toLowerCase().includes("openday"));
 
-      if (isPreschool) {
-        if (resultText.toUpperCase().includes("ĐẠT")) {
-          resColor = "#047857"; resBg = "#ecfdf5"; resBorder = "#a7f3d0";
-        } else if (resultText.toUpperCase().includes("KHÔNG")) {
-          resColor = "#b91c1c"; resBg = "#fef2f2"; resBorder = "#fecaca";
-        } else if (resultText === "Học thử") {
-          resColor = "#4338ca"; resBg = "#e0e7ff"; resBorder = "#c7d2fe";
-        }
-      } else {
-        if (resultText === "Đạt") {
-          resColor = "#047857"; resBg = "#ecfdf5"; resBorder = "#a7f3d0";
-        } else if (resultText === "Đạt cam kết") {
-          resColor = "#b45309"; resBg = "#fef3c7"; resBorder = "#fde68a";
-        } else if (resultText.includes("Không đạt")) {
-          resColor = "#b91c1c"; resBg = "#fef2f2"; resBorder = "#fecaca";
-        } else if (resultText === "Học thử") {
-          resColor = "#4338ca"; resBg = "#e0e7ff"; resBorder = "#c7d2fe";
-        }
-      }
+    const getEmailHtml = (studentGroup: any[], totalStudentsCount: number, passed: number, failed: number, committed: number, pending: number) => {
+      const rowsHtml = studentGroup.map((s, idx) => {
+        const dob = s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—";
+        let resultText = s.admissionResult || "Chưa xét duyệt";
+        let resColor = "#4b5563", resBg = "#f3f4f6", resBorder = "#e5e7eb";
 
-      let detailNote = "";
-      if (isPreschool) {
-        detailNote = s.devAssessmentResult || s.devImportantNote || s.directorNote || "—";
-      } else {
-        detailNote = s.directorNote || "—";
-      }
-      if (detailNote.length > 50) {
-        detailNote = detailNote.substring(0, 47) + "...";
-      }
+        if (isPreschool) {
+          if (resultText.toUpperCase().includes("ĐẠT")) {
+            resColor = "#047857"; resBg = "#ecfdf5"; resBorder = "#a7f3d0";
+          } else if (resultText.toUpperCase().includes("KHÔNG")) {
+            resColor = "#b91c1c"; resBg = "#fef2f2"; resBorder = "#fecaca";
+          } else if (resultText === "Học thử") {
+            resColor = "#4338ca"; resBg = "#e0e7ff"; resBorder = "#c7d2fe";
+          }
+        } else {
+          if (resultText === "Đạt") {
+            resColor = "#047857"; resBg = "#ecfdf5"; resBorder = "#a7f3d0";
+          } else if (resultText === "Đạt cam kết") {
+            resColor = "#b45309"; resBg = "#fef3c7"; resBorder = "#fde68a";
+          } else if (resultText.includes("Không đạt")) {
+            resColor = "#b91c1c"; resBg = "#fef2f2"; resBorder = "#fecaca";
+          } else if (resultText === "Học thử") {
+            resColor = "#4338ca"; resBg = "#e0e7ff"; resBorder = "#c7d2fe";
+          }
+        }
+
+        let detailNote = "";
+        if (isPreschool) {
+          detailNote = s.devAssessmentResult || s.devImportantNote || s.directorNote || "—";
+        } else {
+          detailNote = s.directorNote || "—";
+        }
+        if (detailNote.length > 50) {
+          detailNote = detailNote.substring(0, 47) + "...";
+        }
+
+        return `
+          <tr style="border-bottom:1px solid #f1f5f9; background:${idx % 2 === 0 ? "#fff" : "#f8fafc"};">
+            <td style="padding:12px 10px; text-align:center; font-size:13px; font-weight:600; color:#64748b;">${idx + 1}</td>
+            <td style="padding:12px 10px; font-size:13px; font-weight:700; color:#1E1B4B;">${s.fullName || "—"}</td>
+            <td style="padding:12px 10px; text-align:center; font-size:13px; color:#334155;">${s.studentCode || "—"}</td>
+            <td style="padding:12px 10px; text-align:center; font-size:13px; color:#334155;">K${s.grade || "—"}</td>
+            <td style="padding:12px 10px; text-align:center; font-size:13px; color:#334155;">${dob}</td>
+            <td style="padding:12px 10px; text-align:center;">
+              <span style="display:inline-block; padding:4px 10px; border-radius:50px; font-size:10px; font-weight:700; color:${resColor}; background:${resBg}; border:1px solid ${resBorder}; text-transform:uppercase;">
+                ${resultText}
+              </span>
+            </td>
+            <td style="padding:12px 10px; font-size:13px; color:#4b5563;">${detailNote}</td>
+          </tr>
+        `;
+      }).join("");
 
       return `
-        <tr style="border-bottom:1px solid #f1f5f9; background:${idx % 2 === 0 ? "#fff" : "#f8fafc"};">
-          <td style="padding:12px 10px; text-align:center; font-size:13px; font-weight:600; color:#64748b;">${idx + 1}</td>
-          <td style="padding:12px 10px; font-size:13px; font-weight:700; color:#1E1B4B;">${s.fullName || "—"}</td>
-          <td style="padding:12px 10px; text-align:center; font-size:13px; color:#334155;">${s.studentCode || "—"}</td>
-          <td style="padding:12px 10px; text-align:center; font-size:13px; color:#334155;">K${s.grade || "—"}</td>
-          <td style="padding:12px 10px; text-align:center; font-size:13px; color:#334155;">${dob}</td>
-          <td style="padding:12px 10px; text-align:center;">
-            <span style="display:inline-block; padding:4px 10px; border-radius:50px; font-size:10px; font-weight:700; color:${resColor}; background:${resBg}; border:1px solid ${resBorder}; text-transform:uppercase;">
-              ${resultText}
-            </span>
-          </td>
-          <td style="padding:12px 10px; font-size:13px; color:#4b5563;">${detailNote}</td>
-        </tr>
-      `;
-    }).join("");
-
-    const emailHtml = `
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -197,33 +200,33 @@ body{margin:0;padding:0;background:#f1f5f9;font-family:'Segoe UI',Roboto,Helveti
           <td width="20%" style="padding-right:8px;">
             <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;text-align:center;">
               <div style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;">Tổng số HS</div>
-              <div style="font-size:20px;font-weight:800;color:#1E1B4B;margin-top:4px;">${totalStudents}</div>
+              <div style="font-size:20px;font-weight:800;color:#1E1B4B;margin-top:4px;">${totalStudentsCount}</div>
             </div>
           </td>
           <td width="20%" style="padding-right:8px;">
             <div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;padding:12px;text-align:center;">
               <div style="font-size:9px;font-weight:700;color:#047857;text-transform:uppercase;">Đạt / Học thử</div>
-              <div style="font-size:20px;font-weight:800;color:#059669;margin-top:4px;">${passedCount}</div>
+              <div style="font-size:20px;font-weight:800;color:#059669;margin-top:4px;">${passed}</div>
             </div>
           </td>
           ${!isPreschool ? `
           <td width="20%" style="padding-right:8px;">
             <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:12px;text-align:center;">
               <div style="font-size:9px;font-weight:700;color:#b45309;text-transform:uppercase;">Đạt cam kết</div>
-              <div style="font-size:20px;font-weight:800;color:#d97706;margin-top:4px;">${committedCount}</div>
+              <div style="font-size:20px;font-weight:800;color:#d97706;margin-top:4px;">${committed}</div>
             </div>
           </td>
           ` : ""}
           <td width="20%" style="padding-right:8px;">
             <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:12px;text-align:center;">
               <div style="font-size:9px;font-weight:700;color:#b91c1c;text-transform:uppercase;">Không đạt</div>
-              <div style="font-size:20px;font-weight:800;color:#dc2626;margin-top:4px;">${failedCount}</div>
+              <div style="font-size:20px;font-weight:800;color:#dc2626;margin-top:4px;">${failed}</div>
             </div>
           </td>
           <td width="20%">
             <div style="background:#fffbeb;border:1px solid #fef3c7;border-radius:10px;padding:12px;text-align:center;">
               <div style="font-size:9px;font-weight:700;color:#d97706;text-transform:uppercase;">Chưa duyệt</div>
-              <div style="font-size:20px;font-weight:800;color:#b45309;margin-top:4px;">${pendingCount}</div>
+              <div style="font-size:20px;font-weight:800;color:#b45309;margin-top:4px;">${pending}</div>
             </div>
           </td>
         </tr>
@@ -274,6 +277,113 @@ body{margin:0;padding:0;background:#f1f5f9;font-family:'Segoe UI',Roboto,Helveti
 </div>
 </body>
 </html>`;
+    };
+
+    if (isOpenDay) {
+      // Group students by registeredCampus
+      // Load all campuses
+      const campuses = await prisma.campus.findMany({
+        include: {
+          manager: {
+            include: {
+              teacher: {
+                select: {
+                  email: true
+                }
+              }
+            }
+          }
+        }
+      });
+
+      // Find batch's default campus as fallback
+      let fallbackCampusId = null;
+      if (!isPreschool) {
+        if (batchId !== "all") {
+          const batchObj = await prisma.inputAssessmentBatch.findUnique({
+            where: { id: batchId }
+          });
+          if (batchObj) fallbackCampusId = batchObj.campusId;
+        }
+        if (!fallbackCampusId) {
+          const periodObj = await prisma.inputAssessmentPeriod.findUnique({
+            where: { id: periodId }
+          });
+          if (periodObj) fallbackCampusId = periodObj.campusId;
+        }
+      }
+
+      // Grouping dictionary
+      const groupedStudents: Record<string, typeof students> = {};
+      for (const s of students) {
+        const cId = s.registeredCampus || fallbackCampusId || "DEFAULT";
+        if (!groupedStudents[cId]) {
+          groupedStudents[cId] = [];
+        }
+        groupedStudents[cId].push(s);
+      }
+
+      const staticEmails: Record<string, string> = {
+        CS1: "gdcs.cs1@skylineschool.edu.vn",
+        CS2: "gdcs.cs2@skylineschool.edu.vn",
+        CS3: "gdcs.cs3@skylineschool.edu.vn",
+        CS4: "gdcs.cs4@skylineschool.edu.vn",
+        CS5: "gdcs.cs5@skylineschool.edu.vn",
+      };
+
+      const sentSummary: Record<string, number> = {};
+
+      for (const [campusId, group] of Object.entries(groupedStudents)) {
+        let currentGdcsEmail = null;
+        let campusObj = campuses.find(c => c.id === campusId);
+        
+        if (campusObj) {
+          const managerEmail = campusObj.manager?.teacher?.email || campusObj.manager?.email;
+          if (managerEmail && managerEmail.includes('@')) {
+            currentGdcsEmail = managerEmail;
+          } else {
+            const code = campusObj.campusCode?.toUpperCase();
+            currentGdcsEmail = staticEmails[code];
+          }
+        }
+        
+        if (!currentGdcsEmail) {
+          currentGdcsEmail = gdcsEmail || staticEmails.CS1;
+        }
+
+        const totalGroup = group.length;
+        let groupPassed = 0;
+        let groupFailed = 0;
+        let groupCommitted = 0;
+        let groupPending = 0;
+
+        if (isPreschool) {
+          groupPassed = group.filter(s => s.admissionResult && (s.admissionResult.toUpperCase().includes("ĐẠT") || s.admissionResult === "Học thử")).length;
+          groupFailed = group.filter(s => s.admissionResult && s.admissionResult.toUpperCase().includes("KHÔNG")).length;
+          groupPending = totalGroup - groupPassed - groupFailed;
+        } else {
+          groupPassed = group.filter(s => s.admissionResult === "Đạt" || s.admissionResult === "Học thử").length;
+          groupFailed = group.filter(s => s.admissionResult === "Không đạt" || s.admissionResult === "Không đạt - Kiểm tra lại" || s.admissionResult === "Không đạt - Không kiểm tra lại").length;
+          groupCommitted = group.filter(s => s.admissionResult === "Đạt cam kết").length;
+          groupPending = totalGroup - groupPassed - groupFailed - groupCommitted;
+        }
+
+        const currentHtml = getEmailHtml(group, totalGroup, groupPassed, groupFailed, groupCommitted, groupPending);
+
+        await sendEmail({
+          to: currentGdcsEmail,
+          subject: `[Sky-Line] Yêu cầu xét duyệt Đợt khảo sát: ${batchName} (${periodName})`,
+          html: currentHtml,
+          replyTo: "bankhaothi@skylineschool.edu.vn"
+        });
+
+        sentSummary[currentGdcsEmail] = (sentSummary[currentGdcsEmail] || 0) + totalGroup;
+      }
+
+      return NextResponse.json({ success: true, groupedSent: sentSummary });
+    }
+
+    const emailHtml = getEmailHtml(students, totalStudents, passedCount, failedCount, committedCount, pendingCount);
 
     await sendEmail({
       to: gdcsEmail,
