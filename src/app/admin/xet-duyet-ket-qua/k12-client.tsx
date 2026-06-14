@@ -1844,7 +1844,7 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
       const gdcsEmail = (campusObj?.campusCode && EMAIL_MAP.gdcs[campusObj.campusCode as keyof typeof EMAIL_MAP.gdcs]) 
         || EMAIL_MAP.gdcs.CS1;
 
-      const confirmSend = confirm(`Gửi email thông báo cho GĐCS cơ sở ${campusName} để xét duyệt Đợt khảo sát "${activeBatch.name}"?\nEmail nhận: ${gdcsEmail}`);
+      const confirmSend = window.confirm(`Gửi email thông báo cho GĐCS cơ sở ${campusName} để xét duyệt Đợt khảo sát "${activeBatch.name}"?\nEmail nhận: ${gdcsEmail}`);
       if (!confirmSend) return;
 
       setSendingBatchEmail(true);
@@ -2928,7 +2928,7 @@ ${reportForm.directorNote}`;
   
   const handleSubjectSubmit=async(e:React.FormEvent)=>{e.preventDefault();if (editingSubjectId ? cannotUpdate : cannotCreate) return;const p=editingSubjectId?{type:"subject",id:editingSubjectId,data:{name:subjectForm.name,subjectType:subjectForm.subjectType||null, scoreColumns: subjectForm.scoreColumns, commentColumns: subjectForm.commentColumns, status: subjectForm.status, exemptCriteria: JSON.stringify(subjectForm.exemptCriteria)}}:{type:"subject",data:{code:subjectForm.code,name:subjectForm.name,subjectType:subjectForm.subjectType||null, scoreColumns: subjectForm.scoreColumns, commentColumns: subjectForm.commentColumns, status: subjectForm.status||"ACTIVE", exemptCriteria: JSON.stringify(subjectForm.exemptCriteria)}};const r=await fetch("/api/input-assessment-categories",{method:editingSubjectId?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});if(r.ok){setIsSubjectOpen(false);fetchSubjects()}else notify((await r.json()).error, "err")};
   
-  const deleteSubject=async(id:string)=>{if (cannotDelete) return;if(!confirm("Xóa?"))return;await fetch("/api/input-assessment-categories?type=subject&id="+id,{method:"DELETE"});fetchSubjects()};
+  const deleteSubject=async(id:string)=>{if (cannotDelete) return;if(!window.confirm("Xóa?"))return;await fetch("/api/input-assessment-categories?type=subject&id="+id,{method:"DELETE"});fetchSubjects()};
   
   const addMapping=async(sid:string)=>{if (cannotCreate) return;const r=await fetch("/api/grade-subject-mappings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({grades:selGrades,eduSystems:selEdus,subjectId:sid})});if(r.ok)fetchMappings();else notify((await r.json()).error, "err")};
   
@@ -4388,7 +4388,7 @@ return {
                                   <Pencil className="w-4 h-4"/>
                                 </button>
                                 <button onClick={async () => {
-                                  if(confirm(`Xóa toàn bộ cấu hình của môn ${g.subject?.name}?`)) {
+                                  if(window.confirm(`Xóa toàn bộ cấu hình của môn ${g.subject?.name}?`)) {
                                     for (const id of g.ids) {
                                       await fetch("/api/grade-subject-mappings?id=" + id, { method: "DELETE" });
                                     }

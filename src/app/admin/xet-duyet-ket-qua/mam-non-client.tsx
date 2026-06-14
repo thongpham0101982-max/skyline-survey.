@@ -421,7 +421,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
     const gdcsEmail = (campusObj?.campusCode && EMAIL_MAP.gdcs[campusObj.campusCode as keyof typeof EMAIL_MAP.gdcs]) 
       || EMAIL_MAP.gdcs.CS1;
 
-    const confirmSend = confirm(`Gửi email thông báo cho GĐCS cơ sở ${campusName} để xét duyệt Đợt khảo sát mầm non "${activeBatch.name}"?\nEmail nhận: ${gdcsEmail}`);
+    const confirmSend = window.confirm(`Gửi email thông báo cho GĐCS cơ sở ${campusName} để xét duyệt Đợt khảo sát mầm non "${activeBatch.name}"?\nEmail nhận: ${gdcsEmail}`);
     if (!confirmSend) return;
 
     setSendingBatchEmail(true);
