@@ -152,14 +152,32 @@ export async function getObservationSlots(filters: {
       }
     })
 
-    // Filter by visibility
+        // Filter by visibility and Khối CM
     const filteredSlots = slots.filter((slot) => {
       if (slot.visibilityType === "DEPARTMENT") {
-        return (
-          slot.teacherId === currentTeacher.id ||
-          slot.targetDeptId === currentTeacher.departmentId
-        );
+        if (slot.teacherId !== currentTeacher.id && slot.targetDeptId !== currentTeacher.departmentId) {
+          return false;
+        }
       }
+      
+      const currentBlock = currentTeacher.departmentRel?.blockCM?.toLowerCase() || "";
+      const isCurrentMamNon = currentBlock.includes("mầm non");
+      
+      // If current teacher is Mầm non, they only see Mầm non slots
+      if (isCurrentMamNon) {
+        const isSlotMamNon = slot.level?.toLowerCase().includes("mầm non");
+        if (!isSlotMamNon) {
+          return false;
+        }
+      } else {
+        // If current teacher is NOT Mầm non, they don't see Mầm non slots
+        // assuming they are Phổ thông
+        const isSlotMamNon = slot.level?.toLowerCase().includes("mầm non");
+        if (isSlotMamNon) {
+          return false;
+        }
+      }
+      
       return true;
     })
 

@@ -84,6 +84,7 @@ const RATING_COLORS: Record<string, string> = {
 export function ObservationClient({
   initialSlots, currentTeacher, subjects, departments, teachers, campuses, classes, initialFilters
 }: ObservationClientProps) {
+  const isMamNonTeacher = currentTeacher?.departmentRel?.blockCM?.toLowerCase().includes("mầm non");
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -576,10 +577,15 @@ export function ObservationClient({
             <select value={filterLevel} onChange={e => { setFilterLevel(e.target.value); setFilterGrade("all") }}
               className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-700 focus:ring-2 focus:ring-[#00A19A] outline-none">
               <option value="all">Chọn cấp học</option>
-              <option value="Mầm non">Mầm non</option>
-              <option value="Tiểu học">Tiểu học</option>
-              <option value="THCS">THCS</option>
-              <option value="THPT">THPT</option>
+              {isMamNonTeacher ? (
+                <option value="Mầm non">Mầm non</option>
+              ) : (
+                <>
+                  <option value="Tiểu học">Tiểu học</option>
+                  <option value="THCS">THCS</option>
+                  <option value="THPT">THPT</option>
+                </>
+              )}
             </select>
           </div>
 
