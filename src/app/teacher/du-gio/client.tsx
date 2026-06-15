@@ -633,9 +633,21 @@ export function ObservationClient({
 
                     {/* My Registration Status (observer view) */}
                     {!isHost && isRegistered && (
-                      <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-bold ${myReg.isApproved ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-amber-50 border-amber-200 text-amber-700"}`}>
-                        {myReg.isApproved ? <CheckCircle className="w-4 h-4 shrink-0" /> : <Clock3 className="w-4 h-4 shrink-0" />}
-                        {myReg.isApproved ? "Đã được xác nhận dự giờ" : "Chờ xác nhận từ GV chủ trì"}
+                      <div className="flex flex-col gap-2 w-full">
+                        <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-bold ${myReg.isApproved ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-amber-50 border-amber-200 text-amber-700"}`}>
+                          {myReg.isApproved ? <CheckCircle className="w-4 h-4 shrink-0" /> : <Clock3 className="w-4 h-4 shrink-0" />}
+                          {myReg.isApproved ? "Đã được xác nhận dự giờ" : "Chờ xác nhận từ GV chủ trì"}
+                        </div>
+                        {myReg.evaluation && (
+                          <div className="flex items-center gap-2 px-3 py-2 bg-violet-50 border border-violet-200 text-violet-700 rounded-xl text-xs font-bold">
+                            <ClipboardList className="w-4 h-4 shrink-0" />
+                            <span>
+                              {myReg.evaluation.totalScore !== null
+                                ? `Kết quả: ${myReg.evaluation.totalScore.toFixed(2)}/20 điểm (${myReg.evaluation.overallRating})`
+                                : `Kết quả: ${myReg.evaluation.overallRating}`}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -1068,8 +1080,15 @@ export function ObservationClient({
 
               {/* Overall Rating */}
               <div className="flex flex-col gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Xếp loại tiết dạy tổng thể *</label>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <label className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Xếp loại tiết dạy tổng thể *</label>
+                    {evalModal.slot.level !== "Mầm non" && (
+                      <span className="text-xs font-black text-violet-700 bg-violet-50 border border-violet-100 px-2.5 py-1 rounded-lg">
+                        Tổng điểm: {evalK12Scores.reduce((a, b) => a + b, 0).toFixed(2)}/20đ
+                      </span>
+                    )}
+                  </div>
                   {evalModal.slot.level !== "Mầm non" && (
                     <span className="text-[10px] font-black bg-violet-100 text-violet-700 px-2 py-0.5 rounded-md">
                       Tự động gợi ý: {calculateK12Ranking(evalK12Scores)}
