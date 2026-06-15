@@ -68,10 +68,9 @@ export async function getObservationData() {
 }
 
 export async function getObservationSlots(filters: {
-  level?: string
-  subjectId?: string
-  grade?: string
-  teacherId?: string
+    level?: string
+    grade?: string
+    period?: string
   date?: string
 }) {
   try {

@@ -99,9 +99,8 @@ export function ObservationClient({
 
   // Filter states
   const [filterLevel, setFilterLevel] = useState(initialFilters.level)
-  const [filterSubjectId, setFilterSubjectId] = useState(initialFilters.subjectId)
   const [filterGrade, setFilterGrade] = useState(initialFilters.grade)
-  const [filterTeacherId, setFilterTeacherId] = useState(initialFilters.teacherId)
+  const [filterPeriod, setFilterPeriod] = useState("all")
   const [filterDate, setFilterDate] = useState(initialFilters.date)
   const [filterCampusId, setFilterCampusId] = useState(initialFilters.campusId)
   const [filterDeptId, setFilterDeptId] = useState(initialFilters.deptId)
@@ -599,23 +598,13 @@ export function ObservationClient({
             </select>
           </div>
 
-          {/* Subject Filter */}
+          {/* Period Filter */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Môn học</label>
-            <select value={filterSubjectId} onChange={e => setFilterSubjectId(e.target.value)}
+            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1"><Clock className="w-3 h-3"/>Tiết dạy</label>
+            <select value={filterPeriod} onChange={e => setFilterPeriod(e.target.value)}
               className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-700 focus:ring-2 focus:ring-[#00A19A] outline-none">
-              <option value="all">Chọn môn học</option>
-              {subjects.map(sub => <option key={sub.id} value={sub.id}>{sub.subjectName}</option>)}
-            </select>
-          </div>
-
-          {/* Teacher Filter */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Giáo viên dạy</label>
-            <select value={filterTeacherId} onChange={e => setFilterTeacherId(e.target.value)}
-              className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-700 focus:ring-2 focus:ring-[#00A19A] outline-none">
-              <option value="all">Chọn giáo viên</option>
-              {teachers.map(t => <option key={t.id} value={t.id}>{t.teacherName} ({t.teacherCode})</option>)}
+              <option value="all">Tất cả tiết</option>
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(p => <option key={p} value={`Tiết ${p}`}>Tiết {p}</option>)}
             </select>
           </div>
 
