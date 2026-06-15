@@ -755,11 +755,7 @@ export function ObservationClient({
                       {/* Seats Count */}
                       <div className="flex items-center gap-1 text-[11px] text-slate-500 font-bold shrink-0">
                         <Users className="w-3.5 h-3.5 text-slate-400" />
-                        {seatsLeft > 0 ? (
-                          <span>Còn <span className="text-emerald-600 font-black">{seatsLeft}</span> chỗ</span>
-                        ) : (
-                          <span className="text-red-500 font-black">Hết chỗ</span>
-                        )}
+                        <span>Số GV đăng ký: <span className="text-emerald-600 font-black">{observerCount}</span>/{slot.maxSeats} GV</span>
                       </div>
 
                       {/* Action Buttons */}
