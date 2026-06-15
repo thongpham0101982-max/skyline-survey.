@@ -413,3 +413,63 @@ export async function getCreatedCountInMonth(dateString: string) {
     return { success: false, count: 0 }
   }
 }
+
+export async function approveRegistration(registrationId: string) {
+  try {
+    const session = await auth()
+    if (!session || !session.user) return { success: false, error: "Unauthorized" }
+    const currentTeacher = await prisma.teacher.findUnique({ where: { userId: session.user.id } })
+    if (!currentTeacher) return { success: false, error: "Teacher profile not found" }
+    const registration = await prisma.observationRegistration.findUnique({ where: { id: registrationId }, include: { slot: true } })
+    if (!registration) return { success: false, error: "Registration not found" }
+    if (registration.slot.teacherId !== currentTeacher.id) return { success: false, error: "Ban khong phai giao vien chu tri tiet day nay" }
+    await prisma.observationRegistration.update({ where: { id: registrationId }, data: { isApproved: true, approvedAt: new Date() } })
+    revalidatePath("/teacher/du-gio")
+    return { success: true }
+  } catch (e: any) { return { success: false, error: e.message } }
+}
+
+export async function submitEvaluation(data: {
+  registrationId: string
+  slotId: string
+  criterion1: number
+  criterion2: number
+  criterion3: number
+  criterion4: number
+  criterion5: number
+  strengths: string
+  improvements: string
+  generalComment: string
+  overallRating: string
+}) {
+  try {
+    const session = await auth()
+    if (!session || !session.user) return { success: false, error: "Unauthorized" }
+    const currentTeacher = await prisma.teacher.findUnique({ where: { userId: session.user.id } })
+    if (!currentTeacher) return { success: false, error: "Teacher profile not found" }
+    const registration = await prisma.observationRegistration.findUnique({ where: { id: data.registrationId }, include: { evaluation: true } })
+    if (!registration) return { success: false, error: "Khong tim thay dang ky du gio" }
+    if (registration.teacherId !== currentTeacher.id) return { success: false, error: "Khong co quyen nop phieu nay" }
+    if (!registration.isApproved) return { success: false, error: "Can duoc xac nhan du gio truoc khi nop phieu danh gia" }
+    const evalData = {
+      criterion1: data.criterion1,
+      criterion2: data.criterion2,
+      criterion3: data.criterion3,
+      criterion4: data.criterion4,
+      criterion5: data.criterion5,
+      strengths: data.strengths,
+      improvements: data.improvements,
+      generalComment: data.generalComment,
+      overallRating: data.overallRating
+    }
+    if (registration.evaluation) {
+      await prisma.observationEvaluation.update({ where: { registrationId: data.registrationId }, data: evalData })
+    } else {
+      await prisma.observationEvaluation.create({
+        data: { registrationId: data.registrationId, slotId: data.slotId, evaluatorId: currentTeacher.id, ...evalData }
+      })
+    }
+    revalidatePath("/teacher/du-gio")
+    return { success: true }
+  } catch (e: any) { return { success: false, error: e.message } }
+}

@@ -17,6 +17,8 @@ export default async function ObservationPage(props: {
   const grade = searchParams.grade || "all"
   const teacherId = searchParams.teacherId || "all"
   const date = searchParams.date || ""
+  const campusId = searchParams.campusId || "all"
+  const deptId = searchParams.deptId || "all"
 
   const refDataResult = await getObservationData()
   if (!refDataResult.success) {
@@ -32,7 +34,9 @@ export default async function ObservationPage(props: {
     subjectId,
     grade,
     teacherId,
-    date
+    date,
+    campusId,
+    deptId
   })
 
   return (
@@ -44,7 +48,7 @@ export default async function ObservationPage(props: {
       teachers={refDataResult.teachers || []}
       campuses={refDataResult.campuses || []}
       classes={refDataResult.classes || []}
-      initialFilters={{ level, subjectId, grade, teacherId, date }}
+      initialFilters={{ level, subjectId, grade, teacherId, date, campusId, deptId }}
     />
   )
 }
