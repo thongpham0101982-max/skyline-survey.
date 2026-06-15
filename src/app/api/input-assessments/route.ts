@@ -186,10 +186,19 @@ async function notifyBatchAssignment(batch: any) {
     const recipientEmails = [];
     if (batch.assignedUserId) {
       const assignedUser = await (prisma as any).user.findUnique({
-        where: { id: batch.assignedUserId }
+        where: { id: batch.assignedUserId },
+        include: { teacher: true }
       });
-      if (assignedUser && assignedUser.email) {
-        recipientEmails.push(assignedUser.email);
+      let resolvedEmail = "";
+      if (assignedUser) {
+        if (assignedUser.teacher && assignedUser.teacher.email && assignedUser.teacher.email.includes("@")) {
+          resolvedEmail = assignedUser.teacher.email;
+        } else if (assignedUser.email && assignedUser.email.includes("@")) {
+          resolvedEmail = assignedUser.email;
+        }
+      }
+      if (resolvedEmail) {
+        recipientEmails.push(resolvedEmail);
       }
     }
 
