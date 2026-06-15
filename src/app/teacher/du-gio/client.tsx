@@ -202,21 +202,21 @@ export function ObservationClient({
   const handleSearch = () => {
     const params = new URLSearchParams(window.location.search)
     if (filterLevel && filterLevel !== "all") params.set("level", filterLevel); else params.delete("level")
-    if (filterSubjectId && filterSubjectId !== "all") params.set("subjectId", filterSubjectId); else params.delete("subjectId")
+    
     if (filterGrade && filterGrade !== "all") params.set("grade", filterGrade); else params.delete("grade")
-    if (filterTeacherId && filterTeacherId !== "all") params.set("teacherId", filterTeacherId); else params.delete("teacherId")
+    
     if (filterDate) params.set("date", filterDate); else params.delete("date")
     if (filterCampusId && filterCampusId !== "all") params.set("campusId", filterCampusId); else params.delete("campusId")
     if (filterDeptId && filterDeptId !== "all") params.set("deptId", filterDeptId); else params.delete("deptId")
     startTransition(async () => {
       router.push(`${pathname}?${params.toString()}`)
-      const res = await getObservationSlots({ level: filterLevel, subjectId: filterSubjectId, grade: filterGrade, teacherId: filterTeacherId, date: filterDate, campusId: filterCampusId, deptId: filterDeptId })
+      const res = await getObservationSlots({ level: filterLevel, grade: filterGrade, period: filterPeriod, date: filterDate, campusId: filterCampusId, deptId: filterDeptId })
       if (res.success && res.slots) { setSlots(res.slots); showToast("Đã cập nhật danh sách tìm kiếm!", "success") }
     })
   }
 
   const refreshSlots = async () => {
-    const res = await getObservationSlots({ level: filterLevel, subjectId: filterSubjectId, grade: filterGrade, teacherId: filterTeacherId, date: filterDate, campusId: filterCampusId, deptId: filterDeptId })
+    const res = await getObservationSlots({ level: filterLevel, grade: filterGrade, period: filterPeriod, date: filterDate, campusId: filterCampusId, deptId: filterDeptId })
     if (res.success && res.slots) setSlots(res.slots)
   }
 
