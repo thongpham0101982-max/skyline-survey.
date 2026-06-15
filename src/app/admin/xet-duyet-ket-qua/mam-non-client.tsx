@@ -2844,7 +2844,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                           <table className="w-full text-left">
                             <thead className="bg-[#00A19A]/5/70 border-b border-slate-300">
                               <tr>
-                                {["Mã Đợt", "Nội dung", "Cơ sở", "Thời gian", "Trạng thái", "Thao tác"].map(h => <th key={h} className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">{h}</th>)}
+                                {["Mã Đợt", "Nội dung", "Cơ sở", "Thời gian", "Trạng thái", "Người phụ trách", "Thao tác"].map(h => <th key={h} className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">{h}</th>)}
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-teal-50">
@@ -2885,6 +2885,23 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                          {b.status === "ACTIVE" ? "ON" : "OFF"}
                                        </span>
                                      </div></td>
+                                    <td className="p-4">
+                                      <div className="flex items-center gap-2">
+                                        <div className="w-6 h-6 bg-emerald-50 rounded-full flex items-center justify-center text-[10px] font-black text-emerald-600 border border-emerald-100">
+                                          {(() => {
+                                            const assignee = giaoVuCSUsers.find((u: any) => u.id === b.assignedUserId);
+                                            const name = assignee ? assignee.fullName : "-- Chưa gán --";
+                                            return name.charAt(0);
+                                          })()}
+                                        </div>
+                                        <span className="text-xs font-bold text-slate-600">
+                                          {(() => {
+                                            const assignee = giaoVuCSUsers.find((u: any) => u.id === b.assignedUserId);
+                                            return assignee ? assignee.fullName : "-- Chưa gán --";
+                                          })()}
+                                        </span>
+                                      </div>
+                                    </td>
                                     <td className="p-4 text-right"><div className="flex justify-end gap-1"><button onClick={() => openEditBatch(b)} className="p-2 text-slate-300 hover:text-[#00A19A] hover:bg-[#00A19A]/5 rounded-none"><Edit2 className="w-4 h-4" /></button><button onClick={() => setConfirm({ msg: `Xóa đợt #${b.batchNumber}?`, fn: () => doDeleteBatch(b.id) })} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-none"><Trash2 className="w-4 h-4" /></button></div></td>
                                   </tr>
                                 );

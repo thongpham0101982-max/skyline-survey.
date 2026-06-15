@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
+import { sendEmail } from "@/lib/mail"
 
 export async function GET(req) {
   const session = await auth();
@@ -87,8 +88,12 @@ export async function POST(req) {
            campusId: data.campusId || null,
            assignedUserId: data.assignedUserId || null,
            status: data.status || "ACTIVE"
-        }
+        },
+        include: { period: true, campus: true }
       });
+      if (data.assignedUserId) {
+        await notifyBatchAssignment(result);
+      }
       return NextResponse.json(result);
     }
     
@@ -120,6 +125,10 @@ export async function PUT(req) {
       return NextResponse.json(result);
     }
     else if (action === "UPDATE_BATCH") {
+      const oldBatch = await (prisma as any).preschoolInputAssessmentBatch.findUnique({
+        where: { id },
+        select: { assignedUserId: true }
+      });
       const result = await (prisma as any).preschoolInputAssessmentBatch.update({
         where: { id },
         data: {
@@ -130,8 +139,12 @@ export async function PUT(req) {
            ...(data.assignedUserId !== undefined && { assignedUserId: data.assignedUserId || null }),
            ...(data.status !== undefined && { status: data.status }),
            ...(data.batchNumber !== undefined && { batchNumber: typeof data.batchNumber === 'string' ? parseInt(data.batchNumber) : data.batchNumber }),
-        }
+        },
+        include: { period: true, campus: true }
       });
+      if (data.assignedUserId && oldBatch?.assignedUserId !== data.assignedUserId) {
+        await notifyBatchAssignment(result);
+      }
       return NextResponse.json(result);
     }
     
@@ -160,3 +173,112 @@ export async function DELETE(req) {
     return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }
+
+
+async function notifyBatchAssignment(batch: any) {
+  if (!batch.assignedUserId) return;
+  try {
+    const campusId = batch.campusId;
+    if (!campusId) return;
+
+    const assignments = await (prisma as any).userCampusAssignment.findMany({
+      where: { campusId },
+      include: { user: true }
+    });
+
+    const giaovuUsers = assignments
+      .map((a: any) => a.user)
+      .filter((u: any) => {
+        const role = (u?.role || "").toUpperCase();
+        return ["GIAO_VU", "GIAO_VU_CS", "GVCS"].includes(role);
+      });
+
+    const batchCode = batch.batchNumber ? `#${batch.batchNumber}` : `#${batch.id}`;
+    const surveyContent = batch.period?.name || "Khảo sát đầu vào";
+    const campusName = batch.campus?.campusName || batch.campus?.campusCode || "Cơ sở";
+    const campusCode = batch.campus?.campusCode || "CS1";
+    const startTimeStr = batch.startDate ? new Date(batch.startDate).toLocaleDateString("vi-VN") : "—";
+    const endTimeStr = batch.endDate ? new Date(batch.endDate).toLocaleDateString("vi-VN") : "—";
+    const timeDisplay = `${startTimeStr} - ${endTimeStr}`;
+
+    const title = `[Hệ thống] Phân công người phụ trách đợt khảo sát ${batchCode}`;
+    const message = `Thông báo:\n- Mã Đợt: ${batchCode} (${batch.name || ""})\n- Nội dung khảo sát: ${surveyContent}\n- Cơ sở: ${campusName}\n- Thời gian: ${timeDisplay}\n\nKính nhờ thầy cô giáo vụ Cơ sở thực hiện phân công giáo viên khảo sát.`;
+
+    for (const u of giaovuUsers) {
+      await (prisma as any).notification.create({
+        data: {
+          userId: u.id,
+          title,
+          message
+        }
+      });
+    }
+
+    const recipientEmails = giaovuUsers
+      .map((u: any) => u.email)
+      .filter((email: string) => email && email.includes("@"));
+
+    if (recipientEmails.length === 0) {
+      const staticGiaovu = {
+        CS1: "giaovu.cs1@skylineschool.edu.vn",
+        CS2: "giaovu.cs2@skylineschool.edu.vn",
+        CS3: "giaovu.cs3@skylineschool.edu.vn",
+        CS4: "giaovu.cs4@skylineschool.edu.vn",
+        CS5: "giaovu.cs5@skylineschool.edu.vn",
+      };
+      const fbEmail = staticGiaovu[campusCode.toUpperCase()] || "giaovu.cs1@skylineschool.edu.vn";
+      recipientEmails.push(fbEmail);
+    }
+
+    const emailHtml = `
+      <div style="font-family: Arial, sans-serif; font-size: 14px; color: #1E1B4B; line-height: 1.6; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
+        <div style="background-color: #00A6A9; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; color: #ffffff;">
+          <h2 style="margin: 0; font-size: 18px; text-transform: uppercase;">Thông báo phân công khảo sát</h2>
+        </div>
+        <div style="padding: 20px 10px;">
+          <p>Kính gửi quý thầy/cô Giáo vụ Cơ sở,</p>
+          <p>Hệ thống trân trọng thông báo thông tin đợt khảo sát mới đã được gán người phụ trách:</p>
+          <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
+            <table width="100%" cellpadding="5" cellspacing="0" style="border-collapse: collapse;">
+              <tr>
+                <td width="35%" style="font-weight: bold; color: #475569;">Mã Đợt:</td>
+                <td><strong>${batchCode}</strong> (${batch.name || ""})</td>
+              </tr>
+              <tr>
+                <td style="font-weight: bold; color: #475569;">Nội dung khảo sát:</td>
+                <td>${surveyContent}</td>
+              </tr>
+              <tr>
+                <td style="font-weight: bold; color: #475569;">Cơ sở:</td>
+                <td>${campusName}</td>
+              </tr>
+              <tr>
+                <td style="font-weight: bold; color: #475569;">Thời gian:</td>
+                <td>${timeDisplay}</td>
+              </tr>
+            </table>
+          </div>
+          <p style="font-style: italic; color: #0d9488; font-weight: bold;">
+            Kính nhờ thầy cô giáo vụ Cơ sở thực hiện phân công giáo viên khảo sát.
+          </p>
+        </div>
+        <div style="background-color: #f8fafc; padding: 15px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; border-radius: 0 0 8px 8px;">
+          <p style="margin: 0; font-weight: bold; color: #1E1B4B;">Hệ thống Quản trị Chất lượng Dạy và Học</p>
+          <p style="margin: 4px 0 0 0;">Email tự động gửi từ Hệ thống Khảo sát Tuyển sinh Sky-Line</p>
+        </div>
+      </div>
+    `;
+
+    for (const email of recipientEmails) {
+      await sendEmail({
+        to: email,
+        subject: `[Sky-Line] Thông báo phân công khảo sát - Đợt ${batchCode}`,
+        html: emailHtml,
+        replyTo: "bankhaothi@skylineschool.edu.vn"
+      });
+    }
+  } catch (err) {
+    console.error("Failed to notify batch assignment:", err);
+  }
+}
+
