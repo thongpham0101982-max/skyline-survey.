@@ -142,7 +142,8 @@ export async function getObservationSlots(filters: {
                 teacherCode: true,
                 email: true
               }
-            }
+            },
+            evaluation: true
           }
         }
       },
