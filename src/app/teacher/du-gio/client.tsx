@@ -678,10 +678,16 @@ export function ObservationClient({
                                 {myReg.evaluation ? "Xem phiếu" : "Điền phiếu"}
                               </button>
                             )}
-                            <button onClick={() => handleCancelRegistration(slot.id)}
-                              className="px-3 py-1.5 bg-slate-100 hover:bg-rose-50 hover:border-rose-300 hover:text-rose-600 border border-slate-200 text-slate-600 rounded-lg text-xs font-bold transition-all">
-                              Hủy đăng ký
-                            </button>
+                            {!myReg.isApproved ? (
+                              <button onClick={() => handleCancelRegistration(slot.id)}
+                                className="px-3 py-1.5 bg-slate-100 hover:bg-rose-50 hover:border-rose-300 hover:text-rose-600 border border-slate-200 text-slate-600 rounded-lg text-xs font-bold transition-all">
+                                Hủy đăng ký
+                              </button>
+                            ) : (
+                              <span className="px-3 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-600 rounded-lg text-xs font-extrabold select-none cursor-default">
+                                GV đã xác nhận
+                              </span>
+                            )}
                           </div>
                         ) : (
                           <button onClick={() => handleRegister(slot.id)} disabled={observerCount >= slot.maxSeats}
@@ -936,7 +942,9 @@ export function ObservationClient({
       )}
 
       {/* Evaluation Modal */}
-      {evalModal && (
+      {evalModal && (() => {
+        const isReadOnly = !!evalModal.registration.evaluation;
+        return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300">
             <div className="px-6 py-5 bg-gradient-to-r from-violet-700 to-violet-900 text-white flex items-center justify-between shrink-0">
@@ -998,7 +1006,7 @@ export function ObservationClient({
                                       const nextRank = calculateK12Ranking(nextScores);
                                       setEvalOverall(nextRank);
                                     }}
-                                    className="rounded-xl border border-slate-200 p-2 bg-white text-sm font-black text-slate-800 focus:ring-2 focus:ring-violet-500 outline-none w-28 shadow-sm"
+                                    disabled={isReadOnly} className="rounded-xl border border-slate-200 p-2 bg-white text-sm font-black text-slate-800 focus:ring-2 focus:ring-violet-500 outline-none w-28 shadow-sm disabled:opacity-75 disabled:bg-slate-150"
                                   >
                                     {options.map(o => <option key={o} value={o}>{o.toFixed(2)}</option>)}
                                   </select>
@@ -1044,17 +1052,17 @@ export function ObservationClient({
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-extrabold text-slate-700">Ưu điểm nổi bật của tiết dạy</label>
                   <textarea placeholder="Những điểm mạnh, sáng tạo, hiệu quả của tiết dạy..." rows={3} value={evalStrengths} onChange={e => setEvalStrengths(e.target.value)}
-                    className="w-full text-sm rounded-xl border border-slate-200 p-3 bg-slate-50 text-slate-800 focus:ring-2 focus:ring-violet-500 outline-none resize-none" />
+                    disabled={isReadOnly} className="w-full text-sm rounded-xl border border-slate-200 p-3 bg-slate-50 text-slate-800 focus:ring-2 focus:ring-violet-500 outline-none resize-none disabled:opacity-75 disabled:bg-slate-100" />
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-extrabold text-slate-700">Góp ý cải thiện / xây dựng</label>
                   <textarea placeholder="Những điểm có thể cải thiện, gợi ý phương pháp thay thế..." rows={3} value={evalImprovements} onChange={e => setEvalImprovements(e.target.value)}
-                    className="w-full text-sm rounded-xl border border-slate-200 p-3 bg-slate-50 text-slate-800 focus:ring-2 focus:ring-violet-500 outline-none resize-none" />
+                    disabled={isReadOnly} className="w-full text-sm rounded-xl border border-slate-200 p-3 bg-slate-50 text-slate-800 focus:ring-2 focus:ring-violet-500 outline-none resize-none disabled:opacity-75 disabled:bg-slate-100" />
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-extrabold text-slate-700">Nhận xét chung</label>
                   <textarea placeholder="Tổng thể nhận xét của bạn về tiết dự giờ..." rows={2} value={evalGeneral} onChange={e => setEvalGeneral(e.target.value)}
-                    className="w-full text-sm rounded-xl border border-slate-200 p-3 bg-slate-50 text-slate-800 focus:ring-2 focus:ring-violet-500 outline-none resize-none" />
+                    disabled={isReadOnly} className="w-full text-sm rounded-xl border border-slate-200 p-3 bg-slate-50 text-slate-800 focus:ring-2 focus:ring-violet-500 outline-none resize-none disabled:opacity-75 disabled:bg-slate-100" />
                 </div>
               </div>
 
@@ -1070,7 +1078,7 @@ export function ObservationClient({
                 </div>
                 <div className="grid grid-cols-4 gap-2">
                   {[["Tốt","bg-emerald-500"],["Khá","bg-sky-500"],["Trung bình","bg-amber-400"],["Yếu","bg-rose-500"]].map(([r, color]) => (
-                    <button key={r} type="button" onClick={() => setEvalOverall(r)}
+                    <button key={r} type="button" onClick={() => { if (!isReadOnly) setEvalOverall(r); }} disabled={isReadOnly}
                       className={`py-2.5 rounded-xl border-2 text-xs font-extrabold transition-all ${evalOverall === r ? `${color} border-transparent text-white shadow-md` : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"}`}>
                       {r}
                     </button>
@@ -1080,15 +1088,18 @@ export function ObservationClient({
               {/* Actions */}
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
                 <button type="button" onClick={() => setEvalModal(null)} className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all text-sm">Đóng</button>
-                <button type="button" onClick={handleSubmitEval} disabled={evalSubmitting}
-                  className="px-6 py-2.5 bg-violet-600 hover:bg-violet-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-extrabold rounded-xl transition-all shadow-md text-sm">
-                  {evalSubmitting ? "Đang nộp..." : evalModal.registration.evaluation ? "Cập nhật phiếu" : "Nộp phiếu đánh giá"}
-                </button>
+                {!isReadOnly && (
+                  <button type="button" onClick={handleSubmitEval} disabled={evalSubmitting}
+                    className="px-6 py-2.5 bg-violet-600 hover:bg-violet-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-extrabold rounded-xl transition-all shadow-md text-sm">
+                    {evalSubmitting ? "Đang nộp..." : "Nộp phiếu đánh giá"}
+                  </button>
+                )}
               </div>
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
     </div>
   )
 }
