@@ -160,12 +160,12 @@ body{margin:0;padding:0;background:#f1f5f9;font-family:'Be Vietnam Pro', 'Segoe 
   <div style="max-width:860px;margin:0 auto;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 10px 30px rgba(0,122,135,.1);border:1px solid #e2e8f0;">
 
     <!-- HEADER -->
-    <div style="background: linear-gradient(135deg, #00A6A9 0%, #007A87 100%); padding: 35px 30px; text-align: center; border-bottom: 3px solid #007A87;">
+    <div style="background-color: #00A6A9; background: linear-gradient(135deg, #00A6A9 0%, #007A87 100%); padding: 35px 30px; text-align: center; border-bottom: 3px solid #007A87;">
       <div style="display:inline-block;background:rgba(255,255,255,0.15);padding:5px 16px;border-radius:50px;margin-bottom:14px;border:1px solid rgba(255,255,255,0.2);">
-        <span style="color:#fff;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:2px;">Sky-Line Education System</span>
+        <span style="color:#ffffff !important; color:#ffffff;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:2px;">Sky-Line Education System</span>
       </div>
-      <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:800;text-transform:uppercase;letter-spacing:-0.5px;">Yêu cầu xét duyệt kết quả khảo sát</h1>
-      <p style="margin:8px 0 0;color:#e0f7fa;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">
+      <h1 style="margin:0;color:#ffffff !important; color:#ffffff;font-size:22px;font-weight:800;text-transform:uppercase;letter-spacing:-0.5px;">Yêu cầu xét duyệt kết quả khảo sát</h1>
+      <p style="margin:8px 0 0;color:#e0f7fa !important; color:#e0f7fa;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">
         ${isPreschool ? "Bậc Mầm non" : "Bậc Phổ thông (K-12)"} - CỔNG THÔNG TIN KHẢO SÁT
       </p>
     </div>
@@ -290,9 +290,7 @@ body{margin:0;padding:0;background:#f1f5f9;font-family:'Be Vietnam Pro', 'Segoe 
 
     <!-- FOOTER -->
     <div style="background:#f8fafc;padding:24px 32px;text-align:center;border-top:1px solid #e2e8f0;">
-      <img src="${baseUrl}/images/logo.png" alt="Sky-Line" style="height:32px;margin-bottom:10px;" onerror="this.style.display='none'">
-      <p style="margin:0;font-size:13px;font-weight:700;color:#1E1B4B;text-transform:uppercase;letter-spacing:.5px;">Hệ thống Giáo dục Sky-Line</p>
-      <p style="margin:5px 0 0;font-size:12px;color:#94a3b8;">Nơi học sinh học cách yêu thương, chia sẻ, tự lập &amp; có trách nhiệm.</p>
+      <p style="margin:0;font-size:13px;font-weight:700;color:#1E1B4B;text-transform:uppercase;letter-spacing:.5px;">Hệ thống Quản trị Chất lượng Dạy và Học</p>
       <p style="margin:6px 0 0;font-size:11px;color:#cbd5e1;">Email tự động gửi từ Hệ thống Khảo sát Tuyển sinh Sky-Line</p>
     </div>
   </div>
