@@ -210,7 +210,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
         // Dynamic batch parameter based on selected dropdown
         const batchQueryParam = selectedBatchId === "all" ? "" : selectedBatchId;
         
-        fetch(`/api/teacher-assessments?action=getStudents&periodId=${assignment.periodId}&grade=${encodeURIComponent(gradeParam)}&systemCode=${encodeURIComponent(systemParam)}&subjectId=${assignment.subjectId}&batchId=${batchQueryParam}`)
+        fetch(`/api/teacher-assessments?action=getStudents&periodId=${assignment.periodId}&grade=${encodeURIComponent(gradeParam)}&systemCode=${encodeURIComponent(systemParam)}&subjectId=${assignment.subjectId}&batchId=${batchQueryParam}&_t=${Date.now()}`, { cache: "no-store" })
             .then(res => res.json())
             .then(data => {
                 if (!Array.isArray(data)) {
@@ -912,7 +912,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                     const systemParam = selectedSystemCode !== "all" ? selectedSystemCode : "";
                     setLoading(true);
                     const batchQueryParam = selectedBatchId === "all" ? "" : selectedBatchId;
-                    const response = await fetch(`/api/teacher-assessments?action=getStudents&periodId=${assignment.periodId}&grade=${encodeURIComponent(gradeParam)}&systemCode=${encodeURIComponent(systemParam)}&subjectId=${assignment.subjectId}&batchId=${batchQueryParam}`);
+                    const response = await fetch(`/api/teacher-assessments?action=getStudents&periodId=${assignment.periodId}&grade=${encodeURIComponent(gradeParam)}&systemCode=${encodeURIComponent(systemParam)}&subjectId=${assignment.subjectId}&batchId=${batchQueryParam}&_t=${Date.now()}`, { cache: "no-store" });
                     if (response.ok) {
                       const data = await response.json();
                       if (Array.isArray(data)) setStudents(data);
