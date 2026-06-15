@@ -422,7 +422,7 @@ export async function approveRegistration(registrationId: string) {
     if (!currentTeacher) return { success: false, error: "Teacher profile not found" }
     const registration = await prisma.observationRegistration.findUnique({ where: { id: registrationId }, include: { slot: true } })
     if (!registration) return { success: false, error: "Registration not found" }
-    if (registration.slot.teacherId !== currentTeacher.id) return { success: false, error: "Ban khong phai giao vien chu tri tiet day nay" }
+    if (registration.slot.teacherId !== currentTeacher.id) return { success: false, error: "Bạn không phải giáo viên chủ trì tiết dạy này" }
     await prisma.observationRegistration.update({ where: { id: registrationId }, data: { isApproved: true, approvedAt: new Date() } })
     revalidatePath("/teacher/du-gio")
     return { success: true }
@@ -448,9 +448,9 @@ export async function submitEvaluation(data: {
     const currentTeacher = await prisma.teacher.findUnique({ where: { userId: session.user.id } })
     if (!currentTeacher) return { success: false, error: "Teacher profile not found" }
     const registration = await prisma.observationRegistration.findUnique({ where: { id: data.registrationId }, include: { evaluation: true } })
-    if (!registration) return { success: false, error: "Khong tim thay dang ky du gio" }
-    if (registration.teacherId !== currentTeacher.id) return { success: false, error: "Khong co quyen nop phieu nay" }
-    if (!registration.isApproved) return { success: false, error: "Can duoc xac nhan du gio truoc khi nop phieu danh gia" }
+    if (!registration) return { success: false, error: "Không tìm thấy đăng ký dự giờ" }
+    if (registration.teacherId !== currentTeacher.id) return { success: false, error: "Không có quyền nộp phiếu này" }
+    if (!registration.isApproved) return { success: false, error: "Cần được xác nhận dự giờ trước khi nộp phiếu đánh giá" }
     const evalData = {
       criterion1: data.criterion1,
       criterion2: data.criterion2,

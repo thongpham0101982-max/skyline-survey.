@@ -40,10 +40,10 @@ const CRITERIA_LABELS = [
 
 const RATING_LABELS = ["Tốt", "Khá", "Trung bình", "Yếu"]
 const RATING_COLORS: Record<string, string> = {
-  "Tot": "bg-emerald-100 text-emerald-700 border-emerald-300",
-  "Kha": "bg-sky-100 text-sky-700 border-sky-300",
-  "Trung binh": "bg-amber-100 text-amber-700 border-amber-300",
-  "Yeu": "bg-rose-100 text-rose-700 border-rose-300"
+  "Tốt": "bg-emerald-100 text-emerald-700 border-emerald-300",
+  "Khá": "bg-sky-100 text-sky-700 border-sky-300",
+  "Trung bình": "bg-amber-100 text-amber-700 border-amber-300",
+  "Yếu": "bg-rose-100 text-rose-700 border-rose-300"
 }
 
 export function ObservationClient({
@@ -120,7 +120,7 @@ export function ObservationClient({
 
   const getGradesForLevel = (level: string) => {
     switch (level) {
-      case "Mầm non": return ["18-24 thang","24-36 thang","Mam (3-4 tuoi)","Choi (4-5 tuoi)","La (5-6 tuoi)"]
+      case "Mầm non": return ["18-24 tháng","24-36 tháng","Mầm (3-4 tuổi)","Chồi (4-5 tuổi)","Lá (5-6 tuổi)"]
       case "Tiểu học": return ["Khối 1","Khối 2","Khối 3","Khối 4","Khối 5"]
       case "THCS": return ["Khối 6","Khối 7","Khối 8","Khối 9"]
       case "THPT": return ["Khối 10","Khối 11","Khối 12"]
@@ -139,17 +139,17 @@ export function ObservationClient({
     return classes.filter(c => c.campusId === newCampusId && c.level === dbLevel && c.grade === numGrade)
   }, [classes, newCampusId, newLevel, newGrade])
 
-  const getNextPeriod = (p: string) => { const m = p.match(/\d+/); if (m) { const n = parseInt(m[0]); if (n < 8) return `Tiet ${n+1}` } return p }
+  const getNextPeriod = (p: string) => { const m = p.match(/\d+/); if (m) { const n = parseInt(m[0]); if (n < 8) return `Tiết ${n+1}` } return p }
   const handleStartTimeChange = (val: string) => { setNewStartTime(val); setNewEndTime(newIsDoublePeriod ? getNextPeriod(val) : val) }
   const handleDoublePeriodChange = (checked: boolean) => { setNewIsDoublePeriod(checked); if (checked) setNewEndTime(getNextPeriod(newStartTime)); else setNewEndTime(newStartTime) }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    if (file.type !== "application/pdf") { showToast("Chi ho tro tai len file PDF!", "error"); e.target.value = ""; return }
-    if (file.size > 5 * 1024 * 1024) { showToast("Kich thuoc file khong duoc vuot qua 5MB!", "error"); e.target.value = ""; return }
+    if (file.type !== "application/pdf") { showToast("Chỉ hỗ trợ tải lên file PDF!", "error"); e.target.value = ""; return }
+    if (file.size > 5 * 1024 * 1024) { showToast("Kích thước file không được vượt quá 5MB!", "error"); e.target.value = ""; return }
     const reader = new FileReader()
-    reader.onload = () => { setNewLessonPlanName(file.name); setNewLessonPlanData(reader.result as string); showToast("Da dinh kem giao an PDF!", "info") }
+    reader.onload = () => { setNewLessonPlanName(file.name); setNewLessonPlanData(reader.result as string); showToast("Đã đính kèm giáo án PDF!", "info") }
     reader.readAsDataURL(file)
   }
 
@@ -159,8 +159,8 @@ export function ObservationClient({
       const win = window.open()
       if (win) {
         win.document.write(`<html><head><title>${name}</title><style>body{margin:0;padding:0;background:#525659;}iframe{border:0;width:100%;height:100%;}</style></head><body><iframe src="${dataUrl}" allowfullscreen></iframe></body></html>`)
-      } else { showToast("Vui long cho phep mo popup tren trinh duyet!", "error") }
-    } catch { showToast("Loi hien thi giao an PDF!", "error") }
+      } else { showToast("Vui lòng cho phép mở popup trên trình duyệt!", "error") }
+    } catch { showToast("Lỗi hiển thị giáo án PDF!", "error") }
   }
 
   const handleSearch = () => {
@@ -175,7 +175,7 @@ export function ObservationClient({
     startTransition(async () => {
       router.push(`${pathname}?${params.toString()}`)
       const res = await getObservationSlots({ level: filterLevel, subjectId: filterSubjectId, grade: filterGrade, teacherId: filterTeacherId, date: filterDate, campusId: filterCampusId, deptId: filterDeptId })
-      if (res.success && res.slots) { setSlots(res.slots); showToast("Da cap nhat danh sach tim kiem!", "success") }
+      if (res.success && res.slots) { setSlots(res.slots); showToast("Đã cập nhật danh sách tìm kiếm!", "success") }
     })
   }
 
@@ -187,34 +187,34 @@ export function ObservationClient({
   const handleRegister = async (slotId: string) => {
     startTransition(async () => {
       const res = await registerObservation(slotId)
-      if (res.success) { showToast("Dang ky du gio thanh cong!", "success"); refreshSlots() }
-      else showToast(res.error || "Khong the dang ky!", "error")
+      if (res.success) { showToast("Đăng ký dự giờ thành công!", "success"); refreshSlots() }
+      else showToast(res.error || "Không thể đăng ký!", "error")
     })
   }
 
   const handleCancelRegistration = async (slotId: string) => {
-    if (!confirm("Thay/Co co chac chan muon huy dang ky du gio tiet day nay?")) return
+    if (!confirm("Thầy/Cô có chắc chắn muốn hủy đăng ký dự giờ tiết dạy này?")) return
     startTransition(async () => {
       const res = await cancelObservation(slotId)
-      if (res.success) { showToast("Da huy dang ky du gio!", "info"); refreshSlots() }
-      else showToast(res.error || "Khong the huy dang ky!", "error")
+      if (res.success) { showToast("Đã hủy đăng ký dự giờ!", "info"); refreshSlots() }
+      else showToast(res.error || "Không thể hủy đăng ký!", "error")
     })
   }
 
   const handleDeleteSlot = async (slotId: string) => {
-    if (!confirm("Thay/Co co chac chan muon xoa tiet day du gio nay? Tat ca dang ky lien quan se bi huy.")) return
+    if (!confirm("Thầy/Cô có chắc chắn muốn xóa tiết dạy dự giờ này? Tất cả đăng ký liên quan sẽ bị hủy.")) return
     startTransition(async () => {
       const res = await deleteObservationSlot(slotId)
-      if (res.success) { showToast("Da xoa tiet day du gio thanh cong!", "info"); refreshSlots() }
-      else showToast(res.error || "Khong the xoa!", "error")
+      if (res.success) { showToast("Đã xóa tiết dạy dự giờ thành công!", "info"); refreshSlots() }
+      else showToast(res.error || "Không thể xóa!", "error")
     })
   }
 
   const handleApprove = async (registrationId: string) => {
     startTransition(async () => {
       const res = await approveRegistration(registrationId)
-      if (res.success) { showToast("Da xac nhan GV du gio thanh cong!", "success"); refreshSlots() }
-      else showToast(res.error || "Khong the xac nhan!", "error")
+      if (res.success) { showToast("Đã xác nhận GV dự giờ thành công!", "success"); refreshSlots() }
+      else showToast(res.error || "Không thể xác nhận!", "error")
     })
   }
 
@@ -243,8 +243,8 @@ export function ObservationClient({
 
   const handleSubmitEval = async () => {
     if (!evalModal) return
-    if (evalCriteria.some(c => c === 0)) { showToast("Vui long danh gia tat ca 5 tieu chi!", "error"); return }
-    if (!evalOverall) { showToast("Vui long chon xep loai tong the!", "error"); return }
+    if (evalCriteria.some(c => c === 0)) { showToast("Vui lòng đánh giá tất cả 5 tiêu chí!", "error"); return }
+    if (!evalOverall) { showToast("Vui lòng chọn xếp loại tổng thể!", "error"); return }
     setEvalSubmitting(true)
     const res = await submitEvaluation({
       registrationId: evalModal.registration.id,
@@ -256,24 +256,24 @@ export function ObservationClient({
     })
     setEvalSubmitting(false)
     if (res.success) {
-      showToast("Da nop phieu danh gia thanh cong!", "success")
+      showToast("Đã nộp phiếu đánh giá thành công!", "success")
       setEvalModal(null)
       refreshSlots()
     } else {
-      showToast(res.error || "Loi nop phieu!", "error")
+      showToast(res.error || "Lỗi nộp phiếu!", "error")
     }
   }
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newLevel || !newGrade || !newTopic || !newDate || !newStartTime || !newEndTime || !newCampusId) {
-      showToast("Vui long dien day du cac thong tin bat buoc (*)", "error"); return
+      showToast("Vui lòng điền đầy đủ các thông tin bắt buộc (*)", "error"); return
     }
-    if (!newSubjectId) { showToast("Vui long chon mon hoc!", "error"); return }
-    if (newSubjectId === "other" && !newSubjectName.trim()) { showToast("Vui long nhap ten mon hoc khac!", "error"); return }
+    if (!newSubjectId) { showToast("Vui lòng chọn môn học!", "error"); return }
+    if (newSubjectId === "other" && !newSubjectName.trim()) { showToast("Vui lòng nhập tên môn học khác!", "error"); return }
     setSubmitting(true)
     const selectedSub = subjects.find(s => s.id === newSubjectId)
-    const subName = selectedSub ? selectedSub.subjectName : newSubjectName || "Khac"
+    const subName = selectedSub ? selectedSub.subjectName : newSubjectName || "Khác"
     const selectedCampus = campuses.find(c => c.id === newCampusId)
     const campusNameStr = selectedCampus ? selectedCampus.campusName : ""
     let classNameStr = newClassNameText
@@ -291,7 +291,7 @@ export function ObservationClient({
     })
     setSubmitting(false)
     if (res.success) {
-      showToast("Tao tiet day du gio moi thanh cong!", "success")
+      showToast("Tạo tiết dạy dự giờ mới thành công!", "success")
       setShowCreateModal(false)
       setNewSubjectId(""); setNewSubjectName(""); setNewLevel(""); setNewGrade(""); setNewClassId("")
       setNewClassNameText(""); setNewTopic(""); setNewDate(""); setNewStartTime("Tiết 1"); setNewEndTime("Tiết 1")
@@ -300,7 +300,7 @@ export function ObservationClient({
       if (fileInputRef.current) fileInputRef.current.value = ""
       refreshSlots()
     } else {
-      showToast(res.error || "Loi tao tiet day!", "error")
+      showToast(res.error || "Lỗi tạo tiết dạy!", "error")
     }
   }
 
@@ -325,7 +325,7 @@ export function ObservationClient({
     router.push(`${pathname}?${params.toString()}`)
   }
 
-  const selectedMonthStr = newDate ? `${(new Date(newDate).getMonth() + 1).toString().padStart(2, "0")}/${new Date(newDate).getFullYear()}` : "thang hien tai"
+  const selectedMonthStr = newDate ? `${(new Date(newDate).getMonth() + 1).toString().padStart(2, "0")}/${new Date(newDate).getFullYear()}` : "tháng hiện tại"
 
   return (
     <div className="flex flex-col gap-6 relative pb-12 animate-fade-in text-slate-800">
@@ -344,13 +344,13 @@ export function ObservationClient({
         <div>
           <h1 className="text-2xl font-black text-[#0A3230] tracking-tight flex items-center gap-2">
             <Calendar className="w-7 h-7 text-[#00A19A]" />
-            Dang ky du gio
+            Đăng ký dự giờ
           </h1>
-          <p className="text-slate-500 text-sm font-medium mt-1">Dang ky du gio tiet day tai Sky-Line</p>
+          <p className="text-slate-500 text-sm font-medium mt-1">Đăng ký dự giờ tiết dạy tại Sky-Line</p>
         </div>
         <button onClick={() => setShowCreateModal(true)}
           className="flex items-center justify-center gap-2 bg-[#00A19A] hover:bg-[#008B85] text-white font-bold py-2.5 px-5 rounded-xl transition-all shadow-md hover:shadow-lg active:scale-95 text-sm shrink-0">
-          <Plus className="w-4 h-4" /> Them moi tiet day
+          <Plus className="w-4 h-4" /> Thêm mới tiết dạy
         </button>
       </div>
 
@@ -358,16 +358,16 @@ export function ObservationClient({
       <div className="flex items-start gap-4 p-5 bg-[#F0FDFA] border-2 border-[#CCFBF1] rounded-2xl text-[#0A3230] shadow-sm">
         <Info className="w-6 h-6 text-[#00A19A] shrink-0 mt-0.5" />
         <div className="space-y-1">
-          <h4 className="font-extrabold text-sm uppercase tracking-wide">Du gio la gi?</h4>
+          <h4 className="font-extrabold text-sm uppercase tracking-wide">Dự giờ là gì?</h4>
           <p className="text-xs font-semibold text-slate-600 leading-relaxed">
-            Du gio la hoat dong chuyen mon giup giao vien hoc hoi, trao doi kinh nghiem giang day va hoan thien phuong phap su pham. Vui long chon lop hoc va dang ky cac tiet du gio phu hop ben duoi.
+            Dự giờ là hoạt động chuyên môn giúp giáo viên học hỏi, trao đổi kinh nghiệm giảng dạy và hoàn thiện phương pháp sư phạm. Vui lòng chọn lớp học và đăng ký các tiết dự giờ phù hợp bên dưới.
           </p>
         </div>
       </div>
 
       {/* Tabs */}
       <div className="flex border-b border-slate-200 gap-1 bg-slate-100 p-1.5 rounded-xl">
-        {[["dang-ky","Dang ky du gio",<Calendar className="w-4 h-4" key="c"/>],["my-schedule","Lich cua toi",<Layers className="w-4 h-4" key="l"/>],["history","Lich su dang ky",<FileText className="w-4 h-4" key="f"/>]].map(([tab, label, icon]) => (
+        {[["dang-ky","Đăng ký dự giờ",<Calendar className="w-4 h-4" key="c"/>],["my-schedule","Lịch của tôi",<Layers className="w-4 h-4" key="l"/>],["history","Lịch sử đăng ký",<FileText className="w-4 h-4" key="f"/>]].map(([tab, label, icon]) => (
           <button key={tab as string} onClick={() => handleTabChange(tab as string)}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-extrabold uppercase tracking-wider transition-all duration-200 ${activeTab === tab ? "bg-white text-[#0A3230] shadow-sm font-black" : "text-slate-500 hover:text-slate-800 hover:bg-white/40"}`}>
             {icon as React.ReactNode}{label as string}
@@ -380,35 +380,35 @@ export function ObservationClient({
         {/* Filters */}
         <div className="bg-white p-5 rounded-2xl border-2 border-slate-100 shadow-sm flex flex-col gap-4">
           <h3 className="font-extrabold text-sm text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-3 flex items-center gap-2">
-            <Search className="w-4 h-4 text-[#00A19A]" /> Loc thong tin
+            <Search className="w-4 h-4 text-[#00A19A]" /> Lọc thông tin
           </h3>
 
           {/* Campus Filter */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1"><Building2 className="w-3 h-3"/>Co so</label>
+            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1"><Building2 className="w-3 h-3"/>Cơ sở</label>
             <select value={filterCampusId} onChange={e => setFilterCampusId(e.target.value)}
               className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-700 focus:ring-2 focus:ring-[#00A19A] outline-none">
-              <option value="all">Tat ca co so</option>
+              <option value="all">Tất cả cơ sở</option>
               {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
             </select>
           </div>
 
           {/* Department Filter */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1"><Users className="w-3 h-3"/>To chuyen mon</label>
+            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1"><Users className="w-3 h-3"/>Tổ chuyên môn</label>
             <select value={filterDeptId} onChange={e => setFilterDeptId(e.target.value)}
               className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-700 focus:ring-2 focus:ring-[#00A19A] outline-none">
-              <option value="all">Tat ca to nhom</option>
+              <option value="all">Tất cả tổ nhóm</option>
               {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
             </select>
           </div>
 
           {/* Level Filter */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Cap hoc</label>
+            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Cấp học</label>
             <select value={filterLevel} onChange={e => { setFilterLevel(e.target.value); setFilterGrade("all") }}
               className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-700 focus:ring-2 focus:ring-[#00A19A] outline-none">
-              <option value="all">Chon cap hoc</option>
+              <option value="all">Chọn cấp học</option>
               <option value="Mầm non">Mầm non</option>
               <option value="Tiểu học">Tiểu học</option>
               <option value="THCS">THCS</option>
@@ -418,44 +418,44 @@ export function ObservationClient({
 
           {/* Grade Filter */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Khoi lop</label>
+            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Khối lớp</label>
             <select value={filterGrade} onChange={e => setFilterGrade(e.target.value)} disabled={filterLevel === "all"}
               className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-700 focus:ring-2 focus:ring-[#00A19A] outline-none disabled:opacity-50">
-              <option value="all">Chon khoi lop</option>
+              <option value="all">Chọn khối lớp</option>
               {getGradesForLevel(filterLevel).map(g => <option key={g} value={g}>{g}</option>)}
             </select>
           </div>
 
           {/* Subject Filter */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Mon hoc</label>
+            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Môn học</label>
             <select value={filterSubjectId} onChange={e => setFilterSubjectId(e.target.value)}
               className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-700 focus:ring-2 focus:ring-[#00A19A] outline-none">
-              <option value="all">Chon mon hoc</option>
+              <option value="all">Chọn môn học</option>
               {subjects.map(sub => <option key={sub.id} value={sub.id}>{sub.subjectName}</option>)}
             </select>
           </div>
 
           {/* Teacher Filter */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Giao vien day</label>
+            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Giáo viên dạy</label>
             <select value={filterTeacherId} onChange={e => setFilterTeacherId(e.target.value)}
               className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-700 focus:ring-2 focus:ring-[#00A19A] outline-none">
-              <option value="all">Chon giao vien</option>
+              <option value="all">Chọn giáo viên</option>
               {teachers.map(t => <option key={t.id} value={t.id}>{t.teacherName} ({t.teacherCode})</option>)}
             </select>
           </div>
 
           {/* Date Filter */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Thoi gian</label>
+            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Thời gian</label>
             <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)}
               className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-700 focus:ring-2 focus:ring-[#00A19A] outline-none" />
           </div>
 
           <button onClick={handleSearch} disabled={isPending}
             className="w-full flex items-center justify-center gap-2 bg-[#0A3230] hover:bg-[#134D4A] text-white font-bold py-2.5 rounded-xl transition-all shadow-md active:scale-95 disabled:opacity-50 mt-2 text-xs uppercase tracking-wider">
-            {isPending ? "Dang tim kiem..." : "Tim kiem"}
+            {isPending ? "Đang tìm kiếm..." : "Tìm kiếm"}
           </button>
         </div>
 
@@ -464,8 +464,8 @@ export function ObservationClient({
           {tabFilteredSlots.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border-2 border-dashed border-slate-200">
               <Calendar className="w-16 h-16 text-slate-300 stroke-1 mb-4" />
-              <p className="text-slate-400 font-bold text-sm">Khong tim thay tiet day du gio nao!</p>
-              <p className="text-slate-400 text-xs mt-1">Vui long thay doi bo loc hoac them moi tiet day cua ban.</p>
+              <p className="text-slate-400 font-bold text-sm">Không tìm thấy tiết dạy dự giờ nào!</p>
+              <p className="text-slate-400 text-xs mt-1">Vui lòng thay đổi bộ lọc hoặc thêm mới tiết dạy của bạn.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -484,10 +484,10 @@ export function ObservationClient({
                       <div className="flex flex-wrap gap-1.5">
                         <span className="px-2.5 py-1 text-[10px] font-extrabold bg-[#E0F2FE] text-[#0284C7] rounded-lg uppercase tracking-wider">{slot.level}</span>
                         <span className="px-2.5 py-1 text-[10px] font-extrabold bg-[#FEF3C7] text-[#D97706] rounded-lg uppercase tracking-wider">{slot.grade}</span>
-                        {isHost && <span className="px-2 py-0.5 text-[9px] font-bold bg-[#00A19A]/10 border border-[#00A19A]/30 text-[#00A19A] rounded-md">Chu tri</span>}
+                        {isHost && <span className="px-2 py-0.5 text-[9px] font-bold bg-[#00A19A]/10 border border-[#00A19A]/30 text-[#00A19A] rounded-md">Chủ trì</span>}
                       </div>
                       {slot.visibilityType === "DEPARTMENT" && (
-                        <span className="px-2 py-0.5 text-[9px] font-bold bg-indigo-50 border border-indigo-200 text-indigo-600 rounded-md">Noi bo To</span>
+                        <span className="px-2 py-0.5 text-[9px] font-bold bg-indigo-50 border border-indigo-200 text-indigo-600 rounded-md">Nội bộ Tổ</span>
                       )}
                     </div>
 
@@ -495,7 +495,7 @@ export function ObservationClient({
                     <div className="space-y-1.5">
                       <h4 className="font-extrabold text-slate-800 text-base group-hover:text-[#00A19A] transition-colors leading-snug">{slot.topic}</h4>
                       <p className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
-                        <BookOpen className="w-3.5 h-3.5 text-[#00A19A]" /> Mon hoc: <span className="text-slate-700">{slot.subjectName}</span>
+                        <BookOpen className="w-3.5 h-3.5 text-[#00A19A]" /> Môn học: <span className="text-slate-700">{slot.subjectName}</span>
                       </p>
                     </div>
 
@@ -505,17 +505,17 @@ export function ObservationClient({
                         <span>{slotDate.toLocaleDateString("vi-VN", { weekday: "long", year: "numeric", month: "2-digit", day: "2-digit" })}</span>
                       </div>
                       <div className="flex items-center gap-2"><Clock className="w-4 h-4 text-[#00A19A] shrink-0" />
-                        <span>Tiet day: <span className="font-bold text-slate-850">{slot.startTime === slot.endTime ? slot.startTime : `${slot.startTime} - ${slot.endTime}`}</span>
-                          {slot.isDoublePeriod && <span className="text-[9px] font-extrabold bg-[#00A19A]/10 text-[#00A19A] px-1.5 py-0.5 rounded-md ml-2">Day 2 tiet lien tiep</span>}
+                        <span>Tiết dạy: <span className="font-bold text-slate-850">{slot.startTime === slot.endTime ? slot.startTime : `${slot.startTime} - ${slot.endTime}`}</span>
+                          {slot.isDoublePeriod && <span className="text-[9px] font-extrabold bg-[#00A19A]/10 text-[#00A19A] px-1.5 py-0.5 rounded-md ml-2">Dạy 2 tiết liên tiếp</span>}
                         </span>
                       </div>
                       <div className="flex items-center gap-2"><MapPin className="w-4 h-4 text-[#00A19A] shrink-0" />
-                        <span>Lop: <span className="font-bold text-slate-800">{slot.className || "Chua xep"}</span>
-                          <span className="text-slate-400 ml-1.5">({slot.campusName || "Co so"})</span>
+                        <span>Lớp: <span className="font-bold text-slate-800">{slot.className || "Chưa xếp"}</span>
+                          <span className="text-slate-400 ml-1.5">({slot.campusName || "Cơ sở"})</span>
                         </span>
                       </div>
                       <div className="flex items-center gap-2 border-t border-slate-200 pt-2 mt-0.5"><User className="w-4 h-4 text-[#00A19A] shrink-0" />
-                        <span>Gv day: <span className="font-bold text-slate-800">{slot.teacher.teacherName}</span>
+                        <span>Gv dạy: <span className="font-bold text-slate-800">{slot.teacher.teacherName}</span>
                           <span className="text-slate-400 text-[10px] ml-1.5">({slot.teacher.campus?.campusName || "Sky-Line"})</span>
                         </span>
                       </div>
@@ -525,7 +525,7 @@ export function ObservationClient({
                     {!isHost && isRegistered && (
                       <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-bold ${myReg.isApproved ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-amber-50 border-amber-200 text-amber-700"}`}>
                         {myReg.isApproved ? <CheckCircle className="w-4 h-4 shrink-0" /> : <Clock3 className="w-4 h-4 shrink-0" />}
-                        {myReg.isApproved ? "Da duoc xac nhan du gio" : "Cho xac nhan tu GV chu tri"}
+                        {myReg.isApproved ? "Đã được xác nhận dự giờ" : "Chờ xác nhận từ GV chủ trì"}
                       </div>
                     )}
 
@@ -533,14 +533,14 @@ export function ObservationClient({
                     <div className="mt-auto pt-3 border-t border-slate-100 flex items-center justify-between gap-2.5">
                       <div className="flex items-center gap-1 text-[11px] text-slate-500 font-bold shrink-0">
                         <Users className="w-3.5 h-3.5 text-slate-400" />
-                        <span>So GV dang ky: <span className="text-emerald-600 font-black">{observerCount}</span>/{slot.maxSeats} GV</span>
+                        <span>Số GV đăng ký: <span className="text-emerald-600 font-black">{observerCount}</span>/{slot.maxSeats} GV</span>
                       </div>
 
                       <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
                         {slot.lessonPlanData && (
                           <button onClick={() => handleViewPdf(slot.lessonPlanName || "GiaoAn.pdf", slot.lessonPlanData)}
-                            className="flex items-center gap-1 px-3 py-1.5 bg-sky-50 border border-sky-200 hover:bg-sky-100 text-sky-600 rounded-lg text-xs font-bold transition-all" title="Xem giao an PDF dinh kem">
-                            <FileText className="w-3.5 h-3.5" /> Giao an
+                            className="flex items-center gap-1 px-3 py-1.5 bg-sky-50 border border-sky-200 hover:bg-sky-100 text-sky-600 rounded-lg text-xs font-bold transition-all" title="Xem giáo án PDF đính kèm">
+                            <FileText className="w-3.5 h-3.5" /> Giáo án
                           </button>
                         )}
 
@@ -555,7 +555,7 @@ export function ObservationClient({
                             </button>
                             <button onClick={() => handleDeleteSlot(slot.id)}
                               className="flex items-center gap-1 px-3 py-1.5 bg-rose-50 border border-rose-200 hover:bg-rose-100 text-rose-600 rounded-lg text-xs font-bold transition-all">
-                              <Trash2 className="w-3.5 h-3.5" /> Xoa
+                              <Trash2 className="w-3.5 h-3.5" /> Xóa
                             </button>
                           </div>
                         ) : isRegistered ? (
@@ -565,18 +565,18 @@ export function ObservationClient({
                               <button onClick={() => openEvalModal(myReg, slot)}
                                 className={`flex items-center gap-1 px-3 py-1.5 border rounded-lg text-xs font-bold transition-all ${myReg.evaluation ? "bg-emerald-50 border-emerald-200 text-emerald-600 hover:bg-emerald-100" : "bg-violet-50 border-violet-200 text-violet-600 hover:bg-violet-100"}`}>
                                 <ClipboardList className="w-3.5 h-3.5" />
-                                {myReg.evaluation ? "Xem phieu" : "Dien phieu"}
+                                {myReg.evaluation ? "Xem phiếu" : "Điền phiếu"}
                               </button>
                             )}
                             <button onClick={() => handleCancelRegistration(slot.id)}
                               className="px-3 py-1.5 bg-slate-100 hover:bg-rose-50 hover:border-rose-300 hover:text-rose-600 border border-slate-200 text-slate-600 rounded-lg text-xs font-bold transition-all">
-                              Huy dang ky
+                              Hủy đăng ký
                             </button>
                           </div>
                         ) : (
                           <button onClick={() => handleRegister(slot.id)} disabled={observerCount >= slot.maxSeats}
                             className="px-4 py-1.5 bg-[#00A19A] hover:bg-[#008B85] disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-lg text-xs font-extrabold uppercase tracking-wide transition-all shadow-sm disabled:shadow-none">
-                            Dang ky
+                            Đăng ký
                           </button>
                         )}
                       </div>
@@ -586,10 +586,10 @@ export function ObservationClient({
                     {isHost && isExpanded && (
                       <div className="border-t border-slate-200 pt-4 space-y-2 animate-in fade-in duration-200">
                         <h5 className="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                          <Users className="w-3.5 h-3.5 text-[#00A19A]" /> Danh sach GV dang ky du gio
+                          <Users className="w-3.5 h-3.5 text-[#00A19A]" /> Danh sách GV đăng ký dự giờ
                         </h5>
                         {slot.registrations.length === 0 ? (
-                          <p className="text-xs text-slate-400 italic">Chua co giao vien nao dang ky.</p>
+                          <p className="text-xs text-slate-400 italic">Chưa có giáo viên nào đăng ký.</p>
                         ) : (
                           <div className="space-y-2">
                             {slot.registrations.map((reg: any) => (
@@ -609,16 +609,16 @@ export function ObservationClient({
                                 </div>
                                 <div className="flex items-center gap-1.5 shrink-0">
                                   {reg.evaluation && (
-                                    <span className="px-2 py-0.5 text-[9px] font-bold bg-violet-50 border border-violet-200 text-violet-600 rounded-md">Da nop phieu</span>
+                                    <span className="px-2 py-0.5 text-[9px] font-bold bg-violet-50 border border-violet-200 text-violet-600 rounded-md">Đã nộp phiếu</span>
                                   )}
                                   {reg.isApproved ? (
                                     <span className="flex items-center gap-1 px-2.5 py-1 bg-emerald-100 border border-emerald-300 text-emerald-700 rounded-lg text-[10px] font-extrabold">
-                                      <CheckCircle className="w-3 h-3" /> Da xac nhan
+                                      <CheckCircle className="w-3 h-3" /> Đã xác nhận
                                     </span>
                                   ) : (
                                     <button onClick={() => handleApprove(reg.id)} disabled={isPending}
                                       className="flex items-center gap-1 px-2.5 py-1 bg-[#00A19A] hover:bg-[#008B85] disabled:opacity-50 text-white rounded-lg text-[10px] font-extrabold transition-all">
-                                      <Shield className="w-3 h-3" /> Xac nhan
+                                      <Shield className="w-3 h-3" /> Xác nhận
                                     </button>
                                   )}
                                 </div>
@@ -640,11 +640,11 @@ export function ObservationClient({
       <div className="flex items-start gap-4 p-5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-700 mt-6 shadow-sm">
         <Info className="w-6 h-6 text-slate-400 shrink-0 mt-0.5" />
         <div className="space-y-1.5">
-          <h4 className="font-extrabold text-sm uppercase tracking-wide text-slate-800">Luu y chuyen mon:</h4>
+          <h4 className="font-extrabold text-sm uppercase tracking-wide text-slate-800">Lưu ý chuyên môn:</h4>
           <ul className="list-disc pl-4 text-xs font-semibold text-slate-500 leading-relaxed space-y-1">
-            <li>Vui long co mat truoc gio day du dinh it nhat 10 phut de chuan bi.</li>
-            <li>Giu trat tu tuyet doi trong lop hoc va khong lam anh huong den qua trinh hoc tap cua hoc sinh.</li>
-            <li>Sau khi tiet day ket thuc, GV du gio vui long dien phieu danh gia tiet day (khi da duoc xac nhan).</li>
+            <li>Vui lòng có mặt trước giờ dạy dự định ít nhất 10 phút để chuẩn bị.</li>
+            <li>Giữ trật tự tuyệt đối trong lớp học và không làm ảnh hưởng đến quá trình học tập của học sinh.</li>
+            <li>Sau khi tiết dạy kết thúc, GV dự giờ vui lòng điền phiếu đánh giá tiết dạy (khi đã được xác nhận).</li>
           </ul>
         </div>
       </div>
@@ -654,115 +654,115 @@ export function ObservationClient({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300">
             <div className="px-6 py-5 bg-[#0A3230] text-white flex items-center justify-between shrink-0">
-              <div><h3 className="font-black text-lg">Them moi tiet day</h3><p className="text-white/60 text-xs mt-0.5">Tao tiet day de giao vien khac dang ky du gio</p></div>
+              <div><h3 className="font-black text-lg">Thêm mới tiết dạy</h3><p className="text-white/60 text-xs mt-0.5">Tạo tiết dạy để giáo viên khác đăng ký dự giờ</p></div>
               <button onClick={() => setShowCreateModal(false)} className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors"><X className="w-5 h-5 text-white/80" /></button>
             </div>
             <form onSubmit={handleCreateSubmit} className="flex-1 overflow-y-auto p-6 space-y-5 custom-scrollbar">
               <div className="flex items-center justify-between gap-3 p-4 bg-sky-50 border border-sky-100 text-sky-800 rounded-2xl">
-                <div className="flex items-center gap-2"><Info className="w-4 h-4 text-sky-600 shrink-0" /><span className="text-xs font-semibold">Ban co the tao toi da 2 tiet day moi thang.</span></div>
-                <span className="text-xs font-bold bg-sky-200/50 px-2 py-0.5 rounded-md text-sky-900 shrink-0">Da tao trong {selectedMonthStr}: <span className="font-black">{monthlyLimitCount}/2</span> tiet</span>
+                <div className="flex items-center gap-2"><Info className="w-4 h-4 text-sky-600 shrink-0" /><span className="text-xs font-semibold">Bạn có thể tạo tối đa 2 tiết dạy mỗi tháng.</span></div>
+                <span className="text-xs font-bold bg-sky-200/50 px-2 py-0.5 rounded-md text-sky-900 shrink-0">Đã tạo trong {selectedMonthStr}: <span className="font-black">{monthlyLimitCount}/2</span> tiết</span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Level */}
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-extrabold text-slate-700">Cap hoc *</label>
+                  <label className="text-xs font-extrabold text-slate-700">Cấp học *</label>
                   <select value={newLevel} onChange={e => { setNewLevel(e.target.value); setNewGrade(""); setNewClassId("") }} required
                     className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-800 focus:ring-2 focus:ring-[#00A19A] outline-none">
-                    <option value="">Chon cap hoc</option>
+                    <option value="">Chọn cấp học</option>
                     <option value="Mầm non">Mầm non</option><option value="Tiểu học">Tiểu học</option>
                     <option value="THCS">THCS</option><option value="THPT">THPT</option>
                   </select>
                 </div>
                 {/* Grade */}
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-extrabold text-slate-700">Khoi lop *</label>
+                  <label className="text-xs font-extrabold text-slate-700">Khối lớp *</label>
                   <select value={newGrade} onChange={e => { setNewGrade(e.target.value); setNewClassId("") }} required disabled={!newLevel}
                     className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-800 focus:ring-2 focus:ring-[#00A19A] outline-none disabled:opacity-50">
-                    <option value="">Chon khoi lop</option>
+                    <option value="">Chọn khối lớp</option>
                     {getGradesForLevel(newLevel).map(g => <option key={g} value={g}>{g}</option>)}
                   </select>
                 </div>
                 {/* Subject */}
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-extrabold text-slate-700">Mon hoc *</label>
+                  <label className="text-xs font-extrabold text-slate-700">Môn học *</label>
                   <select value={newSubjectId} onChange={e => setNewSubjectId(e.target.value)} required
                     className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-800 focus:ring-2 focus:ring-[#00A19A] outline-none">
-                    <option value="">Chon mon hoc</option>
+                    <option value="">Chọn môn học</option>
                     {subjects.map(sub => <option key={sub.id} value={sub.id}>{sub.subjectName}</option>)}
-                    <option value="other">Mon hoc khac / To nhom chuyen de</option>
+                    <option value="other">Môn học khác / Tổ nhóm chuyên đề</option>
                   </select>
                 </div>
                 {newSubjectId === "other" && (
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-extrabold text-slate-700">Ten mon hoc khac *</label>
-                    <input type="text" placeholder="Nhap ten mon hoc..." value={newSubjectName} onChange={e => setNewSubjectName(e.target.value)} required
+                    <label className="text-xs font-extrabold text-slate-700">Tên môn học khác *</label>
+                    <input type="text" placeholder="Nhập tên môn học..." value={newSubjectName} onChange={e => setNewSubjectName(e.target.value)} required
                       className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-800 focus:ring-2 focus:ring-[#00A19A] outline-none" />
                   </div>
                 )}
                 {/* Campus */}
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-extrabold text-slate-700">Co so *</label>
+                  <label className="text-xs font-extrabold text-slate-700">Cơ sở *</label>
                   <select value={newCampusId} onChange={e => { setNewCampusId(e.target.value); setNewClassId("") }} required
                     className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-800 focus:ring-2 focus:ring-[#00A19A] outline-none">
-                    <option value="">Chon co so</option>
+                    <option value="">Chọn cơ sở</option>
                     {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
                   </select>
                 </div>
                 {/* Class */}
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-extrabold text-slate-700">Lop hoc *</label>
+                  <label className="text-xs font-extrabold text-slate-700">Lớp học *</label>
                   <select value={newClassId} onChange={e => setNewClassId(e.target.value)} required disabled={!newCampusId || !newLevel || !newGrade}
                     className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-800 focus:ring-2 focus:ring-[#00A19A] outline-none disabled:opacity-50">
-                    <option value="">Chon lop hoc</option>
+                    <option value="">Chọn lớp học</option>
                     {filteredClassesForCreation.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
-                    <option value="other">Lop hoc khac (Nhap tay...)</option>
+                    <option value="other">Lớp học khác (Nhập tay...)</option>
                   </select>
                 </div>
                 {newClassId === "other" && (
                   <div className="flex flex-col gap-1.5 md:col-span-2">
-                    <label className="text-xs font-extrabold text-slate-700">Nhap ten lop hoc khac *</label>
-                    <input type="text" placeholder="Nhap ten lop hoc (vi du: Lop 2.1, Nha tre A...)" value={newClassNameText} onChange={e => setNewClassNameText(e.target.value)} required
+                    <label className="text-xs font-extrabold text-slate-700">Nhập tên lớp học khác *</label>
+                    <input type="text" placeholder="Nhập tên lớp học (ví dụ: Lớp 2.1, Nhà trẻ A...)" value={newClassNameText} onChange={e => setNewClassNameText(e.target.value)} required
                       className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-800 focus:ring-2 focus:ring-[#00A19A] outline-none" />
                   </div>
                 )}
                 {/* Topic */}
                 <div className="md:col-span-2 flex flex-col gap-1.5">
-                  <label className="text-xs font-extrabold text-slate-700">Bai day / Chu de *</label>
-                  <input type="text" placeholder="Nhap ten bai day hoac chu de sinh hoat..." value={newTopic} onChange={e => setNewTopic(e.target.value)} required
+                  <label className="text-xs font-extrabold text-slate-700">Bài dạy / Chủ đề *</label>
+                  <input type="text" placeholder="Nhập tên bài dạy hoặc chủ đề sinh hoạt..." value={newTopic} onChange={e => setNewTopic(e.target.value)} required
                     className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-800 focus:ring-2 focus:ring-[#00A19A] outline-none" />
                 </div>
                 {/* Date */}
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-extrabold text-slate-700">Ngay day *</label>
+                  <label className="text-xs font-extrabold text-slate-700">Ngày dạy *</label>
                   <input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} required
                     className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-800 focus:ring-2 focus:ring-[#00A19A] outline-none" />
                 </div>
                 {/* PDF Upload */}
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-extrabold text-slate-700">Upload Giao an (PDF) <span className="text-slate-400 font-normal">(khong bat buoc)</span></label>
+                  <label className="text-xs font-extrabold text-slate-700">Upload Giáo án (PDF) <span className="text-slate-400 font-normal">(không bắt buộc)</span></label>
                   <div className="flex items-center gap-2">
                     <input type="file" accept=".pdf" ref={fileInputRef} onChange={handleFileChange} className="hidden" id="pdf-upload-file" />
                     <label htmlFor="pdf-upload-file" className="flex-1 flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-xs font-bold py-2.5 px-4 rounded-xl cursor-pointer transition-all">
-                      <FileText className="w-4 h-4 text-slate-500" />{newLessonPlanName ? "Thay doi File PDF" : "Chon File PDF..."}
+                      <FileText className="w-4 h-4 text-slate-500" />{newLessonPlanName ? "Thay đổi File PDF" : "Chọn File PDF..."}
                     </label>
                     {newLessonPlanName && (
                       <button type="button" onClick={() => { setNewLessonPlanName(""); setNewLessonPlanData(""); if (fileInputRef.current) fileInputRef.current.value = "" }}
-                        className="p-2 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 transition-all" title="Xoa file da chon"><X className="w-3.5 h-3.5" /></button>
+                        className="p-2 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 transition-all" title="Xóa file đã chọn"><X className="w-3.5 h-3.5" /></button>
                     )}
                   </div>
-                  {newLessonPlanName && <span className="text-[10px] font-bold text-[#00A19A] mt-1 truncate max-w-full block">Da chon: {newLessonPlanName}</span>}
+                  {newLessonPlanName && <span className="text-[10px] font-bold text-[#00A19A] mt-1 truncate max-w-full block">Đã chọn: {newLessonPlanName}</span>}
                 </div>
                 {/* Period */}
                 <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-3 items-end bg-slate-50 p-4 rounded-2xl border border-slate-100">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-extrabold text-slate-700">Tiet day: Tu *</label>
+                    <label className="text-xs font-extrabold text-slate-700">Tiết dạy: Tu *</label>
                     <select value={newStartTime} onChange={e => handleStartTimeChange(e.target.value)}
                       className="w-full text-sm rounded-xl border border-slate-200 p-2 bg-white text-slate-800 focus:ring-2 focus:ring-[#00A19A] outline-none">
                       {periodOptions.map(p => <option key={p} value={p}>{p}</option>)}
                     </select>
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-extrabold text-slate-700">Den *</label>
+                    <label className="text-xs font-extrabold text-slate-700">Đến *</label>
                     <select value={newEndTime} disabled={newIsDoublePeriod} onChange={e => setNewEndTime(e.target.value)}
                       className="w-full text-sm rounded-xl border border-slate-200 p-2 bg-white text-slate-800 focus:ring-2 focus:ring-[#00A19A] outline-none disabled:opacity-50">
                       {periodOptions.map(p => <option key={p} value={p}>{p}</option>)}
@@ -771,38 +771,38 @@ export function ObservationClient({
                   <div className="flex items-center gap-2 pb-2 h-[42px] pl-2">
                     <input type="checkbox" id="isDoublePeriod" checked={newIsDoublePeriod} disabled={newStartTime === "Tiết 8"} onChange={e => handleDoublePeriodChange(e.target.checked)}
                       className="w-4 h-4 rounded text-[#00A19A] focus:ring-[#00A19A]" />
-                    <label htmlFor="isDoublePeriod" className="text-xs font-extrabold text-slate-600 select-none cursor-pointer">Day 2 tiet lien tiep</label>
+                    <label htmlFor="isDoublePeriod" className="text-xs font-extrabold text-slate-600 select-none cursor-pointer">Dạy 2 tiết liên tiếp</label>
                   </div>
                 </div>
               </div>
               {/* Description */}
               <div className="flex flex-col gap-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-extrabold text-slate-700">Mo ta noi dung tiet day (khong bat buoc)</label>
+                  <label className="text-xs font-extrabold text-slate-700">Mô tả nội dung tiết dạy (không bắt buộc)</label>
                   <span className="text-[10px] font-bold text-slate-400">{newDescription.length}/500</span>
                 </div>
-                <textarea placeholder="Nhap mo ta ngan ve noi dung, muc tieu, phuong phap day hoc..." maxLength={500} rows={3} value={newDescription} onChange={e => setNewDescription(e.target.value)}
+                <textarea placeholder="Nhập mô tả ngắn về nội dung, mục tiêu, phương pháp dạy học..." maxLength={500} rows={3} value={newDescription} onChange={e => setNewDescription(e.target.value)}
                   className="w-full text-sm rounded-xl border border-slate-200 p-3 bg-slate-50 text-slate-800 focus:ring-2 focus:ring-[#00A19A] outline-none resize-none" />
               </div>
               {/* Visibility */}
               <div className="flex flex-col gap-2.5 bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                <label className="text-xs font-extrabold text-slate-700">Hien thi cho giao vien</label>
+                <label className="text-xs font-extrabold text-slate-700">Hiển thị cho giáo viên</label>
                 <div className="flex flex-col sm:flex-row gap-4">
                   <label className="flex items-center gap-2 text-xs font-bold text-slate-600 select-none cursor-pointer">
                     <input type="radio" name="visibility" checked={newVisibility === "ALL"} onChange={() => setNewVisibility("ALL")} className="w-4 h-4 text-[#00A19A] focus:ring-[#00A19A]" />
-                    Tat ca giao vien trong truong
+                    Tất cả giáo viên trong trường
                   </label>
                   <label className="flex items-center gap-2 text-xs font-bold text-slate-600 select-none cursor-pointer">
                     <input type="radio" name="visibility" checked={newVisibility === "DEPARTMENT"} onChange={() => setNewVisibility("DEPARTMENT")} className="w-4 h-4 text-[#00A19A] focus:ring-[#00A19A]" />
-                    Chi cac to nhom chuyen mon
+                    Chỉ các tổ nhóm chuyên môn
                   </label>
                 </div>
                 {newVisibility === "DEPARTMENT" && (
                   <div className="flex flex-col gap-1.5 mt-2 animate-in fade-in duration-200">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Chon to nhom *</label>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Chọn tổ nhóm *</label>
                     <select value={newTargetDeptId} onChange={e => setNewTargetDeptId(e.target.value)} required
                       className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-white text-slate-800 focus:ring-2 focus:ring-[#00A19A] outline-none">
-                      <option value="">Chon to nhom chuyen mon</option>
+                      <option value="">Chọn tổ nhóm chuyên môn</option>
                       {departments.map(dept => <option key={dept.id} value={dept.id}>{dept.name} ({dept.code})</option>)}
                     </select>
                   </div>
@@ -810,10 +810,10 @@ export function ObservationClient({
               </div>
               {/* Submit */}
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 shrink-0">
-                <button type="button" onClick={() => setShowCreateModal(false)} className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all text-sm">Huy</button>
+                <button type="button" onClick={() => setShowCreateModal(false)} className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all text-sm">Hủy</button>
                 <button type="submit" disabled={submitting || monthlyLimitCount >= 2}
                   className="px-6 py-2.5 bg-[#00A19A] hover:bg-[#008B85] disabled:bg-slate-200 disabled:text-slate-400 text-white font-extrabold rounded-xl transition-all shadow-md text-sm shrink-0">
-                  {submitting ? "Dang luu..." : "Luu tiet day"}
+                  {submitting ? "Đang lưu..." : "Lưu tiết dạy"}
                 </button>
               </div>
             </form>
@@ -827,8 +827,8 @@ export function ObservationClient({
           <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300">
             <div className="px-6 py-5 bg-gradient-to-r from-violet-700 to-violet-900 text-white flex items-center justify-between shrink-0">
               <div>
-                <h3 className="font-black text-lg flex items-center gap-2"><ClipboardList className="w-5 h-5" /> Phieu danh gia tiet du gio</h3>
-                <p className="text-white/70 text-xs mt-0.5">Bai day: {evalModal.slot.topic}</p>
+                <h3 className="font-black text-lg flex items-center gap-2"><ClipboardList className="w-5 h-5" /> Phiếu đánh giá tiết dự giờ</h3>
+                <p className="text-white/70 text-xs mt-0.5">Bài dạy: {evalModal.slot.topic}</p>
               </div>
               <button onClick={() => setEvalModal(null)} className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors"><X className="w-5 h-5 text-white/80" /></button>
             </div>
@@ -837,7 +837,7 @@ export function ObservationClient({
               <div className="space-y-4">
                 <h4 className="font-extrabold text-sm text-slate-800 uppercase tracking-wider flex items-center gap-2">
                   <span className="w-5 h-5 bg-violet-100 text-violet-700 rounded-md flex items-center justify-center text-[10px] font-black">1</span>
-                  Danh gia theo tieu chi (chon muc do phu hop)
+                  Đánh giá theo tiêu chí (chọn mức độ phù hợp)
                 </h4>
                 {CRITERIA_LABELS.map((label, i) => (
                   <div key={i} className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
@@ -857,29 +857,29 @@ export function ObservationClient({
               <div className="space-y-4">
                 <h4 className="font-extrabold text-sm text-slate-800 uppercase tracking-wider flex items-center gap-2">
                   <span className="w-5 h-5 bg-violet-100 text-violet-700 rounded-md flex items-center justify-center text-[10px] font-black">2</span>
-                  Nhan xet chi tiet
+                  Nhận xét chi tiết
                 </h4>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-extrabold text-slate-700">Uu diem noi bat cua tiet day</label>
-                  <textarea placeholder="Nhung diem manh, sang tao, hieu qua cua tiet day..." rows={3} value={evalStrengths} onChange={e => setEvalStrengths(e.target.value)}
+                  <label className="text-xs font-extrabold text-slate-700">Ưu điểm nổi bật của tiết dạy</label>
+                  <textarea placeholder="Những điểm mạnh, sáng tạo, hiệu quả của tiết dạy..." rows={3} value={evalStrengths} onChange={e => setEvalStrengths(e.target.value)}
                     className="w-full text-sm rounded-xl border border-slate-200 p-3 bg-slate-50 text-slate-800 focus:ring-2 focus:ring-violet-500 outline-none resize-none" />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-extrabold text-slate-700">Gop y cai thien / xay dung</label>
-                  <textarea placeholder="Nhung diem co the cai thien, goi y phuong phap thay the..." rows={3} value={evalImprovements} onChange={e => setEvalImprovements(e.target.value)}
+                  <label className="text-xs font-extrabold text-slate-700">Góp ý cải thiện / xây dựng</label>
+                  <textarea placeholder="Những điểm có thể cải thiện, gợi ý phương pháp thay thế..." rows={3} value={evalImprovements} onChange={e => setEvalImprovements(e.target.value)}
                     className="w-full text-sm rounded-xl border border-slate-200 p-3 bg-slate-50 text-slate-800 focus:ring-2 focus:ring-violet-500 outline-none resize-none" />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-extrabold text-slate-700">Nhan xet chung</label>
-                  <textarea placeholder="Tong the nhan xet cua ban ve tiet du gio..." rows={2} value={evalGeneral} onChange={e => setEvalGeneral(e.target.value)}
+                  <label className="text-xs font-extrabold text-slate-700">Nhận xét chung</label>
+                  <textarea placeholder="Tổng thể nhận xét của bạn về tiết dự giờ..." rows={2} value={evalGeneral} onChange={e => setEvalGeneral(e.target.value)}
                     className="w-full text-sm rounded-xl border border-slate-200 p-3 bg-slate-50 text-slate-800 focus:ring-2 focus:ring-violet-500 outline-none resize-none" />
                 </div>
               </div>
               {/* Overall Rating */}
               <div className="flex flex-col gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                <label className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Xep loai tiet day tong the *</label>
+                <label className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Xếp loại tiết dạy tổng thể *</label>
                 <div className="grid grid-cols-4 gap-2">
-                  {[["Tot","bg-emerald-500"],["Kha","bg-sky-500"],["Trung binh","bg-amber-400"],["Yeu","bg-rose-500"]].map(([r, color]) => (
+                  {[["Tốt","bg-emerald-500"],["Khá","bg-sky-500"],["Trung bình","bg-amber-400"],["Yếu","bg-rose-500"]].map(([r, color]) => (
                     <button key={r} type="button" onClick={() => setEvalOverall(r)}
                       className={`py-2.5 rounded-xl border-2 text-xs font-extrabold transition-all ${evalOverall === r ? `${color} border-transparent text-white shadow-md` : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"}`}>
                       {r}
@@ -889,10 +889,10 @@ export function ObservationClient({
               </div>
               {/* Actions */}
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-                <button type="button" onClick={() => setEvalModal(null)} className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all text-sm">Dong</button>
+                <button type="button" onClick={() => setEvalModal(null)} className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all text-sm">Đóng</button>
                 <button type="button" onClick={handleSubmitEval} disabled={evalSubmitting}
                   className="px-6 py-2.5 bg-violet-600 hover:bg-violet-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-extrabold rounded-xl transition-all shadow-md text-sm">
-                  {evalSubmitting ? "Dang nop..." : evalModal.registration.evaluation ? "Cap nhat phieu" : "Nop phieu danh gia"}
+                  {evalSubmitting ? "Đang nộp..." : evalModal.registration.evaluation ? "Cập nhật phiếu" : "Nộp phiếu đánh giá"}
                 </button>
               </div>
             </div>
