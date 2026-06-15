@@ -69,6 +69,8 @@ model Teacher {
   campus             Campus                   @relation(fields: [campusId], references: [id])
   classes            TeacherClassAssignment[]
   TeachingAssignment TeachingAssignment[]
+  hostObservationSlots  ObservationSlot[]         @relation("HostTeacher")
+  observerRegistrations ObservationRegistration[] @relation("ObserverTeacher")
 }
 
 model Campus {
@@ -908,4 +910,41 @@ model TaskCategory {
   assignedToRole String
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+}
+
+model ObservationSlot {
+  id              String                    @id @default(cuid())
+  teacherId       String
+  subjectId       String?
+  subjectName     String
+  level           String
+  grade           String
+  topic           String
+  date            DateTime
+  startTime       String
+  endTime         String
+  isDoublePeriod  Boolean                   @default(false)
+  room            String
+  description     String?
+  visibilityType  String
+  targetDeptId    String?
+  maxSeats        Int                       @default(10)
+  status          String                    @default("ACTIVE")
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+
+  teacher         Teacher                   @relation("HostTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
+  registrations   ObservationRegistration[]
+}
+
+model ObservationRegistration {
+  id              String            @id @default(cuid())
+  slotId          String
+  teacherId       String
+  registeredAt    DateTime          @default(now())
+
+  slot            ObservationSlot   @relation(fields: [slotId], references: [id], onDelete: Cascade)
+  teacher         Teacher           @relation("ObserverTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@unique([slotId, teacherId])
 }

@@ -242,6 +242,24 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0 }: 
                   {!isCollapsed && <span>Quản lý Khảo sát</span>}
                 </Link>
               </div>
+              
+              <div className="pt-4">
+                <div className="px-3 py-2">
+                  {!isCollapsed ? <span className="text-[10px] font-bold text-white/60 uppercase tracking-[0.1em]">Dự giờ Giáo viên</span> : <span className="w-full text-center text-white/50 block text-xs">•••</span>}
+                </div>
+                <Link href="/teacher/du-gio" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname === '/teacher/du-gio' && !searchParams?.get("tab") ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"} mb-1`}>
+                  <ClipboardCheck className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname === '/teacher/du-gio' && !searchParams?.get("tab") ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
+                  {!isCollapsed && <span>Đăng ký dự giờ</span>}
+                </Link>
+                <Link href="/teacher/du-gio?tab=my-schedule" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname === '/teacher/du-gio' && searchParams?.get("tab") === 'my-schedule' ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"} mb-1`}>
+                  <Layers className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname === '/teacher/du-gio' && searchParams?.get("tab") === 'my-schedule' ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
+                  {!isCollapsed && <span>Lịch của tôi</span>}
+                </Link>
+                <Link href="/teacher/du-gio?tab=history" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname === '/teacher/du-gio' && searchParams?.get("tab") === 'history' ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"}`}>
+                  <FileText className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname === '/teacher/du-gio' && searchParams?.get("tab") === 'history' ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
+                  {!isCollapsed && <span>Lịch sử đăng ký</span>}
+                </Link>
+              </div>
             </>
           )}
         </nav>
