@@ -382,6 +382,14 @@ export function ObservationClient({
       return
     }
 
+    if (!newSubjectId) {
+      showToast("Vui lòng chọn môn học!", "error")
+      return
+    }
+    if (newSubjectId === "other" && !newSubjectName.trim()) {
+      showToast("Vui lòng nhập tên môn học khác!", "error")
+      return
+    }
     setSubmitting(true)
     const selectedSub = subjects.find(s => s.id === newSubjectId)
     const subName = selectedSub ? selectedSub.subjectName : newSubjectName || "Khác"
@@ -396,7 +404,7 @@ export function ObservationClient({
     }
 
     const res = await createObservationSlot({
-      subjectId: newSubjectId || undefined,
+      subjectId: (newSubjectId && newSubjectId !== "other") ? newSubjectId : undefined,
       subjectName: subName,
       level: newLevel,
       grade: newGrade,
@@ -411,7 +419,7 @@ export function ObservationClient({
       targetDeptId: newVisibility === "DEPARTMENT" ? newTargetDeptId : undefined,
       campusId: newCampusId,
       campusName: campusNameStr,
-      classId: newClassId === "other" ? undefined : newClassId,
+      classId: (newClassId && newClassId !== "other") ? newClassId : undefined,
       className: classNameStr,
       lessonPlanName: newLessonPlanName || undefined,
       lessonPlanData: newLessonPlanData || undefined
@@ -1001,14 +1009,14 @@ export function ObservationClient({
 
                 {/* PDF Upload */}
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-extrabold text-slate-700">Upload Giáo án (PDF) *</label>
+                  <label className="text-xs font-extrabold text-slate-700">Upload Giáo án (PDF) <span className="text-slate-400 font-normal">(không bắt buộc)</span></label>
                   <div className="flex items-center gap-2">
                     <input
                       type="file"
                       accept=".pdf"
                       ref={fileInputRef}
                       onChange={handleFileChange}
-                      required={!newLessonPlanName}
+
                       className="hidden"
                       id="pdf-upload-file"
                     />
