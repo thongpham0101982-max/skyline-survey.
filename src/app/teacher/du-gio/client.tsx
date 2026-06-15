@@ -436,11 +436,12 @@ export function ObservationClient({
         };
       }
       
+      const countWeight = slot.isDoublePeriod ? 2 : 1;
       if (isHost) {
-        stats[key].taughtCount += 1;
+        stats[key].taughtCount += countWeight;
       }
       if (isObserverApproved) {
-        stats[key].observedCount += 1;
+        stats[key].observedCount += countWeight;
       }
     });
     
