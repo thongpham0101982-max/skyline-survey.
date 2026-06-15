@@ -687,7 +687,7 @@ export function ObservationClient({
                               <button onClick={() => openEvalModal(myReg, slot)}
                                 className={`flex items-center gap-1 px-3 py-1.5 border rounded-lg text-xs font-bold transition-all ${myReg.evaluation ? "bg-emerald-50 border-emerald-200 text-emerald-600 hover:bg-emerald-100" : "bg-violet-50 border-violet-200 text-violet-600 hover:bg-violet-100"}`}>
                                 <ClipboardList className="w-3.5 h-3.5" />
-                                {myReg.evaluation ? "Xem phiếu" : "Điền phiếu"}
+                                {myReg.evaluation ? "Đã đánh giá" : "Điền phiếu"}
                               </button>
                             )}
                             {!myReg.isApproved ? (
