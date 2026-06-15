@@ -39,6 +39,41 @@ const CRITERIA_LABELS = [
 ]
 
 const RATING_LABELS = ["Tốt", "Khá", "Trung bình", "Yếu"]
+
+const K12_SECTIONS = [
+  {
+    name: "Tiêu chuẩn 1: Phương tiện (3 điểm)",
+    requirements: [
+      { id: 1, label: "Yêu cầu 1", max: 1.5, text: "Chuẩn bị giáo án tốt, giáo án phải chỉ rõ các hoạt động của trò và thầy, bám sát chuẩn kiến thức, kỹ năng, thể hiện mức độ phù hợp của các hoạt động học với mục tiêu, nội dung và phương pháp dạy học được sử dụng. KH bài dạy thể hiện mức độ rõ ràng, chính xác của mục tiêu, nội dung, sản phẩm, cách thức tổ chức thực hiện mỗi hoạt động học của học sinh." },
+      { id: 2, label: "Yêu cầu 2", max: 1.5, text: "Tích cực sử dụng đồ dùng, thiết bị dạy học. Thiết bị, đồ dùng dạy học phải phù hợp với nội dung, phương pháp của kiểu bài lên lớp." }
+    ]
+  },
+  {
+    name: "Tiêu chuẩn 2: Nội dung (5 điểm)",
+    requirements: [
+      { id: 3, label: "Yêu cầu 3", max: 2.0, text: "Nội dung bài dạy chính xác, khoa học (bao gồm khoa học bộ môn và phù hợp với quan điểm tư tưởng, lập trường chính trị của Đảng); Hấp dẫn (bao gồm hấp dẫn của nội dung, phương pháp và hình thức giao nhiệm vụ học tập cho học sinh)." },
+      { id: 4, label: "Yêu cầu 4", max: 2.0, text: "Bảo đảm tính hệ thống, đủ nội dung theo chuẩn kiến thức, kỹ năng và làm rõ trọng tâm của bài học." },
+      { id: 5, label: "Yêu cầu 5", max: 1.0, text: "Liên hệ với thực tế đời sống và sản xuất (nếu có). Nội dung liên hệ thực tế có tính giáo dục và gắn với nội dung bài dạy." }
+    ]
+  },
+  {
+    name: "Tiêu chuẩn 3: Phương pháp (9 điểm)",
+    requirements: [
+      { id: 6, label: "Yêu cầu 6", max: 2.0, text: "Không dạy học theo lối 'đọc chép', áp đặt đối với học sinh. Thể hiện khả năng quan sát, theo dõi, phát hiện kịp thời những khó khăn của học sinh." },
+      { id: 7, label: "Yêu cầu 7", max: 3.0, text: "Tổ chức học sinh học tập tích cực, chủ động, phù hợp với từng đối tượng trong lớp. Khuyến khích học sinh hợp tác, giúp đỡ nhau khi thực hiện nhiệm vụ học tập. Học sinh được tham gia xây dựng bài và phát huy trí lực tốt, hứng thú học tập, không khí lớp học thân thiện." },
+      { id: 8, label: "Yêu cầu 8", max: 2.0, text: "Thực hiện linh hoạt các khâu lên lớp, phân phối thời gian hợp lý (đúng quy trình theo YCCD của CT2018). Dành thời gian thích hợp để củng cố, luyện tập nhằm khắc sâu trọng tâm bài học." },
+      { id: 9, label: "Yêu cầu 9", max: 2.0, text: "Kết hợp tốt các phương pháp trong hoạt động dạy và học. Học sinh tiếp nhận, sẵn sàng, chủ động, sáng tạo, hợp tác thực hiện các nhiệm vụ, tích cực trong trình bày, thảo luận về kết quả thực hiện nhiệm vụ." }
+    ]
+  },
+  {
+    name: "Tiêu chuẩn 4: Kết quả (3 điểm)",
+    requirements: [
+      { id: 10, label: "Yêu cầu 10", max: 2.0, text: "Mức độ phù hợp, đúng đắn, chính xác của phương án kiểm tra, đánh giá trong quá trình tổ chức hoạt động dạy và học. Học sinh hiểu bài, dễ nhớ, nắm vững trọng tâm, biết vận dụng kiến thức. Tạo điều kiện để học sinh ghi chép bài đầy đủ." },
+      { id: 11, label: "Yêu cầu 11", max: 1.0, text: "Tiết dạy nhuần nhuyễn, hấp dẫn, gây ấn tượng và có tính sáng tạo." }
+    ]
+  }
+];
+
 const RATING_COLORS: Record<string, string> = {
   "Tốt": "bg-emerald-100 text-emerald-700 border-emerald-300",
   "Khá": "bg-sky-100 text-sky-700 border-sky-300",
@@ -97,6 +132,7 @@ export function ObservationClient({
   // Evaluation modal state
   const [evalModal, setEvalModal] = useState<{ registration: any; slot: any } | null>(null)
   const [evalCriteria, setEvalCriteria] = useState([0, 0, 0, 0, 0])
+  const [evalK12Scores, setEvalK12Scores] = useState<number[]>([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
   const [evalStrengths, setEvalStrengths] = useState("")
   const [evalImprovements, setEvalImprovements] = useState("")
   const [evalGeneral, setEvalGeneral] = useState("")
@@ -227,12 +263,26 @@ export function ObservationClient({
         registration.evaluation.criterion4 || 0,
         registration.evaluation.criterion5 || 0
       ])
+      setEvalK12Scores([
+        registration.evaluation.score1 || 0,
+        registration.evaluation.score2 || 0,
+        registration.evaluation.score3 || 0,
+        registration.evaluation.score4 || 0,
+        registration.evaluation.score5 || 0,
+        registration.evaluation.score6 || 0,
+        registration.evaluation.score7 || 0,
+        registration.evaluation.score8 || 0,
+        registration.evaluation.score9 || 0,
+        registration.evaluation.score10 || 0,
+        registration.evaluation.score11 || 0
+      ])
       setEvalStrengths(registration.evaluation.strengths || "")
       setEvalImprovements(registration.evaluation.improvements || "")
       setEvalGeneral(registration.evaluation.generalComment || "")
       setEvalOverall(registration.evaluation.overallRating || "")
     } else {
       setEvalCriteria([0, 0, 0, 0, 0])
+      setEvalK12Scores([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
       setEvalStrengths("")
       setEvalImprovements("")
       setEvalGeneral("")
@@ -241,19 +291,79 @@ export function ObservationClient({
     setEvalModal({ registration, slot })
   }
 
+  const calculateK12Ranking = (scores: number[]) => {
+    const sum = scores.reduce((a, b) => a + b, 0)
+    const yq1 = scores[0];
+    const yq3 = scores[2];
+    const yq6 = scores[5];
+    const yq7 = scores[6];
+
+    const maxScores = [1.5, 1.5, 2.0, 2.0, 1.0, 2.0, 3.0, 2.0, 2.0, 2.0, 1.0]
+    const checkOthersAtLeast50Percent = (coreIndices: number[]) => {
+      return scores.every((s, idx) => {
+        if (coreIndices.includes(idx)) return true
+        return s >= maxScores[idx] * 0.5
+      })
+    }
+
+    // 1. Giỏi
+    if (sum >= 17 && yq1 === 1.5 && yq3 === 2.0 && yq6 === 2.0 && yq7 === 3.0 && checkOthersAtLeast50Percent([0, 2, 5, 6])) {
+      return "Giỏi"
+    }
+
+    // 2. Khá
+    if (sum >= 14 && yq3 >= 2.0 && yq6 >= 2.0 && yq7 >= 2.0 && checkOthersAtLeast50Percent([2, 5, 6])) {
+      return "Khá"
+    }
+
+    // 3. Trung bình
+    if (sum >= 12 && yq3 >= 1.0 && yq6 >= 1.0 && yq7 >= 1.0 && scores.every(s => s > 0)) {
+      return "Trung bình"
+    }
+
+    return "Không xếp loại"
+  }
+
   const handleSubmitEval = async () => {
     if (!evalModal) return
-    if (evalCriteria.some(c => c === 0)) { showToast("Vui lòng đánh giá tất cả 5 tiêu chí!", "error"); return }
-    if (!evalOverall) { showToast("Vui lòng chọn xếp loại tổng thể!", "error"); return }
-    setEvalSubmitting(true)
-    const res = await submitEvaluation({
+    const isK12 = evalModal.slot.level !== "Mầm non"
+    
+    let payload: any = {
       registrationId: evalModal.registration.id,
       slotId: evalModal.slot.id,
-      criterion1: evalCriteria[0], criterion2: evalCriteria[1], criterion3: evalCriteria[2],
-      criterion4: evalCriteria[3], criterion5: evalCriteria[4],
-      strengths: evalStrengths, improvements: evalImprovements,
-      generalComment: evalGeneral, overallRating: evalOverall
-    })
+      strengths: evalStrengths,
+      improvements: evalImprovements,
+      generalComment: evalGeneral,
+      overallRating: evalOverall
+    }
+
+    if (isK12) {
+      const sum = evalK12Scores.reduce((a, b) => a + b, 0)
+      payload.score1 = evalK12Scores[0]
+      payload.score2 = evalK12Scores[1]
+      payload.score3 = evalK12Scores[2]
+      payload.score4 = evalK12Scores[3]
+      payload.score5 = evalK12Scores[4]
+      payload.score6 = evalK12Scores[5]
+      payload.score7 = evalK12Scores[6]
+      payload.score8 = evalK12Scores[7]
+      payload.score9 = evalK12Scores[8]
+      payload.score10 = evalK12Scores[9]
+      payload.score11 = evalK12Scores[10]
+      payload.totalScore = sum
+    } else {
+      if (evalCriteria.some(c => c === 0)) { showToast("Vui lòng đánh giá tất cả 5 tiêu chí!", "error"); return }
+      payload.criterion1 = evalCriteria[0]
+      payload.criterion2 = evalCriteria[1]
+      payload.criterion3 = evalCriteria[2]
+      payload.criterion4 = evalCriteria[3]
+      payload.criterion5 = evalCriteria[4]
+    }
+
+    if (!evalOverall) { showToast("Vui lòng chọn xếp loại tổng thể!", "error"); return }
+
+    setEvalSubmitting(true)
+    const res = await submitEvaluation(payload)
     setEvalSubmitting(false)
     if (res.success) {
       showToast("Đã nộp phiếu đánh giá thành công!", "success")
@@ -609,7 +719,11 @@ export function ObservationClient({
                                 </div>
                                 <div className="flex items-center gap-1.5 shrink-0">
                                   {reg.evaluation && (
-                                    <span className="px-2 py-0.5 text-[9px] font-bold bg-violet-50 border border-violet-200 text-violet-600 rounded-md">Đã nộp phiếu</span>
+                                    <span className="px-2 py-0.5 text-[9px] font-bold bg-violet-50 border border-violet-200 text-violet-600 rounded-md">
+                                      {reg.evaluation.totalScore !== null && reg.evaluation.totalScore !== undefined
+                                        ? `Đã nộp: ${reg.evaluation.totalScore}đ (${reg.evaluation.overallRating})`
+                                        : "Đã nộp phiếu"}
+                                    </span>
                                   )}
                                   {reg.isApproved ? (
                                     <span className="flex items-center gap-1 px-2.5 py-1 bg-emerald-100 border border-emerald-300 text-emerald-700 rounded-lg text-[10px] font-extrabold">
@@ -833,30 +947,98 @@ export function ObservationClient({
               <button onClick={() => setEvalModal(null)} className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors"><X className="w-5 h-5 text-white/80" /></button>
             </div>
             <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
-              {/* Criteria */}
-              <div className="space-y-4">
-                <h4 className="font-extrabold text-sm text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                  <span className="w-5 h-5 bg-violet-100 text-violet-700 rounded-md flex items-center justify-center text-[10px] font-black">1</span>
-                  Đánh giá theo tiêu chí (chọn mức độ phù hợp)
-                </h4>
-                {CRITERIA_LABELS.map((label, i) => (
-                  <div key={i} className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
-                    <p className="text-xs font-extrabold text-slate-700 mb-3">{i + 1}. {label}</p>
-                    <div className="grid grid-cols-4 gap-2">
-                      {[4, 3, 2, 1].map((score, si) => (
-                        <button key={si} type="button" onClick={() => { const c = [...evalCriteria]; c[i] = score; setEvalCriteria(c) }}
-                          className={`py-2 rounded-xl border-2 text-xs font-extrabold transition-all ${evalCriteria[i] === score ? score === 4 ? "bg-emerald-500 border-emerald-500 text-white" : score === 3 ? "bg-sky-500 border-sky-500 text-white" : score === 2 ? "bg-amber-400 border-amber-400 text-white" : "bg-rose-500 border-rose-500 text-white" : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"}`}>
-                          {RATING_LABELS[si]}
-                        </button>
-                      ))}
-                    </div>
+              {/* Evaluation Form Sections */}
+              {evalModal.slot.level !== "Mầm non" ? (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between bg-violet-50 border border-violet-100 p-4 rounded-2xl">
+                    <span className="text-xs font-black text-violet-800 uppercase tracking-wide">Tổng điểm tự động tính:</span>
+                    <span className="text-base font-black text-violet-900 bg-white px-4 py-1.5 rounded-xl shadow-sm border border-violet-100">
+                      {evalK12Scores.reduce((a, b) => a + b, 0).toFixed(2)} / 20.00 điểm
+                    </span>
                   </div>
-                ))}
-              </div>
+                  {K12_SECTIONS.map((sec, sIdx) => {
+                    // Calculate starting index of requirements for this section
+                    let reqStartIdx = 0;
+                    for (let i = 0; i < sIdx; i++) {
+                      reqStartIdx += K12_SECTIONS[i].requirements.length;
+                    }
+
+                    return (
+                      <div key={sIdx} className="space-y-4">
+                        <h4 className="font-extrabold text-sm text-slate-800 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
+                          <span className="w-5 h-5 bg-violet-100 text-violet-700 rounded-md flex items-center justify-center text-[10px] font-black">{sIdx + 1}</span>
+                          {sec.name}
+                        </h4>
+                        <div className="space-y-3">
+                          {sec.requirements.map((req, rSubIdx) => {
+                            const globalIdx = reqStartIdx + rSubIdx;
+                            // Generate options from 0 to req.max with step 0.25
+                            const options = [];
+                            for (let v = 0; v <= req.max; v += 0.25) {
+                              options.push(Math.round(v * 100) / 100);
+                            }
+
+                            return (
+                              <div key={req.id} className="bg-slate-50 rounded-2xl p-4 border border-slate-100 flex flex-col md:flex-row md:items-start justify-between gap-4">
+                                <div className="space-y-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="px-2 py-0.5 text-[9px] font-extrabold bg-slate-200 text-slate-700 rounded-md uppercase tracking-wider">{req.label}</span>
+                                    <span className="text-[10px] font-bold text-slate-400">(Tối đa: {req.max}đ)</span>
+                                  </div>
+                                  <p className="text-xs text-slate-600 leading-relaxed font-semibold">{req.text}</p>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0 self-end md:self-start">
+                                  <span className="text-xs font-extrabold text-slate-500">Điểm:</span>
+                                  <select
+                                    value={evalK12Scores[globalIdx]}
+                                    onChange={(e) => {
+                                      const nextScores = [...evalK12Scores];
+                                      nextScores[globalIdx] = parseFloat(e.target.value);
+                                      setEvalK12Scores(nextScores);
+                                      const nextRank = calculateK12Ranking(nextScores);
+                                      setEvalOverall(nextRank);
+                                    }}
+                                    className="rounded-xl border border-slate-200 p-2 bg-white text-sm font-black text-slate-800 focus:ring-2 focus:ring-violet-500 outline-none w-28 shadow-sm"
+                                  >
+                                    {options.map(o => <option key={o} value={o}>{o.toFixed(2)}</option>)}
+                                  </select>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <h4 className="font-extrabold text-sm text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                    <span className="w-5 h-5 bg-violet-100 text-violet-700 rounded-md flex items-center justify-center text-[10px] font-black">1</span>
+                    Đánh giá theo tiêu chí (chọn mức độ phù hợp)
+                  </h4>
+                  {CRITERIA_LABELS.map((label, i) => (
+                    <div key={i} className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                      <p className="text-xs font-extrabold text-slate-700 mb-3">{i + 1}. {label}</p>
+                      <div className="grid grid-cols-4 gap-2">
+                        {[4, 3, 2, 1].map((score, si) => (
+                          <button key={si} type="button" onClick={() => { const c = [...evalCriteria]; c[i] = score; setEvalCriteria(c) }}
+                            className={`py-2 rounded-xl border-2 text-xs font-extrabold transition-all ${evalCriteria[i] === score ? score === 4 ? "bg-emerald-500 border-emerald-500 text-white" : score === 3 ? "bg-sky-500 border-sky-500 text-white" : score === 2 ? "bg-amber-400 border-amber-400 text-white" : "bg-rose-500 border-rose-500 text-white" : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"}`}>
+                            {RATING_LABELS[si]}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {/* Text Fields */}
               <div className="space-y-4">
                 <h4 className="font-extrabold text-sm text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                  <span className="w-5 h-5 bg-violet-100 text-violet-700 rounded-md flex items-center justify-center text-[10px] font-black">2</span>
+                  <span className="w-5 h-5 bg-violet-100 text-violet-700 rounded-md flex items-center justify-center text-[10px] font-black">
+                    {evalModal.slot.level !== "Mầm non" ? "5" : "2"}
+                  </span>
                   Nhận xét chi tiết
                 </h4>
                 <div className="flex flex-col gap-1.5">
@@ -875,9 +1057,17 @@ export function ObservationClient({
                     className="w-full text-sm rounded-xl border border-slate-200 p-3 bg-slate-50 text-slate-800 focus:ring-2 focus:ring-violet-500 outline-none resize-none" />
                 </div>
               </div>
+
               {/* Overall Rating */}
               <div className="flex flex-col gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                <label className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Xếp loại tiết dạy tổng thể *</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Xếp loại tiết dạy tổng thể *</label>
+                  {evalModal.slot.level !== "Mầm non" && (
+                    <span className="text-[10px] font-black bg-violet-100 text-violet-700 px-2 py-0.5 rounded-md">
+                      Tự động gợi ý: {calculateK12Ranking(evalK12Scores)}
+                    </span>
+                  )}
+                </div>
                 <div className="grid grid-cols-4 gap-2">
                   {[["Tốt","bg-emerald-500"],["Khá","bg-sky-500"],["Trung bình","bg-amber-400"],["Yếu","bg-rose-500"]].map(([r, color]) => (
                     <button key={r} type="button" onClick={() => setEvalOverall(r)}

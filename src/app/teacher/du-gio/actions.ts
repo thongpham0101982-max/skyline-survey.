@@ -432,11 +432,23 @@ export async function approveRegistration(registrationId: string) {
 export async function submitEvaluation(data: {
   registrationId: string
   slotId: string
-  criterion1: number
-  criterion2: number
-  criterion3: number
-  criterion4: number
-  criterion5: number
+  criterion1?: number
+  criterion2?: number
+  criterion3?: number
+  criterion4?: number
+  criterion5?: number
+  score1?: number
+  score2?: number
+  score3?: number
+  score4?: number
+  score5?: number
+  score6?: number
+  score7?: number
+  score8?: number
+  score9?: number
+  score10?: number
+  score11?: number
+  totalScore?: number
   strengths: string
   improvements: string
   generalComment: string
@@ -452,11 +464,23 @@ export async function submitEvaluation(data: {
     if (registration.teacherId !== currentTeacher.id) return { success: false, error: "Không có quyền nộp phiếu này" }
     if (!registration.isApproved) return { success: false, error: "Cần được xác nhận dự giờ trước khi nộp phiếu đánh giá" }
     const evalData = {
-      criterion1: data.criterion1,
-      criterion2: data.criterion2,
-      criterion3: data.criterion3,
-      criterion4: data.criterion4,
-      criterion5: data.criterion5,
+      criterion1: data.criterion1 ?? null,
+      criterion2: data.criterion2 ?? null,
+      criterion3: data.criterion3 ?? null,
+      criterion4: data.criterion4 ?? null,
+      criterion5: data.criterion5 ?? null,
+      score1: data.score1 ?? null,
+      score2: data.score2 ?? null,
+      score3: data.score3 ?? null,
+      score4: data.score4 ?? null,
+      score5: data.score5 ?? null,
+      score6: data.score6 ?? null,
+      score7: data.score7 ?? null,
+      score8: data.score8 ?? null,
+      score9: data.score9 ?? null,
+      score10: data.score10 ?? null,
+      score11: data.score11 ?? null,
+      totalScore: data.totalScore ?? null,
       strengths: data.strengths,
       improvements: data.improvements,
       generalComment: data.generalComment,

@@ -970,6 +970,19 @@ model ObservationEvaluation {
   criterion4       Int?
   criterion5       Int?
 
+  score1           Float?
+  score2           Float?
+  score3           Float?
+  score4           Float?
+  score5           Float?
+  score6           Float?
+  score7           Float?
+  score8           Float?
+  score9           Float?
+  score10          Float?
+  score11          Float?
+  totalScore       Float?
+
   strengths        String?
   improvements     String?
   generalComment   String?
