@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useTransition, useMemo } from "react"
+import { useState, useEffect, useTransition, useMemo, useRef } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { 
   Calendar, 
@@ -16,7 +16,6 @@ import {
   AlertCircle, 
   Trash2, 
   Info, 
-  ChevronRight,
   Layers,
   FileText
 } from "lucide-react"
@@ -35,6 +34,7 @@ interface TeacherInfo {
   teacherCode: string
   email: string | null
   departmentId: string | null
+  campusId: string
 }
 
 interface SubjectInfo {
@@ -49,12 +49,29 @@ interface DeptInfo {
   name: string
 }
 
+interface CampusInfo {
+  id: string
+  campusCode: string
+  campusName: string
+}
+
+interface ClassInfo {
+  id: string
+  classCode: string
+  className: string
+  level: string
+  grade: string
+  campusId: string
+}
+
 interface ObservationClientProps {
   initialSlots: any[]
   currentTeacher: TeacherInfo
   subjects: SubjectInfo[]
   departments: DeptInfo[]
   teachers: any[]
+  campuses: CampusInfo[]
+  classes: ClassInfo[]
   initialFilters: {
     level: string
     subjectId: string
@@ -70,12 +87,16 @@ export function ObservationClient({
   subjects,
   departments,
   teachers,
+  campuses,
+  classes,
   initialFilters
 }: ObservationClientProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const activeTabParam = searchParams.get("tab") || "dang-ky"
+
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [slots, setSlots] = useState(initialSlots)
   const [activeTab, setActiveTab] = useState(activeTabParam)
@@ -97,15 +118,19 @@ export function ObservationClient({
   const [newSubjectName, setNewSubjectName] = useState("")
   const [newLevel, setNewLevel] = useState("")
   const [newGrade, setNewGrade] = useState("")
+  const [newCampusId, setNewCampusId] = useState(currentTeacher.campusId || "")
+  const [newClassId, setNewClassId] = useState("")
+  const [newClassNameText, setNewClassNameText] = useState("")
   const [newTopic, setNewTopic] = useState("")
   const [newDate, setNewDate] = useState("")
-  const [newStartTime, setNewStartTime] = useState("07:00")
-  const [newEndTime, setNewEndTime] = useState("07:45")
+  const [newStartTime, setNewStartTime] = useState("Tiết 1")
+  const [newEndTime, setNewEndTime] = useState("Tiết 1")
   const [newIsDoublePeriod, setNewIsDoublePeriod] = useState(false)
-  const [newRoom, setNewRoom] = useState("")
   const [newDescription, setNewDescription] = useState("")
   const [newVisibility, setNewVisibility] = useState("ALL")
   const [newTargetDeptId, setNewTargetDeptId] = useState("")
+  const [newLessonPlanName, setNewLessonPlanName] = useState("")
+  const [newLessonPlanData, setNewLessonPlanData] = useState("")
   const [monthlyLimitCount, setMonthlyLimitCount] = useState(0)
   const [submitting, setSubmitting] = useState(false)
 
@@ -129,34 +154,19 @@ export function ObservationClient({
     setToast({ message, type })
     setTimeout(() => {
       setToast(null)
-    }, 4000)
+    }, 4500)
   }
 
-  // Predefined time options (07:00 to 17:30, 15-minute intervals)
-  const timeOptions = useMemo(() => {
-    const options = []
-    for (let hour = 7; hour <= 17; hour++) {
-      for (let min = 0; min < 60; min += 15) {
-        const hStr = hour.toString().padStart(2, "0")
-        const mStr = min.toString().padStart(2, "0")
-        options.push(`${hStr}:${mStr}`)
-      }
-    }
-    options.push("18:00")
-    return options
-  }, [])
-
-  // Predefined rooms
-  const roomOptions = [
-    "Phòng học tiêu chuẩn",
-    "Phòng Lab Ngoại ngữ",
-    "Phòng STEM / Tin học",
-    "Phòng Thí nghiệm Lý-Hóa-Sinh",
-    "Phòng Âm nhạc",
-    "Phòng Mỹ thuật",
-    "Phòng Đa năng (Thể chất)",
-    "Thư viện trường",
-    "Sân thể thao ngoài trời"
+  // Predefined periods
+  const periodOptions = [
+    "Tiết 1",
+    "Tiết 2",
+    "Tiết 3",
+    "Tiết 4",
+    "Tiết 5",
+    "Tiết 6",
+    "Tiết 7",
+    "Tiết 8"
   ]
 
   // Grades list dependent on selected Level
@@ -172,6 +182,104 @@ export function ObservationClient({
         return ["Khối 10", "Khối 11", "Khối 12"]
       default:
         return []
+    }
+  }
+
+  // Filter DB classes dynamically for selection
+  const filteredClassesForCreation = useMemo(() => {
+    if (!newCampusId || !newLevel) return []
+    
+    // Normalize level
+    let dbLevel = ""
+    if (newLevel === "Tiểu học") dbLevel = "Tieu hoc"
+    else if (newLevel === "THCS") dbLevel = "THCS"
+    else if (newLevel === "THPT") dbLevel = "THPT"
+    else dbLevel = "Mam non" // Preschool fallback
+
+    // Normalize grade
+    const numGrade = newGrade.replace("Khối ", "")
+
+    return classes.filter(c => {
+      return c.campusId === newCampusId && c.level === dbLevel && c.grade === numGrade
+    })
+  }, [classes, newCampusId, newLevel, newGrade])
+
+  // Consecutive period calculation
+  const getNextPeriod = (p: string) => {
+    const m = p.match(/\d+/)
+    if (m) {
+      const num = parseInt(m[0])
+      if (num < 8) return `Tiết ${num + 1}`
+    }
+    return p
+  }
+
+  const handleStartTimeChange = (val: string) => {
+    setNewStartTime(val)
+    if (newIsDoublePeriod) {
+      setNewEndTime(getNextPeriod(val))
+    } else {
+      setNewEndTime(val)
+    }
+  }
+
+  const handleDoublePeriodChange = (checked: boolean) => {
+    setNewIsDoublePeriod(checked)
+    if (checked) {
+      setNewEndTime(getNextPeriod(newStartTime))
+    } else {
+      setNewEndTime(newStartTime)
+    }
+  }
+
+  // PDF File Upload selector
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (file.type !== "application/pdf") {
+      showToast("Chỉ hỗ trợ tải lên file PDF!", "error")
+      e.target.value = ""
+      return
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      showToast("Kích thước file không được vượt quá 5MB!", "error")
+      e.target.value = ""
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = () => {
+      setNewLessonPlanName(file.name)
+      setNewLessonPlanData(reader.result as string)
+      showToast("Đã đính kèm giáo án PDF!", "info")
+    }
+    reader.readAsDataURL(file)
+  }
+
+  // Open Base64 PDF preview in new tab
+  const handleViewPdf = (name: string, dataUrl: string) => {
+    if (!dataUrl) return
+    try {
+      const win = window.open()
+      if (win) {
+        win.document.write(`
+          <html>
+            <head>
+              <title>${name}</title>
+              <style>body { margin: 0; padding: 0; background: #525659; } iframe { border: 0; width: 100%; height: 100%; }</style>
+            </head>
+            <body>
+              <iframe src="${dataUrl}" allowfullscreen></iframe>
+            </body>
+          </html>
+        `)
+      } else {
+        showToast("Vui lòng cho phép mở popup trên trình duyệt để xem giáo án!", "error")
+      }
+    } catch (e) {
+      showToast("Lỗi hiển thị giáo án PDF!", "error")
     }
   }
 
@@ -269,19 +377,23 @@ export function ObservationClient({
   // Handle creation form submit
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newLevel || !newGrade || !newTopic || !newDate || !newStartTime || !newEndTime || !newRoom) {
+    if (!newLevel || !newGrade || !newTopic || !newDate || !newStartTime || !newEndTime || !newCampusId) {
       showToast("Vui lòng điền đầy đủ các thông tin bắt buộc (*)", "error")
-      return
-    }
-
-    if (newStartTime >= newEndTime) {
-      showToast("Thời gian bắt đầu phải trước thời gian kết thúc!", "error")
       return
     }
 
     setSubmitting(true)
     const selectedSub = subjects.find(s => s.id === newSubjectId)
     const subName = selectedSub ? selectedSub.subjectName : newSubjectName || "Khác"
+
+    const selectedCampus = campuses.find(c => c.id === newCampusId)
+    const campusNameStr = selectedCampus ? selectedCampus.campusName : ""
+
+    let classNameStr = newClassNameText
+    if (newClassId && newClassId !== "other") {
+      const selClass = classes.find(c => c.id === newClassId)
+      if (selClass) classNameStr = selClass.className
+    }
 
     const res = await createObservationSlot({
       subjectId: newSubjectId || undefined,
@@ -293,10 +405,16 @@ export function ObservationClient({
       startTime: newStartTime,
       endTime: newEndTime,
       isDoublePeriod: newIsDoublePeriod,
-      room: newRoom,
+      room: classNameStr, // Room fallback to class name
       description: newDescription,
       visibilityType: newVisibility,
-      targetDeptId: newVisibility === "DEPARTMENT" ? newTargetDeptId : undefined
+      targetDeptId: newVisibility === "DEPARTMENT" ? newTargetDeptId : undefined,
+      campusId: newCampusId,
+      campusName: campusNameStr,
+      classId: newClassId === "other" ? undefined : newClassId,
+      className: classNameStr,
+      lessonPlanName: newLessonPlanName || undefined,
+      lessonPlanData: newLessonPlanData || undefined
     })
 
     setSubmitting(false)
@@ -308,15 +426,19 @@ export function ObservationClient({
       setNewSubjectName("")
       setNewLevel("")
       setNewGrade("")
+      setNewClassId("")
+      setNewClassNameText("")
       setNewTopic("")
       setNewDate("")
-      setNewStartTime("07:00")
-      setNewEndTime("07:45")
+      setNewStartTime("Tiết 1")
+      setNewEndTime("Tiết 1")
       setNewIsDoublePeriod(false)
-      setNewRoom("")
       setNewDescription("")
       setNewVisibility("ALL")
       setNewTargetDeptId("")
+      setNewLessonPlanName("")
+      setNewLessonPlanData("")
+      if (fileInputRef.current) fileInputRef.current.value = ""
       
       refreshSlots()
     } else {
@@ -351,13 +473,13 @@ export function ObservationClient({
     const params = new URLSearchParams(window.location.search)
     if (tab === "dang-ky") params.delete("tab")
     else params.set("tab", tab)
-    router.push(`smpathname}?${params.toString()}`.replace('smpathname', pathname))
+    router.push(`${pathname}?${params.toString()}`)
   }
 
   const selectedMonthStr = newDate ? `${(new Date(newDate).getMonth() + 1).toString().padStart(2, "0")}/${new Date(newDate).getFullYear()}` : "tháng hiện tại"
 
   return (
-    <div className="flex flex-col gap-6 relative pb-12 animate-fade-in">
+    <div className="flex flex-col gap-6 relative pb-12 animate-fade-in text-slate-800">
       {/* Toast Alert Box */}
       {toast && (
         <div className={`fixed top-4 right-4 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border border-white/20 text-white animate-in slide-in-from-top duration-300 ${
@@ -439,7 +561,7 @@ export function ObservationClient({
         </button>
       </div>
 
-      {/* Main Layout: Filters on Left, Grid Cards on Right */}
+      {/* Main Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
         {/* Left Column: Filters */}
         <div className="bg-white p-5 rounded-2xl border-2 border-slate-100 shadow-sm flex flex-col gap-4">
@@ -455,7 +577,7 @@ export function ObservationClient({
               value={filterLevel}
               onChange={(e) => {
                 setFilterLevel(e.target.value)
-                setFilterGrade("all") // Reset grade on level change
+                setFilterGrade("all")
               }}
               className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-700 focus:ring-2 focus:ring-[#00A19A] outline-none"
             >
@@ -584,7 +706,7 @@ export function ObservationClient({
                       </p>
                     </div>
 
-                    {/* Meta info: Time, Room, Teacher */}
+                    {/* Meta info */}
                     <div className="grid grid-cols-1 gap-2.5 bg-slate-50 p-3.5 rounded-xl text-xs font-semibold text-slate-600">
                       <div className="flex items-center gap-2">
                         <Calendar className="w-4 h-4 text-[#00A19A] shrink-0" />
@@ -593,13 +715,16 @@ export function ObservationClient({
                       <div className="flex items-center gap-2">
                         <Clock className="w-4 h-4 text-[#00A19A] shrink-0" />
                         <span>
-                          {slot.startTime} - {slot.endTime} 
-                          {slot.isDoublePeriod && <span className="text-[10px] font-bold text-[#00A19A] ml-2">(2 tiết liên tiếp)</span>}
+                          Tiết dạy: <span className="font-bold text-slate-850">{slot.startTime === slot.endTime ? slot.startTime : `${slot.startTime} - ${slot.endTime}`}</span>
+                          {slot.isDoublePeriod && <span className="text-[9px] font-extrabold bg-[#00A19A]/10 text-[#00A19A] px-1.5 py-0.5 rounded-md ml-2">Dạy 2 tiết liên tiếp</span>}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <MapPin className="w-4 h-4 text-[#00A19A] shrink-0" />
-                        <span>Phòng: <span className="font-bold text-slate-800">{slot.room}</span></span>
+                        <span>
+                          Lớp: <span className="font-bold text-slate-800">{slot.className || "Chưa xếp"}</span> 
+                          <span className="text-slate-400 ml-1.5">({slot.campusName || "Cơ sở"})</span>
+                        </span>
                       </div>
                       <div className="flex items-center gap-2 border-t border-slate-200 pt-2 mt-0.5">
                         <User className="w-4 h-4 text-[#00A19A] shrink-0" />
@@ -617,11 +742,11 @@ export function ObservationClient({
                       </p>
                     )}
 
-                    {/* Footer Actions / Seats */}
-                    <div className="mt-auto pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
+                    {/* Footer Actions */}
+                    <div className="mt-auto pt-3 border-t border-slate-100 flex items-center justify-between gap-2.5">
                       {/* Seats Count */}
-                      <div className="flex items-center gap-1.5 text-xs text-slate-500 font-bold shrink-0">
-                        <Users className="w-4 h-4 text-slate-400" />
+                      <div className="flex items-center gap-1 text-[11px] text-slate-500 font-bold shrink-0">
+                        <Users className="w-3.5 h-3.5 text-slate-400" />
                         {seatsLeft > 0 ? (
                           <span>Còn <span className="text-emerald-600 font-black">{seatsLeft}</span> chỗ</span>
                         ) : (
@@ -629,20 +754,32 @@ export function ObservationClient({
                         )}
                       </div>
 
-                      {/* Action Button */}
-                      <div className="flex items-center gap-2 shrink-0">
+                      {/* Action Buttons */}
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {/* PDF View Link */}
+                        {slot.lessonPlanData && (
+                          <button
+                            onClick={() => handleViewPdf(slot.lessonPlanName || "GiaoAn.pdf", slot.lessonPlanData)}
+                            className="flex items-center gap-1 px-3 py-1.5 bg-sky-50 border border-sky-200 hover:bg-sky-100 text-sky-600 rounded-lg text-xs font-bold transition-all"
+                            title="Xem giáo án PDF đính kèm"
+                          >
+                            <FileText className="w-3.5 h-3.5" />
+                            Giáo án
+                          </button>
+                        )}
+
                         {isHost ? (
                           <button
                             onClick={() => handleDeleteSlot(slot.id)}
                             className="flex items-center gap-1 px-3 py-1.5 bg-rose-50 border border-rose-200 hover:bg-rose-100 text-rose-600 rounded-lg text-xs font-bold transition-all"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
-                            Xóa tiết
+                            Xóa
                           </button>
                         ) : isRegistered ? (
                           <button
                             onClick={() => handleCancelRegistration(slot.id)}
-                            className="px-4 py-1.5 bg-slate-100 hover:bg-rose-50 hover:border-rose-300 hover:text-rose-600 border border-slate-200 text-slate-600 rounded-lg text-xs font-bold transition-all"
+                            className="px-3 py-1.5 bg-slate-100 hover:bg-rose-50 hover:border-rose-300 hover:text-rose-600 border border-slate-200 text-slate-600 rounded-lg text-xs font-bold transition-all"
                           >
                             Hủy đăng ký
                           </button>
@@ -650,7 +787,7 @@ export function ObservationClient({
                           <button
                             onClick={() => handleRegister(slot.id)}
                             disabled={seatsLeft <= 0}
-                            className="px-5 py-1.5 bg-[#00A19A] hover:bg-[#008B85] disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-lg text-xs font-extrabold uppercase tracking-wide transition-all shadow-sm disabled:shadow-none"
+                            className="px-4 py-1.5 bg-[#00A19A] hover:bg-[#008B85] disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-lg text-xs font-extrabold uppercase tracking-wide transition-all shadow-sm disabled:shadow-none"
                           >
                             Đăng ký
                           </button>
@@ -665,7 +802,7 @@ export function ObservationClient({
         </div>
       </div>
 
-      {/* Notes / Rules Alert at Bottom */}
+      {/* Notes Alert */}
       <div className="flex items-start gap-4 p-5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-700 mt-6 shadow-sm">
         <Info className="w-6 h-6 text-slate-400 shrink-0 mt-0.5" />
         <div className="space-y-1.5">
@@ -678,11 +815,11 @@ export function ObservationClient({
         </div>
       </div>
 
-      {/* "Thêm mới tiết dạy" Modal Overlay */}
+      {/* Creation Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300">
-            {/* Modal Header */}
+            {/* Header */}
             <div className="px-6 py-5 bg-[#0A3230] text-white flex items-center justify-between shrink-0">
               <div>
                 <h3 className="font-black text-lg">Thêm mới tiết dạy</h3>
@@ -696,9 +833,9 @@ export function ObservationClient({
               </button>
             </div>
 
-            {/* Modal Body */}
+            {/* Body */}
             <form onSubmit={handleCreateSubmit} className="flex-1 overflow-y-auto p-6 space-y-5 custom-scrollbar">
-              {/* Monthly Limit warning */}
+              {/* Monthly count alert */}
               <div className="flex items-center justify-between gap-3 p-4 bg-sky-50 border border-sky-100 text-sky-800 rounded-2xl">
                 <div className="flex items-center gap-2">
                   <Info className="w-4.5 h-4.5 text-sky-600 shrink-0" />
@@ -709,7 +846,7 @@ export function ObservationClient({
                 </span>
               </div>
 
-              {/* Form Grid */}
+              {/* Grid fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Level Select */}
                 <div className="flex flex-col gap-1.5">
@@ -718,7 +855,8 @@ export function ObservationClient({
                     value={newLevel}
                     onChange={(e) => {
                       setNewLevel(e.target.value)
-                      setNewGrade("") // reset grade
+                      setNewGrade("")
+                      setNewClassId("")
                     }}
                     required
                     className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-800 focus:ring-2 focus:ring-[#00A19A] outline-none"
@@ -736,7 +874,10 @@ export function ObservationClient({
                   <label className="text-xs font-extrabold text-slate-700">Khối lớp *</label>
                   <select
                     value={newGrade}
-                    onChange={(e) => setNewGrade(e.target.value)}
+                    onChange={(e) => {
+                      setNewGrade(e.target.value)
+                      setNewClassId("")
+                    }}
                     required
                     disabled={!newLevel}
                     className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-800 focus:ring-2 focus:ring-[#00A19A] outline-none disabled:opacity-50"
@@ -765,7 +906,7 @@ export function ObservationClient({
                   </select>
                 </div>
 
-                {/* Other Subject Input (conditional) */}
+                {/* Other Subject Name */}
                 {newSubjectId === "other" && (
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-extrabold text-slate-700">Tên môn học khác *</label>
@@ -774,6 +915,59 @@ export function ObservationClient({
                       placeholder="Nhập tên môn học..."
                       value={newSubjectName}
                       onChange={(e) => setNewSubjectName(e.target.value)}
+                      required
+                      className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-800 focus:ring-2 focus:ring-[#00A19A] outline-none"
+                    />
+                  </div>
+                )}
+
+                {/* Campus Select */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-extrabold text-slate-700">Cơ sở *</label>
+                  <select
+                    value={newCampusId}
+                    onChange={(e) => {
+                      setNewCampusId(e.target.value)
+                      setNewClassId("")
+                    }}
+                    required
+                    className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-800 focus:ring-2 focus:ring-[#00A19A] outline-none"
+                  >
+                    <option value="">Chọn cơ sở</option>
+                    {campuses.map(c => (
+                      <option key={c.id} value={c.id}>{c.campusName}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Class Select */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-extrabold text-slate-700">Lớp học *</label>
+                  <select
+                    value={newClassId}
+                    onChange={(e) => setNewClassId(e.target.value)}
+                    required
+                    disabled={!newCampusId || !newLevel || !newGrade}
+                    className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-800 focus:ring-2 focus:ring-[#00A19A] outline-none disabled:opacity-50"
+                  >
+                    <option value="">Chọn lớp học</option>
+                    {filteredClassesForCreation.map(c => (
+                      <option key={c.id} value={c.id}>{c.className}</option>
+                    ))}
+                    {/* Fallback option if classes not fully seeded */}
+                    <option value="other">Lớp học khác (Nhập tay...)</option>
+                  </select>
+                </div>
+
+                {/* Manual Class Name Input */}
+                {newClassId === "other" && (
+                  <div className="flex flex-col gap-1.5 md:col-span-2">
+                    <label className="text-xs font-extrabold text-slate-700">Nhập tên lớp học khác *</label>
+                    <input
+                      type="text"
+                      placeholder="Nhập tên lớp học (ví dụ: Lớp 2.1, Nhà trẻ A...)"
+                      value={newClassNameText}
+                      onChange={(e) => setNewClassNameText(e.target.value)}
                       required
                       className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-800 focus:ring-2 focus:ring-[#00A19A] outline-none"
                     />
@@ -805,34 +999,45 @@ export function ObservationClient({
                   />
                 </div>
 
-                {/* Room Selection */}
+                {/* PDF Upload */}
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-extrabold text-slate-700">Phòng học *</label>
-                  <select
-                    value={newRoom}
-                    onChange={(e) => setNewRoom(e.target.value)}
-                    required
-                    className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-800 focus:ring-2 focus:ring-[#00A19A] outline-none"
-                  >
-                    <option value="">Chọn phòng học</option>
-                    {roomOptions.map(room => (
-                      <option key={room} value={room}>{room}</option>
-                    ))}
-                    <option value="Phòng học lớp phụ trách">Phòng học lớp phụ trách</option>
-                  </select>
+                  <label className="text-xs font-extrabold text-slate-700">Upload Giáo án (PDF) *</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="file"
+                      accept=".pdf"
+                      ref={fileInputRef}
+                      onChange={handleFileChange}
+                      required={!newLessonPlanName}
+                      className="hidden"
+                      id="pdf-upload-file"
+                    />
+                    <label 
+                      htmlFor="pdf-upload-file"
+                      className="flex-1 flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-xs font-bold py-2.5 px-4 rounded-xl cursor-pointer transition-all"
+                    >
+                      <FileText className="w-4 h-4 text-slate-500" />
+                      {newLessonPlanName ? "Thay đổi File PDF" : "Chọn File PDF..."}
+                    </label>
+                  </div>
+                  {newLessonPlanName && (
+                    <span className="text-[10px] font-bold text-[#00A19A] mt-1 truncate max-w-full block">
+                      Đã chọn: {newLessonPlanName}
+                    </span>
+                  )}
                 </div>
 
-                {/* Time Selection */}
+                {/* Period Selection */}
                 <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-3 items-end bg-slate-50 p-4 rounded-2xl border border-slate-100">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-extrabold text-slate-700">Thời gian: Từ *</label>
+                    <label className="text-xs font-extrabold text-slate-700">Tiết dạy: Từ *</label>
                     <select
                       value={newStartTime}
-                      onChange={(e) => setNewStartTime(e.target.value)}
+                      onChange={(e) => handleStartTimeChange(e.target.value)}
                       className="w-full text-sm rounded-xl border border-slate-200 p-2 bg-white text-slate-800 focus:ring-2 focus:ring-[#00A19A] outline-none"
                     >
-                      {timeOptions.map(t => (
-                        <option key={t} value={t}>{t}</option>
+                      {periodOptions.map(p => (
+                        <option key={p} value={p}>{p}</option>
                       ))}
                     </select>
                   </div>
@@ -840,11 +1045,12 @@ export function ObservationClient({
                     <label className="text-xs font-extrabold text-slate-700">Đến *</label>
                     <select
                       value={newEndTime}
+                      disabled={newIsDoublePeriod}
                       onChange={(e) => setNewEndTime(e.target.value)}
-                      className="w-full text-sm rounded-xl border border-slate-200 p-2 bg-white text-slate-800 focus:ring-2 focus:ring-[#00A19A] outline-none"
+                      className="w-full text-sm rounded-xl border border-slate-200 p-2 bg-white text-slate-800 focus:ring-2 focus:ring-[#00A19A] outline-none disabled:opacity-50"
                     >
-                      {timeOptions.map(t => (
-                        <option key={t} value={t}>{t}</option>
+                      {periodOptions.map(p => (
+                        <option key={p} value={p} disabled={p < newStartTime}>{p}</option>
                       ))}
                     </select>
                   </div>
@@ -853,10 +1059,11 @@ export function ObservationClient({
                       type="checkbox"
                       id="isDoublePeriod"
                       checked={newIsDoublePeriod}
-                      onChange={(e) => setNewIsDoublePeriod(e.target.checked)}
+                      disabled={newStartTime === "Tiết 8"}
+                      onChange={(e) => handleDoublePeriodChange(e.target.checked)}
                       className="w-4.5 h-4.5 rounded text-[#00A19A] focus:ring-[#00A19A]"
                     />
-                    <label htmlFor="isDoublePeriod" className="text-xs font-extrabold text-slate-600 select-none">
+                    <label htmlFor="isDoublePeriod" className="text-xs font-extrabold text-slate-605 select-none cursor-pointer disabled:opacity-50">
                       Dạy 2 tiết liên tiếp
                     </label>
                   </div>
@@ -923,7 +1130,7 @@ export function ObservationClient({
                 )}
               </div>
 
-              {/* Modal Footer Actions */}
+              {/* Footer Actions */}
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 shrink-0">
                 <button
                   type="button"

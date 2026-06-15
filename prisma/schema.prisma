@@ -924,7 +924,7 @@ model ObservationSlot {
   startTime       String
   endTime         String
   isDoublePeriod  Boolean                   @default(false)
-  room            String
+  room            String?
   description     String?
   visibilityType  String
   targetDeptId    String?
@@ -932,6 +932,12 @@ model ObservationSlot {
   status          String                    @default("ACTIVE")
   createdAt       DateTime                  @default(now())
   updatedAt       DateTime                  @updatedAt
+  campusId        String?
+  campusName      String?
+  classId         String?
+  className       String?
+  lessonPlanName  String?
+  lessonPlanData  String?
 
   teacher         Teacher                   @relation("HostTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
   registrations   ObservationRegistration[]

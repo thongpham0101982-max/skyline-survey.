@@ -42,6 +42,8 @@ export default async function ObservationPage(props: {
       subjects={refDataResult.subjects || []}
       departments={refDataResult.departments || []}
       teachers={refDataResult.teachers || []}
+      campuses={refDataResult.campuses || []}
+      classes={refDataResult.classes || []}
       initialFilters={{ level, subjectId, grade, teacherId, date }}
     />
   )

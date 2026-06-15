@@ -43,12 +43,24 @@ export async function getObservationData() {
       orderBy: { teacherName: "asc" }
     })
 
+    const campuses = await prisma.campus.findMany({
+      where: { status: "ACTIVE" },
+      orderBy: { campusName: "asc" }
+    })
+
+    const classes = await prisma.class.findMany({
+      where: { status: "ACTIVE" },
+      orderBy: { className: "asc" }
+    })
+
     return {
       success: true,
       currentTeacher,
       subjects,
       departments,
-      teachers
+      teachers,
+      campuses,
+      classes
     }
   } catch (e: any) {
     return { success: false, error: e.message }
@@ -139,7 +151,7 @@ export async function getObservationSlots(filters: {
       }
     })
 
-    // Filter by visibility (DEPARTMENT visibility type only visible to host or same department)
+    // Filter by visibility
     const filteredSlots = slots.filter((slot) => {
       if (slot.visibilityType === "DEPARTMENT") {
         return (
@@ -166,10 +178,16 @@ export async function createObservationSlot(data: {
   startTime: string
   endTime: string
   isDoublePeriod: boolean
-  room: string
+  room?: string
   description?: string
   visibilityType: string
   targetDeptId?: string
+  campusId?: string
+  campusName?: string
+  classId?: string
+  className?: string
+  lessonPlanName?: string
+  lessonPlanData?: string
 }) {
   try {
     const session = await auth()
@@ -185,7 +203,7 @@ export async function createObservationSlot(data: {
       return { success: false, error: "Teacher profile not found" }
     }
 
-    // 1. Verify monthly limit (max 2 active slots per month)
+    // 1. Verify monthly limit
     const slotDate = new Date(data.date)
     const startOfMonth = new Date(slotDate.getFullYear(), slotDate.getMonth(), 1)
     const endOfMonth = new Date(slotDate.getFullYear(), slotDate.getMonth() + 1, 1)
@@ -221,12 +239,18 @@ export async function createObservationSlot(data: {
         startTime: data.startTime,
         endTime: data.endTime,
         isDoublePeriod: data.isDoublePeriod,
-        room: data.room,
+        room: data.room || null,
         description: data.description || null,
         visibilityType: data.visibilityType,
         targetDeptId: data.targetDeptId || null,
         maxSeats: 10,
-        status: "ACTIVE"
+        status: "ACTIVE",
+        campusId: data.campusId || null,
+        campusName: data.campusName || null,
+        classId: data.classId || null,
+        className: data.className || null,
+        lessonPlanName: data.lessonPlanName || null,
+        lessonPlanData: data.lessonPlanData || null
       }
     })
 
