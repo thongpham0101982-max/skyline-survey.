@@ -141,7 +141,10 @@ export async function PUT(req) {
         include: { period: true, campus: true }
       });
       if (!batch) return NextResponse.json({ error: "Không tìm thấy đợt khảo sát" }, { status: 404 });
-      await notifyBatchAssignment(batch);
+      const host = req.headers.get("host") || "skyline-survey.vercel.app";
+      const protocol = host.includes("localhost") ? "http" : "https";
+      const appUrl = `${protocol}://${host}`;
+      await notifyBatchAssignment(batch, appUrl);
       return NextResponse.json({ success: true });
     }
     
@@ -172,9 +175,10 @@ export async function DELETE(req) {
 }
 
 
-async function notifyBatchAssignment(batch: any) {
+async function notifyBatchAssignment(batch: any, appUrl?: string) {
   if (!batch.assignedUserId) return;
   try {
+    const loginUrl = appUrl || process.env.NEXTAUTH_URL || "https://skyline-survey.vercel.app";
     const campusId = batch.campusId;
     if (!campusId) return;
 
@@ -281,6 +285,16 @@ async function notifyBatchAssignment(batch: any) {
           <p style="font-style: italic; color: #0d9488; font-weight: bold;">
             Kính nhờ thầy cô giáo vụ Cơ sở thực hiện phân công giáo viên khảo sát.
           </p>
+          <div style="background-color: #f0fdfa; padding: 15px; border-radius: 8px; border: 1px solid #ccfbf1; margin-top: 15px; margin-bottom: 20px; font-size: 13.5px; color: #0f766e;">
+            <p style="margin: 0; line-height: 1.6;">
+              Để đăng nhập hệ thống và phân công giáo viên, thầy/cô vui lòng đăng nhập:<br/>
+              - <strong>Tài khoản và mật khẩu:</strong> Mã số SKL.<br/>
+              - <strong>Lưu ý:</strong> Vui lòng đổi Mật khẩu khi đăng nhập.
+            </p>
+          </div>
+          <div style="text-align: center; margin: 25px 0;">
+            <a href="${loginUrl}" target="_blank" style="background-color: #00A6A9; color: #ffffff; padding: 12px 30px; text-decoration: none; font-weight: bold; border-radius: 8px; display: inline-block; font-size: 14px; box-shadow: 0 4px 6px -1px rgba(0, 166, 169, 0.2);">Đăng nhập Hệ thống</a>
+          </div>
         </div>
         <div style="background-color: #f8fafc; padding: 15px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; border-radius: 0 0 8px 8px;">
           <p style="margin: 0; font-weight: bold; color: #1E1B4B;">Hệ thống Quản trị Chất lượng Dạy và Học</p>
