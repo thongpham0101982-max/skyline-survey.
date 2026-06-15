@@ -414,6 +414,57 @@ export function ObservationClient({
     }
   }
 
+  const monthlyStats = useMemo(() => {
+    const stats = {};
+    slots.forEach(slot => {
+      const slotDate = new Date(slot.date);
+      if (isNaN(slotDate.getTime())) return;
+      const year = slotDate.getFullYear();
+      const month = slotDate.getMonth() + 1;
+      const key = `${year}-${month.toString().padStart(2, "0")}`;
+      
+      const isHost = slot.teacherId === currentTeacher.id;
+      const isObserverApproved = slot.registrations.some(r => r.teacherId === currentTeacher.id && r.isApproved);
+      
+      if (!stats[key]) {
+        stats[key] = {
+          monthStr: `Tháng ${month.toString().padStart(2, "0")}/${year}`,
+          year,
+          month,
+          taughtCount: 0,
+          observedCount: 0
+        };
+      }
+      
+      if (isHost) {
+        stats[key].taughtCount += 1;
+      }
+      if (isObserverApproved) {
+        stats[key].observedCount += 1;
+      }
+    });
+    
+    return Object.values(stats).sort((a, b) => b.year !== a.year ? b.year - a.year : b.month - a.month);
+  }, [slots, currentTeacher.id]);
+
+  const receivedEvaluations = useMemo(() => {
+    const list = [];
+    slots.forEach(slot => {
+      if (slot.teacherId === currentTeacher.id) {
+        slot.registrations.forEach(reg => {
+          if (reg.evaluation) {
+            list.push({
+              slot,
+              registration: reg,
+              evaluation: reg.evaluation
+            });
+          }
+        });
+      }
+    });
+    return list.sort((a, b) => new Date(b.slot.date).getTime() - new Date(a.slot.date).getTime());
+  }, [slots, currentTeacher.id]);
+
   const tabFilteredSlots = useMemo(() => {
     const now = new Date()
     return slots.filter(slot => {
@@ -477,7 +528,12 @@ export function ObservationClient({
 
       {/* Tabs */}
       <div className="flex border-b border-slate-200 gap-1 bg-slate-100 p-1.5 rounded-xl">
-        {[["dang-ky","Đăng ký dự giờ",<Calendar className="w-4 h-4" key="c"/>],["my-schedule","Lịch của tôi",<Layers className="w-4 h-4" key="l"/>],["history","Lịch sử đăng ký",<FileText className="w-4 h-4" key="f"/>]].map(([tab, label, icon]) => (
+        {[
+          ["dang-ky", "Đăng ký dự giờ", <Calendar className="w-4 h-4" key="c"/>],
+          ["my-schedule", "Lịch của tôi", <Layers className="w-4 h-4" key="l"/>],
+          ["history", "Lịch sử đăng ký", <FileText className="w-4 h-4" key="f"/>],
+          ["evaluation-results", "Kết quả đánh giá", <CheckCircle className="w-4 h-4" key="e"/>]
+        ].map(([tab, label, icon]) => (
           <button key={tab as string} onClick={() => handleTabChange(tab as string)}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-extrabold uppercase tracking-wider transition-all duration-200 ${activeTab === tab ? "bg-white text-[#0A3230] shadow-sm font-black" : "text-slate-500 hover:text-slate-800 hover:bg-white/40"}`}>
             {icon as React.ReactNode}{label as string}
@@ -571,7 +627,90 @@ export function ObservationClient({
 
         {/* Slot Cards */}
         <div className="lg:col-span-3 flex flex-col gap-6">
-          {tabFilteredSlots.length === 0 ? (
+          {activeTab === "evaluation-results" ? (
+            <div className="space-y-8 animate-in fade-in duration-300">
+              {/* 1. Monthly Statistics Section */}
+              <div className="bg-white p-6 rounded-3xl border-2 border-slate-100 shadow-sm space-y-4">
+                <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-3">
+                  <CheckCircle className="w-5 h-5 text-[#00A19A]" /> Thống kê hoạt động theo Tháng
+                </h3>
+                
+                {monthlyStats.length === 0 ? (
+                  <p className="text-xs text-slate-400 italic">Chưa có dữ liệu thống kê.</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {monthlyStats.map(stat => (
+                      <div key={stat.monthStr} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex flex-col gap-3">
+                        <span className="text-xs font-black text-slate-700">{stat.monthStr}</span>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="bg-white p-3 rounded-xl border border-slate-200/60 shadow-sm flex flex-col">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tiết dạy</span>
+                            <span className="text-lg font-black text-emerald-600 mt-1">{stat.taughtCount} tiết</span>
+                          </div>
+                          <div className="bg-white p-3 rounded-xl border border-slate-200/60 shadow-sm flex flex-col">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tiết dự giờ</span>
+                            <span className="text-lg font-black text-violet-600 mt-1">{stat.observedCount} tiết</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* 2. Received Evaluations Section */}
+              <div className="bg-white p-6 rounded-3xl border-2 border-slate-100 shadow-sm space-y-4">
+                <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-3">
+                  <ClipboardList className="w-5 h-5 text-[#00A19A]" /> Kết quả đánh giá tiết dạy (Phiếu GV dự)
+                </h3>
+                
+                {receivedEvaluations.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                    <ClipboardList className="w-12 h-12 stroke-1 text-slate-300 mb-2" />
+                    <p className="text-xs font-bold">Chưa nhận được phiếu đánh giá nào từ giáo viên dự giờ.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {receivedEvaluations.map(({ slot, registration, evaluation }) => {
+                      const slotDate = new Date(slot.date);
+                      return (
+                        <div key={registration.id} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-slate-200 transition-all">
+                          <div className="space-y-2 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="px-2 py-0.5 text-[9px] font-extrabold bg-sky-50 text-sky-600 border border-sky-200 rounded-md uppercase tracking-wider">{slot.level}</span>
+                              <span className="px-2 py-0.5 text-[9px] font-extrabold bg-amber-50 text-amber-600 border border-amber-200 rounded-md uppercase tracking-wider">{slot.grade}</span>
+                              <span className="text-xs font-bold text-slate-400">{slotDate.toLocaleDateString("vi-VN")} · {slot.startTime}</span>
+                            </div>
+                            <h4 className="font-extrabold text-sm text-slate-800 truncate">{slot.topic}</h4>
+                            <p className="text-[11px] font-bold text-slate-500">
+                              Người đánh giá: <span className="text-slate-700 font-extrabold">{registration.teacher?.teacherName || "GV dự giờ"}</span> ({registration.teacher?.teacherCode || ""})
+                            </p>
+                          </div>
+                          
+                          <div className="flex items-center gap-3 shrink-0 justify-between md:justify-end">
+                            <div className="text-right">
+                              <div className="text-xs font-black text-slate-700">
+                                {evaluation.totalScore !== null && evaluation.totalScore !== undefined
+                                  ? `${evaluation.totalScore.toFixed(2)}/20.00đ`
+                                  : "Đánh giá đạt"}
+                              </div>
+                              <span className="inline-block px-2 py-0.5 text-[10px] font-bold rounded-md bg-violet-50 text-violet-700 border border-violet-200 mt-1">
+                                {evaluation.overallRating}
+                              </span>
+                            </div>
+                            <button onClick={() => openEvalModal(registration, slot)}
+                              className="px-3 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-xs font-extrabold shadow-sm transition-all">
+                              Xem phiếu
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : tabFilteredSlots.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border-2 border-dashed border-slate-200">
               <Calendar className="w-16 h-16 text-slate-300 stroke-1 mb-4" />
               <p className="text-slate-400 font-bold text-sm">Không tìm thấy tiết dạy dự giờ nào!</p>
@@ -684,11 +823,18 @@ export function ObservationClient({
                           <div className="flex items-center gap-1.5">
                             {/* Eval form button if approved */}
                             {myReg.isApproved && (
-                              <button onClick={() => openEvalModal(myReg, slot)}
-                                className={`flex items-center gap-1 px-3 py-1.5 border rounded-lg text-xs font-bold transition-all ${myReg.evaluation ? "bg-emerald-50 border-emerald-200 text-emerald-600 hover:bg-emerald-100" : "bg-violet-50 border-violet-200 text-violet-600 hover:bg-violet-100"}`}>
-                                <ClipboardList className="w-3.5 h-3.5" />
-                                {myReg.evaluation ? "Đã đánh giá" : "Điền phiếu"}
-                              </button>
+                              myReg.evaluation ? (
+                                <span className="flex items-center gap-1 px-3 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-600 rounded-lg text-xs font-extrabold select-none cursor-default">
+                                  <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
+                                  Đã đánh giá
+                                </span>
+                              ) : (
+                                <button onClick={() => openEvalModal(myReg, slot)}
+                                  className="flex items-center gap-1 px-3 py-1.5 bg-violet-50 border border-violet-200 text-violet-600 hover:bg-violet-100 rounded-lg text-xs font-bold transition-all">
+                                  <ClipboardList className="w-3.5 h-3.5" />
+                                  Điền phiếu
+                                </button>
+                              )
                             )}
                             {!myReg.isApproved ? (
                               <button onClick={() => handleCancelRegistration(slot.id)}
@@ -1042,8 +1188,8 @@ export function ObservationClient({
                       <p className="text-xs font-extrabold text-slate-700 mb-3">{i + 1}. {label}</p>
                       <div className="grid grid-cols-4 gap-2">
                         {[4, 3, 2, 1].map((score, si) => (
-                          <button key={si} type="button" onClick={() => { const c = [...evalCriteria]; c[i] = score; setEvalCriteria(c) }}
-                            className={`py-2 rounded-xl border-2 text-xs font-extrabold transition-all ${evalCriteria[i] === score ? score === 4 ? "bg-emerald-500 border-emerald-500 text-white" : score === 3 ? "bg-sky-500 border-sky-500 text-white" : score === 2 ? "bg-amber-400 border-amber-400 text-white" : "bg-rose-500 border-rose-500 text-white" : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"}`}>
+                          <button key={si} type="button" onClick={() => { if (!isReadOnly) { const c = [...evalCriteria]; c[i] = score; setEvalCriteria(c) } }} disabled={isReadOnly}
+                            className={`py-2 rounded-xl border-2 text-xs font-extrabold transition-all ${evalCriteria[i] === score ? score === 4 ? "bg-emerald-500 border-emerald-500 text-white" : score === 3 ? "bg-sky-500 border-sky-500 text-white" : score === 2 ? "bg-amber-400 border-amber-400 text-white" : "bg-rose-500 border-rose-500 text-white" : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"} disabled:opacity-75`}>
                             {RATING_LABELS[si]}
                           </button>
                         ))}
