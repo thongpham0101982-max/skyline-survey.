@@ -27,7 +27,7 @@ interface ObservationClientProps {
   teachers: any[]
   campuses: CampusInfo[]
   classes: ClassInfo[]
-  initialFilters: { level: string; subjectId: string; grade: string; teacherId: string; date: string; campusId: string; deptId: string }
+  initialFilters: { level: string; period: string; grade: string; date: string; campusId: string; deptId: string }
 }
 
 const CRITERIA_LABELS = [
