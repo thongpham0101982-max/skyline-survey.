@@ -4,6 +4,36 @@ import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { getSurveyFormAgeGroup } from "@/lib/preschool"
 
+function matchesPreschoolGrade(stGradeOrAgeGroup, taGrade) {
+    const st = (stGradeOrAgeGroup || "").toLowerCase().trim();
+    const ta = (taGrade || "").toLowerCase().trim();
+    if (!ta || ta === "tất cả") return true;
+    if (st === ta) return true;
+
+    const cleanTa = ta.replace("khối", "").trim();
+    const cleanSt = st.replace("khối", "").trim();
+    if (cleanSt === cleanTa) return true;
+
+    const equivalenceGroups = {
+        "12 đến 18 tháng": ["12 đến 18 tháng"],
+        "nhà trẻ 12-18 tháng": ["12 đến 18 tháng"],
+        "18 đến 24 tháng": ["18 đến 24 tháng", "24 đến 36 tháng"],
+        "nhà trẻ 18-24 tháng": ["18 đến 24 tháng", "24 đến 36 tháng"],
+        "24 đến 36 tháng": ["18 đến 24 tháng", "24 đến 36 tháng", "mẫu giáo bé"],
+        "nhà trẻ 24-36 tháng": ["18 đến 24 tháng", "24 đến 36 tháng", "mẫu giáo bé"],
+        "mẫu giáo bé": ["mẫu giáo bé", "24 đến 36 tháng", "3 đến 4 tuổi"],
+        "3 đến 4 tuổi": ["mẫu giáo bé", "mẫu giáo nhỡ", "3 đến 4 tuổi"],
+        "mẫu giáo nhỡ": ["mẫu giáo nhỡ", "3 đến 4 tuổi", "4 đến 5 tuổi"],
+        "4 đến 5 tuổi": ["mẫu giáo nhỡ", "mẫu giáo lớn", "4 đến 5 tuổi"],
+        "mẫu giáo lớn": ["mẫu giáo lớn", "4 đến 5 tuổi", "5 đến 6 tuổi"],
+        "5 đến 6 tuổi": ["mẫu giáo lớn", "5 đến 6 tuổi"]
+    };
+
+    const allowedTAs = equivalenceGroups[cleanSt] || [];
+    return allowedTAs.some(allowed => allowed === cleanTa || allowed.includes(cleanTa) || cleanTa.includes(allowed));
+}
+
+
 export async function GET(req: any) {
   const session = await auth()
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -207,10 +237,16 @@ export async function GET(req: any) {
                     const firstScore = studentScoresList[0];
                     const surveyDate = firstScore ? firstScore.createdAt : new Date();
                     const mappedGrade = getSurveyFormAgeGroup(st.grade, surveyDate);
-                    const stGrade = mappedGrade.toLowerCase().trim();
                     return preschoolAssignments.some(ta => {
-                        const taGrade = (ta.grade || "").toLowerCase().trim();
-                        return !taGrade || taGrade === "tất cả" || stGrade === taGrade || stGrade.includes(taGrade.replace("khối", "").trim());
+                        const taGrade = ta.grade;
+                        if (!taGrade || taGrade.toLowerCase().trim() === "tất cả") return true;
+                        
+                        // Check match on original grade
+                        if (matchesPreschoolGrade(st.grade || "", taGrade)) return true;
+                        // Check match on mapped grade
+                        if (matchesPreschoolGrade(mappedGrade, taGrade)) return true;
+                        
+                        return false;
                     });
                 });
             } else if (!grade && preschoolAssignments.length === 0) {
