@@ -1061,6 +1061,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
   const [pLoading, setPLoading] = useState(false)
   const [expandedId, setExpandedId] = useState<string|null>(null)
   const [confirm, setConfirm] = useState<{msg:string; fn:()=>void}|null>(null)
+  const [sendingEmailBatchId, setSendingEmailBatchId] = useState<string | null>(null);
 
   // ───────── PERIODS CRUD ─────────
   const [pModal, setPModal] = useState(false)
@@ -3777,14 +3778,50 @@ return {
                                        </span>
                                      </div>
                                      </td>
-                                     <td className="p-4">
-                                       <div className="flex items-center gap-2">
-                                         <div className="w-6 h-6 bg-emerald-50 rounded-full flex items-center justify-center text-[10px] font-black text-emerald-600 border border-emerald-100">
-                                           {assigneeName.charAt(0)}
-                                         </div>
-                                         <span className="text-xs font-bold text-slate-600">{assigneeName}</span>
-                                       </div>
-                                     </td>
+                                                                           <td className="p-4">
+                                        <div className="flex items-center justify-between gap-2 group/assignee">
+                                          <div className="flex items-center gap-2">
+                                            <div className="w-6 h-6 bg-emerald-50 rounded-full flex items-center justify-center text-[10px] font-black text-emerald-600 border border-emerald-100">
+                                              {assigneeName.charAt(0)}
+                                            </div>
+                                            <span className="text-xs font-bold text-slate-600">{assigneeName}</span>
+                                          </div>
+                                          {b.assignedUserId && (
+                                            <button
+                                              onClick={async (e) => {
+                                                e.stopPropagation();
+                                                setSendingEmailBatchId(b.id);
+                                                try {
+                                                  const res = await fetch("/api/input-assessments", {
+                                                    method: "PUT",
+                                                    headers: { "Content-Type": "application/json" },
+                                                    body: JSON.stringify({ action: "SEND_ASSIGNMENT_EMAIL", id: b.id })
+                                                  });
+                                                  if (res.ok) {
+                                                    notify("Đã gửi email thông báo thành công");
+                                                  } else {
+                                                    const d = await res.json();
+                                                    notify(d.error || "Lỗi gửi email", "err");
+                                                  }
+                                                } catch(e) {
+                                                  notify("Lỗi kết nối", "err");
+                                                } finally {
+                                                  setSendingEmailBatchId(null);
+                                                }
+                                              }}
+                                              className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-all ml-2"
+                                              disabled={sendingEmailBatchId === b.id}
+                                              title="Gửi email thông báo cho người phụ trách"
+                                            >
+                                              {sendingEmailBatchId === b.id ? (
+                                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                              ) : (
+                                                <Mail className="w-3.5 h-3.5" />
+                                              )}
+                                            </button>
+                                          )}
+                                        </div>
+                                      </td>
                                      <td className="p-4 text-right pr-6">
                                        <div className="flex items-center justify-end gap-1">
                                          <button onClick={() => openEditBatch(b)} className={"p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate} title="Chỉnh sửa">

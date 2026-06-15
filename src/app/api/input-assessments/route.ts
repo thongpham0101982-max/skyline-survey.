@@ -68,12 +68,8 @@ export async function POST(req) {
             campusId: data.campusId || null,
             assignedUserId: data.assignedUserId || null,
             status: data.status || "ACTIVE"
-        },
-        include: { period: true, campus: true }
+        }
       });
-      if (data.assignedUserId) {
-        await notifyBatchAssignment(result);
-      }
       return NextResponse.json(result);
     }
     
@@ -105,10 +101,6 @@ export async function PUT(req) {
       return NextResponse.json(result);
     }
     else if (action === "UPDATE_BATCH") {
-      const oldBatch = await (prisma as any).inputAssessmentBatch.findUnique({
-        where: { id },
-        select: { assignedUserId: true }
-      });
       const result = await (prisma as any).inputAssessmentBatch.update({
         where: { id },
         data: {
@@ -119,13 +111,18 @@ export async function PUT(req) {
            ...(data.assignedUserId !== undefined && { assignedUserId: data.assignedUserId || null }),
            ...(data.status !== undefined && { status: data.status }),
            ...(data.batchNumber !== undefined && { batchNumber: typeof data.batchNumber === 'string' ? parseInt(data.batchNumber) : data.batchNumber }),
-        },
+        }
+      });
+      return NextResponse.json(result);
+    }
+    else if (action === "SEND_ASSIGNMENT_EMAIL") {
+      const batch = await (prisma as any).inputAssessmentBatch.findUnique({
+        where: { id },
         include: { period: true, campus: true }
       });
-      if (data.assignedUserId && oldBatch?.assignedUserId !== data.assignedUserId) {
-        await notifyBatchAssignment(result);
-      }
-      return NextResponse.json(result);
+      if (!batch) return NextResponse.json({ error: "Không tìm thấy đợt khảo sát" }, { status: 404 });
+      await notifyBatchAssignment(batch);
+      return NextResponse.json({ success: true });
     }
     
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
@@ -184,19 +181,33 @@ async function notifyBatchAssignment(batch: any) {
     const title = `[Hệ thống] Phân công người phụ trách đợt khảo sát ${batchCode}`;
     const message = `Thông báo:\n- Mã Đợt: ${batchCode} (${batch.name || ""})\n- Nội dung khảo sát: ${surveyContent}\n- Cơ sở: ${campusName}\n- Thời gian: ${timeDisplay}\n\nKính nhờ thầy cô giáo vụ Cơ sở thực hiện phân công giáo viên khảo sát.`;
 
+
+
+    const recipientEmails = [];
+    if (batch.assignedUserId) {
+      const assignedUser = await (prisma as any).user.findUnique({
+        where: { id: batch.assignedUserId }
+      });
+      if (assignedUser && assignedUser.email) {
+        recipientEmails.push(assignedUser.email);
+      }
+    }
+
+    const notifyUserIds = new Set();
+    if (batch.assignedUserId) notifyUserIds.add(batch.assignedUserId);
     for (const u of giaovuUsers) {
+      notifyUserIds.add(u.id);
+    }
+
+    for (const userId of Array.from(notifyUserIds)) {
       await (prisma as any).notification.create({
         data: {
-          userId: u.id,
+          userId,
           title,
           message
         }
       });
     }
-
-    const recipientEmails = giaovuUsers
-      .map((u: any) => u.email)
-      .filter((email: string) => email && email.includes("@"));
 
     if (recipientEmails.length === 0) {
       const staticGiaovu = {

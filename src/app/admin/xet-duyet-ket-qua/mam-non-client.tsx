@@ -1065,6 +1065,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
   }, [yearId]);
   const [toast, setToast] = useState<{ msg: string; type: string } | null>(null);
   const [confirm, setConfirm] = useState<{ msg: string; fn: () => void } | null>(null);
+  const [sendingEmailBatchId, setSendingEmailBatchId] = useState<string | null>(null);
   const notify = (msg: string, type = "ok") => { setToast({ msg, type }); setTimeout(() => setToast(null), 3200); };
 
   // Periods
@@ -2885,21 +2886,57 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                          {b.status === "ACTIVE" ? "ON" : "OFF"}
                                        </span>
                                      </div></td>
-                                    <td className="p-4">
-                                      <div className="flex items-center gap-2">
-                                        <div className="w-6 h-6 bg-emerald-50 rounded-full flex items-center justify-center text-[10px] font-black text-emerald-600 border border-emerald-100">
-                                          {(() => {
-                                            const assignee = giaoVuCSUsers.find((u: any) => u.id === b.assignedUserId);
-                                            const name = assignee ? assignee.fullName : "-- Chưa gán --";
-                                            return name.charAt(0);
-                                          })()}
+                                                                        <td className="p-4">
+                                      <div className="flex items-center justify-between gap-2 group/assignee">
+                                        <div className="flex items-center gap-2">
+                                          <div className="w-6 h-6 bg-emerald-50 rounded-full flex items-center justify-center text-[10px] font-black text-emerald-600 border border-emerald-100">
+                                            {(() => {
+                                              const assignee = giaoVuCSUsers.find((u: any) => u.id === b.assignedUserId);
+                                              const name = assignee ? assignee.fullName : "-- Chưa gán --";
+                                              return name.charAt(0);
+                                            })()}
+                                          </div>
+                                          <span className="text-xs font-bold text-slate-600">
+                                            {(() => {
+                                              const assignee = giaoVuCSUsers.find((u: any) => u.id === b.assignedUserId);
+                                              return assignee ? assignee.fullName : "-- Chưa gán --";
+                                            })()}
+                                          </span>
                                         </div>
-                                        <span className="text-xs font-bold text-slate-600">
-                                          {(() => {
-                                            const assignee = giaoVuCSUsers.find((u: any) => u.id === b.assignedUserId);
-                                            return assignee ? assignee.fullName : "-- Chưa gán --";
-                                          })()}
-                                        </span>
+                                        {b.assignedUserId && (
+                                          <button
+                                            onClick={async (e) => {
+                                              e.stopPropagation();
+                                              setSendingEmailBatchId(b.id);
+                                              try {
+                                                const res = await fetch("/api/preschool-input-assessments", {
+                                                  method: "PUT",
+                                                  headers: { "Content-Type": "application/json" },
+                                                  body: JSON.stringify({ action: "SEND_ASSIGNMENT_EMAIL", id: b.id })
+                                                });
+                                                if (res.ok) {
+                                                  notify("Đã gửi email thông báo thành công");
+                                                } else {
+                                                  const d = await res.json();
+                                                  notify(d.error || "Lỗi gửi email", "err");
+                                                }
+                                              } catch(e) {
+                                                notify("Lỗi kết nối", "err");
+                                              } finally {
+                                                setSendingEmailBatchId(null);
+                                              }
+                                            }}
+                                            className="p-1 text-slate-400 hover:text-[#00A19A] hover:bg-[#00A19A]/5 rounded-md transition-all ml-2"
+                                            disabled={sendingEmailBatchId === b.id}
+                                            title="Gửi email thông báo cho người phụ trách"
+                                          >
+                                            {sendingEmailBatchId === b.id ? (
+                                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                            ) : (
+                                              <Mail className="w-3.5 h-3.5" />
+                                            )}
+                                          </button>
+                                        )}
                                       </div>
                                     </td>
                                     <td className="p-4 text-right"><div className="flex justify-end gap-1"><button onClick={() => openEditBatch(b)} className="p-2 text-slate-300 hover:text-[#00A19A] hover:bg-[#00A19A]/5 rounded-none"><Edit2 className="w-4 h-4" /></button><button onClick={() => setConfirm({ msg: `Xóa đợt #${b.batchNumber}?`, fn: () => doDeleteBatch(b.id) })} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-none"><Trash2 className="w-4 h-4" /></button></div></td>
