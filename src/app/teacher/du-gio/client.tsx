@@ -422,8 +422,8 @@ export function ObservationClient({
       const slotDate = new Date(slot.date)
       const isPast = slotDate < new Date(now.getFullYear(), now.getMonth(), now.getDate())
       if (activeTab === "dang-ky") return !isHost && !isPast
-      if (activeTab === "my-schedule") return (isHost || isObserver) && !isPast
-      if (activeTab === "history") return (isHost || isObserver) && isPast
+      if (activeTab === "my-schedule") return isHost
+      if (activeTab === "history") return isObserver
       return true
     })
   }, [slots, activeTab, currentTeacher.id])
