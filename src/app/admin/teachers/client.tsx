@@ -541,6 +541,19 @@ export function TeacherManagerClient({
                       </td>
 
                       <td className="px-5 py-4">
+                        {isEditing ? (
+                          <select value={editForm.position} onChange={e => setEditForm({ ...editForm, position: e.target.value })}
+                            className="border border-[#00A19A] rounded-xl px-2.5 py-1.5 text-xs outline-none bg-white font-bold focus:border-[#00A19A] w-full cursor-pointer">
+                            <option value="GV">GV</option>
+                            <option value="TTCM">TTCM</option>
+                            <option value="QLCM">QLCM</option>
+                          </select>
+                        ) : (
+                          <PositionBadge position={t.position} />
+                        )}
+                      </td>
+
+                      <td className="px-5 py-4">
                         <div className="flex items-center gap-1.5 group/key">
                           <span className="font-mono text-xs font-bold text-slate-600 bg-slate-50/50 px-2.5 py-1 rounded-lg border border-slate-200 tracking-wide">
                             {t.user?.email || t.teacherCode}
