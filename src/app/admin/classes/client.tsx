@@ -150,11 +150,11 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
       {/* Tabs */}
       <div className="flex border-b border-slate-200 gap-1 bg-slate-100 p-1.5 rounded-xl w-fit">
         <button onClick={() => { setActiveTab("k12"); setSelectedLevel(""); setSelectedEduSystem("") }}
-          className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-extrabold uppercase tracking-wider transition-all duration-200 ${activeTab === "k12" ? "bg-white text-blue-800 shadow-sm" : "text-slate-500 hover:text-slate-800 hover:bg-white/40"}`}>
+          className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-extrabold uppercase tracking-wider transition-all duration-200 ${activeTab === "k12" ? "bg-white text-blue-800 shadow-sm" : "text-slate-500 hover:text-blue-700 hover:bg-blue-100"}`}>
           <GraduationCap className="w-5 h-5" /> Phổ thông K-12
         </button>
         <button onClick={() => { setActiveTab("mam-non"); setSelectedLevel(""); setSelectedEduSystem("") }}
-          className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-extrabold uppercase tracking-wider transition-all duration-200 ${activeTab === "mam-non" ? "bg-white text-emerald-700 shadow-sm" : "text-slate-500 hover:text-slate-800 hover:bg-white/40"}`}>
+          className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-extrabold uppercase tracking-wider transition-all duration-200 ${activeTab === "mam-non" ? "bg-white text-emerald-700 shadow-sm" : "text-slate-500 hover:text-emerald-700 hover:bg-emerald-100"}`}>
           <Layers className="w-5 h-5" /> Mầm non
         </button>
       </div>
