@@ -150,6 +150,20 @@ export function ObservationClient({
     }
   }, [newDate])
 
+  const resetCreateForm = () => {
+    setEditSlotId(null);
+    setNewSubjectId(""); setNewSubjectName(""); setNewLevel(""); setNewGrade(""); setNewClassId("");
+    setNewClassNameText(""); setNewTopic(""); setNewDate(""); setNewStartTime("Tiết 1"); setNewEndTime("Tiết 1");
+    setNewIsDoublePeriod(false); setNewDescription(""); setNewVisibility("ALL"); setNewTargetDeptId("");
+    setNewLessonPlanName(""); setNewLessonPlanData("");
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const openCreateModal = () => {
+    resetCreateForm();
+    setShowCreateModal(true);
+  };
+
   const showToast = (message: string, type: "success" | "error" | "info" = "success") => {
     setToast({ message, type })
     setTimeout(() => setToast(null), 4500)
@@ -1116,7 +1130,7 @@ export function ObservationClient({
               </div>
               {/* Submit */}
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 shrink-0">
-                <button type="button" onClick={() => setShowCreateModal(false)} className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all text-sm">Hủy</button>
+                <button type="button" onClick={() => { setShowCreateModal(false); resetCreateForm(); }} className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all text-sm">Hủy</button>
                 <button type="submit" disabled={submitting || monthlyLimitCount >= 2}
                   className="px-6 py-2.5 bg-[#00A19A] hover:bg-[#008B85] disabled:bg-slate-200 disabled:text-slate-400 text-white font-extrabold rounded-xl transition-all shadow-md text-sm shrink-0">
                   {submitting ? "Đang lưu..." : (editSlotId ? "Cập nhật" : "Lưu tiết dạy")}
