@@ -16,10 +16,7 @@ const K12_LEVELS = [
 
 const MN_LEVELS = [
   { value: "", label: "Tất cả" },
-  { value: "Nhà trẻ", label: "Nhà trẻ" },
-  { value: "Mẫu giáo bé", label: "Mẫu giáo bé" },
-  { value: "Mẫu giáo nhỡ", label: "Mẫu giáo nhỡ" },
-  { value: "Mẫu giáo lớn", label: "Mẫu giáo lớn" },
+  { value: "Mầm non", label: "Mầm non" }
 ];
 
 export function AdminClassesClient({ initialClasses, campuses, academicYears, teachers, isCampusLocked = false, defaultCampusId = null }: any) {
@@ -62,9 +59,9 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
     ];
     
     const mnData = [
-      { "Mã lớp*": "MN-26-1", "Cơ sở": "CS1", "Bậc học": "Nhà trẻ", "Khối lớp": "Nhà trẻ", "Tên lớp*": "Chồi 1", "Hệ học": "MNS", "Sỹ số": 20, "GVCN": "Nguyễn Thị Mầm" },
-      { "Mã lớp*": "MN-26-2", "Cơ sở": "CS2", "Bậc học": "Mẫu giáo bé", "Khối lớp": "Mầm", "Tên lớp*": "Mầm 1", "Hệ học": "MNG", "Sỹ số": 25, "GVCN": "Trần Thị Non" },
-      { "Mã lớp*": "MN-26-3", "Cơ sở": "CS1", "Bậc học": "Mẫu giáo lớn", "Khối lớp": "Lá", "Tên lớp*": "Lá 1", "Hệ học": "MNS", "Sỹ số": 25, "GVCN": "" }
+      { "Mã lớp*": "MN-26-1", "Cơ sở": "CS1", "Bậc học": "Mầm non", "Khối lớp": "Nhà trẻ", "Tên lớp*": "Chồi 1", "Hệ học": "MNS", "Sỹ số": 20, "GVCN": "Nguyễn Thị Mầm" },
+      { "Mã lớp*": "MN-26-2", "Cơ sở": "CS2", "Bậc học": "Mầm non", "Khối lớp": "Mầm", "Tên lớp*": "Mầm 1", "Hệ học": "MNG", "Sỹ số": 25, "GVCN": "Trần Thị Non" },
+      { "Mã lớp*": "MN-26-3", "Cơ sở": "CS1", "Bậc học": "Mầm non", "Khối lớp": "Lá", "Tên lớp*": "Lá 1", "Hệ học": "MNS", "Sỹ số": 25, "GVCN": "" }
     ];
 
     const dataToExport = activeTab === "mam-non" ? mnData : k12Data;
@@ -269,7 +266,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
                  <td className="px-4 py-3.5 text-slate-400 text-center">{i + 1}</td>
                  <td className="px-4 py-3.5"><span className="flex items-center gap-1.5"><Building2 className="w-3.5 h-3.5 text-indigo-500" /><span className="text-slate-700">{c.campus}</span></span></td>
                  <td className="px-4 py-3.5">
-                   {c.level ? (<span className={"text-xs px-2 py-1 rounded-full font-medium " + (["tiểu học", "tieu hoc", "nhà trẻ"].includes(c.level.toLowerCase()) ? "bg-amber-50 text-amber-700" : ["thcs", "mẫu giáo bé"].includes(c.level.toLowerCase()) ? "bg-blue-50 text-blue-700" : ["thpt", "mẫu giáo nhỡ"].includes(c.level.toLowerCase()) ? "bg-purple-50 text-purple-700" : c.level.toLowerCase() === "mẫu giáo lớn" ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600")}>{c.level}</span>) : <span className="text-slate-300">--</span>}
+                   {c.level ? (<span className={"text-xs px-2 py-1 rounded-full font-medium " + (["tiểu học", "tieu hoc"].includes(c.level.toLowerCase()) ? "bg-amber-50 text-amber-700" : ["thcs"].includes(c.level.toLowerCase()) ? "bg-blue-50 text-blue-700" : ["thpt"].includes(c.level.toLowerCase()) ? "bg-purple-50 text-purple-700" : ["mầm non", "nhà trẻ", "mẫu giáo bé", "mẫu giáo nhỡ", "mẫu giáo lớn"].includes(c.level.toLowerCase()) ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600")}>{c.level}</span>) : <span className="text-slate-300">--</span>}
                  </td>
                  <td className="px-4 py-3.5">
                    {c.grade ? (<span className="flex items-center gap-1.5"><Layers className="w-3.5 h-3.5 text-emerald-500" /><span className="text-slate-700 font-medium">{c.grade}</span></span>) : <span className="text-slate-300">--</span>}
