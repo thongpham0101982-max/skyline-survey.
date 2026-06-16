@@ -95,7 +95,11 @@ export async function getObservationSlots(filters: {
     }
 
     if (filters.level && filters.level !== "all") {
-      where.level = filters.level
+      if (filters.level === "Phổ thông K-12") {
+        where.level = { in: ["Tiểu học", "THCS", "THPT", "Phổ thông K-12"] };
+      } else {
+        where.level = filters.level;
+      }
     }
     if (filters.grade && filters.grade !== "all") {
       where.grade = filters.grade
