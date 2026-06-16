@@ -448,17 +448,32 @@ export function ObservationClient({
     const campusNameStr = selectedCampus ? selectedCampus.campusName : ""
     let classNameStr = newClassNameText
     if (newClassId && newClassId !== "other") { const selClass = classes.find(c => c.id === newClassId); if (selClass) classNameStr = selClass.className }
-    const res = await createObservationSlot({
-      subjectId: (newSubjectId && newSubjectId !== "other") ? newSubjectId : undefined,
-      subjectName: subName, level: newLevel, grade: newGrade, topic: newTopic, date: newDate,
-      startTime: newStartTime, endTime: newEndTime, isDoublePeriod: newIsDoublePeriod,
-      room: classNameStr, description: newDescription, visibilityType: newVisibility,
-      targetDeptId: newVisibility === "DEPARTMENT" ? newTargetDeptId : undefined,
-      campusId: newCampusId, campusName: campusNameStr,
-      classId: (newClassId && newClassId !== "other") ? newClassId : undefined,
-      className: classNameStr,
-      lessonPlanName: newLessonPlanName || undefined, lessonPlanData: newLessonPlanData || undefined
-    })
+    let res;
+    if (editSlotId) {
+      res = await updateObservationSlot(editSlotId, {
+        subjectId: (newSubjectId && newSubjectId !== "other") ? newSubjectId : undefined,
+        subjectName: subName, level: newLevel, grade: newGrade, topic: newTopic, date: newDate,
+        startTime: newStartTime, endTime: newEndTime, isDoublePeriod: newIsDoublePeriod,
+        room: classNameStr, description: newDescription, visibilityType: newVisibility,
+        targetDeptId: newVisibility === "DEPARTMENT" ? newTargetDeptId : undefined,
+        campusId: newCampusId, campusName: campusNameStr,
+        classId: (newClassId && newClassId !== "other") ? newClassId : undefined,
+        className: classNameStr,
+        lessonPlanName: newLessonPlanName || undefined, lessonPlanData: newLessonPlanData || undefined
+      });
+    } else {
+      res = await createObservationSlot({
+        subjectId: (newSubjectId && newSubjectId !== "other") ? newSubjectId : undefined,
+        subjectName: subName, level: newLevel, grade: newGrade, topic: newTopic, date: newDate,
+        startTime: newStartTime, endTime: newEndTime, isDoublePeriod: newIsDoublePeriod,
+        room: classNameStr, description: newDescription, visibilityType: newVisibility,
+        targetDeptId: newVisibility === "DEPARTMENT" ? newTargetDeptId : undefined,
+        campusId: newCampusId, campusName: campusNameStr,
+        classId: (newClassId && newClassId !== "other") ? newClassId : undefined,
+        className: classNameStr,
+        lessonPlanName: newLessonPlanName || undefined, lessonPlanData: newLessonPlanData || undefined
+      });
+    }
     setSubmitting(false)
     if (res.success) {
       showToast(editSlotId ? "Cập nhật tiết dạy thành công!" : "Tạo tiết dạy dự giờ mới thành công!", "success")
@@ -882,11 +897,13 @@ export function ObservationClient({
                               {observerCount} GV
                               {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                             </button>
-                            <button onClick={() => openEditModal(slot)}
-                              className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 border border-blue-200 hover:bg-blue-100 text-blue-600 rounded-lg text-xs font-bold transition-all">
-                              <FileText className="w-3.5 h-3.5" />
-                              Sửa
-                            </button>
+                            {observerCount === 0 && (
+                              <button onClick={() => openEditModal(slot)}
+                                className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 border border-blue-200 hover:bg-blue-100 text-blue-600 rounded-lg text-xs font-bold transition-all">
+                                <FileText className="w-3.5 h-3.5" />
+                                Sửa
+                              </button>
+                            )}
                             <button onClick={() => handleDeleteSlot(slot.id)}
                               className="flex items-center gap-1 px-3 py-1.5 bg-rose-50 border border-rose-200 hover:bg-rose-100 text-rose-600 rounded-lg text-xs font-bold transition-all">
                               <Trash2 className="w-3.5 h-3.5" /> Xóa
