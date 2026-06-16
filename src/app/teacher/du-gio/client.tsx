@@ -174,7 +174,27 @@ export function ObservationClient({
     else if (newLevel === "THPT") dbLevel = "THPT"
     else dbLevel = "Mầm non"
     const numGrade = newGrade.replace("Khoi ", "")
-    return classes.filter(c => c.campusId === newCampusId && c.level === dbLevel && c.grade === numGrade)
+    return classes.filter(c => {
+      if (c.campusId !== newCampusId) return false;
+      if (c.level !== dbLevel) return false;
+      if (dbLevel === "Mầm non") {
+        if (!newGrade) return true;
+        // Map newGrade to class name or grade in DB
+        const lowerGrade = newGrade.toLowerCase();
+        const lowerClassGrade = (c.grade || "").toLowerCase();
+        const lowerClassName = (c.className || "").toLowerCase();
+        
+        if (lowerGrade.includes("18-24") || lowerGrade.includes("24-36")) {
+          return lowerClassGrade.includes("nhà trẻ") || lowerClassName.includes("nhà trẻ") || lowerClassGrade.includes("tháng");
+        }
+        if (lowerGrade.includes("mầm")) return lowerClassGrade.includes("mầm") || lowerClassName.includes("mầm");
+        if (lowerGrade.includes("chồi")) return lowerClassGrade.includes("chồi") || lowerClassName.includes("chồi");
+        if (lowerGrade.includes("lá")) return lowerClassGrade.includes("lá") || lowerClassName.includes("lá");
+        
+        return true; // fallback, show all
+      }
+      return c.grade === numGrade;
+    })
   }, [classes, newCampusId, newLevel, newGrade])
 
   const getNextPeriod = (p: string) => { const m = p.match(/\d+/); if (m) { const n = parseInt(m[0]); if (n < 8) return `Tiết ${n+1}` } return p }
