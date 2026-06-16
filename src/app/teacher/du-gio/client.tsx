@@ -516,17 +516,6 @@ export function ObservationClient({
         </button>
       </div>
 
-      {/* Info Alert */}
-      <div className="flex items-start gap-4 p-5 bg-[#F0FDFA] border-2 border-[#CCFBF1] rounded-2xl text-[#0A3230] shadow-sm">
-        <Info className="w-6 h-6 text-[#00A19A] shrink-0 mt-0.5" />
-        <div className="space-y-1">
-          <h4 className="font-extrabold text-sm uppercase tracking-wide">Dự giờ là gì?</h4>
-          <p className="text-xs font-semibold text-slate-600 leading-relaxed">
-            Dự giờ là hoạt động chuyên môn giúp giáo viên học hỏi, trao đổi kinh nghiệm giảng dạy và hoàn thiện phương pháp sư phạm. Vui lòng chọn lớp học và đăng ký các tiết dự giờ phù hợp bên dưới.
-          </p>
-        </div>
-      </div>
-
       {/* Tabs */}
       <div className="flex border-b border-slate-200 gap-1 bg-slate-100 p-1.5 rounded-xl">
         {[
@@ -604,7 +593,7 @@ export function ObservationClient({
             <select value={filterPeriod} onChange={e => setFilterPeriod(e.target.value)}
               className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-700 focus:ring-2 focus:ring-[#00A19A] outline-none">
               <option value="all">Tất cả tiết</option>
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(p => <option key={p} value={`Tiết ${p}`}>Tiết {p}</option>)}
+              {[1, 2, 3, 4, 5, 6, 7, 8].map(p => <option key={p} value={`Tiết ${p}`}>Tiết {p}</option>)}
             </select>
           </div>
 
@@ -910,18 +899,7 @@ export function ObservationClient({
         </div>
       </div>
 
-      {/* Notes */}
-      <div className="flex items-start gap-4 p-5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-700 mt-6 shadow-sm">
-        <Info className="w-6 h-6 text-slate-400 shrink-0 mt-0.5" />
-        <div className="space-y-1.5">
-          <h4 className="font-extrabold text-sm uppercase tracking-wide text-slate-800">Lưu ý chuyên môn:</h4>
-          <ul className="list-disc pl-4 text-xs font-semibold text-slate-500 leading-relaxed space-y-1">
-            <li>Vui lòng có mặt trước giờ dạy dự định ít nhất 10 phút để chuẩn bị.</li>
-            <li>Giữ trật tự tuyệt đối trong lớp học và không làm ảnh hưởng đến quá trình học tập của học sinh.</li>
-            <li>Sau khi tiết dạy kết thúc, GV dự giờ vui lòng điền phiếu đánh giá tiết dạy (khi đã được xác nhận).</li>
-          </ul>
-        </div>
-      </div>
+      
 
       {/* Create Modal */}
       {showCreateModal && (
