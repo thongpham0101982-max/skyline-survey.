@@ -243,7 +243,7 @@ export async function createObservationSlot(data: {
         description: data.description || null,
         visibilityType: data.visibilityType,
         targetDeptId: data.targetDeptId || null,
-        maxSeats: 10,
+        maxSeats: 4,
         status: "ACTIVE",
         campusId: data.campusId || null,
         campusName: data.campusName || null,

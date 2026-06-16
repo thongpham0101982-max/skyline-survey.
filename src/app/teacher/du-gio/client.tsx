@@ -513,10 +513,19 @@ export function ObservationClient({
       
       const countWeight = slot.isDoublePeriod ? 2 : 1;
       if (isHost) {
-        stats[key].taughtCount += countWeight;
+        // Chỉ tính tiết dạy khi tất cả GV đã được duyệt đều đã điền phiếu đánh giá
+        const approvedRegs = slot.registrations.filter((r) => r.isApproved);
+        const allEvaluated = approvedRegs.length > 0 && approvedRegs.every((r) => !!r.evaluation);
+        if (allEvaluated) {
+          stats[key].taughtCount += countWeight;
+        }
       }
       if (isObserverApproved) {
-        stats[key].observedCount += countWeight;
+        // Chỉ tính tiết dự khi GV dự đã điền phiếu đánh giá
+        const myReg = slot.registrations.find((r) => r.teacherId === currentTeacher.id && r.isApproved);
+        if (myReg && myReg.evaluation) {
+          stats[key].observedCount += countWeight;
+        }
       }
     });
     
