@@ -30,9 +30,8 @@ export default async function ObservationPage(props: {
 
   const slotsResult = await getObservationSlots({
     level,
-    subjectId,
     grade,
-    teacherId,
+    period,
     date,
     campusId,
     deptId
