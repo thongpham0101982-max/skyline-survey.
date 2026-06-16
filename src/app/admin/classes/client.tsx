@@ -6,14 +6,23 @@ import Link from "next/link"
 import * as xlsx from "xlsx"
 import { importClassesAction, deleteClasses, updateClass } from "./actions"
 
-const LEVELS = [
+const K12_LEVELS = [
   { value: "", label: "Tất cả" },
-  { value: "Tieu hoc", label: "Tiểu học" },
+  { value: "Tiểu học", label: "Tiểu học" },
   { value: "THCS", label: "THCS" },
   { value: "THPT", label: "THPT" },
-]
+];
+
+const MN_LEVELS = [
+  { value: "", label: "Tất cả" },
+  { value: "Nhà trẻ", label: "Nhà trẻ" },
+  { value: "Mẫu giáo bé", label: "Mẫu giáo bé" },
+  { value: "Mẫu giáo nhỡ", label: "Mẫu giáo nhỡ" },
+  { value: "Mẫu giáo lớn", label: "Mẫu giáo lớn" },
+];
 
 export function AdminClassesClient({ initialClasses, campuses, academicYears, teachers, isCampusLocked = false, defaultCampusId = null }: any) {
+  const [activeTab, setActiveTab] = useState("k12")
   const [classes, setClasses] = useState(initialClasses)
   const [selectedYearId, setSelectedYearId] = useState<string>(() => getDefaultAcademicYearClient(academicYears)?.id || "")
   const [selectedCampus, setSelectedCampus] = useState(defaultCampusId || "")
@@ -26,11 +35,19 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const selectedYear = academicYears.find((y: any) => y.id === selectedYearId)
-  const eduSystems = selectedYear?.educationSystems || []
+  const baseEduSystems = selectedYear?.educationSystems || [];
+  const mnEduSystems = [{ id: 'mns', code: 'MNS', name: 'Mầm non S' }, { id: 'mng', code: 'MNG', name: 'Mầm non Global' }];
+  const eduSystems = activeTab === "mam-non" ? mnEduSystems : baseEduSystems;
 
   useEffect(() => { setClasses(initialClasses); setSelectedIds([]) }, [initialClasses])
 
   let filteredClasses = classes.filter((c: any) => c.academicYearId === selectedYearId)
+  const mnLevels = ["Nhà trẻ", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn", "Mầm non"];
+  if (activeTab === "mam-non") {
+    filteredClasses = filteredClasses.filter((c: any) => mnLevels.includes(c.level));
+  } else {
+    filteredClasses = filteredClasses.filter((c: any) => !mnLevels.includes(c.level));
+  }
   if (selectedCampus) filteredClasses = filteredClasses.filter((c: any) => c.campusId === selectedCampus)
   if (selectedLevel) filteredClasses = filteredClasses.filter((c: any) => c.level === selectedLevel)
   if (selectedEduSystem) filteredClasses = filteredClasses.filter((c: any) => c.educationSystem === selectedEduSystem)
@@ -130,6 +147,18 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
 
   return (
     <div className="space-y-6">
+      {/* Tabs */}
+      <div className="flex border-b border-slate-200 gap-1 bg-slate-100 p-1.5 rounded-xl w-fit">
+        <button onClick={() => { setActiveTab("k12"); setSelectedLevel(""); setSelectedEduSystem("") }}
+          className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-extrabold uppercase tracking-wider transition-all duration-200 ${activeTab === "k12" ? "bg-white text-blue-800 shadow-sm" : "text-slate-500 hover:text-slate-800 hover:bg-white/40"}`}>
+          <GraduationCap className="w-5 h-5" /> Phổ thông K-12
+        </button>
+        <button onClick={() => { setActiveTab("mam-non"); setSelectedLevel(""); setSelectedEduSystem("") }}
+          className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-extrabold uppercase tracking-wider transition-all duration-200 ${activeTab === "mam-non" ? "bg-white text-emerald-700 shadow-sm" : "text-slate-500 hover:text-slate-800 hover:bg-white/40"}`}>
+          <Layers className="w-5 h-5" /> Mầm non
+        </button>
+      </div>
+
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-4 bg-white p-4 rounded-xl shadow-sm border">
         <div className="flex items-center gap-2">
@@ -155,7 +184,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
           <label className="font-semibold text-slate-700 text-sm">Bậc học:</label>
           <select value={selectedLevel} onChange={e => setSelectedLevel(e.target.value)}
             className="border rounded-lg p-2 text-sm min-w-[140px] outline-none focus:ring-2 focus:ring-emerald-300">
-            {LEVELS.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
+            {(activeTab === "mam-non" ? MN_LEVELS : K12_LEVELS).map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
           </select>
         </div>
         <div className="flex items-center gap-2">
@@ -224,7 +253,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
                  <td className="px-4 py-3.5 text-slate-400 text-center">{i + 1}</td>
                  <td className="px-4 py-3.5"><span className="flex items-center gap-1.5"><Building2 className="w-3.5 h-3.5 text-indigo-500" /><span className="text-slate-700">{c.campus}</span></span></td>
                  <td className="px-4 py-3.5">
-                   {c.level ? (<span className={"text-xs px-2 py-1 rounded-full font-medium " + (c.level === "Tieu hoc" ? "bg-amber-50 text-amber-700" : c.level === "THCS" ? "bg-blue-50 text-blue-700" : c.level === "THPT" ? "bg-purple-50 text-purple-700" : "bg-slate-100 text-slate-600")}>{c.level}</span>) : <span className="text-slate-300">--</span>}
+                   {c.level ? (<span className={"text-xs px-2 py-1 rounded-full font-medium " + (["Tiểu học", "Tieu hoc", "Nhà trẻ"].includes(c.level) ? "bg-amber-50 text-amber-700" : ["THCS", "Mẫu giáo bé"].includes(c.level) ? "bg-blue-50 text-blue-700" : ["THPT", "Mẫu giáo nhỡ"].includes(c.level) ? "bg-purple-50 text-purple-700" : c.level === "Mẫu giáo lớn" ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600")}>{c.level}</span>) : <span className="text-slate-300">--</span>}
                  </td>
                  <td className="px-4 py-3.5">
                    {c.grade ? (<span className="flex items-center gap-1.5"><Layers className="w-3.5 h-3.5 text-emerald-500" /><span className="text-slate-700 font-medium">{c.grade}</span></span>) : <span className="text-slate-300">--</span>}
