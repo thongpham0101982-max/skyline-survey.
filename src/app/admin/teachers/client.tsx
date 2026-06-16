@@ -1,3 +1,4 @@
+"use client"
 function PositionBadge({ position }) {
   if (position === "TTCM") return (
     <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg border text-[10px] font-black uppercase tracking-wider bg-orange-50 text-orange-700 border-orange-200">
@@ -15,7 +16,6 @@ function PositionBadge({ position }) {
     </span>
   );
 }
-"use client"
 import { useState, useRef } from "react"
 import {
   Plus, Trash2, Edit2, Check, X, Upload, Download,
