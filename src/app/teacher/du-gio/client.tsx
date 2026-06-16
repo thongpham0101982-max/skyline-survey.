@@ -539,26 +539,6 @@ export function ObservationClient({
             <Search className="w-4 h-4 text-[#00A19A]" /> Lọc thông tin
           </h3>
 
-          {/* Campus Filter */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1"><Building2 className="w-3 h-3"/>Cơ sở</label>
-            <select value={filterCampusId} onChange={e => setFilterCampusId(e.target.value)}
-              className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-700 focus:ring-2 focus:ring-[#00A19A] outline-none">
-              <option value="all">Tất cả cơ sở</option>
-              {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
-            </select>
-          </div>
-
-          {/* Department Filter */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1"><Users className="w-3 h-3"/>Tổ chuyên môn</label>
-            <select value={filterDeptId} onChange={e => setFilterDeptId(e.target.value)}
-              className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-700 focus:ring-2 focus:ring-[#00A19A] outline-none">
-              <option value="all">Tất cả tổ nhóm</option>
-              {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-            </select>
-          </div>
-
           {/* Level Filter */}
           <div className="flex flex-col gap-1.5">
             <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Cấp học</label>
@@ -577,6 +557,28 @@ export function ObservationClient({
             </select>
           </div>
 
+          {/* Campus Filter */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1"><Building2 className="w-3 h-3"/>Cơ sở</label>
+            <select value={filterCampusId} onChange={e => setFilterCampusId(e.target.value)}
+              className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-700 focus:ring-2 focus:ring-[#00A19A] outline-none">
+              <option value="all">Tất cả cơ sở</option>
+              {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
+            </select>
+          </div>
+
+          {/* Department Filter */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1"><Users className="w-3 h-3"/>Tổ chuyên môn</label>
+            <select value={filterDeptId} onChange={e => setFilterDeptId(e.target.value)}
+              className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-700 focus:ring-2 focus:ring-[#00A19A] outline-none">
+              <option value="all">Tất cả tổ nhóm</option>
+              {departments
+                .filter(d => !d.name.includes("Giáo vụ") && !d.name.includes("KT&ĐBCL") && !d.name.includes("Tư vấn"))
+                .map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+            </select>
+          </div>
+
           {/* Grade Filter */}
           <div className="flex flex-col gap-1.5">
             <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Khối lớp</label>
@@ -587,6 +589,13 @@ export function ObservationClient({
             </select>
           </div>
 
+          {/* Date Filter */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Ngày dạy</label>
+            <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)}
+              className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-700 focus:ring-2 focus:ring-[#00A19A] outline-none" />
+          </div>
+
           {/* Period Filter */}
           <div className="flex flex-col gap-1.5">
             <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1"><Clock className="w-3 h-3"/>Tiết dạy</label>
@@ -595,13 +604,6 @@ export function ObservationClient({
               <option value="all">Tất cả tiết</option>
               {[1, 2, 3, 4, 5, 6, 7, 8].map(p => <option key={p} value={`Tiết ${p}`}>Tiết {p}</option>)}
             </select>
-          </div>
-
-          {/* Date Filter */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Thời gian</label>
-            <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)}
-              className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-700 focus:ring-2 focus:ring-[#00A19A] outline-none" />
           </div>
 
           <button onClick={handleSearch} disabled={isPending}
