@@ -3,6 +3,7 @@ import { getDefaultAcademicYearClient } from "@/lib/academicYear"
 import { useState, useRef, useEffect } from "react"
 import { Upload, Users, BookOpen, Download, Calendar, Building2, GraduationCap, Layers, Trash2, Edit, X, Save, CheckSquare } from "lucide-react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import * as xlsx from "xlsx"
 import { importClassesAction, deleteClasses, updateClass } from "./actions"
 
@@ -22,6 +23,7 @@ const MN_LEVELS = [
 ];
 
 export function AdminClassesClient({ initialClasses, campuses, academicYears, teachers, isCampusLocked = false, defaultCampusId = null }: any) {
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState("k12")
   const [classes, setClasses] = useState(initialClasses)
   const [selectedYearId, setSelectedYearId] = useState<string>(() => getDefaultAcademicYearClient(academicYears)?.id || "")
@@ -107,7 +109,10 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
           }
         })
         const res = await importClassesAction(payload)
-        if (res.success) alert("Đã import " + res.count + " lớp học! Tải lại trang để cập nhật.")
+        if (res.success) {
+          alert("Đã import " + res.count + " lớp học!");
+          router.refresh();
+        }
       } catch(e) { console.error(e); alert("Lỗi đọc file Excel!") }
       setUploading(false)
       if (fileInputRef.current) fileInputRef.current.value = ""
@@ -127,14 +132,14 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
     if (!confirm("Bạn có chắc chắn muốn xóa " + selectedIds.length + " lớp?")) return
     setDeleting(true)
     const res = await deleteClasses(selectedIds)
-    if (res.success) alert("Xóa thành công!")
+    if (res.success) { alert("Xóa thành công!"); router.refresh(); }
     else alert("Có lỗi khi xóa!")
     setDeleting(false)
   }
   const handleDeleteSingle = async (id: string) => {
     if (!confirm("Xóa lớp này?")) return
     const res = await deleteClasses([id])
-    if (res.success) alert("Xóa thành công!"); else alert("Không thể xóa!")
+    if (res.success) { alert("Xóa thành công!"); router.refresh(); }; else alert("Không thể xóa!")
   }
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -146,7 +151,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
       educationSystem: editModal.educationSystem || "",
       homeroomTeacherId: editModal.homeroomTeacherId || null
     })
-    if (res.success) setEditModal(null); else alert("Lỗi khi cập nhật!")
+    if (res.success) { setEditModal(null); router.refresh(); } else alert("Lỗi khi cập nhật!")
   }
 
   const getEduBadgeColor = (code: string) => {
