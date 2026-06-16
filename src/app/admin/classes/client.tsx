@@ -136,7 +136,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
   const handleDeleteSingle = async (id: string) => {
     if (!confirm("Xóa lớp này?")) return
     const res = await deleteClasses([id])
-    if (res.success) { alert("Xóa thành công!"); router.refresh(); }; else alert("Không thể xóa!")
+    if (res.success) { alert("Xóa thành công!"); router.refresh(); } else alert("Không thể xóa!")
   }
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault()
