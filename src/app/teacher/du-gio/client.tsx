@@ -942,15 +942,10 @@ export function ObservationClient({
                   <select value={newLevel} onChange={e => { setNewLevel(e.target.value); setNewGrade(""); setNewClassId("") }} required
                     className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-800 focus:ring-2 focus:ring-[#00A19A] outline-none">
                     <option value="">Chọn cấp học</option>
-                    {isMamNonTeacher ? (
-                      <option value="Mầm non">Mầm non</option>
-                    ) : (
-                      <>
-                        <option value="Tiểu học">Tiểu học</option>
-                        <option value="THCS">THCS</option>
-                        <option value="THPT">THPT</option>
-                      </>
-                    )}
+                    <option value="Mầm non">Mầm non</option>
+                    <option value="Tiểu học">Tiểu học</option>
+                    <option value="THCS">THCS</option>
+                    <option value="THPT">THPT</option>
                   </select>
                 </div>
                 {/* Grade */}
