@@ -651,14 +651,8 @@ export function ObservationClient({
             <select value={filterLevel} onChange={e => { setFilterLevel(e.target.value); setFilterGrade("all") }}
               className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-700 focus:ring-2 focus:ring-[#00A19A] outline-none">
               <option value="all">Tất cả bậc học</option>
-              {(filterSchoolBlock === "all" || filterSchoolBlock === "mam-non") && <option value="Mầm non">Mầm non</option>}
-              {(filterSchoolBlock === "all" || filterSchoolBlock === "k12") && (
-                <>
-                  <option value="Tiểu học">Tiểu học</option>
-                  <option value="THCS">THCS</option>
-                  <option value="THPT">THPT</option>
-                </>
-              )}
+              <option value="Mầm non">Mầm non</option>
+              <option value="Phổ thông K-12">Phổ thông K-12</option>
             </select>
           </div>
 
@@ -764,7 +758,9 @@ export function ObservationClient({
                         <div key={registration.id} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-slate-200 transition-all">
                           <div className="space-y-2 min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="px-2 py-0.5 text-[9px] font-extrabold bg-sky-50 text-sky-600 border border-sky-200 rounded-md uppercase tracking-wider">{slot.level}</span>
+                              <span className="px-2 py-0.5 text-[9px] font-extrabold bg-sky-50 text-sky-600 border border-sky-200 rounded-md uppercase tracking-wider">
+                                {["Tiểu học", "THCS", "THPT", "Phổ thông K-12"].includes(slot.level) ? "Phổ thông K-12" : slot.level}
+                              </span>
                               <span className="px-2 py-0.5 text-[9px] font-extrabold bg-amber-50 text-amber-600 border border-amber-200 rounded-md uppercase tracking-wider">{slot.grade}</span>
                               <span className="text-xs font-bold text-slate-400">{slotDate.toLocaleDateString("vi-VN")} · {slot.startTime}</span>
                             </div>
@@ -818,7 +814,9 @@ export function ObservationClient({
                     {/* Tags */}
                     <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
                       <div className="flex flex-wrap gap-1.5">
-                        <span className="px-2.5 py-1 text-[10px] font-extrabold bg-[#E0F2FE] text-[#0284C7] rounded-lg uppercase tracking-wider">{slot.level}</span>
+                        <span className="px-2.5 py-1 text-[10px] font-extrabold bg-[#E0F2FE] text-[#0284C7] rounded-lg uppercase tracking-wider">
+                          {["Tiểu học", "THCS", "THPT", "Phổ thông K-12"].includes(slot.level) ? "Phổ thông K-12" : slot.level}
+                        </span>
                         {slot.teacher?.departmentRel?.name && (
                           <span className="px-2.5 py-1 text-[10px] font-extrabold bg-indigo-50 text-indigo-700 rounded-lg uppercase tracking-wider border border-indigo-100" title={`Tổ chuyên môn gán với Mã GV ${slot.teacher.teacherCode}`}>
                             TCM: {slot.teacher.departmentRel.name}
