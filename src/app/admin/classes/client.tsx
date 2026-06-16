@@ -40,7 +40,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
   const eduSystems = activeTab === "mam-non" ? mnEduSystems : baseEduSystems;
 
   const getGradesList = (level: string, tab: string) => {
-    if (tab === "mam-non") return ["Nhà trẻ 12-24 tháng", "Nhà trẻ 18-36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"];
+    if (tab === "mam-non") return ["Nhà trẻ 12-24 tháng", "Nhà trẻ 18-36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn", "5-6 tuổi"];
     if (level === "Tiểu học") return ["1", "2", "3", "4", "5"];
     if (level === "THCS") return ["6", "7", "8", "9"];
     if (level === "THPT") return ["10", "11", "12"];
