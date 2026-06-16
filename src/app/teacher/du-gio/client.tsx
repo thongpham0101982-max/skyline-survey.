@@ -846,6 +846,11 @@ export function ObservationClient({
                               {observerCount} GV
                               {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                             </button>
+                            <button onClick={() => openEditModal(slot)}
+                              className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 border border-blue-200 hover:bg-blue-100 text-blue-600 rounded-lg text-xs font-bold transition-all">
+                              <FileText className="w-3.5 h-3.5" />
+                              Sửa
+                            </button>
                             <button onClick={() => handleDeleteSlot(slot.id)}
                               className="flex items-center gap-1 px-3 py-1.5 bg-rose-50 border border-rose-200 hover:bg-rose-100 text-rose-600 rounded-lg text-xs font-bold transition-all">
                               <Trash2 className="w-3.5 h-3.5" /> Xóa
