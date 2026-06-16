@@ -201,6 +201,7 @@ export function ObservationClient({
 
   const handleSearch = () => {
     const params = new URLSearchParams(window.location.search)
+    if (filterSchoolBlock && filterSchoolBlock !== "all") params.set("schoolBlock", filterSchoolBlock); else params.delete("schoolBlock")
     if (filterLevel && filterLevel !== "all") params.set("level", filterLevel); else params.delete("level")
     
     if (filterGrade && filterGrade !== "all") params.set("grade", filterGrade); else params.delete("grade")
@@ -210,13 +211,13 @@ export function ObservationClient({
     if (filterDeptId && filterDeptId !== "all") params.set("deptId", filterDeptId); else params.delete("deptId")
     startTransition(async () => {
       router.push(`${pathname}?${params.toString()}`)
-      const res = await getObservationSlots({ level: filterLevel, grade: filterGrade, period: filterPeriod, date: filterDate, campusId: filterCampusId, deptId: filterDeptId })
+      const res = await getObservationSlots({ schoolBlock: filterSchoolBlock, level: filterLevel, grade: filterGrade, period: filterPeriod, date: filterDate, campusId: filterCampusId, deptId: filterDeptId })
       if (res.success && res.slots) { setSlots(res.slots); showToast("Đã cập nhật danh sách tìm kiếm!", "success") }
     })
   }
 
   const refreshSlots = async () => {
-    const res = await getObservationSlots({ level: filterLevel, grade: filterGrade, period: filterPeriod, date: filterDate, campusId: filterCampusId, deptId: filterDeptId })
+    const res = await getObservationSlots({ schoolBlock: filterSchoolBlock, level: filterLevel, grade: filterGrade, period: filterPeriod, date: filterDate, campusId: filterCampusId, deptId: filterDeptId })
     if (res.success && res.slots) setSlots(res.slots)
   }
 
@@ -539,21 +540,14 @@ export function ObservationClient({
             <Search className="w-4 h-4 text-[#00A19A]" /> Lọc thông tin
           </h3>
 
-          {/* Level Filter */}
+                    {/* Khối trường Filter */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Cấp học</label>
-            <select value={filterLevel} onChange={e => { setFilterLevel(e.target.value); setFilterGrade("all") }}
+            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1"><Building2 className="w-3 h-3"/>Khối trường</label>
+            <select value={filterSchoolBlock} onChange={e => { setFilterSchoolBlock(e.target.value); setFilterLevel("all"); setFilterGrade("all") }}
               className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-700 focus:ring-2 focus:ring-[#00A19A] outline-none">
-              <option value="all">Chọn cấp học</option>
-              {isMamNonTeacher ? (
-                <option value="Mầm non">Mầm non</option>
-              ) : (
-                <>
-                  <option value="Tiểu học">Tiểu học</option>
-                  <option value="THCS">THCS</option>
-                  <option value="THPT">THPT</option>
-                </>
-              )}
+              <option value="all">Tất cả khối trường</option>
+              <option value="k12">Phổ thông K-12</option>
+              <option value="mam-non">Mầm non</option>
             </select>
           </div>
 
@@ -579,12 +573,29 @@ export function ObservationClient({
             </select>
           </div>
 
+          {/* Level Filter */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1"><Layers className="w-3 h-3"/>Bậc học</label>
+            <select value={filterLevel} onChange={e => { setFilterLevel(e.target.value); setFilterGrade("all") }}
+              className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-700 focus:ring-2 focus:ring-[#00A19A] outline-none">
+              <option value="all">Tất cả bậc học</option>
+              {(filterSchoolBlock === "all" || filterSchoolBlock === "mam-non") && <option value="Mầm non">Mầm non</option>}
+              {(filterSchoolBlock === "all" || filterSchoolBlock === "k12") && (
+                <>
+                  <option value="Tiểu học">Tiểu học</option>
+                  <option value="THCS">THCS</option>
+                  <option value="THPT">THPT</option>
+                </>
+              )}
+            </select>
+          </div>
+
           {/* Grade Filter */}
           <div className="flex flex-col gap-1.5">
             <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Khối lớp</label>
             <select value={filterGrade} onChange={e => setFilterGrade(e.target.value)} disabled={filterLevel === "all"}
               className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-700 focus:ring-2 focus:ring-[#00A19A] outline-none disabled:opacity-50">
-              <option value="all">Chọn khối lớp</option>
+              <option value="all">Tất cả khối lớp</option>
               {getGradesForLevel(filterLevel).map(g => <option key={g} value={g}>{g}</option>)}
             </select>
           </div>

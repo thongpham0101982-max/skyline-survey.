@@ -68,6 +68,9 @@ export async function getObservationData() {
 }
 
 export async function getObservationSlots(filters: {
+    schoolBlock?: string
+    campusId?: string
+    deptId?: string
     level?: string
     grade?: string
     period?: string
