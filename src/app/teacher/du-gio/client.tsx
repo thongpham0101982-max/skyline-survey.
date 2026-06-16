@@ -889,7 +889,7 @@ export function ObservationClient({
                     <div className="mt-auto pt-3 border-t border-slate-100 flex items-center justify-between gap-2.5">
                       <div className="flex items-center gap-1 text-[11px] text-slate-500 font-bold shrink-0">
                         <Users className="w-3.5 h-3.5 text-slate-400" />
-                        <span>Số GV đăng ký: <span className="text-emerald-600 font-black">{observerCount}</span>/{slot.maxSeats} GV</span>
+                        <span>Số GV đăng ký: <span className="text-emerald-600 font-black">{observerCount}</span>/{Math.min(slot.maxSeats || 4, 4)} GV</span>
                       </div>
 
                       <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
@@ -950,7 +950,7 @@ export function ObservationClient({
                             )}
                           </div>
                         ) : (
-                          <button onClick={() => handleRegister(slot.id)} disabled={observerCount >= slot.maxSeats}
+                          <button onClick={() => handleRegister(slot.id)} disabled={observerCount >= Math.min(slot.maxSeats || 4, 4)}
                             className="px-4 py-1.5 bg-[#00A19A] hover:bg-[#008B85] disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-lg text-xs font-extrabold uppercase tracking-wide transition-all shadow-sm disabled:shadow-none">
                             Đăng ký
                           </button>

@@ -301,7 +301,7 @@ export async function registerObservation(slotId: string) {
       return { success: false, error: "You are already registered for this slot" }
     }
 
-    if (slot.registrations.length >= slot.maxSeats) {
+    if (slot.registrations.length >= Math.min(slot.maxSeats || 4, 4)) {
       return { success: false, error: "This slot is fully booked" }
     }
 
