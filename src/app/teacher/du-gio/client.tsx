@@ -738,6 +738,11 @@ export function ObservationClient({
                     <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
                       <div className="flex flex-wrap gap-1.5">
                         <span className="px-2.5 py-1 text-[10px] font-extrabold bg-[#E0F2FE] text-[#0284C7] rounded-lg uppercase tracking-wider">{slot.level}</span>
+                        {slot.teacher?.departmentRel?.name && (
+                          <span className="px-2.5 py-1 text-[10px] font-extrabold bg-indigo-50 text-indigo-700 rounded-lg uppercase tracking-wider border border-indigo-100" title={`Tổ chuyên môn gán với Mã GV ${slot.teacher.teacherCode}`}>
+                            TCM: {slot.teacher.departmentRel.name}
+                          </span>
+                        )}
                         <span className="px-2.5 py-1 text-[10px] font-extrabold bg-[#FEF3C7] text-[#D97706] rounded-lg uppercase tracking-wider">{slot.grade}</span>
                         {isHost && <span className="px-2 py-0.5 text-[9px] font-bold bg-[#00A19A]/10 border border-[#00A19A]/30 text-[#00A19A] rounded-md">Chủ trì</span>}
                       </div>
