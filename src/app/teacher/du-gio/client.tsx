@@ -199,6 +199,11 @@ export function ObservationClient({
       case "Tiểu học": return ["Khối 1","Khối 2","Khối 3","Khối 4","Khối 5"]
       case "THCS": return ["Khối 6","Khối 7","Khối 8","Khối 9"]
       case "THPT": return ["Khối 10","Khối 11","Khối 12"]
+      case "Phổ thông K-12": return [
+        "Khối 1","Khối 2","Khối 3","Khối 4","Khối 5",
+        "Khối 6","Khối 7","Khối 8","Khối 9",
+        "Khối 10","Khối 11","Khối 12"
+      ]
       default: return []
     }
   }
