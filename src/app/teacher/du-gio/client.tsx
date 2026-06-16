@@ -98,6 +98,7 @@ export function ObservationClient({
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null)
 
   // Filter states
+  const [filterSchoolBlock, setFilterSchoolBlock] = useState(typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('schoolBlock') || 'all' : 'all');
   const [filterLevel, setFilterLevel] = useState(initialFilters.level)
   const [filterGrade, setFilterGrade] = useState(initialFilters.grade)
   const [filterPeriod, setFilterPeriod] = useState("all")
