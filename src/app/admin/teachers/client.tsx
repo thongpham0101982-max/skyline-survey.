@@ -1,3 +1,20 @@
+function PositionBadge({ position }) {
+  if (position === "TTCM") return (
+    <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg border text-[10px] font-black uppercase tracking-wider bg-orange-50 text-orange-700 border-orange-200">
+      TTCM
+    </span>
+  );
+  if (position === "QLCM") return (
+    <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg border text-[10px] font-black uppercase tracking-wider bg-indigo-50 text-indigo-700 border-indigo-200">
+      QLCM
+    </span>
+  );
+  return (
+    <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg border text-[10px] font-black uppercase tracking-wider bg-slate-50 text-slate-600 border-slate-200">
+      GV
+    </span>
+  );
+}
 "use client"
 import { useState, useRef } from "react"
 import {
@@ -14,9 +31,9 @@ const EMPTY_NEW = {
   teacherCode: "", teacherName: "",
   email: "", phone: "",
   dateOfBirth: "", department: "", mainSubject: "", campus: "",
-  additionalCampusIds: []
+  additionalCampusIds: [], position: "GV"
 }
-const EMPTY_EDIT = { teacherName: "", dateOfBirth: "", department: "", mainSubject: "", campusId: "", status: "ACTIVE", email: "", additionalCampusIds: [] }
+const EMPTY_EDIT = { teacherName: "", dateOfBirth: "", department: "", mainSubject: "", campusId: "", status: "ACTIVE", email: "", additionalCampusIds: [], position: "GV" }
 
 const DEPT_COLORS = {
   "KT&DBCL": "bg-[#00A19A]/5 text-[#00A19A] border-[#00A19A]/30",
@@ -83,7 +100,7 @@ export function TeacherManagerClient({
     setSaving(true); setErrorMsg("")
     try {
       const selectedCampus = (campuses || []).find((c) => c.campusName === newForm.campus)
-      await createTeacherAction({ ...newForm, campusId: selectedCampus?.id })
+      await createTeacherAction({ ...newForm, campusId: selectedCampus?.id, position: newForm.position })
       setTeachers([...teachers, {
         id: "temp_" + Date.now(), teacherCode: newForm.teacherCode, teacherName: newForm.teacherName,
         dateOfBirth: newForm.dateOfBirth || null,
@@ -109,21 +126,21 @@ export function TeacherManagerClient({
       dateOfBirth: t.dateOfBirth ? new Date(t.dateOfBirth).toISOString().split("T")[0] : "",
       department: t.department || "", mainSubject: t.mainSubject || "",
       campusId: t.campusId || "", status: t.status || "ACTIVE",
-      email: t.email || "", additionalCampusIds: t.additionalCampusIds || []
+      email: t.email || "", additionalCampusIds: t.additionalCampusIds || [], position: t.position || "GV"
     })
   }
 
   const handleSaveEdit = async (id) => {
     setSaving(true); setErrorMsg("")
     try {
-      await updateTeacherAction({ id, ...editForm })
+      await updateTeacherAction({ id, ...editForm, position: editForm.position })
       setTeachers(teachers.map((t) => t.id === id ? {
         ...t, teacherName: editForm.teacherName, dateOfBirth: editForm.dateOfBirth || null,
         department: editForm.department || null, mainSubject: editForm.mainSubject || null,
         campusId: editForm.campusId || null, email: editForm.email || null,
         campus: (campuses || []).find((c) => c.id === editForm.campusId)?.campusName || null,
         additionalCampuses: (campuses || []).filter((c) => editForm.additionalCampusIds?.includes(c.id)).map((c) => ({ id: c.id, campusName: c.campusName })),
-        additionalCampusIds: editForm.additionalCampusIds || [], status: editForm.status
+        additionalCampusIds: editForm.additionalCampusIds || [], position: editForm.position || "GV", status: editForm.status
       } : t))
       setEditingId(null)
       setSuccessMsg("Đã lưu thay đổi thành công!")
@@ -307,7 +324,7 @@ export function TeacherManagerClient({
             </h3>
             <button onClick={() => { setShowAddForm(false); setErrorMsg("") }} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-all cursor-pointer"><X className="w-5 h-5" /></button>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
             <div>
               <label className="block text-xs font-black text-slate-500 mb-1.5 uppercase tracking-wider">Mã GV *</label>
               <input type="text" value={newForm.teacherCode}
@@ -399,6 +416,7 @@ export function TeacherManagerClient({
                 <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-wider min-w-[200px]">Họ và Tên</th>
                 <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-wider w-40">Cơ sở</th>
                 <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-wider w-48">Tổ chuyên môn</th>
+                <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-wider w-36">Chức vụ</th>
                 <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-wider w-56">Tài khoản đăng nhập</th>
                 <th className="px-5 py-4 text-center text-[11px] font-black uppercase tracking-wider w-32">Trạng thái</th>
                 <th className="px-5 py-4 text-center text-[11px] font-black uppercase tracking-wider w-32">Thao tác</th>

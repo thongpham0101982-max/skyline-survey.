@@ -60,6 +60,7 @@ model Teacher {
   homeroomClass      String?
   campusId           String
   status             String                   @default("ACTIVE")
+  position           String                   @default("GV")
   dateOfBirth        DateTime?
   departmentId       String?
   mainSubjectId      String?

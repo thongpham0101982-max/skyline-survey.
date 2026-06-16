@@ -106,7 +106,7 @@ export async function createTeacherAction(data: any) {
         dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
         departmentId: departmentId,
         mainSubjectId: mainSubjectId,
-        campusId, status: "ACTIVE"
+        campusId, status: "ACTIVE", position: data.position || "GV"
       }
     })
 
@@ -137,6 +137,7 @@ export async function updateTeacherAction(data: any) {
     if (campusId !== undefined) updateData.campusId = campusId
     if (data.status !== undefined) updateData.status = data.status
     if (data.email !== undefined) updateData.email = data.email || null
+    if (data.position !== undefined) updateData.position = data.position
 
     if (data.department !== undefined) {
       updateData.departmentId = await resolveDepartmentId(data.department)

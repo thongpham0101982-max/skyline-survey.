@@ -95,6 +95,7 @@ export default async function TeacherManagerPage() {
     email: t.email || null,
     phone: t.phone || null,
     status: t.status,
+    position: t.position || "GV",
     user: { email: t.user?.email || t.teacherCode, status: t.user?.status || "ACTIVE" }
   }))
 
