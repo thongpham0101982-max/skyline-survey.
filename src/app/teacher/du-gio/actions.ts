@@ -159,24 +159,6 @@ export async function getObservationSlots(filters: {
         }
       }
       
-      const currentBlock = currentTeacher.departmentRel?.blockCM || "";
-      const isCurrentMamNon = currentBlock.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
-      
-      // If current teacher is Mầm non, they only see Mầm non slots
-      if (isCurrentMamNon) {
-        const isSlotMamNon = slot.level?.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
-        if (!isSlotMamNon) {
-          return false;
-        }
-      } else {
-        // If current teacher is NOT Mầm non, they don't see Mầm non slots
-        // assuming they are Phổ thông
-        const isSlotMamNon = slot.level?.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
-        if (isSlotMamNon) {
-          return false;
-        }
-      }
-      
       return true;
     })
 

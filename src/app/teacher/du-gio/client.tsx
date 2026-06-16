@@ -98,7 +98,8 @@ export function ObservationClient({
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null)
 
   // Filter states
-  const [filterSchoolBlock, setFilterSchoolBlock] = useState(typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('schoolBlock') || 'all' : 'all');
+  const [filterSchoolBlock, setFilterSchoolBlock] = useState(typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('schoolBlock') || (isMamNonTeacher ? "mam-non" : "k12") : (isMamNonTeacher ? "mam-non" : "k12"));
+  const [activeDeptTab, setActiveDeptTab] = useState("all");
   const [filterLevel, setFilterLevel] = useState(initialFilters.level)
   const [filterGrade, setFilterGrade] = useState(initialFilters.grade)
   const [filterPeriod, setFilterPeriod] = useState("all")
@@ -475,12 +476,20 @@ export function ObservationClient({
       const isObserver = slot.registrations.some((r: any) => r.teacherId === currentTeacher.id)
       const slotDate = new Date(slot.date)
       const isPast = slotDate < new Date(now.getFullYear(), now.getMonth(), now.getDate())
-      if (activeTab === "dang-ky") return !isHost && !isObserver && !isPast
+      if (activeTab === "dang-ky") {
+        if (isHost || isObserver || isPast) return false;
+        if (activeDeptTab !== "all") {
+          const isMyDept = slot.teacher?.departmentId === currentTeacher.departmentId;
+          if (activeDeptTab === "my-dept" && !isMyDept) return false;
+          if (activeDeptTab === "other-dept" && isMyDept) return false;
+        }
+        return true;
+      }
       if (activeTab === "my-schedule") return isHost
       if (activeTab === "history") return isObserver
       return true
     })
-  }, [slots, activeTab, currentTeacher.id])
+  }, [slots, activeTab, currentTeacher.id, activeDeptTab])
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab)
@@ -541,16 +550,7 @@ export function ObservationClient({
             <Search className="w-4 h-4 text-[#00A19A]" /> Lọc thông tin
           </h3>
 
-                    {/* Khối trường Filter */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1"><Building2 className="w-3 h-3"/>Khối trường</label>
-            <select value={filterSchoolBlock} onChange={e => { setFilterSchoolBlock(e.target.value); setFilterLevel("all"); setFilterGrade("all") }}
-              className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-700 focus:ring-2 focus:ring-[#00A19A] outline-none">
-              <option value="all">Tất cả khối trường</option>
-              <option value="k12">Phổ thông K-12</option>
-              <option value="mam-non">Mầm non</option>
-            </select>
-          </div>
+                    
 
           {/* Campus Filter */}
           <div className="flex flex-col gap-1.5">
