@@ -42,11 +42,11 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
   useEffect(() => { setClasses(initialClasses); setSelectedIds([]) }, [initialClasses])
 
   let filteredClasses = classes.filter((c: any) => c.academicYearId === selectedYearId)
-  const mnLevels = ["Nhà trẻ", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn", "Mầm non"];
+  const mnLevelsLowerCase = ["nhà trẻ", "mẫu giáo bé", "mẫu giáo nhỡ", "mẫu giáo lớn", "mầm non"];
   if (activeTab === "mam-non") {
-    filteredClasses = filteredClasses.filter((c: any) => mnLevels.includes(c.level));
+    filteredClasses = filteredClasses.filter((c: any) => c.level && mnLevelsLowerCase.includes(c.level.toLowerCase()));
   } else {
-    filteredClasses = filteredClasses.filter((c: any) => !mnLevels.includes(c.level));
+    filteredClasses = filteredClasses.filter((c: any) => !c.level || !mnLevelsLowerCase.includes(c.level.toLowerCase()));
   }
   if (selectedCampus) filteredClasses = filteredClasses.filter((c: any) => c.campusId === selectedCampus)
   if (selectedLevel) filteredClasses = filteredClasses.filter((c: any) => c.level === selectedLevel)
@@ -253,7 +253,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
                  <td className="px-4 py-3.5 text-slate-400 text-center">{i + 1}</td>
                  <td className="px-4 py-3.5"><span className="flex items-center gap-1.5"><Building2 className="w-3.5 h-3.5 text-indigo-500" /><span className="text-slate-700">{c.campus}</span></span></td>
                  <td className="px-4 py-3.5">
-                   {c.level ? (<span className={"text-xs px-2 py-1 rounded-full font-medium " + (["Tiểu học", "Tieu hoc", "Nhà trẻ"].includes(c.level) ? "bg-amber-50 text-amber-700" : ["THCS", "Mẫu giáo bé"].includes(c.level) ? "bg-blue-50 text-blue-700" : ["THPT", "Mẫu giáo nhỡ"].includes(c.level) ? "bg-purple-50 text-purple-700" : c.level === "Mẫu giáo lớn" ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600")}>{c.level}</span>) : <span className="text-slate-300">--</span>}
+                   {c.level ? (<span className={"text-xs px-2 py-1 rounded-full font-medium " + (["tiểu học", "tieu hoc", "nhà trẻ"].includes(c.level.toLowerCase()) ? "bg-amber-50 text-amber-700" : ["thcs", "mẫu giáo bé"].includes(c.level.toLowerCase()) ? "bg-blue-50 text-blue-700" : ["thpt", "mẫu giáo nhỡ"].includes(c.level.toLowerCase()) ? "bg-purple-50 text-purple-700" : c.level.toLowerCase() === "mẫu giáo lớn" ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600")}>{c.level}</span>) : <span className="text-slate-300">--</span>}
                  </td>
                  <td className="px-4 py-3.5">
                    {c.grade ? (<span className="flex items-center gap-1.5"><Layers className="w-3.5 h-3.5 text-emerald-500" /><span className="text-slate-700 font-medium">{c.grade}</span></span>) : <span className="text-slate-300">--</span>}
