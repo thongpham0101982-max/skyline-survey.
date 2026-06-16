@@ -8,7 +8,7 @@ import {
   ClipboardList, CheckCircle, Clock3, Building2, Shield
 } from "lucide-react"
 import { 
-  createObservationSlot, registerObservation, cancelObservation,
+  createObservationSlot, updateObservationSlot, registerObservation, cancelObservation,
   deleteObservationSlot, getCreatedCountInMonth, getObservationSlots,
   approveRegistration, submitEvaluation
 } from "./actions"
@@ -127,6 +127,7 @@ export function ObservationClient({
   const [newLessonPlanData, setNewLessonPlanData] = useState("")
   const [monthlyLimitCount, setMonthlyLimitCount] = useState(0)
   const [submitting, setSubmitting] = useState(false)
+  const [editSlotId, setEditSlotId] = useState<string | null>(null)
 
   // Expanded slot registrants (for host view)
   const [expandedSlotId, setExpandedSlotId] = useState<string | null>(null)
@@ -424,7 +425,7 @@ export function ObservationClient({
     })
     setSubmitting(false)
     if (res.success) {
-      showToast("Tạo tiết dạy dự giờ mới thành công!", "success")
+      showToast(editSlotId ? "Cập nhật tiết dạy thành công!" : "Tạo tiết dạy dự giờ mới thành công!", "success")
       setShowCreateModal(false)
       setNewSubjectId(""); setNewSubjectName(""); setNewLevel(""); setNewGrade(""); setNewClassId("")
       setNewClassNameText(""); setNewTopic(""); setNewDate(""); setNewStartTime("Tiết 1"); setNewEndTime("Tiết 1")
@@ -1113,7 +1114,7 @@ export function ObservationClient({
                 <button type="button" onClick={() => setShowCreateModal(false)} className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all text-sm">Hủy</button>
                 <button type="submit" disabled={submitting || monthlyLimitCount >= 2}
                   className="px-6 py-2.5 bg-[#00A19A] hover:bg-[#008B85] disabled:bg-slate-200 disabled:text-slate-400 text-white font-extrabold rounded-xl transition-all shadow-md text-sm shrink-0">
-                  {submitting ? "Đang lưu..." : "Lưu tiết dạy"}
+                  {submitting ? "Đang lưu..." : (editSlotId ? "Cập nhật" : "Lưu tiết dạy")}
                 </button>
               </div>
             </form>

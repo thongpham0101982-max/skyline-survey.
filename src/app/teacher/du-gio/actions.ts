@@ -497,3 +497,84 @@ export async function submitEvaluation(data: {
     return { success: true }
   } catch (e: any) { return { success: false, error: e.message } }
 }
+
+export async function updateObservationSlot(slotId: string, data: {
+  subjectId?: string
+  subjectName: string
+  level: string
+  grade: string
+  topic: string
+  date: string
+  startTime: string
+  endTime: string
+  isDoublePeriod: boolean
+  room?: string
+  description?: string
+  visibilityType: string
+  targetDeptId?: string
+  campusId?: string
+  campusName?: string
+  classId?: string
+  className?: string
+  lessonPlanName?: string
+  lessonPlanData?: string
+}) {
+  try {
+    const session = await auth()
+    if (!session || !session.user) {
+      return { success: false, error: "Unauthorized" }
+    }
+
+    const currentTeacher = await prisma.teacher.findUnique({
+      where: { userId: session.user.id }
+    })
+
+    if (!currentTeacher) {
+      return { success: false, error: "Teacher profile not found" }
+    }
+
+    const slot = await prisma.observationSlot.findUnique({
+      where: { id: slotId }
+    })
+
+    if (!slot) {
+      return { success: false, error: "Observation slot not found" }
+    }
+
+    if (slot.teacherId !== currentTeacher.id) {
+      return { success: false, error: "You can only edit your own observation slots" }
+    }
+
+    const slotDate = new Date(data.date)
+
+    const updatedSlot = await prisma.observationSlot.update({
+      where: { id: slotId },
+      data: {
+        subjectId: data.subjectId || null,
+        subjectName: data.subjectName,
+        level: data.level,
+        grade: data.grade,
+        topic: data.topic,
+        date: slotDate,
+        startTime: data.startTime,
+        endTime: data.endTime,
+        isDoublePeriod: data.isDoublePeriod,
+        room: data.room || null,
+        description: data.description || null,
+        visibilityType: data.visibilityType,
+        targetDeptId: data.targetDeptId || null,
+        campusId: data.campusId || null,
+        campusName: data.campusName || null,
+        classId: data.classId || null,
+        className: data.className || null,
+        lessonPlanName: data.lessonPlanName !== undefined ? data.lessonPlanName : slot.lessonPlanName,
+        lessonPlanData: data.lessonPlanData !== undefined ? data.lessonPlanData : slot.lessonPlanData
+      }
+    })
+
+    revalidatePath("/teacher/du-gio")
+    return { success: true, slot: updatedSlot }
+  } catch (e: any) {
+    return { success: false, error: e.message }
+  }
+}
