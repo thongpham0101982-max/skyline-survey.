@@ -614,7 +614,7 @@ export function ObservationClient({
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-slate-200 gap-1 bg-slate-100 p-1.5 rounded-xl">
+      <div className="flex border border-slate-200/60 gap-1.5 bg-slate-100/80 p-1.5 rounded-2xl mb-2 backdrop-blur-sm">
         {[
           ["dang-ky", "Đăng ký dự giờ", <Calendar className="w-4 h-4" key="c"/>],
           ["my-schedule", "Lịch của tôi", <Layers className="w-4 h-4" key="l"/>],
@@ -622,7 +622,7 @@ export function ObservationClient({
           ["evaluation-results", "Kết quả đánh giá", <CheckCircle className="w-4 h-4" key="e"/>]
         ].map(([tab, label, icon]) => (
           <button key={tab as string} onClick={() => handleTabChange(tab as string)}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-extrabold uppercase tracking-wider transition-all duration-200 ${activeTab === tab ? "bg-white text-[#0A3230] shadow-sm font-black" : "text-slate-500 hover:text-slate-800 hover:bg-white/40"}`}>
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-wider transition-all duration-300 ${activeTab === tab ? "bg-gradient-to-r from-[#0A3230] to-[#00A19A] text-white shadow-md font-black scale-105" : "text-slate-600 hover:text-slate-900 hover:bg-white/60"}`}>
             {icon as React.ReactNode}{label as string}
           </button>
         ))}
@@ -631,7 +631,7 @@ export function ObservationClient({
       {/* Main Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
         {/* Filters */}
-        <div className="bg-white p-5 rounded-2xl border-2 border-slate-100 shadow-sm flex flex-col gap-4">
+        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-md shadow-slate-100/40 flex flex-col gap-5 border-t-4 border-t-[#0A3230]">
           <h3 className="font-extrabold text-sm text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-3 flex items-center gap-2">
             <Search className="w-4 h-4 text-[#00A19A]" /> Lọc thông tin
           </h3>
@@ -642,7 +642,7 @@ export function ObservationClient({
           <div className="flex flex-col gap-1.5">
             <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1"><Building2 className="w-3 h-3"/>Cơ sở</label>
             <select value={filterCampusId} onChange={e => setFilterCampusId(e.target.value)}
-              className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-700 focus:ring-2 focus:ring-[#00A19A] outline-none">
+              className="w-full text-sm rounded-xl border border-slate-200/80 p-2.5 bg-slate-50/50 text-slate-700 hover:border-[#00A19A]/50 focus:border-[#00A19A] focus:bg-white focus:ring-2 focus:ring-[#00A19A]/20 transition-all outline-none">
               <option value="all">Tất cả cơ sở</option>
               {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
             </select>
@@ -654,7 +654,7 @@ export function ObservationClient({
           <div className="flex flex-col gap-1.5">
             <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1"><Layers className="w-3 h-3"/>Bậc học</label>
             <select value={filterLevel} onChange={e => { setFilterLevel(e.target.value); setFilterGrade("all") }}
-              className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-700 focus:ring-2 focus:ring-[#00A19A] outline-none">
+              className="w-full text-sm rounded-xl border border-slate-200/80 p-2.5 bg-slate-50/50 text-slate-700 hover:border-[#00A19A]/50 focus:border-[#00A19A] focus:bg-white focus:ring-2 focus:ring-[#00A19A]/20 transition-all outline-none">
               <option value="all">Tất cả bậc học</option>
               <option value="Mầm non">Mầm non</option>
               <option value="Phổ thông K-12">Phổ thông K-12</option>
@@ -675,14 +675,14 @@ export function ObservationClient({
           <div className="flex flex-col gap-1.5">
             <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Ngày dạy</label>
             <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)}
-              className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-700 focus:ring-2 focus:ring-[#00A19A] outline-none" />
+              className="w-full text-sm rounded-xl border border-slate-200/80 p-2.5 bg-slate-50/50 text-slate-700 hover:border-[#00A19A]/50 focus:border-[#00A19A] focus:bg-white focus:ring-2 focus:ring-[#00A19A]/20 transition-all outline-none" />
           </div>
 
           {/* Period Filter */}
           <div className="flex flex-col gap-1.5">
             <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1"><Clock className="w-3 h-3"/>Tiết dạy</label>
             <select value={filterPeriod} onChange={e => setFilterPeriod(e.target.value)}
-              className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-700 focus:ring-2 focus:ring-[#00A19A] outline-none">
+              className="w-full text-sm rounded-xl border border-slate-200/80 p-2.5 bg-slate-50/50 text-slate-700 hover:border-[#00A19A]/50 focus:border-[#00A19A] focus:bg-white focus:ring-2 focus:ring-[#00A19A]/20 transition-all outline-none">
               <option value="all">Tất cả tiết</option>
               {[1, 2, 3, 4, 5, 6, 7, 8].map(p => <option key={p} value={`Tiết ${p}`}>Tiết {p}</option>)}
             </select>
@@ -703,11 +703,11 @@ export function ObservationClient({
               <div className="flex gap-2">
                 
                 <button onClick={() => setActiveDeptTab("my-dept")}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${activeDeptTab === "my-dept" ? "bg-[#00A19A] text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
+                  className={`px-4 py-1.5 text-xs font-bold rounded-xl transition-all duration-300 shadow-sm ${activeDeptTab === "my-dept" ? "bg-gradient-to-r from-[#0A3230] to-[#00A19A] text-white" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
                   Tiết dạy thuộc TCM
                 </button>
                 <button onClick={() => setActiveDeptTab("other-dept")}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${activeDeptTab === "other-dept" ? "bg-[#00A19A] text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
+                  className={`px-4 py-1.5 text-xs font-bold rounded-xl transition-all duration-300 shadow-sm ${activeDeptTab === "other-dept" ? "bg-gradient-to-r from-[#0A3230] to-[#00A19A] text-white" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
                   Tiết dạy TCM khác
                 </button>
               </div>
@@ -815,7 +815,7 @@ export function ObservationClient({
                 const slotDate = new Date(slot.date)
 
                 return (
-                  <div key={slot.id} className="bg-white rounded-2xl border-2 border-slate-100 p-5 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col gap-4 group relative overflow-hidden">
+                  <div key={slot.id} className="bg-white rounded-2xl border border-slate-100/80 p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col gap-4 group relative overflow-hidden border-l-4 border-l-[#00A19A]">
                     {/* Tags */}
                     <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
                       <div className="flex flex-wrap gap-1.5">
