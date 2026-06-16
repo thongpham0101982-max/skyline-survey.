@@ -94,14 +94,11 @@ export async function getObservationSlots(filters: {
     if (filters.level && filters.level !== "all") {
       where.level = filters.level
     }
-    if (filters.subjectId && filters.subjectId !== "all") {
-      where.subjectId = filters.subjectId
-    }
     if (filters.grade && filters.grade !== "all") {
       where.grade = filters.grade
     }
-    if (filters.teacherId && filters.teacherId !== "all") {
-      where.teacherId = filters.teacherId
+    if (filters.period && filters.period !== "all") {
+      where.startTime = filters.period
     }
     if (filters.date) {
       const filterDate = new Date(filters.date)
