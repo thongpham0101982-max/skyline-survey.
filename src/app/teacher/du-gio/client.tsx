@@ -159,6 +159,28 @@ export function ObservationClient({
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  const openEditModal = (slot: any) => {
+    setEditSlotId(slot.id);
+    setNewSubjectId(slot.subjectId || "other");
+    setNewSubjectName(slot.subjectName || "");
+    setNewLevel(slot.level || "");
+    setNewGrade(slot.grade ? (slot.level === "Mầm non" ? slot.grade : "Khoi " + slot.grade) : "");
+    setNewCampusId(slot.campusId || "");
+    setNewClassId(slot.classId || "other");
+    setNewClassNameText(slot.className || "");
+    setNewTopic(slot.topic || "");
+    setNewDate(new Date(slot.date).toISOString().split('T')[0]);
+    setNewStartTime(slot.startTime || "Tiết 1");
+    setNewEndTime(slot.endTime || "Tiết 1");
+    setNewIsDoublePeriod(slot.isDoublePeriod || false);
+    setNewDescription(slot.description || "");
+    setNewVisibility(slot.visibilityType || "ALL");
+    setNewTargetDeptId(slot.targetDeptId || "");
+    setNewLessonPlanName(slot.lessonPlanName || "");
+    setNewLessonPlanData(slot.lessonPlanData || "");
+    setShowCreateModal(true);
+  };
+
   const openCreateModal = () => {
     resetCreateForm();
     setShowCreateModal(true);
