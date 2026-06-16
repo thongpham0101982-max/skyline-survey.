@@ -26,6 +26,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
   const [selectedYearId, setSelectedYearId] = useState<string>(() => getDefaultAcademicYearClient(academicYears)?.id || "")
   const [selectedCampus, setSelectedCampus] = useState(defaultCampusId || "")
   const [selectedLevel, setSelectedLevel] = useState("")
+  const [selectedGrade, setSelectedGrade] = useState("")
   const [selectedEduSystem, setSelectedEduSystem] = useState("")
   const [uploading, setUploading] = useState(false)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -38,6 +39,15 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
   const mnEduSystems = [{ id: 'mns', code: 'MNS', name: 'Mầm non S' }, { id: 'mng', code: 'MNG', name: 'Mầm non Global' }];
   const eduSystems = activeTab === "mam-non" ? mnEduSystems : baseEduSystems;
 
+  const getAvailableGrades = () => {
+    if (activeTab === "mam-non") return ["Nhà trẻ", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"];
+    if (selectedLevel === "Tiểu học") return ["1", "2", "3", "4", "5"];
+    if (selectedLevel === "THCS") return ["6", "7", "8", "9"];
+    if (selectedLevel === "THPT") return ["10", "11", "12"];
+    return ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"];
+  }
+
+
   useEffect(() => { setClasses(initialClasses); setSelectedIds([]) }, [initialClasses])
 
   let filteredClasses = classes.filter((c: any) => c.academicYearId === selectedYearId)
@@ -49,6 +59,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
   }
   if (selectedCampus) filteredClasses = filteredClasses.filter((c: any) => c.campusId === selectedCampus)
   if (selectedLevel) filteredClasses = filteredClasses.filter((c: any) => c.level === selectedLevel)
+  if (selectedGrade) filteredClasses = filteredClasses.filter((c: any) => c.grade === selectedGrade)
   if (selectedEduSystem) filteredClasses = filteredClasses.filter((c: any) => c.educationSystem === selectedEduSystem)
 
   const handleDownloadTemplate = () => {
@@ -162,11 +173,11 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
     <div className="space-y-6">
       {/* Tabs */}
       <div className="flex border-b border-slate-200 gap-1 bg-slate-100 p-1.5 rounded-xl w-fit">
-        <button onClick={() => { setActiveTab("k12"); setSelectedLevel(""); setSelectedEduSystem("") }}
+        <button onClick={() => { setActiveTab("k12"); setSelectedLevel(""); setSelectedGrade(""); setSelectedEduSystem("") }}
           className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-extrabold uppercase tracking-wider transition-all duration-200 ${activeTab === "k12" ? "bg-blue-600 text-white shadow-md ring-2 ring-blue-600/20" : "text-slate-500 hover:text-blue-700 hover:bg-blue-100"}`}>
           <GraduationCap className="w-5 h-5" /> Phổ thông K-12
         </button>
-        <button onClick={() => { setActiveTab("mam-non"); setSelectedLevel(""); setSelectedEduSystem("") }}
+        <button onClick={() => { setActiveTab("mam-non"); setSelectedLevel(""); setSelectedGrade(""); setSelectedEduSystem("") }}
           className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-extrabold uppercase tracking-wider transition-all duration-200 ${activeTab === "mam-non" ? "bg-emerald-600 text-white shadow-md ring-2 ring-emerald-600/20" : "text-slate-500 hover:text-emerald-700 hover:bg-emerald-100"}`}>
           <Layers className="w-5 h-5" /> Mầm non
         </button>
@@ -195,11 +206,21 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
         <div className="flex items-center gap-2">
           <GraduationCap className="w-5 h-5 text-emerald-600" />
           <label className="font-semibold text-slate-700 text-sm">Bậc học:</label>
-          <select value={selectedLevel} onChange={e => setSelectedLevel(e.target.value)}
+          <select value={selectedLevel} onChange={e => { setSelectedLevel(e.target.value); setSelectedGrade(""); }}
             className="border rounded-lg p-2 text-sm min-w-[140px] outline-none focus:ring-2 focus:ring-emerald-300">
             {(activeTab === "mam-non" ? MN_LEVELS : K12_LEVELS).map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
           </select>
         </div>
+        <div className="flex items-center gap-2">
+          <BookOpen className="w-5 h-5 text-indigo-600" />
+          <label className="font-semibold text-slate-700 text-sm">Khối học:</label>
+          <select value={selectedGrade} onChange={e => setSelectedGrade(e.target.value)}
+            className="border rounded-lg p-2 text-sm min-w-[120px] outline-none focus:ring-2 focus:ring-indigo-300">
+            <option value="">Tất cả</option>
+            {getAvailableGrades().map(g => <option key={g} value={g}>{g}</option>)}
+          </select>
+        </div>
+
         <div className="flex items-center gap-2">
           <Layers className="w-5 h-5 text-purple-600" />
           <label className="font-semibold text-slate-700 text-sm">Hệ học:</label>
