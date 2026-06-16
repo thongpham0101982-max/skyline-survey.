@@ -206,7 +206,7 @@ export function TeacherManagerClient({
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white border border-slate-100 rounded-2xl p-5 flex items-center gap-4 hover:border-[#00A19A]/30 hover:shadow-md transition-all duration-300 shadow-xs">
+        <div className="bg-white border border-slate-100 rounded-2xl p-6 flex items-center gap-4 hover:border-[#00A19A]/30 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 shadow-sm border-l-4 border-l-[#00A19A]">
           <div className="w-12 h-12 rounded-xl bg-[#00A19A]/10 flex items-center justify-center flex-shrink-0">
             <Users className="w-6 h-6 text-[#00A19A]" />
           </div>
@@ -215,7 +215,7 @@ export function TeacherManagerClient({
             <p className="text-[10px] text-slate-400 mt-1.5 uppercase tracking-wider font-bold">Tổng giáo viên</p>
           </div>
         </div>
-        <div className="bg-white border border-slate-100 rounded-2xl p-5 flex items-center gap-4 hover:border-emerald-550/30 hover:shadow-md transition-all duration-300 shadow-xs">
+        <div className="bg-white border border-slate-100 rounded-2xl p-6 flex items-center gap-4 hover:border-emerald-500/30 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 shadow-sm border-l-4 border-l-emerald-550">
           <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
             <UserCheck className="w-6 h-6 text-emerald-600" />
           </div>
@@ -224,7 +224,7 @@ export function TeacherManagerClient({
             <p className="text-[10px] text-slate-400 mt-1.5 uppercase tracking-wider font-bold">Đang hoạt động</p>
           </div>
         </div>
-        <div className="bg-white border border-slate-100 rounded-2xl p-5 flex items-center gap-4 hover:border-violet-500/30 hover:shadow-md transition-all duration-300 shadow-xs">
+        <div className="bg-white border border-slate-100 rounded-2xl p-6 flex items-center gap-4 hover:border-violet-500/30 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 shadow-sm border-l-4 border-l-violet-600">
           <div className="w-12 h-12 rounded-xl bg-violet-50 flex items-center justify-center flex-shrink-0">
             <Building2 className="w-6 h-6 text-violet-600" />
           </div>
@@ -233,7 +233,7 @@ export function TeacherManagerClient({
             <p className="text-[10px] text-slate-400 mt-1.5 uppercase tracking-wider font-bold">Tổ chuyên môn</p>
           </div>
         </div>
-        <div className="bg-white border border-slate-100 rounded-2xl p-5 flex items-center gap-4 hover:border-amber-500/30 hover:shadow-md transition-all duration-300 shadow-xs">
+        <div className="bg-white border border-slate-100 rounded-2xl p-6 flex items-center gap-4 hover:border-amber-500/30 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 shadow-sm border-l-4 border-l-amber-500">
           <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0">
             <GraduationCap className="w-6 h-6 text-amber-650" />
           </div>
@@ -245,13 +245,13 @@ export function TeacherManagerClient({
       </div>
 
       {/* Toolbar */}
-      <div className="bg-white border border-slate-100 rounded-2xl p-5 space-y-4 shadow-sm">
+      <div className="bg-white border border-slate-100 shadow-md shadow-slate-100/40 rounded-3xl p-6 space-y-4 border-t-4 border-t-[#00A19A]">
         <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center">
           <div className="relative flex-1 min-w-0">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input type="text" placeholder="Tìm tên, mã GV, cơ sở..."
               value={search} onChange={e => setSearch(e.target.value)}
-              className="w-full pl-10 pr-9 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/10 outline-none transition-all bg-white font-medium" />
+              className="w-full pl-10 pr-9 py-2.5 border border-slate-200 rounded-xl text-sm hover:border-[#00A19A]/50 focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/15 outline-none transition-all bg-white font-semibold" />
             {search && <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"><X className="w-4 h-4" /></button>}
           </div>
           <div className="flex flex-wrap items-center gap-2 justify-start lg:justify-end">
@@ -263,7 +263,7 @@ export function TeacherManagerClient({
               <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleFileImport} className="hidden" disabled={importing} />
             </label>
             <button onClick={() => { setShowAddForm(true); setErrorMsg("") }}
-              className="flex items-center gap-1.5 px-5 py-2.5 bg-[#00A19A] hover:bg-[#135E5B] text-white rounded-xl text-sm font-black transition-all active:scale-95 whitespace-nowrap cursor-pointer shadow-md shadow-teal-500/10">
+              className="flex items-center gap-1.5 px-5 py-2.5 bg-gradient-to-r from-[#0A3230] to-[#00A19A] hover:brightness-110 text-white rounded-xl text-sm font-black transition-all active:scale-95 whitespace-nowrap cursor-pointer shadow-md shadow-[#00A19A]/15">
               <Plus className="w-4 h-4" />Thêm GV Mới
             </button>
           </div>
@@ -271,17 +271,17 @@ export function TeacherManagerClient({
         <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100">
           <span className="text-xs font-black text-slate-450 uppercase tracking-widest flex items-center gap-1.5 mr-2"><Filter className="w-3.5 h-3.5" />Bộ lọc:</span>
           <select value={filterDepartment} onChange={e => setFilterDepartment(e.target.value)}
-            className={`border rounded-xl px-3 py-1.5 text-xs font-bold outline-none bg-white transition-all cursor-pointer ${filterDepartment ? "border-[#00A19A] text-[#00A19A] bg-[#00A19A]/5" : "border-slate-200 text-slate-655 focus:border-[#00A19A]"}`}>
+            className={`border rounded-xl px-3.5 py-2 text-xs font-bold outline-none bg-white transition-all cursor-pointer ${filterDepartment ? "border-[#00A19A] text-[#00A19A] bg-[#00A19A]/5" : "border-slate-200 text-slate-600 hover:border-[#00A19A]/40 focus:border-[#00A19A]"}`}>
             <option value="">Tất cả Tổ CM</option>
             {(departments || []).map((d) => <option key={d.id} value={d.name}>{d.name}</option>)}
           </select>
           <select value={filterSubject} onChange={e => setFilterSubject(e.target.value)}
-            className={`border rounded-xl px-3 py-1.5 text-xs font-bold outline-none bg-white transition-all cursor-pointer ${filterSubject ? "border-[#00A19A] text-[#00A19A] bg-[#00A19A]/5" : "border-slate-200 text-slate-655 focus:border-[#00A19A]"}`}>
+            className={`border rounded-xl px-3.5 py-2 text-xs font-bold outline-none bg-white transition-all cursor-pointer ${filterSubject ? "border-[#00A19A] text-[#00A19A] bg-[#00A19A]/5" : "border-slate-200 text-slate-600 hover:border-[#00A19A]/40 focus:border-[#00A19A]"}`}>
             <option value="">Tất cả Môn dạy</option>
             {(subjects || []).map((s) => <option key={s.id} value={s.subjectName}>{s.subjectName}</option>)}
           </select>
           <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
-            className={`border rounded-xl px-3 py-1.5 text-xs font-bold outline-none bg-white transition-all cursor-pointer ${filterStatus ? "border-[#00A19A] text-[#00A19A] bg-[#00A19A]/5" : "border-slate-200 text-slate-655 focus:border-[#00A19A]"}`}>
+            className={`border rounded-xl px-3.5 py-2 text-xs font-bold outline-none bg-white transition-all cursor-pointer ${filterStatus ? "border-[#00A19A] text-[#00A19A] bg-[#00A19A]/5" : "border-slate-200 text-slate-600 hover:border-[#00A19A]/40 focus:border-[#00A19A]"}`}>
             <option value="">Tất cả Trạng thái</option>
             <option value="ACTIVE">Đang dạy</option>
             <option value="INACTIVE">Nghỉ dạy</option>
@@ -380,7 +380,7 @@ export function TeacherManagerClient({
       )}
 
       {/* Table */}
-      <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
+      <div className="bg-white border border-slate-150 rounded-3xl overflow-hidden shadow-md shadow-slate-100/40 border-t-4 border-t-[#0A3230]">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-150 bg-slate-50/50">
           <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
             Danh sách giáo viên{hasFilters && <span className="ml-1.5 text-[#00A19A] font-black">| Đang lọc: {displayed.length} kết quả</span>}
@@ -393,15 +393,15 @@ export function TeacherManagerClient({
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-200 bg-slate-50/30 text-slate-400">
-                <th className="px-5 py-3.5 text-left text-[10px] font-black uppercase tracking-wider w-12">#</th>
-                <th className="px-5 py-3.5 text-left text-[10px] font-black uppercase tracking-wider w-28">Mã GV</th>
-                <th className="px-5 py-3.5 text-left text-[10px] font-black uppercase tracking-wider min-w-[200px]">Họ và Tên</th>
-                <th className="px-5 py-3.5 text-left text-[10px] font-black uppercase tracking-wider w-40">Cơ sở</th>
-                <th className="px-5 py-3.5 text-left text-[10px] font-black uppercase tracking-wider w-48">Tổ chuyên môn</th>
-                <th className="px-5 py-3.5 text-left text-[10px] font-black uppercase tracking-wider w-56">Tài khoản đăng nhập</th>
-                <th className="px-5 py-3.5 text-center text-[10px] font-black uppercase tracking-wider w-32">Trạng thái</th>
-                <th className="px-5 py-3.5 text-center text-[10px] font-black uppercase tracking-wider w-32">Thao tác</th>
+              <tr className="border-b border-slate-200 bg-[#0A3230] text-white">
+                <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-wider w-12">#</th>
+                <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-wider w-28">Mã GV</th>
+                <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-wider min-w-[200px]">Họ và Tên</th>
+                <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-wider w-40">Cơ sở</th>
+                <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-wider w-48">Tổ chuyên môn</th>
+                <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-wider w-56">Tài khoản đăng nhập</th>
+                <th className="px-5 py-4 text-center text-[11px] font-black uppercase tracking-wider w-32">Trạng thái</th>
+                <th className="px-5 py-4 text-center text-[11px] font-black uppercase tracking-wider w-32">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
