@@ -53,15 +53,26 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
   if (selectedEduSystem) filteredClasses = filteredClasses.filter((c: any) => c.educationSystem === selectedEduSystem)
 
   const handleDownloadTemplate = () => {
-    const ws = xlsx.utils.json_to_sheet([
+    const k12Data = [
       { "Mã lớp*": "C-26-1", "Cơ sở": "CS1", "Bậc học": "THCS", "Khối lớp": "6", "Tên lớp*": "6A1", "Hệ học": "HNG", "Sỹ số": 35, "GVCN": "Nguyễn Văn A" },
       { "Mã lớp*": "C-26-2", "Cơ sở": "CS2", "Bậc học": "THPT", "Khối lớp": "10", "Tên lớp*": "10A1", "Hệ học": "SB", "Sỹ số": 32, "GVCN": "Trần Thị B" },
-      { "Mã lớp*": "C-26-3", "Cơ sở": "CS1", "Bậc học": "THCS", "Khối lớp": "6", "Tên lớp*": "6B1", "Hệ học": "HNS", "Sỹ số": 30, "GVCN": "" }
-    ], { header: ["Mã lớp*", "Cơ sở", "Bậc học", "Khối lớp", "Tên lớp*", "Hệ học", "Sỹ số", "GVCN"] })
+      { "Mã lớp*": "C-26-3", "Cơ sở": "CS1", "Bậc học": "Tiểu học", "Khối lớp": "1", "Tên lớp*": "1A1", "Hệ học": "HNS", "Sỹ số": 30, "GVCN": "" }
+    ];
+    
+    const mnData = [
+      { "Mã lớp*": "MN-26-1", "Cơ sở": "CS1", "Bậc học": "Nhà trẻ", "Khối lớp": "Nhà trẻ", "Tên lớp*": "Chồi 1", "Hệ học": "MNS", "Sỹ số": 20, "GVCN": "Nguyễn Thị Mầm" },
+      { "Mã lớp*": "MN-26-2", "Cơ sở": "CS2", "Bậc học": "Mẫu giáo bé", "Khối lớp": "Mầm", "Tên lớp*": "Mầm 1", "Hệ học": "MNG", "Sỹ số": 25, "GVCN": "Trần Thị Non" },
+      { "Mã lớp*": "MN-26-3", "Cơ sở": "CS1", "Bậc học": "Mẫu giáo lớn", "Khối lớp": "Lá", "Tên lớp*": "Lá 1", "Hệ học": "MNS", "Sỹ số": 25, "GVCN": "" }
+    ];
+
+    const dataToExport = activeTab === "mam-non" ? mnData : k12Data;
+    const fileName = activeTab === "mam-non" ? "Form_Mau_Them_Lop_Mam_Non.xlsx" : "Form_Mau_Them_Lop_Pho_Thong.xlsx";
+
+    const ws = xlsx.utils.json_to_sheet(dataToExport, { header: ["Mã lớp*", "Cơ sở", "Bậc học", "Khối lớp", "Tên lớp*", "Hệ học", "Sỹ số", "GVCN"] })
     ws['!cols'] = [{ wch: 15 }, { wch: 15 }, { wch: 12 }, { wch: 10 }, { wch: 15 }, { wch: 10 }, { wch: 8 }, { wch: 25 }]
     const wb = xlsx.utils.book_new()
     xlsx.utils.book_append_sheet(wb, ws, "Danh_sach_lop")
-    xlsx.writeFile(wb, "Form_Mau_Them_Lop.xlsx")
+    xlsx.writeFile(wb, fileName)
   }
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
