@@ -94,7 +94,7 @@ export function ObservationClient({
   const [slots, setSlots] = useState(initialSlots)
   const [activeTab, setActiveTab] = useState(activeTabParam)
   const [isPending, startTransition] = useTransition()
-  const [isFilterPending, startFilterTransition] = useTransition()
+  const [isSearching, setIsSearching] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null)
 
@@ -270,7 +270,7 @@ export function ObservationClient({
     } catch { showToast("Lỗi hiển thị giáo án PDF!", "error") }
   }
 
-  const handleSearch = useCallback(() => {
+  const handleSearch = useCallback(async () => {
     const params = new URLSearchParams(window.location.search)
     if (filterSchoolBlock && filterSchoolBlock !== "all") params.set("schoolBlock", filterSchoolBlock); else params.delete("schoolBlock")
     if (filterLevel && filterLevel !== "all") params.set("level", filterLevel); else params.delete("level")
@@ -280,12 +280,18 @@ export function ObservationClient({
     if (filterDate) params.set("date", filterDate); else params.delete("date")
     if (filterCampusId && filterCampusId !== "all") params.set("campusId", filterCampusId); else params.delete("campusId")
     if (filterDeptId && filterDeptId !== "all") params.set("deptId", filterDeptId); else params.delete("deptId")
-    startFilterTransition(async () => {
+    
+    setIsSearching(true)
+    try {
       router.push(`${pathname}?${params.toString()}`)
       const res = await getObservationSlots({ schoolBlock: filterSchoolBlock, level: filterLevel, grade: filterGrade, period: filterPeriod, date: filterDate, campusId: filterCampusId, deptId: filterDeptId })
       if (res.success && res.slots) { setSlots(res.slots) }
-    })
-  }, [filterSchoolBlock, filterLevel, filterGrade, filterPeriod, filterDate, filterCampusId, filterDeptId, router, pathname, startFilterTransition])
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setIsSearching(false)
+    }
+  }, [filterSchoolBlock, filterLevel, filterGrade, filterPeriod, filterDate, filterCampusId, filterDeptId, router, pathname])
 
   // Auto-apply filters on change (debounced)
   useEffect(() => {
@@ -733,7 +739,7 @@ export function ObservationClient({
               )}
 
               {/* Loading Indicator */}
-              {isFilterPending && (
+              {isSearching && (
                 <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-sky-50 border border-sky-100">
                   <div className="w-3 h-3 border-2 border-sky-400 border-t-transparent rounded-full animate-spin" />
                   <span className="text-[11px] font-bold text-sky-600">Đang cập nhật...</span>
