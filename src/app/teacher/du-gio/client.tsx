@@ -455,70 +455,6 @@ export function ObservationClient({
     return "Không xếp loại"
   }
 
-  const getK12RankingReason = (scores: number[]) => {
-    const sum = scores.reduce((a, b) => a + b, 0);
-    const yq1 = scores[0];
-    const yq3 = scores[2];
-    const yq6 = scores[5];
-    const yq7 = scores[6];
-    const maxScores = [1.5, 1.5, 2.0, 2.0, 1.0, 2.0, 3.0, 2.0, 2.0, 2.0, 1.0];
-
-    const currentRank = calculateK12Ranking(scores);
-    if (currentRank === "Giỏi") return "";
-
-    const reasons = [];
-
-    if (currentRank === "Khá") {
-      if (sum < 17) reasons.push(`Tổng ĐTB (${sum.toFixed(2)}) < 17.00đ`);
-      if (yq1 < 1.5) reasons.push(`YC1 (${yq1.toFixed(2)}đ) < 1.50đ`);
-      if (yq3 < 2.0) reasons.push(`YC3 (${yq3.toFixed(2)}đ) < 2.00đ`);
-      if (yq6 < 2.0) reasons.push(`YC6 (${yq6.toFixed(2)}đ) < 2.00đ`);
-      if (yq7 < 3.0) reasons.push(`YC7 (${yq7.toFixed(2)}đ) < 3.00đ`);
-      
-      const failedOthers = [];
-      scores.forEach((s, idx) => {
-        if ([0, 2, 5, 6].includes(idx)) return;
-        if (s < maxScores[idx] * 0.5) {
-          failedOthers.push(idx + 1);
-        }
-      });
-      if (failedOthers.length > 0) {
-        reasons.push(`YC ${failedOthers.join(", ")} < 50% max`);
-      }
-    } else if (currentRank === "Trung bình") {
-      if (sum < 14) reasons.push(`Tổng ĐTB (${sum.toFixed(2)}) < 14.00đ`);
-      if (yq3 < 2.0) reasons.push(`YC3 chốt chặn (${yq3.toFixed(2)}đ) < 2.00đ`);
-      if (yq6 < 2.0) reasons.push(`YC6 chốt chặn (${yq6.toFixed(2)}đ) < 2.00đ`);
-      if (yq7 < 2.0) reasons.push(`YC7 chốt chặn (${yq7.toFixed(2)}đ) < 2.00đ`);
-      
-      const failedOthers = [];
-      scores.forEach((s, idx) => {
-        if ([2, 5, 6].includes(idx)) return;
-        if (s < maxScores[idx] * 0.5) {
-          failedOthers.push(idx + 1);
-        }
-      });
-      if (failedOthers.length > 0) {
-        reasons.push(`YC ${failedOthers.join(", ")} < 50% max`);
-      }
-    } else if (currentRank === "Không xếp loại") {
-      if (sum < 12) reasons.push(`Tổng ĐTB (${sum.toFixed(2)}) < 12.00đ`);
-      if (yq3 < 1.0) reasons.push(`YC3 chốt chặn (${yq3.toFixed(2)}đ) < 1.00đ`);
-      if (yq6 < 1.0) reasons.push(`YC6 chốt chặn (${yq6.toFixed(2)}đ) < 1.00đ`);
-      if (yq7 < 1.0) reasons.push(`YC7 chốt chặn (${yq7.toFixed(2)}đ) < 1.00đ`);
-      
-      const zeroScores = [];
-      scores.forEach((s, idx) => {
-        if (s <= 0) zeroScores.push(idx + 1);
-      });
-      if (zeroScores.length > 0) {
-        reasons.push(`YC ${zeroScores.join(", ")} bị điểm 0`);
-      }
-    }
-
-    return reasons.join(", ");
-  }
-
   const handleSubmitEval = async () => {
     if (!evalModal) return
     const isK12 = evalModal.slot.level !== "Mầm non"
@@ -985,8 +921,7 @@ export function ObservationClient({
                     {evaluationsGroupedBySlot.map(({ slot, evaluations }) => {
                       const slotDate = new Date(slot.date);
                       const isK12Slot = !["Mầm non"].includes(slot.level);
-                      let dtbText = "";
-                      let slotRank = "";
+                      let dbtText = "";
                       if (isK12Slot) {
                         const passedEvals = evaluations.filter(({ evaluation }) => {
                           return evaluation.totalScore !== null && evaluation.totalScore !== undefined && evaluation.totalScore >= 14;
@@ -994,17 +929,9 @@ export function ObservationClient({
                         if (passedEvals.length > 0) {
                           const sum = passedEvals.reduce((acc, curr) => acc + (curr.evaluation.totalScore || 0), 0);
                           const avg = sum / passedEvals.length;
-                          dtbText = `ĐTB: ${avg.toFixed(2)}/20.00đ`;
-
-                          // Calculate average for requirements 1 to 11 to feed calculateK12Ranking
-                          const avgScores = Array(11).fill(0);
-                          for (let num = 1; num <= 11; num++) {
-                            const sumScore = passedEvals.reduce((acc, curr) => acc + (Number(curr.evaluation[`score${num}`]) || 0), 0);
-                            avgScores[num - 1] = sumScore / passedEvals.length;
-                          }
-                          slotRank = calculateK12Ranking(avgScores);
+                          dbtText = `ĐBT: ${avg.toFixed(2)}/20.00đ`;
                         } else {
-                          dtbText = "ĐTB: --";
+                          dbtText = "ĐBT: --";
                         }
                       }
                       return (
@@ -1023,30 +950,12 @@ export function ObservationClient({
                                 )}
                               </div>
                               <h4 className="font-extrabold text-sm text-slate-800 truncate">{slot.topic}</h4>
-                              {isK12Slot && slotRank && slotRank !== "Giỏi" && (
-                                <div className="text-[10px] font-semibold text-rose-600 bg-rose-50 border border-rose-100/70 rounded px-2 py-0.5 inline-flex items-center mt-1">
-                                  <span className="font-extrabold text-[10px] uppercase mr-1 text-rose-700">Khống chế:</span>
-                                  <span>{getK12RankingReason(avgScores)}</span>
-                                </div>
-                              )}
                             </div>
-                            <div className="flex items-center gap-2.5 shrink-0 text-xs font-bold text-slate-400">
-                              {isK12Slot && dtbText && (
-                                <div className="flex items-center gap-1.5">
-                                  <span className="px-2.5 py-1 bg-[#00A19A]/10 text-[#00A19A] border border-[#00A19A]/20 rounded-lg font-black" title="Điểm Trung Bình Tiết (chỉ tính trên các phiếu ĐẠT)">
-                                    {dtbText}
-                                  </span>
-                                  {slotRank && (
-                                    <span className={`px-2 py-0.5 text-[9px] font-black rounded border uppercase tracking-wider ${
-                                      slotRank === "Giỏi" ? "bg-emerald-50 text-emerald-600 border-emerald-200" :
-                                      slotRank === "Khá" ? "bg-sky-50 text-sky-600 border-sky-200" :
-                                      slotRank === "Trung bình" ? "bg-amber-50 text-amber-600 border-amber-200" :
-                                      "bg-rose-50 text-rose-600 border-rose-200"
-                                    }`}>
-                                      {slotRank}
-                                    </span>
-                                  )}
-                                </div>
+                            <div className="flex items-center gap-3 shrink-0 text-xs font-bold text-slate-400">
+                              {isK12Slot && dbtText && (
+                                <span className="px-2.5 py-1 bg-[#00A19A]/10 text-[#00A19A] border border-[#00A19A]/20 rounded-lg font-black" title="Điểm Trung Bình Tiết (chỉ tính trên các phiếu ĐẠT)">
+                                  {dbtText}
+                                </span>
                               )}
                               <span>
                                 Tổng số: <span className="font-black text-slate-700">{evaluations.length} phiếu</span>
