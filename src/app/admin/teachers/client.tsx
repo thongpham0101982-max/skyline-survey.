@@ -362,6 +362,15 @@ export function TeacherManagerClient({
                 {(departments || []).map((d) => <option key={d.id} value={d.name}>{d.name}</option>)}
               </select>
             </div>
+            <div>
+              <label className="block text-xs font-black text-slate-500 mb-1.5 uppercase tracking-wider">Chức vụ</label>
+              <select value={newForm.position} onChange={e => setNewForm({ ...newForm, position: e.target.value })}
+                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/10 outline-none bg-white transition-all font-bold cursor-pointer">
+                <option value="GV">GV (Giáo viên)</option>
+                <option value="TTCM">TTCM (Tổ trưởng CM)</option>
+                <option value="QLCM">QLCM (Quản lý CM)</option>
+              </select>
+            </div>
           </div>
           {(campuses || []).length > 1 && (
             <div className="mt-4">
