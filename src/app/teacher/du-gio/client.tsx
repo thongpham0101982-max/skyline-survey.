@@ -1015,11 +1015,18 @@ export function ObservationClient({
                                 <FileText className="w-3.5 h-3.5" />
                                 Sửa
                               </button>
+                            )}                            {observerCount < Math.min(slot.maxSeats || 4, 4) ? (
+                              <button onClick={() => handleDeleteSlot(slot.id)}
+                                className="flex items-center gap-1 px-3 py-1.5 bg-rose-50 border border-rose-200 hover:bg-rose-100 text-rose-600 rounded-lg text-xs font-bold transition-all">
+                                <Trash2 className="w-3.5 h-3.5" /> Xóa
+                              </button>
+                            ) : (
+                              <span
+                                className="flex items-center gap-1 px-3 py-1.5 bg-slate-100 border border-slate-200 text-slate-400 rounded-lg text-xs font-bold cursor-not-allowed select-none"
+                                title="Không thể xóa khi đã đủ GV đăng ký">
+                                <Trash2 className="w-3.5 h-3.5" /> Xóa
+                              </span>
                             )}
-                            <button onClick={() => handleDeleteSlot(slot.id)}
-                              className="flex items-center gap-1 px-3 py-1.5 bg-rose-50 border border-rose-200 hover:bg-rose-100 text-rose-600 rounded-lg text-xs font-bold transition-all">
-                              <Trash2 className="w-3.5 h-3.5" /> Xóa
-                            </button>
                           </div>
                         ) : isRegistered ? (
                           <div className="flex items-center gap-1.5">
