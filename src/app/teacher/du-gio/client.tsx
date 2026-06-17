@@ -1,11 +1,11 @@
 ﻿"use client"
 
-import { useState, useEffect, useTransition, useMemo, useRef } from "react"
+import { useState, useEffect, useTransition, useMemo, useRef, useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { 
   Calendar, Clock, MapPin, User, Users, BookOpen, Plus, Search, X, Check,
   AlertCircle, Trash2, Info, Layers, FileText, ChevronDown, ChevronUp,
-  ClipboardList, CheckCircle, Clock3, Building2, Shield
+  ClipboardList, CheckCircle, Clock3, Building2, Shield, Filter, RotateCcw, SlidersHorizontal
 } from "lucide-react"
 import { 
   createObservationSlot, updateObservationSlot, registerObservation, cancelObservation,
@@ -106,6 +106,8 @@ export function ObservationClient({
   const [filterDate, setFilterDate] = useState(initialFilters.date)
   const [filterCampusId, setFilterCampusId] = useState(initialFilters.campusId)
   const [filterDeptId, setFilterDeptId] = useState(initialFilters.deptId)
+  const [showFilterPanel, setShowFilterPanel] = useState(true)
+  const autoSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Create form states
   const [newSubjectId, setNewSubjectId] = useState("")
@@ -263,7 +265,7 @@ export function ObservationClient({
     } catch { showToast("Lỗi hiển thị giáo án PDF!", "error") }
   }
 
-  const handleSearch = () => {
+  const handleSearch = useCallback(() => {
     const params = new URLSearchParams(window.location.search)
     if (filterSchoolBlock && filterSchoolBlock !== "all") params.set("schoolBlock", filterSchoolBlock); else params.delete("schoolBlock")
     if (filterLevel && filterLevel !== "all") params.set("level", filterLevel); else params.delete("level")
@@ -276,8 +278,61 @@ export function ObservationClient({
     startTransition(async () => {
       router.push(`${pathname}?${params.toString()}`)
       const res = await getObservationSlots({ schoolBlock: filterSchoolBlock, level: filterLevel, grade: filterGrade, period: filterPeriod, date: filterDate, campusId: filterCampusId, deptId: filterDeptId })
-      if (res.success && res.slots) { setSlots(res.slots); showToast("Đã cập nhật danh sách tìm kiếm!", "success") }
+      if (res.success && res.slots) { setSlots(res.slots) }
     })
+  }, [filterSchoolBlock, filterLevel, filterGrade, filterPeriod, filterDate, filterCampusId, filterDeptId, router, pathname, startTransition])
+
+  // Auto-apply filters on change (debounced)
+  useEffect(() => {
+    if (autoSearchTimerRef.current) clearTimeout(autoSearchTimerRef.current)
+    autoSearchTimerRef.current = setTimeout(() => {
+      handleSearch()
+    }, 400)
+    return () => { if (autoSearchTimerRef.current) clearTimeout(autoSearchTimerRef.current) }
+  }, [filterSchoolBlock, filterLevel, filterGrade, filterPeriod, filterDate, filterCampusId, filterDeptId, handleSearch])
+
+  // Active filter helpers
+  const activeFilterCount = useMemo(() => {
+    let count = 0
+    if (filterCampusId && filterCampusId !== "all") count++
+    if (filterLevel && filterLevel !== "all") count++
+    if (filterGrade && filterGrade !== "all") count++
+    if (filterDate) count++
+    if (filterPeriod && filterPeriod !== "all") count++
+    return count
+  }, [filterCampusId, filterLevel, filterGrade, filterDate, filterPeriod])
+
+  const activeFilterTags = useMemo(() => {
+    const tags: { key: string; label: string; value: string; onRemove: () => void }[] = []
+    if (filterCampusId && filterCampusId !== "all") {
+      const campus = campuses.find(c => c.id === filterCampusId)
+      tags.push({ key: "campus", label: "Cơ sở", value: campus?.campusName || filterCampusId, onRemove: () => setFilterCampusId("all") })
+    }
+    if (filterLevel && filterLevel !== "all") {
+      tags.push({ key: "level", label: "Bậc học", value: filterLevel, onRemove: () => { setFilterLevel("all"); setFilterGrade("all") } })
+    }
+    if (filterGrade && filterGrade !== "all") {
+      tags.push({ key: "grade", label: "Khối", value: filterGrade, onRemove: () => setFilterGrade("all") })
+    }
+    if (filterDate) {
+      const d = new Date(filterDate)
+      const formatted = d.getDate().toString().padStart(2,"0") + "/" + (d.getMonth()+1).toString().padStart(2,"0") + "/" + d.getFullYear()
+      tags.push({ key: "date", label: "Ngày", value: formatted, onRemove: () => setFilterDate("") })
+    }
+    if (filterPeriod && filterPeriod !== "all") {
+      tags.push({ key: "period", label: "Tiết", value: filterPeriod, onRemove: () => setFilterPeriod("all") })
+    }
+    return tags
+  }, [filterCampusId, filterLevel, filterGrade, filterDate, filterPeriod, campuses])
+
+  const clearAllFilters = () => {
+    setFilterCampusId("all")
+    setFilterLevel("all")
+    setFilterGrade("all")
+    setFilterDate("")
+    setFilterPeriod("all")
+    setFilterSchoolBlock("all")
+    setFilterDeptId("all")
   }
 
   const refreshSlots = async () => {
@@ -631,67 +686,112 @@ export function ObservationClient({
       {/* Main Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
         {/* Filters */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-md shadow-slate-100/40 flex flex-col gap-5 border-t-4 border-t-[#0A3230]">
-          <h3 className="font-extrabold text-sm text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-3 flex items-center gap-2">
-            <Search className="w-4 h-4 text-[#00A19A]" /> Lọc thông tin
-          </h3>
-
-                    
-
-          {/* Campus Filter */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1"><Building2 className="w-3 h-3"/>Cơ sở</label>
-            <select value={filterCampusId} onChange={e => setFilterCampusId(e.target.value)}
-              className="w-full text-sm rounded-xl border border-slate-200/80 p-2.5 bg-slate-50/50 text-slate-700 hover:border-[#00A19A]/50 focus:border-[#00A19A] focus:bg-white focus:ring-2 focus:ring-[#00A19A]/20 transition-all outline-none">
-              <option value="all">Tất cả cơ sở</option>
-              {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
-            </select>
-          </div>
-
-          
-
-          {/* Level Filter */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1"><Layers className="w-3 h-3"/>Bậc học</label>
-            <select value={filterLevel} onChange={e => { setFilterLevel(e.target.value); setFilterGrade("all") }}
-              className="w-full text-sm rounded-xl border border-slate-200/80 p-2.5 bg-slate-50/50 text-slate-700 hover:border-[#00A19A]/50 focus:border-[#00A19A] focus:bg-white focus:ring-2 focus:ring-[#00A19A]/20 transition-all outline-none">
-              <option value="all">Tất cả bậc học</option>
-              <option value="Mầm non">Mầm non</option>
-              <option value="Phổ thông K-12">Phổ thông K-12</option>
-            </select>
-          </div>
-
-          {/* Grade Filter */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Khối lớp</label>
-            <select value={filterGrade} onChange={e => setFilterGrade(e.target.value)} disabled={filterLevel === "all"}
-              className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-700 focus:ring-2 focus:ring-[#00A19A] outline-none disabled:opacity-50">
-              <option value="all">Tất cả khối lớp</option>
-              {getGradesForLevel(filterLevel).map(g => <option key={g} value={g}>{g}</option>)}
-            </select>
-          </div>
-
-          {/* Date Filter */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Ngày dạy</label>
-            <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)}
-              className="w-full text-sm rounded-xl border border-slate-200/80 p-2.5 bg-slate-50/50 text-slate-700 hover:border-[#00A19A]/50 focus:border-[#00A19A] focus:bg-white focus:ring-2 focus:ring-[#00A19A]/20 transition-all outline-none" />
-          </div>
-
-          {/* Period Filter */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1"><Clock className="w-3 h-3"/>Tiết dạy</label>
-            <select value={filterPeriod} onChange={e => setFilterPeriod(e.target.value)}
-              className="w-full text-sm rounded-xl border border-slate-200/80 p-2.5 bg-slate-50/50 text-slate-700 hover:border-[#00A19A]/50 focus:border-[#00A19A] focus:bg-white focus:ring-2 focus:ring-[#00A19A]/20 transition-all outline-none">
-              <option value="all">Tất cả tiết</option>
-              {[1, 2, 3, 4, 5, 6, 7, 8].map(p => <option key={p} value={`Tiết ${p}`}>Tiết {p}</option>)}
-            </select>
-          </div>
-
-          <button onClick={handleSearch} disabled={isPending}
-            className="w-full flex items-center justify-center gap-2 bg-[#0A3230] hover:bg-[#134D4A] text-white font-bold py-2.5 rounded-xl transition-all shadow-md active:scale-95 disabled:opacity-50 mt-2 text-xs uppercase tracking-wider">
-            {isPending ? "Đang tìm kiếm..." : "Tìm kiếm"}
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-md shadow-slate-100/40 flex flex-col border-t-4 border-t-[#0A3230] overflow-hidden">
+          {/* Filter Header - collapsible */}
+          <button
+            onClick={() => setShowFilterPanel(!showFilterPanel)}
+            className="flex items-center justify-between px-5 py-4 hover:bg-slate-50/80 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <SlidersHorizontal className="w-4 h-4 text-[#00A19A]" />
+              <span className="font-extrabold text-sm text-slate-800 uppercase tracking-wider">Bộ lọc</span>
+              {activeFilterCount > 0 && (
+                <span className="inline-flex items-center justify-center w-5 h-5 text-[10px] font-black text-white bg-[#00A19A] rounded-full">
+                  {activeFilterCount}
+                </span>
+              )}
+            </div>
+            <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-300 ${showFilterPanel ? "rotate-180" : ""}`} />
           </button>
+
+          {/* Filter Body */}
+          <div className={`transition-all duration-300 ease-in-out overflow-hidden ${showFilterPanel ? "max-h-[800px] opacity-100" : "max-h-0 opacity-0"}`}>
+            <div className="px-5 pb-5 flex flex-col gap-4 border-t border-slate-100">
+
+              {/* Active Filter Tags */}
+              {activeFilterCount > 0 && (
+                <div className="flex flex-wrap gap-1.5 pt-4">
+                  {activeFilterTags.map(tag => (
+                    <span key={tag.key}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-lg bg-[#00A19A]/10 text-[#00A19A] border border-[#00A19A]/20">
+                      <span className="text-[#0A3230]/50">{tag.label}:</span> {tag.value}
+                      <button onClick={tag.onRemove} className="ml-0.5 p-0.5 rounded-full hover:bg-[#00A19A]/20 transition-colors">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                  <button onClick={clearAllFilters}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-lg bg-rose-50 text-rose-500 border border-rose-200/60 hover:bg-rose-100 transition-colors">
+                    <RotateCcw className="w-3 h-3" /> Xóa tất cả
+                  </button>
+                </div>
+              )}
+
+              {/* Loading Indicator */}
+              {isPending && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-sky-50 border border-sky-100">
+                  <div className="w-3 h-3 border-2 border-sky-400 border-t-transparent rounded-full animate-spin" />
+                  <span className="text-[11px] font-bold text-sky-600">Đang cập nhật...</span>
+                </div>
+              )}
+              {/* Campus Filter */}
+              <div className="flex flex-col gap-1.5 pt-2">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1"><Building2 className="w-3 h-3"/>Cơ sở</label>
+                <select value={filterCampusId} onChange={e => setFilterCampusId(e.target.value)}
+                  className={`w-full text-sm rounded-xl border p-2.5 transition-all outline-none ${filterCampusId !== "all" ? "border-[#00A19A] bg-[#00A19A]/5 text-[#0A3230] font-semibold ring-1 ring-[#00A19A]/20" : "border-slate-200/80 bg-slate-50/50 text-slate-700 hover:border-[#00A19A]/50 focus:border-[#00A19A] focus:bg-white focus:ring-2 focus:ring-[#00A19A]/20"}`}>
+                  <option value="all">Tất cả cơ sở</option>
+                  {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
+                </select>
+              </div>
+              {/* Level Filter */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1"><Layers className="w-3 h-3"/>Bậc học</label>
+                <select value={filterLevel} onChange={e => { setFilterLevel(e.target.value); setFilterGrade("all") }}
+                  className={`w-full text-sm rounded-xl border p-2.5 transition-all outline-none ${filterLevel !== "all" ? "border-[#00A19A] bg-[#00A19A]/5 text-[#0A3230] font-semibold ring-1 ring-[#00A19A]/20" : "border-slate-200/80 bg-slate-50/50 text-slate-700 hover:border-[#00A19A]/50 focus:border-[#00A19A] focus:bg-white focus:ring-2 focus:ring-[#00A19A]/20"}`}>
+                  <option value="all">Tất cả bậc học</option>
+                  <option value="Mầm non">Mầm non</option>
+                  <option value="Phổ thông K-12">Phổ thông K-12</option>
+                </select>
+              </div>
+              {/* Grade Filter */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1"><ChevronDown className="w-3 h-3"/>Khối lớp</label>
+                <select value={filterGrade} onChange={e => setFilterGrade(e.target.value)} disabled={filterLevel === "all"}
+                  className={`w-full text-sm rounded-xl border p-2.5 transition-all outline-none disabled:opacity-50 disabled:cursor-not-allowed ${filterGrade !== "all" ? "border-[#00A19A] bg-[#00A19A]/5 text-[#0A3230] font-semibold ring-1 ring-[#00A19A]/20" : "border-slate-200/80 bg-slate-50/50 text-slate-700 hover:border-[#00A19A]/50 focus:border-[#00A19A] focus:bg-white focus:ring-2 focus:ring-[#00A19A]/20"}`}>
+                  <option value="all">Tất cả khối lớp</option>
+                  {getGradesForLevel(filterLevel).map(g => <option key={g} value={g}>{g}</option>)}
+                </select>
+              </div>
+              {/* Date Filter */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1"><Calendar className="w-3 h-3"/>Ngày dạy</label>
+                <div className="relative">
+                  <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)}
+                    className={`w-full text-sm rounded-xl border p-2.5 transition-all outline-none pr-8 ${filterDate ? "border-[#00A19A] bg-[#00A19A]/5 text-[#0A3230] font-semibold ring-1 ring-[#00A19A]/20" : "border-slate-200/80 bg-slate-50/50 text-slate-700 hover:border-[#00A19A]/50 focus:border-[#00A19A] focus:bg-white focus:ring-2 focus:ring-[#00A19A]/20"}`} />
+                  {filterDate && (
+                    <button onClick={() => setFilterDate("")} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-slate-200/80 transition-colors">
+                      <X className="w-3.5 h-3.5 text-slate-400" />
+                    </button>
+                  )}
+                </div>
+              </div>
+              {/* Period Filter */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1"><Clock className="w-3 h-3"/>Tiết dạy</label>
+                <select value={filterPeriod} onChange={e => setFilterPeriod(e.target.value)}
+                  className={`w-full text-sm rounded-xl border p-2.5 transition-all outline-none ${filterPeriod !== "all" ? "border-[#00A19A] bg-[#00A19A]/5 text-[#0A3230] font-semibold ring-1 ring-[#00A19A]/20" : "border-slate-200/80 bg-slate-50/50 text-slate-700 hover:border-[#00A19A]/50 focus:border-[#00A19A] focus:bg-white focus:ring-2 focus:ring-[#00A19A]/20"}`}>
+                  <option value="all">Tất cả tiết</option>
+                  {[1, 2, 3, 4, 5, 6, 7, 8].map(p => <option key={p} value={`Tiết ${p}`}>Tiết {p}</option>)}
+                </select>
+              </div>
+              {/* Filter Info */}
+              <div className="text-[10px] text-slate-400 font-medium pt-1 flex items-center gap-1">
+                <Filter className="w-3 h-3" />
+                Bộ lọc tự động áp dụng khi thay đổi
+              </div>
+
+            </div>
+          </div>
         </div>
 
         {/* Slot Cards */}

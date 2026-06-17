@@ -1,1 +1,0 @@
-const fs = require(" fs\); const p = \src/app/admin/input-assessments/client.tsx\; let c = fs.readFileSync(p, \utf8\); c = c.replace(/campusId\\?: string;/g, \\); c = c.replace(/admissionCampus:\\/g, \\); c = c.replace(/\\|\\|\\, /g, \\); fs.writeFileSync(p, c);
