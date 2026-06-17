@@ -434,7 +434,7 @@ export function TeacherManagerClient({
             <tbody className="divide-y divide-slate-100">
               {displayed.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-16 text-center">
+                  <td colSpan={9} className="px-6 py-16 text-center">
                     <div className="w-16 h-16 rounded-2xl border border-dashed border-slate-250 flex items-center justify-center mx-auto mb-4 bg-slate-50">
                       <GraduationCap className="w-8 h-8 text-slate-400" />
                     </div>
@@ -578,8 +578,8 @@ export function TeacherManagerClient({
                         {isEditing ? (
                           <select value={editForm.status} onChange={e => setEditForm({ ...editForm, status: e.target.value })}
                             className="border border-[#00A19A]/60 rounded-xl px-2 py-1.5 text-xs outline-none bg-white font-bold w-28 focus:border-[#00A19A] cursor-pointer">
-                            <option value="ACTIVE">On (Đang dạy)</option>
-                            <option value="INACTIVE">Off (Nghỉ dạy)</option>
+                            <option value="ACTIVE">On</option>
+                            <option value="INACTIVE">Off</option>
                           </select>
                         ) : (
                           t.status === "ACTIVE" ? (
