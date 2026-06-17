@@ -24,9 +24,10 @@ interface SidebarProps {
   permissionModules?: string[]
   actualRole?: string
   taskCount?: number
+  isTTCM?: boolean
 }
 
-function SidebarContent({ role, permissionModules, actualRole, taskCount = 0 }: SidebarProps) {
+function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, isTTCM = false }: SidebarProps) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const typeParam = searchParams?.get("type")
@@ -109,6 +110,20 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0 }: 
             >
               <LayoutDashboard className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname === (role === "ADMIN" ? "/admin" : "/parent") ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
               {!isCollapsed && <span>Dashboard</span>}
+            </Link>
+          )}
+          {role === "ADMIN" && (isTTCM || isSuperAdmin) && (
+            <Link 
+              href="/admin/tong-hop-du-gio"
+              onClick={() => setIsOpen(false)}
+              className={`group flex items-center px-3 py-2.5 rounded-xl transition-all duration-200 text-sm font-medium ${
+                pathname.startsWith("/admin/tong-hop-du-gio") 
+                  ? "bg-white/20 text-white border border-[#135E5B]/30 shadow-[0_0_15px_-3px_rgba(19,94,91,0.2)] font-semibold" 
+                  : "text-white/70 hover:text-white hover:bg-white/10"
+              }`}
+            >
+              <PieChart className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.startsWith("/admin/tong-hop-du-gio") ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
+              {!isCollapsed && <span>Tổng hợp dự giờ</span>}
             </Link>
           )}
 
