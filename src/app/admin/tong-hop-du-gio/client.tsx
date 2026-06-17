@@ -35,11 +35,25 @@ export function AdminTongHopClient({
 
   const [selectedDeptId, setSelectedDeptId] = useState(initialDeptId)
   const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null)
+  
+  // Search & Filter states
+  const [searchTeacherQuery, setSearchTeacherQuery] = useState("")
+  const [searchSlotQuery, setSearchSlotQuery] = useState("")
+  const [filterLevel, setFilterLevel] = useState("all")
+  const [filterGrade, setFilterGrade] = useState("all")
 
   // Get all teachers in the selected department
   const deptTeachers = useMemo(() => {
     return teachers.filter((t: any) => t.departmentId === selectedDeptId);
   }, [teachers, selectedDeptId]);
+
+  // Filter department teachers by search query
+  const filteredDeptTeachers = useMemo(() => {
+    return deptTeachers.filter((t: any) => 
+      t.teacherName.toLowerCase().includes(searchTeacherQuery.toLowerCase()) ||
+      t.teacherCode.toLowerCase().includes(searchTeacherQuery.toLowerCase())
+    );
+  }, [deptTeachers, searchTeacherQuery]);
 
   // Compute taught and observed slot counts for each teacher in the selected department
   const teacherStats = useMemo(() => {
@@ -106,7 +120,7 @@ export function AdminTongHopClient({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Teachers List */}
         <div className="lg:col-span-5 flex flex-col gap-4">
-          {/* Department Selector Card */}
+          {/* Department Selector & Teacher Search Card */}
           <div className="bg-white p-5 rounded-3xl border-2 border-slate-100 shadow-sm space-y-4">
             <div className="flex flex-col gap-2">
               <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Tổ chuyên môn</label>
@@ -118,7 +132,7 @@ export function AdminTongHopClient({
               ) : (
                 <select 
                   value={selectedDeptId} 
-                  onChange={e => { setSelectedDeptId(e.target.value); setSelectedTeacherId(null); }}
+                  onChange={e => { setSelectedDeptId(e.target.value); setSelectedTeacherId(null); setSearchTeacherQuery(""); }}
                   className="w-full text-sm font-semibold rounded-xl border border-slate-200 p-3 bg-slate-50 text-slate-800 focus:ring-2 focus:ring-[#00A19A] outline-none"
                 >
                   {departments.map(dept => (
@@ -127,28 +141,48 @@ export function AdminTongHopClient({
                 </select>
               )}
             </div>
+
+            {/* Teacher Search Input */}
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Tìm kiếm giáo viên</label>
+              <div className="relative group/search">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400 group-focus-within/search:text-[#00A19A] transition-colors" />
+                <input 
+                  type="text" 
+                  placeholder="Tìm tên hoặc mã giáo viên..."
+                  value={searchTeacherQuery}
+                  onChange={e => { setSearchTeacherQuery(e.target.value); setSelectedTeacherId(null); }}
+                  className="w-full text-xs font-semibold rounded-xl border border-slate-200 pl-9 pr-8 py-2.5 bg-slate-50 text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A19A] focus:border-[#00A19A] transition-all outline-none"
+                />
+                {searchTeacherQuery && (
+                  <button onClick={() => { setSearchTeacherQuery(""); setSelectedTeacherId(null); }} className="absolute right-3 top-3 text-slate-400 hover:text-slate-600">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Teachers Statistics List Card */}
           <div className="bg-white p-5 rounded-3xl border-2 border-slate-100 shadow-sm flex-1 flex flex-col min-h-[400px]">
             <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider pb-3 border-b border-slate-100 flex items-center justify-between mb-4">
-              <span>Thống kê thành viên ({deptTeachers.length})</span>
+              <span>Thống kê thành viên ({filteredDeptTeachers.length})</span>
             </h3>
             
-            {deptTeachers.length === 0 ? (
-              <div className="flex flex-col items-center justify-center flex-1 py-12 text-slate-405">
+            {filteredDeptTeachers.length === 0 ? (
+              <div className="flex flex-col items-center justify-center flex-1 py-12 text-slate-400">
                 <ClipboardList className="w-10 h-10 text-slate-300 mb-2 stroke-1" />
-                <p className="text-xs font-bold">Không có giáo viên trong tổ này.</p>
+                <p className="text-xs font-bold text-center">Không tìm thấy giáo viên nào.</p>
               </div>
             ) : (
-              <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1 custom-scrollbar">
-                {deptTeachers.map(teacher => {
+              <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1 custom-scrollbar">
+                {filteredDeptTeachers.map(teacher => {
                   const stats = teacherStats[teacher.id] || { taughtCount: 0, observedCount: 0 };
                   const isSelected = selectedTeacherId === teacher.id;
                   return (
                     <button 
                       key={teacher.id} 
-                      onClick={() => setSelectedTeacherId(teacher.id)}
+                      onClick={() => { setSelectedTeacherId(teacher.id); setSearchSlotQuery(""); setFilterLevel("all"); setFilterGrade("all"); }}
                       className={`w-full text-left p-3.5 rounded-2xl border-2 transition-all duration-200 flex items-center justify-between gap-3 ${
                         isSelected
                           ? "bg-teal-50/50 border-[#00A19A] shadow-sm"
@@ -190,26 +224,76 @@ export function AdminTongHopClient({
           ) : (() => {
             const selTeacher = teachers.find(t => t.id === selectedTeacherId);
             const selTeacherSlots = initialSlots.filter(s => s.teacherId === selectedTeacherId);
+            
+            // Local filter logic for slots
+            const filteredSlots = selTeacherSlots.filter(slot => {
+              const matchQuery = !searchSlotQuery || 
+                slot.topic.toLowerCase().includes(searchSlotQuery.toLowerCase()) ||
+                (slot.className && slot.className.toLowerCase().includes(searchSlotQuery.toLowerCase()));
+              const matchLevel = filterLevel === "all" || slot.level === filterLevel;
+              const matchGrade = filterGrade === "all" || slot.grade === filterGrade;
+              return matchQuery && matchLevel && matchGrade;
+            });
+
             return (
-              <div className="space-y-6 flex-1 flex flex-col text-slate-800">
-                <div className="pb-4 border-b border-slate-100 flex items-center justify-between gap-3 shrink-0">
+              <div className="space-y-4 flex-1 flex flex-col text-slate-800">
+                <div className="pb-3 border-b border-slate-100 flex items-center justify-between gap-3 shrink-0">
                   <div>
                     <h3 className="text-base font-black text-slate-800">{selTeacher?.teacherName}</h3>
                     <p className="text-xs font-bold text-slate-400 mt-0.5">Mã GV: {selTeacher?.teacherCode}</p>
                   </div>
                   <span className="px-3 py-1 bg-[#00A19A]/10 text-[#00A19A] border border-[#00A19A]/20 rounded-xl text-xs font-black">
-                    Tổng số: {selTeacherSlots.length} tiết dạy
+                    {filteredSlots.length} / {selTeacherSlots.length} tiết dạy
                   </span>
                 </div>
 
-                {selTeacherSlots.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center flex-1 py-12 text-slate-405">
+                {/* Slot Search & Filter controls */}
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-150 shrink-0">
+                  <div className="md:col-span-6 relative">
+                    <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Tìm kiếm chủ đề, lớp học..."
+                      value={searchSlotQuery}
+                      onChange={e => setSearchSlotQuery(e.target.value)}
+                      className="w-full text-xs font-semibold rounded-xl border border-slate-200 pl-9 pr-3 py-2 bg-white text-slate-800 focus:ring-2 focus:ring-[#00A19A] outline-none"
+                    />
+                  </div>
+                  <div className="md:col-span-3">
+                    <select 
+                      value={filterLevel} 
+                      onChange={e => { setFilterLevel(e.target.value); setFilterGrade("all"); }}
+                      className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 focus:ring-2 focus:ring-[#00A19A] outline-none"
+                    >
+                      <option value="all">Mọi cấp học</option>
+                      <option value="Tiểu học">Tiểu học</option>
+                      <option value="THCS">THCS</option>
+                      <option value="THPT">THPT</option>
+                      <option value="Mầm non">Mầm non</option>
+                    </select>
+                  </div>
+                  <div className="md:col-span-3">
+                    <select 
+                      value={filterGrade} 
+                      onChange={e => setFilterGrade(e.target.value)}
+                      className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 focus:ring-2 focus:ring-[#00A19A] outline-none"
+                    >
+                      <option value="all">Mọi khối</option>
+                      {Array.from(new Set(selTeacherSlots.map(s => s.grade))).sort().map(g => (
+                        <option key={g} value={g}>{g}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {filteredSlots.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center flex-1 py-12 text-slate-400">
                     <ClipboardList className="w-12 h-12 stroke-1 text-slate-200 mb-2" />
-                    <p className="text-xs font-bold">Chưa có tiết dạy nào được ghi nhận.</p>
+                    <p className="text-xs font-bold">Không tìm thấy tiết dạy tương ứng.</p>
                   </div>
                 ) : (
-                  <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1 custom-scrollbar">
-                    {selTeacherSlots.map(slot => {
+                  <div className="space-y-4 max-h-[500px] overflow-y-auto pr-1 custom-scrollbar">
+                    {filteredSlots.map(slot => {
                       const avgScore = getSlotAverageScore(slot);
                       const slotDate = new Date(slot.date);
                       const isK12 = !["Mầm non"].includes(slot.level);
@@ -230,7 +314,7 @@ export function AdminTongHopClient({
                             </div>
                             <div className="shrink-0 text-right">
                               {avgScore !== null ? (
-                                <span className="px-2.5 py-1 bg-[#00A19A]/10 text-[#00A19A] border border-[#00A19A]/20 rounded-lg font-black text-xs">
+                                <span className="px-2.5 py-1 bg-[#00A19A]/10 text-[#00A19A] border-[#00A19A]/20 rounded-lg font-black text-xs">
                                   ĐTB chung: {typeof avgScore === "number" ? `${avgScore.toFixed(2)}/20.00đ` : avgScore}
                                 </span>
                               ) : (
