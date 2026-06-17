@@ -1,17 +1,17 @@
 "use client"
 function PositionBadge({ position }) {
   if (position === "TTCM") return (
-    <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg border text-[10px] font-black uppercase tracking-wider bg-orange-50 text-orange-700 border-orange-200">
+    <span className="inline-flex items-center px-2.5 py-1 rounded-xl text-[10px] font-extrabold uppercase tracking-wide bg-amber-50 text-amber-700">
       TTCM
     </span>
   );
   if (position === "QLCM") return (
-    <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg border text-[10px] font-black uppercase tracking-wider bg-indigo-50 text-indigo-700 border-indigo-200">
+    <span className="inline-flex items-center px-2.5 py-1 rounded-xl text-[10px] font-extrabold uppercase tracking-wide bg-indigo-50 text-indigo-700">
       QLCM
     </span>
   );
   return (
-    <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg border text-[10px] font-black uppercase tracking-wider bg-slate-50 text-slate-600 border-slate-200">
+    <span className="inline-flex items-center px-2.5 py-1 rounded-xl text-[10px] font-semibold uppercase tracking-wide bg-slate-50 text-slate-500">
       GV
     </span>
   );
@@ -36,20 +36,20 @@ const EMPTY_NEW = {
 const EMPTY_EDIT = { teacherName: "", dateOfBirth: "", department: "", mainSubject: "", campusId: "", status: "ACTIVE", email: "", additionalCampusIds: [], position: "GV" }
 
 const DEPT_COLORS = {
-  "KT&DBCL": "bg-[#00A19A]/5 text-[#00A19A] border-[#00A19A]/30",
-  "KT-DBCL": "bg-[#00A19A]/5 text-[#00A19A] border-[#00A19A]/30",
-  "default": "bg-slate-50 text-slate-700 border-slate-300"
+  "KT&DBCL": "bg-[#00A19A]/5 text-[#00A19A]",
+  "KT-DBCL": "bg-[#00A19A]/5 text-[#00A19A]",
+  "default": "bg-slate-50 text-slate-600"
 }
 function getDeptColor(dept) { return DEPT_COLORS[dept] || DEPT_COLORS["default"] }
 
 function StatusBadge({ status }) {
   if (status === "ACTIVE") return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black bg-emerald-50 text-emerald-800 border border-emerald-200 uppercase tracking-wide">
-      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />Đang dạy
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[10px] font-extrabold bg-emerald-50 text-emerald-700 uppercase tracking-wider">
+      <span className="w-1.5 h-1.5 rounded-full bg-emerald-550 animate-pulse" />Đang dạy
     </span>
   )
   return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black bg-rose-50 text-rose-800 border border-rose-200 uppercase tracking-wide">
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[10px] font-extrabold bg-rose-50 text-rose-700 uppercase tracking-wider">
       <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />Nghỉ dạy
     </span>
   )
@@ -451,7 +451,7 @@ export function TeacherManagerClient({
                       <td className="px-5 py-4 text-slate-400 text-xs font-mono font-bold tabular-nums">{idx + 1}</td>
 
                       <td className="px-5 py-4">
-                        <span className="inline-block font-mono font-black text-[#00A19A] bg-[#00A19A]/5 px-2.5 py-1 rounded-lg text-xs border border-[#00A19A]/15 tracking-wide">
+                        <span className="inline-block font-mono font-bold text-[#00A19A] bg-[#00A19A]/5 px-2.5 py-1 rounded-xl text-xs tracking-wide">
                           {t.teacherCode}
                         </span>
                       </td>
@@ -472,7 +472,7 @@ export function TeacherManagerClient({
                           <div className="flex flex-col gap-1">
                             <span className="font-bold text-slate-800 text-sm leading-tight">{t.teacherName}</span>
                             {t.email ? (
-                              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-slate-500 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-md self-start">
+                              <span className="inline-flex items-center gap-1.5 text-[10px] font-medium text-slate-450 bg-slate-50 px-2 py-0.5 rounded-lg self-start">
                                 <Mail className="w-3 h-3 text-slate-400" />{t.email}
                               </span>
                             ) : (
@@ -539,7 +539,7 @@ export function TeacherManagerClient({
                         ) : (
                           <div className="flex flex-col gap-1">
                             {t.department ? (
-                              <span className={`inline-block px-2.5 py-0.5 rounded-lg border text-[10px] font-black uppercase tracking-wider self-start ${getDeptColor(t.department)}`}>
+                              <span className={`inline-block px-2.5 py-1 rounded-xl text-[10px] font-extrabold uppercase tracking-wide self-start ${getDeptColor(t.department)}`}>
                                 {t.department}
                               </span>
                             ) : (
@@ -564,11 +564,11 @@ export function TeacherManagerClient({
 
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-1.5 group/key">
-                          <span className="font-mono text-xs font-bold text-slate-600 bg-slate-50/50 px-2.5 py-1 rounded-lg border border-slate-200 tracking-wide">
+                          <span className="font-mono text-xs font-semibold text-slate-500 bg-slate-50/50 px-2.5 py-1 rounded-xl tracking-wide">
                             {t.user?.email || t.teacherCode}
                           </span>
                           <button onClick={() => handleResetPassword(t.id, t.teacherCode, t.teacherName)}
-                            className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 border border-transparent hover:border-amber-200 rounded-lg opacity-0 group-hover:opacity-100 transition-all cursor-pointer" title="Reset mật khẩu">
+                            className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all cursor-pointer" title="Reset mật khẩu">
                             <Key className="w-3.5 h-3.5" />
                           </button>
                         </div>
@@ -583,12 +583,12 @@ export function TeacherManagerClient({
                           </select>
                         ) : (
                           t.status === "ACTIVE" ? (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black bg-emerald-50 text-emerald-800 border border-emerald-200 uppercase tracking-wide">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />Đang dạy
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[10px] font-extrabold bg-emerald-50 text-emerald-700 uppercase tracking-wider">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-550 animate-pulse" />Đang dạy
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black bg-rose-50 text-rose-800 border border-rose-200 uppercase tracking-wide">
-                              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />Nghỉ dạy
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[10px] font-extrabold bg-rose-50 text-rose-700 uppercase tracking-wider">
+                              <span className="w-1.5 h-1.5 rounded-full bg-rose-550" />Nghỉ dạy
                             </span>
                           )
                         )}
@@ -610,11 +610,11 @@ export function TeacherManagerClient({
                           ) : (
                             <>
                               <button onClick={() => handleEdit(t)}
-                                className="p-2 text-[#00A19A] hover:bg-[#00A19A]/10 border border-transparent hover:border-[#00A19A]/20 rounded-lg transition-all opacity-0 group-hover:opacity-100 cursor-pointer" title="Chỉnh sửa">
+                                className="p-2 text-[#00A19A] hover:bg-[#00A19A]/10 rounded-xl transition-all opacity-0 group-hover:opacity-100 cursor-pointer" title="Chỉnh sửa">
                                 <Edit2 className="w-4 h-4" />
                               </button>
                               <button onClick={() => handleDelete(t.id, t.teacherName)}
-                                className="p-2 text-rose-500 hover:bg-rose-50 hover:text-rose-700 border border-transparent hover:border-rose-200 rounded-lg transition-all opacity-0 group-hover:opacity-100 cursor-pointer" title="Xóa">
+                                className="p-2 text-rose-500 hover:bg-rose-50 hover:text-rose-700 rounded-xl transition-all opacity-0 group-hover:opacity-100 cursor-pointer" title="Xóa">
                                 <Trash2 className="w-4 h-4" />
                               </button>
                             </>
