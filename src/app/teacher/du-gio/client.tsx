@@ -94,6 +94,7 @@ export function ObservationClient({
   const [slots, setSlots] = useState(initialSlots)
   const [activeTab, setActiveTab] = useState(activeTabParam)
   const [isPending, startTransition] = useTransition()
+  const [isFilterPending, startFilterTransition] = useTransition()
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null)
 
@@ -145,6 +146,10 @@ export function ObservationClient({
   const [evalSubmitting, setEvalSubmitting] = useState(false)
 
   useEffect(() => { setActiveTab(activeTabParam) }, [activeTabParam])
+
+  useEffect(() => {
+    setSlots(initialSlots)
+  }, [initialSlots])
 
   useEffect(() => {
     if (newDate) {
@@ -275,12 +280,12 @@ export function ObservationClient({
     if (filterDate) params.set("date", filterDate); else params.delete("date")
     if (filterCampusId && filterCampusId !== "all") params.set("campusId", filterCampusId); else params.delete("campusId")
     if (filterDeptId && filterDeptId !== "all") params.set("deptId", filterDeptId); else params.delete("deptId")
-    startTransition(async () => {
+    startFilterTransition(async () => {
       router.push(`${pathname}?${params.toString()}`)
       const res = await getObservationSlots({ schoolBlock: filterSchoolBlock, level: filterLevel, grade: filterGrade, period: filterPeriod, date: filterDate, campusId: filterCampusId, deptId: filterDeptId })
       if (res.success && res.slots) { setSlots(res.slots) }
     })
-  }, [filterSchoolBlock, filterLevel, filterGrade, filterPeriod, filterDate, filterCampusId, filterDeptId, router, pathname, startTransition])
+  }, [filterSchoolBlock, filterLevel, filterGrade, filterPeriod, filterDate, filterCampusId, filterDeptId, router, pathname, startFilterTransition])
 
   // Auto-apply filters on change (debounced)
   useEffect(() => {
@@ -728,7 +733,7 @@ export function ObservationClient({
               )}
 
               {/* Loading Indicator */}
-              {isPending && (
+              {isFilterPending && (
                 <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-sky-50 border border-sky-100">
                   <div className="w-3 h-3 border-2 border-sky-400 border-t-transparent rounded-full animate-spin" />
                   <span className="text-[11px] font-bold text-sky-600">Đang cập nhật...</span>
