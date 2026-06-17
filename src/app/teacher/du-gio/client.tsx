@@ -1020,13 +1020,31 @@ export function ObservationClient({
                                           const maxScores = [1.5, 1.5, 2.0, 2.0, 1.0, 2.0, 3.0, 2.0, 2.0, 2.0, 1.0];
                                           const maxVal = maxScores[num - 1];
                                           const isPassed = scoreVal >= maxVal * 0.5;
+                                          
+                                          let stdClass = "";
+                                          let labelTextClass = "";
+                                          if (isPassed) {
+                                            if (num <= 2) {
+                                              stdClass = "bg-teal-50 text-teal-600 border-teal-150";
+                                              labelTextClass = "text-teal-600/60 font-bold";
+                                            } else if (num <= 5) {
+                                              stdClass = "bg-sky-50 text-sky-600 border-sky-150";
+                                              labelTextClass = "text-sky-600/60 font-bold";
+                                            } else if (num <= 9) {
+                                              stdClass = "bg-indigo-50 text-indigo-600 border-indigo-150";
+                                              labelTextClass = "text-indigo-600/60 font-bold";
+                                            } else {
+                                              stdClass = "bg-amber-50 text-amber-600 border-amber-150";
+                                              labelTextClass = "text-amber-600/60 font-bold";
+                                            }
+                                          } else {
+                                            stdClass = "bg-rose-50/70 text-rose-500 border-rose-100";
+                                            labelTextClass = "text-rose-300 font-bold";
+                                          }
+
                                           return (
-                                            <span key={num} className={`inline-flex items-center gap-0.5 px-1 py-0.2 text-[9px] font-extrabold border rounded transition-all ${
-                                              isPassed 
-                                                ? "bg-[#00A19A]/5 text-[#00A19A] border-[#00A19A]/15" 
-                                                : "bg-rose-50/70 text-rose-500 border-rose-100"
-                                            }`}>
-                                              <span className={isPassed ? "text-[#00A19A]/60 font-bold" : "text-rose-300 font-bold"}>Y{num}:</span>
+                                            <span key={num} className={`inline-flex items-center gap-0.5 px-1 py-0.2 text-[9px] font-extrabold border rounded transition-all ${stdClass}`}>
+                                              <span className={labelTextClass}>Y{num}:</span>
                                               <span>{scoreVal.toFixed(1)}</span>
                                             </span>
                                           );
@@ -1104,13 +1122,31 @@ export function ObservationClient({
                                           const maxScores = [1.5, 1.5, 2.0, 2.0, 1.0, 2.0, 3.0, 2.0, 2.0, 2.0, 1.0];
                                           const maxVal = maxScores[num - 1];
                                           const isPassed = scoreVal >= maxVal * 0.5;
+                                          
+                                          let stdClass = "";
+                                          let labelTextClass = "";
+                                          if (isPassed) {
+                                            if (num <= 2) {
+                                              stdClass = "bg-teal-50 text-teal-600 border-teal-150";
+                                              labelTextClass = "text-teal-600/60 font-bold";
+                                            } else if (num <= 5) {
+                                              stdClass = "bg-sky-50 text-sky-600 border-sky-150";
+                                              labelTextClass = "text-sky-600/60 font-bold";
+                                            } else if (num <= 9) {
+                                              stdClass = "bg-indigo-50 text-indigo-600 border-indigo-150";
+                                              labelTextClass = "text-indigo-600/60 font-bold";
+                                            } else {
+                                              stdClass = "bg-amber-50 text-amber-600 border-amber-150";
+                                              labelTextClass = "text-amber-600/60 font-bold";
+                                            }
+                                          } else {
+                                            stdClass = "bg-rose-50/70 text-rose-500 border-rose-100";
+                                            labelTextClass = "text-rose-300 font-bold";
+                                          }
+
                                           return (
-                                            <span key={num} className={`inline-flex items-center gap-0.5 px-1.5 py-0.2 text-[9px] font-extrabold border rounded transition-all ${
-                                              isPassed 
-                                                ? "bg-[#00A19A]/5 text-[#00A19A] border-[#00A19A]/15" 
-                                                : "bg-rose-50/70 text-rose-500 border-rose-100"
-                                            }`}>
-                                              <span className={isPassed ? "text-[#00A19A]/60 font-bold" : "text-rose-300 font-bold"}>Y{num}:</span>
+                                            <span key={num} className={`inline-flex items-center gap-0.5 px-1.5 py-0.2 text-[9px] font-extrabold border rounded transition-all ${stdClass}`}>
+                                              <span className={labelTextClass}>Y{num}:</span>
                                               <span>{scoreVal.toFixed(1)}</span>
                                             </span>
                                           );
