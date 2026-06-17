@@ -921,7 +921,8 @@ export function ObservationClient({
                     {evaluationsGroupedBySlot.map(({ slot, evaluations }) => {
                       const slotDate = new Date(slot.date);
                       const isK12Slot = !["Mầm non"].includes(slot.level);
-                      let dbtText = "";
+                      let dtbText = "";
+                      let slotRank = "";
                       if (isK12Slot) {
                         const passedEvals = evaluations.filter(({ evaluation }) => {
                           return evaluation.totalScore !== null && evaluation.totalScore !== undefined && evaluation.totalScore >= 14;
@@ -929,9 +930,17 @@ export function ObservationClient({
                         if (passedEvals.length > 0) {
                           const sum = passedEvals.reduce((acc, curr) => acc + (curr.evaluation.totalScore || 0), 0);
                           const avg = sum / passedEvals.length;
-                          dbtText = `ĐBT: ${avg.toFixed(2)}/20.00đ`;
+                          dtbText = `ĐTB: ${avg.toFixed(2)}/20.00đ`;
+
+                          // Calculate average for requirements 1 to 11 to feed calculateK12Ranking
+                          const avgScores = Array(11).fill(0);
+                          for (let num = 1; num <= 11; num++) {
+                            const sumScore = passedEvals.reduce((acc, curr) => acc + (Number(curr.evaluation[`score${num}`]) || 0), 0);
+                            avgScores[num - 1] = sumScore / passedEvals.length;
+                          }
+                          slotRank = calculateK12Ranking(avgScores);
                         } else {
-                          dbtText = "ĐBT: --";
+                          dtbText = "ĐTB: --";
                         }
                       }
                       return (
@@ -951,11 +960,23 @@ export function ObservationClient({
                               </div>
                               <h4 className="font-extrabold text-sm text-slate-800 truncate">{slot.topic}</h4>
                             </div>
-                            <div className="flex items-center gap-3 shrink-0 text-xs font-bold text-slate-400">
-                              {isK12Slot && dbtText && (
-                                <span className="px-2.5 py-1 bg-[#00A19A]/10 text-[#00A19A] border border-[#00A19A]/20 rounded-lg font-black" title="Điểm Trung Bình Tiết (chỉ tính trên các phiếu ĐẠT)">
-                                  {dbtText}
-                                </span>
+                            <div className="flex items-center gap-2.5 shrink-0 text-xs font-bold text-slate-400">
+                              {isK12Slot && dtbText && (
+                                <div className="flex items-center gap-1.5">
+                                  <span className="px-2.5 py-1 bg-[#00A19A]/10 text-[#00A19A] border border-[#00A19A]/20 rounded-lg font-black" title="Điểm Trung Bình Tiết (chỉ tính trên các phiếu ĐẠT)">
+                                    {dtbText}
+                                  </span>
+                                  {slotRank && (
+                                    <span className={`px-2 py-0.5 text-[9px] font-black rounded border uppercase tracking-wider ${
+                                      slotRank === "Giỏi" ? "bg-emerald-50 text-emerald-600 border-emerald-200" :
+                                      slotRank === "Khá" ? "bg-sky-50 text-sky-600 border-sky-200" :
+                                      slotRank === "Trung bình" ? "bg-amber-50 text-amber-600 border-amber-200" :
+                                      "bg-rose-50 text-rose-600 border-rose-200"
+                                    }`}>
+                                      {slotRank}
+                                    </span>
+                                  )}
+                                </div>
                               )}
                               <span>
                                 Tổng số: <span className="font-black text-slate-700">{evaluations.length} phiếu</span>
