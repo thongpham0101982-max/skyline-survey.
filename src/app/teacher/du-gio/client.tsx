@@ -1389,6 +1389,59 @@ export function ObservationClient({
                                     <span className="text-[10px] font-bold text-slate-400">(Tối đa: {req.max}đ)</span>
                                   </div>
                                   <p className="text-xs text-slate-600 leading-relaxed font-semibold">{req.text}</p>
+                                  
+                                  {/* Warning message for core requirements (1, 3, 6, 7) */}
+                                  {[1, 3, 6, 7].includes(req.id) && (
+                                    <div className={`mt-2 p-2 rounded-xl text-[10px] font-bold border transition-all ${
+                                      (() => {
+                                        const score = evalK12Scores[globalIdx] || 0;
+                                        if (req.id === 1) {
+                                          return score === 1.5 
+                                            ? "bg-emerald-50 border-emerald-200/60 text-emerald-700" 
+                                            : "bg-amber-50 border-amber-200/60 text-amber-700";
+                                        }
+                                        if (req.id === 3 || req.id === 6) {
+                                          if (score < 1.0) return "bg-rose-50 border-rose-200/60 text-rose-700";
+                                          if (score < 2.0) return "bg-amber-50 border-amber-200/60 text-amber-700";
+                                          return "bg-emerald-50 border-emerald-200/60 text-emerald-700";
+                                        }
+                                        if (req.id === 7) {
+                                          if (score < 1.0) return "bg-rose-50 border-rose-200/60 text-rose-700";
+                                          if (score < 2.0) return "bg-amber-50 border-amber-200/60 text-amber-700";
+                                          if (score < 3.0) return "bg-amber-50 border-amber-200/60 text-amber-700";
+                                          return "bg-emerald-50 border-emerald-200/60 text-emerald-700";
+                                        }
+                                        return "";
+                                      })()
+                                    }`}>
+                                      <div className="flex items-center gap-1.5">
+                                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                                        <span>
+                                          {(() => {
+                                            const score = evalK12Scores[globalIdx] || 0;
+                                            if (req.id === 1) {
+                                              return score === 1.5
+                                                ? "Yêu cầu chốt chặn: Đã đạt điểm tối đa (1.50đ) để xếp loại Giỏi."
+                                                : "Yêu cầu chốt chặn: Điểm chưa đạt tối đa (1.50đ). Tiết dạy không thể xếp loại Giỏi.";
+                                            }
+                                            if (req.id === 3 || req.id === 6) {
+                                              const label = req.id === 3 ? "Yêu cầu 3" : "Yêu cầu 6";
+                                              if (score < 1.0) return `${label} chốt chặn: Điểm dưới 1.0đ. Tiết dạy sẽ bị Không xếp loại (cần tối thiểu 1.0đ cho loại Trung bình).`;
+                                              if (score < 2.0) return `${label} chốt chặn: Điểm dưới 2.0đ. Tiết dạy chỉ có thể xếp loại Trung bình (cần tối thiểu 2.0đ cho loại Khá/Giỏi).`;
+                                              return `${label} chốt chặn: Đã đạt điểm tối đa (2.00đ) để xếp loại Khá/Giỏi.`;
+                                            }
+                                            if (req.id === 7) {
+                                              if (score < 1.0) return "Yêu cầu 7 chốt chặn: Điểm dưới 1.0đ. Tiết dạy sẽ bị Không xếp loại (cần tối thiểu 1.0đ cho loại Trung bình).";
+                                              if (score < 2.0) return "Yêu cầu 7 chốt chặn: Điểm dưới 2.0đ. Tiết dạy chỉ có thể xếp loại Trung bình (cần tối thiểu 2.0đ cho loại Khá/Giỏi).";
+                                              if (score < 3.0) return "Yêu cầu 7 chốt chặn: Điểm dưới 3.0đ. Tiết dạy tối đa chỉ xếp loại Khá (cần tối đa 3.0đ cho loại Giỏi).";
+                                              return "Yêu cầu 7 chốt chặn: Đã đạt điểm tối đa (3.00đ) để xếp loại Giỏi.";
+                                            }
+                                            return "";
+                                          })()}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                                 <div className="flex items-center gap-2 shrink-0 self-end md:self-start">
                                   <span className="text-xs font-extrabold text-slate-500">Điểm:</span>
