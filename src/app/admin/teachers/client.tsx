@@ -45,12 +45,12 @@ function getDeptColor(dept) { return DEPT_COLORS[dept] || DEPT_COLORS["default"]
 function StatusBadge({ status }) {
   if (status === "ACTIVE") return (
     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[10px] font-extrabold bg-emerald-50 text-emerald-700 uppercase tracking-wider">
-      <span className="w-1.5 h-1.5 rounded-full bg-emerald-550 animate-pulse" />Đang dạy
+      <span className="w-1.5 h-1.5 rounded-full bg-emerald-550 animate-pulse" />On
     </span>
   )
   return (
     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[10px] font-extrabold bg-rose-50 text-rose-700 uppercase tracking-wider">
-      <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />Nghỉ dạy
+      <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />Off
     </span>
   )
 }
@@ -238,7 +238,7 @@ export function TeacherManagerClient({
           </div>
           <div>
             <p className="text-2xl font-black text-slate-800 leading-none">{activeCount}</p>
-            <p className="text-[10px] text-slate-400 mt-1.5 uppercase tracking-wider font-bold">Đang hoạt động</p>
+            <p className="text-[10px] text-slate-400 mt-1.5 uppercase tracking-wider font-bold">On</p>
           </div>
         </div>
         <div className="bg-white border border-slate-100 rounded-2xl p-6 flex items-center gap-4 hover:border-violet-500/30 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 shadow-sm border-l-4 border-l-violet-600">
@@ -300,8 +300,8 @@ export function TeacherManagerClient({
           <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
             className={`border rounded-xl px-3.5 py-2 text-xs font-bold outline-none bg-white transition-all cursor-pointer ${filterStatus ? "border-[#00A19A] text-[#00A19A] bg-[#00A19A]/5" : "border-slate-200 text-slate-600 hover:border-[#00A19A]/40 focus:border-[#00A19A]"}`}>
             <option value="">Tất cả Trạng thái</option>
-            <option value="ACTIVE">Đang dạy</option>
-            <option value="INACTIVE">Nghỉ dạy</option>
+            <option value="ACTIVE">On</option>
+            <option value="INACTIVE">Off</option>
           </select>
           {hasFilters && (
             <button onClick={() => { setSearch(""); setFilterDepartment(""); setFilterSubject(""); setFilterStatus("") }}
@@ -413,7 +413,7 @@ export function TeacherManagerClient({
           </p>
           <div className="flex items-center gap-2 border border-slate-200/60 px-3 py-1 bg-white font-bold text-xs rounded-lg">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-slate-655 font-bold">{activeCount} đang dạy</span>
+            <span className="text-slate-655 font-bold">{activeCount} On</span>
           </div>
         </div>
         <div className="overflow-x-auto">
@@ -578,17 +578,17 @@ export function TeacherManagerClient({
                         {isEditing ? (
                           <select value={editForm.status} onChange={e => setEditForm({ ...editForm, status: e.target.value })}
                             className="border border-[#00A19A]/60 rounded-xl px-2 py-1.5 text-xs outline-none bg-white font-bold w-28 focus:border-[#00A19A] cursor-pointer">
-                            <option value="ACTIVE">Đang dạy</option>
-                            <option value="INACTIVE">Nghỉ dạy</option>
+                            <option value="ACTIVE">On (Đang dạy)</option>
+                            <option value="INACTIVE">Off (Nghỉ dạy)</option>
                           </select>
                         ) : (
                           t.status === "ACTIVE" ? (
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[10px] font-extrabold bg-emerald-50 text-emerald-700 uppercase tracking-wider">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-550 animate-pulse" />Đang dạy
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-550 animate-pulse" />On
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[10px] font-extrabold bg-rose-50 text-rose-700 uppercase tracking-wider">
-                              <span className="w-1.5 h-1.5 rounded-full bg-rose-550" />Nghỉ dạy
+                              <span className="w-1.5 h-1.5 rounded-full bg-rose-550" />Off
                             </span>
                           )
                         )}
@@ -634,7 +634,7 @@ export function TeacherManagerClient({
               Hiển thị <span className="font-black text-slate-600">{displayed.length}</span> / <span className="font-black text-slate-600">{teachers.length}</span> giáo viên
             </p>
             <p className="text-xs text-slate-400 font-bold">
-              <span className="text-emerald-700 font-black">{activeCount}</span> đang dạy &middot; <span className="text-rose-600 font-black">{inactiveCount}</span> nghỉ dạy
+              <span className="text-emerald-700 font-black">{activeCount}</span> On &middot; <span className="text-rose-600 font-black">{inactiveCount}</span> Off
             </p>
           </div>
         )}
