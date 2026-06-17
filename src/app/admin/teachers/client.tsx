@@ -79,6 +79,16 @@ export function TeacherManagerClient({
   const [errorMsg, setErrorMsg] = useState("")
   const [successMsg, setSuccessMsg] = useState("")
   const fileInputRef = useRef(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 40
+
+  // Reset page to 1 when filters change:
+  const [prevFilters, setPrevFilters] = useState('')
+  const currentFiltersKey = search + filterDepartment + filterSubject + filterStatus
+  if (currentFiltersKey !== prevFilters) {
+    setPrevFilters(currentFiltersKey)
+    setCurrentPage(1)
+  }
 
   const displayed = teachers.filter((t) => {
     let match = true
@@ -443,10 +453,14 @@ export function TeacherManagerClient({
                   </td>
                 </tr>
               ) : (
-                displayed.map((t, idx) => {
-                  const isEditing = editingId === t.id
-                  return (
-                    <tr key={t.id} className={`group transition-all ${isEditing ? "bg-[#00A19A]/5 border-l-4 border-l-[#00A19A]" : "hover:bg-slate-50/20"}`}>
+                (() => {
+                  const startIndex = (currentPage - 1) * itemsPerPage;
+                  const paginated = displayed.slice(startIndex, startIndex + itemsPerPage);
+                  return paginated.map((t, index) => {
+                    const idx = startIndex + index;
+                    const isEditing = editingId === t.id;
+                    return (
+                      <tr key={t.id} className={`group transition-all ${isEditing ? "bg-[#00A19A]/5 border-l-4 border-l-[#00A19A]" : "hover:bg-slate-50/20"}`}>
 
                       <td className="px-5 py-4 text-slate-400 text-xs font-mono font-bold tabular-nums">{idx + 1}</td>
 
@@ -622,20 +636,56 @@ export function TeacherManagerClient({
                         </div>
                       </td>
                     </tr>
-                  )
-                })
+                  );
+                  });
+                })()
               )}
             </tbody>
           </table>
         </div>
         {displayed.length > 0 && (
-          <div className="px-5 py-3.5 border-t border-slate-150 bg-slate-50/50 flex items-center justify-between">
-            <p className="text-xs text-slate-400 font-bold">
-              Hiển thị <span className="font-black text-slate-600">{displayed.length}</span> / <span className="font-black text-slate-600">{teachers.length}</span> giáo viên
-            </p>
-            <p className="text-xs text-slate-400 font-bold">
-              <span className="text-emerald-700 font-black">{activeCount}</span> On &middot; <span className="text-rose-600 font-black">{inactiveCount}</span> Off
-            </p>
+          <div className="px-5 py-3.5 border-t border-slate-150 bg-slate-50/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-xs text-slate-450 font-bold">
+              <p>
+                Hiển thị <span className="font-black text-slate-700">{Math.min(displayed.length, (currentPage - 1) * itemsPerPage + 1)}-{Math.min(displayed.length, currentPage * itemsPerPage)}</span> trong số <span className="font-black text-slate-700">{displayed.length}</span> giáo viên
+              </p>
+              <p className="hidden sm:block text-slate-300">|</p>
+              <p>
+                <span className="text-emerald-700 font-black">{activeCount}</span> On &middot; <span className="text-rose-600 font-black">{inactiveCount}</span> Off
+              </p>
+            </div>
+            
+            {displayed.length > itemsPerPage && (
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:hover:bg-white transition-all cursor-pointer"
+                >
+                  Trước
+                </button>
+                {Array.from({ length: Math.ceil(displayed.length / itemsPerPage) }).map((_, i) => {
+                  const pageNum = i + 1;
+                  const isCurrent = currentPage === pageNum;
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`w-8 h-8 flex items-center justify-center text-xs font-extrabold rounded-lg border transition-all cursor-pointer ${isCurrent ? 'bg-[#00A19A] border-[#00A19A] text-white' : 'bg-white border-slate-200 text-slate-600 hover:bg-[#00A19A]/5'}`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(displayed.length / itemsPerPage)))}
+                  disabled={currentPage === Math.ceil(displayed.length / itemsPerPage)}
+                  className="px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:hover:bg-white transition-all cursor-pointer"
+                >
+                  Sau
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
