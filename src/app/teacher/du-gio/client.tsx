@@ -621,6 +621,30 @@ export function ObservationClient({
     return list.sort((a, b) => new Date(b.slot.date).getTime() - new Date(a.slot.date).getTime());
   }, [slots, currentTeacher.id]);
 
+  const evaluationsGroupedBySlot = useMemo(() => {
+    const groups = [];
+    slots.forEach(slot => {
+      if (slot.teacherId === currentTeacher.id) {
+        const evals = [];
+        slot.registrations.forEach(reg => {
+          if (reg.evaluation) {
+            evals.push({
+              registration: reg,
+              evaluation: reg.evaluation
+            });
+          }
+        });
+        if (evals.length > 0) {
+          groups.push({
+            slot,
+            evaluations: evals
+          });
+        }
+      }
+    });
+    return groups.sort((a, b) => new Date(b.slot.date).getTime() - new Date(a.slot.date).getTime());
+  }, [slots, currentTeacher.id]);
+
   const tabFilteredSlots = useMemo(() => {
     const now = new Date()
     return slots.filter(slot => {
@@ -893,40 +917,230 @@ export function ObservationClient({
                     <p className="text-xs font-bold">Chưa nhận được phiếu đánh giá nào từ giáo viên dự giờ.</p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {receivedEvaluations.map(({ slot, registration, evaluation }) => {
+                  <div className="space-y-6">
+                    {evaluationsGroupedBySlot.map(({ slot, evaluations }) => {
                       const slotDate = new Date(slot.date);
+                      const isK12Slot = !["Mầm non"].includes(slot.level);
+                      let dbtText = "";
+                      if (isK12Slot) {
+                        const passedEvals = evaluations.filter(({ evaluation }) => {
+                          return evaluation.totalScore !== null && evaluation.totalScore !== undefined && evaluation.totalScore >= 14;
+                        });
+                        if (passedEvals.length > 0) {
+                          const sum = passedEvals.reduce((acc, curr) => acc + (curr.evaluation.totalScore || 0), 0);
+                          const avg = sum / passedEvals.length;
+                          dbtText = `ĐBT: ${avg.toFixed(2)}/20.00đ`;
+                        } else {
+                          dbtText = "ĐBT: --";
+                        }
+                      }
                       return (
-                        <div key={registration.id} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-slate-200 transition-all">
-                          <div className="space-y-2 min-w-0">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className="px-2 py-0.5 text-[9px] font-extrabold bg-sky-50 text-sky-600 border border-sky-200 rounded-md uppercase tracking-wider">
-                                {["Tiểu học", "THCS", "THPT", "Phổ thông K-12"].includes(slot.level) ? "Phổ thông K-12" : slot.level}
-                              </span>
-                              <span className="px-2 py-0.5 text-[9px] font-extrabold bg-amber-50 text-amber-600 border border-amber-200 rounded-md uppercase tracking-wider">{slot.grade}</span>
-                              <span className="text-xs font-bold text-slate-400">{slotDate.toLocaleDateString("vi-VN")} · {slot.startTime}</span>
-                            </div>
-                            <h4 className="font-extrabold text-sm text-slate-800 truncate">{slot.topic}</h4>
-                            <p className="text-[11px] font-bold text-slate-500">
-                              Người đánh giá: <span className="text-slate-700 font-extrabold">{registration.teacher?.teacherName || "GV dự giờ"}</span> ({registration.teacher?.teacherCode || ""})
-                            </p>
-                          </div>
-                          
-                          <div className="flex items-center gap-3 shrink-0 justify-between md:justify-end">
-                            <div className="text-right">
-                              <div className="text-xs font-black text-slate-700">
-                                {evaluation.totalScore !== null && evaluation.totalScore !== undefined
-                                  ? `${evaluation.totalScore.toFixed(2)}/20.00đ`
-                                  : "Đánh giá đạt"}
+                        <div key={slot.id} className="p-5 bg-white border border-slate-150 rounded-2xl shadow-sm space-y-4 border-l-4 border-l-[#00A19A]">
+                          {/* Slot Info Header */}
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                            <div className="space-y-1 min-w-0">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="px-2 py-0.5 text-[9px] font-extrabold bg-sky-50 text-sky-600 border border-sky-200 rounded-md uppercase tracking-wider">
+                                  {["Tiểu học", "THCS", "THPT", "Phổ thông K-12"].includes(slot.level) ? "Phổ thông K-12" : slot.level}
+                                </span>
+                                <span className="px-2 py-0.5 text-[9px] font-extrabold bg-amber-50 text-amber-600 border border-amber-200 rounded-md uppercase tracking-wider">{slot.grade}</span>
+                                <span className="text-xs font-bold text-slate-400">{slotDate.toLocaleDateString("vi-VN")} · {slot.startTime}</span>
+                                {slot.className && (
+                                  <span className="px-2 py-0.5 text-[9px] font-bold bg-slate-100 text-slate-600 border border-slate-200 rounded-md">Lớp: {slot.className} ({slot.campusName})</span>
+                                )}
                               </div>
-                              <span className="inline-block px-2 py-0.5 text-[10px] font-bold rounded-md bg-violet-50 text-violet-700 border border-violet-200 mt-1">
-                                {evaluation.overallRating}
+                              <h4 className="font-extrabold text-sm text-slate-800 truncate">{slot.topic}</h4>
+                            </div>
+                            <div className="flex items-center gap-3 shrink-0 text-xs font-bold text-slate-400">
+                              {isK12Slot && dbtText && (
+                                <span className="px-2.5 py-1 bg-[#00A19A]/10 text-[#00A19A] border border-[#00A19A]/20 rounded-lg font-black" title="Điểm Trung Bình Tiết (chỉ tính trên các phiếu ĐẠT)">
+                                  {dbtText}
+                                </span>
+                              )}
+                              <span>
+                                Tổng số: <span className="font-black text-slate-700">{evaluations.length} phiếu</span>
                               </span>
                             </div>
-                            <button onClick={() => openEvalModal(registration, slot)}
-                              className="px-3 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-xs font-extrabold shadow-sm transition-all">
-                              Xem phiếu
-                            </button>
+                          </div>
+
+                          {/* List of evaluations */}
+                          <div className="space-y-2.5">
+                            {evaluations.map(({ registration, evaluation }) => {
+                              const isK12 = !["Mầm non"].includes(slot.level);
+                              const passed = isK12
+                                ? (evaluation.totalScore !== null && evaluation.totalScore !== undefined ? evaluation.totalScore >= 14 : (evaluation.overallRating === "Giỏi" || evaluation.overallRating === "Khá"))
+                                : (evaluation.overallRating === "Tốt" || evaluation.overallRating === "Khá");
+
+                              return (
+                                <div key={registration.id} className="p-3 bg-slate-50 border border-slate-100 rounded-xl hover:border-[#00A19A]/20 transition-all">
+                                  {/* Desktop Grid Layout */}
+                                  <div className="hidden md:grid grid-cols-12 items-center gap-3">
+                                    {/* Col 1: Evaluator Info (Avatar + Name) */}
+                                    <div className="col-span-3 flex items-center gap-2 min-w-0">
+                                      <div className="w-8 h-8 rounded-full bg-[#00A19A]/10 text-[#00A19A] flex items-center justify-center text-xs font-black shrink-0">
+                                        {registration.teacher?.teacherName.charAt(0)}
+                                      </div>
+                                      <div className="min-w-0">
+                                        <p className="text-xs font-black text-slate-800 truncate" title={registration.teacher?.teacherName}>
+                                          {registration.teacher?.teacherName}
+                                        </p>
+                                        <p className="text-[10px] font-bold text-slate-400">
+                                          {registration.teacher?.teacherCode}
+                                        </p>
+                                      </div>
+                                    </div>
+
+                                    {/* Col 2: Result & Badge */}
+                                    <div className="col-span-2 flex flex-col gap-0.5 justify-center">
+                                      <span className="text-xs font-black text-slate-800">
+                                        {evaluation.totalScore !== null && evaluation.totalScore !== undefined
+                                          ? `${evaluation.totalScore.toFixed(2)}/20.00đ`
+                                          : "Mầm non"}
+                                      </span>
+                                      <div className="flex flex-wrap items-center gap-1">
+                                        <span className="px-1 py-0.2 text-[8px] font-bold rounded bg-violet-50 text-violet-600 border border-violet-150">
+                                          {evaluation.overallRating}
+                                        </span>
+                                        {passed ? (
+                                          <span className="px-1 py-0.2 text-[8px] font-black rounded bg-emerald-50 text-emerald-600 border border-emerald-150 uppercase tracking-wider">ĐẠT</span>
+                                        ) : (
+                                          <span className="px-1 py-0.2 text-[8px] font-black rounded bg-rose-50 text-rose-600 border border-rose-150 uppercase tracking-wider">CHƯA ĐẠT</span>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    {/* Col 3: Score List */}
+                                    <div className="col-span-6 flex flex-wrap gap-1">
+                                      {isK12 ? (
+                                        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((num) => {
+                                          const scoreKey = `score${num}`;
+                                          const scoreVal = evaluation[scoreKey] !== null && evaluation[scoreKey] !== undefined
+                                            ? Number(evaluation[scoreKey])
+                                            : 0;
+                                          const maxScores = [1.5, 1.5, 2.0, 2.0, 1.0, 2.0, 3.0, 2.0, 2.0, 2.0, 1.0];
+                                          const maxVal = maxScores[num - 1];
+                                          const isPassed = scoreVal >= maxVal * 0.5;
+                                          return (
+                                            <span key={num} className={`inline-flex items-center gap-0.5 px-1 py-0.2 text-[9px] font-extrabold border rounded transition-all ${
+                                              isPassed 
+                                                ? "bg-[#00A19A]/5 text-[#00A19A] border-[#00A19A]/15" 
+                                                : "bg-rose-50/70 text-rose-500 border-rose-100"
+                                            }`}>
+                                              <span className={isPassed ? "text-[#00A19A]/60 font-bold" : "text-rose-300 font-bold"}>Y{num}:</span>
+                                              <span>{scoreVal.toFixed(1)}</span>
+                                            </span>
+                                          );
+                                        })
+                                      ) : (
+                                        [1, 2, 3, 4, 5].map((num) => {
+                                          const critKey = `criterion${num}`;
+                                          const ratingLabels = { 4: "Tốt", 3: "Khá", 2: "Tr.bình", 1: "Yếu" };
+                                          const critVal = evaluation[critKey] !== null && evaluation[critKey] !== undefined
+                                            ? evaluation[critKey]
+                                            : 0;
+                                          const critLabel = ratingLabels[critVal] || "-";
+                                          const isPassed = critVal >= 3;
+                                          return (
+                                            <span key={num} className={`inline-flex items-center gap-0.5 px-1 py-0.2 text-[9px] font-extrabold border rounded transition-all ${
+                                              isPassed 
+                                                ? "bg-[#00A19A]/5 text-[#00A19A] border-[#00A19A]/15" 
+                                                : "bg-rose-50/70 text-rose-500 border-rose-100"
+                                            }`}>
+                                              <span className={isPassed ? "text-[#00A19A]/60 font-bold" : "text-rose-300 font-bold"}>T{num}:</span>
+                                              <span>{critLabel}</span>
+                                            </span>
+                                          );
+                                        })
+                                      )}
+                                    </div>
+
+                                    {/* Col 4: Action button */}
+                                    <div className="col-span-1 text-right">
+                                      <button onClick={() => openEvalModal(registration, slot)}
+                                        className="px-2.5 py-1.5 bg-[#00A19A] hover:bg-[#008B85] text-white rounded-lg text-[11px] font-black shadow-sm transition-all whitespace-nowrap">
+                                        Xem
+                                      </button>
+                                    </div>
+                                  </div>
+
+                                  {/* Mobile Card Layout (visible only on small screens) */}
+                                  <div className="md:hidden flex flex-col gap-2">
+                                    <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-1.5">
+                                      <div className="flex items-center gap-1.5">
+                                        <div className="w-6 h-6 rounded-full bg-[#00A19A]/10 text-[#00A19A] flex items-center justify-center text-[10px] font-black shrink-0">
+                                          {registration.teacher?.teacherName.charAt(0)}
+                                        </div>
+                                        <span className="text-xs font-black text-slate-700 truncate">{registration.teacher?.teacherName}</span>
+                                      </div>
+                                      <button onClick={() => openEvalModal(registration, slot)}
+                                        className="px-2 py-1 bg-[#00A19A] text-white rounded-md text-[10px] font-black shadow-sm">
+                                        Xem phiếu
+                                      </button>
+                                    </div>
+                                    <div className="flex items-center justify-between gap-2">
+                                      <div className="flex flex-wrap items-center gap-1">
+                                        <span className="text-xs font-black text-slate-700 mr-1">
+                                          {evaluation.totalScore !== null && evaluation.totalScore !== undefined
+                                            ? `${evaluation.totalScore.toFixed(2)}đ`
+                                            : "Mầm non"}
+                                        </span>
+                                        <span className="px-1 py-0.2 text-[8px] font-bold rounded bg-violet-50 text-violet-600 border border-violet-150">
+                                          {evaluation.overallRating}
+                                        </span>
+                                        {passed ? (
+                                          <span className="px-1 py-0.2 text-[8px] font-black rounded bg-emerald-50 text-emerald-600 border border-emerald-150 uppercase tracking-wider">ĐẠT</span>
+                                        ) : (
+                                          <span className="px-1 py-0.2 text-[8px] font-black rounded bg-rose-50 text-rose-600 border border-rose-150 uppercase tracking-wider">CHƯA ĐẠT</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="flex flex-wrap gap-1 border-t border-slate-100 pt-1.5">
+                                      {isK12 ? (
+                                        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((num) => {
+                                          const scoreKey = `score${num}`;
+                                          const scoreVal = evaluation[scoreKey] !== null && evaluation[scoreKey] !== undefined
+                                            ? Number(evaluation[scoreKey])
+                                            : 0;
+                                          const maxScores = [1.5, 1.5, 2.0, 2.0, 1.0, 2.0, 3.0, 2.0, 2.0, 2.0, 1.0];
+                                          const maxVal = maxScores[num - 1];
+                                          const isPassed = scoreVal >= maxVal * 0.5;
+                                          return (
+                                            <span key={num} className={`inline-flex items-center gap-0.5 px-1.5 py-0.2 text-[9px] font-extrabold border rounded transition-all ${
+                                              isPassed 
+                                                ? "bg-[#00A19A]/5 text-[#00A19A] border-[#00A19A]/15" 
+                                                : "bg-rose-50/70 text-rose-500 border-rose-100"
+                                            }`}>
+                                              <span className={isPassed ? "text-[#00A19A]/60 font-bold" : "text-rose-300 font-bold"}>Y{num}:</span>
+                                              <span>{scoreVal.toFixed(1)}</span>
+                                            </span>
+                                          );
+                                        })
+                                      ) : (
+                                        [1, 2, 3, 4, 5].map((num) => {
+                                          const critKey = `criterion${num}`;
+                                          const ratingLabels = { 4: "Tốt", 3: "Khá", 2: "Tr.bình", 1: "Yếu" };
+                                          const critVal = evaluation[critKey] !== null && evaluation[critKey] !== undefined
+                                            ? evaluation[critKey]
+                                            : 0;
+                                          const critLabel = ratingLabels[critVal] || "-";
+                                          const isPassed = critVal >= 3;
+                                          return (
+                                            <span key={num} className={`inline-flex items-center gap-0.5 px-1.5 py-0.2 text-[9px] font-extrabold border rounded transition-all ${
+                                              isPassed 
+                                                ? "bg-[#00A19A]/5 text-[#00A19A] border-[#00A19A]/15" 
+                                                : "bg-rose-50/70 text-rose-500 border-rose-100"
+                                            }`}>
+                                              <span className={isPassed ? "text-[#00A19A]/60 font-bold" : "text-rose-300 font-bold"}>T{num}:</span>
+                                              <span>{critLabel}</span>
+                                            </span>
+                                          );
+                                        })
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
                       );
@@ -1010,13 +1224,26 @@ export function ObservationClient({
                           {myReg.isApproved ? "Đã được xác nhận dự giờ" : "Chờ xác nhận từ GV chủ trì"}
                         </div>
                         {myReg.evaluation && (
-                          <div className="flex items-center gap-2 px-3 py-2 bg-violet-50 border border-violet-200 text-violet-700 rounded-xl text-xs font-bold">
-                            <ClipboardList className="w-4 h-4 shrink-0" />
-                            <span>
-                              {myReg.evaluation.totalScore !== null
-                                ? `Kết quả: ${myReg.evaluation.totalScore.toFixed(2)}/20 điểm (${myReg.evaluation.overallRating})`
-                                : `Kết quả: ${myReg.evaluation.overallRating}`}
-                            </span>
+                          <div className="flex items-center justify-between gap-2 px-3 py-2 bg-violet-50 border border-violet-200 text-violet-700 rounded-xl text-xs font-bold">
+                            <div className="flex items-center gap-2">
+                              <ClipboardList className="w-4 h-4 shrink-0" />
+                              <span>
+                                {myReg.evaluation.totalScore !== null
+                                  ? `Kết quả: ${myReg.evaluation.totalScore.toFixed(2)}/20 điểm (${myReg.evaluation.overallRating})`
+                                  : `Kết quả: ${myReg.evaluation.overallRating}`}
+                              </span>
+                            </div>
+                            {(() => {
+                              const isK12 = !["Mầm non"].includes(slot.level);
+                              const passed = isK12
+                                ? (myReg.evaluation.totalScore !== null && myReg.evaluation.totalScore !== undefined ? myReg.evaluation.totalScore >= 14 : (myReg.evaluation.overallRating === "Giỏi" || myReg.evaluation.overallRating === "Khá"))
+                                : (myReg.evaluation.overallRating === "Tốt" || myReg.evaluation.overallRating === "Khá");
+                              return passed ? (
+                                <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded text-[9px] font-black uppercase tracking-wider">ĐẠT</span>
+                              ) : (
+                                <span className="px-2 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 rounded text-[9px] font-black uppercase tracking-wider">CHƯA ĐẠT</span>
+                              );
+                            })()}
                           </div>
                         )}
                       </div>
@@ -1129,11 +1356,24 @@ export function ObservationClient({
                                 </div>
                                 <div className="flex items-center gap-1.5 shrink-0">
                                   {reg.evaluation && (
-                                    <span className="px-2 py-0.5 text-[9px] font-bold bg-violet-50 border border-violet-200 text-violet-600 rounded-md">
-                                      {reg.evaluation.totalScore !== null && reg.evaluation.totalScore !== undefined
-                                        ? `Đã nộp: ${reg.evaluation.totalScore}đ (${reg.evaluation.overallRating})`
-                                        : "Đã nộp phiếu"}
-                                    </span>
+                                    <div className="flex flex-col items-end gap-1">
+                                      <span className="px-2 py-0.5 text-[9px] font-bold bg-violet-50 border border-violet-200 text-violet-600 rounded-md">
+                                        {reg.evaluation.totalScore !== null && reg.evaluation.totalScore !== undefined
+                                          ? `Đã nộp: ${reg.evaluation.totalScore}đ (${reg.evaluation.overallRating})`
+                                          : `Đã nộp: ${reg.evaluation.overallRating}`}
+                                      </span>
+                                      {(() => {
+                                        const isK12 = !["Mầm non"].includes(slot.level);
+                                        const passed = isK12
+                                          ? (reg.evaluation.totalScore !== null && reg.evaluation.totalScore !== undefined ? reg.evaluation.totalScore >= 14 : (reg.evaluation.overallRating === "Giỏi" || reg.evaluation.overallRating === "Khá"))
+                                          : (reg.evaluation.overallRating === "Tốt" || reg.evaluation.overallRating === "Khá");
+                                        return passed ? (
+                                          <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded text-[9px] font-extrabold uppercase tracking-wider">ĐẠT</span>
+                                        ) : (
+                                          <span className="px-1.5 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 rounded text-[9px] font-extrabold uppercase tracking-wider">CHƯA ĐẠT</span>
+                                        );
+                                      })()}
+                                    </div>
                                   )}
                                   {reg.isApproved ? (
                                     <span className="flex items-center gap-1 px-2.5 py-1 bg-emerald-100 border border-emerald-300 text-emerald-700 rounded-lg text-[10px] font-extrabold">
@@ -1344,7 +1584,21 @@ export function ObservationClient({
           <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300">
             <div className="px-6 py-5 bg-gradient-to-r from-violet-700 to-violet-900 text-white flex items-center justify-between shrink-0">
               <div>
-                <h3 className="font-black text-lg flex items-center gap-2"><ClipboardList className="w-5 h-5" /> Phiếu đánh giá tiết dự giờ</h3>
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <h3 className="font-black text-lg flex items-center gap-2"><ClipboardList className="w-5 h-5" /> Phiếu đánh giá tiết dự giờ</h3>
+                  {evalOverall && (() => {
+                    const isK12 = evalModal.slot.level !== "Mầm non";
+                    const score = isK12 ? evalK12Scores.reduce((a, b) => a + b, 0) : null;
+                    const passed = isK12
+                      ? (score !== null ? score >= 14 : (evalOverall === "Giỏi" || evalOverall === "Khá"))
+                      : (evalOverall === "Tốt" || evalOverall === "Khá");
+                    return passed ? (
+                      <span className="px-2 py-0.5 bg-emerald-505 text-white bg-emerald-500 border border-emerald-400 rounded-md text-[10px] font-black uppercase tracking-wider shadow-sm">ĐẠT</span>
+                    ) : (
+                      <span className="px-2 py-0.5 bg-rose-505 text-white bg-rose-500 border border-rose-400 rounded-md text-[10px] font-black uppercase tracking-wider shadow-sm">CHƯA ĐẠT</span>
+                    );
+                  })()}
+                </div>
                 <p className="text-white/70 text-xs mt-0.5">Bài dạy: {evalModal.slot.topic}</p>
               </div>
               <button onClick={() => setEvalModal(null)} className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors"><X className="w-5 h-5 text-white/80" /></button>
@@ -1524,6 +1778,18 @@ export function ObservationClient({
                         Tổng điểm: {evalK12Scores.reduce((a, b) => a + b, 0).toFixed(2)}/20đ
                       </span>
                     )}
+                    {evalOverall && (() => {
+                      const isK12 = evalModal.slot.level !== "Mầm non";
+                      const score = isK12 ? evalK12Scores.reduce((a, b) => a + b, 0) : null;
+                      const passed = isK12
+                        ? (score !== null ? score >= 14 : (evalOverall === "Giỏi" || evalOverall === "Khá"))
+                        : (evalOverall === "Tốt" || evalOverall === "Khá");
+                      return passed ? (
+                        <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 border border-emerald-300 rounded-md text-[10px] font-black uppercase tracking-wider">ĐẠT</span>
+                      ) : (
+                        <span className="px-2 py-0.5 bg-rose-100 text-rose-700 border border-rose-300 rounded-md text-[10px] font-black uppercase tracking-wider">CHƯA ĐẠT</span>
+                      );
+                    })()}
                   </div>
                   {evalModal.slot.level !== "Mầm non" && (
                     <span className="text-[10px] font-black bg-violet-100 text-violet-700 px-2 py-0.5 rounded-md">
@@ -1532,7 +1798,10 @@ export function ObservationClient({
                   )}
                 </div>
                 <div className="grid grid-cols-4 gap-2">
-                  {[["Tốt","bg-emerald-500"],["Khá","bg-sky-500"],["Trung bình","bg-amber-400"],["Yếu","bg-rose-500"]].map(([r, color]) => (
+                  {(evalModal.slot.level !== "Mầm non"
+                    ? [["Giỏi","bg-emerald-500"],["Khá","bg-sky-500"],["Trung bình","bg-amber-400"],["Không xếp loại","bg-rose-500"]]
+                    : [["Tốt","bg-emerald-500"],["Khá","bg-sky-500"],["Trung bình","bg-amber-400"],["Yếu","bg-rose-500"]]
+                  ).map(([r, color]) => (
                     <button key={r} type="button" onClick={() => { if (!isReadOnly) setEvalOverall(r); }} disabled={isReadOnly}
                       className={`py-2.5 rounded-xl border-2 text-xs font-extrabold transition-all ${evalOverall === r ? `${color} border-transparent text-white shadow-md` : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"}`}>
                       {r}
