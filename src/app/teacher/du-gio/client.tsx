@@ -646,7 +646,26 @@ export function ObservationClient({
   const handleTabChange = (tab: string) => {
     setActiveTab(tab)
     const params = new URLSearchParams(window.location.search)
-    if (tab === "dang-ky") params.delete("tab"); else params.set("tab", tab)
+    if (tab === "dang-ky") {
+      params.delete("tab")
+    } else {
+      params.set("tab", tab)
+      // Clear search filters when switching to other tabs
+      params.delete("schoolBlock")
+      params.delete("level")
+      params.delete("grade")
+      params.delete("date")
+      params.delete("campusId")
+      params.delete("deptId")
+      
+      setFilterCampusId("all")
+      setFilterLevel("all")
+      setFilterGrade("all")
+      setFilterDate("")
+      setFilterPeriod("all")
+      setFilterSchoolBlock("all")
+      setFilterDeptId("all")
+    }
     router.push(`${pathname}?${params.toString()}`)
   }
 
@@ -697,7 +716,8 @@ export function ObservationClient({
       {/* Main Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
         {/* Filters */}
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-md shadow-slate-100/40 flex flex-col border-t-4 border-t-[#0A3230] overflow-hidden">
+        {activeTab === "dang-ky" && (
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-md shadow-slate-100/40 flex flex-col border-t-4 border-t-[#0A3230] overflow-hidden">
           {/* Filter Header - collapsible */}
           <button
             onClick={() => setShowFilterPanel(!showFilterPanel)}
@@ -804,9 +824,10 @@ export function ObservationClient({
             </div>
           </div>
         </div>
+        )}
 
         {/* Slot Cards */}
-        <div className="lg:col-span-3 flex flex-col gap-6">
+        <div className={`${activeTab === "dang-ky" ? "lg:col-span-3" : "lg:col-span-4"} flex flex-col gap-6`}>
           {activeTab === "dang-ky" && (
             <div className="flex flex-col gap-4">
               
