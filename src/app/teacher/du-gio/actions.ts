@@ -38,7 +38,8 @@ export async function getObservationData() {
       select: {
         id: true,
         teacherName: true,
-        teacherCode: true
+        teacherCode: true,
+        departmentId: true
       },
       orderBy: { teacherName: "asc" }
     })
@@ -123,8 +124,9 @@ export async function getObservationSlots(filters: {
         teacher: {
           select: {
             id: true,
-            teacherName: true,
-            teacherCode: true,
+        teacherName: true,
+        teacherCode: true,
+        departmentId: true,
             email: true,
             departmentId: true,
             departmentRel: true,
@@ -141,8 +143,9 @@ export async function getObservationSlots(filters: {
             teacher: {
               select: {
                 id: true,
-                teacherName: true,
-                teacherCode: true,
+        teacherName: true,
+        teacherCode: true,
+        departmentId: true,
                 email: true
               }
             },
@@ -591,3 +594,4 @@ export async function updateObservationSlot(slotId: string, data: {
     return { success: false, error: e.message }
   }
 }
+

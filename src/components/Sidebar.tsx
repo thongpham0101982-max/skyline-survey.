@@ -259,6 +259,10 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0 }: 
                   <FileText className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname === '/teacher/du-gio' && searchParams?.get("tab") === 'history' ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
                   {!isCollapsed && <span>Lịch sử đăng ký</span>}
                 </Link>
+                <Link href="/teacher/du-gio?tab=tong-hop" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname === '/teacher/du-gio' && searchParams?.get("tab") === 'tong-hop' ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"} mt-1`}>
+                  <PieChart className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname === '/teacher/du-gio' && searchParams?.get("tab") === 'tong-hop' ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
+                  {!isCollapsed && <span>Tổng hợp dự giờ</span>}
+                </Link>
               </div>
             </>
           )}
