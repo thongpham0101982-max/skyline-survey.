@@ -65,12 +65,9 @@ export function AdminTongHopClient({
       if (!dept.blockCM || dept.blockCM === "" || dept.blockCM === "Hỗ trợ người học") {
         return false;
       }
-      const deptTeachers = teachers.filter((t: any) => t.departmentId === dept.id);
-      const hasTaught = deptTeachers.some((t: any) => (allTeacherStats[t.id]?.taughtCount || 0) > 0);
-      const hasObserved = deptTeachers.some((t: any) => (allTeacherStats[t.id]?.observedCount || 0) > 0);
-      return hasTaught && hasObserved;
+      return true;
     });
-  }, [departments, teachers, allTeacherStats]);
+  }, [departments]);
 
   // If user is TTCM, preselect and lock to their department. Otherwise, select the first active department.
   const initialDeptId = isTTCM 
@@ -86,14 +83,10 @@ export function AdminTongHopClient({
   const [filterLevel, setFilterLevel] = useState("all")
   const [filterGrade, setFilterGrade] = useState("all")
 
-  // Get all teachers in the selected department who have registered teaching or observing slots
+  // Get all teachers in the selected department
   const deptTeachers = useMemo(() => {
-    return teachers.filter((t: any) => {
-      if (t.departmentId !== selectedDeptId) return false;
-      const stats = allTeacherStats[t.id];
-      return stats && (stats.taughtCount > 0 || stats.observedCount > 0);
-    });
-  }, [teachers, selectedDeptId, allTeacherStats]);
+    return teachers.filter((t: any) => t.departmentId === selectedDeptId);
+  }, [teachers, selectedDeptId]);
 
   // Filter department teachers by search query
   const filteredDeptTeachers = useMemo(() => {
