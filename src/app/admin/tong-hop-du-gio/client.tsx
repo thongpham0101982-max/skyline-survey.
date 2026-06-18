@@ -86,10 +86,14 @@ export function AdminTongHopClient({
   const [filterLevel, setFilterLevel] = useState("all")
   const [filterGrade, setFilterGrade] = useState("all")
 
-  // Get all teachers in the selected department
+  // Get all teachers in the selected department who have registered teaching or observing slots
   const deptTeachers = useMemo(() => {
-    return teachers.filter((t: any) => t.departmentId === selectedDeptId);
-  }, [teachers, selectedDeptId]);
+    return teachers.filter((t: any) => {
+      if (t.departmentId !== selectedDeptId) return false;
+      const stats = allTeacherStats[t.id];
+      return stats && (stats.taughtCount > 0 || stats.observedCount > 0);
+    });
+  }, [teachers, selectedDeptId, allTeacherStats]);
 
   // Filter department teachers by search query
   const filteredDeptTeachers = useMemo(() => {
