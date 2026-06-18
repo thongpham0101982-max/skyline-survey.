@@ -1119,12 +1119,13 @@ export function ObservationClient({
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/50 pb-3">
                                   <div>
                                     <div className="flex flex-wrap items-center gap-1.5">
-                                      <span className="px-1.5 py-0.2 text-[8px] font-extrabold bg-sky-50 text-sky-600 border border-sky-200 rounded uppercase tracking-wider">{slot.level}</span>
-                                      <span className="px-1.5 py-0.2 text-[8px] font-extrabold bg-amber-50 text-amber-600 border border-amber-200 rounded uppercase tracking-wider">{slot.grade}</span>
-                                      <span className="text-[10px] font-bold text-slate-400">{slotDate.toLocaleDateString("vi-VN")} · {slot.startTime}</span>
-                                      {slot.className && <span className="px-1.5 py-0.2 text-[8px] font-bold bg-slate-200/50 text-slate-600 border border-slate-300/30 rounded">Lớp: {slot.className}</span>}
-                                    </div>
-                                    <h4 className="font-extrabold text-sm text-slate-800 mt-1">{slot.topic}</h4>
+                                <span className="px-1.5 py-0.2 text-[8px] font-extrabold bg-sky-50 text-sky-600 border border-sky-200 rounded uppercase tracking-wider">{slot.level}</span>
+                                <span className="px-1.5 py-0.2 text-[8px] font-extrabold bg-amber-50 text-amber-600 border border-amber-200 rounded uppercase tracking-wider">{slot.grade}</span>
+                                <span className="px-1.5 py-0.2 text-[8px] font-extrabold bg-rose-50 text-rose-600 border border-rose-200 rounded uppercase tracking-wider">{slot.startTime}</span>
+                                <span className="text-[10px] font-bold text-slate-400">{slotDate.toLocaleDateString("vi-VN")}</span>
+                                {slot.className && <span className="px-1.5 py-0.2 text-[8px] font-bold bg-slate-200/50 text-slate-600 border border-slate-300/30 rounded">Lớp: {slot.className}</span>}
+                              </div>
+                              <h4 className="font-black text-[15px] text-[#00A19A] mt-1.5 tracking-tight">{slot.topic}</h4>
                                   </div>
                                   <div className="shrink-0 text-right">
                                     {avgScore !== null ? (
