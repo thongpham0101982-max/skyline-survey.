@@ -135,13 +135,29 @@ Thông tin người dùng hiện tại đang gửi tin nhắn:
         } else if (call.name === "getObservationCriteriaGuidelines") {
           toolResult = await getObservationCriteriaGuidelines();
         } else if (call.name === "getTeacherActivityInMonth") {
-          toolResult = await getTeacherActivityInMonth(call.args.teacherNameOrCode as string);
+          if (currentUser?.role !== "ADMIN") {
+            toolResult = { error: "Bạn không có quyền xem thông tin thống kê hoạt động của giáo viên khác." };
+          } else {
+            toolResult = await getTeacherActivityInMonth(call.args.teacherNameOrCode as string);
+          }
         } else if (call.name === "getLowestAverageScoreTaughtPeriod") {
-          toolResult = await getLowestAverageScoreTaughtPeriod();
+          if (currentUser?.role !== "ADMIN") {
+            toolResult = { error: "Bạn không có quyền truy cập thông tin tiết dạy có điểm thấp nhất." };
+          } else {
+            toolResult = await getLowestAverageScoreTaughtPeriod();
+          }
         } else if (call.name === "getDepartmentObservationStatsSummary") {
-          toolResult = await getDepartmentObservationStatsSummary(call.args.deptName as string);
+          if (currentUser?.role !== "ADMIN") {
+            toolResult = { error: "Bạn không có quyền xem thống kê tổ chuyên môn." };
+          } else {
+            toolResult = await getDepartmentObservationStatsSummary(call.args.deptName as string);
+          }
         } else if (call.name === "getCriteriaExtremeFrequencies") {
-          toolResult = await getCriteriaExtremeFrequencies();
+          if (currentUser?.role !== "ADMIN") {
+            toolResult = { error: "Bạn không có quyền truy cập phân tích tần số tiêu chí đánh giá." };
+          } else {
+            toolResult = await getCriteriaExtremeFrequencies();
+          }
         }
 
         // Gửi kết quả về Gemini
