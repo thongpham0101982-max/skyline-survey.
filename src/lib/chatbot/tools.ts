@@ -1,7 +1,177 @@
 import { prisma } from "@/lib/db";
 
-// 1. Thống kê dự giờ của một Giáo viên
-export async function getTeacherObservationStats(teacherNameOrCode: string) {
+// ==========================================
+// 1. Dành cho GIÁO VIÊN
+// ==========================================
+
+// 1.1 Xem nhận xét ưu điểm/góp ý của các tiết dạy tôi đã dạy
+export async function getTeacherOwnFeedback(teacherUserId: string) {
+  try {
+    const teacher = await prisma.teacher.findUnique({
+      where: { userId: teacherUserId }
+    });
+    if (!teacher) return { error: "Không tìm thấy hồ sơ giáo viên của bạn." };
+
+    const slots = await prisma.observationSlot.findMany({
+      where: { teacherId: teacher.id },
+      include: {
+        registrations: {
+          where: { isApproved: true },
+          include: {
+            evaluation: true,
+            teacher: true // Người dự giờ
+          }
+        }
+      },
+      orderBy: { date: "desc" }
+    });
+
+    const feedbackList: any[] = [];
+    slots.forEach(slot => {
+      const slotEvals = slot.registrations.map(r => r.evaluation).filter(Boolean);
+      if (slotEvals.length === 0) return;
+
+      const strengths = slotEvals.map(e => ({
+        observer: e.GDCSApprovalComment || "", // backup or name
+        comment: e.strengths
+      })).filter(item => item.comment);
+
+      const improvements = slotEvals.map(e => ({
+        observer: e.GDCSApprovalComment || "",
+        comment: e.improvements
+      })).filter(item => item.comment);
+
+      if (strengths.length > 0 || improvements.length > 0) {
+        feedbackList.push({
+          topic: slot.topic,
+          className: slot.className || "Chưa rõ",
+          date: slot.date.toLocaleDateString("vi-VN"),
+          strengths: strengths.map(s => s.comment),
+          improvements: improvements.map(i => i.comment)
+        });
+      }
+    });
+
+    return {
+      success: true,
+      teacherName: teacher.teacherName,
+      feedbackList
+    };
+  } catch (e: any) {
+    return { error: `Lỗi truy xuất nhận xét: ${e.message}` };
+  }
+}
+
+// 1.2 Kiểm tra xem giáo viên đã dự đủ số tiết bắt buộc trong tháng này chưa
+export async function checkTeacherObservationQuota(teacherUserId: string) {
+  try {
+    const teacher = await prisma.teacher.findUnique({
+      where: { userId: teacherUserId }
+    });
+    if (!teacher) return { error: "Không tìm thấy hồ sơ giáo viên." };
+
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1;
+    const currentYear = now.getFullYear();
+
+    const startOfMonth = new Date(currentYear, currentMonth - 1, 1);
+    const endOfMonth = new Date(currentYear, currentMonth, 0, 23, 59, 59);
+
+    // Tìm các registration đã được duyệt và GV đã nộp phiếu đánh giá
+    const regs = await prisma.observationRegistration.findMany({
+      where: {
+        teacherId: teacher.id,
+        isApproved: true,
+        evaluation: { isNot: null },
+        slot: {
+          date: {
+            gte: startOfMonth,
+            lte: endOfMonth
+          }
+        }
+      },
+      include: {
+        slot: true
+      }
+    });
+
+    let observedCount = 0;
+    regs.forEach(r => {
+      observedCount += r.slot.isDoublePeriod ? 2 : 1;
+    });
+
+    const quota = 2; // Chỉ tiêu mặc định là 2 tiết/tháng
+    const isCompleted = observedCount >= quota;
+
+    return {
+      success: true,
+      teacherName: teacher.teacherName,
+      month: currentMonth,
+      year: currentYear,
+      observedCount,
+      quota,
+      isCompleted,
+      remaining: Math.max(0, quota - observedCount)
+    };
+  } catch (e: any) {
+    return { error: `Lỗi kiểm tra chỉ tiêu: ${e.message}` };
+  }
+}
+
+// 1.3 Hướng dẫn tiêu chí chấm điểm dự giờ
+export async function getObservationCriteriaGuidelines() {
+  return {
+    success: true,
+    k12: [
+      {
+        standard: "Tiêu chuẩn 1: Phương tiện (Tối đa 3 điểm)",
+        details: [
+          "Yêu cầu 1 (1.5đ): Chuẩn bị giáo án tốt, rõ ràng mục tiêu, nội dung, sản phẩm học tập và tiến trình.",
+          "Yêu cầu 2 (1.5đ): Sử dụng thiết bị dạy học và học liệu phù hợp, thiết thực."
+        ]
+      },
+      {
+        standard: "Tiêu chuẩn 2: Nội dung (Tối đa 5 điểm)",
+        details: [
+          "Yêu cầu 3 (2.0đ): Nội dung chính xác, khoa học, có tính giáo dục và hấp dẫn.",
+          "Yêu cầu 4 (2.0đ): Hệ thống chuẩn kiến thức kỹ năng, làm rõ trọng tâm.",
+          "Yêu cầu 5 (1.0đ): Liên hệ thực tế sinh động, phù hợp."
+        ]
+      },
+      {
+        standard: "Tiêu chuẩn 3: Phương pháp (Tối đa 9 điểm)",
+        details: [
+          "Yêu cầu 6 (2.0đ): Khắc phục lối dạy đọc chép, quan sát học sinh kịp thời.",
+          "Yêu cầu 7 (3.0đ): Học sinh học tích cực, chủ động, tương tác và thảo luận nhóm.",
+          "Yêu cầu 8 (2.0đ): Phân phối thời gian hợp lý, tiến trình khoa học, củng cố tốt.",
+          "Yêu cầu 9 (2.0đ): Kết hợp linh hoạt các phương pháp dạy và học."
+        ]
+      },
+      {
+        standard: "Tiêu chuẩn 4: Kết quả (Tối đa 3 điểm)",
+        details: [
+          "Yêu cầu 10 (2.0đ): Đánh giá chất lượng học sinh hiểu bài, dễ nhớ, ghi chép đầy đủ.",
+          "Yêu cầu 11 (1.0đ): Tiết dạy nhuần nhuyễn, gây ấn tượng, sáng tạo."
+        ]
+      }
+    ],
+    preschool: [
+      "Tiêu chí 1: Nội dung phù hợp độ tuổi, chính xác khoa học.",
+      "Tiêu chí 2: Phương pháp giảng dạy sáng tạo, linh hoạt thu hút trẻ.",
+      "Tiêu chí 3: Tổ chức hoạt động học tích cực, trẻ tương tác cao.",
+      "Tiêu chí 4: Sử dụng thiết bị dạy học, đồ dùng dạy học sáng tạo.",
+      "Tiêu chí 5: Trẻ hào hứng, đạt được kết quả mong đợi."
+    ]
+  };
+}
+
+
+// ==========================================
+// 2. Dành cho ADMIN
+// ==========================================
+
+// 2.1 Tra cứu số tiết dạy/dự của Giáo viên bất kỳ trong tháng
+export async function getTeacherActivityInMonth(teacherNameOrCode: string, monthSearch?: number) {
   try {
     const teacher = await prisma.teacher.findFirst({
       where: {
@@ -9,73 +179,127 @@ export async function getTeacherObservationStats(teacherNameOrCode: string) {
           { teacherName: { contains: teacherNameOrCode } },
           { teacherCode: teacherNameOrCode }
         ]
+      }
+    });
+
+    if (!teacher) return { error: `Không tìm thấy giáo viên "${teacherNameOrCode}"` };
+
+    const now = new Date();
+    const month = monthSearch || (now.getMonth() + 1);
+    const year = now.getFullYear();
+
+    const startOfMonth = new Date(year, month - 1, 1);
+    const endOfMonth = new Date(year, month, 0, 23, 59, 59);
+
+    // Tiết dạy (do GV đứng lớp)
+    const taughtSlots = await prisma.observationSlot.findMany({
+      where: {
+        teacherId: teacher.id,
+        date: { gte: startOfMonth, lte: endOfMonth }
       },
       include: {
-        departmentRel: true,
-        hostObservationSlots: {
-          include: {
-            registrations: {
-              include: { evaluation: true }
-            }
-          }
+        registrations: {
+          include: { evaluation: true }
         }
       }
     });
 
-    if (!teacher) {
-      return { error: `Không tìm thấy giáo viên nào có tên hoặc mã số là "${teacherNameOrCode}"` };
-    }
-
-    const totalSlots = teacher.hostObservationSlots.length;
-    const evaluations = teacher.hostObservationSlots.flatMap(s => s.registrations.map(r => r.evaluation).filter(Boolean));
-    
-    // Tính toán số lượng xếp loại dự giờ
-    const ratingsCount: Record<string, number> = {};
-    let totalScoreSum = 0;
-    let scoreCount = 0;
-
-    evaluations.forEach((evalData: any) => {
-      const rating = evalData.overallRating || "Chưa xếp loại";
-      ratingsCount[rating] = (ratingsCount[rating] || 0) + 1;
-      
-      if (evalData.totalScore !== null && evalData.totalScore !== undefined) {
-        totalScoreSum += evalData.totalScore;
-        scoreCount++;
+    let taughtCount = 0;
+    taughtSlots.forEach(s => {
+      const hasEval = s.registrations.some(r => r.evaluation !== null);
+      if (hasEval) {
+        taughtCount += s.isDoublePeriod ? 2 : 1;
       }
     });
 
-    const averageScore = scoreCount > 0 ? (totalScoreSum / scoreCount).toFixed(2) : null;
+    // Tiết dự (được duyệt & đã đánh giá)
+    const observedRegs = await prisma.observationRegistration.findMany({
+      where: {
+        teacherId: teacher.id,
+        isApproved: true,
+        evaluation: { isNot: null },
+        slot: {
+          date: { gte: startOfMonth, lte: endOfMonth }
+        }
+      },
+      include: {
+        slot: true
+      }
+    });
+
+    let observedCount = 0;
+    observedRegs.forEach(r => {
+      observedCount += r.slot.isDoublePeriod ? 2 : 1;
+    });
 
     return {
       success: true,
       teacherName: teacher.teacherName,
       teacherCode: teacher.teacherCode,
-      department: teacher.departmentRel?.name || "Chưa phân tổ chuyên môn",
-      totalTaughtSlots: totalSlots,
-      totalEvaluations: evaluations.length,
-      averageScore: averageScore ? `${averageScore}/20.00đ` : "Chưa có điểm trung bình",
-      ratingsSummary: ratingsCount,
-      recentTopics: teacher.hostObservationSlots.slice(0, 3).map(s => ({
-        topic: s.topic,
-        className: s.className,
-        date: s.date.toLocaleDateString("vi-VN")
-      }))
+      month,
+      year,
+      taughtCount,
+      observedCount
     };
-  } catch (error: any) {
-    return { error: `Lỗi truy vấn dữ liệu: ${error.message}` };
+  } catch (e: any) {
+    return { error: `Lỗi thống kê hoạt động giáo viên: ${e.message}` };
   }
 }
 
-// 2. Thống kê dự giờ của một Tổ chuyên môn
-export async function getDeptObservationStats(deptName: string) {
+// 2.2 Giáo viên có tiết dạy ĐTB thấp nhất
+export async function getLowestAverageScoreTaughtPeriod() {
+  try {
+    const slots = await prisma.observationSlot.findMany({
+      where: {
+        level: { not: "Mầm non" } // Chỉ tính điểm số của K-12
+      },
+      include: {
+        teacher: true,
+        registrations: {
+          include: { evaluation: true }
+        }
+      }
+    });
+
+    let lowestSlot: any = null;
+    let lowestAvg = 21;
+
+    for (const slot of slots) {
+      const evals = slot.registrations.map(r => r.evaluation).filter(Boolean);
+      const scores = evals.map(e => e.totalScore).filter((s): s is number => s !== null && s !== undefined);
+      if (scores.length === 0) continue;
+
+      const avg = scores.reduce((sum, s) => sum + s, 0) / scores.length;
+      if (avg < lowestAvg) {
+        lowestAvg = avg;
+        lowestSlot = slot;
+      }
+    }
+
+    if (!lowestSlot) return { error: "Không tìm thấy dữ liệu chấm điểm K-12 nào." };
+
+    return {
+      success: true,
+      teacherName: lowestSlot.teacher.teacherName,
+      teacherCode: lowestSlot.teacher.teacherCode,
+      topic: lowestSlot.topic,
+      className: lowestSlot.className || "Chưa rõ",
+      date: lowestSlot.date.toLocaleDateString("vi-VN"),
+      averageScore: lowestAvg.toFixed(2)
+    };
+  } catch (e: any) {
+    return { error: `Lỗi truy vấn tiết dạy điểm thấp: ${e.message}` };
+  }
+}
+
+// 2.3 Thống kê số tiết dạy, số tiết dự theo Tổ chuyên môn
+export async function getDepartmentObservationStatsSummary(deptName: string) {
   try {
     const dept = await prisma.department.findFirst({
       where: { name: { contains: deptName } }
     });
 
-    if (!dept) {
-      return { error: `Không tìm thấy tổ chuyên môn nào phù hợp với từ khóa "${deptName}"` };
-    }
+    if (!dept) return { error: `Không tìm thấy tổ chuyên môn "${deptName}"` };
 
     const teachers = await prisma.teacher.findMany({
       where: { departmentId: dept.id },
@@ -86,202 +310,128 @@ export async function getDeptObservationStats(deptName: string) {
               include: { evaluation: true }
             }
           }
+        },
+        observerRegistrations: {
+          where: { isApproved: true, evaluation: { isNot: null } },
+          include: { slot: true }
         }
       }
     });
 
-    let totalSlots = 0;
-    let totalEvaluations = 0;
-    const ratingsSummary: Record<string, number> = {};
-    const teacherStatsList = [];
+    let totalTaught = 0;
+    let totalObserved = 0;
 
-    for (const t of teachers) {
-      totalSlots += t.hostObservationSlots.length;
-      const evals = t.hostObservationSlots.flatMap(s => s.registrations.map(r => r.evaluation).filter(Boolean));
-      totalEvaluations += evals.length;
-
-      const ratings: Record<string, number> = {};
-      evals.forEach((e: any) => {
-        const r = e.overallRating || "Chưa xếp loại";
-        ratings[r] = (ratings[r] || 0) + 1;
-        ratingsSummary[r] = (ratingsSummary[r] || 0) + 1;
+    teachers.forEach(t => {
+      t.hostObservationSlots.forEach(s => {
+        const hasEval = s.registrations.some(r => r.evaluation !== null);
+        if (hasEval) totalTaught += s.isDoublePeriod ? 2 : 1;
       });
-
-      teacherStatsList.push({
-        name: t.teacherName,
-        code: t.teacherCode,
-        slotsCount: t.hostObservationSlots.length,
-        evaluationsCount: evals.length,
-        ratings
+      t.observerRegistrations.forEach(r => {
+        totalObserved += r.slot.isDoublePeriod ? 2 : 1;
       });
-    }
+    });
 
     return {
       success: true,
       departmentName: dept.name,
-      blockCM: dept.blockCM || "Chưa rõ",
       totalTeachers: teachers.length,
-      totalTaughtSlots: totalSlots,
-      totalEvaluations: totalEvaluations,
-      ratingsSummary,
-      teachers: teacherStatsList.slice(0, 10) // Giới hạn 10 giáo viên tiêu biểu để tránh quá tải token
+      totalTaughtSlots: totalTaught,
+      totalObservedSlots: totalObserved
     };
-  } catch (error: any) {
-    return { error: `Lỗi truy vấn dữ liệu tổ chuyên môn: ${error.message}` };
+  } catch (e: any) {
+    return { error: `Lỗi thống kê tổ chuyên môn: ${e.message}` };
   }
 }
 
-// 3. Thống kê đợt khảo sát đầu vào (Input Assessment)
-export async function getInputAssessmentSummary(periodSearch: string) {
+// 2.4 Tiêu chí có điểm thấp nhất có tần số xuất hiện nhiều nhất và Tiêu chí có điểm cao nhất thường xuyên nhất
+export async function getCriteriaExtremeFrequencies() {
   try {
-    // 3.1. Tìm đợt khảo sát phổ thông K-12
-    const periodK12 = await prisma.inputAssessmentPeriod.findFirst({
-      where: { name: { contains: periodSearch } },
-      include: {
-        students: true
+    const evals = await prisma.observationEvaluation.findMany({
+      where: {
+        totalScore: { not: null }
       }
     });
 
-    // 3.2. Tìm đợt khảo sát Mầm non
-    const periodPreschool = await prisma.preschoolInputAssessmentPeriod.findFirst({
-      where: { name: { contains: periodSearch } },
-      include: {
-        students: true
-      }
-    });
+    if (evals.length === 0) return { error: "Không tìm thấy dữ liệu đánh giá để thống kê." };
 
-    if (!periodK12 && !periodPreschool) {
-      return { error: `Không tìm thấy đợt khảo sát đầu vào nào phù hợp với tên "${periodSearch}"` };
-    }
+    const maxScores = [1.5, 1.5, 2.0, 2.0, 1.0, 2.0, 3.0, 2.0, 2.0, 2.0, 1.0];
+    const criteriaLabels = [
+      "Yêu cầu 1 (Chuẩn bị giáo án/bài dạy)",
+      "Yêu cầu 2 (Sử dụng đồ dùng/học liệu)",
+      "Yêu cầu 3 (Nội dung bài dạy chính xác)",
+      "Yêu cầu 4 (Bảo đảm tính hệ thống, trọng tâm)",
+      "Yêu cầu 5 (Nội dung liên hệ thực tế)",
+      "Yêu cầu 6 (Khắc phục đọc chép, hỗ trợ HS)",
+      "Yêu cầu 7 (Tổ chức hoạt động học tích cực, nhóm)",
+      "Yêu cầu 8 (Phân phối thời gian, củng cố)",
+      "Yêu cầu 9 (Kết hợp phương pháp đa dạng)",
+      "Yêu cầu 10 (Kiểm tra đánh giá kết quả)",
+      "Yêu cầu 11 (Tiết dạy nhuần nhuyễn, sáng tạo)"
+    ];
 
-    const result: any = { success: true };
+    const lowestFreq: Record<number, number> = {};
+    const highestFreq: Record<number, number> = {};
 
-    if (periodK12) {
-      const students = periodK12.students;
-      let passed = 0;
-      let failed = 0;
-      let pending = 0;
-      let mathSum = 0, mathCount = 0;
-      let litSum = 0, litCount = 0;
-      let engSum = 0, engCount = 0;
+    evals.forEach(e => {
+      let minRatio = 1.1;
+      let maxRatio = -0.1;
+      let minIdx = -1;
+      let maxIdx = -1;
 
-      students.forEach(s => {
-        const res = s.admissionResult || "";
-        if (res === "Đạt" || res === "Đạt cam kết" || res === "Học thử") passed++;
-        else if (res.includes("Không đạt")) failed++;
-        else pending++;
+      for (let i = 1; i <= 11; i++) {
+        const scoreKey = `score${i}` as keyof typeof e;
+        const val = e[scoreKey];
+        if (val === null || val === undefined) continue;
 
-        if (s.mathScore !== null && s.mathScore !== undefined) { mathSum += s.mathScore; mathCount++; }
-        if (s.literatureScore !== null && s.literatureScore !== undefined) { litSum += s.literatureScore; litCount++; }
-        if (s.writtenEnglishScore !== null && s.writtenEnglishScore !== undefined) { engSum += s.writtenEnglishScore; engCount++; }
-      });
+        const ratio = Number(val) / maxScores[i - 1];
 
-      result.k12 = {
-        periodName: periodK12.name,
-        code: periodK12.code,
-        totalStudents: students.length,
-        statusCounts: { passed, failed, pending },
-        averages: {
-          math: mathCount > 0 ? (mathSum / mathCount).toFixed(2) : "N/A",
-          literature: litCount > 0 ? (litSum / litCount).toFixed(2) : "N/A",
-          english: engCount > 0 ? (engSum / engCount).toFixed(2) : "N/A"
+        if (ratio < minRatio) {
+          minRatio = ratio;
+          minIdx = i;
         }
-      };
-    }
+        if (ratio > maxRatio) {
+          maxRatio = ratio;
+          maxIdx = i;
+        }
+      }
 
-    if (periodPreschool) {
-      const students = periodPreschool.students;
-      let passed = 0;
-      let failed = 0;
-      let pending = 0;
+      if (minIdx !== -1) lowestFreq[minIdx] = (lowestFreq[minIdx] || 0) + 1;
+      if (maxIdx !== -1) highestFreq[maxIdx] = (highestFreq[maxIdx] || 0) + 1;
+    });
 
-      students.forEach(s => {
-        const res = s.admissionResult || s.devAssessmentResult || "";
-        if (res === "Đạt" || res === "Học thử" || res === "Đồng ý") passed++;
-        else if (res.includes("Không đạt") || res.includes("Không đồng ý")) failed++;
-        else pending++;
-      });
-
-      result.preschool = {
-        periodName: periodPreschool.name,
-        code: periodPreschool.code,
-        totalStudents: students.length,
-        statusCounts: { passed, failed, pending }
-      };
-    }
-
-    return result;
-  } catch (error: any) {
-    return { error: `Lỗi truy vấn dữ liệu khảo sát đầu vào: ${error.message}` };
-  }
-}
-
-// 4. Tìm kiếm kết quả & điểm của một học sinh cụ thể
-export async function searchStudentInputScore(studentSearch: string) {
-  try {
-    // Tìm trong bảng Phổ thông K-12
-    const studentsK12 = await prisma.inputAssessmentStudent.findMany({
-      where: {
-        OR: [
-          { fullName: { contains: studentSearch } },
-          { studentCode: studentSearch }
-        ]
-      },
-      include: {
-        period: true
+    let maxLowCount = 0;
+    let mostFreqLowIdx = 1;
+    Object.entries(lowestFreq).forEach(([idx, count]) => {
+      if (count > maxLowCount) {
+        maxLowCount = count;
+        mostFreqLowIdx = Number(idx);
       }
     });
 
-    // Tìm trong bảng Mầm non
-    const studentsPreschool = await prisma.preschoolInputAssessmentStudent.findMany({
-      where: {
-        OR: [
-          { fullName: { contains: studentSearch } },
-          { studentCode: studentSearch }
-        ]
-      },
-      include: {
-        period: true
+    let maxHighCount = 0;
+    let mostFreqHighIdx = 1;
+    Object.entries(highestFreq).forEach(([idx, count]) => {
+      if (count > maxHighCount) {
+        maxHighCount = count;
+        mostFreqHighIdx = Number(idx);
       }
     });
-
-    if (studentsK12.length === 0 && studentsPreschool.length === 0) {
-      return { error: `Không tìm thấy thông tin học sinh khảo sát đầu vào nào có tên hoặc mã số là "${studentSearch}"` };
-    }
 
     return {
       success: true,
-      k12Students: studentsK12.map(s => ({
-        fullName: s.fullName,
-        studentCode: s.studentCode,
-        gender: s.gender,
-        dateOfBirth: s.dateOfBirth ? s.dateOfBirth.toLocaleDateString("vi-VN") : null,
-        periodName: s.period.name,
-        grade: s.grade || "Chưa rõ",
-        scores: {
-          math: s.mathScore,
-          literature: s.literatureScore,
-          englishWritten: s.writtenEnglishScore,
-          englishOral: s.oralEnglishScore,
-          psychology: s.psychologyScore
-        },
-        admissionResult: s.admissionResult || "Chưa duyệt",
-        enrollmentStatus: s.enrollmentStatus || "Chưa nhập học"
-      })),
-      preschoolStudents: studentsPreschool.map(s => ({
-        fullName: s.fullName,
-        studentCode: s.studentCode,
-        gender: s.gender,
-        dateOfBirth: s.dateOfBirth ? s.dateOfBirth.toLocaleDateString("vi-VN") : null,
-        periodName: s.period.name,
-        grade: s.grade || "Chưa rõ",
-        admissionResult: s.admissionResult || s.devAssessmentResult || "Chưa duyệt",
-        probationaryResult: s.probationaryResult || "Không thử học",
-        enrollmentStatus: s.enrollmentStatus || "Chưa nhập học",
-        notes: s.directorNote
-      }))
+      totalEvaluations: evals.length,
+      lowestCriterion: {
+        index: mostFreqLowIdx,
+        label: criteriaLabels[mostFreqLowIdx - 1],
+        count: maxLowCount
+      },
+      highestCriterion: {
+        index: mostFreqHighIdx,
+        label: criteriaLabels[mostFreqHighIdx - 1],
+        count: maxHighCount
+      }
     };
-  } catch (error: any) {
-    return { error: `Lỗi tìm kiếm học sinh khảo sát: ${error.message}` };
+  } catch (e: any) {
+    return { error: `Lỗi thống kê tiêu chí cực đoan: ${e.message}` };
   }
 }

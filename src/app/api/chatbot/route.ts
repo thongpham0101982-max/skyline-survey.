@@ -1,9 +1,13 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { auth } from "@/lib/auth";
 import { 
-  getTeacherObservationStats, 
-  getDeptObservationStats, 
-  getInputAssessmentSummary, 
-  searchStudentInputScore 
+  getTeacherOwnFeedback,
+  checkTeacherObservationQuota,
+  getObservationCriteriaGuidelines,
+  getTeacherActivityInMonth,
+  getLowestAverageScoreTaughtPeriod,
+  getDepartmentObservationStatsSummary,
+  getCriteriaExtremeFrequencies
 } from "@/lib/chatbot/tools";
 
 export async function POST(req: Request) {
@@ -13,19 +17,54 @@ export async function POST(req: Request) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       return Response.json(
-        { error: "Vui lòng cấu hình GEMINI_API_KEY trong file .env" },
+        { error: "Vui lòng cấu hình GEMINI_API_KEY trong project settings." },
         { status: 500 }
       );
     }
+
+    // Lấy thông tin user hiện tại từ session
+    let session: any = null;
+    try {
+      session = await auth();
+    } catch (e) {
+      console.error("Auth helper error in chatbot route:", e);
+    }
+    const currentUser = session?.user;
 
     const ai = new GoogleGenerativeAI(apiKey);
     const model = ai.getGenerativeModel({
       model: "gemini-1.5-flash",
       tools: [{
         functionDeclarations: [
+          // 1. Cho Giáo viên
           {
-            name: "getTeacherObservationStats",
-            description: "Thống kê kết quả dự giờ, tổng số tiết dạy, tiết dự và số lượng xếp loại (Giỏi/Khá...) của giáo viên cụ thể theo Tên hoặc Mã GV.",
+            name: "getTeacherOwnFeedback",
+            description: "Xem nhận xét ưu điểm/góp ý của các tiết dạy tôi (giáo viên hiện tại đang đăng nhập) đã đứng lớp dạy.",
+            parameters: {
+              type: "OBJECT",
+              properties: {}
+            }
+          },
+          {
+            name: "checkTeacherObservationQuota",
+            description: "Kiểm tra xem tôi (giáo viên hiện tại đang đăng nhập) đã đi dự giờ đủ số tiết bắt buộc (chỉ tiêu 2 tiết) trong tháng này chưa.",
+            parameters: {
+              type: "OBJECT",
+              properties: {}
+            }
+          },
+          {
+            name: "getObservationCriteriaGuidelines",
+            description: "Xem và hướng dẫn các tiêu chí chấm điểm, chuẩn đánh giá dự giờ của Phổ thông (Y1-Y11) và Mầm non (T1-T5).",
+            parameters: {
+              type: "OBJECT",
+              properties: {}
+            }
+          },
+          // 2. Cho Admin
+          {
+            name: "getTeacherActivityInMonth",
+            description: "Thống kê số tiết dạy và số tiết dự giờ của một giáo viên cụ thể bất kỳ trong tháng hiện tại.",
             parameters: {
               type: "OBJECT",
               properties: {
@@ -35,8 +74,16 @@ export async function POST(req: Request) {
             }
           },
           {
-            name: "getDeptObservationStats",
-            description: "Thống kê tình hình dự giờ, số giáo viên, tổng tiết dạy và bảng tóm tắt xếp loại của một Tổ chuyên môn cụ thể theo Tên tổ.",
+            name: "getLowestAverageScoreTaughtPeriod",
+            description: "Tìm giáo viên có tiết dạy đạt điểm trung bình (ĐTB) thấp nhất trong hệ thống.",
+            parameters: {
+              type: "OBJECT",
+              properties: {}
+            }
+          },
+          {
+            name: "getDepartmentObservationStatsSummary",
+            description: "Thống kê số lượng giáo viên, tổng số tiết dạy và tổng số tiết đi dự giờ của một Tổ chuyên môn cụ thể theo Tên tổ.",
             parameters: {
               type: "OBJECT",
               properties: {
@@ -46,30 +93,22 @@ export async function POST(req: Request) {
             }
           },
           {
-            name: "getInputAssessmentSummary",
-            description: "Thống kê tóm tắt đợt khảo sát đầu vào (Input Assessment) gồm tổng số học sinh, tỷ lệ Đạt/Chưa đạt/Cam kết, và điểm trung bình các môn học.",
+            name: "getCriteriaExtremeFrequencies",
+            description: "Thống kê xem Tiêu chí nào (trong Y1-Y11) có điểm thấp nhất có tần số xuất hiện nhiều nhất và Tiêu chí nào có điểm cao nhất thường xuyên nhất.",
             parameters: {
               type: "OBJECT",
-              properties: {
-                periodSearch: { type: "STRING", description: "Tên đợt khảo sát đầu vào cần tra cứu (ví dụ: Khảo sát lớp 1, Mầm non 2026...)." }
-              },
-              required: ["periodSearch"]
-            }
-          },
-          {
-            name: "searchStudentInputScore",
-            description: "Tìm kiếm thông tin điểm số khảo sát đầu vào (Toán, Văn, Anh, Tâm lý, Mầm non), trạng thái trúng tuyển, nhập học của một học sinh cụ thể theo Tên hoặc Mã học sinh.",
-            parameters: {
-              type: "OBJECT",
-              properties: {
-                studentSearch: { type: "STRING", description: "Tên học sinh hoặc mã học sinh cần tìm kiếm." }
-              },
-              required: ["studentSearch"]
+              properties: {}
             }
           }
         ]
       }],
-      systemInstruction: "Bạn là Trợ lý ảo Chuyên môn của Trường Skyline. Bạn có nhiệm vụ hỗ trợ Ban giám hiệu, Tổ trưởng chuyên môn và các cán bộ quản trị truy vấn dữ liệu Dự giờ (dự giờ tiết dạy, xếp loại giáo viên) và Khảo sát đầu vào (kết quả điểm số, trạng thái trúng tuyển của học sinh mới). Hãy trả lời ngắn gọn, trực quan, chuyên nghiệp và lịch sự bằng Tiếng Việt. Định dạng câu trả lời rõ ràng bằng markdown, bảng biểu hoặc gạch đầu dòng khi thích hợp."
+      systemInstruction: `Bạn là Trợ lý ảo Chuyên môn của Trường Skyline. Bạn có nhiệm vụ hỗ trợ Giáo viên tra cứu lịch sử nhận xét của họ, kiểm tra chỉ tiêu số tiết dự giờ cá nhân, và hướng dẫn tiêu chí chấm điểm. Đối với Ban giám hiệu và Admin, bạn hỗ trợ thống kê hoạt động dạy/dự của giáo viên, tìm các tiết học điểm thấp, tổng hợp tổ chuyên môn, phân tích tần số các tiêu chí tốt/cần cải thiện nhất.
+Hãy trả lời ngắn gọn, trực quan, chuyên nghiệp và lịch sự bằng Tiếng Việt. Định dạng câu trả lời rõ ràng bằng markdown, bảng biểu hoặc gạch đầu dòng khi thích hợp.
+
+Thông tin người dùng hiện tại đang gửi tin nhắn:
+- ID người dùng: ${currentUser?.id || "Chưa đăng nhập"}
+- Họ tên: ${currentUser?.name || "Khách"}
+- Quyền hạn (Role): ${currentUser?.role || "GIAO_VIEN"}`
     });
 
     const chat = model.startChat({ history });
@@ -81,17 +120,31 @@ export async function POST(req: Request) {
       let toolResult;
 
       try {
-        if (call.name === "getTeacherObservationStats") {
-          toolResult = await getTeacherObservationStats(call.args.teacherNameOrCode as string);
-        } else if (call.name === "getDeptObservationStats") {
-          toolResult = await getDeptObservationStats(call.args.deptName as string);
-        } else if (call.name === "getInputAssessmentSummary") {
-          toolResult = await getInputAssessmentSummary(call.args.periodSearch as string);
-        } else if (call.name === "searchStudentInputScore") {
-          toolResult = await searchStudentInputScore(call.args.studentSearch as string);
+        if (call.name === "getTeacherOwnFeedback") {
+          if (!currentUser?.id) {
+            toolResult = { error: "Vui lòng đăng nhập để xem nhận xét cá nhân." };
+          } else {
+            toolResult = await getTeacherOwnFeedback(currentUser.id);
+          }
+        } else if (call.name === "checkTeacherObservationQuota") {
+          if (!currentUser?.id) {
+            toolResult = { error: "Vui lòng đăng nhập để kiểm tra chỉ tiêu." };
+          } else {
+            toolResult = await checkTeacherObservationQuota(currentUser.id);
+          }
+        } else if (call.name === "getObservationCriteriaGuidelines") {
+          toolResult = await getObservationCriteriaGuidelines();
+        } else if (call.name === "getTeacherActivityInMonth") {
+          toolResult = await getTeacherActivityInMonth(call.args.teacherNameOrCode as string);
+        } else if (call.name === "getLowestAverageScoreTaughtPeriod") {
+          toolResult = await getLowestAverageScoreTaughtPeriod();
+        } else if (call.name === "getDepartmentObservationStatsSummary") {
+          toolResult = await getDepartmentObservationStatsSummary(call.args.deptName as string);
+        } else if (call.name === "getCriteriaExtremeFrequencies") {
+          toolResult = await getCriteriaExtremeFrequencies();
         }
 
-        // Trả kết quả của tool về cho Gemini để sinh văn bản trả lời tự nhiên
+        // Gửi kết quả về Gemini
         result = await chat.sendMessage([
           {
             functionResponse: {
@@ -105,7 +158,7 @@ export async function POST(req: Request) {
           {
             functionResponse: {
               name: call.name,
-              response: { error: `Lỗi trong quá trình chạy hàm: ${e.message}` }
+              response: { error: `Lỗi khi gọi hàm: ${e.message}` }
             }
           }
         ]);

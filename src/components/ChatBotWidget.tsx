@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import { 
   MessageSquare, Send, X, Bot, Sparkles, Trash2, 
-  ChevronDown, ArrowDownCircle, AlertCircle
+  ChevronDown, AlertCircle
 } from "lucide-react"
 
 interface ChatMessage {
@@ -11,19 +11,32 @@ interface ChatMessage {
   parts: [{ text: string }]
 }
 
-export function ChatBotWidget() {
+interface ChatBotWidgetProps {
+  role?: "ADMIN" | "TEACHER"
+}
+
+export function ChatBotWidget({ role = "TEACHER" }: ChatBotWidgetProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [input, setInput] = useState("")
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      role: "model",
-      parts: [{ text: "Xin chào! Tôi là Trợ lý ảo Chuyên môn của Trường Skyline. Tôi có thể hỗ trợ Thầy/Cô tra cứu thông tin **Dự giờ** (giáo viên, xếp loại) và **Khảo sát đầu vào** (điểm số học sinh, đợt khảo sát). Thầy/Cô cần tra cứu thông tin gì ạ?" }]
-    }
-  ])
+  const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  // Khởi tạo lời chào dựa trên Role người dùng
+  useEffect(() => {
+    const defaultText = role === "ADMIN"
+      ? "Xin chào Admin! Tôi là Trợ lý ảo Chuyên môn hỗ trợ quản trị hệ thống. Thầy/Cô có thể tra cứu thông tin hoạt động dự giờ của Giáo viên, Tổ chuyên môn, hoặc thống kê các tiêu chí giảng dạy nổi bật/cần cải thiện nhất."
+      : "Xin chào Thầy/Cô! Tôi là Trợ lý ảo Chuyên môn hỗ trợ Giáo viên. Thầy/Cô có thể tra cứu lịch sử nhận xét các tiết dạy của mình, kiểm tra chỉ tiêu số tiết dự giờ cá nhân, hoặc xem hướng dẫn tiêu chí chấm điểm."
+    
+    setMessages([
+      {
+        role: "model",
+        parts: [{ text: defaultText }]
+      }
+    ])
+  }, [role])
 
   // Tự động cuộn xuống cuối danh sách tin nhắn
   const scrollToBottom = () => {
@@ -55,7 +68,6 @@ export function ChatBotWidget() {
 
     try {
       // Chuẩn bị lịch sử trò chuyện theo cấu trúc Gemini API
-      // Bỏ qua tin nhắn đầu tiên nếu là tin nhắn chào của Bot
       const history = updatedMessages
         .slice(0, -1) // Không bao gồm tin nhắn vừa tạo
         .map(msg => ({
@@ -95,23 +107,32 @@ export function ChatBotWidget() {
 
   const handleClearChat = () => {
     if (confirm("Thầy/Cô có muốn xóa toàn bộ lịch sử hội thoại hiện tại không?")) {
+      const defaultText = role === "ADMIN"
+        ? "Lịch sử đã được làm mới. Tôi sẵn sàng hỗ trợ các câu hỏi thống kê mới từ Admin!"
+        : "Lịch sử đã được làm mới. Tôi sẵn sàng hỗ trợ các câu hỏi tra cứu cá nhân mới từ Thầy/Cô!"
       setMessages([
         {
           role: "model",
-          parts: [{ text: "Lịch sử đã được làm mới. Tôi sẵn sàng hỗ trợ Thầy/Cô các câu hỏi mới!" }]
+          parts: [{ text: defaultText }]
         }
       ])
       setError(null)
     }
   }
 
-  // Gợi ý câu hỏi mẫu
-  const sampleQuestions = [
-    { text: "Thống kê dự giờ Tổ 1", label: "Dự giờ Tổ 1" },
-    { text: "Kết quả dự giờ giáo viên Mỹ Linh", label: "Dự giờ GV Mỹ Linh" },
-    { text: "Điểm khảo sát đầu vào của Nguyễn Văn A", label: "Điểm HS Nguyễn Văn A" },
-    { text: "Tóm tắt đợt khảo sát gần đây", label: "Đợt khảo sát đầu vào" }
-  ]
+  // Gợi ý câu hỏi mẫu dựa theo Role
+  const sampleQuestions = role === "ADMIN"
+    ? [
+        { text: "Thống kê số tiết dạy và số tiết dự của Tổ chuyên môn Tổ 1", label: "Thống kê hoạt động Tổ 1" },
+        { text: "Giáo viên nào có tiết dạy điểm trung bình thấp nhất?", label: "Tiết dạy ĐTB thấp nhất" },
+        { text: "Tiêu chí nào có điểm thấp nhất xuất hiện nhiều nhất và tiêu chí nào có điểm cao nhất thường xuyên nhất?", label: "Phân tích tần số tiêu chí" },
+        { text: "Thống kê số tiết dạy và số tiết dự của giáo viên Mỹ Linh trong tháng", label: "Số tiết dạy/dự GV trong tháng" }
+      ]
+    : [
+        { text: "Xem nhận xét ưu điểm và góp ý của các tiết dạy tôi đã dạy", label: "Xem nhận xét bài dạy của tôi" },
+        { text: "Tôi đã dự đủ số tiết bắt buộc trong tháng này chưa?", label: "Kiểm tra chỉ tiêu tháng này" },
+        { text: "Hướng dẫn tôi các tiêu chí chấm điểm dự giờ", label: "Xem hướng dẫn chấm điểm" }
+      ];
 
   // Hàm chuyển đổi Markdown đơn giản sang HTML
   const renderMessageContent = (text: string) => {
@@ -137,7 +158,7 @@ export function ChatBotWidget() {
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
       {/* Khung Chat Window */}
       {isOpen && (
-        <div className="w-[360px] md:w-[400px] h-[550px] bg-white/95 backdrop-blur-md rounded-3xl border border-slate-200 shadow-2xl flex flex-col overflow-hidden mb-4 transition-all duration-300 animate-in slide-in-from-bottom-5">
+        <div className="w-[360px] md:w-[410px] h-[550px] bg-white/95 backdrop-blur-md rounded-3xl border border-slate-200 shadow-2xl flex flex-col overflow-hidden mb-4 transition-all duration-300 animate-in slide-in-from-bottom-5">
           {/* Header */}
           <div className="bg-[#0A3230] text-white p-4 flex items-center justify-between shadow-md shrink-0">
             <div className="flex items-center gap-2.5">
@@ -145,7 +166,7 @@ export function ChatBotWidget() {
                 <Bot className="w-5 h-5 text-[#00A19A]" />
               </div>
               <div>
-                <h4 className="text-sm font-black tracking-wide">Trợ Lý Chuyên Môn</h4>
+                <h4 className="text-sm font-black tracking-wide">Trợ Lý Chuyên Môn ({role === "ADMIN" ? "Admin" : "Giáo viên"})</h4>
                 <p className="text-[10px] text-slate-300 flex items-center gap-1 font-medium">
                   <Sparkles className="w-2.5 h-2.5 text-amber-400 fill-amber-400" /> Powered by Gemini AI
                 </p>
@@ -222,16 +243,19 @@ export function ChatBotWidget() {
 
           {/* Gợi ý câu hỏi nhanh */}
           {messages.length === 1 && !isLoading && (
-            <div className="px-4 py-2 bg-slate-50 border-t border-slate-100 flex flex-wrap gap-1.5 shrink-0">
-              {sampleQuestions.map((q, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handleSend(q.text)}
-                  className="px-2.5 py-1 bg-white hover:bg-[#00A19A]/10 border border-slate-200 hover:border-[#00A19A]/20 text-[10px] md:text-xs font-semibold text-slate-600 hover:text-[#00A19A] rounded-xl transition duration-200"
-                >
-                  {q.label}
-                </button>
-              ))}
+            <div className="px-4 py-2.5 bg-slate-50 border-t border-slate-100 flex flex-col gap-1.5 shrink-0">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-0.5">Gợi ý câu hỏi nhanh:</p>
+              <div className="flex flex-wrap gap-1.5">
+                {sampleQuestions.map((q, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleSend(q.text)}
+                    className="px-2.5 py-1 bg-white hover:bg-[#00A19A]/10 border border-slate-200 hover:border-[#00A19A]/20 text-[10px] md:text-xs font-semibold text-slate-600 hover:text-[#00A19A] rounded-xl transition duration-200 text-left"
+                  >
+                    {q.label}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 

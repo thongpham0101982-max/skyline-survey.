@@ -1,3 +1,5 @@
+import { ChatBotWidget } from "@/components/ChatBotWidget"
+
 import { Sidebar } from "@/components/Sidebar"
 import { NotificationBell } from "@/components/NotificationBell"
 import { auth } from "@/lib/auth"
@@ -31,6 +33,8 @@ export default async function TeacherLayout({ children }: { children: React.Reac
         <div className="p-4 sm:p-6 md:p-8 flex-1 overflow-x-hidden overflow-y-auto bg-slate-50/50">
           {children}
         </div>
+        
+        <ChatBotWidget role="TEACHER" />
       </main>
     </div>
   )
