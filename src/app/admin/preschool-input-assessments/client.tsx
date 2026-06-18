@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 import { getDefaultAcademicYearClient } from "@/lib/academicYear"
 import { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import * as XLSX from "xlsx"
@@ -2741,7 +2741,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       <div className="bg-white border-2 border-[#00A19A] shadow-none rounded-none p-1">
         <div className="flex flex-wrap gap-0.5">
           {[
-            { id: "periods", label: "Tạo kỳ Khảo sát", icon: Clock },
+            { id: "periods", label: "T\u1ea1o \u0111\u1ee3t kh\u1ea3o s\u00e1t", icon: Clock },
             { id: "categories", label: "Danh mục", icon: Settings },
             { id: "children", label: "Danh sách Khảo sát", icon: Users },
 
@@ -2771,10 +2771,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             <h2 className="text-sm font-black text-slate-600 uppercase tracking-widest flex items-center gap-2"><Clock className="w-4 h-4 text-teal-400" /> Kỳ &amp; Đợt Khảo sát Mầm non</h2>
             <div className="flex gap-2">
               <button onClick={fetchPeriods} className="p-2 text-slate-400 hover:text-[#00A19A] hover:bg-[#00A19A]/5 rounded-none transition-all"><RefreshCw className="w-4 h-4" /></button>
-              <button onClick={openAddPeriod} className="flex items-center gap-2 px-5 py-2.5 bg-[#00A19A] text-white text-[13px] font-black rounded-none hover:bg-[#00A19A]-700 transition-all shadow-none shadow-teal-100"><Plus className="w-4 h-4" /> Tạo Kỳ mới</button>
+
             </div>
           </div>
-          {pLoading ? <Spin /> : periods.length === 0 ? <Empty text="Chưa có Kỳ khảo sát nào" sub="Bấm Tạo Kỳ mới để bắt đầu" /> : (
+          {pLoading ? <Spin /> : periods.length === 0 ? <Empty text="Ch\u01b0a c\u00f3 K\u1ef3 kh\u1ea3o s\u00e1t n\u00e0o" sub="Li\u00ean h\u1ec7 qu\u1ea3n tr\u1ecb vi\u00ean \u0111\u1ec3 t\u1ea1o k\u1ef3 kh\u1ea3o s\u00e1t m\u1edbi" /> : (
             <div className="space-y-3">
               {periods.map(p => (
                 <div key={p.id} className="bg-white rounded-none border border-slate-300 shadow-none overflow-hidden hover:border-slate-300 transition-all">
