@@ -93,7 +93,6 @@ export function TeacherManagerClient({
   }
 
 
-  const selectedDisplayedIds = selectedIds.filter(id => displayed.some(t => t.id === id));
   const displayed = teachers.filter((t) => {
     let match = true
     if (search) {
@@ -105,6 +104,7 @@ export function TeacherManagerClient({
     if (filterStatus) match = match && t.status === filterStatus
     return match
   })
+  const selectedDisplayedIds = selectedIds.filter(id => displayed.some(t => t.id === id));
 
   const activeCount = teachers.filter((t) => t.status === "ACTIVE").length
   const inactiveCount = teachers.filter((t) => t.status !== "ACTIVE").length
