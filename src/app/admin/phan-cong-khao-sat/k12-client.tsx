@@ -102,6 +102,13 @@ export function PhanCongK12Client({
   const defaultYear = academicYears.find(y => !y.isOff) || academicYears[0]
   const [yearId, setYearId] = useState(defaultYear?.id || "")
 
+  // ─── Grades ───
+  const [activeGrades, setActiveGrades] = useState<string[]>(grades)
+
+  useEffect(() => {
+    setActiveGrades(grades)
+  }, [grades])
+
   // ─── Periods ───
   const [periods, setPeriods] = useState<any[]>(initialPeriods)
   const [pLoading, setPLoading] = useState(false)
@@ -137,8 +144,17 @@ export function PhanCongK12Client({
     if (!yearId) return
     setPLoading(true)
     try {
-      const r = await fetch(`/api/input-assessments?academicYearId=${yearId}&t=${Date.now()}`)
-      if (r.ok) setPeriods(await r.json())
+      const [periodsRes, gradesRes] = await Promise.all([
+        fetch(`/api/input-assessments?academicYearId=${yearId}&t=${Date.now()}`),
+        fetch(`/api/input-assessments?getGrades=true&academicYearId=${yearId}&t=${Date.now()}`)
+      ])
+      if (periodsRes.ok) setPeriods(await periodsRes.json())
+      if (gradesRes.ok) {
+        const fetchedGrades = await gradesRes.json()
+        setActiveGrades(fetchedGrades)
+      }
+    } catch (err) {
+      console.error(err)
     } finally { setPLoading(false) }
   }, [yearId])
 
@@ -401,10 +417,10 @@ export function PhanCongK12Client({
                     <div className="bg-slate-50/50 p-6 rounded-3xl border border-slate-100">
                       <div className="flex items-center justify-between mb-4">
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Layers className="w-3.5 h-3.5" /> Khối *</label>
-                        <button onClick={() => setAsSelGrades(asSelGrades.length === grades.length ? [] : grades)} className="text-[9px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">Chọn hết</button>
+                        <button onClick={() => setAsSelGrades(asSelGrades.length === activeGrades.length ? [] : activeGrades)} className="text-[9px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">Chọn hết</button>
                       </div>
                       <div className="grid grid-cols-4 gap-2">
-                        {grades.map(g => (
+                        {activeGrades.map(g => (
                           <button key={g} onClick={() => setAsSelGrades(p => p.includes(g) ? p.filter(x => x !== g) : [...p, g])}
                             className={`py-2 rounded-xl text-[11px] font-black border-2 transition-all ${asSelGrades.includes(g) ? "bg-emerald-500 border-emerald-500 text-white shadow-sm" : "bg-white border-white text-slate-400 hover:border-emerald-200 hover:text-emerald-500"}`}>
                             K{g}

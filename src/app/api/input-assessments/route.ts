@@ -12,6 +12,36 @@ export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
     const academicYearId = searchParams.get("academicYearId");
+    const getGrades = searchParams.get("getGrades");
+    
+    if (getGrades === "true") {
+      if (!academicYearId) {
+        return NextResponse.json({ error: "Missing academicYearId" }, { status: 400 });
+      }
+      const uniqueGrades = await (prisma as any).class.findMany({
+        where: { academicYearId },
+        select: { grade: true },
+        distinct: ["grade"],
+        orderBy: { grade: "asc" }
+      }).catch(() => []);
+      
+      const dbGrades = uniqueGrades
+        .map((g: any) => g.grade)
+        .filter(Boolean)
+        .filter((g: string) => /^(?:[1-9]|1[0-2])$/.test(String(g).trim()));
+        
+      if (dbGrades.length === 0) {
+        return NextResponse.json(["1","2","3","4","5","6","7","8","9","10","11","12"]);
+      }
+      
+      const sortedGrades = dbGrades.sort((a: any, b: any) => {
+        const na = parseInt(a);
+        const nb = parseInt(b);
+        if (isNaN(na) || isNaN(nb)) return String(a).localeCompare(String(b));
+        return na - nb;
+      });
+      return NextResponse.json(sortedGrades);
+    }
     
     const whereClause = academicYearId ? { academicYearId } : {};
     
