@@ -11,6 +11,9 @@ export async function getObservationData() {
       return { success: false, error: "Unauthorized" }
     }
 
+    const roleCode = (session.user as any)?.role || "TEACHER"
+    const isAdmin = ["ADMIN", "ADMINISTRATOR", "KT_DBCL"].includes(roleCode)
+
     const currentTeacher = await prisma.teacher.findUnique({
       where: { userId: session.user.id },
       include: {
@@ -19,7 +22,7 @@ export async function getObservationData() {
       }
     })
 
-    if (!currentTeacher) {
+    if (!currentTeacher && !isAdmin) {
       return { success: false, error: "Teacher profile not found" }
     }
 
@@ -83,11 +86,14 @@ export async function getObservationSlots(filters: {
       return { success: false, error: "Unauthorized" }
     }
 
+    const roleCode = (session.user as any)?.role || "TEACHER"
+    const isAdmin = ["ADMIN", "ADMINISTRATOR", "KT_DBCL"].includes(roleCode)
+
     const currentTeacher = await prisma.teacher.findUnique({
       where: { userId: session.user.id }
     })
 
-    if (!currentTeacher) {
+    if (!currentTeacher && !isAdmin) {
       return { success: false, error: "Teacher profile not found" }
     }
 
@@ -160,8 +166,11 @@ export async function getObservationSlots(filters: {
 
         // Filter by visibility and Khối CM
     const filteredSlots = slots.filter((slot) => {
+      if (isAdmin) {
+        return true;
+      }
       if (slot.visibilityType === "DEPARTMENT") {
-        if (slot.teacherId !== currentTeacher.id && slot.targetDeptId !== currentTeacher.departmentId) {
+        if (!currentTeacher || (slot.teacherId !== currentTeacher.id && slot.targetDeptId !== currentTeacher.departmentId)) {
           return false;
         }
       }

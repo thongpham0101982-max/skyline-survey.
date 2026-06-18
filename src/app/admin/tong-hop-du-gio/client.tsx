@@ -14,7 +14,7 @@ interface ClassInfo { id: string; classCode: string; className: string; level: s
 
 interface AdminTongHopClientProps {
   initialSlots: any[]
-  currentTeacher: TeacherInfo
+  currentTeacher: TeacherInfo | null
   subjects: SubjectInfo[]
   departments: DeptInfo[]
   teachers: any[]
