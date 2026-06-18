@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 function PositionBadge({ position }) {
   if (position === "TTCM") return (
     <span className="inline-flex items-center px-2.5 py-1 rounded-xl text-[10px] font-extrabold uppercase tracking-wide bg-amber-50 text-amber-700">
@@ -16,11 +16,11 @@ function PositionBadge({ position }) {
     </span>
   );
 }
-import { useState, useRef } from "react"
+import { useState, useRef, useMemo } from "react"
 import {
   Plus, Trash2, Edit2, Check, X, Upload, Download,
   Key, GraduationCap, Search, Users, UserCheck, Building2, Mail,
-  Filter, RefreshCw, ShieldCheck, AlertCircle
+  Filter, RefreshCw, ShieldCheck, AlertCircle, Layers
 } from "lucide-react"
 import {
   createTeacherAction, updateTeacherAction, deleteTeacherAction,
@@ -71,6 +71,7 @@ export function TeacherManagerClient({
   const [filterDepartment, setFilterDepartment] = useState("")
   const [filterSubject, setFilterSubject] = useState("")
   const [filterStatus, setFilterStatus] = useState("")
+  const [activeBlockTab, setActiveBlockTab] = useState("")
   const [editingId, setEditingId] = useState(null)
   const [editForm, setEditForm] = useState(EMPTY_EDIT)
   const [showAddForm, setShowAddForm] = useState(false)
@@ -94,7 +95,7 @@ export function TeacherManagerClient({
 
   // Reset page to 1 when filters change:
   const [prevFilters, setPrevFilters] = useState('')
-  const currentFiltersKey = search + filterDepartment + filterSubject + filterStatus
+  const currentFiltersKey = search + filterDepartment + filterSubject + filterStatus + activeBlockTab
   if (currentFiltersKey !== prevFilters) {
     setPrevFilters(currentFiltersKey)
     setCurrentPage(1)
@@ -113,6 +114,10 @@ export function TeacherManagerClient({
     if (filterDepartment) match = match && t.department === filterDepartment
     if (filterSubject) match = match && t.mainSubject === filterSubject
     if (filterStatus) match = match && t.status === filterStatus
+    if (activeBlockTab) {
+      const deptObj = (departments || []).find((d) => d.name === t.department)
+      match = match && deptObj?.blockCM === activeBlockTab
+    }
     return match
   })
   const selectedDisplayedIds = selectedIds.filter(id => displayed.some(t => t.id === id));
@@ -286,6 +291,51 @@ export function TeacherManagerClient({
         </div>
       </div>
 
+
+      {/* Block CM Tabs */}
+      {(() => {
+        const blockSet = new Set();
+        (departments || []).forEach((d) => { if (d.blockCM) blockSet.add(d.blockCM) });
+        const blocks = Array.from(blockSet).sort();
+        if (blocks.length === 0) return null;
+        const blockColors = {
+          "Mầm Non": { bg: "bg-amber-500", text: "text-amber-700", light: "bg-amber-50", border: "border-amber-200", ring: "ring-amber-200" },
+          "Phổ thông": { bg: "bg-indigo-500", text: "text-indigo-700", light: "bg-indigo-50", border: "border-indigo-200", ring: "ring-indigo-200" },
+          "Điều hành": { bg: "bg-teal-500", text: "text-teal-700", light: "bg-teal-50", border: "border-teal-200", ring: "ring-teal-200" },
+          "Hỗ trợ người học": { bg: "bg-rose-500", text: "text-rose-700", light: "bg-rose-50", border: "border-rose-200", ring: "ring-rose-200" },
+        };
+        const defaultColor = { bg: "bg-slate-500", text: "text-slate-700", light: "bg-slate-50", border: "border-slate-200", ring: "ring-slate-200" };
+        const getBlockCount = (block) => teachers.filter(t => {
+          const d = (departments || []).find(dx => dx.name === t.department);
+          return d?.blockCM === block;
+        }).length;
+        return (
+          <div className="bg-white border border-slate-100 rounded-2xl p-2 shadow-sm flex flex-wrap gap-1.5">
+            <button
+              onClick={() => { setActiveBlockTab(""); setCurrentPage(1); setSelectedIds([]); }}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 ${!activeBlockTab ? "bg-[#00A19A] text-white shadow-md" : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"}`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>Tất cả</span>
+              <span className={`ml-1 px-2 py-0.5 rounded-full text-[10px] font-black ${!activeBlockTab ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"}`}>{teachers.length}</span>
+            </button>
+            {blocks.map(block => {
+              const c = blockColors[block] || defaultColor;
+              const count = getBlockCount(block);
+              const isActive = activeBlockTab === block;
+              return (
+                <button key={block}
+                  onClick={() => { setActiveBlockTab(isActive ? "" : block); setCurrentPage(1); setSelectedIds([]); }}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 ${isActive ? c.bg + " text-white shadow-md" : c.light + " " + c.text + " border " + c.border + " hover:shadow-sm"}`}
+                >
+                  <span>{block}</span>
+                  <span className={`ml-0.5 px-2 py-0.5 rounded-full text-[10px] font-black ${isActive ? "bg-white/20 text-white" : c.light + " " + c.text}`}>{count}</span>
+                </button>
+              );
+            })}
+          </div>
+        );
+      })()}
       {/* Toolbar */}
       <div className="bg-white border border-slate-100 shadow-md shadow-slate-100/40 rounded-3xl p-6 space-y-4 border-t-4 border-t-[#00A19A]">
         <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center">

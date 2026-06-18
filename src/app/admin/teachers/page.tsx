@@ -16,7 +16,7 @@ export default async function TeacherManagerPage() {
   const departments = await prisma.department.findMany({
     where: { status: "ACTIVE" },
     orderBy: { name: "asc" },
-    select: { id: true, code: true, name: true }
+    select: { id: true, code: true, name: true, blockCM: true }
   })
 
   const subjects = await prisma.subject.findMany({
@@ -51,7 +51,7 @@ export default async function TeacherManagerPage() {
           }
         }
       },
-      departmentRel: { select: { name: true } },
+      departmentRel: { select: { name: true, blockCM: true } },
       mainSubjectRel: { select: { subjectName: true } },
       campus: { select: { campusName: true } }
     }
@@ -81,6 +81,7 @@ export default async function TeacherManagerPage() {
     dateOfBirth: t.dateOfBirth || null,
     department: t.departmentRel?.name || null,
     departmentId: t.departmentId || null,
+    departmentBlockCM: t.departmentRel?.blockCM || null,
     mainSubject: t.mainSubjectRel?.subjectName || null,
     mainSubjectId: t.mainSubjectId || null,
     campus: t.campus?.campusName || null,
