@@ -58,16 +58,26 @@ export function AdminTongHopClient({
     return statsMap;
   }, [teachers, initialSlots]);
 
-  // 2. Only show departments that have teachers with BOTH teaching and observing activity
-  // and belong to a valid Khoi CM (blockCM), excluding "Hỗ trợ người học"
+  const [activeBlockTab, setActiveBlockTab] = useState("Phổ thông K-12")
+
+  // 2. Only show departments that belong to the active blockCM, excluding "Hỗ trợ người học"
   const activeDepartments = useMemo(() => {
     return departments.filter(dept => {
       if (!dept.blockCM || dept.blockCM === "" || dept.blockCM === "Hỗ trợ người học") {
         return false;
       }
+      if (activeBlockTab === "Phổ thông K-12" && dept.blockCM !== "Phổ thông") {
+        return false;
+      }
+      if (activeBlockTab === "Mầm non" && dept.blockCM !== "Mầm Non") {
+        return false;
+      }
+      if (activeBlockTab === "Điều hành" && dept.blockCM !== "Điều hành") {
+        return false;
+      }
       return true;
     });
-  }, [departments]);
+  }, [departments, activeBlockTab]);
 
   // If user is TTCM, preselect and lock to their department. Otherwise, select the first active department.
   const initialDeptId = isTTCM 
@@ -82,6 +92,23 @@ export function AdminTongHopClient({
   const [searchSlotQuery, setSearchSlotQuery] = useState("")
   const [filterLevel, setFilterLevel] = useState("all")
   const [filterGrade, setFilterGrade] = useState("all")
+
+  const handleTabChange = (tab: string) => {
+    setActiveBlockTab(tab);
+    setSelectedTeacherId(null);
+    setSearchTeacherQuery("");
+    
+    const newActiveDepts = departments.filter(dept => {
+      if (!dept.blockCM || dept.blockCM === "" || dept.blockCM === "Hỗ trợ người học") {
+        return false;
+      }
+      if (tab === "Phổ thông K-12" && dept.blockCM !== "Phổ thông") return false;
+      if (tab === "Mầm non" && dept.blockCM !== "Mầm Non") return false;
+      if (tab === "Điều hành" && dept.blockCM !== "Điều hành") return false;
+      return true;
+    });
+    setSelectedDeptId(newActiveDepts[0]?.id || "");
+  };
 
   // Get all teachers in the selected department
   const deptTeachers = useMemo(() => {
@@ -143,6 +170,45 @@ export function AdminTongHopClient({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Teachers List */}
         <div className="lg:col-span-5 flex flex-col gap-4">
+          {/* Tabs / Tags */}
+          <div className="bg-white border border-slate-150 rounded-2xl p-2 shadow-sm flex flex-wrap gap-1.5 shrink-0">
+            {["Phổ thông K-12", "Mầm non", "Điều hành"].map(tab => {
+              const isActive = activeBlockTab === tab;
+              
+              // Count departments belonging to this block
+              const deptCount = departments.filter(dept => {
+                if (tab === "Phổ thông K-12" && dept.blockCM === "Phổ thông") return true;
+                if (tab === "Mầm non" && dept.blockCM === "Mầm Non") return true;
+                if (tab === "Điều hành" && dept.blockCM === "Điều hành") return true;
+                return false;
+              }).length;
+
+              let tabStyle = "";
+              if (isActive) {
+                if (tab === "Phổ thông K-12") tabStyle = "bg-indigo-600 text-white shadow-md shadow-indigo-100";
+                if (tab === "Mầm non") tabStyle = "bg-amber-500 text-white shadow-md shadow-amber-100";
+                if (tab === "Điều hành") tabStyle = "bg-teal-600 text-white shadow-md shadow-teal-100";
+              } else {
+                if (tab === "Phổ thông K-12") tabStyle = "bg-indigo-50/70 text-indigo-600 border border-indigo-100 hover:shadow-xs";
+                if (tab === "Mầm non") tabStyle = "bg-amber-50/70 text-amber-600 border border-amber-100 hover:shadow-xs";
+                if (tab === "Điều hành") tabStyle = "bg-teal-50/70 text-teal-600 border border-teal-100 hover:shadow-xs";
+              }
+
+              return (
+                <button
+                  key={tab}
+                  onClick={() => handleTabChange(tab)}
+                  className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 ${tabStyle}`}
+                >
+                  <span>{tab}</span>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[9px] font-black ${isActive ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"}`}>
+                    {deptCount}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
           {/* Department Selector & Teacher Search Card */}
           <div className="bg-white p-5 rounded-3xl border-2 border-slate-100 shadow-sm space-y-4">
             <div className="flex flex-col gap-2">
