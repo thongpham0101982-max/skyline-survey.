@@ -111,7 +111,13 @@ Thông tin người dùng hiện tại đang gửi tin nhắn:
 - Quyền hạn (Role): ${currentUser?.role || "GIAO_VIEN"}`
     });
 
-    const chat = model.startChat({ history });
+    // Đảm bảo tin nhắn đầu tiên trong lịch sử gửi lên Gemini bắt đầu bằng vai trò 'user'
+    let cleanHistory = Array.isArray(history) ? [...history] : [];
+    while (cleanHistory.length > 0 && cleanHistory[0].role === "model") {
+      cleanHistory.shift();
+    }
+
+    const chat = model.startChat({ history: cleanHistory });
     let result = await chat.sendMessage(message);
     const functionCalls = result.response.functionCalls;
 
