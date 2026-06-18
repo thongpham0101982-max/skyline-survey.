@@ -63,7 +63,7 @@ export const APP_CATEGORIES = [
         href: "/admin/cau-hinh-khao-sat",
         subModules: [
           { code: "PRESCHOOL_INPUT_ASSESSMENTS", name: "KSNL Đầu vào Mầm non" },
-          { code: "INPUT_ASSESSMENTS", name: "KSNL đầu vào Phổ thông" },
+          { code: "INPUT_ASSESSMENTS", name: "Phổ thông K-12" },
           { code: "INPUT_ASSESSMENTS_PERIODS", name: "Kỳ KS" },
           { code: "INPUT_ASSESSMENTS_CATEGORIES", name: "Danh mục" },
           { code: "INPUT_ASSESSMENTS_SUBJECTS", name: "Môn KS" },

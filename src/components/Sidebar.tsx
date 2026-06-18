@@ -226,13 +226,13 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                       {hasGeneral && (
                         <Link href="/teacher/input-assessments?type=general" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool' ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"}`}>
                           <ClipboardCheck className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool' ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
-                          {!isCollapsed && <span>KSNL đầu vào Phổ thông</span>}
+                          {!isCollapsed && <span>Phổ thông K-12</span>}
                         </Link>
                       )}
                       {!hasPreschool && !hasGeneral && (
                         <Link href="/teacher/input-assessments?type=general" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool' ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"}`}>
                           <ClipboardCheck className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool' ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
-                          {!isCollapsed && <span>KSNL đầu vào Phổ thông</span>}
+                          {!isCollapsed && <span>Phổ thông K-12</span>}
                         </Link>
                       )}
                     </>

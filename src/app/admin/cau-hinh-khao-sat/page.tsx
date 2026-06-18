@@ -181,7 +181,13 @@ export default async function SurveyConfigPage({ searchParams }: { searchParams:
         }).catch(() => []);
         
         try {
-          const dbGrades = uniqueGrades.map((g: any) => g.grade).filter(Boolean);
+          const dbGrades = uniqueGrades
+            .map((g: any) => g.grade)
+            .filter(Boolean)
+            .filter((g: string) => {
+              const n = parseInt(g);
+              return !isNaN(n) && n >= 1 && n <= 12;
+            });
           if (dbGrades.length > 0) {
             gradesK12 = dbGrades.sort((a: any, b: any) => {
               const na = parseInt(a);

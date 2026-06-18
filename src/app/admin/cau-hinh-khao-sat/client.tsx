@@ -114,7 +114,7 @@ export function SurveyConfigClient({
               }`}
             >
               <ClipboardList className={`w-4 h-4 transition-transform duration-300 ${activeTab === "k12" ? "rotate-3" : ""}`} />
-              <span>KSNL Đầu vào Phổ thông</span>
+              <span>Phổ thông K-12</span>
             </button>
           )}
 

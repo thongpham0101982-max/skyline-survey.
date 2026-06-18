@@ -3307,7 +3307,7 @@ return {
               <ClipboardCheck className="w-4 h-4 text-white"/>
             </div>
             <div className="min-w-0">
-              <h1 className="text-base font-black text-slate-800 tracking-tight leading-tight truncate">KSNL đầu vào Phổ thông</h1>
+              <h1 className="text-base font-black text-slate-800 tracking-tight leading-tight truncate">Phổ thông K-12</h1>
               <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest hidden sm:block">Hệ thống khảo sát & phân công giáo viên</p>
             </div>
           </div>
