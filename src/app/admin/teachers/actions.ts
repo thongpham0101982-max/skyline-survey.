@@ -1,4 +1,4 @@
-﻿"use server"
+"use server"
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 import bcrypt from "bcryptjs"
@@ -287,4 +287,55 @@ export async function resetTeacherPasswordAction(teacherId: string) {
   const hashedPassword = await bcrypt.hash(teacher.teacherCode, 10)
   await prisma.user.update({ where: { id: teacher.userId }, data: { passwordHash: hashedPassword } })
   return { success: true }
+}
+export async function assignTeachersToRoleAction(teacherIds: string[], roleCode: string) {
+  try {
+    const teachers = await prisma.teacher.findMany({
+      where: { id: { in: teacherIds } },
+      select: { id: true, userId: true, teacherCode: true, teacherName: true, campusId: true }
+    });
+
+    const defaultCampus = await prisma.campus.findFirst();
+    const defaultCampusId = defaultCampus?.id;
+
+    for (const t of teachers) {
+      if (t.userId) {
+        // Update existing user role
+        await prisma.user.update({
+          where: { id: t.userId },
+          data: { role: roleCode }
+        });
+      } else {
+        // Create user record if missing (safeguard)
+        const hashedPassword = await bcrypt.hash(t.teacherCode, 10);
+        const newUser = await prisma.user.create({
+          data: {
+            fullName: t.teacherName,
+            email: t.teacherCode,
+            passwordHash: hashedPassword,
+            role: roleCode,
+            status: "ACTIVE"
+          }
+        });
+        await prisma.teacher.update({
+          where: { id: t.id },
+          data: { userId: newUser.id }
+        });
+        
+        // Also assign primary campus
+        const campusId = t.campusId || defaultCampusId;
+        if (campusId) {
+          await prisma.userCampusAssignment.create({
+            data: { userId: newUser.id, campusId }
+          }).catch(() => {});
+        }
+      }
+    }
+
+    revalidatePath("/admin/teachers");
+    revalidatePath("/admin/users");
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
 }

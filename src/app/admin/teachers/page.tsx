@@ -99,6 +99,10 @@ export default async function TeacherManagerPage() {
     user: { email: t.user?.email || t.teacherCode, status: t.user?.status || "ACTIVE" }
   }))
 
+  const roles = await prisma.role.findMany({
+    orderBy: { name: "asc" }
+  })
+
   return (
     <div className="space-y-6">
       <div>
@@ -115,6 +119,7 @@ export default async function TeacherManagerPage() {
         campuses={campuses}
         isCampusLocked={!session.isFullAccess && session.allowedCampusIds.length === 1}
         defaultCampusId={!session.isFullAccess ? session.allowedCampusIds[0] : null}
+        roles={roles}
       />
     </div>
   )

@@ -24,7 +24,7 @@ import {
 } from "lucide-react"
 import {
   createTeacherAction, updateTeacherAction, deleteTeacherAction,
-  importTeachersAction, resetTeacherPasswordAction
+  importTeachersAction, resetTeacherPasswordAction, assignTeachersToRoleAction
 } from "./actions"
 
 const EMPTY_NEW = {
@@ -56,8 +56,8 @@ function StatusBadge({ status }) {
 }
 
 export function TeacherManagerClient({ 
-  initialTeachers, years, defaultYearId, classes, departments, subjects, campuses, isCampusLocked = false, defaultCampusId = null 
-}) {
+  initialTeachers, years, defaultYearId, classes, departments, subjects, campuses, isCampusLocked = false, defaultCampusId = null, roles = [] 
+}: any) {
   const [teachers, setTeachers] = useState(initialTeachers)
   const [search, setSearch] = useState("")
   const [filterDepartment, setFilterDepartment] = useState("")
@@ -75,6 +75,8 @@ export function TeacherManagerClient({
   })
   const [saving, setSaving] = useState(false)
   const [importing, setImporting] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [assigning, setAssigning] = useState(false)
   const [importResult, setImportResult] = useState(null)
   const [errorMsg, setErrorMsg] = useState("")
   const [successMsg, setSuccessMsg] = useState("")
@@ -90,6 +92,8 @@ export function TeacherManagerClient({
     setCurrentPage(1)
   }
 
+
+  const selectedDisplayedIds = selectedIds.filter(id => displayed.some(t => t.id === id));
   const displayed = teachers.filter((t) => {
     let match = true
     if (search) {
@@ -417,10 +421,44 @@ export function TeacherManagerClient({
 
       {/* Table */}
       <div className="bg-white border border-slate-150 rounded-3xl overflow-hidden shadow-md shadow-slate-100/40 border-t-4 border-t-[#0A3230]">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-150 bg-slate-50/50">
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-            Danh sách giáo viên{hasFilters && <span className="ml-1.5 text-[#00A19A] font-black">| Đang lọc: {displayed.length} kết quả</span>}
-          </p>
+        <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-4 border-b border-slate-150 bg-slate-50/50">
+          <div className="flex items-center gap-4 flex-wrap">
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+              Danh sách giáo viên{hasFilters && <span className="ml-1.5 text-[#00A19A] font-black">| Đang lọc: {displayed.length} kết quả</span>}
+            </p>
+            {selectedDisplayedIds.length > 0 && (
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-bold text-slate-600">Đã chọn: <span className="text-[#00A19A] font-extrabold">{selectedDisplayedIds.length}</span></span>
+                <select
+                  onChange={async (e) => {
+                    const roleCode = e.target.value;
+                    if (!roleCode) return;
+                    const roleName = roles.find((r) => r.code === roleCode)?.name || roleCode;
+                    if (confirm(`Bạn có chắc chắn muốn cấp tài khoản và gán Nhóm: ${roleName} cho ${selectedDisplayedIds.length} giáo viên đã chọn?`)) {
+                      setAssigning(true);
+                      const res = await assignTeachersToRoleAction(selectedDisplayedIds, roleCode);
+                      if (res.success) {
+                        alert("Đã cấp tài khoản/phân nhóm quyền thành công!");
+                        setSelectedIds([]);
+                        window.location.reload();
+                      } else {
+                        alert("Lỗi: " + res.error);
+                      }
+                      setAssigning(false);
+                    }
+                    e.target.value = "";
+                  }}
+                  disabled={assigning}
+                  className="p-1.5 rounded-xl border text-xs bg-white border-slate-300 font-bold text-slate-700 cursor-pointer outline-none focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/15 transition-all"
+                >
+                  <option value="">-- Cấp Quyền Nhóm --</option>
+                  {roles.map((r) => (
+                    <option key={r.code} value={r.code}>{r.name} ({r.code})</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
           <div className="flex items-center gap-2 border border-slate-200/60 px-3 py-1 bg-white font-bold text-xs rounded-lg">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span className="text-slate-655 font-bold">{activeCount} On</span>
@@ -430,6 +468,15 @@ export function TeacherManagerClient({
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-200 bg-[#0A3230] text-white">
+                <th className="px-5 py-4 text-center text-[11px] font-black uppercase tracking-wider w-12">
+                  <input type="checkbox" className="w-4 h-4 rounded text-[#00A19A] cursor-pointer"
+                    checked={displayed.length > 0 && selectedDisplayedIds.length === displayed.length}
+                    onChange={(e) => {
+                      if (e.target.checked) setSelectedIds(displayed.map(t => t.id));
+                      else setSelectedIds([]);
+                    }}
+                  />
+                </th>
                 <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-wider w-12">#</th>
                 <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-wider w-28">Mã GV</th>
                 <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-wider min-w-[200px]">Họ và Tên</th>
@@ -444,7 +491,7 @@ export function TeacherManagerClient({
             <tbody className="divide-y divide-slate-100">
               {displayed.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-6 py-16 text-center">
+                  <td colSpan={10} className="px-6 py-16 text-center">
                     <div className="w-16 h-16 rounded-2xl border border-dashed border-slate-250 flex items-center justify-center mx-auto mb-4 bg-slate-50">
                       <GraduationCap className="w-8 h-8 text-slate-400" />
                     </div>
@@ -460,8 +507,17 @@ export function TeacherManagerClient({
                     const idx = startIndex + index;
                     const isEditing = editingId === t.id;
                     return (
-                      <tr key={t.id} className={`group transition-all ${isEditing ? "bg-[#00A19A]/5 border-l-4 border-l-[#00A19A]" : "hover:bg-slate-50/20"}`}>
+                      <tr key={t.id} className={`group transition-all ${isEditing ? "bg-[#00A19A]/5 border-l-4 border-l-[#00A19A]" : "hover:bg-slate-50/20"} ${selectedDisplayedIds.includes(t.id) ? "bg-[#00A19A]/5" : ""}`}>
 
+                      <td className="px-5 py-4 text-center">
+                        <input type="checkbox" className="w-4 h-4 rounded text-[#00A19A] cursor-pointer"
+                          checked={selectedDisplayedIds.includes(t.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) setSelectedIds([...selectedIds, t.id]);
+                            else setSelectedIds(selectedIds.filter(id => id !== t.id));
+                          }}
+                        />
+                      </td>
                       <td className="px-5 py-4 text-slate-400 text-xs font-mono font-bold tabular-nums">{idx + 1}</td>
 
                       <td className="px-5 py-4">
