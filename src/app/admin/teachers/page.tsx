@@ -86,10 +86,10 @@ export default async function TeacherManagerPage() {
     campus: t.campus?.campusName || null,
     campusId: t.campusId || null,
     additionalCampuses: t.user?.campusAssignments?.map(ca => ({
-      id: ca.campus.id,
-      campusName: ca.campus.campusName
-    })).filter(ac => ac.id !== t.campusId) || [],
-    additionalCampusIds: t.user?.campusAssignments?.map(ca => ca.campusId).filter(cid => cid !== t.campusId) || [],
+      id: ca.campus?.id || "",
+      campusName: ca.campus?.campusName || ""
+    })).filter(ac => ac.id && ac.id !== t.campusId) || [],
+    additionalCampusIds: t.user?.campusAssignments?.map(ca => ca.campusId).filter(cid => cid && cid !== t.campusId) || [],
     homeroomClass: t.homeroomClass || null,
     homeroomClassId: classHomeroomMap.get(t.id)?.classId || null,
     email: t.email || null,

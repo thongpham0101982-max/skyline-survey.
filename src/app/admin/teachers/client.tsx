@@ -55,6 +55,14 @@ function StatusBadge({ status }) {
   )
 }
 
+const cleanStr = (s: string | null | undefined) => 
+  (s || "")
+   .toLowerCase()
+   .normalize("NFD")
+   .replace(/[\u0300-\u036f]/g, "")
+   .replace(/đ/g, "d")
+   .replace(/Đ/g, "d");
+
 export function TeacherManagerClient({ 
   initialTeachers, years, defaultYearId, classes, departments, subjects, campuses, isCampusLocked = false, defaultCampusId = null, roles = [] 
 }: any) {
@@ -96,8 +104,11 @@ export function TeacherManagerClient({
   const displayed = teachers.filter((t) => {
     let match = true
     if (search) {
-      const q = search.toLowerCase()
-      match = match && (t.teacherName.toLowerCase().includes(q) || t.teacherCode.toLowerCase().includes(q) || (t.campus || "").toLowerCase().includes(q))
+      const q = cleanStr(search)
+      const nameClean = cleanStr(t.teacherName)
+      const codeClean = cleanStr(t.teacherCode)
+      const campusClean = cleanStr(t.campus)
+      match = match && (nameClean.includes(q) || codeClean.includes(q) || campusClean.includes(q))
     }
     if (filterDepartment) match = match && t.department === filterDepartment
     if (filterSubject) match = match && t.mainSubject === filterSubject
@@ -433,7 +444,7 @@ export function TeacherManagerClient({
                   onChange={async (e) => {
                     const roleCode = e.target.value;
                     if (!roleCode) return;
-                    const roleName = roles.find((r) => r.code === roleCode)?.name || roleCode;
+                    const roleName = (roles || []).find((r) => r.code === roleCode)?.name || roleCode;
                     if (confirm(`Bạn có chắc chắn muốn cấp tài khoản và gán Nhóm: ${roleName} cho ${selectedDisplayedIds.length} giáo viên đã chọn?`)) {
                       setAssigning(true);
                       const res = await assignTeachersToRoleAction(selectedDisplayedIds, roleCode);
@@ -452,7 +463,7 @@ export function TeacherManagerClient({
                   className="p-1.5 rounded-xl border text-xs bg-white border-slate-300 font-bold text-slate-700 cursor-pointer outline-none focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/15 transition-all"
                 >
                   <option value="">-- Cấp Quyền Nhóm --</option>
-                  {roles.map((r) => (
+                  {(roles || []).map((r) => (
                     <option key={r.code} value={r.code}>{r.name} ({r.code})</option>
                   ))}
                 </select>
