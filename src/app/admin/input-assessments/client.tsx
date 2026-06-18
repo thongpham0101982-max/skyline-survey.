@@ -986,6 +986,12 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
 
   const [yearId, setYearId] = useState(() => getDefaultAcademicYearClient(academicYears)?.id || "")
   
+  const [activeGrades, setActiveGrades] = useState<string[]>(grades)
+  
+  useEffect(() => {
+    setActiveGrades(grades)
+  }, [grades])
+  
   const currentEduSystems = useMemo(() => {
     return eduSystems.filter((es: any) => es.academicYearId === yearId)
   }, [eduSystems, yearId])
@@ -2755,15 +2761,24 @@ ${reportForm.directorNote}`;
     if (!yearId) return
     setPLoading(true)
     try {
-      const r = await fetch(`/api/input-assessments?academicYearId=${yearId}&t=${Date.now()}`)
-      if (r.ok) { 
-        const d = await r.json()
+      const [periodsRes, gradesRes] = await Promise.all([
+        fetch(`/api/input-assessments?academicYearId=${yearId}&t=${Date.now()}`),
+        fetch(`/api/input-assessments?getGrades=true&academicYearId=${yearId}&t=${Date.now()}`)
+      ])
+      if (periodsRes.ok) { 
+        const d = await periodsRes.json()
         setPeriods(d)
         if (d.length) {
           if (!sPeriodId) setSPeriodId(d[0].id)
           if (!asPeriodId) setAsPeriodId(d[0].id)
         }
       }
+      if (gradesRes.ok) {
+        const fetchedGrades = await gradesRes.json()
+        setActiveGrades(fetchedGrades)
+      }
+    } catch (err) {
+      console.error(err)
     } finally { setPLoading(false) }
   }, [yearId, sPeriodId, asPeriodId])
 
@@ -3461,10 +3476,10 @@ return {
                       <div className="bg-slate-50/50 p-6 rounded-3xl border border-slate-100">
                         <div className="flex items-center justify-between mb-4">
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Layers className="w-3.5 h-3.5"/> Khối *</label>
-                          <button onClick={() => setAsSelGrades(asSelGrades.length === grades.length ? [] : grades)} className={"text-[9px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg " + (isReadOnly ? "pointer-events-none opacity-40 cursor-not-allowed" : "")} disabled={isReadOnly}>Chọn hết</button>
+                          <button onClick={() => setAsSelGrades(asSelGrades.length === activeGrades.length ? [] : activeGrades)} className={"text-[9px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg " + (isReadOnly ? "pointer-events-none opacity-40 cursor-not-allowed" : "")} disabled={isReadOnly}>Chọn hết</button>
                         </div>
                         <div className="grid grid-cols-4 gap-2">
-                          {grades.map(g => (
+                          {activeGrades.map(g => (
                             <button
                               key={g}
                               onClick={() => setAsSelGrades(p => p.includes(g) ? p.filter(x=>x!==g) : [...p, g])}
@@ -4198,10 +4213,10 @@ return {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="block font-black text-slate-850 text-xs uppercase tracking-wider">Khối:</span>
-                    <button onClick={() => setSelGrades(selGrades.length === grades.length ? [] : [...grades])} className={"text-[10px] font-black uppercase tracking-wider text-[#00A19A] bg-[#00A19A]/10 hover:bg-[#00A19A]/20 px-2.5 py-1 rounded-md transition-colors border border-[#00A19A]/20 " + (isReadOnly ? "pointer-events-none opacity-40" : "")} disabled={isReadOnly}>Chọn tất cả</button>
+                    <button onClick={() => setSelGrades(selGrades.length === activeGrades.length ? [] : [...activeGrades])} className={"text-[10px] font-black uppercase tracking-wider text-[#00A19A] bg-[#00A19A]/10 hover:bg-[#00A19A]/20 px-2.5 py-1 rounded-md transition-colors border border-[#00A19A]/20 " + (isReadOnly ? "pointer-events-none opacity-40" : "")} disabled={isReadOnly}>Chọn tất cả</button>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {grades.map((g: string) => (
+                    {activeGrades.map((g: string) => (
                       <button key={g} onClick={() => toggleGrade(g)} className={`text-xs px-3 py-1.5 rounded-lg font-bold transition-all border ${selGrades.includes(g) ? 'bg-[#00A19A] text-white border-[#00A19A] shadow-sm' : 'bg-white text-slate-800 border-slate-300 hover:border-[#00A19A] hover:bg-slate-100/50'} ${isReadOnly ? "pointer-events-none opacity-40" : ""}`} disabled={isReadOnly}>
                         {selGrades.includes(g) && <Check className="w-3 h-3 inline mr-1"/>} K{g}
                       </button>
@@ -4318,7 +4333,7 @@ return {
                       });
                       
                       return Array.from(groups.values()).map((g:any, i) => {
-                        const allGrades = grades.length > 0 && g.grades.size === grades.length;
+                        const allGrades = activeGrades.length > 0 && g.grades.size === activeGrades.length;
                         const allEdus = currentEduSystems.length > 0 && g.edus.size === currentEduSystems.length;
                         
                         return (
@@ -6294,7 +6309,7 @@ return {
             
             <div className="grid grid-cols-3 gap-4">
                <Field label="Giới tính"><select value={sForm.gender} onChange={e=>setSForm(f=>({...f,gender:e.target.value}))} className={inp}><option value="">--</option><option value="Nam">Nam</option><option value="Nữ">Nữ</option></select></Field>
-               <Field label="Khối"><select value={sForm.grade} onChange={e=>setSForm(f=>({...f,grade:e.target.value}))} className={inp}><option value="">--</option>{grades.map(g=><option key={g} value={g}>{g}</option>)}</select></Field>
+               <Field label="Khối"><select value={sForm.grade} onChange={e=>setSForm(f=>({...f,grade:e.target.value}))} className={inp}><option value="">--</option>{activeGrades.map(g=><option key={g} value={g}>{g}</option>)}</select></Field>
                <Field label="Học kỳ / Năm TS">
                  <select value={sForm.hocKy} onChange={e=>setSForm(f=>({...f,hocKy:e.target.value}))} className={inp}>
                    <option value="">--</option>

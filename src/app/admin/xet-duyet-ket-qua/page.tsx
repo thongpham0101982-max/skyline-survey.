@@ -123,7 +123,10 @@ export default async function XetDuyetKetQuaPage() {
             }).catch(() => []);
             
             try {
-              const dbGrades = uniqueGrades.map((g: any) => g.grade).filter(Boolean);
+              const dbGrades = uniqueGrades
+                .map((g: any) => g.grade)
+                .filter(Boolean)
+                .filter((g: string) => /^(?:[1-9]|1[0-2])$/.test(String(g).trim()));
               if (dbGrades.length > 0) {
                 grades = dbGrades.sort((a: any, b: any) => {
                   const na = parseInt(a);
