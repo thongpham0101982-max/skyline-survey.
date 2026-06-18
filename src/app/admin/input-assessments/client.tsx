@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 import { getDefaultAcademicYearClient } from "@/lib/academicYear"
 const DEFAULT_WATERMARK_SVG = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='%23007A87'><path d='M10,80 Q50,40 90,20 Q60,50 10,80 Z'/><path d='M30,80 Q60,55 90,35 Q65,60 30,80 Z'/></svg>";
 
@@ -3339,7 +3339,7 @@ return {
       <div className="bg-white border border-slate-200 shadow-sm rounded-xl px-1 py-1">
         <div className="flex flex-wrap gap-0.5">
           {[
-            { id:"periods",              label:"T\u1ea1o k\u1ef3 Kh\u1ea3o s\u00e1t",      tip:"K\u1ef3 kh\u1ea3o s\u00e1t",        icon:Clock },
+            { id:"periods",              label:"T\u1ea1o \u0111\u1ee3t kh\u1ea3o s\u00e1t",      tip:"K\u1ef3 & \u0110\u1ee3t kh\u1ea3o s\u00e1t",        icon:Clock },
             { id:"categories",           label:"Danh m\u1ee5c",   tip:"Danh m\u1ee5c",            icon:Settings },
             { id:"subjects",             label:"M\u00f4n KS",     tip:"M\u00f4n kh\u1ea3o s\u00e1t",        icon:BookOpen },
             { id:"mapping",              label:"C\u1ea5u h\u00ecnh",   tip:"C\u1ea5u h\u00ecnh theo Kh\u1ed1i",  icon:Layers },
@@ -3670,13 +3670,13 @@ return {
             <h2 className="text-sm font-black text-slate-600 uppercase tracking-widest flex items-center gap-2"><Clock className="w-4 h-4"/> Kỳ & Đợt Khảo sát</h2>
             <div className="flex gap-2">
               <button onClick={fetchPeriods} className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all"><RefreshCw className="w-4 h-4"/></button>
-              <button onClick={e => { if (cannotCreate) return; openAddPeriod(); }} disabled={cannotCreate} className={"flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white text-[13px] font-black rounded-xl hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 " + (cannotCreate ? "pointer-events-none opacity-40 cursor-not-allowed" : "")}>
-                <Plus className="w-4 h-4"/> Tạo Kỳ mới
-              </button>
+
+
+
             </div>
           </div>
 
-          {pLoading ? <Spin/> : periods.length === 0 ? <Empty icon={Calendar} text="Chưa có Kỳ khảo sát nào" sub="Bấm Tạo Kỳ mới để bắt đầu" /> : (
+          {pLoading ? <Spin/> : periods.length === 0 ? <Empty icon={Calendar} text="Chưa có Kỳ khảo sát nào" sub="Liên hệ quản trị viên để tạo kỳ khảo sát mới" /> : (
             <div className="space-y-3">
               {visiblePeriods.map(p => (
                 <div key={p.id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden group/p hover:border-indigo-200 transition-all">
