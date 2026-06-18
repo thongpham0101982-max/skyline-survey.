@@ -3570,7 +3570,7 @@ return {
                               onClick={() => setAsSelGrades(p => p.includes(g) ? p.filter(x=>x!==g) : [...p, g])}
                               className={`py-2 rounded-xl text-[11px] font-black border-2 transition-all ${asSelGrades.includes(g) ? "bg-emerald-500 border-emerald-500 text-white shadow-sm" : "bg-white border-white text-slate-400 hover:border-emerald-200 hover:text-emerald-500"} ${isReadOnly ? "pointer-events-none opacity-40 cursor-not-allowed" : ""}`} disabled={isReadOnly}
                             >
-                              K{g}
+                              {g}
                             </button>
                           ))}
                         </div>
@@ -3698,7 +3698,7 @@ return {
                             <td className="p-5">
                                 <div className="flex flex-wrap gap-1">
                                   {a.grades.map((g: string) => (
-                                    <span key={g} className="text-xs font-black text-slate-600 bg-slate-100 px-2 py-1 rounded-md">Khối {g}</span>
+                                    <span key={g} className="text-xs font-black text-slate-600 bg-slate-100 px-2 py-1 rounded-md">{g}</span>
                                   ))}
                                 </div>
                               </td>
@@ -4287,7 +4287,7 @@ return {
                   <div className="flex flex-wrap gap-2">
                     {activeGrades.map((g: string) => (
                       <button key={g} onClick={() => toggleGrade(g)} className={`text-xs px-3 py-1.5 rounded-lg font-bold transition-all border ${selGrades.includes(g) ? 'bg-[#00A19A] text-white border-[#00A19A] shadow-sm' : 'bg-white text-slate-800 border-slate-300 hover:border-[#00A19A] hover:bg-slate-100/50'} ${isReadOnly ? "pointer-events-none opacity-40" : ""}`} disabled={isReadOnly}>
-                        {selGrades.includes(g) && <Check className="w-3 h-3 inline mr-1"/>} K{g}
+                        {selGrades.includes(g) && <Check className="w-3 h-3 inline mr-1"/>} {g}
                       </button>
                     ))}
                   </div>

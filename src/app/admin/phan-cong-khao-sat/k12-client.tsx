@@ -423,7 +423,7 @@ export function PhanCongK12Client({
                         {activeGrades.map(g => (
                           <button key={g} onClick={() => setAsSelGrades(p => p.includes(g) ? p.filter(x => x !== g) : [...p, g])}
                             className={`py-2 rounded-xl text-[11px] font-black border-2 transition-all ${asSelGrades.includes(g) ? "bg-emerald-500 border-emerald-500 text-white shadow-sm" : "bg-white border-white text-slate-400 hover:border-emerald-200 hover:text-emerald-500"}`}>
-                            K{g}
+                            {g}
                           </button>
                         ))}
                       </div>
@@ -530,7 +530,7 @@ export function PhanCongK12Client({
                         </td>
                         <td className="p-5">
                           <div className="flex flex-wrap gap-1">
-                            {a.grades.map((g: string) => <span key={g} className="text-xs font-black text-slate-600 bg-slate-100 px-2 py-1 rounded-md">Khối {g}</span>)}
+                            {a.grades.map((g: string) => <span key={g} className="text-xs font-black text-slate-600 bg-slate-100 px-2 py-1 rounded-md">{g}</span>)}
                           </div>
                         </td>
                         <td className="p-5">
