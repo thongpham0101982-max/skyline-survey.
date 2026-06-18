@@ -8,7 +8,7 @@ import {
 
 interface TeacherInfo { id: string; teacherName: string; teacherCode: string; email: string | null; departmentId: string | null; campusId: string; position?: string }
 interface SubjectInfo { id: string; subjectCode: string; subjectName: string }
-interface DeptInfo { id: string; code: string; name: string }
+interface DeptInfo { id: string; code: string; name: string; blockCM?: string | null }
 interface CampusInfo { id: string; campusCode: string; campusName: string }
 interface ClassInfo { id: string; classCode: string; className: string; level: string; grade: string; campusId: string }
 
@@ -59,8 +59,12 @@ export function AdminTongHopClient({
   }, [teachers, initialSlots]);
 
   // 2. Only show departments that have teachers with BOTH teaching and observing activity
+  // and belong to a valid Khoi CM (blockCM), excluding "Hỗ trợ người học"
   const activeDepartments = useMemo(() => {
     return departments.filter(dept => {
+      if (!dept.blockCM || dept.blockCM === "" || dept.blockCM === "Hỗ trợ người học") {
+        return false;
+      }
       const deptTeachers = teachers.filter((t: any) => t.departmentId === dept.id);
       const hasTaught = deptTeachers.some((t: any) => (allTeacherStats[t.id]?.taughtCount || 0) > 0);
       const hasObserved = deptTeachers.some((t: any) => (allTeacherStats[t.id]?.observedCount || 0) > 0);
