@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState, useMemo } from "react"
 import { 
@@ -28,10 +28,50 @@ interface AdminTongHopClientProps {
 export function AdminTongHopClient({
   initialSlots, currentTeacher, subjects, departments, teachers, campuses, classes, initialFilters, isTTCM, isSuperAdmin
 }: AdminTongHopClientProps) {
-  // If user is TTCM, preselect and lock to their department. Otherwise, select the first department.
+  // 1. Compute taught and observed slot counts for all teachers in the system
+  const allTeacherStats = useMemo(() => {
+    const statsMap: Record<string, { taughtCount: number; observedCount: number }> = {};
+    
+    // Initialize stats for each teacher
+    teachers.forEach((t: any) => {
+      statsMap[t.id] = { taughtCount: 0, observedCount: 0 };
+    });
+
+    // Loop through all slots to calculate counts
+    initialSlots.forEach((slot: any) => {
+      // Taught count (Host)
+      if (statsMap[slot.teacherId]) {
+        const hasEvaluations = slot.registrations.some((r: any) => r.evaluation !== null);
+        if (hasEvaluations) {
+          statsMap[slot.teacherId].taughtCount += (slot.isDoublePeriod ? 2 : 1);
+        }
+      }
+
+      // Observed count (Observer)
+      slot.registrations.forEach((reg: any) => {
+        if (reg.isApproved && reg.evaluation && statsMap[reg.teacherId]) {
+          statsMap[reg.teacherId].observedCount += (slot.isDoublePeriod ? 2 : 1);
+        }
+      });
+    });
+
+    return statsMap;
+  }, [teachers, initialSlots]);
+
+  // 2. Only show departments that have teachers with BOTH teaching and observing activity
+  const activeDepartments = useMemo(() => {
+    return departments.filter(dept => {
+      const deptTeachers = teachers.filter((t: any) => t.departmentId === dept.id);
+      const hasTaught = deptTeachers.some((t: any) => (allTeacherStats[t.id]?.taughtCount || 0) > 0);
+      const hasObserved = deptTeachers.some((t: any) => (allTeacherStats[t.id]?.observedCount || 0) > 0);
+      return hasTaught && hasObserved;
+    });
+  }, [departments, teachers, allTeacherStats]);
+
+  // If user is TTCM, preselect and lock to their department. Otherwise, select the first active department.
   const initialDeptId = isTTCM 
     ? (currentTeacher?.departmentId || "") 
-    : (departments.find(d => d.id === initialFilters.deptId)?.id || departments[0]?.id || "");
+    : (activeDepartments.find(d => d.id === initialFilters.deptId)?.id || activeDepartments[0]?.id || "");
 
   const [selectedDeptId, setSelectedDeptId] = useState(initialDeptId)
   const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null)
@@ -55,35 +95,14 @@ export function AdminTongHopClient({
     );
   }, [deptTeachers, searchTeacherQuery]);
 
-  // Compute taught and observed slot counts for each teacher in the selected department
+  // Get taught and observed slot counts for each teacher in the selected department
   const teacherStats = useMemo(() => {
     const statsMap: Record<string, { taughtCount: number; observedCount: number }> = {};
-    
-    // Initialize stats for each teacher in the department
     deptTeachers.forEach((t: any) => {
-      statsMap[t.id] = { taughtCount: 0, observedCount: 0 };
+      statsMap[t.id] = allTeacherStats[t.id] || { taughtCount: 0, observedCount: 0 };
     });
-
-    // Loop through all slots to calculate counts
-    initialSlots.forEach((slot: any) => {
-      // 1. Taught count (Host)
-      if (statsMap[slot.teacherId]) {
-        const hasEvaluations = slot.registrations.some((r: any) => r.evaluation !== null);
-        if (hasEvaluations) {
-          statsMap[slot.teacherId].taughtCount += (slot.isDoublePeriod ? 2 : 1);
-        }
-      }
-
-      // 2. Observed count (Observer)
-      slot.registrations.forEach((reg: any) => {
-        if (reg.isApproved && reg.evaluation && statsMap[reg.teacherId]) {
-          statsMap[reg.teacherId].observedCount += (slot.isDoublePeriod ? 2 : 1);
-        }
-      });
-    });
-
     return statsMap;
-  }, [deptTeachers, initialSlots]);
+  }, [deptTeachers, allTeacherStats]);
 
   const getSlotAverageScore = (slot: any) => {
     const isK12 = !["Mầm non"].includes(slot.level);
@@ -103,6 +122,9 @@ export function AdminTongHopClient({
   };
 
   const selectedDeptName = departments.find(d => d.id === selectedDeptId)?.name || "Chưa xác định";
+
+  // activeDepartments is defined above
+
 
   return (
     <div className="space-y-6">
@@ -135,7 +157,7 @@ export function AdminTongHopClient({
                   onChange={e => { setSelectedDeptId(e.target.value); setSelectedTeacherId(null); setSearchTeacherQuery(""); }}
                   className="w-full text-sm font-semibold rounded-xl border border-slate-200 p-3 bg-slate-50 text-slate-800 focus:ring-2 focus:ring-[#00A19A] outline-none"
                 >
-                  {departments.map(dept => (
+                  {activeDepartments.map(dept => (
                     <option key={dept.id} value={dept.id}>{dept.name}</option>
                   ))}
                 </select>
