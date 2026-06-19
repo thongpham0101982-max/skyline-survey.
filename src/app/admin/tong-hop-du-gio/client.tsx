@@ -247,14 +247,43 @@ export function AdminTongHopClient({
   return (
     <div className="space-y-6">
       {/* Title Header */}
-      <div className="border-b border-slate-100 pb-5">
-        <h1 className="text-2xl font-black text-[#0A3230] tracking-tight">Tổng hợp kết quả dự giờ</h1>
-        <p className="text-slate-500 text-sm font-medium mt-0.5">
-          {isTTCM 
-            ? `Quyền hạn Tổ trưởng chuyên môn: Xem báo cáo Tổ ${selectedDeptName}`
-            : "Quyền hạn Quản trị viên: Xem báo cáo tổng hợp toàn hệ thống chuyên môn"
-          }
-        </p>
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-slate-100 pb-5">
+        <div>
+          <h1 className="text-2xl font-black text-[#0A3230] tracking-tight">Tổng hợp kết quả dự giờ</h1>
+          <p className="text-slate-500 text-sm font-medium mt-0.5">
+            {isTTCM 
+              ? `Quyền hạn Tổ trưởng chuyên môn: Xem báo cáo Tổ ${selectedDeptName}`
+              : "Quyền hạn Quản trị viên: Xem báo cáo tổng hợp toàn hệ thống chuyên môn"
+            }
+          </p>
+        </div>
+
+        {/* Horizontal Statistics Summary */}
+        <div className="flex flex-wrap items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-150 text-xs shrink-0 shadow-xs">
+          <div className="flex items-center gap-2">
+            <span className="font-extrabold text-slate-500 uppercase tracking-wider text-[9px] flex items-center gap-1">
+              <ClipboardList className="w-3.5 h-3.5 text-slate-400"/> Tổng tiết dạy:
+            </span>
+            <span className="px-2 py-0.5 bg-amber-50 text-amber-600 border border-amber-200 rounded-lg font-black text-[9px] tracking-wide">
+              MẦM NON: {departmentSummary.taughtMamNon}
+            </span>
+            <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 border border-indigo-200 rounded-lg font-black text-[9px] tracking-wide">
+              PHỔ THÔNG: {departmentSummary.taughtPhoThong}
+            </span>
+          </div>
+          <div className="h-6 w-px bg-slate-200 hidden sm:block" />
+          <div className="flex items-center gap-2">
+            <span className="font-extrabold text-slate-500 uppercase tracking-wider text-[9px] flex items-center gap-1">
+              <CheckCircle className="w-3.5 h-3.5 text-slate-400"/> Tổng tiết dự:
+            </span>
+            <span className="px-2 py-0.5 bg-amber-50 text-amber-600 border border-amber-200 rounded-lg font-black text-[9px] tracking-wide">
+              MẦM NON: {departmentSummary.observedMamNon}
+            </span>
+            <span className="px-2 py-0.5 bg-violet-50 text-violet-600 border border-violet-200 rounded-lg font-black text-[9px] tracking-wide">
+              PHỔ THÔNG: {departmentSummary.observedPhoThong}
+            </span>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -364,32 +393,7 @@ export function AdminTongHopClient({
               <span>Thống kê thành viên ({filteredDeptTeachers.length})</span>
             </h3>
 
-            {filteredDeptTeachers.length > 0 && (
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-150 mb-4 space-y-2.5">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-slate-400 uppercase tracking-wider text-[9px]"><ClipboardList className="w-3.5 h-3.5 inline mr-1 text-slate-400"/>Tổng tiết dạy</span>
-                  <div className="flex gap-1.5">
-                    <span className="px-2 py-0.5 bg-amber-50 text-amber-600 border border-amber-200 rounded-lg font-black text-[9px]">
-                      MẦM NON: {departmentSummary.taughtMamNon}
-                    </span>
-                    <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 border border-indigo-200 rounded-lg font-black text-[9px]">
-                      PHỔ THÔNG: {departmentSummary.taughtPhoThong}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between text-xs border-t border-slate-200/50 pt-2.5">
-                  <span className="font-bold text-slate-400 uppercase tracking-wider text-[9px]"><CheckCircle className="w-3.5 h-3.5 inline mr-1 text-slate-400"/>Tổng tiết dự</span>
-                  <div className="flex gap-1.5">
-                    <span className="px-2 py-0.5 bg-amber-50 text-amber-600 border border-amber-200 rounded-lg font-black text-[9px]">
-                      MẦM NON: {departmentSummary.observedMamNon}
-                    </span>
-                    <span className="px-2 py-0.5 bg-violet-50 text-violet-600 border border-violet-200 rounded-lg font-black text-[9px]">
-                      PHỔ THÔNG: {departmentSummary.observedPhoThong}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
+
             
             {filteredDeptTeachers.length === 0 ? (
               <div className="flex flex-col items-center justify-center flex-1 py-12 text-slate-400">
