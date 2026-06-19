@@ -1,3 +1,4 @@
+import { prisma } from "@/lib/db";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { auth } from "@/lib/auth";
 import { 
@@ -12,7 +13,7 @@ import {
 
 export async function POST(req: Request) {
   try {
-    const { message, history } = await req.json();
+    const { message, history, chatbotCode } = await req.json();
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
@@ -30,6 +31,45 @@ export async function POST(req: Request) {
       console.error("Auth helper error in chatbot route:", e);
     }
     const currentUser = session?.user;
+
+    // Xác định code chatbot phù hợp dựa trên role nếu không truyền lên
+    const codeToFind = chatbotCode || (currentUser?.role === "ADMIN" ? "ADMIN_ASSISTANT" : "TEACHER_ASSISTANT");
+
+    // Lấy cấu hình từ database
+    let dbInstruction = "";
+    try {
+      const config = await prisma.chatbotConfig.findUnique({
+        where: { code: codeToFind }
+      });
+
+      if (config && config.isActive) {
+        // Kiểm tra phân quyền
+        const allowedRoles = config.allowedRoles ? config.allowedRoles.split(",") : [];
+        const userRole = currentUser?.role || "GIAO_VIEN";
+        
+        const hasAccess = allowedRoles.some(r => r.trim().toUpperCase() === userRole.toUpperCase());
+        if (!hasAccess && allowedRoles.length > 0) {
+          return Response.json(
+            { error: "Thầy/Cô không có quyền truy cập vào trợ lý ảo này." },
+            { status: 403 }
+          );
+        }
+        
+        dbInstruction = config.systemInstruction;
+      }
+    } catch (e) {
+      console.error("Failed to query chatbot config from DB:", e);
+    }
+
+    // Fallback nếu không có trong database hoặc lỗi
+    if (!dbInstruction) {
+      dbInstruction = codeToFind === "ADMIN_ASSISTANT"
+        ? "Bạn là Trợ lý ảo Chuyên môn của Trường Skyline hỗ trợ Quản trị viên và Ban giám hiệu. Bạn hỗ trợ thống kê hoạt động dạy/dự của giáo viên, tìm các tiết học điểm thấp, tổng hợp tổ chuyên môn, phân tích tần số các tiêu chí tốt/cần cải thiện nhất."
+        : "Bạn là Trợ lý ảo Chuyên môn của Trường Skyline hỗ trợ Giáo viên. Bạn có nhiệm vụ hỗ trợ Giáo viên tra cứu lịch sử nhận xét các tiết dạy của họ, kiểm tra chỉ tiêu số tiết dự giờ cá nhân (chỉ tiêu là 2 tiết/tháng), và hướng dẫn tiêu chí chấm điểm.";
+    }
+
+    // Thêm thông tin ngữ cảnh người dùng
+    dbInstruction += `\n\nThông tin người dùng hiện tại đang gửi tin nhắn:\n- ID người dùng: ${currentUser?.id || "Chưa đăng nhập"}\n- Họ tên: ${currentUser?.name || "Khách"}\n- Quyền hạn (Role): ${currentUser?.role || "GIAO_VIEN"}\n\nHãy trả lời ngắn gọn, trực quan, chuyên nghiệp và lịch sự bằng Tiếng Việt. Định dạng câu trả lời rõ ràng bằng markdown, bảng biểu hoặc gạch đầu dòng khi thích hợp.`;
 
     const ai = new GoogleGenerativeAI(apiKey);
     const model = ai.getGenerativeModel({
@@ -102,13 +142,7 @@ export async function POST(req: Request) {
           }
         ]
       }],
-      systemInstruction: `Bạn là Trợ lý ảo Chuyên môn của Trường Skyline. Bạn có nhiệm vụ hỗ trợ Giáo viên tra cứu lịch sử nhận xét của họ, kiểm tra chỉ tiêu số tiết dự giờ cá nhân, và hướng dẫn tiêu chí chấm điểm. Đối với Ban giám hiệu và Admin, bạn hỗ trợ thống kê hoạt động dạy/dự của giáo viên, tìm các tiết học điểm thấp, tổng hợp tổ chuyên môn, phân tích tần số các tiêu chí tốt/cần cải thiện nhất.
-Hãy trả lời ngắn gọn, trực quan, chuyên nghiệp và lịch sự bằng Tiếng Việt. Định dạng câu trả lời rõ ràng bằng markdown, bảng biểu hoặc gạch đầu dòng khi thích hợp.
-
-Thông tin người dùng hiện tại đang gửi tin nhắn:
-- ID người dùng: ${currentUser?.id || "Chưa đăng nhập"}
-- Họ tên: ${currentUser?.name || "Khách"}
-- Quyền hạn (Role): ${currentUser?.role || "GIAO_VIEN"}`
+      systemInstruction: dbInstruction
     });
 
     // Đảm bảo tin nhắn đầu tiên trong lịch sử gửi lên Gemini bắt đầu bằng vai trò 'user'

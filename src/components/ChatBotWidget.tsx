@@ -13,9 +13,10 @@ interface ChatMessage {
 
 interface ChatBotWidgetProps {
   role?: "ADMIN" | "TEACHER"
+  chatbotCode?: string
 }
 
-export function ChatBotWidget({ role = "TEACHER" }: ChatBotWidgetProps) {
+export function ChatBotWidget({ role = "TEACHER", chatbotCode }: ChatBotWidgetProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [input, setInput] = useState("")
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -75,12 +76,15 @@ export function ChatBotWidget({ role = "TEACHER" }: ChatBotWidgetProps) {
           parts: msg.parts
         }))
 
+      const activeCode = chatbotCode || (role === "ADMIN" ? "ADMIN_ASSISTANT" : "TEACHER_ASSISTANT");
+
       const response = await fetch("/api/chatbot", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: messageText,
-          history: history
+          history: history,
+          chatbotCode: activeCode
         })
       })
 
