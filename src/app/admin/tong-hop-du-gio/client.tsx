@@ -52,7 +52,16 @@ const preschoolLabels = [
 export function AdminTongHopClient({
   initialSlots, currentTeacher, subjects, departments, teachers, campuses, classes, initialFilters, isTTCM, isSuperAdmin
 }: AdminTongHopClientProps) {
-  const [activeBlockTab, setActiveBlockTab] = useState("Phổ thông K-12")
+  const [activeBlockTab, setActiveBlockTab] = useState(() => {
+    if (isTTCM && currentTeacher?.departmentId) {
+      const d = departments.find(dept => dept.id === currentTeacher.departmentId);
+      if (d) {
+        if (d.blockCM === "Mầm Non") return "Mầm non";
+        if (d.blockCM === "Điều hành") return "Điều hành";
+      }
+    }
+    return "Phổ thông K-12";
+  })
 
   // 2. Only show departments that belong to the active blockCM, excluding "Hỗ trợ người học"
   const activeDepartments = useMemo(() => {
@@ -173,6 +182,7 @@ export function AdminTongHopClient({
   }, [teachers, initialSlots, selectedMonth]);
 
   const handleTabChange = (tab: string) => {
+    if (isTTCM) return; // Lock for TTCM
     setActiveBlockTab(tab);
     setSelectedTeacherId(null);
     setActiveDetailTab("to-cm");
@@ -267,6 +277,219 @@ export function AdminTongHopClient({
 
   const selectedDeptName = departments.find(d => d.id === selectedDeptId)?.name || "Chưa xác định";
 
+  // 1. Teacher's slots for the selected teacher (filtered by selected month)
+  const selTeacherSlots = useMemo(() => {
+    if (!selectedTeacherId) return [];
+    return initialSlots.filter(s => {
+      if (s.teacherId !== selectedTeacherId) return false;
+      if (selectedMonth !== "all") {
+        if (!s.date) return false;
+        const d = new Date(s.date);
+        if (isNaN(d.getTime())) return false;
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        return yyyy + "-" + mm === selectedMonth;
+      }
+      return true;
+    });
+  }, [selectedTeacherId, initialSlots, selectedMonth]);
+
+  // 2. Filtered slots based on searchSlotQuery, filterLevel, filterGrade
+  const filteredSlots = useMemo(() => {
+    return selTeacherSlots.filter(slot => {
+      const matchQuery = !searchSlotQuery || 
+        slot.topic.toLowerCase().includes(searchSlotQuery.toLowerCase()) ||
+        (slot.className && slot.className.toLowerCase().includes(searchSlotQuery.toLowerCase()));
+      const matchLevel = filterLevel === "all" || slot.level === filterLevel;
+      const matchGrade = filterGrade === "all" || slot.grade === filterGrade;
+      return matchQuery && matchLevel && matchGrade;
+    });
+  }, [selTeacherSlots, searchSlotQuery, filterLevel, filterGrade]);
+
+  // 3. Teacher's evaluations
+  const teacherEvaluations = useMemo(() => {
+    const evals = [];
+    selTeacherSlots.forEach(slot => {
+      slot.registrations.forEach((reg) => {
+        if (reg.evaluation) {
+          evals.push({
+            evaluation: reg.evaluation,
+            level: slot.level,
+            topic: slot.topic,
+            date: slot.date
+          });
+        }
+      });
+    });
+    return evals;
+  }, [selTeacherSlots]);
+
+  // 4. Teacher's Preschool / K12 level check
+  const isPreschoolTeacher = useMemo(() => {
+    if (!selectedTeacherId) return false;
+    const selTeacher = teachers.find(t => t.id === selectedTeacherId);
+    return selTeacherSlots.length > 0
+      ? selTeacherSlots.every(s => ["Mầm non"].includes(s.level))
+      : (selTeacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().includes("mam non");
+  }, [selectedTeacherId, selTeacherSlots, teachers]);
+
+  // 5. Teacher's Competency and Weakness Data
+  const teacherCompetencyResult = useMemo(() => {
+    const competencyData = [];
+    const weaknessData = [];
+
+    if (teacherEvaluations.length > 0) {
+      if (!isPreschoolTeacher) {
+        for (let i = 1; i <= 11; i++) {
+          const scoreKey = "score" + i;
+          const maxVal = maxScoresK12[i - 1];
+          const sum = teacherEvaluations.reduce((acc, curr) => acc + (curr.evaluation[scoreKey] || 0), 0);
+          const avg = sum / teacherEvaluations.length;
+          const pct = Math.round((avg / maxVal) * 100);
+
+          const lowCount = teacherEvaluations.filter(curr => {
+            const val = curr.evaluation[scoreKey] !== null ? Number(curr.evaluation[scoreKey]) : 0;
+            return val < maxVal * 0.70;
+          }).length;
+          const lowPct = Math.round((lowCount / teacherEvaluations.length) * 100);
+
+          competencyData.push({
+            id: "Y" + i,
+            label: k12Labels[i - 1],
+            avg: avg,
+            max: maxVal,
+            pct: pct,
+            standard: i <= 2 ? 1 : i <= 5 ? 2 : i <= 9 ? 3 : 4
+          });
+
+          weaknessData.push({
+            id: "Y" + i,
+            label: k12Labels[i - 1],
+            lowCount: lowCount,
+            lowPct: lowPct,
+            avgPct: pct
+          });
+        }
+      } else {
+        for (let i = 1; i <= 5; i++) {
+          const critKey = "criterion" + i;
+          const sum = teacherEvaluations.reduce((acc, curr) => acc + (curr.evaluation[critKey] || 0), 0);
+          const avg = sum / teacherEvaluations.length;
+          const pct = Math.round((avg / 4) * 100);
+
+          const lowCount = teacherEvaluations.filter(curr => (curr.evaluation[critKey] || 0) <= 2).length;
+          const lowPct = Math.round((lowCount / teacherEvaluations.length) * 100);
+
+          competencyData.push({
+            id: "T" + i,
+            label: preschoolLabels[i - 1],
+            avg: avg,
+            max: 4,
+            pct: pct,
+            standard: 1
+          });
+
+          weaknessData.push({
+            id: "T" + i,
+            label: preschoolLabels[i - 1],
+            lowCount: lowCount,
+            lowPct: lowPct,
+            avgPct: pct
+          });
+        }
+      }
+    }
+
+    const sortedWeaknesses = [...weaknessData].sort((a, b) => b.lowPct - a.lowPct);
+
+    return { competencyData, sortedWeaknesses };
+  }, [teacherEvaluations, isPreschoolTeacher]);
+
+  // 6. Department Competency and Weakness Data
+  const deptCompetencyResult = useMemo(() => {
+    const dep = [];
+    const ids = new Set(deptTeachers.map(t => t.id));
+    initialSlots.forEach(sl => {
+      if (!ids.has(sl.teacherId)) return;
+      if (selectedMonth !== "all") {
+        if (!sl.date) return;
+        const d2 = new Date(sl.date);
+        if (isNaN(d2.getTime())) return;
+        const mm2 = String(d2.getMonth() + 1).padStart(2, "0");
+        if (d2.getFullYear() + "-" + mm2 !== selectedMonth) return;
+      }
+      sl.registrations.forEach(r => { if (r.evaluation) dep.push({ ev: r.evaluation, lv: sl.level }); });
+    });
+
+    const di = activeDepartments.find(d => d.id === selectedDeptId);
+    const dmn = di ? di.blockCM === "Mầm Non" : false;
+    const dc = [];
+    const dw = [];
+
+    if (dep.length > 0) {
+      if (!dmn) {
+        for (let i = 1; i <= 11; i++) {
+          const sk = "score" + i, mx = maxScoresK12[i - 1];
+          const sm = dep.reduce((a, x) => a + (x.ev[sk] || 0), 0), av = sm / dep.length, pt = Math.round((av / mx) * 100);
+          const lc = dep.filter(x => { const v = x.ev[sk] !== null ? Number(x.ev[sk]) : 0; return v < mx * 0.7; }).length, lp = Math.round((lc / dep.length) * 100);
+          dc.push({ id: "Y" + i, lb: k12Labels[i - 1], av, mx, pt, std: i <= 2 ? 1 : i <= 5 ? 2 : i <= 9 ? 3 : 4 });
+          dw.push({ id: "Y" + i, lb: k12Labels[i - 1], lc, lp, pt });
+        }
+      } else {
+        for (let i = 1; i <= 5; i++) {
+          const ck = "criterion" + i;
+          const sm = dep.reduce((a, x) => a + (x.ev[ck] || 0), 0), av = sm / dep.length, pt = Math.round((av / 4) * 100);
+          const lc = dep.filter(x => (x.ev[ck] || 0) <= 2).length, lp = Math.round((lc / dep.length) * 100);
+          dc.push({ id: "T" + i, lb: preschoolLabels[i - 1], av, mx: 4, pt, std: 1 });
+          dw.push({ id: "T" + i, lb: preschoolLabels[i - 1], lc, lp, pt });
+        }
+      }
+    }
+
+    const dsw = [...dw].sort((a, b) => b.lp - a.lp);
+    return { dep, dmn, dc, dsw };
+  }, [deptTeachers, initialSlots, selectedMonth, activeDepartments, selectedDeptId]);
+
+  const theme = useMemo(() => {
+    if (activeDetailTab === "to-cm") {
+      return {
+        color: "violet",
+        hex: "#7c3aed",
+        border: "border-violet-500",
+        borderT: "border-t-violet-600",
+        text: "text-violet-600",
+        textD: "text-[#1e0a30]",
+        bg: "bg-violet-50/50",
+        fill: "rgba(124, 58, 237, 0.12)",
+        btn: "border-violet-600 text-violet-600"
+      };
+    }
+    if (isPreschoolTeacher) {
+      return {
+        color: "amber",
+        hex: "#f59e0b",
+        border: "border-amber-500",
+        borderT: "border-t-amber-500",
+        text: "text-amber-600",
+        textD: "text-[#3a2000]",
+        bg: "bg-amber-50/50",
+        fill: "rgba(245, 158, 11, 0.12)",
+        btn: "border-amber-500 text-amber-500"
+      };
+    }
+    return {
+      color: "teal",
+      hex: "#00A19A",
+      border: "border-[#00A19A]",
+      borderT: "border-t-[#0A3230]",
+      text: "text-[#00A19A]",
+      textD: "text-[#0A3230]",
+      bg: "bg-teal-50/50",
+      fill: "rgba(0, 161, 154, 0.12)",
+      btn: "border-[#00A19A] text-[#00A19A]"
+    };
+  }, [activeDetailTab, isPreschoolTeacher]);
+
   // activeDepartments is defined above
 
 
@@ -323,6 +546,11 @@ export function AdminTongHopClient({
           {/* Tabs / Tags with gorgeous gradient hover effects */}
           <div className="bg-slate-100/80 border border-slate-200/60 rounded-2xl p-1.5 shadow-xs flex flex-wrap gap-1 shrink-0">
             {["Phổ thông K-12", "Mầm non", "Điều hành"].map(tab => {
+              if (isTTCM && currentTeacher?.departmentId) {
+                const d = departments.find(dept => dept.id === currentTeacher.departmentId);
+                const ownBlock = d ? (d.blockCM === "Mầm Non" ? "Mầm non" : d.blockCM === "Phổ thông" ? "Phổ thông K-12" : "Điều hành") : "Phổ thông K-12";
+                if (ownBlock !== tab) return null;
+              }
               const isActive = activeBlockTab === tab;
               
               // Count departments belonging to this block
@@ -486,18 +714,18 @@ export function AdminTongHopClient({
         </div>
 
         {/* Right Column: Teacher Details */}
-        <div className="lg:col-span-8 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-md shadow-slate-100/30 min-h-[500px] flex flex-col border-t-4 border-t-[#0A3230]">
+        <div className={"lg:col-span-8 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-md shadow-slate-100/30 min-h-[500px] flex flex-col border-t-4 transition-all duration-300 " + theme.borderT}>
           {/* Tab Switcher */}
           <div className="flex gap-4 border-b border-slate-100 pb-2 shrink-0 text-xs mb-4">
             <button 
               onClick={() => setActiveDetailTab("lich-su")}
-              className={"pb-2 px-1 font-extrabold border-b-2 transition-all duration-200 " + (activeDetailTab === "lich-su" ? "border-[#00A19A] text-[#00A19A]" : "border-transparent text-slate-400 hover:text-slate-650")}
+              className={"pb-2 px-1 font-extrabold border-b-2 transition-all duration-200 " + (activeDetailTab === "lich-su" ? theme.btn : "border-transparent text-slate-400 hover:text-slate-650")}
             >
               Lịch sử tiết dạy
             </button>
             <button 
               onClick={() => setActiveDetailTab("phan-tich")}
-              className={"pb-2 px-1 font-extrabold border-b-2 transition-all duration-200 " + (activeDetailTab === "phan-tich" ? "border-[#00A19A] text-[#00A19A]" : "border-transparent text-slate-400 hover:text-slate-650")}
+              className={"pb-2 px-1 font-extrabold border-b-2 transition-all duration-200 " + (activeDetailTab === "phan-tich" ? theme.btn : "border-transparent text-slate-400 hover:text-slate-650")}
             >
               Phân tích Năng lực & Điểm yếu
             </button>
@@ -510,108 +738,72 @@ export function AdminTongHopClient({
           </div>
 
           {/* Tab Content */}
-          {activeDetailTab === "to-cm" ? (
-            (() => {
-              const dep = []; const ids = new Set(deptTeachers.map(t => t.id));
-              initialSlots.forEach(sl => {
-                if (!ids.has(sl.teacherId)) return;
-                if (selectedMonth !== "all") {
-                  if (!sl.date) return;
-                  const d2 = new Date(sl.date);
-                  if (isNaN(d2.getTime())) return;
-                  const mm2 = String(d2.getMonth() + 1).padStart(2, "0");
-                  if (d2.getFullYear() + "-" + mm2 !== selectedMonth) return;
-                }
-                sl.registrations.forEach(r => { if (r.evaluation) dep.push({ ev: r.evaluation, lv: sl.level }); });
-              });
-              const di = activeDepartments.find(d => d.id === selectedDeptId);
-              const dmn = di ? di.blockCM === "Mầm Non" : false;
-              const dc = [], dw = [];
-              if (dep.length > 0) {
-                if (!dmn) {
-                  for (let i = 1; i <= 11; i++) {
-                    const sk = "score" + i, mx = maxScoresK12[i - 1];
-                    const sm = dep.reduce((a, x) => a + (x.ev[sk] || 0), 0), av = sm / dep.length, pt = Math.round((av / mx) * 100);
-                    const lc = dep.filter(x => { const v = x.ev[sk] !== null ? Number(x.ev[sk]) : 0; return v < mx * 0.7; }).length, lp = Math.round((lc / dep.length) * 100);
-                    dc.push({ id: "Y" + i, lb: k12Labels[i - 1], av, mx, pt, std: i <= 2 ? 1 : i <= 5 ? 2 : i <= 9 ? 3 : 4 });
-                    dw.push({ id: "Y" + i, lb: k12Labels[i - 1], lc, lp, pt });
-                  }
-                } else {
-                  for (let i = 1; i <= 5; i++) {
-                    const ck = "criterion" + i;
-                    const sm = dep.reduce((a, x) => a + (x.ev[ck] || 0), 0), av = sm / dep.length, pt = Math.round((av / 4) * 100);
-                    const lc = dep.filter(x => (x.ev[ck] || 0) <= 2).length, lp = Math.round((lc / dep.length) * 100);
-                    dc.push({ id: "T" + i, lb: preschoolLabels[i - 1], av, mx: 4, pt, std: 1 });
-                    dw.push({ id: "T" + i, lb: preschoolLabels[i - 1], lc, lp, pt });
-                  }
-                }
-              }
-              const dsw = [...dw].sort((a, b) => b.lp - a.lp);
-              const tp2 = dmn ? 5 : 11, as2 = (2 * Math.PI) / tp2, ce = 150, rd = 100;
-              const gl2 = [25, 50, 75, 100];
-              const gp2 = gl2.map(lv => {
-                const pts = [];
-                for (let i = 0; i < tp2; i++) { const a = i * as2, rv = rd * (lv / 100); pts.push((ce + rv * Math.sin(a)) + "," + (ce - rv * Math.cos(a))); }
-                return pts.join(" ");
-              });
-              const al2 = [];
-              for (let i = 0; i < tp2; i++) { const a = i * as2; al2.push({ x1: ce, y1: ce, x2: ce + rd * Math.sin(a), y2: ce - rd * Math.cos(a), lb: (dmn ? "T" : "Y") + (i + 1), lx: ce + (rd + 20) * Math.sin(a), ly: ce - (rd + 20) * Math.cos(a) }); }
-              const dvp = dc.map((d, i) => { const a = i * as2, rv = rd * (d.pt / 100); return (ce + rv * Math.sin(a)) + "," + (ce - rv * Math.cos(a)); });
-              const dvpath = dvp.join(" ");
-              return (
-                <div className="space-y-6 max-h-[580px] overflow-y-auto pr-1 custom-scrollbar">
-                  <div className="bg-gradient-to-r from-violet-50/60 to-indigo-50/30 border border-violet-200/60 rounded-2xl p-4 flex items-center gap-3">
-                    <div className="p-2 bg-white text-violet-600 rounded-xl border border-violet-200 shrink-0"><Layers className="w-5 h-5" /></div>
-                    <div><h4 className="font-black text-sm text-[#0A3230]">{selectedDeptName}</h4>
-                    <p className="text-[10px] text-slate-500 mt-0.5">Tổng hợp toàn Tổ · {dep.length} phiếu · {deptTeachers.length} GV</p></div>
-                  </div>
-                  {dep.length === 0 ? (
-                    <div className="flex flex-col items-center py-16"><PieChart className="w-10 h-10 stroke-1 text-slate-300 mb-3" />
-                      <p className="text-xs font-black text-slate-400">Chưa có dữ liệu đánh giá</p></div>
-                  ) : (
-                    <>
-                      <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
-                        <div className="md:col-span-5 flex justify-center">
-                          <div className="flex flex-col items-center bg-slate-50/50 p-4 rounded-3xl border border-slate-200/60">
-                            <span className="text-[10px] font-black text-violet-600 uppercase tracking-widest mb-2">Bản đồ Năng lực Tổ CM</span>
-                            <svg width="250" height="250" viewBox="0 0 300 300" className="overflow-visible">
-                              {gl2.map((lv, ix) => <polygon key={lv} points={gp2[ix]} fill="none" stroke="#e2e8f0" strokeWidth="1" strokeDasharray={lv === 100 ? "none" : "3,3"} />)}
-                              {gl2.map(lv => <text key={lv} x={ce} y={ce - rd * (lv / 100) + 4} textAnchor="middle" className="text-[8px] fill-slate-400">{lv}%</text>)}
-                              {al2.map((ax, ix) => <g key={ix}><line x1={ax.x1} y1={ax.y1} x2={ax.x2} y2={ax.y2} stroke="#e2e8f0" strokeWidth="1" /><text x={ax.lx} y={ax.ly + 4} textAnchor="middle" className="text-[10px] font-extrabold fill-[#0A3230]">{ax.lb}</text></g>)}
-                              {dvp.length > 0 && <polygon points={dvpath} fill="rgba(124,58,237,0.12)" stroke="#7c3aed" strokeWidth="2.5" />}
-                              {dc.map((d, i) => { const a = i * as2, rv = rd * (d.pt / 100), px = ce + rv * Math.sin(a), py = ce - rv * Math.cos(a); return <circle key={i} cx={px} cy={py} r="4" fill="#fff" stroke="#7c3aed" strokeWidth="2.5" />; })}
-                            </svg>
-                          </div>
-                        </div>
-                        <div className="md:col-span-7 space-y-3 bg-slate-50/30 p-4 rounded-3xl border border-slate-200/60">
-                          <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5"><Award className="w-4 h-4 text-violet-600" /><span>Năng lực dạy học toàn Tổ</span></h4>
-                          <div className="space-y-3">{dc.map(item => {
-                            let cl2 = "from-violet-500 to-indigo-500";
-                            if (item.std === 1) cl2 = "from-teal-500 to-emerald-500";
-                            else if (item.std === 2) cl2 = "from-sky-500 to-blue-500";
-                            else if (item.std === 3) cl2 = "from-indigo-500 to-violet-500";
-                            else cl2 = "from-amber-500 to-orange-500";
-                            return (<div key={item.id} className="space-y-1"><div className="flex justify-between text-xs"><span className="font-bold text-slate-700 text-[10px] truncate max-w-[200px]">{item.id}. {item.lb.split(":")[1] || item.lb}</span><span className="font-black text-slate-500 text-[10px]">{item.av.toFixed(2)}/{item.mx.toFixed(1)}đ ({item.pt}%)</span></div><div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden"><div className={"h-full rounded-full bg-gradient-to-r " + cl2} style={{ width: item.pt + "%" }} /></div></div>);
-                          })}</div>
-                        </div>
-                      </div>
-                      <div className="bg-white p-5 rounded-3xl border border-slate-200/80 space-y-4">
-                        <h4 className="text-[11px] font-black text-slate-500 uppercase flex items-center gap-1.5 border-b border-slate-100 pb-3"><AlertCircle className="w-4 h-4 text-rose-500" /><span>Điểm yếu toàn Tổ CM</span></h4>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">{dsw.slice(0, 6).map((w, ix) => {
-                          const isH = w.lp >= 40, isM = w.lp >= 15 && w.lp < 40;
-                          let bc = "border-slate-200", bg = "bg-slate-50/50", bdg = "bg-slate-100 text-slate-550 border-slate-200";
-                          if (isH) { bc = "border-rose-200 border-l-4 border-l-rose-500"; bg = "bg-rose-50/30"; bdg = "bg-rose-50 text-rose-700 border-rose-250"; }
-                          else if (isM) { bc = "border-amber-200 border-l-4 border-l-amber-500"; bg = "bg-amber-50/30"; bdg = "bg-amber-50 text-amber-700 border-amber-250"; }
-                          return (<div key={w.id} className={"p-3.5 border rounded-2xl flex items-center justify-between gap-3 " + bg + " " + bc}><div className="min-w-0"><span className="text-[9px] font-black text-slate-400 block uppercase">Ưu tiên {ix + 1}</span><h5 className="font-extrabold text-xs truncate mt-0.5">{w.id}. {w.lb.split(":")[1] || w.lb}</h5><p className="text-[9px] text-slate-400 mt-0.5">TB: {w.pt}%</p></div><div className="shrink-0 text-right"><span className={"px-2 py-0.5 rounded-lg text-[10px] font-black border " + bdg}>{w.lp}% Điểm yếu</span><span className="block text-[8px] text-slate-400 mt-1">{w.lc}/{dep.length} phiếu</span></div></div>);
-                        })}</div>
-                        {dsw[0] && dsw[0].lp > 0 && (<div className="bg-gradient-to-r from-violet-50/40 to-indigo-50/20 border border-violet-200 rounded-2xl p-4 flex gap-3 items-start mt-3"><div className="p-2 bg-white text-violet-600 rounded-xl border border-violet-200 shrink-0"><MessageSquare className="w-4 h-4" /></div><div><h6 className="font-black text-xs text-[#0A3230] uppercase">Đề xuất phát triển Tổ CM</h6><p className="text-[10.5px] text-slate-600 mt-1">Tỷ lệ điểm yếu cao nhất: <span className="font-black text-rose-700">{dsw[0].id} ({dsw[0].lp}%)</span>. Đề xuất sinh hoạt chuyên môn tập trung vào các năng lực này.</p></div></div>)}
-                      </div>
-                    </>
-                  )}
+          {activeDetailTab === "to-cm" ? (() => {
+            const { dep, dmn, dc, dsw } = deptCompetencyResult;
+            const tp2 = dmn ? 5 : 11, as2 = (2 * Math.PI) / tp2, ce = 150, rd = 100;
+            const gl2 = [25, 50, 75, 100];
+            const gp2 = gl2.map(lv => {
+              const pts = [];
+              for (let i = 0; i < tp2; i++) { const a = i * as2, rv = rd * (lv / 100); pts.push((ce + rv * Math.sin(a)) + "," + (ce - rv * Math.cos(a))); }
+              return pts.join(" ");
+            });
+            const al2 = [];
+            for (let i = 0; i < tp2; i++) { const a = i * as2; al2.push({ x1: ce, y1: ce, x2: ce + rd * Math.sin(a), y2: ce - rd * Math.cos(a), lb: (dmn ? "T" : "Y") + (i + 1), lx: ce + (rd + 20) * Math.sin(a), ly: ce - (rd + 20) * Math.cos(a) }); }
+            const dvp = dc.map((d, i) => { const a = i * as2, rv = rd * (d.pt / 100); return (ce + rv * Math.sin(a)) + "," + (ce - rv * Math.cos(a)); });
+            const dvpath = dvp.join(" ");
+            return (
+              <div className="space-y-6 max-h-[580px] overflow-y-auto pr-1 custom-scrollbar">
+                <div className="bg-gradient-to-r from-violet-50/60 to-indigo-50/30 border border-violet-200/60 rounded-2xl p-4 flex items-center gap-3">
+                  <div className="p-2 bg-white text-violet-600 rounded-xl border border-violet-200 shrink-0"><Layers className="w-5 h-5" /></div>
+                  <div><h4 className="font-black text-sm text-[#0A3230]">{selectedDeptName}</h4>
+                  <p className="text-[10px] text-slate-500 mt-0.5">Tổng hợp toàn Tổ · {dep.length} phiếu · {deptTeachers.length} GV</p></div>
                 </div>
-              );
-            })()
-          ) : !selectedTeacherId ? (
+                {dep.length === 0 ? (
+                  <div className="flex flex-col items-center py-16"><PieChart className="w-10 h-10 stroke-1 text-slate-300 mb-3" />
+                    <p className="text-xs font-black text-slate-400">Chưa có dữ liệu đánh giá</p></div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
+                      <div className="md:col-span-5 flex justify-center">
+                        <div className="flex flex-col items-center bg-slate-50/50 p-4 rounded-3xl border border-slate-200/60">
+                          <span className="text-[10px] font-black text-violet-600 uppercase tracking-widest mb-2">Bản đồ Năng lực Tổ CM</span>
+                          <svg width="250" height="250" viewBox="0 0 300 300" className="overflow-visible">
+                            {gl2.map((lv, ix) => <polygon key={lv} points={gp2[ix]} fill="none" stroke="#e2e8f0" strokeWidth="1" strokeDasharray={lv === 100 ? "none" : "3,3"} />)}
+                            {gl2.map(lv => <text key={lv} x={ce} y={ce - rd * (lv / 100) + 4} textAnchor="middle" className="text-[8px] fill-slate-400">{lv}%</text>)}
+                            {al2.map((ax, ix) => <g key={ix}><line x1={ax.x1} y1={ax.y1} x2={ax.x2} y2={ax.y2} stroke="#e2e8f0" strokeWidth="1" /><text x={ax.lx} y={ax.ly + 4} textAnchor="middle" className="text-[10px] font-extrabold fill-[#0A3230]">{ax.lb}</text></g>)}
+                            {dvp.length > 0 && <polygon points={dvpath} fill="rgba(124,58,237,0.12)" stroke="#7c3aed" strokeWidth="2.5" />}
+                            {dc.map((d, i) => { const a = i * as2, rv = rd * (d.pt / 100), px = ce + rv * Math.sin(a), py = ce - rv * Math.cos(a); return <circle key={i} cx={px} cy={py} r="4" fill="#fff" stroke="#7c3aed" strokeWidth="2.5" />; })}
+                          </svg>
+                        </div>
+                      </div>
+                      <div className="md:col-span-7 space-y-3 bg-slate-50/30 p-4 rounded-3xl border border-slate-200/60">
+                        <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5"><Award className="w-4 h-4 text-violet-600" /><span>Năng lực dạy học toàn Tổ</span></h4>
+                        <div className="space-y-3">{dc.map(item => {
+                          let cl2 = "from-violet-500 to-indigo-500";
+                          if (item.std === 1) cl2 = "from-teal-500 to-emerald-500";
+                          else if (item.std === 2) cl2 = "from-sky-500 to-blue-500";
+                          else if (item.std === 3) cl2 = "from-indigo-500 to-violet-500";
+                          else cl2 = "from-amber-500 to-orange-500";
+                          return (<div key={item.id} className="space-y-1"><div className="flex justify-between text-xs"><span className="font-bold text-slate-700 text-[10px] truncate max-w-[200px]">{item.id}. {item.lb.split(":")[1] || item.lb}</span><span className="font-black text-slate-500 text-[10px]">{item.av.toFixed(2)}/{item.mx.toFixed(1)}đ ({item.pt}%)</span></div><div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden"><div className={"h-full rounded-full bg-gradient-to-r " + cl2} style={{ width: item.pt + "%" }} /></div></div>);
+                        })}</div>
+                      </div>
+                    </div>
+                    <div className="bg-white p-5 rounded-3xl border border-slate-200/80 space-y-4">
+                      <h4 className="text-[11px] font-black text-slate-500 uppercase flex items-center gap-1.5 border-b border-slate-100 pb-3"><AlertCircle className="w-4 h-4 text-rose-500" /><span>Điểm yếu toàn Tổ CM</span></h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">{dsw.slice(0, 6).map((w, ix) => {
+                        const isH = w.lp >= 40, isM = w.lp >= 15 && w.lp < 40;
+                        let bc = "border-slate-200", bg = "bg-slate-50/50", bdg = "bg-slate-100 text-slate-550 border-slate-200";
+                        if (isH) { bc = "border-rose-200 border-l-4 border-l-rose-500"; bg = "bg-rose-50/30"; bdg = "bg-rose-50 text-rose-700 border-rose-250"; }
+                        else if (isM) { bc = "border-amber-200 border-l-4 border-l-amber-500"; bg = "bg-amber-50/30"; bdg = "bg-amber-50 text-amber-700 border-amber-250"; }
+                        return (<div key={w.id} className={"p-3.5 border rounded-2xl flex items-center justify-between gap-3 " + bg + " " + bc}><div className="min-w-0"><span className="text-[9px] font-black text-slate-400 block uppercase">Ưu tiên {ix + 1}</span><h5 className="font-extrabold text-xs truncate mt-0.5">{w.id}. {w.lb.split(":")[1] || w.lb}</h5><p className="text-[9px] text-slate-400 mt-0.5">TB: {w.pt}%</p></div><div className="shrink-0 text-right"><span className={"px-2 py-0.5 rounded-lg text-[10px] font-black border " + bdg}>{w.lp}% Điểm yếu</span><span className="block text-[8px] text-slate-400 mt-1">{w.lc}/{dep.length} phiếu</span></div></div>);
+                      })}</div>
+                      {dsw[0] && dsw[0].lp > 0 && (<div className="bg-gradient-to-r from-violet-50/40 to-indigo-50/20 border border-violet-200 rounded-2xl p-4 flex gap-3 items-start mt-3"><div className="p-2 bg-white text-violet-600 rounded-xl border border-violet-200 shrink-0"><MessageSquare className="w-4 h-4" /></div><div><h6 className="font-black text-xs text-[#0A3230] uppercase">Đề xuất phát triển Tổ CM</h6><p className="text-[10.5px] text-slate-600 mt-1">Tỷ lệ điểm yếu cao nhất: <span className="font-black text-rose-700">{dsw[0].id} ({dsw[0].lp}%)</span>. Đề xuất sinh hoạt chuyên môn tập trung vào các năng lực này.</p></div></div>)}
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })() : !selectedTeacherId ? (
             <div className="flex flex-col items-center justify-center flex-1 text-slate-400 py-16">
               <div className="w-16 h-16 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-350 mb-4 shadow-2xs">
                 <User className="w-8 h-8 stroke-1" />
@@ -621,119 +813,13 @@ export function AdminTongHopClient({
             </div>
           ) : (() => {
             const selTeacher = teachers.find(t => t.id === selectedTeacherId);
-            const selTeacherSlots = initialSlots.filter(s => {
-              if (s.teacherId !== selectedTeacherId) return false;
-              if (selectedMonth !== "all") {
-                if (!s.date) return false;
-                const d = new Date(s.date);
-                if (isNaN(d.getTime())) return false;
-                const yyyy = d.getFullYear();
-                const mm = String(d.getMonth() + 1).padStart(2, '0');
-                return yyyy + "-" + mm === selectedMonth;
-              }
-              return true;
-            });
-            
-            const filteredSlots = selTeacherSlots.filter(slot => {
-              const matchQuery = !searchSlotQuery || 
-                slot.topic.toLowerCase().includes(searchSlotQuery.toLowerCase()) ||
-                (slot.className && slot.className.toLowerCase().includes(searchSlotQuery.toLowerCase()));
-              const matchLevel = filterLevel === "all" || slot.level === filterLevel;
-              const matchGrade = filterGrade === "all" || slot.grade === filterGrade;
-              return matchQuery && matchLevel && matchGrade;
-            });
-
-            // Prepare evaluations data
-            const evaluations = [];
-            selTeacherSlots.forEach(slot => {
-              slot.registrations.forEach(reg => {
-                if (reg.evaluation) {
-                  evaluations.push({
-                    evaluation: reg.evaluation,
-                    level: slot.level,
-                    topic: slot.topic,
-                    date: slot.date
-                  });
-                }
-              });
-            });
-
-            const isPreschool = selTeacherSlots.length > 0
-              ? selTeacherSlots.every(s => ["Mầm non"].includes(s.level))
-              : (selTeacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().includes("mam non");
-
-            const competencyData = [];
-            const weaknessData = [];
-
-            if (evaluations.length > 0) {
-              if (!isPreschool) {
-                for (let i = 1; i <= 11; i++) {
-                  const scoreKey = "score" + i;
-                  const maxVal = maxScoresK12[i - 1];
-                  const sum = evaluations.reduce((acc, curr) => acc + (curr.evaluation[scoreKey] || 0), 0);
-                  const avg = sum / evaluations.length;
-                  const pct = Math.round((avg / maxVal) * 100);
-
-                  const lowCount = evaluations.filter(curr => {
-                    const val = curr.evaluation[scoreKey] !== null ? Number(curr.evaluation[scoreKey]) : 0;
-                    return val < maxVal * 0.70;
-                  }).length;
-                  const lowPct = Math.round((lowCount / evaluations.length) * 100);
-
-                  competencyData.push({
-                    id: "Y" + i,
-                    label: k12Labels[i - 1],
-                    avg: avg,
-                    max: maxVal,
-                    pct: pct,
-                    standard: i <= 2 ? 1 : i <= 5 ? 2 : i <= 9 ? 3 : 4
-                  });
-
-                  weaknessData.push({
-                    id: "Y" + i,
-                    label: k12Labels[i - 1],
-                    lowCount: lowCount,
-                    lowPct: lowPct,
-                    avgPct: pct
-                  });
-                }
-              } else {
-                for (let i = 1; i <= 5; i++) {
-                  const critKey = "criterion" + i;
-                  const sum = evaluations.reduce((acc, curr) => acc + (curr.evaluation[critKey] || 0), 0);
-                  const avg = sum / evaluations.length;
-                  const pct = Math.round((avg / 4) * 100);
-
-                  const lowCount = evaluations.filter(curr => (curr.evaluation[critKey] || 0) <= 2).length;
-                  const lowPct = Math.round((lowCount / evaluations.length) * 100);
-
-                  competencyData.push({
-                    id: "T" + i,
-                    label: preschoolLabels[i - 1],
-                    avg: avg,
-                    max: 4,
-                    pct: pct,
-                    standard: 1
-                  });
-
-                  weaknessData.push({
-                    id: "T" + i,
-                    label: preschoolLabels[i - 1],
-                    lowCount: lowCount,
-                    lowPct: lowPct,
-                    avgPct: pct
-                  });
-                }
-              }
-            }
-
-            const sortedWeaknesses = [...weaknessData].sort((a, b) => b.lowPct - a.lowPct);
+            const { competencyData, sortedWeaknesses } = teacherCompetencyResult;
 
             const renderRadarChart = () => {
               const size = 300;
               const center = size / 2;
               const radius = 100;
-              const totalPoints = isPreschool ? 5 : 11;
+              const totalPoints = isPreschoolTeacher ? 5 : 11;
               const angleStep = (2 * Math.PI) / totalPoints;
 
               const gridLayers = [25, 50, 75, 100];
@@ -759,7 +845,7 @@ export function AdminTongHopClient({
                   y1: center, 
                   x2: x, 
                   y2: y, 
-                  label: isPreschool ? "T" + (i + 1) : "Y" + (i + 1), 
+                  label: isPreschoolTeacher ? "T" + (i + 1) : "Y" + (i + 1), 
                   lx: center + (radius + 20) * Math.sin(angle), 
                   ly: center - (radius + 20) * Math.cos(angle) 
                 });
@@ -826,8 +912,8 @@ export function AdminTongHopClient({
                     {valuePoints.length > 0 && (
                       <polygon
                         points={valuePath}
-                        fill="rgba(0, 161, 154, 0.15)"
-                        stroke="#00A19A"
+                        fill={theme.fill}
+                        stroke={theme.hex}
                         strokeWidth="2.5"
                       />
                     )}
@@ -844,7 +930,7 @@ export function AdminTongHopClient({
                           cy={y}
                           r="4"
                           fill="#ffffff"
-                          stroke="#00A19A"
+                          stroke={theme.hex}
                           strokeWidth="2.5"
                         />
                       );
@@ -858,7 +944,11 @@ export function AdminTongHopClient({
               <div className="space-y-5 flex-1 flex flex-col text-slate-800">
                 <div className="pb-4 border-b border-slate-100 flex items-center justify-between gap-3 shrink-0">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-teal-50 text-[#00A19A] flex items-center justify-center font-bold text-sm shadow-2xs border border-teal-100">
+                    <div className={"w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shadow-2xs border " + (
+                      isPreschoolTeacher 
+                        ? "bg-amber-50 text-amber-600 border-amber-100" 
+                        : "bg-teal-50 text-[#00A19A] border-teal-100"
+                    )}>
                       {selTeacher ? selTeacher.teacherName.charAt(0) : "G"}
                     </div>
                     <div>
@@ -866,7 +956,11 @@ export function AdminTongHopClient({
                       <p className="text-[10px] font-bold text-slate-400 mt-0.5 uppercase tracking-wider">Mã GV: {selTeacher ? selTeacher.teacherCode : ""}</p>
                     </div>
                   </div>
-                  <span className="px-3.5 py-1.5 bg-[#00A19A]/10 text-[#00A19A] border border-[#00A19A]/20 rounded-2xl text-[10px] font-black uppercase tracking-wider shadow-2xs">
+                  <span className={"px-3.5 py-1.5 border rounded-2xl text-[10px] font-black uppercase tracking-wider shadow-2xs " + (
+                    isPreschoolTeacher
+                      ? "bg-amber-50/60 text-amber-700 border-amber-200"
+                      : "bg-[#00A19A]/10 text-[#00A19A] border-[#00A19A]/20"
+                  )}>
                     {filteredSlots.length} / {selTeacherSlots.length} tiết dạy
                   </span>
                 </div>
@@ -876,7 +970,7 @@ export function AdminTongHopClient({
                     {/* Slot Search & Filter controls */}
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-200/60 shrink-0">
                       <div className="md:col-span-6 relative">
-                        <Search className="absolute left-3 top-3 h-3.5 w-3.5 text-slate-400" />
+                        <Search className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
                         <input
                           type="text"
                           placeholder="Tìm kiếm chủ đề, lớp học..."
@@ -922,8 +1016,7 @@ export function AdminTongHopClient({
                         {filteredSlots.map(slot => {
                           const avgScore = getSlotAverageScore(slot);
                           const slotDate = new Date(slot.date);
-                          const isK12 = !["Mầm non"].includes(slot.level);
-                          const evals = slot.registrations.filter((r: any) => r.evaluation !== null);
+                          const evals = slot.registrations.filter((r) => r.evaluation !== null);
                           const isMamNonBlock = slot.level === "Mầm non" || 
                                                 (slot.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().includes("mam non");
 
@@ -966,11 +1059,11 @@ export function AdminTongHopClient({
                                   <p className="text-xs text-slate-400 italic bg-slate-50 p-4 rounded-xl text-center border border-dashed border-slate-200">Chưa nhận được phiếu đánh giá nào.</p>
                                 ) : (
                                   <div className="space-y-3">
-                                    {evals.map((reg: any) => {
+                                    {evals.map((reg) => {
                                       const evalData = reg.evaluation;
-                                      const passed = isK12
-                                        ? (evalData.totalScore !== null && evalData.totalScore !== undefined ? evalData.totalScore >= 14 : (evalData.overallRating === "Giỏi" || evalData.overallRating === "Khá"))
-                                        : (evalData.overallRating === "Tốt" || evalData.overallRating === "Khá");
+                                      const passed = isPreschoolTeacher
+                                        ? (evalData.overallRating === "Tốt" || evalData.overallRating === "Khá")
+                                        : (evalData.totalScore !== null && evalData.totalScore !== undefined ? evalData.totalScore >= 14 : (evalData.overallRating === "Giỏi" || evalData.overallRating === "Khá"));
 
                                       return (
                                         <div key={reg.id} className="p-4 bg-slate-50/50 border border-slate-200/60 rounded-xl space-y-3 hover:bg-slate-50 hover:shadow-2xs transition-all duration-200">
@@ -999,7 +1092,27 @@ export function AdminTongHopClient({
                                           </div>
 
                                           <div className="flex flex-wrap gap-1.5">
-                                            {isK12 ? (
+                                            {isPreschoolTeacher ? (
+                                              [1, 2, 3, 4, 5].map((num) => {
+                                                const critKey = "criterion" + num;
+                                                const ratingLabels = { 4: "Tốt", 3: "Khá", 2: "Tr.bình", 1: "Yếu" };
+                                                const critVal = evalData[critKey] !== null && evalData[critKey] !== undefined
+                                                  ? evalData[critKey]
+                                                  : 0;
+                                                const critLabel = ratingLabels[critVal] || "-";
+                                                const isPassed = critVal >= 3;
+                                                return (
+                                                  <span key={num} className={"inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[8px] font-extrabold border rounded-md shadow-2xs " + (
+                                                    isPassed 
+                                                      ? "bg-teal-50 text-teal-700 border-teal-200/80" 
+                                                      : "bg-rose-50/70 text-rose-550 border-rose-150"
+                                                  )}>
+                                                    <span className={isPassed ? "text-teal-700/60 font-bold" : "text-rose-455 font-bold"}>T{num}:</span>
+                                                    <span>{critLabel}</span>
+                                                  </span>
+                                                );
+                                              })
+                                            ) : (
                                               [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((num) => {
                                                 const scoreKey = "score" + num;
                                                 const scoreVal = evalData[scoreKey] !== null && evalData[scoreKey] !== undefined
@@ -1033,26 +1146,6 @@ export function AdminTongHopClient({
                                                   <span key={num} className={"inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[8px] font-extrabold border rounded-md shadow-2xs " + stdClass}>
                                                     <span className={labelTextClass}>Y{num}:</span>
                                                     <span>{scoreVal.toFixed(1)}</span>
-                                                  </span>
-                                                );
-                                              })
-                                            ) : (
-                                              [1, 2, 3, 4, 5].map((num) => {
-                                                const critKey = "criterion" + num;
-                                                const ratingLabels = { 4: "Tốt", 3: "Khá", 2: "Tr.bình", 1: "Yếu" };
-                                                const critVal = evalData[critKey] !== null && evalData[critKey] !== undefined
-                                                  ? evalData[critKey]
-                                                  : 0;
-                                                const critLabel = ratingLabels[critVal] || "-";
-                                                const isPassed = critVal >= 3;
-                                                return (
-                                                  <span key={num} className={"inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[8px] font-extrabold border rounded-md shadow-2xs " + (
-                                                    isPassed 
-                                                      ? "bg-teal-50 text-teal-700 border-teal-200/80" 
-                                                      : "bg-rose-50/70 text-rose-550 border-rose-150"
-                                                  )}>
-                                                    <span className={isPassed ? "text-teal-700/60 font-bold" : "text-rose-455 font-bold"}>T{num}:</span>
-                                                    <span>{critLabel}</span>
                                                   </span>
                                                 );
                                               })
@@ -1108,7 +1201,7 @@ export function AdminTongHopClient({
                         </div>
                         <div className="md:col-span-7 space-y-3 bg-slate-50/30 p-4 rounded-3xl border border-slate-200/60 shadow-xs">
                           <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
-                            <Award className="w-4 h-4 text-teal-655" />
+                            <Award className={"w-4 h-4 " + theme.text} />
                             <span>Biểu đồ năng lực dạy học</span>
                           </h4>
                           <div className="space-y-3">
@@ -1175,7 +1268,7 @@ export function AdminTongHopClient({
                             return (
                               <div key={weakness.id} className={"p-3.5 border rounded-2xl flex items-center justify-between gap-3 " + bgClass + " " + borderClass}>
                                 <div className="min-w-0">
-                                  <span className="text-[9px] font-black text-slate-450 block tracking-widest uppercase">ƯƯ TIÊN {idx + 1}</span>
+                                  <span className="text-[9px] font-black text-slate-455 block tracking-widest uppercase">Ưu tiên {idx + 1}</span>
                                   <h5 className="font-extrabold text-xs text-slate-750 truncate mt-0.5">{weakness.id}. {weakness.label.split(":")[1] || weakness.label}</h5>
                                   <p className="text-[9px] font-medium text-slate-400 mt-0.5">Hiệu suất trung bình: {weakness.avgPct}%</p>
                                 </div>
