@@ -235,7 +235,7 @@ export function ChatbotConfigsClient({ initialConfigs = [] }: any) {
                     )}
                   </td>
                   <td className="px-8 py-6 text-right">
-                    <div className="flex items-center justify-end gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center justify-end gap-2 opacity-70 group-hover:opacity-100 transition-opacity">
                       <button onClick={() => startEdit(c)} className="p-2 text-slate-400 hover:text-[#00A19A] hover:bg-slate-50 rounded-xl transition-all">
                         <Edit2 className="w-4 h-4" />
                       </button>

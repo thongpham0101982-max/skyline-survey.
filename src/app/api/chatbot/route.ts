@@ -153,10 +153,12 @@ export async function POST(req: Request) {
 
     const chat = model.startChat({ history: cleanHistory });
     let result = await chat.sendMessage(message);
-    const functionCalls = result.response.functionCalls;
+    const calls = typeof result.response.functionCalls === "function"
+      ? result.response.functionCalls()
+      : (result.response.functionCalls || []);
 
-    if (functionCalls && functionCalls.length > 0) {
-      const call = functionCalls[0];
+    if (calls && calls.length > 0) {
+      const call = calls[0];
       let toolResult;
 
       try {
