@@ -918,6 +918,7 @@ export function AdminTongHopClient({
                         {filteredSlots.map(slot => {
                           const avgScore = getSlotAverageScore(slot);
                           const slotDate = new Date(slot.date);
+                          const isK12 = !["Mầm non"].includes(slot.level);
                           const evals = slot.registrations.filter((r: any) => r.evaluation !== null);
                           const isMamNonBlock = slot.level === "Mầm non" || 
                                                 (slot.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().includes("mam non");
