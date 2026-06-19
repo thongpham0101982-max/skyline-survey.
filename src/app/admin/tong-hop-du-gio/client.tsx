@@ -28,36 +28,6 @@ interface AdminTongHopClientProps {
 export function AdminTongHopClient({
   initialSlots, currentTeacher, subjects, departments, teachers, campuses, classes, initialFilters, isTTCM, isSuperAdmin
 }: AdminTongHopClientProps) {
-  // 1. Compute taught and observed slot counts for all teachers in the system
-  const allTeacherStats = useMemo(() => {
-    const statsMap: Record<string, { taughtCount: number; observedCount: number }> = {};
-    
-    // Initialize stats for each teacher
-    teachers.forEach((t: any) => {
-      statsMap[t.id] = { taughtCount: 0, observedCount: 0 };
-    });
-
-    // Loop through all slots to calculate counts
-    initialSlots.forEach((slot: any) => {
-      // Taught count (Host)
-      if (statsMap[slot.teacherId]) {
-        const hasEvaluations = slot.registrations.some((r: any) => r.evaluation !== null);
-        if (hasEvaluations) {
-          statsMap[slot.teacherId].taughtCount += (slot.isDoublePeriod ? 2 : 1);
-        }
-      }
-
-      // Observed count (Observer)
-      slot.registrations.forEach((reg: any) => {
-        if (reg.isApproved && reg.evaluation && statsMap[reg.teacherId]) {
-          statsMap[reg.teacherId].observedCount += (slot.isDoublePeriod ? 2 : 1);
-        }
-      });
-    });
-
-    return statsMap;
-  }, [teachers, initialSlots]);
-
   const [activeBlockTab, setActiveBlockTab] = useState("Phổ thông K-12")
 
   // 2. Only show departments that belong to the active blockCM, excluding "Hỗ trợ người học"
@@ -88,15 +58,99 @@ export function AdminTongHopClient({
   const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null)
   
   // Search & Filter states
+  const [selectedMonth, setSelectedMonth] = useState<string>("all")
   const [searchTeacherQuery, setSearchTeacherQuery] = useState("")
   const [searchSlotQuery, setSearchSlotQuery] = useState("")
   const [filterLevel, setFilterLevel] = useState("all")
   const [filterGrade, setFilterGrade] = useState("all")
 
+  // Extract all unique months from initialSlots
+  const availableMonths = useMemo(() => {
+    const months = new Set<string>();
+    initialSlots.forEach(s => {
+      if (s.date) {
+        const d = new Date(s.date);
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        months.add(`${yyyy}-${mm}`);
+      }
+    });
+    return Array.from(months).sort().reverse();
+  }, [initialSlots]);
+
+  // 1. Compute taught and observed slot counts for all teachers in the system
+  const allTeacherStats = useMemo(() => {
+    const statsMap: Record<string, { 
+      taughtCount: number; 
+      observedCount: number;
+      taughtMamNon: number;
+      taughtPhoThong: number;
+      observedMamNon: number;
+      observedPhoThong: number;
+    }> = {};
+    
+    // Initialize stats for each teacher
+    teachers.forEach((t: any) => {
+      statsMap[t.id] = { 
+        taughtCount: 0, 
+        observedCount: 0,
+        taughtMamNon: 0,
+        taughtPhoThong: 0,
+        observedMamNon: 0,
+        observedPhoThong: 0
+      };
+    });
+
+    // Loop through all slots to calculate counts
+    initialSlots.forEach((slot: any) => {
+      // Filter by month
+      if (selectedMonth !== "all") {
+        const d = new Date(slot.date);
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        if (`${yyyy}-${mm}` !== selectedMonth) {
+          return;
+        }
+      }
+
+      const isMamNon = slot.level === "Mầm non" || 
+                       (slot.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
+
+      // Taught count (Host)
+      if (statsMap[slot.teacherId]) {
+        const hasEvaluations = slot.registrations.some((r: any) => r.evaluation !== null);
+        if (hasEvaluations) {
+          const increment = slot.isDoublePeriod ? 2 : 1;
+          statsMap[slot.teacherId].taughtCount += increment;
+          if (isMamNon) {
+            statsMap[slot.teacherId].taughtMamNon += increment;
+          } else {
+            statsMap[slot.teacherId].taughtPhoThong += increment;
+          }
+        }
+      }
+
+      // Observed count (Observer)
+      slot.registrations.forEach((reg: any) => {
+        if (reg.isApproved && reg.evaluation && statsMap[reg.teacherId]) {
+          const increment = slot.isDoublePeriod ? 2 : 1;
+          statsMap[reg.teacherId].observedCount += increment;
+          if (isMamNon) {
+            statsMap[reg.teacherId].observedMamNon += increment;
+          } else {
+            statsMap[reg.teacherId].observedPhoThong += increment;
+          }
+        }
+      });
+    });
+
+    return statsMap;
+  }, [teachers, initialSlots, selectedMonth]);
+
   const handleTabChange = (tab: string) => {
     setActiveBlockTab(tab);
     setSelectedTeacherId(null);
-    setSearchTeacherQuery("");
+    searchTeacherQuery !== "" && setSearchTeacherQuery("");
     
     const newActiveDepts = departments.filter(dept => {
       if (!dept.blockCM || dept.blockCM === "" || dept.blockCM === "Hỗ trợ người học") {
@@ -125,12 +179,48 @@ export function AdminTongHopClient({
 
   // Get taught and observed slot counts for each teacher in the selected department
   const teacherStats = useMemo(() => {
-    const statsMap: Record<string, { taughtCount: number; observedCount: number }> = {};
+    const statsMap: Record<string, { 
+      taughtCount: number; 
+      observedCount: number;
+      taughtMamNon: number;
+      taughtPhoThong: number;
+      observedMamNon: number;
+      observedPhoThong: number;
+    }> = {};
     deptTeachers.forEach((t: any) => {
-      statsMap[t.id] = allTeacherStats[t.id] || { taughtCount: 0, observedCount: 0 };
+      statsMap[t.id] = allTeacherStats[t.id] || { 
+        taughtCount: 0, 
+        observedCount: 0,
+        taughtMamNon: 0,
+        taughtPhoThong: 0,
+        observedMamNon: 0,
+        observedPhoThong: 0
+      };
     });
     return statsMap;
   }, [deptTeachers, allTeacherStats]);
+
+  const departmentSummary = useMemo(() => {
+    let taughtMamNon = 0;
+    let taughtPhoThong = 0;
+    let observedMamNon = 0;
+    let observedPhoThong = 0;
+
+    deptTeachers.forEach((t: any) => {
+      const stats = teacherStats[t.id] || { taughtMamNon: 0, taughtPhoThong: 0, observedMamNon: 0, observedPhoThong: 0 };
+      taughtMamNon += stats.taughtMamNon || 0;
+      taughtPhoThong += stats.taughtPhoThong || 0;
+      observedMamNon += stats.observedMamNon || 0;
+      observedPhoThong += stats.observedPhoThong || 0;
+    });
+
+    return {
+      taughtMamNon,
+      taughtPhoThong,
+      observedMamNon,
+      observedPhoThong
+    };
+  }, [deptTeachers, teacherStats]);
 
   const getSlotAverageScore = (slot: any) => {
     const isK12 = !["Mầm non"].includes(slot.level);
@@ -231,6 +321,22 @@ export function AdminTongHopClient({
               )}
             </div>
 
+            {/* Month Filter */}
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Lọc theo Tháng</label>
+              <select 
+                value={selectedMonth} 
+                onChange={e => { setSelectedMonth(e.target.value); setSelectedTeacherId(null); }}
+                className="w-full text-sm font-semibold rounded-xl border border-slate-200 p-3 bg-white text-slate-800 focus:ring-2 focus:ring-[#00A19A] outline-none transition-all"
+              >
+                <option value="all">Tất cả các tháng</option>
+                {availableMonths.map(m => {
+                  const [year, month] = m.split("-");
+                  return <option key={m} value={m}>{`Tháng ${month}/${year}`}</option>;
+                })}
+              </select>
+            </div>
+
             {/* Teacher Search Input */}
             <div className="flex flex-col gap-2">
               <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Tìm kiếm giáo viên</label>
@@ -257,6 +363,33 @@ export function AdminTongHopClient({
             <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider pb-3 border-b border-slate-100 flex items-center justify-between mb-4">
               <span>Thống kê thành viên ({filteredDeptTeachers.length})</span>
             </h3>
+
+            {filteredDeptTeachers.length > 0 && (
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-150 mb-4 space-y-2.5">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-slate-400 uppercase tracking-wider text-[9px]"><ClipboardList className="w-3.5 h-3.5 inline mr-1 text-slate-400"/>Tổng tiết dạy</span>
+                  <div className="flex gap-1.5">
+                    <span className="px-2 py-0.5 bg-amber-50 text-amber-600 border border-amber-200 rounded-lg font-black text-[9px]">
+                      MẦM NON: {departmentSummary.taughtMamNon}
+                    </span>
+                    <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 border border-indigo-200 rounded-lg font-black text-[9px]">
+                      PHỔ THÔNG: {departmentSummary.taughtPhoThong}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between text-xs border-t border-slate-200/50 pt-2.5">
+                  <span className="font-bold text-slate-400 uppercase tracking-wider text-[9px]"><CheckCircle className="w-3.5 h-3.5 inline mr-1 text-slate-400"/>Tổng tiết dự</span>
+                  <div className="flex gap-1.5">
+                    <span className="px-2 py-0.5 bg-amber-50 text-amber-600 border border-amber-200 rounded-lg font-black text-[9px]">
+                      MẦM NON: {departmentSummary.observedMamNon}
+                    </span>
+                    <span className="px-2 py-0.5 bg-violet-50 text-violet-600 border border-violet-200 rounded-lg font-black text-[9px]">
+                      PHỔ THÔNG: {departmentSummary.observedPhoThong}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
             
             {filteredDeptTeachers.length === 0 ? (
               <div className="flex flex-col items-center justify-center flex-1 py-12 text-slate-400">
@@ -266,7 +399,14 @@ export function AdminTongHopClient({
             ) : (
               <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1 custom-scrollbar">
                 {filteredDeptTeachers.map(teacher => {
-                  const stats = teacherStats[teacher.id] || { taughtCount: 0, observedCount: 0 };
+                  const stats = teacherStats[teacher.id] || { 
+                    taughtCount: 0, 
+                    observedCount: 0,
+                    taughtMamNon: 0,
+                    taughtPhoThong: 0,
+                    observedMamNon: 0,
+                    observedPhoThong: 0
+                  };
                   const isSelected = selectedTeacherId === teacher.id;
                   return (
                     <button 
@@ -286,13 +426,17 @@ export function AdminTongHopClient({
                           Mã GV: {teacher.teacherCode}
                         </p>
                       </div>
-                      <div className="flex gap-2 shrink-0">
-                        <span className="px-2 py-0.5 bg-emerald-50 border border-emerald-100 text-emerald-600 rounded-lg text-[9px] font-black uppercase">
-                          Dạy: {stats.taughtCount}
-                        </span>
-                        <span className="px-2 py-0.5 bg-violet-50 border border-violet-100 text-violet-600 rounded-lg text-[9px] font-black uppercase">
-                          Dự: {stats.observedCount}
-                        </span>
+                      <div className="flex flex-col gap-1 items-end shrink-0">
+                        <div className="flex items-center gap-1 text-[8px] font-black uppercase">
+                          <span className="text-slate-400">Dạy:</span>
+                          <span className="px-1 py-0.2 bg-amber-50 text-amber-600 border border-amber-100 rounded">{stats.taughtMamNon} MN</span>
+                          <span className="px-1 py-0.2 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded">{stats.taughtPhoThong} PT</span>
+                        </div>
+                        <div className="flex items-center gap-1 text-[8px] font-black uppercase">
+                          <span className="text-slate-400">Dự:</span>
+                          <span className="px-1 py-0.2 bg-amber-50 text-amber-600 border border-amber-100 rounded">{stats.observedMamNon} MN</span>
+                          <span className="px-1 py-0.2 bg-violet-50 text-violet-600 border border-violet-100 rounded">{stats.observedPhoThong} PT</span>
+                        </div>
                       </div>
                     </button>
                   );
@@ -312,7 +456,16 @@ export function AdminTongHopClient({
             </div>
           ) : (() => {
             const selTeacher = teachers.find(t => t.id === selectedTeacherId);
-            const selTeacherSlots = initialSlots.filter(s => s.teacherId === selectedTeacherId);
+            const selTeacherSlots = initialSlots.filter(s => {
+              if (s.teacherId !== selectedTeacherId) return false;
+              if (selectedMonth !== "all") {
+                const d = new Date(s.date);
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                return `${yyyy}-${mm}` === selectedMonth;
+              }
+              return true;
+            });
             
             // Local filter logic for slots
             const filteredSlots = selTeacherSlots.filter(slot => {
