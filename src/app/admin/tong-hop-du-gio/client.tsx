@@ -447,13 +447,11 @@ export function AdminTongHopClient({
                       <div className="flex flex-col gap-1 items-end shrink-0">
                         <div className="flex items-center gap-1 text-[8px] font-black uppercase tracking-wider">
                           <span className="text-slate-450 font-bold text-[7px]">Dạy:</span>
-                          <span className="px-1.5 py-0.2 bg-amber-50 text-amber-700 border border-amber-200/60 rounded font-bold">{stats.taughtMamNon} MN</span>
-                          <span className="px-1.5 py-0.2 bg-emerald-50 text-emerald-700 border border-emerald-200/60 rounded font-bold">{stats.taughtPhoThong} PT</span>
+                          <span className="px-1.5 py-0.2 bg-emerald-50 text-emerald-700 border border-emerald-200/60 rounded font-bold">{stats.taughtCount} tiết</span>
                         </div>
                         <div className="flex items-center gap-1 text-[8px] font-black uppercase tracking-wider">
                           <span className="text-slate-450 font-bold text-[7px]">Dự:</span>
-                          <span className="px-1.5 py-0.2 bg-amber-50 text-amber-700 border border-amber-200/60 rounded font-bold">{stats.observedMamNon} MN</span>
-                          <span className="px-1.5 py-0.2 bg-violet-50 text-violet-700 border border-violet-200/60 rounded font-bold">{stats.observedPhoThong} PT</span>
+                          <span className="px-1.5 py-0.2 bg-violet-50 text-violet-700 border border-violet-200/60 rounded font-bold">{stats.observedCount} tiết</span>
                         </div>
                       </div>
                     </button>
