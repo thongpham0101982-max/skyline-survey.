@@ -57,6 +57,7 @@ export function AdminTongHopClient({
 
   const [selectedDeptId, setSelectedDeptId] = useState(initialDeptId)
   const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null)
+  const [activeDetailTab, setActiveDetailTab] = useState("lich-su")
   
   // Search & Filter states
   const [selectedMonth, setSelectedMonth] = useState<string>("all")
@@ -151,6 +152,7 @@ export function AdminTongHopClient({
   const handleTabChange = (tab: string) => {
     setActiveBlockTab(tab);
     setSelectedTeacherId(null);
+    setActiveDetailTab("lich-su");
     searchTeacherQuery !== "" && setSearchTeacherQuery("");
     
     const newActiveDepts = departments.filter(dept => {
@@ -420,7 +422,7 @@ export function AdminTongHopClient({
                   return (
                     <button 
                       key={teacher.id} 
-                      onClick={() => { setSelectedTeacherId(teacher.id); setSearchSlotQuery(""); setFilterLevel("all"); setFilterGrade("all"); }}
+                      onClick={() => { setSelectedTeacherId(teacher.id); setSearchSlotQuery(""); setFilterLevel("all"); setFilterGrade("all"); setActiveDetailTab("lich-su"); }}
                       className={"w-full text-left p-3.5 rounded-2xl border transition-all duration-305 flex items-center justify-between gap-3 " + (
                         isSelected
                           ? "bg-gradient-to-r from-teal-50/70 to-emerald-50/20 border-[#00A19A] shadow-xs shadow-teal-50 scale-[1.01]"
@@ -494,6 +496,240 @@ export function AdminTongHopClient({
               return matchQuery && matchLevel && matchGrade;
             });
 
+            // Prepare evaluations data
+            const evaluations = [];
+            selTeacherSlots.forEach(slot => {
+              slot.registrations.forEach(reg => {
+                if (reg.evaluation) {
+                  evaluations.push({
+                    evaluation: reg.evaluation,
+                    level: slot.level,
+                    topic: slot.topic,
+                    date: slot.date
+                  });
+                }
+              });
+            });
+
+            const isPreschool = selTeacherSlots.length > 0
+              ? selTeacherSlots.every(s => ["Mầm non"].includes(s.level))
+              : (selTeacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
+
+            const maxScoresK12 = [1.5, 1.5, 2.0, 2.0, 1.0, 2.0, 3.0, 2.0, 2.0, 2.0, 1.0];
+            const k12Labels = [
+              "Y1: Chuẩn bị giáo án, bám sát kiến thức kỹ năng",
+              "Y2: Sử dụng đồ dùng, thiết bị dạy học phù hợp",
+              "Y3: Nội dung bài giảng chính xác, khoa học",
+              "Y4: Đảm bảo tính hệ thống, trọng tâm bài dạy",
+              "Y5: Liên hệ thực tế đời sống, tính giáo dục",
+              "Y6: Không đọc chép, hỗ trợ kịp thời học sinh",
+              "Y7: Tổ chức học tập chủ động, hợp tác nhóm",
+              "Y8: Linh hoạt các khâu, phân phối thời gian hợp lý",
+              "Y9: Kết hợp các phương pháp, khuyến khích tư duy",
+              "Y10: Đánh giá quá trình học, học sinh nắm vững bài",
+              "Y11: Tiết dạy nhuần nhuyễn, sinh động, sáng tạo"
+            ];
+
+            const preschoolLabels = [
+              "T1: Nội dung bài dạy phù hợp, chính xác",
+              "T2: Phương pháp giảng dạy hiệu quả, sáng tạo",
+              "T3: Tổ chức hoạt động học tập tích cực",
+              "T4: Sử dụng CNTT và phương tiện dạy học",
+              "T5: Kết quả học tập và tương tác của học sinh"
+            ];
+
+            const competencyData = [];
+            const weaknessData = [];
+
+            if (evaluations.length > 0) {
+              if (!isPreschool) {
+                for (let i = 1; i <= 11; i++) {
+                  const scoreKey = "score" + i;
+                  const maxVal = maxScoresK12[i - 1];
+                  const sum = evaluations.reduce((acc, curr) => acc + (curr.evaluation[scoreKey] || 0), 0);
+                  const avg = sum / evaluations.length;
+                  const pct = Math.round((avg / maxVal) * 100);
+
+                  const lowCount = evaluations.filter(curr => {
+                    const val = curr.evaluation[scoreKey] !== null ? Number(curr.evaluation[scoreKey]) : 0;
+                    return val < maxVal * 0.70;
+                  }).length;
+                  const lowPct = Math.round((lowCount / evaluations.length) * 100);
+
+                  competencyData.push({
+                    id: "Y" + i,
+                    label: k12Labels[i - 1],
+                    avg: avg,
+                    max: maxVal,
+                    pct: pct,
+                    standard: i <= 2 ? 1 : i <= 5 ? 2 : i <= 9 ? 3 : 4
+                  });
+
+                  weaknessData.push({
+                    id: "Y" + i,
+                    label: k12Labels[i - 1],
+                    lowCount: lowCount,
+                    lowPct: lowPct,
+                    avgPct: pct
+                  });
+                }
+              } else {
+                for (let i = 1; i <= 5; i++) {
+                  const critKey = "criterion" + i;
+                  const sum = evaluations.reduce((acc, curr) => acc + (curr.evaluation[critKey] || 0), 0);
+                  const avg = sum / evaluations.length;
+                  const pct = Math.round((avg / 4) * 100);
+
+                  const lowCount = evaluations.filter(curr => (curr.evaluation[critKey] || 0) <= 2).length;
+                  const lowPct = Math.round((lowCount / evaluations.length) * 100);
+
+                  competencyData.push({
+                    id: "T" + i,
+                    label: preschoolLabels[i - 1],
+                    avg: avg,
+                    max: 4,
+                    pct: pct,
+                    standard: 1
+                  });
+
+                  weaknessData.push({
+                    id: "T" + i,
+                    label: preschoolLabels[i - 1],
+                    lowCount: lowCount,
+                    lowPct: lowPct,
+                    avgPct: pct
+                  });
+                }
+              }
+            }
+
+            const sortedWeaknesses = [...weaknessData].sort((a, b) => b.lowPct - a.lowPct);
+
+            const renderRadarChart = () => {
+              const size = 300;
+              const center = size / 2;
+              const radius = 100;
+              const totalPoints = isPreschool ? 5 : 11;
+              const angleStep = (2 * Math.PI) / totalPoints;
+
+              const gridLayers = [25, 50, 75, 100];
+              const gridPaths = gridLayers.map(level => {
+                const points = [];
+                for (let i = 0; i < totalPoints; i++) {
+                  const angle = i * angleStep;
+                  const r = radius * (level / 100);
+                  const x = center + r * Math.sin(angle);
+                  const y = center - r * Math.cos(angle);
+                  points.push(x + "," + y);
+                }
+                return points.join(" ");
+              });
+
+              const axisLines = [];
+              for (let i = 0; i < totalPoints; i++) {
+                const angle = i * angleStep;
+                const x = center + radius * Math.sin(angle);
+                const y = center - radius * Math.cos(angle);
+                axisLines.push({ 
+                  x1: center, 
+                  y1: center, 
+                  x2: x, 
+                  y2: y, 
+                  label: isPreschool ? "T" + (i + 1) : "Y" + (i + 1), 
+                  lx: center + (radius + 20) * Math.sin(angle), 
+                  ly: center - (radius + 20) * Math.cos(angle) 
+                });
+              }
+
+              const valuePoints = [];
+              competencyData.forEach((d, i) => {
+                const angle = i * angleStep;
+                const r = radius * (d.pct / 100);
+                const x = center + r * Math.sin(angle);
+                const y = center - r * Math.cos(angle);
+                valuePoints.push(x + "," + y);
+              });
+              const valuePath = valuePoints.join(" ");
+
+              return (
+                <div className="flex flex-col items-center justify-center bg-slate-50/50 p-4 rounded-3xl border border-slate-200/60 shadow-xs relative">
+                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Bản đồ Năng lực dạy học</span>
+                  <svg width="250" height="250" viewBox="0 0 300 300" className="overflow-visible">
+                    {gridLayers.map((level, idx) => (
+                      <polygon
+                        key={level}
+                        points={gridPaths[idx]}
+                        fill="none"
+                        stroke="#e2e8f0"
+                        strokeWidth="1"
+                        strokeDasharray={level === 100 ? "none" : "3,3"}
+                      />
+                    ))}
+                    
+                    {gridLayers.map((level) => (
+                      <text
+                        key={level}
+                        x={center}
+                        y={center - radius * (level / 100) + 4}
+                        textAnchor="middle"
+                        className="text-[8px] fill-slate-400 font-bold"
+                      >
+                        {level}%
+                      </text>
+                    ))}
+
+                    {axisLines.map((axis, idx) => (
+                      <g key={idx}>
+                        <line
+                          x1={axis.x1}
+                          y1={axis.y1}
+                          x2={axis.x2}
+                          y2={axis.y2}
+                          stroke="#e2e8f0"
+                          strokeWidth="1"
+                        />
+                        <text
+                          x={axis.lx}
+                          y={axis.ly + 4}
+                          textAnchor="middle"
+                          className="text-[10px] font-extrabold fill-[#0A3230]"
+                        >
+                          {axis.label}
+                        </text>
+                      </g>
+                    ))}
+
+                    {valuePoints.length > 0 && (
+                      <polygon
+                        points={valuePath}
+                        fill="rgba(0, 161, 154, 0.15)"
+                        stroke="#00A19A"
+                        strokeWidth="2.5"
+                      />
+                    )}
+
+                    {competencyData.map((d, i) => {
+                      const angle = i * angleStep;
+                      const r = radius * (d.pct / 100);
+                      const x = center + r * Math.sin(angle);
+                      const y = center - r * Math.cos(angle);
+                      return (
+                        <circle
+                          key={i}
+                          cx={x}
+                          cy={y}
+                          r="4"
+                          fill="#ffffff"
+                          stroke="#00A19A"
+                          strokeWidth="2.5"
+                        />
+                      );
+                    })}
+                  </svg>
+                </div>
+              );
+            };
+
             return (
               <div className="space-y-5 flex-1 flex flex-col text-slate-800">
                 <div className="pb-4 border-b border-slate-100 flex items-center justify-between gap-3 shrink-0">
@@ -511,232 +747,373 @@ export function AdminTongHopClient({
                   </span>
                 </div>
 
-                {/* Slot Search & Filter controls */}
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-200/60 shrink-0">
-                  <div className="md:col-span-6 relative">
-                    <Search className="absolute left-3 top-3 h-3.5 w-3.5 text-slate-400" />
-                    <input
-                      type="text"
-                      placeholder="Tìm kiếm chủ đề, lớp học..."
-                      value={searchSlotQuery}
-                      onChange={e => setSearchSlotQuery(e.target.value)}
-                      className="w-full text-xs font-semibold rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 bg-white text-slate-800 focus:border-[#00A19A] focus:ring-4 focus:ring-[#00A19A]/10 outline-none transition-all"
-                    />
-                  </div>
-                  <div className="md:col-span-3">
-                    <select 
-                      value={filterLevel} 
-                      onChange={e => { setFilterLevel(e.target.value); setFilterGrade("all"); }}
-                      className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2.5 bg-white text-slate-800 focus:border-[#00A19A] focus:ring-4 focus:ring-[#00A19A]/10 outline-none transition-all appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2523475569%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:0.55rem_auto] bg-[right_0.75rem_center] bg-no-repeat pr-6"
-                    >
-                      <option value="all">Mọi cấp học</option>
-                      <option value="Tiểu học">Tiểu học</option>
-                      <option value="THCS">THCS</option>
-                      <option value="THPT">THPT</option>
-                      <option value="Mầm non">Mầm non</option>
-                    </select>
-                  </div>
-                  <div className="md:col-span-3">
-                    <select 
-                      value={filterGrade} 
-                      onChange={e => setFilterGrade(e.target.value)}
-                      className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2.5 bg-white text-slate-800 focus:border-[#00A19A] focus:ring-4 focus:ring-[#00A19A]/10 outline-none transition-all appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2523475569%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:0.55rem_auto] bg-[right_0.75rem_center] bg-no-repeat pr-6"
-                    >
-                      <option value="all">Mọi khối</option>
-                      {Array.from(new Set(selTeacherSlots.map(s => s.grade))).sort().map(g => (
-                        <option key={g} value={g}>{g}</option>
-                      ))}
-                    </select>
-                  </div>
+                {/* Tab Switcher */}
+                <div className="flex gap-4 border-b border-slate-100 pb-2 shrink-0 text-xs">
+                  <button 
+                    onClick={() => setActiveDetailTab("lich-su")}
+                    className={"pb-2 px-1 font-extrabold border-b-2 transition-all duration-200 " + (activeDetailTab === "lich-su" ? "border-[#00A19A] text-[#00A19A]" : "border-transparent text-slate-400 hover:text-slate-650")}
+                  >
+                    Lịch sử tiết dạy
+                  </button>
+                  <button 
+                    onClick={() => setActiveDetailTab("phan-tich")}
+                    className={"pb-2 px-1 font-extrabold border-b-2 transition-all duration-200 " + (activeDetailTab === "phan-tich" ? "border-[#00A19A] text-[#00A19A]" : "border-transparent text-slate-400 hover:text-slate-650")}
+                  >
+                    Phân tích Năng lực & Điểm yếu
+                  </button>
                 </div>
 
-                {filteredSlots.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center flex-1 py-12 text-slate-400">
-                    <ClipboardList className="w-12 h-12 stroke-1 text-slate-200 mb-2" />
-                    <p className="text-xs font-bold">Không tìm thấy tiết dạy tương ứng.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-5 max-h-[520px] overflow-y-auto pr-1 custom-scrollbar">
-                    {filteredSlots.map(slot => {
-                      const avgScore = getSlotAverageScore(slot);
-                      const slotDate = new Date(slot.date);
-                      const isK12 = !["Mầm non"].includes(slot.level);
-                      const evals = slot.registrations.filter((r: any) => r.evaluation !== null);
-                      const isMamNonBlock = slot.level === "Mầm non" || 
-                                            (slot.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().includes("mam non");
+                {activeDetailTab === "lich-su" ? (
+                  <>
+                    {/* Slot Search & Filter controls */}
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-200/60 shrink-0">
+                      <div className="md:col-span-6 relative">
+                        <Search className="absolute left-3 top-3 h-3.5 w-3.5 text-slate-400" />
+                        <input
+                          type="text"
+                          placeholder="Tìm kiếm chủ đề, lớp học..."
+                          value={searchSlotQuery}
+                          onChange={e => setSearchSlotQuery(e.target.value)}
+                          className="w-full text-xs font-semibold rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 bg-white text-slate-800 focus:border-[#00A19A] focus:ring-4 focus:ring-[#00A19A]/10 outline-none transition-all"
+                        />
+                      </div>
+                      <div className="md:col-span-3">
+                        <select 
+                          value={filterLevel} 
+                          onChange={e => { setFilterLevel(e.target.value); setFilterGrade("all"); }}
+                          className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2.5 bg-white text-slate-800 focus:border-[#00A19A] focus:ring-4 focus:ring-[#00A19A]/10 outline-none transition-all appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2523475569%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:0.55rem_auto] bg-[right_0.75rem_center] bg-no-repeat pr-6"
+                        >
+                          <option value="all">Mọi cấp học</option>
+                          <option value="Tiểu học">Tiểu học</option>
+                          <option value="THCS">THCS</option>
+                          <option value="THPT">THPT</option>
+                          <option value="Mầm non">Mầm non</option>
+                        </select>
+                      </div>
+                      <div className="md:col-span-3">
+                        <select 
+                          value={filterGrade} 
+                          onChange={e => setFilterGrade(e.target.value)}
+                          className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2.5 bg-white text-slate-800 focus:border-[#00A19A] focus:ring-4 focus:ring-[#00A19A]/10 outline-none transition-all appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2523475569%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:0.55rem_auto] bg-[right_0.75rem_center] bg-no-repeat pr-6"
+                        >
+                          <option value="all">Mọi khối</option>
+                          {Array.from(new Set(selTeacherSlots.map(s => s.grade))).sort().map(g => (
+                            <option key={g} value={g}>{g}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
 
-                      return (
-                        <div key={slot.id} className={"p-5 bg-white border border-slate-200/80 rounded-2xl space-y-4 hover:shadow-md transition-all duration-300 border-l-4 " + (
-                          isMamNonBlock ? "border-l-amber-500" : "border-l-indigo-500"
-                        )}>
-                          {/* Slot Info */}
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
-                            <div>
-                              <div className="flex flex-wrap items-center gap-1.5">
-                                <span className={"px-2 py-0.5 text-[8px] font-extrabold rounded uppercase tracking-wider " + (
-                                  isMamNonBlock ? "bg-amber-50 text-amber-700 border border-amber-250/60" : "bg-indigo-50 text-indigo-700 border border-indigo-250/60"
-                                )}>{slot.level}</span>
-                                <span className="px-2 py-0.5 text-[8px] font-extrabold bg-slate-50 text-slate-650 border border-slate-200 rounded uppercase tracking-wider">{slot.grade}</span>
-                                <span className="px-2 py-0.5 text-[8px] font-extrabold bg-rose-50 text-rose-600 border border-rose-200 rounded uppercase tracking-wider">{slot.startTime}</span>
-                                <span className="text-[10px] font-bold text-slate-400">{slotDate.toLocaleDateString("vi-VN")}</span>
-                                {slot.className && <span className="px-2 py-0.5 text-[8px] font-bold bg-teal-50 text-teal-700 border border-teal-200 rounded">Lớp: {slot.className}</span>}
+                    {filteredSlots.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center flex-1 py-12 text-slate-400">
+                        <ClipboardList className="w-12 h-12 stroke-1 text-slate-200 mb-2" />
+                        <p className="text-xs font-bold">Không tìm thấy tiết dạy tương ứng.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-5 max-h-[520px] overflow-y-auto pr-1 custom-scrollbar">
+                        {filteredSlots.map(slot => {
+                          const avgScore = getSlotAverageScore(slot);
+                          const slotDate = new Date(slot.date);
+                          const isK12 = !["Mầm non"].includes(slot.level);
+                          const evals = slot.registrations.filter((r: any) => r.evaluation !== null);
+                          const isMamNonBlock = slot.level === "Mầm non" || 
+                                                (slot.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
+
+                          return (
+                            <div key={slot.id} className={"p-5 bg-white border border-slate-200/80 rounded-2xl space-y-4 hover:shadow-md transition-all duration-300 border-l-4 " + (
+                              isMamNonBlock ? "border-l-amber-500" : "border-l-indigo-500"
+                            )}>
+                              {/* Slot Info */}
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                                <div>
+                                  <div className="flex flex-wrap items-center gap-1.5">
+                                    <span className={"px-2 py-0.5 text-[8px] font-extrabold rounded uppercase tracking-wider " + (
+                                      isMamNonBlock ? "bg-amber-50 text-amber-700 border border-amber-250/60" : "bg-indigo-50 text-indigo-700 border border-indigo-250/60"
+                                    )}>{slot.level}</span>
+                                    <span className="px-2 py-0.5 text-[8px] font-extrabold bg-slate-50 text-slate-650 border border-slate-200 rounded uppercase tracking-wider">{slot.grade}</span>
+                                    <span className="px-2 py-0.5 text-[8px] font-extrabold bg-rose-50 text-rose-600 border border-rose-200 rounded uppercase tracking-wider">{slot.startTime}</span>
+                                    <span className="text-[10px] font-bold text-slate-400">{slotDate.toLocaleDateString("vi-VN")}</span>
+                                    {slot.className && <span className="px-2 py-0.5 text-[8px] font-bold bg-teal-50 text-teal-700 border border-teal-200 rounded">Lớp: {slot.className}</span>}
+                                  </div>
+                                  <h4 className="font-black text-[15px] text-[#0A3230] mt-2 tracking-tight">{slot.topic}</h4>
+                                </div>
+                                <div className="shrink-0 text-right">
+                                  {avgScore !== null ? (
+                                    <span className="px-3 py-1.5 bg-gradient-to-r from-teal-50 to-emerald-50 text-teal-700 border border-teal-200 rounded-xl font-black text-xs shadow-2xs">
+                                      ĐTB chung: {typeof avgScore === "number" ? avgScore.toFixed(2) + "/20.00đ" : avgScore}
+                                    </span>
+                                  ) : (
+                                    <span className="px-3 py-1.5 bg-slate-50 text-slate-400 border border-slate-200 rounded-xl font-bold text-xs">
+                                      ĐTB chung: --
+                                    </span>
+                                  )}
+                                </div>
                               </div>
-                              <h4 className="font-black text-[15px] text-[#0A3230] mt-2 tracking-tight">{slot.topic}</h4>
-                            </div>
-                            <div className="shrink-0 text-right">
-                              {avgScore !== null ? (
-                                <span className="px-3 py-1.5 bg-gradient-to-r from-teal-50 to-emerald-50 text-teal-700 border border-teal-200 rounded-xl font-black text-xs shadow-2xs">
-                                  ĐTB chung: {typeof avgScore === "number" ? avgScore.toFixed(2) + "/20.00đ" : avgScore}
-                                </span>
-                              ) : (
-                                <span className="px-3 py-1.5 bg-slate-50 text-slate-400 border border-slate-200 rounded-xl font-bold text-xs">
-                                  ĐTB chung: --
-                                </span>
-                              )}
-                            </div>
-                          </div>
 
-                          {/* Observers Evaluations Detail */}
-                          <div className="space-y-3">
-                            <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-                              <BookOpen className="w-3.5 h-3.5 text-slate-350" />
-                              <span>Đánh giá của giáo viên dự ({evals.length})</span>
-                            </h5>
-                            {evals.length === 0 ? (
-                              <p className="text-xs text-slate-400 italic bg-slate-50 p-4 rounded-xl text-center border border-dashed border-slate-200">Chưa nhận được phiếu đánh giá nào.</p>
-                            ) : (
+                              {/* Observers Evaluations Detail */}
                               <div className="space-y-3">
-                                {evals.map((reg: any) => {
-                                  const evalData = reg.evaluation;
-                                  const passed = isK12
-                                    ? (evalData.totalScore !== null && evalData.totalScore !== undefined ? evalData.totalScore >= 14 : (evalData.overallRating === "Giỏi" || evalData.overallRating === "Khá"))
-                                    : (evalData.overallRating === "Tốt" || evalData.overallRating === "Khá");
+                                <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                                  <BookOpen className="w-3.5 h-3.5 text-slate-350" />
+                                  <span>Đánh giá của giáo viên dự ({evals.length})</span>
+                                </h5>
+                                {evals.length === 0 ? (
+                                  <p className="text-xs text-slate-400 italic bg-slate-50 p-4 rounded-xl text-center border border-dashed border-slate-200">Chưa nhận được phiếu đánh giá nào.</p>
+                                ) : (
+                                  <div className="space-y-3">
+                                    {evals.map((reg: any) => {
+                                      const evalData = reg.evaluation;
+                                      const passed = isK12
+                                        ? (evalData.totalScore !== null && evalData.totalScore !== undefined ? evalData.totalScore >= 14 : (evalData.overallRating === "Giỏi" || evalData.overallRating === "Khá"))
+                                        : (evalData.overallRating === "Tốt" || evalData.overallRating === "Khá");
 
-                                  return (
-                                    <div key={reg.id} className="p-4 bg-slate-50/50 border border-slate-200/60 rounded-xl space-y-3 hover:bg-slate-50 hover:shadow-2xs transition-all duration-200">
-                                      {/* Observer Header */}
-                                      <div className="flex items-center justify-between gap-2 border-b border-slate-200/50 pb-2.5">
-                                        <div className="min-w-0 flex items-center gap-2">
-                                          <div className="w-6 h-6 rounded-full bg-slate-200 text-slate-650 flex items-center justify-center font-bold text-[10px]">
-                                            {reg.teacher?.teacherName.charAt(0) || "U"}
+                                      return (
+                                        <div key={reg.id} className="p-4 bg-slate-50/50 border border-slate-200/60 rounded-xl space-y-3 hover:bg-slate-50 hover:shadow-2xs transition-all duration-200">
+                                          {/* Observer Header */}
+                                          <div className="flex items-center justify-between gap-2 border-b border-slate-200/50 pb-2.5">
+                                            <div className="min-w-0 flex items-center gap-2">
+                                              <div className="w-6 h-6 rounded-full bg-slate-200 text-slate-655 flex items-center justify-center font-bold text-[10px]">
+                                                {reg.teacher?.teacherName.charAt(0) || "U"}
+                                              </div>
+                                              <div className="min-w-0">
+                                                <p className="text-xs font-black text-slate-800">{reg.teacher?.teacherName}</p>
+                                                <p className="text-[9px] text-slate-400 font-bold">Mã GV: {reg.teacher?.teacherCode}</p>
+                                              </div>
+                                            </div>
+                                            <div className="flex items-center gap-1.5 shrink-0">
+                                              <span className="px-2 py-0.5 text-[9px] font-extrabold rounded-lg bg-violet-50 text-violet-755 border border-violet-200">
+                                                {evalData.totalScore !== null && evalData.totalScore !== undefined
+                                                  ? evalData.totalScore.toFixed(2) + "đ"
+                                                  : evalData.overallRating}
+                                              </span>
+                                              {passed ? (
+                                                <span className="px-2 py-0.5 text-[9px] font-black rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-250 uppercase tracking-widest">ĐẠT</span>
+                                              ) : (
+                                                <span className="px-2 py-0.5 text-[9px] font-black rounded-lg bg-rose-50 text-rose-700 border border-rose-250 uppercase tracking-widest">CHƯA ĐẠT</span>
+                                              )}
+                                            </div>
                                           </div>
-                                          <div className="min-w-0">
-                                            <p className="text-xs font-black text-slate-800">{reg.teacher?.teacherName}</p>
-                                            <p className="text-[9px] text-slate-400 font-bold">Mã GV: {reg.teacher?.teacherCode}</p>
+
+                                          {/* Requirement Scores badges */}
+                                          <div className="flex flex-wrap gap-1.5">
+                                            {isK12 ? (
+                                              [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((num) => {
+                                                const scoreKey = "score" + num;
+                                                const scoreVal = evalData[scoreKey] !== null && evalData[scoreKey] !== undefined
+                                                  ? Number(evalData[scoreKey])
+                                                  : 0;
+                                                const maxScores = [1.5, 1.5, 2.0, 2.0, 1.0, 2.0, 3.0, 2.0, 2.0, 2.0, 1.0];
+                                                const maxVal = maxScores[num - 1];
+                                                const isPassed = scoreVal >= maxVal * 0.5;
+
+                                                let stdClass = "";
+                                                let labelTextClass = "";
+                                                if (isPassed) {
+                                                  if (num <= 2) {
+                                                    stdClass = "bg-teal-50 text-teal-700 border-teal-200/80";
+                                                    labelTextClass = "text-teal-700/60 font-bold";
+                                                  } else if (num <= 5) {
+                                                    stdClass = "bg-sky-50 text-sky-700 border-sky-200/80";
+                                                    labelTextClass = "text-sky-700/60 font-bold";
+                                                  } else if (num <= 9) {
+                                                    stdClass = "bg-indigo-50 text-indigo-700 border-indigo-200/80";
+                                                    labelTextClass = "text-indigo-700/60 font-bold";
+                                                  } else {
+                                                    stdClass = "bg-amber-50 text-amber-700 border-amber-200/80";
+                                                    labelTextClass = "text-amber-700/60 font-bold";
+                                                  }
+                                                } else {
+                                                  stdClass = "bg-rose-50/70 text-rose-550 border-rose-150";
+                                                  labelTextClass = "text-rose-400 font-bold";
+                                                }
+
+                                                return (
+                                                  <span key={num} className={"inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[8px] font-extrabold border rounded-md shadow-2xs " + stdClass}>
+                                                    <span className={labelTextClass}>Y{num}:</span>
+                                                    <span>{scoreVal.toFixed(1)}</span>
+                                                  </span>
+                                                );
+                                              })
+                                            ) : (
+                                              [1, 2, 3, 4, 5].map((num) => {
+                                                const critKey = "criterion" + num;
+                                                const ratingLabels = { 4: "Tốt", 3: "Khá", 2: "Tr.bình", 1: "Yếu" };
+                                                const critVal = evalData[critKey] !== null && evalData[critKey] !== undefined
+                                                  ? evalData[critKey]
+                                                  : 0;
+                                                const critLabel = ratingLabels[critVal] || "-";
+                                                const isPassed = critVal >= 3;
+                                                return (
+                                                  <span key={num} className={"inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[8px] font-extrabold border rounded-md shadow-2xs " + (
+                                                    isPassed 
+                                                      ? "bg-teal-50 text-teal-700 border-teal-200/80" 
+                                                      : "bg-rose-50/70 text-rose-550 border-rose-150"
+                                                  )}>
+                                                    <span className={isPassed ? "text-teal-700/60 font-bold" : "text-rose-455 font-bold"}>T{num}:</span>
+                                                    <span>{critLabel}</span>
+                                                  </span>
+                                                );
+                                              })
+                                            )}
+                                          </div>
+
+                                          {/* Strengths & Improvements */}
+                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[10px] border-t border-slate-200/50 pt-2.5">
+                                            {evalData.strengths && (
+                                              <div className="bg-emerald-50/30 border border-emerald-100/60 p-2.5 rounded-xl text-emerald-800">
+                                                <span className="font-extrabold flex items-center gap-1 mb-0.5">
+                                                  <ThumbsUp className="w-3.5 h-3.5 text-emerald-600" />
+                                                  <span>Ưu điểm:</span>
+                                                </span>
+                                                <span className="italic block leading-relaxed">{evalData.strengths}</span>
+                                              </div>
+                                            )}
+                                            {evalData.improvements && (
+                                              <div className="bg-amber-50/30 border border-amber-100/60 p-2.5 rounded-xl text-amber-800">
+                                                <span className="font-extrabold flex items-center gap-1 mb-0.5">
+                                                  <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
+                                                  <span>Góp ý phát triển:</span>
+                                                </span>
+                                                <span className="italic block leading-relaxed">{evalData.improvements}</span>
+                                              </div>
+                                            )}
                                           </div>
                                         </div>
-                                        <div className="flex items-center gap-1.5 shrink-0">
-                                          <span className="px-2 py-0.5 text-[9px] font-extrabold rounded-lg bg-violet-50 text-violet-755 border border-violet-200">
-                                            {evalData.totalScore !== null && evalData.totalScore !== undefined
-                                              ? evalData.totalScore.toFixed(2) + "đ"
-                                              : evalData.overallRating}
-                                          </span>
-                                          {passed ? (
-                                            <span className="px-2 py-0.5 text-[9px] font-black rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-250 uppercase tracking-widest">ĐẠT</span>
-                                          ) : (
-                                            <span className="px-2 py-0.5 text-[9px] font-black rounded-lg bg-rose-50 text-rose-700 border border-rose-250 uppercase tracking-widest">CHƯA ĐẠT</span>
-                                          )}
-                                        </div>
-                                      </div>
-
-                                      {/* Requirement Scores badges */}
-                                      <div className="flex flex-wrap gap-1.5">
-                                        {isK12 ? (
-                                          [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((num) => {
-                                            const scoreKey = "score" + num;
-                                            const scoreVal = evalData[scoreKey] !== null && evalData[scoreKey] !== undefined
-                                              ? Number(evalData[scoreKey])
-                                              : 0;
-                                            const maxScores = [1.5, 1.5, 2.0, 2.0, 1.0, 2.0, 3.0, 2.0, 2.0, 2.0, 1.0];
-                                            const maxVal = maxScores[num - 1];
-                                            const isPassed = scoreVal >= maxVal * 0.5;
-
-                                            let stdClass = "";
-                                            let labelTextClass = "";
-                                            if (isPassed) {
-                                              if (num <= 2) {
-                                                stdClass = "bg-teal-50 text-teal-700 border-teal-200/80";
-                                                labelTextClass = "text-teal-700/60 font-bold";
-                                              } else if (num <= 5) {
-                                                stdClass = "bg-sky-50 text-sky-700 border-sky-200/80";
-                                                labelTextClass = "text-sky-700/60 font-bold";
-                                              } else if (num <= 9) {
-                                                stdClass = "bg-indigo-50 text-indigo-700 border-indigo-200/80";
-                                                labelTextClass = "text-indigo-700/60 font-bold";
-                                              } else {
-                                                stdClass = "bg-amber-50 text-amber-700 border-amber-200/80";
-                                                labelTextClass = "text-amber-700/60 font-bold";
-                                              }
-                                            } else {
-                                              stdClass = "bg-rose-50/70 text-rose-550 border-rose-150";
-                                              labelTextClass = "text-rose-400 font-bold";
-                                            }
-
-                                            return (
-                                              <span key={num} className={"inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[8px] font-extrabold border rounded-md shadow-2xs " + stdClass}>
-                                                <span className={labelTextClass}>Y{num}:</span>
-                                                <span>{scoreVal.toFixed(1)}</span>
-                                              </span>
-                                            );
-                                          })
-                                        ) : (
-                                          [1, 2, 3, 4, 5].map((num) => {
-                                            const critKey = "criterion" + num;
-                                            const ratingLabels = { 4: "Tốt", 3: "Khá", 2: "Tr.bình", 1: "Yếu" };
-                                            const critVal = evalData[critKey] !== null && evalData[critKey] !== undefined
-                                              ? evalData[critKey]
-                                              : 0;
-                                            const critLabel = ratingLabels[critVal] || "-";
-                                            const isPassed = critVal >= 3;
-                                            return (
-                                              <span key={num} className={"inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[8px] font-extrabold border rounded-md shadow-2xs " + (
-                                                isPassed 
-                                                  ? "bg-teal-50 text-teal-700 border-teal-200/80" 
-                                                  : "bg-rose-50/70 text-rose-550 border-rose-150"
-                                              )}>
-                                                <span className={isPassed ? "text-teal-700/60 font-bold" : "text-rose-455 font-bold"}>T{num}:</span>
-                                                <span>{critLabel}</span>
-                                              </span>
-                                            );
-                                          })
-                                        )}
-                                      </div>
-
-                                      {/* Strengths & Improvements */}
-                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[10px] border-t border-slate-200/50 pt-2.5">
-                                        {evalData.strengths && (
-                                          <div className="bg-emerald-50/30 border border-emerald-100/60 p-2.5 rounded-xl text-emerald-800">
-                                            <span className="font-extrabold flex items-center gap-1 mb-0.5">
-                                              <ThumbsUp className="w-3.5 h-3.5 text-emerald-600" />
-                                              <span>Ưu điểm:</span>
-                                            </span>
-                                            <span className="italic block leading-relaxed">{evalData.strengths}</span>
-                                          </div>
-                                        )}
-                                        {evalData.improvements && (
-                                          <div className="bg-amber-50/30 border border-amber-100/60 p-2.5 rounded-xl text-amber-800">
-                                            <span className="font-extrabold flex items-center gap-1 mb-0.5">
-                                              <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
-                                              <span>Góp ý phát triển:</span>
-                                            </span>
-                                            <span className="italic block leading-relaxed">{evalData.improvements}</span>
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  );
-                                })}
+                                      );
+                                    })}
+                                  </div>
+                                )}
                               </div>
-                            )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  evaluations.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center flex-1 text-slate-400 py-16">
+                      <div className="w-16 h-16 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-350 mb-4 shadow-2xs">
+                        <PieChart className="w-8 h-8 stroke-1" />
+                      </div>
+                      <p className="text-xs font-black uppercase tracking-widest text-slate-500">Chưa có dữ liệu đánh giá</p>
+                      <p className="text-[11px] text-slate-400 mt-1.5 text-center max-w-sm leading-relaxed">Giáo viên này chưa nhận được phiếu đánh giá nào từ giáo viên dự giờ trong tháng/kỳ học này để phân tích.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-6 max-h-[520px] overflow-y-auto pr-1 custom-scrollbar">
+                      {/* Competency Dashboard */}
+                      <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
+                        {/* Left: Radar Competency Map */}
+                        <div className="md:col-span-5 flex justify-center">
+                          {renderRadarChart()}
+                        </div>
+
+                        {/* Right: Detailed Competency List */}
+                        <div className="md:col-span-7 space-y-3 bg-slate-50/30 p-4 rounded-3xl border border-slate-200/60 shadow-xs">
+                          <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                            <Award className="w-4 h-4 text-teal-650" />
+                            <span>Biểu đồ năng lực dạy học</span>
+                          </h4>
+                          <div className="space-y-3">
+                            {competencyData.map((item) => {
+                              let colorClass = "from-teal-500 to-emerald-500";
+                              if (item.standard === 1) colorClass = "from-teal-500 to-emerald-500";
+                              else if (item.standard === 2) colorClass = "from-sky-500 to-blue-500";
+                              else if (item.standard === 3) colorClass = "from-indigo-500 to-violet-500";
+                              else colorClass = "from-amber-500 to-orange-500";
+
+                              return (
+                                <div key={item.id} className="space-y-1">
+                                  <div className="flex items-center justify-between text-xs">
+                                    <span className="font-bold text-slate-700 text-[10px] truncate max-w-[200px]">
+                                      {item.id}. {item.label.split(":")[1] || item.label}
+                                    </span>
+                                    <span className="font-black text-slate-500 text-[10px]">
+                                      {item.avg.toFixed(2)}/{item.max.toFixed(1)}đ ({item.pct}%)
+                                    </span>
+                                  </div>
+                                  <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-200/50">
+                                    <div 
+                                      className={"h-full rounded-full bg-gradient-to-r " + colorClass}
+                                      style={{ width: item.pct + "%" }}
+                                    />
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
+                      </div>
+
+                      {/* Weakness Analysis Section */}
+                      <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
+                        <div>
+                          <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5 border-b border-slate-100 pb-3">
+                            <AlertCircle className="w-4 h-4 text-rose-500" />
+                            <span>Theo dõi điểm yếu dạy học (% Số lần điểm thấp hơn 70% quy định)</span>
+                          </h4>
+                          <p className="text-[10px] text-slate-400 mt-1.5 leading-relaxed">
+                            Chỉ số này thống kê phần trăm số phiếu đánh giá mà tiêu chí của giáo viên ở mức yếu/cần cải thiện. Tiêu chí có tỷ lệ % cao nhất đại diện cho những điểm yếu cần ưu tiên khắc phục và đào tạo phát triển.
+                          </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                          {sortedWeaknesses.slice(0, 4).map((weakness, idx) => {
+                            const isHighRisk = weakness.lowPct >= 40;
+                            const isMediumRisk = weakness.lowPct >= 15 && weakness.lowPct < 40;
+
+                            let borderClass = "border-slate-200";
+                            let bgClass = "bg-slate-50/50";
+                            let badgeClass = "bg-slate-100 text-slate-550 border-slate-200";
+                            
+                            if (isHighRisk) {
+                              borderClass = "border-rose-200 border-l-4 border-l-rose-500";
+                              bgClass = "bg-rose-50/30";
+                              badgeClass = "bg-rose-50 text-rose-700 border-rose-250";
+                            } else if (isMediumRisk) {
+                              borderClass = "border-amber-200 border-l-4 border-l-amber-500";
+                              bgClass = "bg-amber-50/30";
+                              badgeClass = "bg-amber-50 text-amber-700 border-amber-250";
+                            }
+
+                            return (
+                              <div key={weakness.id} className={"p-3.5 border rounded-2xl flex items-center justify-between gap-3 " + bgClass + " " + borderClass}>
+                                <div className="min-w-0">
+                                  <span className="text-[9px] font-black text-slate-450 block tracking-widest uppercase">ƯU TIÊN {idx + 1}</span>
+                                  <h5 className="font-extrabold text-xs text-slate-750 truncate mt-0.5">{weakness.id}. {weakness.label.split(":")[1] || weakness.label}</h5>
+                                  <p className="text-[9px] font-medium text-slate-400 mt-0.5">Hiệu suất trung bình: {weakness.avgPct}%</p>
+                                </div>
+                                <div className="shrink-0 text-right">
+                                  <span className={"px-2 py-0.5 rounded-lg text-[10px] font-black border shadow-2xs " + badgeClass}>
+                                    {weakness.lowPct}% Điểm yếu
+                                  </span>
+                                  <span className="block text-[8px] text-slate-455 mt-1 font-bold">{weakness.lowCount} / {evaluations.length} phiếu</span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* Recommendations Action Card */}
+                        {sortedWeaknesses[0] && sortedWeaknesses[0].lowPct > 0 && (
+                          <div className="bg-gradient-to-r from-teal-50/40 to-emerald-50/20 border border-teal-200 rounded-2xl p-4 flex gap-3.5 items-start mt-3">
+                            <div className="p-2 bg-white text-[#00A19A] rounded-xl border border-teal-250 shrink-0 shadow-2xs">
+                              <MessageSquare className="w-5 h-5" />
+                            </div>
+                            <div className="space-y-1 min-w-0">
+                              <h6 className="font-black text-xs text-[#0A3230] uppercase tracking-wider">Đề xuất phát triển chuyên môn (Chăm sóc & Đào tạo)</h6>
+                              <p className="text-[10.5px] text-slate-655 leading-relaxed">
+                                Dựa trên phân tích điểm yếu, giáo viên có tỷ lệ điểm thấp cao nhất ở <span className="font-black text-red-650">{sortedWeaknesses[0].id} ({sortedWeaknesses[0].lowPct}%)</span> và <span className="font-bold text-amber-650">{sortedWeaknesses[1] ? sortedWeaknesses[1].id + " (" + sortedWeaknesses[1].lowPct + "%)" : ""}</span>. Tổ chuyên môn khuyến nghị cần tổ chức dự giờ chuyên đề bổ sung hoặc cặp đôi kèm cặp (coaching) tập trung vào các năng lực này.
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
                 )}
-              </div>
-            );
-          })()}
+            </div>
+          );
+})()}
         </div>
       </div>
     </div>
