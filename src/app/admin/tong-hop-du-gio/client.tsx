@@ -169,7 +169,7 @@ export function AdminTongHopClient({
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Teachers List */}
-        <div className="lg:col-span-5 flex flex-col gap-4">
+        <div className="lg:col-span-4 flex flex-col gap-4">
           {/* Tabs / Tags */}
           <div className="bg-white border border-slate-150 rounded-2xl p-2 shadow-sm flex flex-wrap gap-1.5 shrink-0">
             {["Phổ thông K-12", "Mầm non", "Điều hành"].map(tab => {
@@ -303,7 +303,7 @@ export function AdminTongHopClient({
         </div>
 
         {/* Right Column: Teacher Details */}
-        <div className="lg:col-span-7 bg-white p-6 rounded-3xl border-2 border-slate-100 shadow-sm min-h-[500px] flex flex-col">
+        <div className="lg:col-span-8 bg-white p-6 rounded-3xl border-2 border-slate-100 shadow-sm min-h-[500px] flex flex-col">
           {!selectedTeacherId ? (
             <div className="flex flex-col items-center justify-center flex-1 text-slate-400 py-12">
               <ClipboardList className="w-16 h-16 stroke-1 text-slate-200 mb-3" />
