@@ -1,1 +1,0 @@
-const fs = require(" fs\); const p = \src/app/admin/input-assessments/client.tsx\; let c = fs.readFileSync(p, \utf8\).split(\\n\); const nc = c.filter(l => !l.includes(\campusId\) && !l.includes(\C? s?\) && !l.includes(\campuses\) && !l.includes(\admissionCampus\)); fs.writeFileSync(p, nc.join(\\n\));

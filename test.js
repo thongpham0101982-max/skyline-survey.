@@ -1,1 +1,0 @@
-const { PrismaClient } = require('@prisma/client'); const prisma = new PrismaClient(); async function main() { const t = await prisma.teacher.findUnique({where: {teacherCode: '0301000025'}, include: {departmentRel: true}}); console.log(t); } main().catch(console.error).finally(() => prisma.$disconnect());

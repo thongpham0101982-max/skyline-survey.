@@ -1,1 +1,0 @@
-const fs = require(" fs\); const content = fs.readFileSync(\src/app/admin/input-assessments/client.tsx\, \utf8\); const matches = content.match(/label=\\\.*?\\\/g); if (matches) { matches.forEach(m => console.log(m)); }
