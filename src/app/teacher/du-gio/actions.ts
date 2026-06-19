@@ -42,7 +42,14 @@ export async function getObservationData() {
         id: true,
         teacherName: true,
         teacherCode: true,
-        departmentId: true
+        departmentId: true,
+        position: true,
+        observerType: true,
+        observeeType: true,
+        requiredObserved: true,
+        observedUnit: true,
+        requiredTaught: true,
+        taughtUnit: true
       },
       orderBy: { teacherName: "asc" }
     })
@@ -604,3 +611,65 @@ export async function updateObservationSlot(slotId: string, data: {
   }
 }
 
+export async function updateTeacherObservationTargets(
+  teacherId: string,
+  data: {
+    observerType?: string | null
+    observeeType?: string | null
+    requiredObserved: number
+    observedUnit: string
+    requiredTaught: number
+    taughtUnit: string
+  }
+) {
+  try {
+    const session = await auth()
+    if (!session || !session.user) {
+      return { success: false, error: "Unauthorized" }
+    }
+
+    const roleCode = (session.user as any)?.role || "TEACHER"
+    const isSuperAdmin = roleCode === "ADMIN"
+
+    // Also allow TTCM to update targets for teachers in their department
+    const currentTeacher = await prisma.teacher.findUnique({
+      where: { userId: session.user.id },
+      select: { position: true, departmentId: true }
+    })
+
+    const isTTCM = currentTeacher?.position === "TTCM"
+
+    if (!isSuperAdmin && !isTTCM) {
+      return { success: false, error: "Bạn không có quyền cấu hình chỉ tiêu" }
+    }
+
+    // If they are TTCM, make sure the target teacher is in their department
+    if (isTTCM && !isSuperAdmin) {
+      const targetTeacher = await prisma.teacher.findUnique({
+        where: { id: teacherId },
+        select: { departmentId: true }
+      })
+      if (!targetTeacher || targetTeacher.departmentId !== currentTeacher.departmentId) {
+        return { success: false, error: "Bạn chỉ có thể cấu hình chỉ tiêu cho giáo viên thuộc tổ của mình" }
+      }
+    }
+
+    await prisma.teacher.update({
+      where: { id: teacherId },
+      data: {
+        observerType: data.observerType || null,
+        observeeType: data.observeeType || null,
+        requiredObserved: data.requiredObserved,
+        observedUnit: data.observedUnit,
+        requiredTaught: data.requiredTaught,
+        taughtUnit: data.taughtUnit
+      }
+    })
+
+    revalidatePath("/teacher/du-gio")
+    revalidatePath("/admin/tong-hop-du-gio")
+    return { success: true }
+  } catch (e: any) {
+    return { success: false, error: e.message }
+  }
+}

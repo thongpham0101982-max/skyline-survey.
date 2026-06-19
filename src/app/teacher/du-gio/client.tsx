@@ -1026,10 +1026,10 @@ export function ObservationClient({
                             </div>
                             <div className="flex gap-2 shrink-0">
                               <span className="px-2 py-0.5 bg-emerald-50 border border-emerald-100 text-emerald-600 rounded-lg text-[9px] font-black uppercase">
-                                Dạy: {stats.taughtCount}
+                                Dạy: {stats.taughtCount}{teacher.requiredTaught ? `/${teacher.requiredTaught}` : ""}
                               </span>
                               <span className="px-2 py-0.5 bg-violet-50 border border-violet-100 text-violet-600 rounded-lg text-[9px] font-black uppercase">
-                                Dự: {stats.observedCount}
+                                Dự: {stats.observedCount}{teacher.requiredObserved ? `/${teacher.requiredObserved}` : ""}
                               </span>
                             </div>
                           </button>
@@ -1068,6 +1068,20 @@ export function ObservationClient({
                         <div>
                           <h3 className="text-base font-black text-slate-800">{selTeacher?.teacherName}</h3>
                           <p className="text-xs font-bold text-slate-400 mt-0.5">Mã GV: {selTeacher?.teacherCode}</p>
+                          {selTeacher && (selTeacher.observerType || selTeacher.observeeType) && (
+                            <div className="flex flex-wrap gap-1.5 mt-1.5 text-[9px] font-extrabold">
+                              {selTeacher.observerType && (
+                                <span className="px-1.5 py-0.5 bg-violet-50 text-violet-700 border border-violet-100 rounded-lg">
+                                  Dự: {selTeacher.requiredObserved} tiết/{selTeacher.observedUnit} ({selTeacher.observerType})
+                                </span>
+                              )}
+                              {selTeacher.observeeType && (
+                                <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-lg">
+                                  Dạy: {selTeacher.requiredTaught} tiết/{selTeacher.taughtUnit} ({selTeacher.observeeType})
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </div>
                         <span className="px-3 py-1 bg-[#00A19A]/10 text-[#00A19A] border border-[#00A19A]/20 rounded-xl text-xs font-black">
                           {filteredSlots.length} / {selTeacherSlots.length} tiết dạy

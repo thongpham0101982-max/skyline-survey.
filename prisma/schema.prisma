@@ -72,6 +72,13 @@ model Teacher {
   TeachingAssignment TeachingAssignment[]
   hostObservationSlots  ObservationSlot[]         @relation("HostTeacher")
   observerRegistrations ObservationRegistration[] @relation("ObserverTeacher")
+
+  observerType       String?
+  observeeType       String?
+  requiredObserved   Int                      @default(0)
+  observedUnit       String                   @default("tháng")
+  requiredTaught     Int                      @default(0)
+  taughtUnit         String                   @default("tháng")
 }
 
 model Campus {

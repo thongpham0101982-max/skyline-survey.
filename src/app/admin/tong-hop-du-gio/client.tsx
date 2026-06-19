@@ -1,6 +1,7 @@
 ﻿"use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
+import { updateTeacherObservationTargets } from "@/app/teacher/du-gio/actions"
 import { 
   ClipboardList, CheckCircle, PieChart, FileText, Calendar, Layers,
   ChevronDown, ChevronUp, AlertCircle, Plus, Search, X, Check,
@@ -88,6 +89,68 @@ export function AdminTongHopClient({
     : (activeDepartments.find(d => d.id === initialFilters.deptId)?.id || activeDepartments[0]?.id || "");
 
   const [selectedDeptId, setSelectedDeptId] = useState(initialDeptId)
+  
+  const [observerType, setObserverType] = useState("")
+  const [observeeType, setObserveeType] = useState("")
+  const [requiredObserved, setRequiredObserved] = useState(0)
+  const [observedUnit, setObservedUnit] = useState("tháng")
+  const [requiredTaught, setRequiredTaught] = useState(0)
+  const [taughtUnit, setTaughtUnit] = useState("tháng")
+  const [savingTargets, setSavingTargets] = useState(false)
+
+  useEffect(() => {
+    if (selectedTeacherId) {
+      const teacher = teachers.find(t => t.id === selectedTeacherId);
+      if (teacher) {
+        setObserverType(teacher.observerType || "");
+        setObserveeType(teacher.observeeType || "");
+        setRequiredObserved(teacher.requiredObserved || 0);
+        setObservedUnit(teacher.observedUnit || "tháng");
+        setRequiredTaught(teacher.requiredTaught || 0);
+        setTaughtUnit(teacher.taughtUnit || "tháng");
+      }
+    }
+  }, [selectedTeacherId, teachers]);
+
+  const handleObserverTypeChange = (type) => {
+    setObserverType(type);
+    if (type === "Ban ĐHCM") {
+      setRequiredObserved(10);
+      setObservedUnit("tháng");
+    } else if (type === "TTCM") {
+      setRequiredObserved(8);
+      setObservedUnit("tháng");
+    } else if (type === "Nhóm trưởng CM CS") {
+      setRequiredObserved(8);
+      setObservedUnit("tháng");
+    } else if (type === "Giám đốc Điều hành cơ sở") {
+      setRequiredObserved(4);
+      setObservedUnit("tháng");
+    } else if (type === "Giáo viên mới") {
+      setRequiredObserved(10);
+      setObservedUnit("tháng");
+    } else if (type === "Giáo viên cũ") {
+      setRequiredObserved(4);
+      setObservedUnit("tháng");
+    }
+  };
+
+  const handleObserveeTypeChange = (type) => {
+    setObserveeType(type);
+    if (type === "TTCM") {
+      setRequiredTaught(1);
+      setTaughtUnit("năm");
+    } else if (type === "Nhóm trưởng CM CS") {
+      setRequiredTaught(1);
+      setTaughtUnit("năm");
+    } else if (type === "Giáo viên mới") {
+      setRequiredTaught(1);
+      setTaughtUnit("tháng");
+    } else if (type === "Giáo viên cũ") {
+      setRequiredTaught(1);
+      setTaughtUnit("học kỳ");
+    }
+  };
   const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null)
   const [activeDetailTab, setActiveDetailTab] = useState("to-cm")
   
@@ -698,11 +761,11 @@ export function AdminTongHopClient({
                       <div className="flex flex-col gap-1 items-end shrink-0">
                         <div className="flex items-center gap-1 text-[8px] font-black uppercase tracking-wider">
                           <span className="text-slate-450 font-bold text-[7px]">Dạy:</span>
-                          <span className="px-1.5 py-0.2 bg-emerald-50 text-emerald-700 border border-emerald-200/60 rounded font-bold">{stats.taughtCount} tiết</span>
+                          <span className="px-1.5 py-0.2 bg-emerald-50 text-emerald-700 border border-emerald-200/60 rounded font-bold">{stats.taughtCount}{teacher.requiredTaught ? `/${teacher.requiredTaught}` : ""} tiết</span>
                         </div>
                         <div className="flex items-center gap-1 text-[8px] font-black uppercase tracking-wider">
                           <span className="text-slate-450 font-bold text-[7px]">Dự:</span>
-                          <span className="px-1.5 py-0.2 bg-violet-50 text-violet-700 border border-violet-200/60 rounded font-bold">{stats.observedCount} tiết</span>
+                          <span className="px-1.5 py-0.2 bg-violet-50 text-violet-700 border border-violet-200/60 rounded font-bold">{stats.observedCount}{teacher.requiredObserved ? `/${teacher.requiredObserved}` : ""} tiết</span>
                         </div>
                       </div>
                     </button>
@@ -729,12 +792,20 @@ export function AdminTongHopClient({
             >
               Phân tích Năng lực & Điểm yếu
             </button>
-            <button
+<button
               onClick={() => setActiveDetailTab("to-cm")}
               className={"pb-2 px-1 font-extrabold border-b-2 transition-all duration-200 " + (activeDetailTab === "to-cm" ? "border-violet-600 text-violet-600" : "border-transparent text-slate-400 hover:text-slate-650")}
             >
               🏫 Năng lực Tổ CM
             </button>
+            {selectedTeacherId && (
+              <button 
+                onClick={() => setActiveDetailTab("chi-tieu")}
+                className={"pb-2 px-1 font-extrabold border-b-2 transition-all duration-200 " + (activeDetailTab === "chi-tieu" ? theme.btn : "border-transparent text-slate-400 hover:text-slate-650")}
+              >
+                🎯 Cấu hình chỉ tiêu
+              </button>
+            )}
           </div>
 
           {/* Tab Content */}
@@ -951,9 +1022,26 @@ export function AdminTongHopClient({
                     )}>
                       {selTeacher ? selTeacher.teacherName.charAt(0) : "G"}
                     </div>
-                    <div>
+<div>
                       <h3 className="text-base font-black text-[#0A3230]">{selTeacher ? selTeacher.teacherName : ""}</h3>
-                      <p className="text-[10px] font-bold text-slate-400 mt-0.5 uppercase tracking-wider">Mã GV: {selTeacher ? selTeacher.teacherCode : ""}</p>
+                      <p className="text-[10px] font-bold text-slate-400 mt-0.5 uppercase tracking-wider flex items-center gap-2">
+                        <span>Mã GV: {selTeacher ? selTeacher.teacherCode : ""}</span>
+                        {selTeacher?.position && <span className="px-1.5 py-0.2 bg-slate-100 text-slate-600 rounded text-[8px] font-black uppercase">{selTeacher.position}</span>}
+                      </p>
+                      {selTeacher && (selTeacher.observerType || selTeacher.observeeType) && (
+                        <div className="flex flex-wrap gap-1.5 mt-1.5 text-[9px] font-extrabold">
+                          {selTeacher.observerType && (
+                            <span className="px-1.5 py-0.5 bg-violet-50 text-violet-755 border border-violet-200 rounded-lg">
+                              Dự: {selTeacher.requiredObserved} tiết/{selTeacher.observedUnit} ({selTeacher.observerType})
+                            </span>
+                          )}
+                          {selTeacher.observeeType && (
+                            <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-755 border border-emerald-200 rounded-lg">
+                              Dạy: {selTeacher.requiredTaught} tiết/{selTeacher.taughtUnit} ({selTeacher.observeeType})
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <span className={"px-3.5 py-1.5 border rounded-2xl text-[10px] font-black uppercase tracking-wider shadow-2xs " + (
@@ -1184,6 +1272,162 @@ export function AdminTongHopClient({
                       </div>
                     )}
                   </>
+                ) : activeDetailTab === "chi-tieu" ? (
+                  <div className="space-y-6 max-h-[520px] overflow-y-auto pr-1 custom-scrollbar">
+                    <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm space-y-5">
+                      <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+                        <Award className="w-5 h-5 text-[#00A19A]" />
+                        <h4 className="font-black text-sm text-[#0A3230] uppercase">Cấu hình chỉ tiêu dự giờ</h4>
+                      </div>
+
+                      {/* Observer targets */}
+                      <div className="space-y-4">
+                        <h5 className="font-extrabold text-xs text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                          <span>1. Chỉ tiêu người đi dự giờ (Số tiết dự giờ tối thiểu)</span>
+                        </h5>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Nhóm đi dự giờ (Theo quy định)</label>
+                            <select
+                              value={observerType}
+                              onChange={(e) => handleObserverTypeChange(e.target.value)}
+                              className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A19A] outline-none"
+                            >
+                              <option value="">-- Chưa khai báo --</option>
+                              <option value="Ban ĐHCM">Ban ĐHCM (10 tiết/tháng)</option>
+                              <option value="TTCM">TTCM (8 tiết/tháng)</option>
+                              <option value="Nhóm trưởng CM CS">Nhóm trưởng CM CS (8 tiết/tháng)</option>
+                              <option value="Giám đốc Điều hành cơ sở">Giám đốc Điều hành cơ sở (4 tiết/tháng)</option>
+                              <option value="Giáo viên mới">Giáo viên mới (10 tiết/tháng)</option>
+                              <option value="Giáo viên cũ">Giáo viên cũ (trên 2 năm kinh nghiệm) (4 tiết/tháng)</option>
+                              <option value="custom">Khác (Tự điền)</option>
+                            </select>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Số tiết dự</label>
+                              <input
+                                type="number"
+                                min="0"
+                                value={requiredObserved}
+                                onChange={(e) => {
+                                  setRequiredObserved(parseInt(e.target.value) || 0);
+                                  setObserverType("custom");
+                                }}
+                                className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A19A] outline-none"
+                              />
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Đơn vị</label>
+                              <select
+                                value={observedUnit}
+                                onChange={(e) => {
+                                  setObservedUnit(e.target.value);
+                                  setObserverType("custom");
+                                }}
+                                className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A19A] outline-none"
+                              >
+                                <option value="tháng">tiết/tháng</option>
+                                <option value="học kỳ">tiết/học kỳ</option>
+                                <option value="năm">tiết/năm</option>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Observee targets */}
+                      <div className="space-y-4 pt-4 border-t border-slate-100">
+                        <h5 className="font-extrabold text-xs text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                          <span>2. Chỉ tiêu người được dự giờ (Số tiết dạy tối thiểu)</span>
+                        </h5>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Nhóm được dự giờ (Theo quy định)</label>
+                            <select
+                              value={observeeType}
+                              onChange={(e) => handleObserveeTypeChange(e.target.value)}
+                              className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A19A] outline-none"
+                            >
+                              <option value="">-- Chưa khai báo --</option>
+                              <option value="TTCM">TTCM (1 tiết/năm)</option>
+                              <option value="Nhóm trưởng CM CS">Nhóm trưởng CM CS (1 tiết/năm)</option>
+                              <option value="Giáo viên mới">Giáo viên mới (1 tiết/tháng)</option>
+                              <option value="Giáo viên cũ">Giáo viên cũ (trên 2 năm kinh nghiệm) (1 tiết/học kỳ)</option>
+                              <option value="custom">Khác (Tự điền)</option>
+                            </select>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Số tiết dạy</label>
+                              <input
+                                type="number"
+                                min="0"
+                                value={requiredTaught}
+                                onChange={(e) => {
+                                  setRequiredTaught(parseInt(e.target.value) || 0);
+                                  setObserveeType("custom");
+                                }}
+                                className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A19A] outline-none"
+                              />
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Đơn vị</label>
+                              <select
+                                value={taughtUnit}
+                                onChange={(e) => {
+                                  setTaughtUnit(e.target.value);
+                                  setObserveeType("custom");
+                                }}
+                                className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A19A] outline-none"
+                              >
+                                <option value="tháng">tiết/tháng</option>
+                                <option value="học kỳ">tiết/học kỳ</option>
+                                <option value="năm">tiết/năm</option>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Save button */}
+                      <div className="flex justify-end pt-4 border-t border-slate-100">
+                        <button
+                          disabled={savingTargets}
+                          onClick={async () => {
+                            if (!selectedTeacherId) return;
+                            setSavingTargets(true);
+                            const res = await updateTeacherObservationTargets(selectedTeacherId, {
+                              observerType: observerType === "custom" ? "Tự điền" : observerType,
+                              observeeType: observeeType === "custom" ? "Tự điền" : observeeType,
+                              requiredObserved,
+                              observedUnit,
+                              requiredTaught,
+                              taughtUnit
+                            });
+                            setSavingTargets(false);
+                            if (res.success) {
+                              alert("Cập nhật chỉ tiêu thành công!");
+                              const tIdx = teachers.findIndex(t => t.id === selectedTeacherId);
+                              if (tIdx > -1) {
+                                teachers[tIdx].observerType = observerType === "custom" ? "Tự điền" : observerType;
+                                teachers[tIdx].observeeType = observeeType === "custom" ? "Tự điền" : observeeType;
+                                teachers[tIdx].requiredObserved = requiredObserved;
+                                teachers[tIdx].observedUnit = observedUnit;
+                                teachers[tIdx].requiredTaught = requiredTaught;
+                                teachers[tIdx].taughtUnit = taughtUnit;
+                              }
+                            } else {
+                              alert("Lỗi: " + res.error);
+                            }
+                          }}
+                          className="px-5 py-2.5 bg-gradient-to-r from-[#0A3230] to-[#00A19A] text-white text-xs font-extrabold uppercase tracking-wider rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-50"
+                        >
+                          {savingTargets ? "Đang lưu..." : "Lưu cấu hình"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 ) : (
                   evaluations.length === 0 ? (
                     <div className="flex flex-col items-center justify-center flex-1 text-slate-400 py-16">
