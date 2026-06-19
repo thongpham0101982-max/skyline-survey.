@@ -26,6 +26,29 @@ interface AdminTongHopClientProps {
   isSuperAdmin: boolean
 }
 
+const maxScoresK12 = [1.5, 1.5, 2.0, 2.0, 1.0, 2.0, 3.0, 2.0, 2.0, 2.0, 1.0];
+const k12Labels = [
+  "Y1: Chuẩn bị giáo án, bám sát kiến thức kỹ năng",
+  "Y2: Sử dụng đồ dùng, thiết bị dạy học phù hợp",
+  "Y3: Nội dung bài giảng chính xác, khoa học",
+  "Y4: Đảm bảo tính hệ thống, trọng tâm bài dạy",
+  "Y5: Liên hệ thực tế đời sống, tính giáo dục",
+  "Y6: Không đọc chép, hỗ trợ kịp thời học sinh",
+  "Y7: Tổ chức học tập chủ động, hợp tác nhóm",
+  "Y8: Linh hoạt các khâu, phân phối thời gian hợp lý",
+  "Y9: Kết hợp các phương pháp, khuyến khích tư duy",
+  "Y10: Đánh giá quá trình học, học sinh nắm vững bài",
+  "Y11: Tiết dạy nhuần nhuyễn, sinh động, sáng tạo"
+];
+
+const preschoolLabels = [
+  "T1: Nội dung bài dạy phù hợp, chính xác",
+  "T2: Phương pháp giảng dạy hiệu quả, sáng tạo",
+  "T3: Tổ chức hoạt động học tập tích cực",
+  "T4: Sử dụng CNTT và phương tiện dạy học",
+  "T5: Kết quả học tập và tương tác của học sinh"
+];
+
 export function AdminTongHopClient({
   initialSlots, currentTeacher, subjects, departments, teachers, campuses, classes, initialFilters, isTTCM, isSuperAdmin
 }: AdminTongHopClientProps) {
@@ -57,7 +80,7 @@ export function AdminTongHopClient({
 
   const [selectedDeptId, setSelectedDeptId] = useState(initialDeptId)
   const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null)
-  const [activeDetailTab, setActiveDetailTab] = useState("lich-su")
+  const [activeDetailTab, setActiveDetailTab] = useState("to-cm")
   
   // Search & Filter states
   const [selectedMonth, setSelectedMonth] = useState<string>("all")
@@ -152,7 +175,7 @@ export function AdminTongHopClient({
   const handleTabChange = (tab: string) => {
     setActiveBlockTab(tab);
     setSelectedTeacherId(null);
-    setActiveDetailTab("lich-su");
+    setActiveDetailTab("to-cm");
     searchTeacherQuery !== "" && setSearchTeacherQuery("");
     
     const newActiveDepts = departments.filter(dept => {
@@ -348,7 +371,7 @@ export function AdminTongHopClient({
               ) : (
                 <select 
                   value={selectedDeptId} 
-                  onChange={e => { setSelectedDeptId(e.target.value); setSelectedTeacherId(null); setSearchTeacherQuery(""); }}
+                  onChange={e => { setSelectedDeptId(e.target.value); setSelectedTeacherId(null); setSearchTeacherQuery(""); setActiveDetailTab("to-cm"); }}
                   className="w-full text-sm font-semibold rounded-xl border border-slate-250 p-3 bg-slate-50/50 hover:bg-slate-50 text-slate-800 focus:bg-white focus:border-[#00A19A] focus:ring-4 focus:ring-[#00A19A]/10 transition-all outline-none appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2523475569%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:0.65rem_auto] bg-[right_1rem_center] bg-no-repeat pr-8"
                 >
                   {activeDepartments.map(dept => (
@@ -363,7 +386,7 @@ export function AdminTongHopClient({
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Lọc theo Tháng</label>
               <select 
                 value={selectedMonth} 
-                onChange={e => { setSelectedMonth(e.target.value); setSelectedTeacherId(null); }}
+                onChange={e => { setSelectedMonth(e.target.value); setSelectedTeacherId(null); setActiveDetailTab("to-cm"); }}
                 className="w-full text-sm font-semibold rounded-xl border border-slate-250 p-3 bg-slate-50/50 hover:bg-slate-50 text-slate-800 focus:bg-white focus:border-[#00A19A] focus:ring-4 focus:ring-[#00A19A]/10 transition-all outline-none appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2523475569%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:0.65rem_auto] bg-[right_1rem_center] bg-no-repeat pr-8"
               >
                 <option value="all">Tất cả các tháng</option>
@@ -383,11 +406,11 @@ export function AdminTongHopClient({
                   type="text" 
                   placeholder="Tìm tên hoặc mã giáo viên..."
                   value={searchTeacherQuery}
-                  onChange={e => { setSearchTeacherQuery(e.target.value); setSelectedTeacherId(null); }}
+                  onChange={e => { setSearchTeacherQuery(e.target.value); setSelectedTeacherId(null); setActiveDetailTab("to-cm"); }}
                   className="w-full text-xs font-semibold rounded-xl border border-slate-200 pl-9 pr-8 py-3 bg-slate-50/50 text-slate-850 placeholder-slate-400 focus:bg-white focus:ring-4 focus:ring-[#00A19A]/10 focus:border-[#00A19A] transition-all outline-none"
                 />
                 {searchTeacherQuery && (
-                  <button onClick={() => { setSearchTeacherQuery(""); setSelectedTeacherId(null); }} className="absolute right-3 top-3.5 text-slate-450 hover:text-slate-700">
+                  <button onClick={() => { setSearchTeacherQuery(""); setSelectedTeacherId(null); setActiveDetailTab("to-cm"); }} className="absolute right-3 top-3.5 text-slate-450 hover:text-slate-700">
                     <X className="w-3.5 h-3.5" />
                   </button>
                 )}
@@ -464,7 +487,129 @@ export function AdminTongHopClient({
 
         {/* Right Column: Teacher Details */}
         <div className="lg:col-span-8 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-md shadow-slate-100/30 min-h-[500px] flex flex-col border-t-4 border-t-[#0A3230]">
-          {!selectedTeacherId ? (
+          {/* Tab Switcher */}
+          <div className="flex gap-4 border-b border-slate-100 pb-2 shrink-0 text-xs mb-4">
+            <button 
+              onClick={() => setActiveDetailTab("lich-su")}
+              className={"pb-2 px-1 font-extrabold border-b-2 transition-all duration-200 " + (activeDetailTab === "lich-su" ? "border-[#00A19A] text-[#00A19A]" : "border-transparent text-slate-400 hover:text-slate-650")}
+            >
+              Lịch sử tiết dạy
+            </button>
+            <button 
+              onClick={() => setActiveDetailTab("phan-tich")}
+              className={"pb-2 px-1 font-extrabold border-b-2 transition-all duration-200 " + (activeDetailTab === "phan-tich" ? "border-[#00A19A] text-[#00A19A]" : "border-transparent text-slate-400 hover:text-slate-650")}
+            >
+              Phân tích Năng lực & Điểm yếu
+            </button>
+            <button
+              onClick={() => setActiveDetailTab("to-cm")}
+              className={"pb-2 px-1 font-extrabold border-b-2 transition-all duration-200 " + (activeDetailTab === "to-cm" ? "border-violet-600 text-violet-600" : "border-transparent text-slate-400 hover:text-slate-650")}
+            >
+              🏫 Năng lực Tổ CM
+            </button>
+          </div>
+
+          {/* Tab Content */}
+          {activeDetailTab === "to-cm" ? (
+            (() => {
+              const dep = []; const ids = new Set(deptTeachers.map(t => t.id));
+              initialSlots.forEach(sl => {
+                if (!ids.has(sl.teacherId)) return;
+                if (selectedMonth !== "all") {
+                  const d2 = new Date(sl.date);
+                  const mm2 = String(d2.getMonth() + 1).padStart(2, "0");
+                  if (d2.getFullYear() + "-" + mm2 !== selectedMonth) return;
+                }
+                sl.registrations.forEach(r => { if (r.evaluation) dep.push({ ev: r.evaluation, lv: sl.level }); });
+              });
+              const di = activeDepartments.find(d => d.id === selectedDeptId);
+              const dmn = di ? di.blockCM === "Mầm Non" : false;
+              const dc = [], dw = [];
+              if (dep.length > 0) {
+                if (!dmn) {
+                  for (let i = 1; i <= 11; i++) {
+                    const sk = "score" + i, mx = maxScoresK12[i - 1];
+                    const sm = dep.reduce((a, x) => a + (x.ev[sk] || 0), 0), av = sm / dep.length, pt = Math.round((av / mx) * 100);
+                    const lc = dep.filter(x => { const v = x.ev[sk] !== null ? Number(x.ev[sk]) : 0; return v < mx * 0.7; }).length, lp = Math.round((lc / dep.length) * 100);
+                    dc.push({ id: "Y" + i, lb: k12Labels[i - 1], av, mx, pt, std: i <= 2 ? 1 : i <= 5 ? 2 : i <= 9 ? 3 : 4 });
+                    dw.push({ id: "Y" + i, lb: k12Labels[i - 1], lc, lp, pt });
+                  }
+                } else {
+                  for (let i = 1; i <= 5; i++) {
+                    const ck = "criterion" + i;
+                    const sm = dep.reduce((a, x) => a + (x.ev[ck] || 0), 0), av = sm / dep.length, pt = Math.round((av / 4) * 100);
+                    const lc = dep.filter(x => (x.ev[ck] || 0) <= 2).length, lp = Math.round((lc / dep.length) * 100);
+                    dc.push({ id: "T" + i, lb: preschoolLabels[i - 1], av, mx: 4, pt, std: 1 });
+                    dw.push({ id: "T" + i, lb: preschoolLabels[i - 1], lc, lp, pt });
+                  }
+                }
+              }
+              const dsw = [...dw].sort((a, b) => b.lp - a.lp);
+              const tp2 = dmn ? 5 : 11, as2 = (2 * Math.PI) / tp2, ce = 150, rd = 100;
+              const gl2 = [25, 50, 75, 100];
+              const gp2 = gl2.map(lv => {
+                const pts = [];
+                for (let i = 0; i < tp2; i++) { const a = i * as2, rv = rd * (lv / 100); pts.push((ce + rv * Math.sin(a)) + "," + (ce - rv * Math.cos(a))); }
+                return pts.join(" ");
+              });
+              const al2 = [];
+              for (let i = 0; i < tp2; i++) { const a = i * as2; al2.push({ x1: ce, y1: ce, x2: ce + rd * Math.sin(a), y2: ce - rd * Math.cos(a), lb: (dmn ? "T" : "Y") + (i + 1), lx: ce + (rd + 20) * Math.sin(a), ly: ce - (rd + 20) * Math.cos(a) }); }
+              const dvp = dc.map((d, i) => { const a = i * as2, rv = rd * (d.pt / 100); return (ce + rv * Math.sin(a)) + "," + (ce - rv * Math.cos(a)); });
+              const dvpath = dvp.join(" ");
+              return (
+                <div className="space-y-6 max-h-[580px] overflow-y-auto pr-1 custom-scrollbar">
+                  <div className="bg-gradient-to-r from-violet-50/60 to-indigo-50/30 border border-violet-200/60 rounded-2xl p-4 flex items-center gap-3">
+                    <div className="p-2 bg-white text-violet-600 rounded-xl border border-violet-200 shrink-0"><Layers className="w-5 h-5" /></div>
+                    <div><h4 className="font-black text-sm text-[#0A3230]">{selectedDeptName}</h4>
+                    <p className="text-[10px] text-slate-500 mt-0.5">Tổng hợp toàn Tổ · {dep.length} phiếu · {deptTeachers.length} GV</p></div>
+                  </div>
+                  {dep.length === 0 ? (
+                    <div className="flex flex-col items-center py-16"><PieChart className="w-10 h-10 stroke-1 text-slate-300 mb-3" />
+                      <p className="text-xs font-black text-slate-400">Chưa có dữ liệu đánh giá</p></div>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
+                        <div className="md:col-span-5 flex justify-center">
+                          <div className="flex flex-col items-center bg-slate-50/50 p-4 rounded-3xl border border-slate-200/60">
+                            <span className="text-[10px] font-black text-violet-600 uppercase tracking-widest mb-2">Bản đồ Năng lực Tổ CM</span>
+                            <svg width="250" height="250" viewBox="0 0 300 300" className="overflow-visible">
+                              {gl2.map((lv, ix) => <polygon key={lv} points={gp2[ix]} fill="none" stroke="#e2e8f0" strokeWidth="1" strokeDasharray={lv === 100 ? "none" : "3,3"} />)}
+                              {gl2.map(lv => <text key={lv} x={ce} y={ce - rd * (lv / 100) + 4} textAnchor="middle" className="text-[8px] fill-slate-400">{lv}%</text>)}
+                              {al2.map((ax, ix) => <g key={ix}><line x1={ax.x1} y1={ax.y1} x2={ax.x2} y2={ax.y2} stroke="#e2e8f0" strokeWidth="1" /><text x={ax.lx} y={ax.ly + 4} textAnchor="middle" className="text-[10px] font-extrabold fill-[#0A3230]">{ax.lb}</text></g>)}
+                              {dvp.length > 0 && <polygon points={dvpath} fill="rgba(124,58,237,0.12)" stroke="#7c3aed" strokeWidth="2.5" />}
+                              {dc.map((d, i) => { const a = i * as2, rv = rd * (d.pt / 100), px = ce + rv * Math.sin(a), py = ce - rv * Math.cos(a); return <circle key={i} cx={px} cy={py} r="4" fill="#fff" stroke="#7c3aed" strokeWidth="2.5" />; })}
+                            </svg>
+                          </div>
+                        </div>
+                        <div className="md:col-span-7 space-y-3 bg-slate-50/30 p-4 rounded-3xl border border-slate-200/60">
+                          <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5"><Award className="w-4 h-4 text-violet-600" /><span>Năng lực dạy học toàn Tổ</span></h4>
+                          <div className="space-y-3">{dc.map(item => {
+                            let cl2 = "from-violet-500 to-indigo-500";
+                            if (item.std === 1) cl2 = "from-teal-500 to-emerald-500";
+                            else if (item.std === 2) cl2 = "from-sky-500 to-blue-500";
+                            else if (item.std === 3) cl2 = "from-indigo-500 to-violet-500";
+                            else cl2 = "from-amber-500 to-orange-500";
+                            return (<div key={item.id} className="space-y-1"><div className="flex justify-between text-xs"><span className="font-bold text-slate-700 text-[10px] truncate max-w-[200px]">{item.id}. {item.lb.split(":")[1] || item.lb}</span><span className="font-black text-slate-500 text-[10px]">{item.av.toFixed(2)}/{item.mx.toFixed(1)}đ ({item.pt}%)</span></div><div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden"><div className={"h-full rounded-full bg-gradient-to-r " + cl2} style={{ width: item.pt + "%" }} /></div></div>);
+                          })}</div>
+                        </div>
+                      </div>
+                      <div className="bg-white p-5 rounded-3xl border border-slate-200/80 space-y-4">
+                        <h4 className="text-[11px] font-black text-slate-500 uppercase flex items-center gap-1.5 border-b border-slate-100 pb-3"><AlertCircle className="w-4 h-4 text-rose-500" /><span>Điểm yếu toàn Tổ CM</span></h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">{dsw.slice(0, 6).map((w, ix) => {
+                          const isH = w.lp >= 40, isM = w.lp >= 15 && w.lp < 40;
+                          let bc = "border-slate-200", bg = "bg-slate-50/50", bdg = "bg-slate-100 text-slate-550 border-slate-200";
+                          if (isH) { bc = "border-rose-200 border-l-4 border-l-rose-500"; bg = "bg-rose-50/30"; bdg = "bg-rose-50 text-rose-700 border-rose-250"; }
+                          else if (isM) { bc = "border-amber-200 border-l-4 border-l-amber-500"; bg = "bg-amber-50/30"; bdg = "bg-amber-50 text-amber-700 border-amber-250"; }
+                          return (<div key={w.id} className={"p-3.5 border rounded-2xl flex items-center justify-between gap-3 " + bg + " " + bc}><div className="min-w-0"><span className="text-[9px] font-black text-slate-400 block uppercase">Ưu tiên {ix + 1}</span><h5 className="font-extrabold text-xs truncate mt-0.5">{w.id}. {w.lb.split(":")[1] || w.lb}</h5><p className="text-[9px] text-slate-400 mt-0.5">TB: {w.pt}%</p></div><div className="shrink-0 text-right"><span className={"px-2 py-0.5 rounded-lg text-[10px] font-black border " + bdg}>{w.lp}% Điểm yếu</span><span className="block text-[8px] text-slate-400 mt-1">{w.lc}/{dep.length} phiếu</span></div></div>);
+                        })}</div>
+                        {dsw[0] && dsw[0].lp > 0 && (<div className="bg-gradient-to-r from-violet-50/40 to-indigo-50/20 border border-violet-200 rounded-2xl p-4 flex gap-3 items-start mt-3"><div className="p-2 bg-white text-violet-600 rounded-xl border border-violet-200 shrink-0"><MessageSquare className="w-4 h-4" /></div><div><h6 className="font-black text-xs text-[#0A3230] uppercase">Đề xuất phát triển Tổ CM</h6><p className="text-[10.5px] text-slate-600 mt-1">Tỷ lệ điểm yếu cao nhất: <span className="font-black text-rose-700">{dsw[0].id} ({dsw[0].lp}%)</span>. Đề xuất sinh hoạt chuyên môn tập trung vào các năng lực này.</p></div></div>)}
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })()
+          ) : !selectedTeacherId ? (
             <div className="flex flex-col items-center justify-center flex-1 text-slate-400 py-16">
               <div className="w-16 h-16 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-350 mb-4 shadow-2xs">
                 <User className="w-8 h-8 stroke-1" />
@@ -511,30 +656,7 @@ export function AdminTongHopClient({
 
             const isPreschool = selTeacherSlots.length > 0
               ? selTeacherSlots.every(s => ["Mầm non"].includes(s.level))
-              : (selTeacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
-
-            const maxScoresK12 = [1.5, 1.5, 2.0, 2.0, 1.0, 2.0, 3.0, 2.0, 2.0, 2.0, 1.0];
-            const k12Labels = [
-              "Y1: Chuẩn bị giáo án, bám sát kiến thức kỹ năng",
-              "Y2: Sử dụng đồ dùng, thiết bị dạy học phù hợp",
-              "Y3: Nội dung bài giảng chính xác, khoa học",
-              "Y4: Đảm bảo tính hệ thống, trọng tâm bài dạy",
-              "Y5: Liên hệ thực tế đời sống, tính giáo dục",
-              "Y6: Không đọc chép, hỗ trợ kịp thời học sinh",
-              "Y7: Tổ chức học tập chủ động, hợp tác nhóm",
-              "Y8: Linh hoạt các khâu, phân phối thời gian hợp lý",
-              "Y9: Kết hợp các phương pháp, khuyến khích tư duy",
-              "Y10: Đánh giá quá trình học, học sinh nắm vững bài",
-              "Y11: Tiết dạy nhuần nhuyễn, sinh động, sáng tạo"
-            ];
-
-            const preschoolLabels = [
-              "T1: Nội dung bài dạy phù hợp, chính xác",
-              "T2: Phương pháp giảng dạy hiệu quả, sáng tạo",
-              "T3: Tổ chức hoạt động học tập tích cực",
-              "T4: Sử dụng CNTT và phương tiện dạy học",
-              "T5: Kết quả học tập và tương tác của học sinh"
-            ];
+              : (selTeacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().includes("mam non");
 
             const competencyData = [];
             const weaknessData = [];
@@ -745,28 +867,6 @@ export function AdminTongHopClient({
                   </span>
                 </div>
 
-                {/* Tab Switcher */}
-                <div className="flex gap-4 border-b border-slate-100 pb-2 shrink-0 text-xs">
-                  <button 
-                    onClick={() => setActiveDetailTab("lich-su")}
-                    className={"pb-2 px-1 font-extrabold border-b-2 transition-all duration-200 " + (activeDetailTab === "lich-su" ? "border-[#00A19A] text-[#00A19A]" : "border-transparent text-slate-400 hover:text-slate-650")}
-                  >
-                    Lịch sử tiết dạy
-                  </button>
-                  <button 
-                    onClick={() => setActiveDetailTab("phan-tich")}
-                    className={"pb-2 px-1 font-extrabold border-b-2 transition-all duration-200 " + (activeDetailTab === "phan-tich" ? "border-[#00A19A] text-[#00A19A]" : "border-transparent text-slate-400 hover:text-slate-650")}
-                  >
-                    Phân tích Năng lực & Điểm yếu
-                  </button>
-                  <button
-                    onClick={() => setActiveDetailTab("to-cm")}
-                    className={"pb-2 px-1 font-extrabold border-b-2 transition-all duration-200 " + (activeDetailTab === "to-cm" ? "border-violet-600 text-violet-600" : "border-transparent text-slate-400 hover:text-slate-650")}
-                  >
-                    🏫 Năng lực Tổ CM
-                  </button>
-                </div>
-
                 {activeDetailTab === "lich-su" ? (
                   <>
                     {/* Slot Search & Filter controls */}
@@ -818,25 +918,23 @@ export function AdminTongHopClient({
                         {filteredSlots.map(slot => {
                           const avgScore = getSlotAverageScore(slot);
                           const slotDate = new Date(slot.date);
-                          const isK12 = !["Mầm non"].includes(slot.level);
                           const evals = slot.registrations.filter((r: any) => r.evaluation !== null);
                           const isMamNonBlock = slot.level === "Mầm non" || 
-                                                (slot.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
+                                                (slot.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().includes("mam non");
 
                           return (
                             <div key={slot.id} className={"p-5 bg-white border border-slate-200/80 rounded-2xl space-y-4 hover:shadow-md transition-all duration-300 border-l-4 " + (
                               isMamNonBlock ? "border-l-amber-500" : "border-l-indigo-500"
                             )}>
-                              {/* Slot Info */}
                               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
                                 <div>
                                   <div className="flex flex-wrap items-center gap-1.5">
                                     <span className={"px-2 py-0.5 text-[8px] font-extrabold rounded uppercase tracking-wider " + (
                                       isMamNonBlock ? "bg-amber-50 text-amber-700 border border-amber-250/60" : "bg-indigo-50 text-indigo-700 border border-indigo-250/60"
                                     )}>{slot.level}</span>
-                                    <span className="px-2 py-0.5 text-[8px] font-extrabold bg-slate-50 text-slate-650 border border-slate-200 rounded uppercase tracking-wider">{slot.grade}</span>
+                                    <span className="px-2 py-0.5 text-[8px] font-extrabold bg-slate-50 text-slate-655 border border-slate-200 rounded uppercase tracking-wider">{slot.grade}</span>
                                     <span className="px-2 py-0.5 text-[8px] font-extrabold bg-rose-50 text-rose-600 border border-rose-200 rounded uppercase tracking-wider">{slot.startTime}</span>
-                                    <span className="text-[10px] font-bold text-slate-400">{slotDate.toLocaleDateString("vi-VN")}</span>
+                                    <span className="text-[10px] font-bold text-slate-450">{slotDate.toLocaleDateString("vi-VN")}</span>
                                     {slot.className && <span className="px-2 py-0.5 text-[8px] font-bold bg-teal-50 text-teal-700 border border-teal-200 rounded">Lớp: {slot.className}</span>}
                                   </div>
                                   <h4 className="font-black text-[15px] text-[#0A3230] mt-2 tracking-tight">{slot.topic}</h4>
@@ -854,7 +952,6 @@ export function AdminTongHopClient({
                                 </div>
                               </div>
 
-                              {/* Observers Evaluations Detail */}
                               <div className="space-y-3">
                                 <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
                                   <BookOpen className="w-3.5 h-3.5 text-slate-350" />
@@ -872,7 +969,6 @@ export function AdminTongHopClient({
 
                                       return (
                                         <div key={reg.id} className="p-4 bg-slate-50/50 border border-slate-200/60 rounded-xl space-y-3 hover:bg-slate-50 hover:shadow-2xs transition-all duration-200">
-                                          {/* Observer Header */}
                                           <div className="flex items-center justify-between gap-2 border-b border-slate-200/50 pb-2.5">
                                             <div className="min-w-0 flex items-center gap-2">
                                               <div className="w-6 h-6 rounded-full bg-slate-200 text-slate-655 flex items-center justify-center font-bold text-[10px]">
@@ -897,7 +993,6 @@ export function AdminTongHopClient({
                                             </div>
                                           </div>
 
-                                          {/* Requirement Scores badges */}
                                           <div className="flex flex-wrap gap-1.5">
                                             {isK12 ? (
                                               [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((num) => {
@@ -905,8 +1000,7 @@ export function AdminTongHopClient({
                                                 const scoreVal = evalData[scoreKey] !== null && evalData[scoreKey] !== undefined
                                                   ? Number(evalData[scoreKey])
                                                   : 0;
-                                                const maxScores = [1.5, 1.5, 2.0, 2.0, 1.0, 2.0, 3.0, 2.0, 2.0, 2.0, 1.0];
-                                                const maxVal = maxScores[num - 1];
+                                                const maxVal = maxScoresK12[num - 1];
                                                 const isPassed = scoreVal >= maxVal * 0.5;
 
                                                 let stdClass = "";
@@ -960,7 +1054,6 @@ export function AdminTongHopClient({
                                             )}
                                           </div>
 
-                                          {/* Strengths & Improvements */}
                                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[10px] border-t border-slate-200/50 pt-2.5">
                                             {evalData.strengths && (
                                               <div className="bg-emerald-50/30 border border-emerald-100/60 p-2.5 rounded-xl text-emerald-800">
@@ -993,102 +1086,7 @@ export function AdminTongHopClient({
                       </div>
                     )}
                   </>
-                ) : activeDetailTab === "to-cm" ? (() => {
-                  const dep = []; const ids = new Set(deptTeachers.map(t => t.id));
-                  initialSlots.forEach(sl => {
-                    if (!ids.has(sl.teacherId)) return;
-                    if (selectedMonth !== "all") {
-                      const d2 = new Date(sl.date);
-                      const mm2 = String(d2.getMonth() + 1).padStart(2, "0");
-                      if (d2.getFullYear() + "-" + mm2 !== selectedMonth) return;
-                    }
-                    sl.registrations.forEach(r => { if (r.evaluation) dep.push({ ev: r.evaluation, lv: sl.level }); });
-                  });
-                  const di = activeDepartments.find(d => d.id === selectedDeptId);
-                  const dmn = di ? di.blockCM === "Mầm Non" : false;
-                  const dc = [], dw = [];
-                  if (dep.length > 0) {
-                    if (!dmn) {
-                      for (let i = 1; i <= 11; i++) {
-                        const sk = "score" + i, mx = maxScoresK12[i - 1];
-                        const sm = dep.reduce((a, x) => a + (x.ev[sk] || 0), 0), av = sm / dep.length, pt = Math.round((av / mx) * 100);
-                        const lc = dep.filter(x => { const v = x.ev[sk] !== null ? Number(x.ev[sk]) : 0; return v < mx * 0.7; }).length, lp = Math.round((lc / dep.length) * 100);
-                        dc.push({ id: "Y" + i, lb: k12Labels[i - 1], av, mx, pt, std: i <= 2 ? 1 : i <= 5 ? 2 : i <= 9 ? 3 : 4 });
-                        dw.push({ id: "Y" + i, lb: k12Labels[i - 1], lc, lp, pt });
-                      }
-                    } else {
-                      for (let i = 1; i <= 5; i++) {
-                        const ck = "criterion" + i;
-                        const sm = dep.reduce((a, x) => a + (x.ev[ck] || 0), 0), av = sm / dep.length, pt = Math.round((av / 4) * 100);
-                        const lc = dep.filter(x => (x.ev[ck] || 0) <= 2).length, lp = Math.round((lc / dep.length) * 100);
-                        dc.push({ id: "T" + i, lb: preschoolLabels[i - 1], av, mx: 4, pt, std: 1 });
-                        dw.push({ id: "T" + i, lb: preschoolLabels[i - 1], lc, lp, pt });
-                      }
-                    }
-                  }
-                  const dsw = [...dw].sort((a, b) => b.lp - a.lp);
-                  const tp2 = dmn ? 5 : 11, as2 = (2 * Math.PI) / tp2, ce = 150, rd = 100;
-                  const gl2 = [25, 50, 75, 100];
-                  const gp2 = gl2.map(lv => {
-                    const pts = [];
-                    for (let i = 0; i < tp2; i++) { const a = i * as2, rv = rd * (lv / 100); pts.push((ce + rv * Math.sin(a)) + "," + (ce - rv * Math.cos(a))); }
-                    return pts.join(" ");
-                  });
-                  const al2 = [];
-                  for (let i = 0; i < tp2; i++) { const a = i * as2; al2.push({ x1: ce, y1: ce, x2: ce + rd * Math.sin(a), y2: ce - rd * Math.cos(a), lb: (dmn ? "T" : "Y") + (i + 1), lx: ce + (rd + 20) * Math.sin(a), ly: ce - (rd + 20) * Math.cos(a) }); }
-                  const dvp = dc.map((d, i) => { const a = i * as2, rv = rd * (d.pt / 100); return (ce + rv * Math.sin(a)) + "," + (ce - rv * Math.cos(a)); });
-                  const dvpath = dvp.join(" ");
-                  return (
-                    <div className="space-y-6 max-h-[580px] overflow-y-auto pr-1 custom-scrollbar">
-                      <div className="bg-gradient-to-r from-violet-50/60 to-indigo-50/30 border border-violet-200/60 rounded-2xl p-4 flex items-center gap-3">
-                        <div className="p-2 bg-white text-violet-600 rounded-xl border border-violet-200 shrink-0"><Layers className="w-5 h-5" /></div>
-                        <div><h4 className="font-black text-sm text-[#0A3230]">{selectedDeptName}</h4>
-                        <p className="text-[10px] text-slate-500 mt-0.5">Tổng hợp toàn Tổ · {dep.length} phiếu · {deptTeachers.length} GV</p></div>
-                      </div>
-                      {dep.length === 0 ? (
-                        <div className="flex flex-col items-center py-16"><PieChart className="w-10 h-10 stroke-1 text-slate-300 mb-3" />
-                          <p className="text-xs font-black text-slate-400">Chưa có dữ liệu đánh giá</p></div>
-                      ) : (
-                        <>
-                          <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
-                            <div className="md:col-span-5 flex justify-center">
-                              <div className="flex flex-col items-center bg-slate-50/50 p-4 rounded-3xl border border-slate-200/60">
-                                <span className="text-[10px] font-black text-violet-600 uppercase tracking-widest mb-2">Bản đồ Năng lực Tổ CM</span>
-                                <svg width="250" height="250" viewBox="0 0 300 300" className="overflow-visible">
-                                  {gl2.map((lv, ix) => <polygon key={lv} points={gp2[ix]} fill="none" stroke="#e2e8f0" strokeWidth="1" strokeDasharray={lv === 100 ? "none" : "3,3"} />)}
-                                  {gl2.map(lv => <text key={lv} x={ce} y={ce - rd * (lv / 100) + 4} textAnchor="middle" className="text-[8px] fill-slate-400">{lv}%</text>)}
-                                  {al2.map((ax, ix) => <g key={ix}><line x1={ax.x1} y1={ax.y1} x2={ax.x2} y2={ax.y2} stroke="#e2e8f0" strokeWidth="1" /><text x={ax.lx} y={ax.ly + 4} textAnchor="middle" className="text-[10px] font-extrabold fill-[#0A3230]">{ax.lb}</text></g>)}
-                                  {dvp.length > 0 && <polygon points={dvpath} fill="rgba(124,58,237,0.12)" stroke="#7c3aed" strokeWidth="2.5" />}
-                                  {dc.map((d, i) => { const a = i * as2, rv = rd * (d.pt / 100), px = ce + rv * Math.sin(a), py = ce - rv * Math.cos(a); return <circle key={i} cx={px} cy={py} r="4" fill="#fff" stroke="#7c3aed" strokeWidth="2.5" />; })}
-                                </svg>
-                              </div>
-                            </div>
-                            <div className="md:col-span-7 space-y-3 bg-slate-50/30 p-4 rounded-3xl border border-slate-200/60">
-                              <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5"><Award className="w-4 h-4 text-violet-600" /><span>Năng lực dạy học toàn Tổ</span></h4>
-                              <div className="space-y-3">{dc.map(item => {
-                                let cl2 = "from-violet-500 to-indigo-500";
-                                if (item.std === 1) cl2 = "from-teal-500 to-emerald-500";
-                                else if (item.std === 2) cl2 = "from-sky-500 to-blue-500";
-                                else if (item.std === 3) cl2 = "from-indigo-500 to-violet-500";
-                                else cl2 = "from-amber-500 to-orange-500";
-                                return (<div key={item.id} className="space-y-1"><div className="flex justify-between text-xs"><span className="font-bold text-slate-700 text-[10px] truncate max-w-[200px]">{item.id}. {item.lb.split(":")[1] || item.lb}</span><span className="font-black text-slate-500 text-[10px]">{item.av.toFixed(2)}/{item.mx.toFixed(1)}đ ({item.pt}%)</span></div><div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden"><div className={"h-full rounded-full bg-gradient-to-r " + cl2} style={{ width: item.pt + "%" }} /></div></div>);
-              })}</div></div></div>
-                          <div className="bg-white p-5 rounded-3xl border border-slate-200/80 space-y-4">
-                            <h4 className="text-[11px] font-black text-slate-500 uppercase flex items-center gap-1.5 border-b border-slate-100 pb-3"><AlertCircle className="w-4 h-4 text-rose-500" /><span>Điểm yếu toàn Tổ CM</span></h4>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">{dsw.slice(0, 6).map((w, ix) => {
-                              const isH = w.lp >= 40, isM = w.lp >= 15 && w.lp < 40;
-                              let bc = "border-slate-200", bg = "bg-slate-50/50", bdg = "bg-slate-100 text-slate-550 border-slate-200";
-                              if (isH) { bc = "border-rose-200 border-l-4 border-l-rose-500"; bg = "bg-rose-50/30"; bdg = "bg-rose-50 text-rose-700 border-rose-250"; }
-                              else if (isM) { bc = "border-amber-200 border-l-4 border-l-amber-500"; bg = "bg-amber-50/30"; bdg = "bg-amber-50 text-amber-700 border-amber-250"; }
-                              return (<div key={w.id} className={"p-3.5 border rounded-2xl flex items-center justify-between gap-3 " + bg + " " + bc}><div className="min-w-0"><span className="text-[9px] font-black text-slate-400 block uppercase">Ưu tiên {ix + 1}</span><h5 className="font-extrabold text-xs truncate mt-0.5">{w.id}. {w.lb.split(":")[1] || w.lb}</h5><p className="text-[9px] text-slate-400 mt-0.5">TB: {w.pt}%</p></div><div className="shrink-0 text-right"><span className={"px-2 py-0.5 rounded-lg text-[10px] font-black border " + bdg}>{w.lp}% Điểm yếu</span><span className="block text-[8px] text-slate-400 mt-1">{w.lc}/{dep.length} phiếu</span></div></div>);
-              })}</div>
-                            {dsw[0] && dsw[0].lp > 0 && (<div className="bg-gradient-to-r from-violet-50/40 to-indigo-50/20 border border-violet-200 rounded-2xl p-4 flex gap-3 items-start mt-3"><div className="p-2 bg-white text-violet-600 rounded-xl border border-violet-200 shrink-0"><MessageSquare className="w-4 h-4" /></div><div><h6 className="font-black text-xs text-[#0A3230] uppercase">Đề xuất phát triển Tổ CM</h6><p className="text-[10.5px] text-slate-600 mt-1">Tỷ lệ điểm yếu cao nhất: <span className="font-black text-rose-700">{dsw[0].id} ({dsw[0].lp}%)</span>. Đề xuất sinh hoạt chuyên môn tập trung vào các năng lực này.</p></div></div>)}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  );
-                })() : (
+                ) : (
                   evaluations.length === 0 ? (
                     <div className="flex flex-col items-center justify-center flex-1 text-slate-400 py-16">
                       <div className="w-16 h-16 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-350 mb-4 shadow-2xs">
@@ -1099,17 +1097,13 @@ export function AdminTongHopClient({
                     </div>
                   ) : (
                     <div className="space-y-6 max-h-[520px] overflow-y-auto pr-1 custom-scrollbar">
-                      {/* Competency Dashboard */}
                       <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
-                        {/* Left: Radar Competency Map */}
                         <div className="md:col-span-5 flex justify-center">
                           {renderRadarChart()}
                         </div>
-
-                        {/* Right: Detailed Competency List */}
                         <div className="md:col-span-7 space-y-3 bg-slate-50/30 p-4 rounded-3xl border border-slate-200/60 shadow-xs">
                           <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
-                            <Award className="w-4 h-4 text-teal-650" />
+                            <Award className="w-4 h-4 text-teal-655" />
                             <span>Biểu đồ năng lực dạy học</span>
                           </h4>
                           <div className="space-y-3">
@@ -1143,7 +1137,6 @@ export function AdminTongHopClient({
                         </div>
                       </div>
 
-                      {/* Weakness Analysis Section */}
                       <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
                         <div>
                           <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5 border-b border-slate-100 pb-3">
@@ -1177,7 +1170,7 @@ export function AdminTongHopClient({
                             return (
                               <div key={weakness.id} className={"p-3.5 border rounded-2xl flex items-center justify-between gap-3 " + bgClass + " " + borderClass}>
                                 <div className="min-w-0">
-                                  <span className="text-[9px] font-black text-slate-450 block tracking-widest uppercase">ƯU TIÊN {idx + 1}</span>
+                                  <span className="text-[9px] font-black text-slate-450 block tracking-widest uppercase">ƯƯ TIÊN {idx + 1}</span>
                                   <h5 className="font-extrabold text-xs text-slate-750 truncate mt-0.5">{weakness.id}. {weakness.label.split(":")[1] || weakness.label}</h5>
                                   <p className="text-[9px] font-medium text-slate-400 mt-0.5">Hiệu suất trung bình: {weakness.avgPct}%</p>
                                 </div>
@@ -1192,7 +1185,6 @@ export function AdminTongHopClient({
                           })}
                         </div>
 
-                        {/* Recommendations Action Card */}
                         {sortedWeaknesses[0] && sortedWeaknesses[0].lowPct > 0 && (
                           <div className="bg-gradient-to-r from-teal-50/40 to-emerald-50/20 border border-teal-200 rounded-2xl p-4 flex gap-3.5 items-start mt-3">
                             <div className="p-2 bg-white text-[#00A19A] rounded-xl border border-teal-250 shrink-0 shadow-2xs">
@@ -1210,9 +1202,10 @@ export function AdminTongHopClient({
                     </div>
                   )
                 )}
-            </div>
-          );
-})()}
+              </div>
+            );
+          })()}
+
         </div>
       </div>
     </div>
