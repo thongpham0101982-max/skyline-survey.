@@ -13,7 +13,7 @@ import {
   approveRegistration, submitEvaluation
 } from "./actions"
 
-interface TeacherInfo { id: string; teacherName: string; teacherCode: string; email: string | null; departmentId: string | null; campusId: string }
+interface TeacherInfo { id: string; teacherName: string; teacherCode: string; email: string | null; departmentId: string | null; campusId: string; departmentRel?: any }
 interface SubjectInfo { id: string; subjectCode: string; subjectName: string }
 interface DeptInfo { id: string; code: string; name: string }
 interface CampusInfo { id: string; campusCode: string; campusName: string }
@@ -725,7 +725,20 @@ export function ObservationClient({
         if (activeDeptTab !== "all") {
           const isMyDept = slot.teacher?.departmentId === currentTeacher.departmentId;
           if (activeDeptTab === "my-dept" && !isMyDept) return false;
-          if (activeDeptTab === "other-dept" && isMyDept) return false;
+          if (activeDeptTab === "other-dept") {
+            if (isMyDept) return false;
+            
+            // If the current teacher is a Preschool teacher, they should only see slots in Preschool departments/level.
+            // If they are K-12, they should only see slots in K-12 departments/level.
+            const slotIsMamNon = slot.level === "Mầm non" || 
+                                 (slot.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
+            
+            if (isMamNonTeacher) {
+              if (!slotIsMamNon) return false;
+            } else {
+              if (slotIsMamNon) return false;
+            }
+          }
         }
         return true;
       }
