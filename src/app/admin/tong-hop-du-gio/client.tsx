@@ -3,7 +3,8 @@
 import { useState, useMemo } from "react"
 import { 
   ClipboardList, CheckCircle, PieChart, FileText, Calendar, Layers,
-  ChevronDown, ChevronUp, AlertCircle, Plus, Search, X, Check
+  ChevronDown, ChevronUp, AlertCircle, Plus, Search, X, Check,
+  BookOpen, User, Award, ThumbsUp, MessageSquare
 } from "lucide-react"
 
 interface TeacherInfo { id: string; teacherName: string; teacherCode: string; email: string | null; departmentId: string | null; campusId: string; position?: string }
@@ -247,39 +248,44 @@ export function AdminTongHopClient({
   return (
     <div className="space-y-6">
       {/* Title Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-slate-100 pb-5">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 border-b border-slate-100 pb-5">
         <div>
-          <h1 className="text-2xl font-black text-[#0A3230] tracking-tight">Tổng hợp kết quả dự giờ</h1>
-          <p className="text-slate-500 text-sm font-medium mt-0.5">
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-teal-50 text-[#00A19A] rounded-xl border border-teal-100">
+              <PieChart className="w-5 h-5" />
+            </div>
+            <h1 className="text-2xl font-black text-[#0A3230] tracking-tight">Tổng hợp kết quả dự giờ</h1>
+          </div>
+          <p className="text-slate-500 text-sm font-medium mt-1.5 ml-1">
             {isTTCM 
-              ? `Quyền hạn Tổ trưởng chuyên môn: Xem báo cáo Tổ ${selectedDeptName}`
+              ? "Quyền hạn Tổ trưởng chuyên môn: Xem báo cáo Tổ " + selectedDeptName
               : "Quyền hạn Quản trị viên: Xem báo cáo tổng hợp toàn hệ thống chuyên môn"
             }
           </p>
         </div>
 
         {/* Horizontal Statistics Summary */}
-        <div className="flex flex-wrap items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-150 text-xs shrink-0 shadow-xs">
+        <div className="flex flex-wrap items-center gap-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-200/80 text-xs shrink-0 shadow-sm backdrop-blur-xs">
           <div className="flex items-center gap-2">
-            <span className="font-extrabold text-slate-500 uppercase tracking-wider text-[9px] flex items-center gap-1">
-              <ClipboardList className="w-3.5 h-3.5 text-slate-400"/> Tổng tiết dạy:
+            <span className="font-extrabold text-slate-500 uppercase tracking-wider text-[9px] flex items-center gap-1.5">
+              <ClipboardList className="w-4 h-4 text-slate-400"/> Tổng tiết dạy:
             </span>
-            <span className="px-2 py-0.5 bg-amber-50 text-amber-600 border border-amber-200 rounded-lg font-black text-[9px] tracking-wide">
+            <span className="px-2.5 py-1 bg-amber-50/60 text-amber-700 border border-amber-200 rounded-lg font-black text-[10px] tracking-wide shadow-2xs">
               MẦM NON: {departmentSummary.taughtMamNon}
             </span>
-            <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 border border-indigo-200 rounded-lg font-black text-[9px] tracking-wide">
+            <span className="px-2.5 py-1 bg-indigo-50/60 text-indigo-700 border border-indigo-200 rounded-lg font-black text-[10px] tracking-wide shadow-2xs">
               PHỔ THÔNG: {departmentSummary.taughtPhoThong}
             </span>
           </div>
           <div className="h-6 w-px bg-slate-200 hidden sm:block" />
           <div className="flex items-center gap-2">
-            <span className="font-extrabold text-slate-500 uppercase tracking-wider text-[9px] flex items-center gap-1">
-              <CheckCircle className="w-3.5 h-3.5 text-slate-400"/> Tổng tiết dự:
+            <span className="font-extrabold text-slate-500 uppercase tracking-wider text-[9px] flex items-center gap-1.5">
+              <CheckCircle className="w-4 h-4 text-slate-400"/> Tổng tiết dự:
             </span>
-            <span className="px-2 py-0.5 bg-amber-50 text-amber-600 border border-amber-200 rounded-lg font-black text-[9px] tracking-wide">
+            <span className="px-2.5 py-1 bg-amber-50/60 text-amber-700 border border-amber-200 rounded-lg font-black text-[10px] tracking-wide shadow-2xs">
               MẦM NON: {departmentSummary.observedMamNon}
             </span>
-            <span className="px-2 py-0.5 bg-violet-50 text-violet-600 border border-violet-200 rounded-lg font-black text-[9px] tracking-wide">
+            <span className="px-2.5 py-1 bg-violet-50/60 text-violet-700 border border-violet-200 rounded-lg font-black text-[10px] tracking-wide shadow-2xs">
               PHỔ THÔNG: {departmentSummary.observedPhoThong}
             </span>
           </div>
@@ -289,8 +295,8 @@ export function AdminTongHopClient({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Teachers List */}
         <div className="lg:col-span-4 flex flex-col gap-4">
-          {/* Tabs / Tags */}
-          <div className="bg-white border border-slate-150 rounded-2xl p-2 shadow-sm flex flex-wrap gap-1.5 shrink-0">
+          {/* Tabs / Tags with gorgeous gradient hover effects */}
+          <div className="bg-slate-100/80 border border-slate-200/60 rounded-2xl p-1.5 shadow-xs flex flex-wrap gap-1 shrink-0">
             {["Phổ thông K-12", "Mầm non", "Điều hành"].map(tab => {
               const isActive = activeBlockTab === tab;
               
@@ -304,23 +310,23 @@ export function AdminTongHopClient({
 
               let tabStyle = "";
               if (isActive) {
-                if (tab === "Phổ thông K-12") tabStyle = "bg-indigo-600 text-white shadow-md shadow-indigo-100";
-                if (tab === "Mầm non") tabStyle = "bg-amber-500 text-white shadow-md shadow-amber-100";
-                if (tab === "Điều hành") tabStyle = "bg-teal-600 text-white shadow-md shadow-teal-100";
+                if (tab === "Phổ thông K-12") tabStyle = "bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-100/50 scale-[1.01]";
+                if (tab === "Mầm non") tabStyle = "bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-100/50 scale-[1.01]";
+                if (tab === "Điều hành") tabStyle = "bg-gradient-to-r from-teal-600 to-emerald-600 text-white shadow-md shadow-teal-100/50 scale-[1.01]";
               } else {
-                if (tab === "Phổ thông K-12") tabStyle = "bg-indigo-50/70 text-indigo-600 border border-indigo-100 hover:shadow-xs";
-                if (tab === "Mầm non") tabStyle = "bg-amber-50/70 text-amber-600 border border-amber-100 hover:shadow-xs";
-                if (tab === "Điều hành") tabStyle = "bg-teal-50/70 text-teal-600 border border-teal-100 hover:shadow-xs";
+                if (tab === "Phổ thông K-12") tabStyle = "bg-white/80 hover:bg-white text-indigo-600 border border-slate-200 hover:border-indigo-300 hover:shadow-2xs";
+                if (tab === "Mầm non") tabStyle = "bg-white/80 hover:bg-white text-amber-600 border border-slate-200 hover:border-amber-300 hover:shadow-2xs";
+                if (tab === "Điều hành") tabStyle = "bg-white/80 hover:bg-white text-teal-600 border border-slate-200 hover:border-teal-300 hover:shadow-2xs";
               }
 
               return (
                 <button
                   key={tab}
                   onClick={() => handleTabChange(tab)}
-                  className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 ${tabStyle}`}
+                  className={"flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-extrabold uppercase tracking-wider transition-all duration-300 " + tabStyle}
                 >
                   <span>{tab}</span>
-                  <span className={`px-1.5 py-0.2 rounded-full text-[9px] font-black ${isActive ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"}`}>
+                  <span className={"px-2 py-0.5 rounded-full text-[9px] font-black leading-none transition-colors duration-300 " + (isActive ? "bg-white/20 text-white" : "bg-slate-200 text-slate-500 border border-slate-200/50")}>
                     {deptCount}
                   </span>
                 </button>
@@ -329,11 +335,11 @@ export function AdminTongHopClient({
           </div>
 
           {/* Department Selector & Teacher Search Card */}
-          <div className="bg-white p-5 rounded-3xl border-2 border-slate-100 shadow-sm space-y-4">
+          <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-md shadow-slate-100/30 space-y-4 relative overflow-hidden border-t-4 border-t-[#00A19A]">
             <div className="flex flex-col gap-2">
-              <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Tổ chuyên môn</label>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tổ chuyên môn</label>
               {isTTCM ? (
-                <div className="w-full text-sm font-semibold rounded-xl border border-slate-200 p-3.5 bg-slate-50 text-slate-600 flex items-center justify-between">
+                <div className="w-full text-sm font-bold rounded-xl border border-slate-200 p-3.5 bg-slate-50 text-slate-700 flex items-center justify-between">
                   <span>{selectedDeptName}</span>
                   <span className="px-2 py-0.5 bg-amber-50 text-amber-600 border border-amber-150 rounded text-[9px] font-black uppercase">TTCM</span>
                 </div>
@@ -341,7 +347,7 @@ export function AdminTongHopClient({
                 <select 
                   value={selectedDeptId} 
                   onChange={e => { setSelectedDeptId(e.target.value); setSelectedTeacherId(null); setSearchTeacherQuery(""); }}
-                  className="w-full text-sm font-semibold rounded-xl border border-slate-200 p-3 bg-slate-50 text-slate-800 focus:ring-2 focus:ring-[#00A19A] outline-none"
+                  className="w-full text-sm font-semibold rounded-xl border border-slate-250 p-3 bg-slate-50/50 hover:bg-slate-50 text-slate-800 focus:bg-white focus:border-[#00A19A] focus:ring-4 focus:ring-[#00A19A]/10 transition-all outline-none appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2523475569%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:0.65rem_auto] bg-[right_1rem_center] bg-no-repeat pr-8"
                 >
                   {activeDepartments.map(dept => (
                     <option key={dept.id} value={dept.id}>{dept.name}</option>
@@ -352,34 +358,34 @@ export function AdminTongHopClient({
 
             {/* Month Filter */}
             <div className="flex flex-col gap-2">
-              <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Lọc theo Tháng</label>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Lọc theo Tháng</label>
               <select 
                 value={selectedMonth} 
                 onChange={e => { setSelectedMonth(e.target.value); setSelectedTeacherId(null); }}
-                className="w-full text-sm font-semibold rounded-xl border border-slate-200 p-3 bg-white text-slate-800 focus:ring-2 focus:ring-[#00A19A] outline-none transition-all"
+                className="w-full text-sm font-semibold rounded-xl border border-slate-250 p-3 bg-slate-50/50 hover:bg-slate-50 text-slate-800 focus:bg-white focus:border-[#00A19A] focus:ring-4 focus:ring-[#00A19A]/10 transition-all outline-none appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2523475569%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:0.65rem_auto] bg-[right_1rem_center] bg-no-repeat pr-8"
               >
                 <option value="all">Tất cả các tháng</option>
                 {availableMonths.map(m => {
                   const [year, month] = m.split("-");
-                  return <option key={m} value={m}>{`Tháng ${month}/${year}`}</option>;
+                  return <option key={m} value={m}>{"Tháng " + month + "/" + year}</option>;
                 })}
               </select>
             </div>
 
             {/* Teacher Search Input */}
             <div className="flex flex-col gap-2">
-              <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Tìm kiếm giáo viên</label>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tìm kiếm giáo viên</label>
               <div className="relative group/search">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400 group-focus-within/search:text-[#00A19A] transition-colors" />
+                <Search className="absolute left-3 top-3.5 h-4 w-4 text-slate-400 group-focus-within/search:text-[#00A19A] transition-colors" />
                 <input 
                   type="text" 
                   placeholder="Tìm tên hoặc mã giáo viên..."
                   value={searchTeacherQuery}
                   onChange={e => { setSearchTeacherQuery(e.target.value); setSelectedTeacherId(null); }}
-                  className="w-full text-xs font-semibold rounded-xl border border-slate-200 pl-9 pr-8 py-2.5 bg-slate-50 text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A19A] focus:border-[#00A19A] transition-all outline-none"
+                  className="w-full text-xs font-semibold rounded-xl border border-slate-200 pl-9 pr-8 py-3 bg-slate-50/50 text-slate-850 placeholder-slate-400 focus:bg-white focus:ring-4 focus:ring-[#00A19A]/10 focus:border-[#00A19A] transition-all outline-none"
                 />
                 {searchTeacherQuery && (
-                  <button onClick={() => { setSearchTeacherQuery(""); setSelectedTeacherId(null); }} className="absolute right-3 top-3 text-slate-400 hover:text-slate-600">
+                  <button onClick={() => { setSearchTeacherQuery(""); setSelectedTeacherId(null); }} className="absolute right-3 top-3.5 text-slate-450 hover:text-slate-700">
                     <X className="w-3.5 h-3.5" />
                   </button>
                 )}
@@ -388,20 +394,19 @@ export function AdminTongHopClient({
           </div>
 
           {/* Teachers Statistics List Card */}
-          <div className="bg-white p-5 rounded-3xl border-2 border-slate-100 shadow-sm flex-1 flex flex-col min-h-[400px]">
-            <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider pb-3 border-b border-slate-100 flex items-center justify-between mb-4">
-              <span>Thống kê thành viên ({filteredDeptTeachers.length})</span>
+          <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-md shadow-slate-100/30 flex-1 flex flex-col min-h-[400px]">
+            <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest pb-3.5 border-b border-slate-100 flex items-center justify-between mb-4">
+              <span>Thành viên ({filteredDeptTeachers.length})</span>
+              <span className="px-2 py-0.5 bg-slate-100 text-slate-550 border border-slate-200 text-[10px] rounded-lg font-extrabold uppercase">TỔ CM</span>
             </h3>
 
-
-            
             {filteredDeptTeachers.length === 0 ? (
               <div className="flex flex-col items-center justify-center flex-1 py-12 text-slate-400">
                 <ClipboardList className="w-10 h-10 text-slate-300 mb-2 stroke-1" />
                 <p className="text-xs font-bold text-center">Không tìm thấy giáo viên nào.</p>
               </div>
             ) : (
-              <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1 custom-scrollbar">
+              <div className="space-y-2.5 max-h-[420px] overflow-y-auto pr-1 custom-scrollbar">
                 {filteredDeptTeachers.map(teacher => {
                   const stats = teacherStats[teacher.id] || { 
                     taughtCount: 0, 
@@ -416,30 +421,37 @@ export function AdminTongHopClient({
                     <button 
                       key={teacher.id} 
                       onClick={() => { setSelectedTeacherId(teacher.id); setSearchSlotQuery(""); setFilterLevel("all"); setFilterGrade("all"); }}
-                      className={`w-full text-left p-3.5 rounded-2xl border-2 transition-all duration-200 flex items-center justify-between gap-3 ${
+                      className={"w-full text-left p-3.5 rounded-2xl border transition-all duration-305 flex items-center justify-between gap-3 " + (
                         isSelected
-                          ? "bg-teal-50/50 border-[#00A19A] shadow-sm"
-                          : "bg-slate-50/50 border-slate-150 hover:bg-slate-50 hover:border-slate-300"
-                      }`}
+                          ? "bg-gradient-to-r from-teal-50/70 to-emerald-50/20 border-[#00A19A] shadow-xs shadow-teal-50 scale-[1.01]"
+                          : "bg-slate-50/30 border-slate-150 hover:bg-slate-50/80 hover:border-slate-300 hover:scale-[1.005]"
+                      )}
                     >
-                      <div className="min-w-0">
-                        <p className={`text-xs font-black truncate ${isSelected ? "text-[#00A19A]" : "text-slate-800"}`}>
-                          {teacher.teacherName}
-                        </p>
-                        <p className="text-[10px] font-bold text-slate-400 mt-0.5">
-                          Mã GV: {teacher.teacherCode}
-                        </p>
+                      <div className="min-w-0 flex items-center gap-3">
+                        <div className={"w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 " + (
+                          isSelected ? "bg-[#00A19A] text-white" : "bg-slate-150 text-slate-650"
+                        )}>
+                          {teacher.teacherName.charAt(0)}
+                        </div>
+                        <div className="min-w-0">
+                          <p className={"text-xs font-extrabold truncate " + (isSelected ? "text-[#00A19A]" : "text-slate-800")}>
+                            {teacher.teacherName}
+                          </p>
+                          <p className="text-[10px] font-bold text-slate-400 mt-0.5">
+                            Mã GV: {teacher.teacherCode}
+                          </p>
+                        </div>
                       </div>
                       <div className="flex flex-col gap-1 items-end shrink-0">
-                        <div className="flex items-center gap-1 text-[8px] font-black uppercase">
-                          <span className="text-slate-400">Dạy:</span>
-                          <span className="px-1 py-0.2 bg-amber-50 text-amber-600 border border-amber-100 rounded">{stats.taughtMamNon} MN</span>
-                          <span className="px-1 py-0.2 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded">{stats.taughtPhoThong} PT</span>
+                        <div className="flex items-center gap-1 text-[8px] font-black uppercase tracking-wider">
+                          <span className="text-slate-450 font-bold text-[7px]">Dạy:</span>
+                          <span className="px-1.5 py-0.2 bg-amber-50 text-amber-700 border border-amber-200/60 rounded font-bold">{stats.taughtMamNon} MN</span>
+                          <span className="px-1.5 py-0.2 bg-emerald-50 text-emerald-700 border border-emerald-200/60 rounded font-bold">{stats.taughtPhoThong} PT</span>
                         </div>
-                        <div className="flex items-center gap-1 text-[8px] font-black uppercase">
-                          <span className="text-slate-400">Dự:</span>
-                          <span className="px-1 py-0.2 bg-amber-50 text-amber-600 border border-amber-100 rounded">{stats.observedMamNon} MN</span>
-                          <span className="px-1 py-0.2 bg-violet-50 text-violet-600 border border-violet-100 rounded">{stats.observedPhoThong} PT</span>
+                        <div className="flex items-center gap-1 text-[8px] font-black uppercase tracking-wider">
+                          <span className="text-slate-450 font-bold text-[7px]">Dự:</span>
+                          <span className="px-1.5 py-0.2 bg-amber-50 text-amber-700 border border-amber-200/60 rounded font-bold">{stats.observedMamNon} MN</span>
+                          <span className="px-1.5 py-0.2 bg-violet-50 text-violet-700 border border-violet-200/60 rounded font-bold">{stats.observedPhoThong} PT</span>
                         </div>
                       </div>
                     </button>
@@ -451,12 +463,14 @@ export function AdminTongHopClient({
         </div>
 
         {/* Right Column: Teacher Details */}
-        <div className="lg:col-span-8 bg-white p-6 rounded-3xl border-2 border-slate-100 shadow-sm min-h-[500px] flex flex-col">
+        <div className="lg:col-span-8 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-md shadow-slate-100/30 min-h-[500px] flex flex-col border-t-4 border-t-[#0A3230]">
           {!selectedTeacherId ? (
-            <div className="flex flex-col items-center justify-center flex-1 text-slate-400 py-12">
-              <ClipboardList className="w-16 h-16 stroke-1 text-slate-200 mb-3" />
-              <p className="text-xs font-bold uppercase tracking-wider">Chọn giáo viên để xem chi tiết tiết dạy</p>
-              <p className="text-[10px] text-slate-400 mt-1">Danh sách tiết dạy, ĐTB chung và các phiếu đánh giá chi tiết của giáo viên sẽ xuất hiện tại đây.</p>
+            <div className="flex flex-col items-center justify-center flex-1 text-slate-400 py-16">
+              <div className="w-16 h-16 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-350 mb-4 shadow-2xs">
+                <User className="w-8 h-8 stroke-1" />
+              </div>
+              <p className="text-xs font-black uppercase tracking-widest text-slate-500">Chọn giáo viên để xem chi tiết tiết dạy</p>
+              <p className="text-[11px] text-slate-400 mt-1.5 text-center max-w-sm leading-relaxed">Danh sách tiết dạy, điểm trung bình chung và các phiếu đánh giá chi tiết của giáo viên sẽ xuất hiện tại đây.</p>
             </div>
           ) : (() => {
             const selTeacher = teachers.find(t => t.id === selectedTeacherId);
@@ -466,12 +480,11 @@ export function AdminTongHopClient({
                 const d = new Date(s.date);
                 const yyyy = d.getFullYear();
                 const mm = String(d.getMonth() + 1).padStart(2, '0');
-                return `${yyyy}-${mm}` === selectedMonth;
+                return yyyy + "-" + mm === selectedMonth;
               }
               return true;
             });
             
-            // Local filter logic for slots
             const filteredSlots = selTeacherSlots.filter(slot => {
               const matchQuery = !searchSlotQuery || 
                 slot.topic.toLowerCase().includes(searchSlotQuery.toLowerCase()) ||
@@ -482,34 +495,39 @@ export function AdminTongHopClient({
             });
 
             return (
-              <div className="space-y-4 flex-1 flex flex-col text-slate-800">
-                <div className="pb-3 border-b border-slate-100 flex items-center justify-between gap-3 shrink-0">
-                  <div>
-                    <h3 className="text-base font-black text-slate-800">{selTeacher?.teacherName}</h3>
-                    <p className="text-xs font-bold text-slate-400 mt-0.5">Mã GV: {selTeacher?.teacherCode}</p>
+              <div className="space-y-5 flex-1 flex flex-col text-slate-800">
+                <div className="pb-4 border-b border-slate-100 flex items-center justify-between gap-3 shrink-0">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-teal-50 text-[#00A19A] flex items-center justify-center font-bold text-sm shadow-2xs border border-teal-100">
+                      {selTeacher ? selTeacher.teacherName.charAt(0) : "G"}
+                    </div>
+                    <div>
+                      <h3 className="text-base font-black text-[#0A3230]">{selTeacher ? selTeacher.teacherName : ""}</h3>
+                      <p className="text-[10px] font-bold text-slate-400 mt-0.5 uppercase tracking-wider">Mã GV: {selTeacher ? selTeacher.teacherCode : ""}</p>
+                    </div>
                   </div>
-                  <span className="px-3 py-1 bg-[#00A19A]/10 text-[#00A19A] border border-[#00A19A]/20 rounded-xl text-xs font-black">
+                  <span className="px-3.5 py-1.5 bg-[#00A19A]/10 text-[#00A19A] border border-[#00A19A]/20 rounded-2xl text-[10px] font-black uppercase tracking-wider shadow-2xs">
                     {filteredSlots.length} / {selTeacherSlots.length} tiết dạy
                   </span>
                 </div>
 
                 {/* Slot Search & Filter controls */}
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-150 shrink-0">
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-200/60 shrink-0">
                   <div className="md:col-span-6 relative">
-                    <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
+                    <Search className="absolute left-3 top-3 h-3.5 w-3.5 text-slate-400" />
                     <input
                       type="text"
                       placeholder="Tìm kiếm chủ đề, lớp học..."
                       value={searchSlotQuery}
                       onChange={e => setSearchSlotQuery(e.target.value)}
-                      className="w-full text-xs font-semibold rounded-xl border border-slate-200 pl-9 pr-3 py-2 bg-white text-slate-800 focus:ring-2 focus:ring-[#00A19A] outline-none"
+                      className="w-full text-xs font-semibold rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 bg-white text-slate-800 focus:border-[#00A19A] focus:ring-4 focus:ring-[#00A19A]/10 outline-none transition-all"
                     />
                   </div>
                   <div className="md:col-span-3">
                     <select 
                       value={filterLevel} 
                       onChange={e => { setFilterLevel(e.target.value); setFilterGrade("all"); }}
-                      className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 focus:ring-2 focus:ring-[#00A19A] outline-none"
+                      className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2.5 bg-white text-slate-800 focus:border-[#00A19A] focus:ring-4 focus:ring-[#00A19A]/10 outline-none transition-all appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2523475569%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:0.55rem_auto] bg-[right_0.75rem_center] bg-no-repeat pr-6"
                     >
                       <option value="all">Mọi cấp học</option>
                       <option value="Tiểu học">Tiểu học</option>
@@ -522,7 +540,7 @@ export function AdminTongHopClient({
                     <select 
                       value={filterGrade} 
                       onChange={e => setFilterGrade(e.target.value)}
-                      className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 focus:ring-2 focus:ring-[#00A19A] outline-none"
+                      className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2.5 bg-white text-slate-800 focus:border-[#00A19A] focus:ring-4 focus:ring-[#00A19A]/10 outline-none transition-all appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2523475569%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:0.55rem_auto] bg-[right_0.75rem_center] bg-no-repeat pr-6"
                     >
                       <option value="all">Mọi khối</option>
                       {Array.from(new Set(selTeacherSlots.map(s => s.grade))).sort().map(g => (
@@ -538,34 +556,40 @@ export function AdminTongHopClient({
                     <p className="text-xs font-bold">Không tìm thấy tiết dạy tương ứng.</p>
                   </div>
                 ) : (
-                  <div className="space-y-4 max-h-[500px] overflow-y-auto pr-1 custom-scrollbar">
+                  <div className="space-y-5 max-h-[520px] overflow-y-auto pr-1 custom-scrollbar">
                     {filteredSlots.map(slot => {
                       const avgScore = getSlotAverageScore(slot);
                       const slotDate = new Date(slot.date);
                       const isK12 = !["Mầm non"].includes(slot.level);
                       const evals = slot.registrations.filter((r: any) => r.evaluation !== null);
+                      const isMamNonBlock = slot.level === "Mầm non" || 
+                                            (slot.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().includes("mam non");
 
                       return (
-                        <div key={slot.id} className="p-4 bg-slate-50 border border-slate-150 rounded-2xl space-y-4">
+                        <div key={slot.id} className={"p-5 bg-white border border-slate-200/80 rounded-2xl space-y-4 hover:shadow-md transition-all duration-300 border-l-4 " + (
+                          isMamNonBlock ? "border-l-amber-500" : "border-l-indigo-500"
+                        )}>
                           {/* Slot Info */}
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/50 pb-3">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
                             <div>
                               <div className="flex flex-wrap items-center gap-1.5">
-                                <span className="px-1.5 py-0.2 text-[8px] font-extrabold bg-sky-50 text-sky-600 border border-sky-200 rounded uppercase tracking-wider">{slot.level}</span>
-                                <span className="px-1.5 py-0.2 text-[8px] font-extrabold bg-amber-50 text-amber-600 border border-amber-200 rounded uppercase tracking-wider">{slot.grade}</span>
-                                <span className="px-1.5 py-0.2 text-[8px] font-extrabold bg-rose-50 text-rose-600 border border-rose-200 rounded uppercase tracking-wider">{slot.startTime}</span>
+                                <span className={"px-2 py-0.5 text-[8px] font-extrabold rounded uppercase tracking-wider " + (
+                                  isMamNonBlock ? "bg-amber-50 text-amber-700 border border-amber-250/60" : "bg-indigo-50 text-indigo-700 border border-indigo-250/60"
+                                )}>{slot.level}</span>
+                                <span className="px-2 py-0.5 text-[8px] font-extrabold bg-slate-50 text-slate-650 border border-slate-200 rounded uppercase tracking-wider">{slot.grade}</span>
+                                <span className="px-2 py-0.5 text-[8px] font-extrabold bg-rose-50 text-rose-600 border border-rose-200 rounded uppercase tracking-wider">{slot.startTime}</span>
                                 <span className="text-[10px] font-bold text-slate-400">{slotDate.toLocaleDateString("vi-VN")}</span>
-                                {slot.className && <span className="px-1.5 py-0.2 text-[8px] font-bold bg-slate-200/50 text-slate-600 border border-slate-300/30 rounded">Lớp: {slot.className}</span>}
+                                {slot.className && <span className="px-2 py-0.5 text-[8px] font-bold bg-teal-50 text-teal-700 border border-teal-200 rounded">Lớp: {slot.className}</span>}
                               </div>
-                              <h4 className="font-black text-[15px] text-[#00A19A] mt-1.5 tracking-tight">{slot.topic}</h4>
+                              <h4 className="font-black text-[15px] text-[#0A3230] mt-2 tracking-tight">{slot.topic}</h4>
                             </div>
                             <div className="shrink-0 text-right">
                               {avgScore !== null ? (
-                                <span className="px-2.5 py-1 bg-[#00A19A]/10 text-[#00A19A] border-[#00A19A]/20 rounded-lg font-black text-xs">
-                                  ĐTB chung: {typeof avgScore === "number" ? `${avgScore.toFixed(2)}/20.00đ` : avgScore}
+                                <span className="px-3 py-1.5 bg-gradient-to-r from-teal-50 to-emerald-50 text-teal-700 border border-teal-200 rounded-xl font-black text-xs shadow-2xs">
+                                  ĐTB chung: {typeof avgScore === "number" ? avgScore.toFixed(2) + "/20.00đ" : avgScore}
                                 </span>
                               ) : (
-                                <span className="px-2.5 py-1 bg-slate-100 text-slate-400 border border-slate-200 rounded-lg font-bold text-xs">
+                                <span className="px-3 py-1.5 bg-slate-50 text-slate-400 border border-slate-200 rounded-xl font-bold text-xs">
                                   ĐTB chung: --
                                 </span>
                               )}
@@ -574,9 +598,12 @@ export function AdminTongHopClient({
 
                           {/* Observers Evaluations Detail */}
                           <div className="space-y-3">
-                            <h5 className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Chi tiết đánh giá của từng Giáo viên dự ({evals.length})</h5>
+                            <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                              <BookOpen className="w-3.5 h-3.5 text-slate-350" />
+                              <span>Đánh giá của giáo viên dự ({evals.length})</span>
+                            </h5>
                             {evals.length === 0 ? (
-                              <p className="text-xs text-slate-400 italic">Chưa nhận được phiếu đánh giá nào.</p>
+                              <p className="text-xs text-slate-400 italic bg-slate-50 p-4 rounded-xl text-center border border-dashed border-slate-200">Chưa nhận được phiếu đánh giá nào.</p>
                             ) : (
                               <div className="space-y-3">
                                 {evals.map((reg: any) => {
@@ -586,32 +613,37 @@ export function AdminTongHopClient({
                                     : (evalData.overallRating === "Tốt" || evalData.overallRating === "Khá");
 
                                   return (
-                                    <div key={reg.id} className="p-3 bg-white border border-slate-200/60 rounded-xl space-y-2.5">
+                                    <div key={reg.id} className="p-4 bg-slate-50/50 border border-slate-200/60 rounded-xl space-y-3 hover:bg-slate-50 hover:shadow-2xs transition-all duration-200">
                                       {/* Observer Header */}
-                                      <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2">
-                                        <div className="min-w-0">
-                                          <p className="text-xs font-black text-slate-800">{reg.teacher?.teacherName}</p>
-                                          <p className="text-[9px] text-slate-400 font-bold">Mã GV: {reg.teacher?.teacherCode}</p>
+                                      <div className="flex items-center justify-between gap-2 border-b border-slate-200/50 pb-2.5">
+                                        <div className="min-w-0 flex items-center gap-2">
+                                          <div className="w-6 h-6 rounded-full bg-slate-200 text-slate-650 flex items-center justify-center font-bold text-[10px]">
+                                            {reg.teacher?.teacherName.charAt(0) || "U"}
+                                          </div>
+                                          <div className="min-w-0">
+                                            <p className="text-xs font-black text-slate-800">{reg.teacher?.teacherName}</p>
+                                            <p className="text-[9px] text-slate-400 font-bold">Mã GV: {reg.teacher?.teacherCode}</p>
+                                          </div>
                                         </div>
-                                        <div className="flex items-center gap-1 shrink-0">
-                                          <span className="px-1.5 py-0.2 text-[9px] font-bold rounded bg-violet-50 text-violet-600 border border-violet-150">
+                                        <div className="flex items-center gap-1.5 shrink-0">
+                                          <span className="px-2 py-0.5 text-[9px] font-extrabold rounded-lg bg-violet-50 text-violet-755 border border-violet-200">
                                             {evalData.totalScore !== null && evalData.totalScore !== undefined
-                                              ? `${evalData.totalScore.toFixed(2)}đ`
+                                              ? evalData.totalScore.toFixed(2) + "đ"
                                               : evalData.overallRating}
                                           </span>
                                           {passed ? (
-                                            <span className="px-1.5 py-0.2 text-[9px] font-black rounded bg-emerald-50 text-emerald-600 border border-emerald-150 uppercase tracking-wider">ĐẠT</span>
+                                            <span className="px-2 py-0.5 text-[9px] font-black rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-250 uppercase tracking-widest">ĐẠT</span>
                                           ) : (
-                                            <span className="px-1.5 py-0.2 text-[9px] font-black rounded bg-rose-50 text-rose-600 border border-rose-150 uppercase tracking-wider">CHƯA ĐẠT</span>
+                                            <span className="px-2 py-0.5 text-[9px] font-black rounded-lg bg-rose-50 text-rose-700 border border-rose-250 uppercase tracking-widest">CHƯA ĐẠT</span>
                                           )}
                                         </div>
                                       </div>
 
                                       {/* Requirement Scores badges */}
-                                      <div className="flex flex-wrap gap-1">
+                                      <div className="flex flex-wrap gap-1.5">
                                         {isK12 ? (
                                           [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((num) => {
-                                            const scoreKey = `score${num}`;
+                                            const scoreKey = "score" + num;
                                             const scoreVal = evalData[scoreKey] !== null && evalData[scoreKey] !== undefined
                                               ? Number(evalData[scoreKey])
                                               : 0;
@@ -623,25 +655,25 @@ export function AdminTongHopClient({
                                             let labelTextClass = "";
                                             if (isPassed) {
                                               if (num <= 2) {
-                                                stdClass = "bg-teal-50 text-teal-600 border-teal-150";
-                                                labelTextClass = "text-teal-600/60 font-bold";
+                                                stdClass = "bg-teal-50 text-teal-700 border-teal-200/80";
+                                                labelTextClass = "text-teal-700/60 font-bold";
                                               } else if (num <= 5) {
-                                                stdClass = "bg-sky-50 text-sky-600 border-sky-150";
-                                                labelTextClass = "text-sky-600/60 font-bold";
+                                                stdClass = "bg-sky-50 text-sky-700 border-sky-200/80";
+                                                labelTextClass = "text-sky-700/60 font-bold";
                                               } else if (num <= 9) {
-                                                stdClass = "bg-indigo-50 text-indigo-600 border-indigo-150";
-                                                labelTextClass = "text-indigo-600/60 font-bold";
+                                                stdClass = "bg-indigo-50 text-indigo-700 border-indigo-200/80";
+                                                labelTextClass = "text-indigo-700/60 font-bold";
                                               } else {
-                                                stdClass = "bg-amber-50 text-amber-600 border-amber-150";
-                                                labelTextClass = "text-amber-600/60 font-bold";
+                                                stdClass = "bg-amber-50 text-amber-700 border-amber-200/80";
+                                                labelTextClass = "text-amber-700/60 font-bold";
                                               }
                                             } else {
-                                              stdClass = "bg-rose-50/70 text-rose-500 border-rose-100";
-                                              labelTextClass = "text-rose-300 font-bold";
+                                              stdClass = "bg-rose-50/70 text-rose-550 border-rose-150";
+                                              labelTextClass = "text-rose-400 font-bold";
                                             }
 
                                             return (
-                                              <span key={num} className={`inline-flex items-center gap-0.5 px-1 py-0.2 text-[8px] font-extrabold border rounded ${stdClass}`}>
+                                              <span key={num} className={"inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[8px] font-extrabold border rounded-md shadow-2xs " + stdClass}>
                                                 <span className={labelTextClass}>Y{num}:</span>
                                                 <span>{scoreVal.toFixed(1)}</span>
                                               </span>
@@ -649,20 +681,20 @@ export function AdminTongHopClient({
                                           })
                                         ) : (
                                           [1, 2, 3, 4, 5].map((num) => {
-                                            const critKey = `criterion${num}`;
-                                            const ratingLabels: Record<number, string> = { 4: "Tốt", 3: "Khá", 2: "Tr.bình", 1: "Yếu" };
+                                            const critKey = "criterion" + num;
+                                            const ratingLabels = { 4: "Tốt", 3: "Khá", 2: "Tr.bình", 1: "Yếu" };
                                             const critVal = evalData[critKey] !== null && evalData[critKey] !== undefined
                                               ? evalData[critKey]
                                               : 0;
                                             const critLabel = ratingLabels[critVal] || "-";
                                             const isPassed = critVal >= 3;
                                             return (
-                                              <span key={num} className={`inline-flex items-center gap-0.5 px-1 py-0.2 text-[8px] font-extrabold border rounded ${
+                                              <span key={num} className={"inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[8px] font-extrabold border rounded-md shadow-2xs " + (
                                                 isPassed 
-                                                  ? "bg-[#00A19A]/5 text-[#00A19A] border-[#00A19A]/15" 
-                                                  : "bg-rose-50/70 text-rose-500 border-rose-100"
-                                              }`}>
-                                                <span className={isPassed ? "text-[#00A19A]/60 font-bold" : "text-rose-300 font-bold"}>T{num}:</span>
+                                                  ? "bg-teal-50 text-teal-700 border-teal-200/80" 
+                                                  : "bg-rose-50/70 text-rose-550 border-rose-150"
+                                              )}>
+                                                <span className={isPassed ? "text-teal-700/60 font-bold" : "text-rose-455 font-bold"}>T{num}:</span>
                                                 <span>{critLabel}</span>
                                               </span>
                                             );
@@ -671,17 +703,23 @@ export function AdminTongHopClient({
                                       </div>
 
                                       {/* Strengths & Improvements */}
-                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[10px] text-slate-600 border-t border-slate-100 pt-2 font-medium">
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[10px] border-t border-slate-200/50 pt-2.5">
                                         {evalData.strengths && (
-                                          <div>
-                                            <span className="font-extrabold text-slate-800 block">✓ Ưu điểm:</span>
-                                            <span className="italic block mt-0.5">{evalData.strengths}</span>
+                                          <div className="bg-emerald-50/30 border border-emerald-100/60 p-2.5 rounded-xl text-emerald-800">
+                                            <span className="font-extrabold flex items-center gap-1 mb-0.5">
+                                              <ThumbsUp className="w-3.5 h-3.5 text-emerald-600" />
+                                              <span>Ưu điểm:</span>
+                                            </span>
+                                            <span className="italic block leading-relaxed">{evalData.strengths}</span>
                                           </div>
                                         )}
                                         {evalData.improvements && (
-                                          <div>
-                                            <span className="font-extrabold text-slate-800 block">⚠ Góp ý:</span>
-                                            <span className="italic block mt-0.5">{evalData.improvements}</span>
+                                          <div className="bg-amber-50/30 border border-amber-100/60 p-2.5 rounded-xl text-amber-800">
+                                            <span className="font-extrabold flex items-center gap-1 mb-0.5">
+                                              <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
+                                              <span>Góp ý phát triển:</span>
+                                            </span>
+                                            <span className="italic block leading-relaxed">{evalData.improvements}</span>
                                           </div>
                                         )}
                                       </div>
@@ -702,5 +740,5 @@ export function AdminTongHopClient({
         </div>
       </div>
     </div>
-  )
+  );
 }
