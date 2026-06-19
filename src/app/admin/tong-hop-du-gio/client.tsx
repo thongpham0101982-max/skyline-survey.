@@ -516,7 +516,9 @@ export function AdminTongHopClient({
               initialSlots.forEach(sl => {
                 if (!ids.has(sl.teacherId)) return;
                 if (selectedMonth !== "all") {
+                  if (!sl.date) return;
                   const d2 = new Date(sl.date);
+                  if (isNaN(d2.getTime())) return;
                   const mm2 = String(d2.getMonth() + 1).padStart(2, "0");
                   if (d2.getFullYear() + "-" + mm2 !== selectedMonth) return;
                 }
@@ -622,7 +624,9 @@ export function AdminTongHopClient({
             const selTeacherSlots = initialSlots.filter(s => {
               if (s.teacherId !== selectedTeacherId) return false;
               if (selectedMonth !== "all") {
+                if (!s.date) return false;
                 const d = new Date(s.date);
+                if (isNaN(d.getTime())) return false;
                 const yyyy = d.getFullYear();
                 const mm = String(d.getMonth() + 1).padStart(2, '0');
                 return yyyy + "-" + mm === selectedMonth;
