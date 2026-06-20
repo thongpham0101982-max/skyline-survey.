@@ -1,4 +1,5 @@
 import { ChatBotWidget } from "@/components/ChatBotWidget"
+import { redirect } from "next/navigation"
 
 import { Sidebar } from "@/components/Sidebar"
 import { NotificationBell } from "@/components/NotificationBell"
@@ -46,6 +47,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     }
   } catch (error) {
     console.error("Admin layout DB error:", error)
+  }
+
+  // Redirect teachers without admin permissions to the teacher workspace
+  const isTeacher = roleCode === "TEACHER" || roleCode === "GV_MN";
+  if (isTeacher && roleCode !== "ADMIN" && readableModules.length === 0) {
+    redirect("/teacher/classes")
   }
 
   return (
