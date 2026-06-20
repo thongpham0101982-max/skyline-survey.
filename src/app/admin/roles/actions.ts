@@ -29,14 +29,35 @@ export async function savePermissions(roleCode: string, permissions: any[]) {
     if (permissions.length > 0) {
       // Defensive: Filter out any permissions without a valid module code before saving
       const validPermissions = permissions.filter(p => !!p.module);
-      await Promise.all(validPermissions.map(p => prisma.permission.create({
+      
+      // Deduplicate and merge permissions by module to prevent duplicate key constraint violations
+      const mergedPermissionsMap = new Map<string, any>();
+      for (const p of validPermissions) {
+        const existing = mergedPermissionsMap.get(p.module);
+        if (existing) {
+          existing.canRead = existing.canRead || !!p.canRead;
+          existing.canCreate = existing.canCreate || !!p.canCreate;
+          existing.canUpdate = existing.canUpdate || !!p.canUpdate;
+          existing.canDelete = existing.canDelete || !!p.canDelete;
+        } else {
+          mergedPermissionsMap.set(p.module, {
+            module: p.module,
+            canRead: !!p.canRead,
+            canCreate: !!p.canCreate,
+            canUpdate: !!p.canUpdate,
+            canDelete: !!p.canDelete
+          });
+        }
+      }
+
+      await Promise.all(Array.from(mergedPermissionsMap.values()).map(p => prisma.permission.create({
         data: {
           roleCode,
           module: p.module,
-          canRead: !!p.canRead,
-          canCreate: !!p.canCreate,
-          canUpdate: !!p.canUpdate,
-          canDelete: !!p.canDelete
+          canRead: p.canRead,
+          canCreate: p.canCreate,
+          canUpdate: p.canUpdate,
+          canDelete: p.canDelete
         }
       })));
     }

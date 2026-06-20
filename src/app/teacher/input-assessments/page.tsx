@@ -9,8 +9,19 @@ export default async function TeacherAssessmentsPage() {
     redirect("/login")
   }
   
-  if (session.user.role !== "TEACHER" && session.user.role !== "ADMIN" && session.user.role !== "Teacher" && session.user.role !== "Admin") {
-    redirect("/")
+  const role = session.user.role;
+  const isAuthorizedRole = role === "TEACHER" || role === "GV_MN" || role === "ADMIN" || role === "Teacher" || role === "Admin";
+  
+  if (!isAuthorizedRole) {
+    try {
+      const { prisma } = require("@/lib/db");
+      const teacher = await prisma.teacher.findUnique({ where: { userId: session.user.id } });
+      if (!teacher) {
+        redirect("/");
+      }
+    } catch (e) {
+      redirect("/");
+    }
   }
 
   return <TeacherAssessmentsClient user={session.user} />
