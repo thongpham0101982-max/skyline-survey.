@@ -5,7 +5,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { 
   Calendar, Clock, MapPin, User, Users, BookOpen, Plus, Search, X, Check,
   AlertCircle, Trash2, Info, Layers, FileText, ChevronDown, ChevronUp,
-  ClipboardList, CheckCircle, Clock3, Building2, Shield, Filter, RotateCcw, SlidersHorizontal
+  ClipboardList, CheckCircle, Clock3, Building2, Shield, Filter, RotateCcw, SlidersHorizontal, Award
 } from "lucide-react"
 import { 
   createObservationSlot, updateObservationSlot, registerObservation, cancelObservation,
