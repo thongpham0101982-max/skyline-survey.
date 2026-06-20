@@ -11,7 +11,7 @@ import {
 
 interface Period { id: string; code: string; name: string; status: string; startDate?: string; endDate?: string; description?: string; assignedUserId?: string; surveyType?: string; batches: Batch[] }
 interface Batch { id: string; periodId: string; batchNumber: number; name: string; startDate: string; endDate: string; status: string; campusId?: string; assignedUserId?: string }
-interface PreschoolChild { id: string; studentCode: string; fullName: string; dateOfBirth?: string; gender?: string; grade?: string; admissionCriteria?: string; surveyFormType?: string; admissionResult?: string; admissionCampus?: string; periodId: string; batchId?: string; devProfessionalComment?: string; devPsychologyComment?: string; devImportantNote?: string; devAssessmentResult?: string; bghApprovalStatus?: string; bghApprovalComment?: string; gdcsApprovalStatus?: string; gdcsApprovalComment?: string; }
+interface PreschoolChild { id: string; studentCode: string; fullName: string; dateOfBirth?: string; gender?: string; grade?: string; admissionCriteria?: string; surveyFormType?: string; admissionResult?: string; admissionCampus?: string; periodId: string; batchId?: string; devProfessionalComment?: string; devPsychologyComment?: string; devImportantNote?: string; devAssessmentResult?: string; bghApprovalStatus?: string; bghApprovalComment?: string; gdcsApprovalStatus?: string; gdcsApprovalComment?: string; bghApprovalUser?: string; bghApprovalDate?: string; gdcsApprovalUser?: string; gdcsApprovalDate?: string; }
 interface Camp { id: string; campusName: string; campusCode?: string; manager?: { fullName?: string } }
 interface AcademicYear { id: string; name: string }
 interface AssessmentConfig { id: string; categoryType: string; code: string; name: string; sortOrder: number }
@@ -926,6 +926,10 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   const [bghApprovalComment, setBghApprovalComment] = useState("");
   const [gdcsApprovalStatus, setGdcsApprovalStatus] = useState("");
   const [gdcsApprovalComment, setGdcsApprovalComment] = useState("");
+  const [bghApprovalUser, setBghApprovalUser] = useState("");
+  const [bghApprovalDate, setBghApprovalDate] = useState("");
+  const [gdcsApprovalUser, setGdcsApprovalUser] = useState("");
+  const [gdcsApprovalDate, setGdcsApprovalDate] = useState("");
 
   const calculateBMI = () => {
     let height = 0;
@@ -1785,6 +1789,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     setBghApprovalComment(student.bghApprovalComment || "");
     setGdcsApprovalStatus(student.gdcsApprovalStatus || "");
     setGdcsApprovalComment(student.gdcsApprovalComment || "");
+    setBghApprovalUser(student.bghApprovalUser || "");
+    setBghApprovalDate(student.bghApprovalDate || "");
+    setGdcsApprovalUser(student.gdcsApprovalUser || "");
+    setGdcsApprovalDate(student.gdcsApprovalDate || "");
     setEvalModal(true);
     setDevLoading(true);
         try {
@@ -6928,6 +6936,14 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 : 'bg-slate-100/50 border-slate-200 text-slate-500 cursor-not-allowed'
                             }`}
                           />
+                          {bghApprovalUser && (
+                            <div className="text-[10px] text-slate-500 font-semibold mt-2 flex flex-col gap-1 bg-slate-50 p-2.5 rounded-xl border border-slate-100 animate-in fade-in">
+                              <div className="flex items-center gap-1">👤 Người duyệt: <span className="font-bold text-slate-700">{bghApprovalUser}</span></div>
+                              {bghApprovalDate && (
+                                <div className="flex items-center gap-1">📅 Thời gian: <span className="font-bold text-slate-700">{new Date(bghApprovalDate).toLocaleString("vi-VN")}</span></div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       )}
 
@@ -7015,6 +7031,14 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 : 'bg-slate-100/50 border-slate-200 text-slate-500 cursor-not-allowed'
                             }`}
                           />
+                          {gdcsApprovalUser && (
+                            <div className="text-[10px] text-slate-500 font-semibold mt-2 flex flex-col gap-1 bg-slate-50 p-2.5 rounded-xl border border-slate-100 animate-in fade-in">
+                              <div className="flex items-center gap-1">👤 Người duyệt: <span className="font-bold text-slate-700">{gdcsApprovalUser}</span></div>
+                              {gdcsApprovalDate && (
+                                <div className="flex items-center gap-1">📅 Thời gian: <span className="font-bold text-slate-700">{new Date(gdcsApprovalDate).toLocaleString("vi-VN")}</span></div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
