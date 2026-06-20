@@ -150,6 +150,95 @@ export function ObservationClient({
   const [taughtUnit, setTaughtUnit] = useState("tháng")
   const [savingTargets, setSavingTargets] = useState(false)
 
+  // Self Target Confirmation states
+  const [selfObserverType, setSelfObserverType] = useState(currentTeacher?.observerType || "")
+  const [selfObserveeType, setSelfObserveeType] = useState(currentTeacher?.observeeType || "")
+  const [selfRequiredObserved, setSelfRequiredObserved] = useState(currentTeacher?.requiredObserved || 0)
+  const [selfObservedUnit, setSelfObservedUnit] = useState(currentTeacher?.observedUnit || "tháng")
+  const [selfRequiredTaught, setSelfRequiredTaught] = useState(currentTeacher?.requiredTaught || 0)
+  const [selfTaughtUnit, setSelfTaughtUnit] = useState(currentTeacher?.taughtUnit || "tháng")
+  const [isEditingSelfTargets, setIsEditingSelfTargets] = useState(!currentTeacher?.observerType)
+  const defaultGvOption = currentTeacher?.observerType === "Giáo viên mới" ? "new" : "old"
+  const [gvOption, setGvOption] = useState(defaultGvOption)
+  const [savingSelfTargets, setSavingSelfTargets] = useState(false)
+
+  const specialPositions = ["Ban ĐHCM", "TTCM", "QLCM", "GĐCS", "Giám đốc Điều hành cơ sở"];
+  const isSpecialPosition = currentTeacher?.position && specialPositions.includes(currentTeacher.position);
+
+  const computedTargets = useMemo(() => {
+    const position = currentTeacher?.position || "";
+    if (position === "Ban ĐHCM") {
+      return {
+        obsType: "Ban ĐHCM",
+        obsCount: 10,
+        obsUnit: "tháng",
+        tgtType: "Ban ĐHCM",
+        tgtCount: 0,
+        tgtUnit: "tháng",
+        labelObs: "10 tiết / Tháng",
+        labelTgt: "Không quy định"
+      };
+    } else if (position === "TTCM") {
+      return {
+        obsType: "TTCM",
+        obsCount: 8,
+        obsUnit: "tháng",
+        tgtType: "TTCM",
+        tgtCount: 1,
+        tgtUnit: "năm",
+        labelObs: "8 tiết / Tháng",
+        labelTgt: "1 tiết / Năm học"
+      };
+    } else if (position === "QLCM") {
+      return {
+        obsType: "QLCM",
+        obsCount: 8,
+        obsUnit: "tháng",
+        tgtType: "QLCM",
+        tgtCount: 0,
+        tgtUnit: "tháng",
+        labelObs: "8 tiết / Tháng",
+        labelTgt: "Không quy định"
+      };
+    } else if (position === "GĐCS" || position === "Giám đốc Điều hành cơ sở") {
+      return {
+        obsType: "Giám đốc Điều hành cơ sở",
+        obsCount: 4,
+        obsUnit: "tháng",
+        tgtType: "Giám đốc Điều hành cơ sở",
+        tgtCount: 0,
+        tgtUnit: "tháng",
+        labelObs: "4 tiết / Tháng",
+        labelTgt: "Không quy định"
+      };
+    } else {
+      // Normal GV
+      if (gvOption === "new") {
+        return {
+          obsType: "Giáo viên mới",
+          obsCount: 10,
+          obsUnit: "tháng",
+          tgtType: "Giáo viên mới",
+          tgtCount: 1,
+          tgtUnit: "tháng",
+          labelObs: "10 tiết / Tháng",
+          labelTgt: "1 tiết / Tháng"
+        };
+      } else {
+        return {
+          obsType: "Giáo viên cũ",
+          obsCount: 4,
+          obsUnit: "tháng",
+          tgtType: "Giáo viên cũ",
+          tgtCount: 1,
+          tgtUnit: "học kỳ",
+          labelObs: "4 tiết / Tháng",
+          labelTgt: "1 tiết / Học kỳ"
+        };
+      }
+    }
+  }, [currentTeacher?.position, gvOption]);
+
   const isPrivileged = currentTeacher?.position === "TTCM" || currentTeacher?.position === "QLCM";
 
   useEffect(() => {
@@ -887,6 +976,138 @@ export function ObservationClient({
 
       {/* Main Layout */}
       <div className="flex flex-col gap-6">
+        {/* Target Confirmation Card */}
+        {activeTab === "dang-ky" && (
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-md shadow-slate-100/40 p-6 border-t-4 border-t-[#00A19A] flex flex-col gap-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <Award className="w-5 h-5 text-[#00A19A]" />
+                <span className="font-extrabold text-sm text-slate-800 uppercase tracking-wider">🎯 Xác nhận chỉ tiêu dự giờ & tiết dạy</span>
+              </div>
+              {selfObserverType && !isEditingSelfTargets && (
+                <button
+                  onClick={() => setIsEditingSelfTargets(true)}
+                  className="text-xs font-bold text-[#00A19A] hover:underline"
+                >
+                  Thay đổi thông tin
+                </button>
+              )}
+            </div>
+
+            {!isEditingSelfTargets ? (
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-emerald-50/40 border border-emerald-100 p-4 rounded-2xl">
+                <div className="space-y-1">
+                  <p className="text-xs text-slate-500 font-bold">Thông tin chỉ tiêu của Thầy/Cô đã được xác nhận:</p>
+                  <div className="flex flex-wrap gap-4 text-xs font-semibold text-slate-800">
+                    <div>Chức danh / Nhóm: <span className="font-black text-[#0A3230]">{selfObserverType}</span></div>
+                    <div>Chỉ tiêu Dự giờ: <span className="font-black text-[#0A3230]">{selfRequiredObserved} tiết/{selfObservedUnit}</span></div>
+                    <div>Chỉ tiêu Tiết dạy: <span className="font-black text-[#0A3230]">{selfRequiredTaught > 0 ? `${selfRequiredTaught} tiết/${selfTaughtUnit}` : "Không quy định"}</span></div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 text-xs font-black text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl self-start md:self-auto">
+                  <Check className="w-4 h-4" /> Đã xác nhận chỉ tiêu
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Họ và Tên & Chức vụ</label>
+                    <div className="text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200 p-2.5 rounded-xl">
+                      {currentTeacher?.teacherName} ({currentTeacher?.position || "Giáo viên"})
+                    </div>
+                  </div>
+
+                  {!isSpecialPosition ? (
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] font-bold uppercase tracking-wider text-[#00A19A]">Chọn nhóm giáo viên</label>
+                      <select
+                        value={gvOption}
+                        onChange={(e) => setGvOption(e.target.value as "new" | "old")}
+                        className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2.5 bg-slate-50 text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A19A] outline-none"
+                      >
+                        <option value="new">Giáo viên mới (dưới 1 năm kinh nghiệm)</option>
+                        <option value="old">Giáo viên cũ (từ 2 năm trở lên)</option>
+                      </select>
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Nhóm chỉ tiêu (Theo chức vụ)</label>
+                      <div className="text-xs font-bold text-[#00A19A] bg-slate-50 border border-slate-200 p-2.5 rounded-xl">
+                        {computedTargets.obsType}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-150">
+                  <div className="flex flex-col">
+                    <span className="text-[9px] font-bold uppercase text-slate-400">Chỉ tiêu dự giờ</span>
+                    <span className="text-xs font-black text-slate-800 mt-1">{computedTargets.labelObs}</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[9px] font-bold uppercase text-slate-400">Chỉ tiêu tiết dạy</span>
+                    <span className="text-xs font-black text-slate-800 mt-1">{computedTargets.labelTgt}</span>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2.5 border-t border-slate-100 pt-4">
+                  {selfObserverType && (
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingSelfTargets(false)}
+                      className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-50 border border-slate-200 rounded-xl"
+                    >
+                      Hủy bỏ
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    disabled={savingSelfTargets}
+                    onClick={async () => {
+                      setSavingSelfTargets(true);
+                      const res = await updateTeacherObservationTargets(currentTeacher.id, {
+                        observerType: computedTargets.obsType,
+                        observeeType: computedTargets.tgtType,
+                        requiredObserved: computedTargets.obsCount,
+                        observedUnit: computedTargets.obsUnit,
+                        requiredTaught: computedTargets.tgtCount,
+                        taughtUnit: computedTargets.tgtUnit
+                      });
+                      setSavingSelfTargets(false);
+                      if (res.success) {
+                        showToast("Xác nhận thông tin chỉ tiêu thành công!", "success");
+                        setSelfObserverType(computedTargets.obsType);
+                        setSelfObserveeType(computedTargets.tgtType);
+                        setSelfRequiredObserved(computedTargets.obsCount);
+                        setSelfObservedUnit(computedTargets.obsUnit);
+                        setSelfRequiredTaught(computedTargets.tgtCount);
+                        setSelfTaughtUnit(computedTargets.tgtUnit);
+                        setIsEditingSelfTargets(false);
+                        
+                        // Sync with teachers local list
+                        const tIdx = teachers.findIndex(t => t.id === currentTeacher.id);
+                        if (tIdx > -1) {
+                          teachers[tIdx].observerType = computedTargets.obsType;
+                          teachers[tIdx].observeeType = computedTargets.tgtType;
+                          teachers[tIdx].requiredObserved = computedTargets.obsCount;
+                          teachers[tIdx].observedUnit = computedTargets.obsUnit;
+                          teachers[tIdx].requiredTaught = computedTargets.tgtCount;
+                          teachers[tIdx].taughtUnit = computedTargets.tgtUnit;
+                        }
+                      } else {
+                        showToast("Lỗi: " + res.error, "error");
+                      }
+                    }}
+                    className="px-5 py-2 bg-gradient-to-r from-[#0A3230] to-[#00A19A] text-white text-xs font-extrabold uppercase tracking-wider rounded-xl shadow-sm hover:shadow-lg transition-all disabled:opacity-50"
+                  >
+                    {savingSelfTargets ? "Đang lưu..." : "Xác nhận & Lưu chỉ tiêu"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
         {/* Filters */}
         {activeTab === "dang-ky" && (
           <div className="bg-white rounded-3xl border border-slate-100 shadow-md shadow-slate-100/40 flex flex-col border-t-4 border-t-[#0A3230] overflow-hidden">

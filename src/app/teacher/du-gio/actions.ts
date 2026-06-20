@@ -660,20 +660,21 @@ export async function updateTeacherObservationTargets(
     const roleCode = (session.user as any)?.role || "TEACHER"
     const isSuperAdmin = roleCode === "ADMIN"
 
-    // Also allow TTCM to update targets for teachers in their department
+    // Also allow TTCM or the teacher themselves to update their own targets
     const currentTeacher = await prisma.teacher.findUnique({
       where: { userId: session.user.id },
-      select: { position: true, departmentId: true }
+      select: { id: true, position: true, departmentId: true }
     })
 
     const isTTCM = currentTeacher?.position === "TTCM"
+    const isSelf = currentTeacher && currentTeacher.id === teacherId
 
-    if (!isSuperAdmin && !isTTCM) {
+    if (!isSuperAdmin && !isTTCM && !isSelf) {
       return { success: false, error: "Bạn không có quyền cấu hình chỉ tiêu" }
     }
 
-    // If they are TTCM, make sure the target teacher is in their department
-    if (isTTCM && !isSuperAdmin) {
+    // If they are TTCM, make sure the target teacher is in their department (unless editing themselves)
+    if (isTTCM && !isSuperAdmin && !isSelf) {
       const targetTeacher = await prisma.teacher.findUnique({
         where: { id: teacherId },
         select: { departmentId: true }
