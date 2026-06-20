@@ -6808,7 +6808,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 );
 
                 const canApproveBGH = (isSystemAdmin || isBGHUser) && hasCampusMatch;
-                const canApproveGDCS = (isSystemAdmin || isGDCSUser) && hasCampusMatch;
+                const canApproveGDCS = (isSystemAdmin || isGDCSUser) && hasCampusMatch && !!bghApprovalStatus;
                 const userCampusNames = userCampuses.map(c => c.campusName).join(", ");
 
                 const getCalculatedResult = () => {
@@ -6885,7 +6885,14 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                             <div className="flex items-center gap-2">
                               <div className={`w-2 h-2 rounded-full ${canApproveBGH ? 'bg-teal-400 animate-pulse' : 'bg-slate-300'}`} />
-                              <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider">BAN GIÁM HIỆU MẦM NON</span>
+                              <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider mr-2">BAN GIÁM HIỆU MẦM NON</span>
+                              {(() => {
+                                if (!bghApprovalStatus) return <span className="text-[9px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">Chưa duyệt</span>;
+                                if (bghApprovalStatus === "DAT_MIEN_HOC_THU" || bghApprovalStatus === "DAT") return <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">Đạt - Miễn Học Thử</span>;
+                                if (bghApprovalStatus === "DAT_HOC_THU") return <span className="text-[9px] font-bold text-teal-600 bg-teal-50 px-2 py-0.5 rounded-lg border border-teal-200">Đạt - Học Thử</span>;
+                                if (bghApprovalStatus === "KHONG_DAT") return <span className="text-[9px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-lg border border-rose-200">Không đạt</span>;
+                                return <span className="text-[9px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200">Ý kiến khác</span>;
+                              })()}
                             </div>
                             {!canApproveBGH && (
                               <span className="text-[9px] font-bold text-slate-450 bg-slate-100 px-2 py-1 rounded-lg flex items-center gap-1" title={
@@ -6909,6 +6916,12 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                           {isBGHUser && !hasCampusMatch && evalStudent?.admissionCampus && (
                             <div className="text-[9px] font-semibold text-amber-600 bg-amber-50/70 border border-amber-100 rounded-xl p-2.5 leading-relaxed">
                               ⚠️ Cơ sở học sinh: <span className="underline font-bold">${evalStudent.admissionCampus}</span>. Cơ sở của bạn: <span className="underline font-bold">${userCampusNames || "Chưa gán"}</span>. Bạn không có quyền duyệt phiếu cơ sở này.
+                            </div>
+                          )}
+
+                          {(isSystemAdmin || isGDCSUser) && hasCampusMatch && !bghApprovalStatus && (
+                            <div className="text-[9px] font-semibold text-amber-600 bg-amber-50/70 border border-amber-100 rounded-xl p-2.5 leading-relaxed mb-4">
+                              ⚠️ Chờ Ban Giám Hiệu Mầm Non duyệt trước. Bạn chỉ có quyền duyệt sau khi BGH đã duyệt.
                             </div>
                           )}
 
@@ -6978,17 +6991,26 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                             <div className="flex items-center gap-2">
                               <div className={`w-2 h-2 rounded-full ${canApproveGDCS ? 'bg-fuchsia-450 animate-pulse' : 'bg-slate-300'}`} />
-                              <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider">
+                              <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider mr-2">
                                 {getGdcsLabel(evalStudent?.admissionCampus)}
                               </span>
+                              {(() => {
+                                if (!gdcsApprovalStatus) return <span className="text-[9px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">Chưa duyệt</span>;
+                                if (gdcsApprovalStatus === "DAT_MIEN_HOC_THU" || gdcsApprovalStatus === "DAT") return <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">Đạt - Miễn Học Thử</span>;
+                                if (gdcsApprovalStatus === "DAT_HOC_THU") return <span className="text-[9px] font-bold text-teal-600 bg-teal-50 px-2 py-0.5 rounded-lg border border-teal-200">Đạt - Học Thử</span>;
+                                if (gdcsApprovalStatus === "KHONG_DAT") return <span className="text-[9px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-lg border border-rose-200">Không đạt</span>;
+                                return <span className="text-[9px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200">Ý kiến khác</span>;
+                              })()}
                             </div>
                             {!canApproveGDCS && (
                               <span className="text-[9px] font-bold text-slate-450 bg-slate-100 px-2 py-1 rounded-lg flex items-center gap-1" title={
                                 !evalStudent?.admissionCampus 
                                   ? "Học sinh chưa có thông tin cơ sở" 
-                                  : isGDCSUser 
-                                    ? `Bạn là GĐCS của ${userCampusNames || "cơ sở khác"}, học sinh thuộc ${evalStudent.admissionCampus}` 
-                                    : "Quyền hạn yêu cầu Giám đốc Cơ sở"
+                                  : !bghApprovalStatus && (isSystemAdmin || isGDCSUser) && hasCampusMatch
+                                    ? "Chờ Ban Giám Hiệu Mầm Non duyệt trước"
+                                    : isGDCSUser && !hasCampusMatch
+                                      ? `Bạn là GĐCS của ${userCampusNames || "cơ sở khác"}, học sinh thuộc ${evalStudent.admissionCampus}` 
+                                      : "Quyền hạn yêu cầu Giám đốc Cơ sở"
                               }>
                                 🔒 Chỉ đọc
                               </span>
