@@ -89,7 +89,10 @@ export function AdminTongHopClient({
     : (activeDepartments.find(d => d.id === initialFilters.deptId)?.id || activeDepartments[0]?.id || "");
 
   const [selectedDeptId, setSelectedDeptId] = useState(initialDeptId)
+  const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null)
+  const [activeDetailTab, setActiveDetailTab] = useState("to-cm")
   
+  // Target Config states (moved down to avoid referencing selectedTeacherId before initialization)
   const [observerType, setObserverType] = useState("")
   const [observeeType, setObserveeType] = useState("")
   const [requiredObserved, setRequiredObserved] = useState(0)
@@ -112,7 +115,7 @@ export function AdminTongHopClient({
     }
   }, [selectedTeacherId, teachers]);
 
-  const handleObserverTypeChange = (type) => {
+  const handleObserverTypeChange = (type: any) => {
     setObserverType(type);
     if (type === "Ban ĐHCM") {
       setRequiredObserved(10);
@@ -135,7 +138,7 @@ export function AdminTongHopClient({
     }
   };
 
-  const handleObserveeTypeChange = (type) => {
+  const handleObserveeTypeChange = (type: any) => {
     setObserveeType(type);
     if (type === "TTCM") {
       setRequiredTaught(1);
@@ -151,8 +154,6 @@ export function AdminTongHopClient({
       setTaughtUnit("học kỳ");
     }
   };
-  const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null)
-  const [activeDetailTab, setActiveDetailTab] = useState("to-cm")
   
   // Search & Filter states
   const [selectedMonth, setSelectedMonth] = useState<string>("all")
