@@ -3,6 +3,27 @@ import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { getSurveyFormAgeGroup } from "@/lib/preschool"
 
+function isPreschoolAssignmentMatch(aGrade: string, formAgeGroup: string, isStage2: boolean): boolean {
+  const ag = (aGrade || "").trim();
+  const form = (formAgeGroup || "").trim();
+
+  if (isStage2) {
+    if (form === "12 đến 18 tháng" && ag === "12 đến 18 tháng") return true;
+    if (form === "18 đến 24 tháng" && ag === "18 đến 24 tháng") return true;
+    if (form === "24 đến 36 tháng" && ag === "24 đến 36 tháng") return true;
+    if (form === "3 đến 4 tuổi" && (ag === "Mẫu giáo bé" || ag === "3 đến 4 tuổi")) return true;
+    if (form === "4 đến 5 tuổi" && (ag === "Mẫu giáo nhỡ" || ag === "4 đến 5 tuổi")) return true;
+    if (form === "5 đến 6 tuổi" && (ag === "Mẫu giáo lớn" || ag === "5 đến 6 tuổi")) return true;
+  } else {
+    if (form === "12 đến 18 tháng" && ag === "12 đến 18 tháng") return true;
+    if (form === "18 đến 24 tháng" && (ag === "18 đến 24 tháng" || ag === "24 đến 36 tháng")) return true;
+    if (form === "24 đến 36 tháng" && (ag === "Mẫu giáo bé" || ag === "3 đến 4 tuổi")) return true;
+    if (form === "3 đến 4 tuổi" && (ag === "Mẫu giáo nhỡ" || ag === "4 đến 5 tuổi")) return true;
+    if (form === "4 đến 5 tuổi" && (ag === "Mẫu giáo lớn" || ag === "5 đến 6 tuổi")) return true;
+  }
+  return ag === form;
+}
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
@@ -166,9 +187,11 @@ export async function GET(req: NextRequest) {
         const firstScore = studentScoresList[0];
         const surveyDate = firstScore ? firstScore.createdAt : new Date();
         const sAgeGroup = getSurveyFormAgeGroup(s.grade, surveyDate);
+        const batchStartDate = s.batch?.startDate ? new Date(s.batch.startDate) : null;
+        const isStage2 = batchStartDate ? (!isNaN(batchStartDate.getTime()) && batchStartDate.getMonth() >= 0 && batchStartDate.getMonth() <= 4) : false;
         const matches = assignments.filter((a: any) => {
           if (a.periodId !== s.periodId) return false;
-          if (a.grade !== sAgeGroup) return false;
+          if (!isPreschoolAssignmentMatch(a.grade, sAgeGroup, isStage2)) return false;
           return !a.batchId || a.batchId === s.batchId;
         });
         const assignedTeachers = Array.from(new Set(matches.map((m: any) => m.user?.fullName || "Chưa rõ"))).filter(Boolean).join(", ") || "Chưa phân công";

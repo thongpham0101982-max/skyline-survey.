@@ -50,9 +50,9 @@ export function getSurveyFormAgeGroup(grade?: string | null, batchStartDate?: st
     if (normalizedGrade === "Nhà trẻ 12-18 tháng" || normalizedGrade === "12 đến 18 tháng") return "12 đến 18 tháng";
     if (normalizedGrade === "Nhà trẻ 18-24 tháng" || normalizedGrade === "18 đến 24 tháng") return "18 đến 24 tháng";
     if (normalizedGrade === "Nhà trẻ 24-36 tháng" || normalizedGrade === "24 đến 36 tháng") return "18 đến 24 tháng";
-    if (normalizedGrade === "Mẫu giáo bé") return "24 đến 36 tháng";
-    if (normalizedGrade === "Mẫu giáo nhỡ") return "3 đến 4 tuổi";
-    if (normalizedGrade === "Mẫu giáo lớn") return "4 đến 5 tuổi";
+    if (normalizedGrade === "Mẫu giáo bé" || normalizedGrade === "3 đến 4 tuổi") return "24 đến 36 tháng";
+    if (normalizedGrade === "Mẫu giáo nhỡ" || normalizedGrade === "4 đến 5 tuổi") return "3 đến 4 tuổi";
+    if (normalizedGrade === "Mẫu giáo lớn" || normalizedGrade === "5 đến 6 tuổi") return "4 đến 5 tuổi";
   }
 
   return normalizedGrade;

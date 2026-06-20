@@ -2775,10 +2775,35 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     if (!evalStudent) return "";
     if (devLoading && !evalAssignments.length) return "Đang tải...";
     if (!evalAssignments.length) return "Chưa phân công";
-        const matches = evalAssignments.filter(a => {
+    
+    // Determine isStage2
+    const batchObj = periods.find(p => p.id === (evalStudent.periodId || cPeriodId))?.batches?.find((b: any) => b.id === evalStudent.batchId);
+    const dateObj = batchObj?.startDate ? new Date(batchObj.startDate) : null;
+    const isStage2 = dateObj ? (!isNaN(dateObj.getTime()) && dateObj.getMonth() >= 0 && dateObj.getMonth() <= 4) : false;
+
+    const matches = evalAssignments.filter(a => {
       const studentPeriodId = evalStudent.periodId || cPeriodId;
       if (a.periodId !== studentPeriodId) return false;
-      if (a.grade !== activeAgeGroup) return false;
+      
+      const ag = (a.grade || "").trim();
+      const form = (activeAgeGroup || "").trim();
+      let isMatch = ag === form;
+      if (isStage2) {
+        if (form === "12 đến 18 tháng" && ag === "12 đến 18 tháng") isMatch = true;
+        else if (form === "18 đến 24 tháng" && ag === "18 đến 24 tháng") isMatch = true;
+        else if (form === "24 đến 36 tháng" && ag === "24 đến 36 tháng") isMatch = true;
+        else if (form === "3 đến 4 tuổi" && (ag === "Mẫu giáo bé" || ag === "3 đến 4 tuổi")) isMatch = true;
+        else if (form === "4 đến 5 tuổi" && (ag === "Mẫu giáo nhỡ" || ag === "4 đến 5 tuổi")) isMatch = true;
+        else if (form === "5 đến 6 tuổi" && (ag === "Mẫu giáo lớn" || ag === "5 đến 6 tuổi")) isMatch = true;
+      } else {
+        if (form === "12 đến 18 tháng" && ag === "12 đến 18 tháng") isMatch = true;
+        else if (form === "18 đến 24 tháng" && (ag === "18 đến 24 tháng" || ag === "24 đến 36 tháng")) isMatch = true;
+        else if (form === "24 đến 36 tháng" && (ag === "Mẫu giáo bé" || ag === "3 đến 4 tuổi")) isMatch = true;
+        else if (form === "3 đến 4 tuổi" && (ag === "Mẫu giáo nhỡ" || ag === "4 đến 5 tuổi")) isMatch = true;
+        else if (form === "4 đến 5 tuổi" && (ag === "Mẫu giáo lớn" || ag === "5 đến 6 tuổi")) isMatch = true;
+      }
+
+      if (!isMatch) return false;
       return !a.batchId || a.batchId === evalStudent.batchId;
     });
     if (matches.length === 0) return "Chưa phân công";
