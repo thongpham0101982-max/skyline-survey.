@@ -12,6 +12,7 @@ export default async function ObservationPage(props: {
   }
 
   const searchParams = await props.searchParams
+  const academicYearId = searchParams.academicYearId || undefined
   const level = searchParams.level || "all"
   const grade = searchParams.grade || "all"
   const period = searchParams.period || "all"
@@ -19,7 +20,7 @@ export default async function ObservationPage(props: {
   const campusId = searchParams.campusId || "all"
   const deptId = searchParams.deptId || "all"
 
-  const refDataResult = await getObservationData()
+  const refDataResult = await getObservationData(academicYearId)
   if (!refDataResult.success) {
     return (
       <div className="p-6 text-red-500 font-bold bg-red-50 rounded-2xl border border-red-200">
@@ -29,6 +30,7 @@ export default async function ObservationPage(props: {
   }
 
   const slotsResult = await getObservationSlots({
+    academicYearId,
     level,
     grade,
     period,
@@ -46,7 +48,9 @@ export default async function ObservationPage(props: {
       teachers={refDataResult.teachers || []}
       campuses={refDataResult.campuses || []}
       classes={refDataResult.classes || []}
-      initialFilters={{ level, grade, period, date, campusId, deptId }}
+      initialFilters={{ level, grade, period, date, campusId, deptId, academicYearId }}
+      academicYears={refDataResult.academicYears || []}
+      selectedYearId={refDataResult.selectedYearId || undefined}
     />
   )
 }

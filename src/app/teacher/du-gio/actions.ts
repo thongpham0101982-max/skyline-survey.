@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 
-export async function getObservationData() {
+export async function getObservationData(academicYearId?: string) {
   try {
     const session = await auth()
     if (!session || !session.user) {
@@ -26,17 +26,24 @@ export async function getObservationData() {
       return { success: false, error: "Teacher profile not found" }
     }
 
-    const activeYear = await prisma.academicYear.findFirst({
-      where: { status: "ACTIVE" }
+    const academicYears = await prisma.academicYear.findMany({
+      orderBy: { startDate: "desc" },
+      select: { id: true, name: true, status: true }
     })
 
+    const selectedYear = academicYearId
+      ? academicYears.find(y => y.id === academicYearId)
+      : academicYears.find(y => y.status === "ACTIVE") || academicYears[0];
+
+    const activeYearId = selectedYear?.id || null;
+
     let activeYearTarget = null
-    if (activeYear && currentTeacher && !isAdmin) {
+    if (activeYearId && currentTeacher && !isAdmin) {
       activeYearTarget = await prisma.teacherAcademicYearTarget.findUnique({
         where: {
           teacherId_academicYearId: {
             teacherId: currentTeacher.id,
-            academicYearId: activeYear.id
+            academicYearId: activeYearId
           }
         }
       })
@@ -103,8 +110,8 @@ export async function getObservationData() {
       orderBy: { teacherName: "asc" }
     })
 
-    const allTargets = activeYear ? await prisma.teacherAcademicYearTarget.findMany({
-      where: { academicYearId: activeYear.id }
+    const allTargets = activeYearId ? await prisma.teacherAcademicYearTarget.findMany({
+      where: { academicYearId: activeYearId }
     }) : []
 
     const targetsMap = new Map(allTargets.map(t => [t.teacherId, t]))
@@ -139,7 +146,9 @@ export async function getObservationData() {
       departments,
       teachers,
       campuses,
-      classes
+      classes,
+      academicYears,
+      selectedYearId: activeYearId
     }
   } catch (e: any) {
     return { success: false, error: e.message }
@@ -153,7 +162,8 @@ export async function getObservationSlots(filters: {
     level?: string
     grade?: string
     period?: string
-  date?: string
+    date?: string
+    academicYearId?: string
 }) {
   try {
     const session = await auth()
@@ -172,9 +182,9 @@ export async function getObservationSlots(filters: {
       return { success: false, error: "Teacher profile not found" }
     }
 
-    const activeYear = await prisma.academicYear.findFirst({
-      where: { status: "ACTIVE" }
-    })
+    const activeYear = filters.academicYearId
+      ? await prisma.academicYear.findUnique({ where: { id: filters.academicYearId } })
+      : await prisma.academicYear.findFirst({ where: { status: "ACTIVE" } })
 
     const where: any = {
       status: "ACTIVE"

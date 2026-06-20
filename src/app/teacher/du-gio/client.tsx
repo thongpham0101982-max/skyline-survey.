@@ -27,7 +27,9 @@ interface ObservationClientProps {
   teachers: any[]
   campuses: CampusInfo[]
   classes: ClassInfo[]
-  initialFilters: { level: string; period: string; grade: string; date: string; campusId: string; deptId: string }
+  initialFilters: { level: string; period: string; grade: string; date: string; campusId: string; deptId: string; academicYearId?: string }
+  academicYears?: { id: string; name: string; status: string }[]
+  selectedYearId?: string
 }
 
 const CRITERIA_LABELS = [
@@ -82,7 +84,7 @@ const RATING_COLORS: Record<string, string> = {
 }
 
 export function ObservationClient({
-  initialSlots, currentTeacher, subjects, departments, teachers, campuses, classes, initialFilters
+  initialSlots, currentTeacher, subjects, departments, teachers, campuses, classes, initialFilters, academicYears, selectedYearId
 }: ObservationClientProps) {
   const isMamNonTeacher = (currentTeacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
   const router = useRouter()
@@ -107,6 +109,14 @@ export function ObservationClient({
   const [filterDate, setFilterDate] = useState(initialFilters.date)
   const [filterCampusId, setFilterCampusId] = useState(initialFilters.campusId)
   const [filterDeptId, setFilterDeptId] = useState(initialFilters.deptId)
+  const [filterAcademicYearId, setFilterAcademicYearId] = useState(initialFilters.academicYearId || selectedYearId || "")
+
+  const handleAcademicYearChange = (yearId: string) => {
+    setFilterAcademicYearId(yearId)
+    const params = new URLSearchParams(window.location.search)
+    params.set("academicYearId", yearId)
+    router.push(`${pathname}?${params.toString()}`)
+  }
   const [showFilterPanel, setShowFilterPanel] = useState(true)
   const autoSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -952,10 +962,25 @@ export function ObservationClient({
           </h1>
           <p className="text-slate-500 text-sm font-medium mt-1">Đăng ký dự giờ tiết dạy tại Sky-Line</p>
         </div>
-        <button onClick={() => setShowCreateModal(true)}
-          className="flex items-center justify-center gap-2 bg-[#00A19A] hover:bg-[#008B85] text-white font-bold py-2.5 px-5 rounded-xl transition-all shadow-md hover:shadow-lg active:scale-95 text-sm shrink-0">
-          <Plus className="w-4 h-4" /> Thêm mới tiết dạy
-        </button>
+        <div className="flex items-center gap-3 shrink-0">
+          {academicYears && academicYears.length > 0 && (
+            <select
+              value={filterAcademicYearId || selectedYearId || ""}
+              onChange={(e) => handleAcademicYearChange(e.target.value)}
+              className="text-xs font-bold rounded-xl border border-slate-200 p-2.5 bg-white text-slate-700 shadow-sm focus:ring-2 focus:ring-[#00A19A] outline-none"
+            >
+              {academicYears.map((yr: any) => (
+                <option key={yr.id} value={yr.id}>
+                  Năm học: {yr.name} {yr.status === "ACTIVE" ? "(Hiện tại)" : ""}
+                </option>
+              ))}
+            </select>
+          )}
+          <button onClick={() => setShowCreateModal(true)}
+            className="flex items-center justify-center gap-2 bg-[#00A19A] hover:bg-[#008B85] text-white font-bold py-2.5 px-5 rounded-xl transition-all shadow-md hover:shadow-lg active:scale-95 text-sm shrink-0">
+            <Plus className="w-4 h-4" /> Thêm mới tiết dạy
+          </button>
+        </div>
       </div>
 
       {/* Tabs */}

@@ -1,6 +1,7 @@
 ﻿"use client"
 
 import { useState, useMemo, useEffect } from "react"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { updateTeacherObservationTargets } from "@/app/teacher/du-gio/actions"
 import { 
   ClipboardList, CheckCircle, PieChart, FileText, Calendar, Layers,
@@ -22,9 +23,11 @@ interface AdminTongHopClientProps {
   teachers: any[]
   campuses: CampusInfo[]
   classes: ClassInfo[]
-  initialFilters: { level: string; period: string; grade: string; date: string; campusId: string; deptId: string }
+  initialFilters: { level: string; period: string; grade: string; date: string; campusId: string; deptId: string; academicYearId?: string }
   isTTCM: boolean
   isSuperAdmin: boolean
+  academicYears?: { id: string; name: string; status: string }[]
+  selectedYearId?: string
 }
 
 const maxScoresK12 = [1.5, 1.5, 2.0, 2.0, 1.0, 2.0, 3.0, 2.0, 2.0, 2.0, 1.0];
@@ -51,8 +54,19 @@ const preschoolLabels = [
 ];
 
 export function AdminTongHopClient({
-  initialSlots, currentTeacher, subjects, departments, teachers, campuses, classes, initialFilters, isTTCM, isSuperAdmin
+  initialSlots, currentTeacher, subjects, departments, teachers, campuses, classes, initialFilters, isTTCM, isSuperAdmin, academicYears, selectedYearId
 }: AdminTongHopClientProps) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const filterAcademicYearId = searchParams.get("academicYearId") || selectedYearId || ""
+
+  const handleAcademicYearChange = (yearId: string) => {
+    const params = new URLSearchParams(window.location.search)
+    params.set("academicYearId", yearId)
+    router.push(`${pathname}?${params.toString()}`)
+  }
+
   const [activeBlockTab, setActiveBlockTab] = useState(() => {
     if (isTTCM && currentTeacher?.departmentId) {
       const d = departments.find(dept => dept.id === currentTeacher.departmentId);
@@ -562,11 +576,26 @@ export function AdminTongHopClient({
       {/* Title Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 border-b border-slate-100 pb-5">
         <div>
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-teal-50 text-[#00A19A] rounded-xl border border-teal-100">
-              <PieChart className="w-5 h-5" />
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-teal-50 text-[#00A19A] rounded-xl border border-teal-100">
+                <PieChart className="w-5 h-5" />
+              </div>
+              <h1 className="text-2xl font-black text-[#0A3230] tracking-tight">Tổng hợp kết quả dự giờ</h1>
             </div>
-            <h1 className="text-2xl font-black text-[#0A3230] tracking-tight">Tổng hợp kết quả dự giờ</h1>
+            {academicYears && academicYears.length > 0 && (
+              <select
+                value={filterAcademicYearId}
+                onChange={(e) => handleAcademicYearChange(e.target.value)}
+                className="text-xs font-bold rounded-xl border border-slate-200 p-2 bg-white text-slate-700 shadow-sm focus:ring-2 focus:ring-[#00A19A] outline-none ml-2"
+              >
+                {academicYears.map((yr: any) => (
+                  <option key={yr.id} value={yr.id}>
+                    Năm học: {yr.name} {yr.status === "ACTIVE" ? "(Hiện tại)" : ""}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
           <p className="text-slate-500 text-sm font-medium mt-1.5 ml-1">
             {isTTCM 
