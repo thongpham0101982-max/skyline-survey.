@@ -26,6 +26,22 @@ export async function getObservationData() {
       return { success: false, error: "Teacher profile not found" }
     }
 
+    const activeYear = await prisma.academicYear.findFirst({
+      where: { status: "ACTIVE" }
+    })
+
+    let activeYearTarget = null
+    if (activeYear && currentTeacher && !isAdmin) {
+      activeYearTarget = await prisma.teacherAcademicYearTarget.findUnique({
+        where: {
+          teacherId_academicYearId: {
+            teacherId: currentTeacher.id,
+            academicYearId: activeYear.id
+          }
+        }
+      })
+    }
+
     if (!currentTeacher && isAdmin) {
       currentTeacher = {
         id: "admin-" + session.user.id,
@@ -53,6 +69,16 @@ export async function getObservationData() {
           campusName: "Trụ sở chính"
         }
       } as any;
+    } else if (currentTeacher) {
+      currentTeacher = {
+        ...currentTeacher,
+        observerType: activeYearTarget?.observerType || null,
+        observeeType: activeYearTarget?.observeeType || null,
+        requiredObserved: activeYearTarget?.requiredObserved || 0,
+        observedUnit: activeYearTarget?.observedUnit || "tháng",
+        requiredTaught: activeYearTarget?.requiredTaught || 0,
+        taughtUnit: activeYearTarget?.taughtUnit || "tháng"
+      } as any
     }
 
     const subjects = await prisma.subject.findMany({
@@ -65,22 +91,35 @@ export async function getObservationData() {
       orderBy: { name: "asc" }
     })
 
-    const teachers = await prisma.teacher.findMany({
+    const rawTeachers = await prisma.teacher.findMany({
       where: { status: "ACTIVE" },
       select: {
         id: true,
         teacherName: true,
         teacherCode: true,
         departmentId: true,
-        position: true,
-        observerType: true,
-        observeeType: true,
-        requiredObserved: true,
-        observedUnit: true,
-        requiredTaught: true,
-        taughtUnit: true
+        position: true
       },
       orderBy: { teacherName: "asc" }
+    })
+
+    const allTargets = activeYear ? await prisma.teacherAcademicYearTarget.findMany({
+      where: { academicYearId: activeYear.id }
+    }) : []
+
+    const targetsMap = new Map(allTargets.map(t => [t.teacherId, t]))
+
+    const teachers = rawTeachers.map(t => {
+      const target = targetsMap.get(t.id)
+      return {
+        ...t,
+        observerType: target?.observerType || null,
+        observeeType: target?.observeeType || null,
+        requiredObserved: target?.requiredObserved || 0,
+        observedUnit: target?.observedUnit || "tháng",
+        requiredTaught: target?.requiredTaught || 0,
+        taughtUnit: target?.taughtUnit || "tháng"
+      }
     })
 
     const campuses = await prisma.campus.findMany({
@@ -133,8 +172,16 @@ export async function getObservationSlots(filters: {
       return { success: false, error: "Teacher profile not found" }
     }
 
+    const activeYear = await prisma.academicYear.findFirst({
+      where: { status: "ACTIVE" }
+    })
+
     const where: any = {
       status: "ACTIVE"
+    }
+
+    if (activeYear) {
+      where.academicYearId = activeYear.id
     }
 
     if (filters.level && filters.level !== "all") {
@@ -278,6 +325,19 @@ export async function createObservationSlot(data: {
       }
     }
 
+    const activeYear = await prisma.academicYear.findFirst({
+      where: { status: "ACTIVE" }
+    })
+
+    const matchingYear = activeYear ? await prisma.academicYear.findFirst({
+      where: {
+        startDate: { lte: slotDate },
+        endDate: { gte: slotDate }
+      }
+    }) : null
+
+    const yearId = matchingYear?.id || activeYear?.id || null
+
     // 2. Create slot
     const newSlot = await prisma.observationSlot.create({
       data: {
@@ -302,7 +362,8 @@ export async function createObservationSlot(data: {
         classId: data.classId || null,
         className: data.className || null,
         lessonPlanName: data.lessonPlanName || null,
-        lessonPlanData: data.lessonPlanData || null
+        lessonPlanData: data.lessonPlanData || null,
+        academicYearId: yearId
       }
     })
 
@@ -608,6 +669,19 @@ export async function updateObservationSlot(slotId: string, data: {
 
     const slotDate = new Date(data.date)
 
+    const activeYear = await prisma.academicYear.findFirst({
+      where: { status: "ACTIVE" }
+    })
+
+    const matchingYear = activeYear ? await prisma.academicYear.findFirst({
+      where: {
+        startDate: { lte: slotDate },
+        endDate: { gte: slotDate }
+      }
+    }) : null
+
+    const yearId = matchingYear?.id || activeYear?.id || null
+
     const updatedSlot = await prisma.observationSlot.update({
       where: { id: slotId },
       data: {
@@ -629,7 +703,8 @@ export async function updateObservationSlot(slotId: string, data: {
         classId: data.classId || null,
         className: data.className || null,
         lessonPlanName: data.lessonPlanName !== undefined ? data.lessonPlanName : slot.lessonPlanName,
-        lessonPlanData: data.lessonPlanData !== undefined ? data.lessonPlanData : slot.lessonPlanData
+        lessonPlanData: data.lessonPlanData !== undefined ? data.lessonPlanData : slot.lessonPlanData,
+        academicYearId: yearId
       }
     })
 
@@ -684,15 +759,41 @@ export async function updateTeacherObservationTargets(
       }
     }
 
-    await prisma.teacher.update({
-      where: { id: teacherId },
-      data: {
+    const activeYear = await prisma.academicYear.findFirst({
+      where: { status: "ACTIVE" }
+    })
+    if (!activeYear) {
+      return { success: false, error: "Không tìm thấy năm học hoạt động" }
+    }
+
+    await prisma.teacherAcademicYearTarget.upsert({
+      where: {
+        teacherId_academicYearId: {
+          teacherId: teacherId,
+          academicYearId: activeYear.id
+        }
+      },
+      update: {
         observerType: data.observerType || null,
         observeeType: data.observeeType || null,
         requiredObserved: data.requiredObserved,
         observedUnit: data.observedUnit,
         requiredTaught: data.requiredTaught,
-        taughtUnit: data.taughtUnit
+        taughtUnit: data.taughtUnit,
+        confirmed: true,
+        confirmedAt: new Date()
+      },
+      create: {
+        teacherId: teacherId,
+        academicYearId: activeYear.id,
+        observerType: data.observerType || null,
+        observeeType: data.observeeType || null,
+        requiredObserved: data.requiredObserved,
+        observedUnit: data.observedUnit,
+        requiredTaught: data.requiredTaught,
+        taughtUnit: data.taughtUnit,
+        confirmed: true,
+        confirmedAt: new Date()
       }
     })
 

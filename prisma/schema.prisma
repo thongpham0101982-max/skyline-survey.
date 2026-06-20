@@ -73,12 +73,7 @@ model Teacher {
   hostObservationSlots  ObservationSlot[]         @relation("HostTeacher")
   observerRegistrations ObservationRegistration[] @relation("ObserverTeacher")
 
-  observerType       String?
-  observeeType       String?
-  requiredObserved   Int                      @default(0)
-  observedUnit       String                   @default("tháng")
-  requiredTaught     Int                      @default(0)
-  taughtUnit         String                   @default("tháng")
+  academicYearTargets TeacherAcademicYearTarget[]
 }
 
 model Campus {
@@ -122,6 +117,8 @@ model AcademicYear {
   teachingAssignments             TeachingAssignment[]
   weeklyReports                   WeeklyReport[]
   workTasks                       WorkTask[]
+  teacherTargets                  TeacherAcademicYearTarget[]
+  observationSlots                ObservationSlot[]
 }
 
 model Class {
@@ -949,6 +946,8 @@ model ObservationSlot {
 
   teacher         Teacher                   @relation("HostTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
   registrations   ObservationRegistration[]
+  academicYearId  String?
+  academicYear    AcademicYear?             @relation(fields: [academicYearId], references: [id], onDelete: SetNull)
 }
 
 model ObservationRegistration {
@@ -1009,4 +1008,23 @@ model ChatbotConfig {
   isActive          Boolean  @default(true)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+}
+
+model TeacherAcademicYearTarget {
+  id               String       @id @default(cuid())
+  teacherId        String
+  academicYearId   String
+  observerType     String?
+  observeeType     String?
+  requiredObserved Int          @default(0)
+  observedUnit     String       @default("tháng")
+  requiredTaught   Int          @default(0)
+  taughtUnit       String       @default("tháng")
+  confirmed        Boolean      @default(false)
+  confirmedAt      DateTime?
+
+  teacher          Teacher      @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  academicYear     AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+
+  @@unique([teacherId, academicYearId])
 }
