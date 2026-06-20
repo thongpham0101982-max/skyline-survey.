@@ -809,8 +809,12 @@ model PreschoolInputAssessmentStudent {
   devAssessmentResult    String?
   bghApprovalStatus      String?
   bghApprovalComment     String?
+  bghApprovalUser        String?
+  bghApprovalDate        DateTime?
   gdcsApprovalStatus     String?
   gdcsApprovalComment    String?
+  gdcsApprovalUser       String?
+  gdcsApprovalDate       DateTime?
   probationaryScoreText  String?
   probationaryResult     String?
   probationaryComment    String?

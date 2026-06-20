@@ -50,8 +50,12 @@ export async function GET(req: NextRequest) {
           admissionResult: true,
           bghApprovalStatus: true,
           bghApprovalComment: true,
+          bghApprovalUser: true,
+          bghApprovalDate: true,
           gdcsApprovalStatus: true,
           gdcsApprovalComment: true,
+          gdcsApprovalUser: true,
+          gdcsApprovalDate: true,
           probationaryResult: true,
           probationaryClass: true,
           batch: {
@@ -274,6 +278,20 @@ export async function POST(req: NextRequest) {
     const finalBgh = updatedBghStatus !== undefined ? updatedBghStatus : student.bghApprovalStatus;
     const finalGdcs = updatedGdcsStatus !== undefined ? updatedGdcsStatus : student.gdcsApprovalStatus;
 
+    const finalBghUser = updatedBghStatus !== undefined 
+      ? (canApproveBGH ? (updatedBghStatus ? (currentUser?.name || currentUser?.email || "BGH") : null) : student.bghApprovalUser) 
+      : undefined;
+    const finalBghDate = updatedBghStatus !== undefined 
+      ? (canApproveBGH ? (updatedBghStatus ? new Date() : null) : student.bghApprovalDate) 
+      : undefined;
+
+    const finalGdcsUser = updatedGdcsStatus !== undefined 
+      ? (canApproveGDCS ? (updatedGdcsStatus ? (currentUser?.name || currentUser?.email || "GĐCS") : null) : student.gdcsApprovalUser) 
+      : undefined;
+    const finalGdcsDate = updatedGdcsStatus !== undefined 
+      ? (canApproveGDCS ? (updatedGdcsStatus ? new Date() : null) : student.gdcsApprovalDate) 
+      : undefined;
+
     let finalAdmissionResult = undefined;
     const hasBghOrGdcsStatus = (finalBgh !== undefined && finalBgh !== null && finalBgh !== "") || 
                                (finalGdcs !== undefined && finalGdcs !== null && finalGdcs !== "");
@@ -322,8 +340,12 @@ export async function POST(req: NextRequest) {
         admissionResult: finalAdmissionResult,
         bghApprovalStatus: updatedBghStatus,
         bghApprovalComment: updatedBghComment,
+        bghApprovalUser: finalBghUser,
+        bghApprovalDate: finalBghDate,
         gdcsApprovalStatus: updatedGdcsStatus,
         gdcsApprovalComment: updatedGdcsComment,
+        gdcsApprovalUser: finalGdcsUser,
+        gdcsApprovalDate: finalGdcsDate,
       }
     })
     return NextResponse.json({ success: true, count: results.length })
