@@ -9,7 +9,7 @@ export function getSurveyFormAgeGroup(grade?: string | null, batchStartDate?: st
   // Determine Giai đoạn (Stage 1 or Stage 2) based on date
   let isStage2 = false;
   
-  const dateObj = batchStartDate ? new Date(batchStartDate) : null;
+  let dateObj = null; if (batchStartDate) { if (batchStartDate instanceof Date) { dateObj = batchStartDate; } else if (typeof batchStartDate === 'string') { const parts = batchStartDate.split('/'); if (parts.length === 3) { dateObj = new Date(parts[2], parts[1] - 1, parts[0]); } else { dateObj = new Date(batchStartDate); } } }
   if (dateObj && !isNaN(dateObj.getTime())) {
     const month = dateObj.getMonth(); // 0-indexed: 0 = January, 11 = December
     // Stage 2 is from January to May (months 0 to 4)
