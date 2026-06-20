@@ -98,6 +98,17 @@ export async function GET(req: NextRequest) {
         criteriaMap[cc.ageGroup] = cc._count.id
       }
 
+      // Fetch all teacher assignments for this period
+      const assignments = await (prisma as any).preschoolInputAssessmentTeacherAssignment.findMany({
+        where: { periodId },
+        select: {
+          periodId: true,
+          batchId: true,
+          grade: true,
+          user: { select: { fullName: true } }
+        }
+      })
+
       // Map scores by studentId
       const studentScoresMap: Record<string, any[]> = {}
       for (const sc of scores) {
@@ -155,8 +166,16 @@ export async function GET(req: NextRequest) {
         const firstScore = studentScoresList[0];
         const surveyDate = firstScore ? firstScore.createdAt : new Date();
         const sAgeGroup = getSurveyFormAgeGroup(s.grade, surveyDate);
+        const matches = assignments.filter((a: any) => {
+          if (a.periodId !== s.periodId) return false;
+          if (a.grade !== sAgeGroup) return false;
+          return !a.batchId || a.batchId === s.batchId;
+        });
+        const assignedTeachers = Array.from(new Set(matches.map((m: any) => m.user?.fullName || "Chưa rõ"))).filter(Boolean).join(", ") || "Chưa phân công";
+
         return {
           ...s,
+          assignedTeachers,
                     scoredCount: scoreMap[s.id] || 0,
           totalCriteria: criteriaMap[sAgeGroup] || 0,
           resolvedAgeGroup: sAgeGroup,

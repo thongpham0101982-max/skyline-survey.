@@ -3463,7 +3463,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <table className="w-full text-left text-sm whitespace-nowrap border-collapse">
                       <thead className="bg-[#00A19A]/5 border-b border-slate-300">
                         <tr>
-                          {["STT", "Mã bé", "Họ và tên", "Ngày sinh", "Nhóm tuổi", "Tiến độ", "Trạng thái", "Thao tác"].map(h => (
+                          {["STT", "Mã bé", "Họ và tên", "Ngày sinh", "Nhóm tuổi", "GV Phân công", "Tiến độ", "Trạng thái", "Thao tác"].map(h => (
                             <th key={h} className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">{h}</th>
                           ))}
                         </tr>
@@ -3512,6 +3512,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                         Form: {s.resolvedAgeGroup}
                                       </span>
                                     )}
+                                  </div>
+                                </td>
+                                <td className="p-4">
+                                  <div className="text-xs font-bold text-slate-700 max-w-[200px] whitespace-normal break-words">
+                                    {s.assignedTeachers || "Chưa phân công"}
                                   </div>
                                 </td>
                                 <td className="p-4">
