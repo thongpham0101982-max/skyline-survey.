@@ -84,72 +84,7 @@ const RATING_COLORS: Record<string, string> = {
 export function ObservationClient({
   initialSlots, currentTeacher, subjects, departments, teachers, campuses, classes, initialFilters
 }: ObservationClientProps) {
-  const isMamNonTeacher = currentTeacher?.departmentRel?.blockCM?.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
-  
-  const [activeDetailTab, setActiveDetailTab] = useState("lich-su")
-  const [observerType, setObserverType] = useState("")
-  const [observeeType, setObserveeType] = useState("")
-  const [requiredObserved, setRequiredObserved] = useState(0)
-  const [observedUnit, setObservedUnit] = useState("tháng")
-  const [requiredTaught, setRequiredTaught] = useState(0)
-  const [taughtUnit, setTaughtUnit] = useState("tháng")
-  const [savingTargets, setSavingTargets] = useState(false)
-
-  const isPrivileged = currentTeacher?.position === "TTCM" || currentTeacher?.position === "QLCM";
-
-  useEffect(() => {
-    if (selectedTeacherId) {
-      const teacher = teachers.find(t => t.id === selectedTeacherId);
-      if (teacher) {
-        setObserverType(teacher.observerType || "");
-        setObserveeType(teacher.observeeType || "");
-        setRequiredObserved(teacher.requiredObserved || 0);
-        setObservedUnit(teacher.observedUnit || "tháng");
-        setRequiredTaught(teacher.requiredTaught || 0);
-        setTaughtUnit(teacher.taughtUnit || "tháng");
-      }
-    }
-  }, [selectedTeacherId, teachers]);
-
-  const handleObserverTypeChange = (type) => {
-    setObserverType(type);
-    if (type === "Ban ĐHCM") {
-      setRequiredObserved(10);
-      setObservedUnit("tháng");
-    } else if (type === "TTCM") {
-      setRequiredObserved(8);
-      setObservedUnit("tháng");
-    } else if (type === "Nhóm trưởng CM CS") {
-      setRequiredObserved(8);
-      setObservedUnit("tháng");
-    } else if (type === "Giám đốc Điều hành cơ sở") {
-      setRequiredObserved(4);
-      setObservedUnit("tháng");
-    } else if (type === "Giáo viên mới") {
-      setRequiredObserved(10);
-      setObservedUnit("tháng");
-    } else if (type === "Giáo viên cũ") {
-      setRequiredObserved(4);
-      setObservedUnit("tháng");
-    }
-  };
-
-  const handleObserveeTypeChange = (type) => {
-    setObserveeType(type);
-    if (type === "TTCM") {
-      setRequiredTaught(1);
-      setTaughtUnit("năm");
-    } else if (type === "Nhóm trưởng CM CS") {
-      setRequiredTaught(1);
-      setTaughtUnit("năm");
-    } else if (type === "Giáo viên mới") {
-      setRequiredTaught(1);
-      setTaughtUnit("tháng");
-    } else if (type === "Giáo viên cũ") {
-      setRequiredTaught(1);
-      setTaughtUnit("học kỳ");
-    }
-  };
+  const isMamNonTeacher = (currentTeacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -180,7 +115,7 @@ export function ObservationClient({
   const [newSubjectName, setNewSubjectName] = useState("")
   const [newLevel, setNewLevel] = useState("")
   const [newGrade, setNewGrade] = useState("")
-  const [newCampusId, setNewCampusId] = useState(currentTeacher.campusId || "")
+  const [newCampusId, setNewCampusId] = useState(currentTeacher?.campusId || "")
   const [newClassId, setNewClassId] = useState("")
   const [newClassNameText, setNewClassNameText] = useState("")
   const [newTopic, setNewTopic] = useState("")
@@ -204,6 +139,72 @@ export function ObservationClient({
   const [monthlyLimitCount, setMonthlyLimitCount] = useState(0)
   const [submitting, setSubmitting] = useState(false)
   const [editSlotId, setEditSlotId] = useState<string | null>(null)
+
+  // Target Config states (moved down to avoid referencing selectedTeacherId before initialization)
+  const [activeDetailTab, setActiveDetailTab] = useState("lich-su")
+  const [observerType, setObserverType] = useState("")
+  const [observeeType, setObserveeType] = useState("")
+  const [requiredObserved, setRequiredObserved] = useState(0)
+  const [observedUnit, setObservedUnit] = useState("tháng")
+  const [requiredTaught, setRequiredTaught] = useState(0)
+  const [taughtUnit, setTaughtUnit] = useState("tháng")
+  const [savingTargets, setSavingTargets] = useState(false)
+
+  const isPrivileged = currentTeacher?.position === "TTCM" || currentTeacher?.position === "QLCM";
+
+  useEffect(() => {
+    if (selectedTeacherId) {
+      const teacher = teachers.find(t => t.id === selectedTeacherId);
+      if (teacher) {
+        setObserverType(teacher.observerType || "");
+        setObserveeType(teacher.observeeType || "");
+        setRequiredObserved(teacher.requiredObserved || 0);
+        setObservedUnit(teacher.observedUnit || "tháng");
+        setRequiredTaught(teacher.requiredTaught || 0);
+        setTaughtUnit(teacher.taughtUnit || "tháng");
+      }
+    }
+  }, [selectedTeacherId, teachers]);
+
+  const handleObserverTypeChange = (type: any) => {
+    setObserverType(type);
+    if (type === "Ban ĐHCM") {
+      setRequiredObserved(10);
+      setObservedUnit("tháng");
+    } else if (type === "TTCM") {
+      setRequiredObserved(8);
+      setObservedUnit("tháng");
+    } else if (type === "Nhóm trưởng CM CS") {
+      setRequiredObserved(8);
+      setObservedUnit("tháng");
+    } else if (type === "Giám đốc Điều hành cơ sở") {
+      setRequiredObserved(4);
+      setObservedUnit("tháng");
+    } else if (type === "Giáo viên mới") {
+      setRequiredObserved(10);
+      setObservedUnit("tháng");
+    } else if (type === "Giáo viên cũ") {
+      setRequiredObserved(4);
+      setObservedUnit("tháng");
+    }
+  };
+
+  const handleObserveeTypeChange = (type: any) => {
+    setObserveeType(type);
+    if (type === "TTCM") {
+      setRequiredTaught(1);
+      setTaughtUnit("năm");
+    } else if (type === "Nhóm trưởng CM CS") {
+      setRequiredTaught(1);
+      setTaughtUnit("năm");
+    } else if (type === "Giáo viên mới") {
+      setRequiredTaught(1);
+      setTaughtUnit("tháng");
+    } else if (type === "Giáo viên cũ") {
+      setRequiredTaught(1);
+      setTaughtUnit("học kỳ");
+    }
+  };
 
   // Expanded slot registrants (for host view)
   const [expandedSlotId, setExpandedSlotId] = useState<string | null>(null)

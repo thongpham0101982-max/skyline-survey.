@@ -14,7 +14,7 @@ export async function getObservationData() {
     const roleCode = (session.user as any)?.role || "TEACHER"
     const isAdmin = ["ADMIN", "ADMINISTRATOR", "KT_DBCL"].includes(roleCode)
 
-    const currentTeacher = await prisma.teacher.findUnique({
+    let currentTeacher = await prisma.teacher.findUnique({
       where: { userId: session.user.id },
       include: {
         departmentRel: true,
@@ -24,6 +24,35 @@ export async function getObservationData() {
 
     if (!currentTeacher && !isAdmin) {
       return { success: false, error: "Teacher profile not found" }
+    }
+
+    if (!currentTeacher && isAdmin) {
+      currentTeacher = {
+        id: "admin-" + session.user.id,
+        teacherName: session.user.name || "Administrator",
+        teacherCode: "ADMIN",
+        email: session.user.email || null,
+        departmentId: "",
+        campusId: "",
+        position: "ADMIN",
+        observerType: "Ban ĐHCM",
+        observeeType: "Giáo viên cũ",
+        requiredObserved: 0,
+        observedUnit: "tháng",
+        requiredTaught: 0,
+        taughtUnit: "tháng",
+        departmentRel: {
+          id: "",
+          code: "ADMIN",
+          name: "Ban giám hiệu",
+          blockCM: ""
+        },
+        campus: {
+          id: "",
+          campusCode: "ADMIN",
+          campusName: "Trụ sở chính"
+        }
+      } as any;
     }
 
     const subjects = await prisma.subject.findMany({
