@@ -284,7 +284,7 @@ export async function POST(req: NextRequest) {
       const isApproved = (s: string) => s === "DAT" || s === "DAT_MIEN_HOC_THU" || s === "DAT_HOC_THU";
 
       if (isApproved(bgh) && isApproved(gdcs)) {
-        if (bgh === "DAT_MIEN_HOC_THU" || gdcs === "DAT_MIEN_HOC_THU") {
+        if (bgh === "DAT_MIEN_HOC_THU" || gdcs === "DAT_MIEN_HOC_THU" || bgh === "DAT" || gdcs === "DAT") {
           finalAdmissionResult = "Đạt - Miễn Học Thử";
         } else if (bgh === "DAT_HOC_THU" || gdcs === "DAT_HOC_THU") {
           finalAdmissionResult = "Đạt - Học Thử";

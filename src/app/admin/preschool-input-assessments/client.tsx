@@ -6785,7 +6785,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
                   if (bgh || gdcs) {
                     if (isApproved(bgh) && isApproved(gdcs)) {
-                      if (bgh === "DAT_MIEN_HOC_THU" || gdcs === "DAT_MIEN_HOC_THU") {
+                      if (bgh === "DAT_MIEN_HOC_THU" || gdcs === "DAT_MIEN_HOC_THU" || bgh === "DAT" || gdcs === "DAT") {
                         return "Đạt - Miễn Học Thử";
                       } else if (bgh === "DAT_HOC_THU" || gdcs === "DAT_HOC_THU") {
                         return "Đạt - Học Thử";
@@ -6898,7 +6898,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 disabled={!canApproveBGH || isAssessmentLocked}
                                 onClick={() => setBghApprovalStatus(bghApprovalStatus === opt.status ? "" : opt.status)}
                                 className={`px-3 py-2 rounded-xl border text-[10px] font-black tracking-wide transition-all ${
-                                  bghApprovalStatus === opt.status 
+                                  (bghApprovalStatus === opt.status || (opt.status === "DAT_MIEN_HOC_THU" && bghApprovalStatus === "DAT"))
                                     ? opt.activeColor 
                                     : `bg-white ${opt.color}`
                                 } ${(!canApproveBGH || isAssessmentLocked) ? 'cursor-not-allowed opacity-60' : 'hover:scale-[1.02] active:scale-[0.98]'}`}
@@ -6985,7 +6985,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 disabled={!canApproveGDCS || isAssessmentLocked}
                                 onClick={() => setGdcsApprovalStatus(gdcsApprovalStatus === opt.status ? "" : opt.status)}
                                 className={`px-3 py-2 rounded-xl border text-[10px] font-black tracking-wide transition-all ${
-                                  gdcsApprovalStatus === opt.status 
+                                  (gdcsApprovalStatus === opt.status || (opt.status === "DAT_MIEN_HOC_THU" && gdcsApprovalStatus === "DAT"))
                                     ? opt.activeColor 
                                     : `bg-white ${opt.color}`
                                 } ${(!canApproveGDCS || isAssessmentLocked) ? 'cursor-not-allowed opacity-60' : 'hover:scale-[1.02] active:scale-[0.98]'}`}
