@@ -10,9 +10,19 @@ function PositionBadge({ position }) {
       QLCM
     </span>
   );
+  if (position === "Ban ĐHCM") return (
+    <span className="inline-flex items-center px-2.5 py-1 rounded-xl text-[10px] font-extrabold uppercase tracking-wide bg-violet-50 text-violet-700">
+      Ban ĐHCM
+    </span>
+  );
+  if (position === "GĐCS") return (
+    <span className="inline-flex items-center px-2.5 py-1 rounded-xl text-[10px] font-extrabold uppercase tracking-wide bg-rose-50 text-rose-700">
+      GĐCS
+    </span>
+  );
   return (
     <span className="inline-flex items-center px-2.5 py-1 rounded-xl text-[10px] font-semibold uppercase tracking-wide bg-slate-50 text-slate-500">
-      GV
+      {position || "GV"}
     </span>
   );
 }
@@ -444,6 +454,8 @@ export function TeacherManagerClient({
                 <option value="GV">GV (Giáo viên)</option>
                 <option value="TTCM">TTCM (Tổ trưởng CM)</option>
                 <option value="QLCM">QLCM (Quản lý CM)</option>
+                <option value="Ban ĐHCM">Ban ĐHCM</option>
+                <option value="GĐCS">GĐCS (Giám đốc CS)</option>
               </select>
             </div>
           </div>
