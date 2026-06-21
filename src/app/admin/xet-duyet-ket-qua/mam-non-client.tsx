@@ -4094,7 +4094,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                           })
                           .filter(s => !cSearch || s.studentCode.toLowerCase().includes(cSearch.toLowerCase()) || s.fullName.toLowerCase().includes(cSearch.toLowerCase()))
                           .map((s, idx) => {
+                            const isExempt = (s.admissionResult || "").toUpperCase().includes("MIỄN") || (s.admissionResult || "").toUpperCase().includes("MIEN");
                             const resultBadge = () => {
+                              if (isExempt) {
+                                return <span className="text-[10px] font-black px-2.5 py-1 rounded-none bg-[#00A19A]/5 text-[#00A19A] border border-[#00A19A]/30">Miễn học thử</span>;
+                              }
                               if (s.probationaryResult === "DAT") return <span className="text-[10px] font-black text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-none border border-emerald-300">✓ ĐẠT</span>;
                               if (s.probationaryResult === "CHUA_DAT") return <span className="text-[10px] font-black text-rose-800 bg-rose-50 px-2.5 py-1 rounded-none border border-rose-300">✗ CHƯA ĐẠT</span>;
                               return <span className="text-[10px] font-black text-slate-500 bg-slate-50 px-2.5 py-1 rounded-none border border-slate-300">Chưa đánh giá</span>;
@@ -4122,13 +4126,23 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 <td className="p-4 flex gap-1.5">
                                   <button
                                     onClick={() => openProbationary(s)}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-black text-violet-700 bg-[#00A19A]/5 hover:bg-[#00A19A] hover:text-white rounded-none border border-slate-300 transition-all shadow-none"
+                                    disabled={isExempt}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-black rounded-none border transition-all shadow-none ${
+                                      isExempt 
+                                        ? 'text-slate-400 bg-slate-100 border-slate-200 cursor-not-allowed' 
+                                        : 'text-violet-700 bg-[#00A19A]/5 hover:bg-[#00A19A] hover:text-white border-slate-300'
+                                    }`}
                                   >
                                     <ClipboardList className="w-3.5 h-3.5" /> Đánh giá học thử
                                   </button>
                                   <button
                                     onClick={() => printProbationaryAssessment(s)}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-500 hover:text-white rounded-none border border-emerald-100 transition-all shadow-none"
+                                    disabled={isExempt}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-black rounded-none border transition-all shadow-none ${
+                                      isExempt 
+                                        ? 'text-slate-400 bg-slate-100 border-slate-200 cursor-not-allowed' 
+                                        : 'text-emerald-700 bg-emerald-50 hover:bg-emerald-500 hover:text-white border-emerald-100'
+                                    }`}
                                   >
                                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                                     In phiếu
