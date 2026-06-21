@@ -3525,7 +3525,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <table className="w-full text-left text-sm whitespace-nowrap border-collapse">
                       <thead className="bg-[#00A19A]/5 border-b border-slate-300">
                         <tr>
-                          {["STT", "Mã bé", "Họ và tên", "Ngày sinh", "Nhóm tuổi", "GV Phân công", "Tiến độ", "Trạng thái", "Thao tác"].map(h => (
+                          {["STT", "Mã bé", "Họ và tên", "Ngày sinh", "Nhóm tuổi", "GV Phân công", "Trạng thái", "Thao tác"].map(h => (
                             <th key={h} className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">{h}</th>
                           ))}
                         </tr>
@@ -3584,14 +3584,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                     {s.assignedTeachers || "Chưa phân công"}
                                   </div>
                                 </td>
-                                <td className="p-4">
-                                  <div className="flex items-center gap-2">
-                                    <div className="w-24 bg-slate-100 h-2 rounded-none overflow-hidden border border-slate-200">
-                                      <div className="h-full bg-[#00A19A]" style={{ width: `${pct}%` }} />
-                                    </div>
-                                    <span className="text-[10px] font-black text-[#00A19A]">{s.scoredCount}/{s.totalCriteria}</span>
-                                  </div>
-                                </td>
+
                                 <td className="p-4">{statusBadge()}</td>
                                 <td className="p-4">
                                   <button
