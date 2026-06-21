@@ -6756,8 +6756,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   </div>
                 </div>
               ))}
+            </div>
+          )}
 
-              {/* ĐÁNH GIÁ CHUNG */}
+          {/* ĐÁNH GIÁ CHUNG */}
               <div className="mt-8 rounded-3xl border border-rose-100 bg-gradient-to-br from-rose-50/30 via-pink-50/10 to-rose-50/20 p-6 space-y-5 shadow-xs">
                 <div className="flex items-center gap-2 mb-1">
                   <div className="w-2.5 h-2.5 rounded-full bg-rose-400"></div>
@@ -7093,8 +7095,6 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   </div>
                 );
               })()}
-            </div>
-          )}
         </div>
       </Modal>
       {/* Modal: Đánh giá Học thử */}
