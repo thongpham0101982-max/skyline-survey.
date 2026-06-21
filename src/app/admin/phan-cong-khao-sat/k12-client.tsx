@@ -450,6 +450,34 @@ export function PhanCongK12Client({
                       {filteredTeachers.map(t => <option key={t.userId} value={t.userId}>{t.teacherName}</option>)}
                     </select>
                   </Field>
+
+                  {/* Hiển thị phân công hiện tại của giáo viên */}
+                  {asTeacherId && (() => {
+                    const currentTeacherAssigns = assignments.filter(a => a.userId === asTeacherId)
+                    return (
+                      <div className="p-3.5 bg-slate-50/80 border border-slate-200/60 rounded-xl space-y-2 animate-in fade-in duration-300">
+                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                          <BookOpen className="w-3.5 h-3.5 text-[#00A99D]" /> 
+                          <span>Phân công hiện tại của GV</span>
+                        </div>
+                        {currentTeacherAssigns.length === 0 ? (
+                          <div className="text-[11px] text-slate-400 font-bold italic">Chưa có phân công nào trong đợt này.</div>
+                        ) : (
+                          <div className="flex flex-wrap gap-1.5">
+                            {currentTeacherAssigns.map((a) => (
+                              <span key={a.id} className="inline-flex items-center gap-1 px-2.5 py-1 bg-white border border-slate-100 rounded-lg text-[10px] font-bold text-slate-700 shadow-sm">
+                                <span className="font-black text-[#00A99D]">{a.subject?.name}</span>
+                                <span className="text-slate-300">•</span>
+                                <span>Khối {a.grade}</span>
+                                <span className="text-slate-300">•</span>
+                                <span className="text-amber-600 uppercase">{a.educationSystem}</span>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })()}
                 </div>
               </div>
             </div>
@@ -493,7 +521,7 @@ export function PhanCongK12Client({
                       <div className="grid grid-cols-4 gap-2">
                         {activeGrades.map(g => (
                           <button key={g} onClick={() => setAsSelGrades(p => p.includes(g) ? p.filter(x => x !== g) : [...p, g])}
-                            className={`py-2 rounded-xl text-[11px] font-black border-2 transition-all ${asSelGrades.includes(g) ? "bg-emerald-500 border-emerald-500 text-white shadow-sm" : "bg-white border-white text-slate-400 hover:border-emerald-200 hover:text-emerald-500"}`}>
+                            className={`py-2 rounded-xl text-[11px] font-black border-2 transition-all ${asSelGrades.includes(g) ? "bg-[#00A99D] border-[#00A99D] text-white shadow-sm" : "bg-white border-white text-slate-400 hover:border-slate-200 hover:text-[#00A99D]"}`}>
                             {g}
                           </button>
                         ))}
@@ -509,7 +537,7 @@ export function PhanCongK12Client({
                       <div className="flex flex-wrap gap-2">
                         {currentEduSystems.map((es: any) => (
                           <button key={es.code} onClick={() => setAsSelSystems(p => p.includes(es.code) ? p.filter(x => x !== es.code) : [...p, es.code])}
-                            className={`px-3 py-2 rounded-xl text-[11px] font-black border-2 transition-all ${asSelSystems.includes(es.code) ? "bg-amber-500 border-amber-500 text-white shadow-sm" : "bg-white border-white text-slate-400 hover:border-amber-200 hover:text-amber-500"}`}>
+                            className={`px-3 py-2 rounded-xl text-[11px] font-black border-2 transition-all ${asSelSystems.includes(es.code) ? "bg-[#003B3A] border-[#003B3A] text-white shadow-sm" : "bg-white border-white text-slate-400 hover:border-slate-200 hover:text-[#00A99D]"}`}>
                             {es.code}
                           </button>
                         ))}
@@ -525,7 +553,7 @@ export function PhanCongK12Client({
         {/* Submit Button */}
         <div className="flex justify-center -mt-3">
           <button onClick={submitAssignment} disabled={asSubmitting || !canCreate}
-            className="group flex items-center gap-3 px-12 py-5 bg-slate-900 text-white rounded-[2rem] font-black text-base hover:bg-black hover:scale-105 transition-all shadow-2xl shadow-indigo-200 disabled:opacity-50">
+            className="group flex items-center gap-3 px-12 py-5 bg-gradient-to-r from-[#00A99D] to-[#009085] text-white rounded-[2rem] font-black text-base hover:from-[#009085] hover:to-[#007068] hover:scale-105 transition-all shadow-2xl shadow-teal-100 disabled:opacity-50 cursor-pointer">
             {asSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : <UserPlus className="w-6 h-6 group-hover:rotate-12 transition-all" />}
             Xác nhận Phân công cho Giáo viên
           </button>

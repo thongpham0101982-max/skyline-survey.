@@ -67,7 +67,7 @@ export function PhanCongKhaoSatClient({
             onClick={() => setActiveTab("k12")}
             className={`flex items-center gap-2 px-6 py-3.5 rounded-xl text-sm font-black transition-all duration-300 ${
               activeTab === "k12"
-                ? "bg-indigo-600 text-white shadow-lg shadow-indigo-100 scale-[1.02]"
+                ? "bg-[#003B3A] text-white shadow-lg shadow-teal-100/30 scale-[1.02]"
                 : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
             }`}
           >
@@ -78,7 +78,7 @@ export function PhanCongKhaoSatClient({
             onClick={() => setActiveTab("preschool")}
             className={`flex items-center gap-2 px-6 py-3.5 rounded-xl text-sm font-black transition-all duration-300 ${
               activeTab === "preschool"
-                ? "bg-teal-600 text-white shadow-lg shadow-teal-100 scale-[1.02]"
+                ? "bg-[#00A99D] text-white shadow-lg shadow-teal-100/30 scale-[1.02]"
                 : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
             }`}
           >

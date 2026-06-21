@@ -42,7 +42,7 @@ function Field({ label, required, children }: { label: string; required?: boolea
 }
 
 const inp = "w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-teal-200 focus:border-teal-400 transition-all placeholder:text-slate-300 shadow-sm"
-const TEAL = "#00A19A"
+const TEAL = "#00A99D"
 
 interface ConfirmState { msg: string; fn: () => void }
 function ConfirmDialog({ open, onClose, onConfirm, message }: { open: boolean; onClose: () => void; onConfirm: () => void; message: string }) {
@@ -485,8 +485,9 @@ export function PhanCongMamNonClient({
                   .map(t => {
                     const userId = t.user.id
                     const isChecked = aSelectedTeachers.includes(userId)
+                    const teacherAssigns = assignments.filter(a => a.userId === userId)
                     return (
-                      <label key={t.id} className={`flex items-center justify-between p-3 rounded-xl cursor-pointer border transition-all ${isChecked ? "border-slate-200" : "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/30"}`}
+                      <label key={t.id} className={`flex items-center justify-between p-3 rounded-xl cursor-pointer border transition-all ${isChecked ? "border-slate-200/80 shadow-sm" : "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/30"}`}
                         style={isChecked ? { background: `${TEAL}05` } : {}}>
                         <div className="flex items-center gap-3">
                           <input type="checkbox" checked={isChecked}
@@ -502,6 +503,17 @@ export function PhanCongMamNonClient({
                               )}
                             </div>
                             <div className="text-[10px] text-slate-400 font-semibold uppercase">{t.teacherCode} • {t.email || t.user.email}</div>
+                            
+                            {/* Hiển thị phân công hiện tại */}
+                            {teacherAssigns.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1.5">
+                                {teacherAssigns.map((assign: any) => (
+                                  <span key={assign.id} className="text-[9px] font-black uppercase px-2 py-0.5 rounded border border-slate-100 text-slate-500 bg-slate-50">
+                                    {assign.grade}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         </div>
                         {isChecked && <CheckCircle2 className="w-4 h-4 animate-in zoom-in-50 duration-200" style={{ color: TEAL }} />}
