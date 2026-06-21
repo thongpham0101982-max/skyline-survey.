@@ -3974,18 +3974,27 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 <td className="w-32 min-w-[128px] p-4 align-top">{getResultBadge(s.generalResult)}</td>
                                 <td className="w-[350px] min-w-[350px] p-4 align-top">
                                    <div className="flex items-center gap-2">
-                                     <button
-                                       disabled={sendingNotifyId === s.id}
-                                       onClick={() => sendApprovalNotification(s.id)}
-                                       className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-black text-amber-700 bg-amber-50 hover:bg-amber-600 hover:text-white rounded-none border border-amber-100 disabled:opacity-50 transition-all shadow-none"
-                                     >
-                                       {sendingNotifyId === s.id ? (
-                                         <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                                       ) : (
-                                         <Send className="w-3.5 h-3.5" />
-                                       )}
-                                       Yêu cầu Duyệt
-                                     </button>
+                                     {(() => {
+                                        const hasBgh = s.bghApprovalStatus && s.bghApprovalStatus !== "" && s.bghApprovalStatus !== "CHUA_DUYET" && s.bghApprovalStatus !== "Chưa duyệt";
+                                        const hasGdcs = s.gdcsApprovalStatus && s.gdcsApprovalStatus !== "" && s.gdcsApprovalStatus !== "CHUA_DUYET" && s.gdcsApprovalStatus !== "Chưa duyệt";
+                                        if (!hasBgh || !hasGdcs) {
+                                          return (
+                                            <button
+                                                                                   disabled={sendingNotifyId === s.id}
+                                                                                   onClick={() => sendApprovalNotification(s.id)}
+                                                                                   className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-black text-amber-700 bg-amber-50 hover:bg-amber-600 hover:text-white rounded-none border border-amber-100 disabled:opacity-50 transition-all shadow-none"
+                                                                                 >
+                                                                                   {sendingNotifyId === s.id ? (
+                                                                                     <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                                                                   ) : (
+                                                                                     <Send className="w-3.5 h-3.5" />
+                                                                                   )}
+                                                                                   Yêu cầu Duyệt
+                                                                                 </button>
+                                          );
+                                        }
+                                        return null;
+                                      })()}
                                      <button
                                        onClick={() => openEvaluation(s)}
                                        className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-black text-violet-700 bg-[#00A19A]/5 hover:bg-[#00A19A] hover:text-white rounded-none border border-slate-300 transition-all shadow-none"
