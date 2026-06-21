@@ -442,6 +442,33 @@ export async function GET(req: any) {
         return NextResponse.json(history);
     }
 
+    if (action === "getPreschoolRetestHistory") {
+        const studentCode = searchParams.get("studentCode");
+        if (!studentCode) return NextResponse.json({error: "Missing studentCode"}, {status:400});
+        
+        const history = await (prisma as any).preschoolInputAssessmentStudent.findMany({
+            where: { studentCode: studentCode },
+            orderBy: { createdAt: 'desc' },
+            include: {
+                period: true,
+                batch: true
+            }
+        });
+        
+        const historyWithScores = await Promise.all(history.map(async (st: any) => {
+            const scores = await (prisma as any).preschoolDevScore.findMany({
+                where: { studentId: st.id },
+                include: { criteria: { include: { area: true } } }
+            });
+            return {
+                ...st,
+                scores
+            };
+        }));
+        
+        return NextResponse.json(historyWithScores);
+    }
+
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
 
   } catch (error: any) {

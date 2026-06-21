@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { getSurveyFormAgeGroup } from "@/lib/preschool"
-import { Baby, X, CheckCircle, AlertCircle, Save, Sparkles, Heart } from "lucide-react"
+import { Baby, X, CheckCircle, AlertCircle, Save, Sparkles, Heart, ClipboardList } from "lucide-react"
 
 interface PreschoolEvaluationFormProps {
   student: any
@@ -26,6 +26,9 @@ export default function PreschoolEvaluationForm({
   const [studentScores, setStudentScores] = useState<Record<string, { result: string; note: string }>>({})
   const [devLoading, setDevLoading] = useState(true)
   const [savingEval, setSavingEval] = useState(false)
+  const [historyList, setHistoryList] = useState<any[]>([])
+  const [loadingHistory, setLoadingHistory] = useState(false)
+  const [expandedHistoryId, setExpandedHistoryId] = useState<string | null>(null)
 
   // Comments & Results states
   const [devProfComment, setDevProfComment] = useState(student.devProfessionalComment || "")
@@ -71,7 +74,22 @@ export default function PreschoolEvaluationForm({
         setDevLoading(false)
       }
     }
+    async function loadHistory() {
+      if (!student?.studentCode) return
+      setLoadingHistory(true)
+      try {
+        const histRes = await fetch(`/api/teacher-assessments?action=getPreschoolRetestHistory&studentCode=${encodeURIComponent(student.studentCode)}`)
+        if (histRes.ok) {
+          setHistoryList(await histRes.json())
+        }
+      } catch (err) {
+        console.error("Error fetching student preschool history:", err)
+      } finally {
+        setLoadingHistory(false)
+      }
+    }
     loadData()
+    loadHistory()
   }, [student])
 
   const calculateBMI = () => {
@@ -475,6 +493,87 @@ export default function PreschoolEvaluationForm({
               </div>
             </div>
           </div>
+
+          {/* Lược sử đánh giá mầm non block */}
+          {(() => {
+            const pastAssessments = historyList.filter((h: any) => h.id !== student.id);
+            if (pastAssessments.length === 0) return null;
+            return (
+              <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-5 space-y-4">
+                <h3 className="text-[12px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-1.5 pb-2 border-b border-slate-100">
+                  <ClipboardList className="w-4 h-4 text-indigo-500" /> Lược sử đánh giá mầm non
+                  <span className="text-[10px] font-bold bg-indigo-100 text-indigo-700 px-2.5 py-0.5 rounded-full ml-auto">{pastAssessments.length} đợt</span>
+                </h3>
+                {loadingHistory ? (
+                  <div className="text-xs text-slate-500 py-2">Đang tải lược sử...</div>
+                ) : (
+                  <div className="space-y-3">
+                    {pastAssessments.map((histRec: any) => {
+                      const isExpanded = expandedHistoryId === histRec.id;
+                      return (
+                        <div key={histRec.id} className="border border-slate-200 rounded-2xl overflow-hidden shadow-xs bg-slate-50/50">
+                          <div 
+                            onClick={() => setExpandedHistoryId(isExpanded ? null : histRec.id)}
+                            className="flex flex-col p-4 cursor-pointer gap-2 bg-white hover:bg-slate-50/40 transition-all"
+                          >
+                            <div className="flex items-start justify-between">
+                              <h4 className="font-bold text-slate-800 text-xs">{histRec.period?.name || "Kỳ khảo sát"}</h4>
+                              <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${
+                                histRec.devAssessmentResult === "DAT" ? "bg-emerald-50 text-emerald-700 border border-emerald-250" :
+                                histRec.devAssessmentResult === "KHONG_DAT" ? "bg-rose-50 text-rose-700" : "bg-teal-50 text-[#00A19A]"
+                              }`}>
+                                {histRec.devAssessmentResult === "DAT" ? "Đạt" : histRec.devAssessmentResult === "KHONG_DAT" ? "Không Đạt" : histRec.devAssessmentResult === "HOC_THU" ? "Học thử" : "Chưa đánh giá"}
+                              </span>
+                            </div>
+                            <p className="text-[10px] text-slate-500">
+                              Đợt: <span className="font-semibold">{histRec.batch?.name || "Khảo sát lẻ"}</span> | 
+                              Ngày: <span className="font-semibold">{histRec.createdAt ? new Date(histRec.createdAt).toLocaleDateString("vi-VN") : "—"}</span>
+                            </p>
+                          </div>
+
+                          {isExpanded && (
+                            <div className="p-4 border-t border-slate-100 bg-slate-50/30 space-y-3 text-xs">
+                              {histRec.devProfessionalComment && (
+                                <div>
+                                  <span className="font-bold text-slate-600 block">Đánh giá chuyên môn:</span>
+                                  <p className="text-slate-700 mt-0.5 italic">"{histRec.devProfessionalComment}"</p>
+                                </div>
+                              )}
+                              {histRec.devPsychologyComment && (
+                                <div>
+                                  <span className="font-bold text-slate-600 block">Đánh giá tâm lý:</span>
+                                  <p className="text-slate-700 mt-0.5 italic">"{histRec.devPsychologyComment}"</p>
+                                </div>
+                              )}
+                              {histRec.devImportantNote && (
+                                <div>
+                                  <span className="font-bold text-slate-600 block">Lưu ý quan trọng:</span>
+                                  <p className="text-slate-700 mt-0.5 italic">"{histRec.devImportantNote}"</p>
+                                </div>
+                              )}
+                              {histRec.scores && histRec.scores.length > 0 && (
+                                <div className="pt-2 border-t border-slate-200">
+                                  <span className="font-bold text-slate-600 block mb-1">Kết quả tiêu chí chi tiết:</span>
+                                  <div className="grid grid-cols-2 gap-2 text-[10px]">
+                                    <div className="bg-emerald-50 text-emerald-800 p-2 rounded-lg border border-emerald-100">
+                                      ✓ Đạt: <span className="font-bold">{histRec.scores.filter((s: any) => s.result === "DAT").length}</span>
+                                    </div>
+                                    <div className="bg-rose-50 text-rose-800 p-2 rounded-lg border border-rose-100">
+                                      ✗ Không đạt: <span className="font-bold">{histRec.scores.filter((s: any) => s.result === "KHONG_DAT").length}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
       </div>
 

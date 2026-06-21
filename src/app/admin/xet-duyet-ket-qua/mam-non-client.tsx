@@ -998,6 +998,9 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
   const [bghApprovalDate, setBghApprovalDate] = useState("");
   const [gdcsApprovalUser, setGdcsApprovalUser] = useState("");
   const [gdcsApprovalDate, setGdcsApprovalDate] = useState("");
+  const [historyList, setHistoryList] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [expandedHistoryId, setExpandedHistoryId] = useState<string | null>(null);
 
   const calculateBMI = () => {
     let height = 0;
@@ -1864,6 +1867,23 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     setBghApprovalDate(student.bghApprovalDate || "");
     setGdcsApprovalUser(student.gdcsApprovalUser || "");
     setGdcsApprovalDate(student.gdcsApprovalDate || "");
+    setHistoryList([]);
+    setExpandedHistoryId(null);
+    if (student.studentCode) {
+      setLoadingHistory(true);
+      fetch(`/api/teacher-assessments?action=getPreschoolRetestHistory&studentCode=${encodeURIComponent(student.studentCode)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data)) {
+            setHistoryList(data);
+          }
+          setLoadingHistory(false);
+        })
+        .catch(err => {
+          console.error("Error fetching history:", err);
+          setLoadingHistory(false);
+        });
+    }
     setEvalModal(true);
     setDevLoading(true);
         try {
@@ -7126,6 +7146,88 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         </div>
                       )}
                     </div>
+                  </div>
+                );
+              })()}
+
+              {/* Lược sử đánh giá mầm non block */}
+              {(() => {
+                const pastAssessments = historyList.filter((h: any) => h.id !== evalStudent?.id);
+                if (pastAssessments.length === 0) return null;
+                return (
+                  <div className="mt-8 rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-50/20 via-violet-50/10 to-indigo-50/10 p-6 space-y-5 shadow-xs">
+                    <div className="flex items-center gap-2 mb-1 pb-3 border-b border-slate-200/60">
+                      <ClipboardList className="w-4 h-4 text-indigo-500" />
+                      <h4 className="text-xs font-black text-indigo-700 uppercase tracking-widest">Lược sử đánh giá mầm non</h4>
+                      <span className="text-[10px] font-bold bg-indigo-100 text-indigo-700 px-2.5 py-0.5 rounded-full ml-auto">{pastAssessments.length} đợt</span>
+                    </div>
+                    {loadingHistory ? (
+                      <div className="text-xs text-slate-500 py-2">Đang tải lược sử...</div>
+                    ) : (
+                      <div className="space-y-3">
+                        {pastAssessments.map((histRec: any) => {
+                          const isExpanded = expandedHistoryId === histRec.id;
+                          return (
+                            <div key={histRec.id} className="border border-slate-200 rounded-2xl overflow-hidden shadow-xs bg-slate-50/50">
+                              <div 
+                                onClick={() => setExpandedHistoryId(isExpanded ? null : histRec.id)}
+                                className="flex flex-col p-4 cursor-pointer gap-2 bg-white hover:bg-slate-50/40 transition-all"
+                              >
+                                <div className="flex items-start justify-between">
+                                  <h4 className="font-bold text-slate-800 text-xs">{histRec.period?.name || "Kỳ khảo sát"}</h4>
+                                  <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${
+                                    histRec.devAssessmentResult === "DAT" ? "bg-emerald-50 text-emerald-700 border border-emerald-250" :
+                                    histRec.devAssessmentResult === "KHONG_DAT" ? "bg-rose-50 text-rose-700" : "bg-teal-50 text-[#00A19A]"
+                                  }`}>
+                                    {histRec.devAssessmentResult === "DAT" ? "Đạt" : histRec.devAssessmentResult === "KHONG_DAT" ? "Không Đạt" : histRec.devAssessmentResult === "HOC_THU" ? "Học thử" : "Chưa đánh giá"}
+                                  </span>
+                                </div>
+                                <p className="text-[10px] text-slate-500">
+                                  Đợt: <span className="font-semibold">{histRec.batch?.name || "Khảo sát lẻ"}</span> | 
+                                  Ngày: <span className="font-semibold">{histRec.createdAt ? new Date(histRec.createdAt).toLocaleDateString("vi-VN") : "—"}</span>
+                                </p>
+                              </div>
+
+                              {isExpanded && (
+                                <div className="p-4 border-t border-slate-100 bg-slate-50/30 space-y-3 text-xs">
+                                  {histRec.devProfessionalComment && (
+                                    <div>
+                                      <span className="font-bold text-slate-600 block">Đánh giá chuyên môn:</span>
+                                      <p className="text-slate-700 mt-0.5 italic">"{histRec.devProfessionalComment}"</p>
+                                    </div>
+                                  )}
+                                  {histRec.devPsychologyComment && (
+                                    <div>
+                                      <span className="font-bold text-slate-600 block">Đánh giá tâm lý:</span>
+                                      <p className="text-slate-700 mt-0.5 italic">"{histRec.devPsychologyComment}"</p>
+                                    </div>
+                                  )}
+                                  {histRec.devImportantNote && (
+                                    <div>
+                                      <span className="font-bold text-slate-600 block">Lưu ý quan trọng:</span>
+                                      <p className="text-slate-700 mt-0.5 italic">"{histRec.devImportantNote}"</p>
+                                    </div>
+                                  )}
+                                  {histRec.scores && histRec.scores.length > 0 && (
+                                    <div className="pt-2 border-t border-slate-200">
+                                      <span className="font-bold text-slate-600 block mb-1">Kết quả tiêu chí chi tiết:</span>
+                                      <div className="grid grid-cols-2 gap-2 text-[10px]">
+                                        <div className="bg-emerald-50 text-emerald-800 p-2 rounded-lg border border-emerald-100">
+                                          ✓ Đạt: <span className="font-bold">{histRec.scores.filter((s: any) => s.result === "DAT").length}</span>
+                                        </div>
+                                        <div className="bg-rose-50 text-rose-800 p-2 rounded-lg border border-rose-100">
+                                          ✗ Không đạt: <span className="font-bold">{histRec.scores.filter((s: any) => s.result === "KHONG_DAT").length}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 );
               })()}
