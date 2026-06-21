@@ -40,7 +40,8 @@ export default function PreschoolEvaluationForm({
   const gdcsApprovalComment = student.gdcsApprovalComment || ""
 
   // If approved by both BGH and GDCS, the whole form is locked for editing
-  const isAssessmentLocked = isLocked || !!(bghApprovalStatus === "DAT" && gdcsApprovalStatus === "DAT")
+  const isApprovedStatus = (s: any) => s === "DAT" || s === "DAT_MIEN_HOC_THU" || s === "DAT_HOC_THU";
+  const isAssessmentLocked = isLocked || !!(isApprovedStatus(bghApprovalStatus) && isApprovedStatus(gdcsApprovalStatus));
 
     useEffect(() => {
     async function loadData() {
@@ -428,12 +429,13 @@ export default function PreschoolEvaluationForm({
               <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Duyệt BGH MN</span>
-                  <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${
-                    bghApprovalStatus === "DAT" ? "bg-emerald-100 text-emerald-700 border border-emerald-200" :
-                    bghApprovalStatus === "KHONG_DAT" ? "bg-rose-100 text-rose-600" : "bg-slate-100 text-slate-500"
-                  }`}>
-                    {bghApprovalStatus === "DAT" ? "Đạt" : bghApprovalStatus === "KHONG_DAT" ? "Không Đạt" : "Chờ Duyệt"}
-                  </span>
+                  {(() => {
+                    if (!bghApprovalStatus) return <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">Chờ Duyệt</span>;
+                    if (bghApprovalStatus === "DAT_MIEN_HOC_THU" || bghApprovalStatus === "DAT") return <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">Đạt - Miễn Học Thử</span>;
+                    if (bghApprovalStatus === "DAT_HOC_THU") return <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200">Đạt - Học Thử</span>;
+                    if (bghApprovalStatus === "KHONG_DAT") return <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-rose-100 text-rose-600 border border-rose-200">Không Đạt</span>;
+                    return <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-250">Ý kiến khác</span>;
+                  })()}
                 </div>
                 {bghApprovalComment && (
                   <p className="text-xs italic text-slate-600 bg-white border border-slate-100 rounded-lg p-2.5">
@@ -446,12 +448,13 @@ export default function PreschoolEvaluationForm({
               <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Duyệt GĐCS</span>
-                  <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${
-                    gdcsApprovalStatus === "DAT" ? "bg-emerald-100 text-emerald-700 border border-emerald-200" :
-                    gdcsApprovalStatus === "KHONG_DAT" ? "bg-rose-100 text-rose-600" : "bg-slate-100 text-slate-500"
-                  }`}>
-                    {gdcsApprovalStatus === "DAT" ? "Đạt" : gdcsApprovalStatus === "KHONG_DAT" ? "Không Đạt" : "Chờ Duyệt"}
-                  </span>
+                  {(() => {
+                    if (!gdcsApprovalStatus) return <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">Chờ Duyệt</span>;
+                    if (gdcsApprovalStatus === "DAT_MIEN_HOC_THU" || gdcsApprovalStatus === "DAT") return <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">Đạt - Miễn Học Thử</span>;
+                    if (gdcsApprovalStatus === "DAT_HOC_THU") return <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200">Đạt - Học Thử</span>;
+                    if (gdcsApprovalStatus === "KHONG_DAT") return <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-rose-100 text-rose-600 border border-rose-200">Không Đạt</span>;
+                    return <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-250">Ý kiến khác</span>;
+                  })()}
                 </div>
                 {gdcsApprovalComment && (
                   <p className="text-xs italic text-slate-600 bg-white border border-slate-100 rounded-lg p-2.5">
