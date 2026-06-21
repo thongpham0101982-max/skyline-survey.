@@ -3536,6 +3536,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                           .map((s, idx) => {
                             const pct = s.totalCriteria > 0 ? Math.round((s.scoredCount / s.totalCriteria) * 100) : 0;
                             const statusBadge = () => {
+                              if (s.totalCriteria > 0 && s.scoredCount > 0) {
+                                return <span className="text-[10px] font-black text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-none border border-emerald-300">✓ Hoàn thành</span>;
+                              }
                               const res = s.admissionResult || s.devAssessmentResult;
                               if (res && res !== "Chưa duyệt" && res !== "CHUA_DUYET" && res !== "") {
                                 if (res === "Đạt - Miễn Học Thử" || res === "DAT_MIEN_HOC_THU") {
@@ -3555,8 +3558,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 }
                               }
                               if (s.totalCriteria === 0) return <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2.5 py-0.5 rounded-none border border-slate-300">Không có tiêu chí</span>;
-                              if (s.scoredCount === s.totalCriteria) return <span className="text-[10px] font-black text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-none border border-emerald-300">✓ Hoàn tất</span>;
-                              if (s.scoredCount > 0) return <span className="text-[10px] font-black text-amber-800 bg-amber-50 px-2.5 py-1 rounded-none border border-amber-300">★ Đang chấm</span>;
+                              if (s.scoredCount === s.totalCriteria) return <span className="text-[10px] font-black text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-none border border-emerald-300">✓ Hoàn thành</span>;
+                              if (s.scoredCount > 0) return <span className="text-[10px] font-black text-amber-800 bg-amber-50 px-2.5 py-1 rounded-none border border-amber-300">✓ Hoàn thành</span>;
                               return <span className="text-[10px] font-black text-slate-500 bg-slate-50 px-2.5 py-1 rounded-none border border-slate-300">⚪ Chưa đánh giá</span>;
                             };
 
