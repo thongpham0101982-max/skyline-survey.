@@ -1889,6 +1889,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
         try {
       const scoresRes = await fetch(`/api/preschool-dev-scores?studentId=${student.id}`);
       let scoredList = [];
+      let ageGroup = "";
       if (scoresRes.ok) {
         scoredList = await scoresRes.json();
         const scoreMap: Record<string, { result: string; note: string }> = {};
@@ -1896,10 +1897,15 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           scoreMap[sc.criteriaId] = { result: sc.result, note: sc.note || "" };
         }
         setStudentScores(scoreMap);
+        if (scoredList.length > 0 && scoredList[0].criteria?.ageGroup) {
+          ageGroup = scoredList[0].criteria.ageGroup;
+        }
       }
 
-      const surveyDate = (scoredList && scoredList.length > 0) ? new Date(scoredList[0].createdAt) : new Date();
-      const ageGroup = getSurveyFormAgeGroup(student.grade, surveyDate);
+      if (!ageGroup) {
+        const surveyDate = new Date();
+        ageGroup = getSurveyFormAgeGroup(student.grade, surveyDate);
+      }
       setActiveAgeGroup(ageGroup);
 
       const areasRes = await fetch(`/api/preschool-dev-areas?type=INPUT&ageGroup=${encodeURIComponent(ageGroup)}`);
