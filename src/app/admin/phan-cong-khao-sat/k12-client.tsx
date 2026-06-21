@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useMemo } from "react"
 import {
   UserCheck, GraduationCap, BookOpen, Layers, Search, Trash2,
   Mail, Edit2, Loader2, Filter, Calendar, UserPlus, CheckCircle2,
-  AlertCircle, X, Plus, RefreshCw
+  AlertCircle, X, Plus, RefreshCw, Users
 } from "lucide-react"
 
 // ─── Helpers ───
@@ -168,6 +168,43 @@ export function PhanCongK12Client({
   const [asFilterBatchId, setAsFilterBatchId] = useState("")
   const [asNotifyingId, setAsNotifyingId] = useState<string | null>(null)
   const [asNotifyingAll, setAsNotifyingAll] = useState(false)
+
+  // ─── Student stats state ───
+  const [studentStats, setStudentStats] = useState<Record<string, number>>({})
+  const [statsLoading, setStatsLoading] = useState(false)
+
+  const fetchStudentStats = useCallback(async () => {
+    if (!asPeriodId) {
+      setStudentStats({})
+      return
+    }
+    setStatsLoading(true)
+    try {
+      let url = `/api/input-assessment-students?periodId=${asPeriodId}`
+      if (asBatchId) url += `&batchId=${asBatchId}`
+      const res = await fetch(url)
+      if (res.ok) {
+        const students = await res.json()
+        const counts = {}
+        students.forEach((s) => {
+          const g = s.grade || "Chưa xác định"
+          counts[g] = (counts[g] || 0) + 1
+        })
+        setStudentStats(counts)
+      } else {
+        setStudentStats({})
+      }
+    } catch (e) {
+      console.error(e)
+      setStudentStats({})
+    } finally {
+      setStatsLoading(false)
+    }
+  }, [asPeriodId, asBatchId])
+
+  useEffect(() => {
+    fetchStudentStats()
+  }, [fetchStudentStats])
   const [asDeptId, setAsDeptId] = useState("")
   const [asTeacherId, setAsTeacherId] = useState("")
   const [asSelSubjects, setAsSelSubjects] = useState<string[]>([])
@@ -367,6 +404,40 @@ export function PhanCongK12Client({
                       {visiblePeriods.find(p => p.id === asPeriodId)?.batches?.map((b: any) => <option key={b.id} value={b.id}>{b.name}</option>)}
                     </select>
                   </Field>
+
+                  {/* Thống kê theo Khối */}
+                  {asPeriodId && (
+                    <div className="bg-slate-50 border border-slate-200/60 rounded-2xl p-4.5 space-y-3 animate-in fade-in duration-350">
+                      <div className="flex items-center justify-between border-b border-slate-200/50 pb-2">
+                        <div className="flex items-center gap-2">
+                          <Users className="w-4 h-4 text-indigo-600" />
+                          <span className="text-[11px] font-black text-slate-800 uppercase tracking-widest">Thống kê theo Khối</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {statsLoading && <Loader2 className="w-3.5 h-3.5 text-indigo-600 animate-spin" />}
+                          <span className="text-[10px] font-black text-slate-500">
+                            Tổng: {Object.values(studentStats).reduce((a, b) => a + b, 0)} HS
+                          </span>
+                        </div>
+                      </div>
+                      {Object.keys(studentStats).length === 0 ? (
+                        <div className="text-[11px] text-slate-400 font-semibold text-center py-2">
+                          {statsLoading ? "Đang tải dữ liệu..." : "Không có học sinh trong đợt khảo sát này"}
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-2">
+                          {Object.entries(studentStats).map(([grade, count]) => (
+                            <div key={grade} className="flex items-center justify-between bg-white border border-slate-100 px-3 py-2.5 rounded-xl text-xs shadow-sm">
+                              <span className="font-bold text-slate-600 truncate mr-2" title={grade}>{grade}</span>
+                              <span className="text-[10px] font-black px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded-full flex-shrink-0">
+                                {count} HS
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <Field label="Lọc theo Tổ chuyên môn (Không bắt buộc)">
                     <select value={asDeptId} onChange={e => setAsDeptId(e.target.value)} className={inp}>
                       <option value="">Tất cả Tổ chuyên môn</option>
