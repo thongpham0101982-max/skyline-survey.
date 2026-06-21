@@ -112,7 +112,7 @@ export function LoginClient() {
 
   const roleLabel =
     role === 'STUDENT' ? 'Học sinh' :
-    role === 'PARENT' ? 'Phụ huynh' : 'Cán bộ'
+    role === 'PARENT' ? 'Phụ huynh' : 'CBGV'
 
   return (
     <>
@@ -194,7 +194,7 @@ export function LoginClient() {
             {/* Premium Role Switcher */}
             <div className="bg-slate-50 p-1.5 rounded-[1.8rem] mb-6 flex gap-1 border border-slate-200/60">
               {['STAFF', 'PARENT', 'STUDENT'].map((r) => {
-                const labels = { STAFF: 'Cán bộ', PARENT: 'Phụ huynh', STUDENT: 'Học sinh' };
+                const labels = { STAFF: 'CBGV', PARENT: 'Phụ huynh', STUDENT: 'Học sinh' };
                 const icons = { STAFF: ShieldCheck, PARENT: Users, STUDENT: GraduationCap };
                 const Icon = icons[r];
                 return (
