@@ -902,6 +902,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
         <div className="fixed inset-0 z-[100] bg-white overflow-y-auto">
           <PreschoolEvaluationForm 
             student={activePreschoolStudent}
+            user={user}
             onSave={async (studentId, scores, comments) => {
               try {
                 const isProb = activePreschoolStudent.isPreschoolProbation;
@@ -916,7 +917,9 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                     probationaryComment: comments.probationaryComment,
                     probationaryPeriod: comments.probationaryPeriod,
                     probationaryClass: comments.probationaryClass,
-                    probationaryTeacher: comments.probationaryTeacher
+                    probationaryTeacher: comments.probationaryTeacher,
+                    probationaryBghStatus: comments.probationaryBghStatus,
+                    probationaryBghComment: comments.probationaryBghComment
                   };
                 } else {
                   body = { studentId, scores, ...comments };

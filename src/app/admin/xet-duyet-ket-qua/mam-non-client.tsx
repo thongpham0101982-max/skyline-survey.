@@ -1008,6 +1008,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
   const [bghApprovalDate, setBghApprovalDate] = useState("");
   const [gdcsApprovalUser, setGdcsApprovalUser] = useState("");
   const [gdcsApprovalDate, setGdcsApprovalDate] = useState("");
+
   const [historyList, setHistoryList] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [expandedHistoryId, setExpandedHistoryId] = useState<string | null>(null);
@@ -1385,6 +1386,11 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
   const [probResult, setProbResult] = useState("");
   const [probComment, setProbComment] = useState("");
   const [savingProb, setSavingProb] = useState(false);
+  const [probBghStatus, setProbBghStatus] = useState("");
+  const [probBghComment, setProbBghComment] = useState("");
+  const [probBghUser, setProbBghUser] = useState("");
+  const [probBghDate, setProbBghDate] = useState("");
+  const [probBghLog, setProbBghLog] = useState("");
 
     const defaultPreschoolCongratulations = `Chúc mừng con đã vượt qua kỳ khảo sát đầu vào lớp {{grade}} hệ {{surveyFormType}} năm học {{academicYear}}. Con đã chính thức đặt bước chân đầu tiên trên con đường trở thành học sinh của Trường Mầm non Sky-Line (Cơ sở {{admissionCampus}}) – một cột mốc quan trọng trong hành trình phát triển của con.
 
@@ -2441,6 +2447,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     setProbTeacher(student.probationaryTeacher || "");
     setProbResult(student.probationaryResult || "");
     setProbComment(student.probationaryComment || "");
+    setProbBghStatus(student.probationaryBghStatus || "");
+    setProbBghComment(student.probationaryBghComment || "");
+    setProbBghUser(student.probationaryBghUser || "");
+    setProbBghDate(student.probationaryBghDate || "");
+    setProbBghLog(student.probationaryBghLog || "");
     setProbModal(true);
     setDevLoading(true);
     try {
@@ -2479,7 +2490,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           probationaryComment: probComment,
           probationaryPeriod: probPeriod,
           probationaryClass: probClass,
-          probationaryTeacher: probTeacher
+          probationaryTeacher: probTeacher,
+          probationaryBghStatus: probBghStatus,
+          probationaryBghComment: probBghComment
         })
       });
       if (r.ok) {
@@ -7659,6 +7672,105 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 className="w-full px-3.5 py-2.5 border border-slate-300 rounded-none text-sm font-medium outline-none focus:ring-2 focus:ring-violet-300 bg-white"
               />
             </div>
+
+            {/* BGH MN Trial Approval Section */}
+            {(() => {
+              const userCampuses = campuses.filter((c: any) => currentUser?.campusIds?.includes(c.id));
+              const hasCampusMatch = currentUser?.campusIds?.length === 0 || userCampuses.some((c: any) => 
+                isPreschoolCampusMatch(probStudent?.admissionCampus, c.campusCode, c.campusName)
+              );
+              const canApproveBGH = (isSystemAdmin || isBGHUser) && hasCampusMatch;
+
+              return (
+                <div className="pt-4 border-t border-slate-200 space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                      <h4 className="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
+                        PHÊ DUYỆT CỦA BGH MẦM NON
+                      </h4>
+                      <p className="text-[10px] font-semibold text-slate-400 mt-0.5">Trạng thái phê duyệt kết quả học thử của BGH</p>
+                    </div>
+                    <div className="flex gap-2">
+                      {[
+                        { status: "DAT", label: "ĐẠT", color: "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100/50", activeColor: "bg-emerald-500 text-white border-emerald-500 shadow-none" },
+                        { status: "KHONG_DAT", label: "KHÔNG ĐẠT", color: "bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100/50", activeColor: "bg-rose-500 text-white border-rose-500 shadow-none" },
+                        { status: "Y_KIEN_KHAC", label: "Ý KIÊN KHÁC", color: "bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100/50", activeColor: "bg-amber-500 text-white border-amber-500 shadow-none" }
+                      ].map(opt => (
+                        <button
+                          key={opt.status}
+                          type="button"
+                          disabled={!canApproveBGH}
+                          onClick={() => setProbBghStatus(probBghStatus === opt.status ? "" : opt.status)}
+                          className={`px-3 py-1.5 rounded-none border text-xs font-black transition-all ${
+                            probBghStatus === opt.status 
+                              ? opt.activeColor 
+                              : `bg-white ${opt.color} border-slate-300`
+                          } ${!canApproveBGH ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-[0.98]'}`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Ý kiến phê duyệt của BGH</label>
+                    <textarea
+                      value={probBghComment}
+                      onChange={e => setProbBghComment(e.target.value)}
+                      placeholder={canApproveBGH ? "Nhập ý kiến phê duyệt của Ban Giám Hiệu..." : "Chưa có ý kiến phê duyệt của BGH"}
+                      disabled={!canApproveBGH}
+                      rows={2}
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-none text-sm font-medium outline-none focus:ring-2 focus:ring-violet-300 bg-white disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
+                    />
+                  </div>
+
+                  {probBghUser && (
+                    <div className="text-[10px] text-slate-505 font-semibold bg-slate-100/50 p-2.5 border border-slate-200">
+                      <div className="flex items-center gap-1">👤 Người duyệt: <span className="font-bold text-slate-700">{probBghUser}</span></div>
+                      {probBghDate && (
+                        <div className="flex items-center gap-1">📅 Thời gian: <span className="font-bold text-slate-700">{new Date(probBghDate).toLocaleString("vi-VN")}</span></div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Audit Logs / Nhật ký phê duyệt */}
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-black text-slate-450 uppercase tracking-widest">Nhật ký phê duyệt</label>
+                    {(() => {
+                      let logs = [];
+                      if (probBghLog) {
+                        try { logs = JSON.parse(probBghLog); } catch (e) {}
+                      }
+                      if (logs.length === 0) {
+                        return <p className="text-[11px] text-slate-400 font-semibold italic">Chưa có nhật ký ghi nhận.</p>;
+                      }
+                      return (
+                        <div className="space-y-2 max-h-40 overflow-y-auto border border-slate-200 p-3 bg-white divide-y divide-slate-100">
+                          {logs.map((log: any, idx: number) => (
+                            <div key={idx} className="pt-2 first:pt-0 text-[11px] text-slate-650 leading-relaxed font-semibold">
+                              <div className="flex justify-between items-center text-slate-400">
+                                <span>👤 <strong className="text-slate-700">{log.user}</strong></span>
+                                <span>{log.date ? new Date(log.date).toLocaleString("vi-VN") : ""}</span>
+                              </div>
+                              <div className="mt-1 flex items-center gap-2">
+                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-black tracking-wider ${
+                                  log.status === "DAT" ? "bg-emerald-50 text-emerald-700 border border-emerald-250" : log.status === "KHONG_DAT" ? "bg-rose-50 text-rose-700 border border-rose-250" : "bg-amber-50 text-amber-700 border border-amber-250"
+                                }`}>
+                                  {log.status === "DAT" ? "ĐẠT" : log.status === "KHONG_DAT" ? "KHÔNG ĐẠT" : "Ý KIẾN KHÁC"}
+                                </span>
+                                {log.comment && <span className="text-slate-500 italic">"{log.comment}"</span>}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
       </Modal>

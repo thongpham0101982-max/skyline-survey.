@@ -821,6 +821,11 @@ model PreschoolInputAssessmentStudent {
   probationaryPeriod     String?
   probationaryClass      String?
   probationaryTeacher    String?
+  probationaryBghStatus  String?
+  probationaryBghComment String?
+  probationaryBghUser    String?
+  probationaryBghDate    DateTime?
+  probationaryBghLog     String?
   batch                  PreschoolInputAssessmentBatch? @relation(fields: [batchId], references: [id], onDelete: SetNull)
   period                 PreschoolInputAssessmentPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
 

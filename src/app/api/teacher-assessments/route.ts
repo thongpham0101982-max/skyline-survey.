@@ -168,6 +168,16 @@ export async function GET(req: any) {
         return NextResponse.json([...assignments, ...mappedPreschool]);
     }
     
+    if (action === "getCampuses") {
+        const campuses = await prisma.campus.findMany({
+            select: {
+                id: true,
+                campusCode: true,
+                campusName: true
+            }
+        });
+        return NextResponse.json(campuses);
+    }
     
     if (action === "getDashboardMetrics") {
         const academicYearId = searchParams.get("academicYearId");
@@ -255,6 +265,11 @@ export async function GET(req: any) {
                         probationaryPeriod: true,
                         probationaryClass: true,
                         probationaryTeacher: true,
+                        probationaryBghStatus: true,
+                        probationaryBghComment: true,
+                        probationaryBghUser: true,
+                        probationaryBghDate: true,
+                        probationaryBghLog: true,
                         surveyFormType: true,
                         admissionResult: true,
                         batch: {
