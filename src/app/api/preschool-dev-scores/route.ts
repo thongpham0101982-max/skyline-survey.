@@ -79,6 +79,7 @@ export async function GET(req: NextRequest) {
           gdcsApprovalDate: true,
           probationaryResult: true,
           probationaryClass: true,
+          probationaryTeacher: true,
           batch: {
             select: {
               startDate: true,
