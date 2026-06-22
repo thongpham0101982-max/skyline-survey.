@@ -19,6 +19,79 @@ const MN_LEVELS = [
   { value: "Mầm non", label: "Mầm non" }
 ];
 
+function SearchableSelect({ options, value, onChange, placeholder = "Chọn giáo viên..." }: any) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selectedOpt = options.find((o: any) => o.value === value);
+  const filtered = options.filter((o: any) =>
+    (o.label || "").toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div className="relative w-full text-slate-700" ref={containerRef}>
+      <div
+        onClick={() => {
+          setIsOpen(!isOpen);
+          if (!isOpen) setSearch("");
+        }}
+        className="w-full border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white cursor-pointer flex justify-between items-center min-h-[42px] border-slate-200"
+      >
+        <span className={selectedOpt && selectedOpt.value ? "text-slate-800 font-medium" : "text-slate-400"}>
+          {selectedOpt ? selectedOpt.label : placeholder}
+        </span>
+        <span className="text-slate-400 text-xs">▼</span>
+      </div>
+
+      {isOpen && (
+        <div className="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-hidden flex flex-col">
+          <div className="p-2 border-b border-slate-100 sticky top-0 bg-white">
+            <input
+              type="text"
+              autoFocus
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Tìm theo tên..."
+              className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-sm outline-none focus:border-blue-500"
+            />
+          </div>
+          <div className="overflow-y-auto max-h-48 divide-y divide-slate-50">
+            {filtered.length === 0 ? (
+              <div className="p-3 text-sm text-slate-400 text-center">Không tìm thấy GV</div>
+            ) : (
+              filtered.map((opt: any) => (
+                <div
+                  key={opt.value}
+                  onClick={() => {
+                    onChange(opt.value);
+                    setIsOpen(false);
+                  }}
+                  className={`px-4 py-2.5 text-sm cursor-pointer hover:bg-slate-50 transition-colors ${
+                    opt.value === value ? "bg-blue-50 text-blue-600 font-semibold" : "text-slate-700"
+                  }`}
+                >
+                  {opt.label}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function AdminClassesClient({ initialClasses, campuses, academicYears, teachers, isCampusLocked = false, defaultCampusId = null }: any) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("k12")
@@ -359,34 +432,47 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-semibold text-slate-700 mb-1">GVCN 1</label>
-                      <select 
-                        value={editModal.gvcn1 || ""} 
-                        onChange={e => setEditModal({...editModal, gvcn1: e.target.value})} 
-                        className="w-full border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
-                      >
-                        <option value="">-- Chưa phân công --</option>
-                        {(teachers?.filter((t: any) => (t.blockCM || "").toLowerCase().includes("mầm non")) || []).map((t: any) => <option key={t.id} value={t.id}>{t.teacherName}</option>)}
-                      </select>
+                      <SearchableSelect
+                        options={[
+                          { value: "", label: "-- Chưa phân công --" },
+                          ...(teachers?.filter((t: any) => (t.blockCM || "").toLowerCase().includes("mầm non")) || []).map((t: any) => ({
+                            value: t.id,
+                            label: t.teacherName
+                          }))
+                        ]}
+                        value={editModal.gvcn1 || ""}
+                        onChange={(val: string) => setEditModal({ ...editModal, gvcn1: val })}
+                      />
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-slate-700 mb-1">GVCN 2</label>
-                      <select 
-                        value={editModal.gvcn2 || ""} 
-                        onChange={e => setEditModal({...editModal, gvcn2: e.target.value})} 
-                        className="w-full border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
-                      >
-                        <option value="">-- Chưa phân công --</option>
-                        {(teachers?.filter((t: any) => (t.blockCM || "").toLowerCase().includes("mầm non")) || []).map((t: any) => <option key={t.id} value={t.id}>{t.teacherName}</option>)}
-                      </select>
+                      <SearchableSelect
+                        options={[
+                          { value: "", label: "-- Chưa phân công --" },
+                          ...(teachers?.filter((t: any) => (t.blockCM || "").toLowerCase().includes("mầm non")) || []).map((t: any) => ({
+                            value: t.id,
+                            label: t.teacherName
+                          }))
+                        ]}
+                        value={editModal.gvcn2 || ""}
+                        onChange={(val: string) => setEditModal({ ...editModal, gvcn2: val })}
+                      />
                     </div>
                   </div>
                 ) : (
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-1">Giáo viên chủ nhiệm (GVCN)</label>
-                    <select value={editModal.homeroomTeacherId || ""} onChange={e => setEditModal({...editModal, homeroomTeacherId: e.target.value})} className="w-full border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white">
-                      <option value="">-- Chưa phân công --</option>
-                      {teachers?.map((t: any) => <option key={t.id} value={t.id}>{t.teacherName}</option>)}
-                    </select>
+                    <SearchableSelect
+                      options={[
+                        { value: "", label: "-- Chưa phân công --" },
+                        ...(teachers || []).map((t: any) => ({
+                          value: t.id,
+                          label: t.teacherName
+                        }))
+                      ]}
+                      value={editModal.homeroomTeacherId || ""}
+                      onChange={(val: string) => setEditModal({ ...editModal, homeroomTeacherId: val })}
+                    />
                   </div>
                 )}
                 <div className="pt-4 flex items-center justify-end gap-3">
