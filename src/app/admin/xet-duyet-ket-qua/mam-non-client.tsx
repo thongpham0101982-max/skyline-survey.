@@ -132,11 +132,6 @@ function Field({ label, required, children }: any) {
 const xetDuyetCols = [
   { id: "stt", label: "STT", width: "w-12 min-w-[48px] max-w-[48px] sticky left-0 bg-[#00A19A]/5 z-20" },
   { id: "name", label: "Thông tin bé", width: "w-[260px] min-w-[260px] max-w-[260px] sticky left-12 bg-[#00A19A]/5 z-20 border-r border-slate-300/80 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] whitespace-normal" },
-  { id: "physical", label: "Thể chất", width: "w-[220px] min-w-[220px] whitespace-normal border-r border-teal-50/50" },
-  { id: "cognitive", label: "Nhận thức", width: "w-[280px] min-w-[280px] whitespace-normal border-r border-teal-50/50" },
-  { id: "language", label: "Ngôn ngữ", width: "w-[280px] min-w-[280px] whitespace-normal border-r border-teal-50/50" },
-  { id: "social", label: "Tình cảm - Kỹ năng XH - TM", width: "w-[280px] min-w-[280px] whitespace-normal border-r border-teal-50/50" },
-  { id: "teacher", label: "Giáo viên đánh giá", width: "w-[280px] min-w-[280px] whitespace-normal border-r border-teal-50/50" },
   { id: "bghApproval", label: "Duyệt BGH MN", width: "w-[220px] min-w-[220px] whitespace-normal border-r border-teal-50/50" },
   { id: "gdcsApproval", label: "Duyệt GĐCS", width: "w-[220px] min-w-[220px] whitespace-normal border-r border-teal-50/50" },
   { id: "result", label: "Kết quả Duyệt", width: "w-32 min-w-[128px]" },
@@ -3940,45 +3935,33 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 <td className={`p-4 align-top ${tdClass}`}>
                                   <div className="flex flex-col gap-2 w-full">
                                     <div className="flex flex-col gap-1.5">
-                                      <div className={`border rounded-none p-2.5 space-y-2.5 transition-all hover:scale-[1.01] hover:shadow-none ${cardClass}`}>
+                                      <div className={`border rounded-lg p-2.5 space-y-2 transition-all hover:scale-[1.01] hover:shadow-sm ${cardClass}`}>
                                         <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-wider pb-1.5 border-b border-white/60">
                                           <span className="flex items-center gap-1">
                                             <span>{headerIcon}</span>
-                                            <span>{areaName} (${areaScores.length})</span>
+                                            <span>{areaName} ({areaScores.length})</span>
                                           </span>
-                                          <span className={`px-1.5 py-0.5 rounded-none border leading-none font-bold ${pillClass}`}>
+                                          <span className={`px-1.5 py-0.5 rounded border leading-none font-bold ${pillClass}`}>
                                             {areaScores.length > 0 ? Math.round((datCount / areaScores.length) * 100) : 0}% Đạt
                                           </span>
                                         </div>
                                         
                                         {/* Premium HSL Progress Bar */}
-                                        <div className={`w-full h-1.5 rounded-none overflow-hidden border border-slate-300/40 ${progressTrack}`}>
-                                          <div className={`h-full rounded-none ${progressBg}`} style={{ width: `${areaScores.length > 0 ? Math.round((datCount / areaScores.length) * 100) : 0}%` }} />
+                                        <div className={`w-full h-1.5 rounded-full overflow-hidden border border-slate-300/40 ${progressTrack}`}>
+                                          <div className={`h-full rounded-full ${progressBg}`} style={{ width: `${areaScores.length > 0 ? Math.round((datCount / areaScores.length) * 100) : 0}%` }} />
                                         </div>
 
-                                        <div className="flex flex-col gap-1 mt-1">
-                                          <div className="flex items-center justify-between bg-white/90 backdrop-blur-sm border border-slate-300/80 rounded-none px-2.5 py-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.01)] text-xs">
-                                            <div className="flex items-center gap-1.5 font-bold text-emerald-600">
-                                              <span className="w-1.5 h-1.5 rounded-none bg-emerald-500" />
-                                              Đạt
-                                            </div>
-                                            <span className="font-black text-slate-700">${datCount} tiêu chí</span>
-                                          </div>
-                                          <div className="flex items-center justify-between bg-white/90 backdrop-blur-sm border border-slate-300/80 rounded-none px-2.5 py-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.01)] text-xs">
-                                            <div className="flex items-center gap-1.5 font-bold text-rose-500">
-                                              <span className="w-1.5 h-1.5 rounded-none bg-rose-400" />
-                                              Không đạt
-                                            </div>
-                                            <span className="font-black text-slate-700">${khongDatCount} tiêu chí</span>
-                                          </div>
+                                        <div className="flex items-center justify-between gap-1 mt-1.5">
+                                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50/90 px-1.5 py-0.5 rounded border border-emerald-200/60 flex items-center gap-1 shadow-sm">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> {datCount}
+                                          </span>
+                                          <span className="text-[10px] font-bold text-rose-700 bg-rose-50/90 px-1.5 py-0.5 rounded border border-rose-200/60 flex items-center gap-1 shadow-sm">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-rose-400" /> {khongDatCount}
+                                          </span>
                                           {chuaDanhGiaCount > 0 && (
-                                            <div className="flex items-center justify-between bg-white/90 backdrop-blur-sm border border-slate-300/80 rounded-none px-2.5 py-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.01)] text-xs">
-                                              <div className="flex items-center gap-1.5 font-semibold text-slate-400">
-                                                <span className="w-1.5 h-1.5 rounded-none bg-slate-300" />
-                                                Chưa đánh giá
-                                              </div>
-                                              <span className="font-black text-slate-500">${chuaDanhGiaCount} tiêu chí</span>
-                                            </div>
+                                            <span className="text-[10px] font-bold text-slate-600 bg-slate-100/90 px-1.5 py-0.5 rounded border border-slate-200/80 flex items-center gap-1 shadow-sm">
+                                              <span className="w-1.5 h-1.5 rounded-full bg-slate-400" /> {chuaDanhGiaCount}
+                                            </span>
                                           )}
                                         </div>
                                       </div>
@@ -4005,80 +3988,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                   </div>
                                 </td>
                                 
-                                {/* Thể chất */}
-                                <td className="w-[220px] min-w-[220px] whitespace-normal border-r border-teal-50/50 p-4 align-top text-xs">
-                                  <div className="flex flex-col gap-2 w-full">
-                                    {hVal || wVal ? (
-                                      <div className="flex flex-col gap-2">
-                                        <div className="bg-gradient-to-br from-emerald-50/70 to-teal-50/30 border border-emerald-100/70 rounded-none p-2.5 shadow-[0_4px_12px_rgba(16,185,129,0.03)] transition-all hover:scale-[1.01] hover:shadow-none">
-                                          <div className="flex items-center gap-1 text-[10px] font-black text-emerald-800 uppercase tracking-wider pb-1.5 border-b border-white/60 mb-2">
-                                            <span>🏃‍♂️</span>
-                                            <span>Thể chất</span>
-                                          </div>
-                                          <div className="grid grid-cols-3 gap-1 bg-white/80 backdrop-blur-sm border border-emerald-100/50 rounded-none p-1 shadow-[0_1px_2px_rgba(0,0,0,0.01)]">
-                                            <div className="p-1 flex flex-col items-center justify-center text-center">
-                                              <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">H.Cao</span>
-                                              <span className="font-black text-[11px] text-slate-700 mt-0.5">{hVal ? `${hVal}cm` : "—"}</span>
-                                            </div>
-                                            <div className="p-1 border-l border-r border-slate-300 flex flex-col items-center justify-center text-center">
-                                              <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">C.Nặng</span>
-                                              <span className="font-black text-[11px] text-slate-700 mt-0.5">{wVal ? `${wVal}kg` : "—"}</span>
-                                            </div>
-                                            <div className="p-1 flex flex-col items-center justify-center text-center">
-                                              <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">BMI</span>
-                                              <span className="font-black text-[11px] text-[#00A19A] mt-0.5">{bmiVal ? bmiVal.toFixed(1) : "—"}</span>
-                                            </div>
-                                          </div>
-                                        </div>
-                                        {bmiVal && bmiClass && (
-                                          <div className={`px-2.5 py-1.5 rounded-none text-[9px] font-black border uppercase tracking-wider text-center flex items-center justify-center gap-1.5 shadow-[0_2px_4px_rgba(0,0,0,0.02)] ${bmiClass.color}`}>
-                                            <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${bmiClass.dot}`} />
-                                            {bmiClass.label}
-                                          </div>
-                                        )}
-                                      </div>
-                                    ) : (
-                                      <span className="text-slate-300 italic block py-1">Chưa đo thể chất</span>
-                                    )}
-                                    {/* Physical details hidden for summary view */}
-                                  </div>
-                                </td>
 
-                                {/* Nhận thức */}
-                                {renderAreaCell("NHAN_THUC", "w-[280px] min-w-[280px] whitespace-normal border-r border-teal-50/50")}
 
-                                {/* Ngôn ngữ */}
-                                {renderAreaCell("NGON_NGU", "w-[280px] min-w-[280px] whitespace-normal border-r border-teal-50/50")}
-
-                                {/* Tình cảm - Kỹ năng XH - TM */}
-                                {renderAreaCell("TINH_CAM_XH_TM", "w-[280px] min-w-[280px] whitespace-normal border-r border-teal-50/50")}
-
-                                {/* Giáo viên đánh giá */}
-                                <td className="w-[280px] min-w-[280px] whitespace-normal border-r border-teal-50/50 p-4 align-top text-xs">
-                                  <div className="flex flex-col gap-2.5 text-slate-700 w-full">
-                                    {s.devProfessionalComment && (
-                                      <div className="bg-[#00A19A]/5/30 border-l-[3px] border-teal-500 rounded-r-xl p-2 flex flex-col gap-0.5 shadow-[0_1px_2px_rgba(0,0,0,0.01)]">
-                                        <span className="text-[9px] font-black text-[#00A19A] uppercase tracking-wider">Chuyên môn</span>
-                                        <span className="text-[11px] leading-relaxed text-slate-700 font-medium">{s.devProfessionalComment}</span>
-                                      </div>
-                                    )}
-                                    {s.devPsychologyComment && (
-                                      <div className="bg-[#00A19A]/10/30 border-l-[3px] border-indigo-500 rounded-r-xl p-2 flex flex-col gap-0.5 shadow-[0_1px_2px_rgba(0,0,0,0.01)]">
-                                        <span className="text-[9px] font-black text-[#00A19A] uppercase tracking-wider">Tâm lý</span>
-                                        <span className="text-[11px] leading-relaxed text-slate-700 font-medium">{s.devPsychologyComment}</span>
-                                      </div>
-                                    )}
-                                    {s.devImportantNote && (
-                                      <div className="bg-rose-50/50 border border-rose-100/80 border-l-[3px] border-l-rose-500 rounded-none p-2.5 text-rose-700 font-semibold shadow-[0_1px_2px_rgba(244,63,94,0.03)] flex flex-col gap-0.5">
-                                        <span className="text-[9px] font-black text-rose-600 uppercase tracking-wider">Lưu ý đặc biệt</span>
-                                        <span className="text-[11px] leading-relaxed">{s.devImportantNote}</span>
-                                      </div>
-                                    )}
-                                    {!s.devProfessionalComment && !s.devPsychologyComment && !s.devImportantNote && (
-                                      <span className="text-slate-300 italic block py-1">—</span>
-                                    )}
-                                  </div>
-                                </td>
+                                
 
                                 {/* Duyệt BGH MN */}
                                  {showBghSection && (
