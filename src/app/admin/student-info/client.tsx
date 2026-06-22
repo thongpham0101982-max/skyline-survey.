@@ -104,6 +104,67 @@ export function StudentInfoClient({
   const [devAreas, setDevAreas] = useState<any[]>([]);
   const [devAreasLoading, setDevAreasLoading] = useState(false);
 
+  
+  // Search & Filter state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedPeriod, setSelectedPeriod] = useState("");
+  const [selectedBatch, setSelectedBatch] = useState("");
+  const [selectedResult, setSelectedResult] = useState("");
+  const [selectedGrade, setSelectedGrade] = useState("");
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 15;
+
+  // Selected student for details modal
+  const [selectedStudent, setSelectedStudent] = useState<any | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+
+  // Multi-select state
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  // Add/Edit student modal states
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [formMode, setFormMode] = useState<"create" | "edit">("create");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [formState, setFormState] = useState<any>({
+    studentCode: "",
+    fullName: "",
+    dateOfBirth: "",
+    gender: "Nam",
+    grade: "",
+    className: "",
+    periodId: "",
+    batchId: "",
+    surveySystem: "",
+    admissionCriteria: "",
+    admissionCampus: "",
+    admissionResult: "",
+    directorNote: "",
+    signatureName: "",
+    surveyFormType: "",
+    kqHocTap: "",
+    kqRenLuyen: "",
+    hoSoCtQuocTe: "",
+    hocKy: "",
+    targetType: "",
+    kqgdTieuHoc: "",
+    devProfessionalComment: "",
+    devPsychologyComment: "",
+    devImportantNote: "",
+    devAssessmentResult: "",
+    registeredCampus: ""
+  });
+
+  // Import excel modal states
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const [importPeriodId, setImportPeriodId] = useState("");
+  const [importBatchId, setImportBatchId] = useState("");
+  const [importing, setImporting] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [importSuccessCount, setImportSuccessCount] = useState<number | null>(null);
+  const importInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     if (isDetailsOpen && activeTab === "preschool" && selectedStudent) {
       const fetchDevAreas = async () => {
@@ -216,66 +277,6 @@ export function StudentInfoClient({
     if (!activeYearId) return eduSystems;
     return eduSystems.filter((es: any) => es.academicYearId === activeYearId);
   }, [eduSystems, activeYearId]);
-  
-  // Search & Filter state
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedPeriod, setSelectedPeriod] = useState("");
-  const [selectedBatch, setSelectedBatch] = useState("");
-  const [selectedResult, setSelectedResult] = useState("");
-  const [selectedGrade, setSelectedGrade] = useState("");
-  
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 15;
-
-  // Selected student for details modal
-  const [selectedStudent, setSelectedStudent] = useState<any | null>(null);
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-
-  // Multi-select state
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-
-  // Add/Edit student modal states
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [formMode, setFormMode] = useState<"create" | "edit">("create");
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [formState, setFormState] = useState<any>({
-    studentCode: "",
-    fullName: "",
-    dateOfBirth: "",
-    gender: "Nam",
-    grade: "",
-    className: "",
-    periodId: "",
-    batchId: "",
-    surveySystem: "",
-    admissionCriteria: "",
-    admissionCampus: "",
-    admissionResult: "",
-    directorNote: "",
-    signatureName: "",
-    surveyFormType: "",
-    kqHocTap: "",
-    kqRenLuyen: "",
-    hoSoCtQuocTe: "",
-    hocKy: "",
-    targetType: "",
-    kqgdTieuHoc: "",
-    devProfessionalComment: "",
-    devPsychologyComment: "",
-    devImportantNote: "",
-    devAssessmentResult: "",
-    registeredCampus: ""
-  });
-
-  // Import excel modal states
-  const [isImportOpen, setIsImportOpen] = useState(false);
-  const [importPeriodId, setImportPeriodId] = useState("");
-  const [importBatchId, setImportBatchId] = useState("");
-  const [importing, setImporting] = useState(false);
-  const [importError, setImportError] = useState<string | null>(null);
-  const [importSuccessCount, setImportSuccessCount] = useState<number | null>(null);
-  const importInputRef = useRef<HTMLInputElement>(null);
 
   // Feedback notifications
   const [notification, setNotification] = useState<{ text: string; type: "success" | "err" } | null>(null);
