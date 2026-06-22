@@ -2784,7 +2784,7 @@ export function StudentInfoClient({
               <div>
                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
                   <FileText className="w-3.5 h-3.5 text-[#00A6A9]" />
-                  Quyết định & Ghi chú của Giám đốc tuyển sinh
+                  Quyết định Ban Giám Hiệu sau khi Học thử
                 </h4>
                 <div className="bg-slate-50/50 p-5 rounded-2xl border border-slate-100 space-y-4">
                   <div className="flex flex-wrap items-center gap-4">
