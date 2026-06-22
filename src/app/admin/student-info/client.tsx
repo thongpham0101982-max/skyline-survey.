@@ -103,6 +103,10 @@ export function StudentInfoClient({
 
   const [devAreas, setDevAreas] = useState<any[]>([]);
   const [devAreasLoading, setDevAreasLoading] = useState(false);
+  const [preschoolInputAreas, setPreschoolInputAreas] = useState<any[]>([]);
+  const [preschoolInputScores, setPreschoolInputScores] = useState<any[]>([]);
+  const [preschoolInputLoading, setPreschoolInputLoading] = useState(false);
+  const [preschoolAssignments, setPreschoolAssignments] = useState<any[]>([]);
 
   
   // Search & Filter state
@@ -182,12 +186,153 @@ export function StudentInfoClient({
           setDevAreasLoading(false);
         }
       };
+
+      const fetchInputData = async () => {
+        setPreschoolInputLoading(true);
+        try {
+          const ageGroup = getSurveyFormAgeGroup(selectedStudent.grade, selectedStudent.batch?.startDate);
+          
+          // 1. Fetch input areas
+          const resAreas = await fetch(`/api/preschool-dev-areas?type=INPUT&ageGroup=${encodeURIComponent(ageGroup)}`);
+          if (resAreas.ok) {
+            const dataAreas = await resAreas.json();
+            setPreschoolInputAreas(dataAreas);
+          }
+
+          // 2. Fetch input scores
+          const resScores = await fetch(`/api/preschool-dev-scores?studentId=${selectedStudent.id}`);
+          if (resScores.ok) {
+            const dataScores = await resScores.json();
+            setPreschoolInputScores(dataScores);
+          }
+
+          // 3. Fetch teacher assignments
+          const targetPeriodId = selectedStudent.periodId;
+          const targetBatchId = selectedStudent.batchId;
+          let assignUrl = `/api/preschool-input-assessment-assignments?periodId=${targetPeriodId}`;
+          if (targetBatchId) {
+            assignUrl += `&batchId=${targetBatchId}`;
+          }
+          if (ageGroup) {
+            assignUrl += `&grade=${encodeURIComponent(ageGroup)}`;
+          }
+          const assignRes = await fetch(assignUrl);
+          if (assignRes.ok) {
+            const assignmentsData = await assignRes.json();
+            setPreschoolAssignments(assignmentsData);
+          }
+        } catch (err) {
+          console.error("Error fetching input dev scores/assignments:", err);
+        } finally {
+          setPreschoolInputLoading(false);
+        }
+      };
+
       fetchDevAreas();
+      fetchInputData();
     } else {
       setDevAreas([]);
+      setPreschoolInputAreas([]);
+      setPreschoolInputScores([]);
+      setPreschoolAssignments([]);
     }
   }, [isDetailsOpen, activeTab, selectedStudent]);
+  const getAssignedTeachersText = () => {
+    if (!selectedStudent) return "";
+    if (preschoolInputLoading && !preschoolAssignments.length) return "Đang tải...";
+    if (!preschoolAssignments.length) return "Chưa phân công";
 
+    const ageGroup = getSurveyFormAgeGroup(selectedStudent.grade, selectedStudent.batch?.startDate);
+    const dateObj = selectedStudent.batch?.startDate ? new Date(selectedStudent.batch.startDate) : null;
+    const isStage2 = dateObj ? (!isNaN(dateObj.getTime()) && dateObj.getMonth() >= 0 && dateObj.getMonth() <= 4) : false;
+
+    const matches = preschoolAssignments.filter(a => {
+      const studentPeriodId = selectedStudent.periodId;
+      if (a.periodId !== studentPeriodId) return false;
+      
+      const ag = (a.grade || "").trim();
+      const form = (ageGroup || "").trim();
+      let isMatch = ag === form;
+      if (isStage2) {
+        if (form === "12 đến 18 tháng" && ag === "12 đến 18 tháng") isMatch = true;
+        else if (form === "18 đến 24 tháng" && ag === "18 đến 24 tháng") isMatch = true;
+        else if (form === "24 đến 36 tháng" && ag === "24 đến 36 tháng") isMatch = true;
+        else if (form === "3 đến 4 tuổi" && (ag === "Mẫu giáo bé" || ag === "3 đến 4 tuổi")) isMatch = true;
+        else if (form === "4 đến 5 tuổi" && (ag === "Mẫu giáo nhỡ" || ag === "4 đến 5 tuổi")) isMatch = true;
+        else if (form === "5 đến 6 tuổi" && (ag === "Mẫu giáo lớn" || ag === "5 đến 6 tuổi")) isMatch = true;
+      } else {
+        if (form === "12 đến 18 tháng" && ag === "12 đến 18 tháng") isMatch = true;
+        else if (form === "18 đến 24 tháng" && (ag === "18 đến 24 tháng" || ag === "24 đến 36 tháng")) isMatch = true;
+        else if (form === "24 đến 36 tháng" && (ag === "Mẫu giáo bé" || ag === "3 đến 4 tuổi")) isMatch = true;
+        else if (form === "3 đến 4 tuổi" && (ag === "Mẫu giáo nhỡ" || ag === "4 đến 5 tuổi")) isMatch = true;
+        else if (form === "4 đến 5 tuổi" && (ag === "Mẫu giáo lớn" || ag === "5 đến 6 tuổi")) isMatch = true;
+      }
+
+      if (!isMatch) return false;
+      return !a.batchId || a.batchId === selectedStudent.batchId;
+    });
+
+    if (matches.length === 0) return "Chưa phân công";
+    const names = Array.from(new Set(matches.map(m => m.user?.fullName || "Chưa rõ"))).filter(Boolean);
+    return names.length > 0 ? names.join(", ") : "Chưa phân công";
+  };
+
+  const renderInputDevScores = () => {
+    if (preschoolInputLoading) {
+      return (
+        <div className="flex items-center gap-1.5 py-1 text-slate-400">
+          <Loader2 className="w-3.5 h-3.5 animate-spin text-[#00A6A9]" />
+          <span className="text-xs text-slate-500 font-medium">Đang tải dữ liệu tiêu chí...</span>
+        </div>
+      );
+    }
+
+    if (!preschoolInputScores || preschoolInputScores.length === 0) {
+      return <span className="text-xs text-slate-400">Chưa có kết quả tiêu chí khảo sát.</span>;
+    }
+
+    const scoresByArea = {};
+    preschoolInputScores.forEach((sc) => {
+      const areaName = sc.criteria?.area?.name || "Chưa phân loại";
+      const areaId = sc.criteria?.area?.id || "unknown";
+      if (!scoresByArea[areaId]) {
+        scoresByArea[areaId] = { areaName, scores: [] };
+      }
+      scoresByArea[areaId].scores.push(sc);
+    });
+
+    return (
+      <div className="space-y-3 max-h-60 overflow-y-auto custom-scrollbar pr-1 mt-1 text-xs">
+        {Object.entries(scoresByArea).map(([areaId, areaData]) => (
+          <div key={areaId} className="bg-slate-50/50 p-2.5 rounded-lg border border-slate-100/80 space-y-1.5">
+            <div className="font-bold text-[#00A6A9] text-[10px] uppercase tracking-wider">{areaData.areaName}</div>
+            <div className="space-y-1">
+              {areaData.scores.map((sc) => {
+                const resText = sc.result === "DAT" ? "Đạt" : 
+                                sc.result === "KHONG_DAT" ? "Không đạt" : 
+                                sc.result === "CHUA_THE_HIEN" ? "Chưa thể hiện" : sc.result || "Chưa đánh giá";
+                const badgeColor = sc.result === "DAT" ? "bg-emerald-50 text-emerald-700" :
+                                   sc.result === "KHONG_DAT" ? "bg-rose-50 text-rose-700" :
+                                   sc.result === "CHUA_THE_HIEN" ? "bg-amber-50 text-amber-700" : "bg-slate-50 text-slate-500";
+                
+                return (
+                  <div key={sc.id} className="flex items-start justify-between gap-4 py-1 border-b border-slate-100/50 last:border-0">
+                    <div className="flex-1">
+                      <div className="font-medium text-slate-700 leading-snug">{sc.criteria?.name || "Tiêu chí"}</div>
+                      {sc.note && <div className="text-[10px] text-slate-400 italic mt-0.5">Ghi chú: {sc.note}</div>}
+                    </div>
+                    <span className={`px-2 py-0.5 rounded-md text-[9px] font-semibold whitespace-nowrap ${badgeColor}`}>
+                      {resText}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
   const renderProbationaryScores = () => {
     if (!selectedStudent.probationaryScoreText) return <span className="text-xs text-slate-400">—</span>;
 
@@ -2702,81 +2847,136 @@ export function StudentInfoClient({
                   </div>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-                    <BookOpen className="w-3.5 h-3.5 text-[#00A6A9]" />
-                    Đánh giá phát triển mầm non
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-white p-4 rounded-2xl border border-slate-200">
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Đánh giá chuyên môn</label>
-                      <p className="text-sm text-slate-700 font-medium mt-1">{selectedStudent.devProfessionalComment || "Chưa có nhận xét chuyên môn."}</p>
-                    </div>
-                    <div className="bg-white p-4 rounded-2xl border border-slate-200">
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Đánh giá tâm lý</label>
-                      <p className="text-sm text-slate-700 font-medium mt-1">{selectedStudent.devPsychologyComment || "Chưa có nhận xét tâm lý."}</p>
-                    </div>
-                  </div>
-
-                  <div className="bg-white p-4 rounded-2xl border border-slate-200">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ghi chú quan trọng</label>
-                    <p className="text-sm text-rose-600 font-semibold mt-1">{selectedStudent.devImportantNote || "-"}</p>
-                  </div>
-
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kết quả đánh giá chung</label>
-                    <p className="text-sm text-slate-800 font-bold mt-1">{selectedStudent.devAssessmentResult || "-"}</p>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-dashed border-slate-200 pt-4">
-                    <div className="bg-emerald-50/30 p-4 rounded-2xl border border-emerald-100/55">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100/60 px-2 py-0.5 rounded">Ban Giám Hiệu</span>
-                      <div className="mt-2 text-sm font-semibold text-slate-700">Trạng thái: <span className="text-emerald-600 font-bold">{selectedStudent.bghApprovalStatus || "Chưa duyệt"}</span></div>
-                      <p className="text-xs text-slate-500 mt-1 italic">Ý kiến: {selectedStudent.bghApprovalComment || "Không có ý kiến."}</p>
-                    </div>
-
-                    <div className="bg-teal-50/30 p-4 rounded-2xl border border-teal-100/55">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-teal-700 bg-teal-100/60 px-2 py-0.5 rounded">GĐCS</span>
-                      <div className="mt-2 text-sm font-semibold text-slate-700">Trạng thái: <span className="text-teal-600 font-bold">{selectedStudent.gdcsApprovalStatus || "Chưa duyệt"}</span></div>
-                      <p className="text-xs text-slate-500 mt-1 italic">Ý kiến: {selectedStudent.gdcsApprovalComment || "Không có ý kiến."}</p>
-                    </div>
-                  </div>
-
-                  <div className="border-t border-dashed border-slate-200 pt-4">
-                    <h5 className="text-[11px] font-black uppercase text-indigo-650 text-indigo-600 tracking-wider mb-3">Thông tin học thử (nếu có)</h5>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-indigo-50/20 p-4 rounded-2xl border border-indigo-100/40">
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Thời gian học thử</label>
-                        <span className="text-xs font-semibold text-slate-700 mt-0.5 block">{selectedStudent.probationaryPeriod || "-"}</span>
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Lớp học thử</label>
-                        <span className="text-xs font-semibold text-slate-700 mt-0.5 block">{selectedStudent.probationaryClass || "-"}</span>
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Giáo viên phụ trách</label>
-                        <span className="text-xs font-semibold text-slate-700 mt-0.5 block">{selectedStudent.probationaryTeacher || "-"}</span>
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kết quả học thử</label>
-                        <span className="text-xs font-bold text-indigo-700 mt-0.5 block">
-                          {selectedStudent.probationaryResult === "DAT" ? "ĐẠT" : selectedStudent.probationaryResult === "CHUA_DAT" ? "CHƯA ĐẠT" : selectedStudent.probationaryResult || "-"}
-                        </span>
-                      </div>
-                    </div>
+                <div className="space-y-6">
+                  {/* Section: Đánh giá phát triển mầm non */}
+                  <div className="space-y-4">
+                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                      <BookOpen className="w-3.5 h-3.5 text-[#00A6A9]" />
+                      Đánh giá phát triển mầm non
+                    </h4>
                     
-                    {selectedStudent.probationaryScoreText && (
-                      <div className="bg-indigo-50/20 p-4 rounded-2xl border border-indigo-100/40 mt-3">
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Chi tiết đánh giá học thử</label>
-                        {renderProbationaryScores()}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="bg-white p-4 rounded-2xl border border-slate-200">
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Đánh giá chuyên môn</label>
+                        <p className="text-sm text-slate-700 font-medium mt-1">{selectedStudent.devProfessionalComment || "Chưa có nhận xét chuyên môn."}</p>
                       </div>
-                    )}
+                      <div className="bg-white p-4 rounded-2xl border border-slate-200">
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Đánh giá tâm lý</label>
+                        <p className="text-sm text-slate-700 font-medium mt-1">{selectedStudent.devPsychologyComment || "Chưa có nhận xét tâm lý."}</p>
+                      </div>
+                    </div>
 
-                    <div className="bg-indigo-50/20 p-4 rounded-2xl border border-indigo-100/40 mt-3">
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Nhận xét chi tiết</label>
-                      <p className="text-xs text-slate-750 mt-1.5 font-medium leading-relaxed">{selectedStudent.probationaryComment || "Chưa có nhận xét."}</p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="bg-white p-4 rounded-2xl border border-slate-200">
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">GV phân công khảo sát</label>
+                        <p className="text-sm text-slate-700 font-semibold mt-1">{getAssignedTeachersText()}</p>
+                      </div>
+                      <div className="bg-white p-4 rounded-2xl border border-slate-200">
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ghi chú quan trọng</label>
+                        <p className="text-sm text-rose-600 font-semibold mt-1">{selectedStudent.devImportantNote || "-"}</p>
+                      </div>
+                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kết quả đánh giá chung</label>
+                        <p className="text-sm text-slate-800 font-bold mt-1">{selectedStudent.devAssessmentResult || "-"}</p>
+                      </div>
+                    </div>
+
+                    {/* Criteria score results */}
+                    <div className="bg-white p-4 rounded-2xl border border-slate-200">
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Kết quả tiêu chí khảo sát năng lực mầm non</label>
+                      {renderInputDevScores()}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-dashed border-slate-200 pt-4">
+                      <div className="bg-emerald-50/30 p-4 rounded-2xl border border-emerald-100/55">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100/60 px-2 py-0.5 rounded">Ban Giám Hiệu</span>
+                        <div className="mt-2 text-sm font-semibold text-slate-700">Trạng thái: <span className="text-emerald-600 font-bold">{selectedStudent.bghApprovalStatus || "Chưa duyệt"}</span></div>
+                        <p className="text-xs text-slate-500 mt-1 italic">Ý kiến: {selectedStudent.bghApprovalComment || "Không có ý kiến."}</p>
+                      </div>
+
+                      <div className="bg-teal-50/30 p-4 rounded-2xl border border-teal-100/55">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-teal-700 bg-teal-100/60 px-2 py-0.5 rounded">GĐCS</span>
+                        <div className="mt-2 text-sm font-semibold text-slate-700">Trạng thái: <span className="text-teal-600 font-bold">{selectedStudent.gdcsApprovalStatus || "Chưa duyệt"}</span></div>
+                        <p className="text-xs text-slate-500 mt-1 italic">Ý kiến: {selectedStudent.gdcsApprovalComment || "Không có ý kiến."}</p>
+                      </div>
                     </div>
                   </div>
+
+                  {/* Section: Thông tin học thử (nếu có) */}
+                  {(selectedStudent.probationaryPeriod || selectedStudent.probationaryClass || selectedStudent.probationaryTeacher || selectedStudent.probationaryResult) && (
+                    <div className="border-t-2 border-dashed border-slate-200 pt-6 mt-6 space-y-4">
+                      <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                        <FileText className="w-3.5 h-3.5 text-indigo-650" />
+                        Thông tin học thử (nếu có)
+                      </h4>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-indigo-50/20 p-4 rounded-2xl border border-indigo-100/40">
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Thời gian học thử</label>
+                          <span className="text-xs font-semibold text-slate-700 mt-0.5 block">{selectedStudent.probationaryPeriod || "-"}</span>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Lớp học thử</label>
+                          <span className="text-xs font-semibold text-slate-700 mt-0.5 block">{selectedStudent.probationaryClass || "-"}</span>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Giáo viên phụ trách</label>
+                          <span className="text-xs font-semibold text-slate-700 mt-0.5 block">{selectedStudent.probationaryTeacher || "-"}</span>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kết quả học thử</label>
+                          <span className="text-xs font-bold text-indigo-700 mt-0.5 block">
+                            {selectedStudent.probationaryResult === "DAT" ? "ĐẠT" : selectedStudent.probationaryResult === "CHUA_DAT" ? "CHƯA ĐẠT" : selectedStudent.probationaryResult || "-"}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {selectedStudent.probationaryScoreText && (
+                        <div className="bg-indigo-50/20 p-4 rounded-2xl border border-indigo-100/40 mt-3">
+                          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Chi tiết đánh giá học thử</label>
+                          {renderProbationaryScores()}
+                        </div>
+                      )}
+
+                      <div className="bg-indigo-50/20 p-4 rounded-2xl border border-indigo-100/40 mt-3">
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Nhận xét chi tiết</label>
+                        <p className="text-xs text-slate-750 mt-1.5 font-medium leading-relaxed">{selectedStudent.probationaryComment || "Chưa có nhận xét."}</p>
+                      </div>
+
+                      {/* Approval log of Preschool BGH */}
+                      <div className="bg-indigo-50/20 p-4 rounded-2xl border border-indigo-100/40 mt-3">
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Nhật ký Ban Giám hiệu Mầm non Phê duyệt</label>
+                        {(() => {
+                          let logs = [];
+                          if (selectedStudent.probationaryBghLog) {
+                            try { logs = JSON.parse(selectedStudent.probationaryBghLog); } catch (e) {}
+                          }
+                          if (logs.length === 0) {
+                            return <p className="text-xs text-slate-400 font-semibold italic">Chưa có nhật ký ghi nhận.</p>;
+                          }
+                          return (
+                            <div className="space-y-2 max-h-40 overflow-y-auto border border-slate-200 p-3 bg-white divide-y divide-slate-100 rounded-xl">
+                              {logs.map((log, idx) => (
+                                <div key={idx} className="pt-2 first:pt-0 text-xs text-slate-650 leading-relaxed font-semibold">
+                                  <div className="flex justify-between items-center text-slate-400">
+                                    <span>👤 <strong className="text-slate-700">{log.user}</strong></span>
+                                    <span>{log.date ? new Date(log.date).toLocaleString("vi-VN") : ""}</span>
+                                  </div>
+                                  <div className="mt-1 flex items-center gap-2">
+                                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-black tracking-wider ${
+                                      log.status === "DAT" ? "bg-emerald-50 text-emerald-700 border border-emerald-250" : log.status === "KHONG_DAT" ? "bg-rose-50 text-rose-700 border border-rose-250" : "bg-amber-50 text-amber-700 border border-amber-250"
+                                    }`}>
+                                      {log.status === "DAT" ? "ĐẠT" : log.status === "KHONG_DAT" ? "KHÔNG ĐẠT" : "Ý KIẾN KHÁC"}
+                                    </span>
+                                    {log.comment && <span className="text-slate-500 italic">"${log.comment}"</span>}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
