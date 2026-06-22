@@ -140,10 +140,11 @@ const xetDuyetCols = [
   { id: "bghApproval", label: "Duyệt BGH MN", width: "w-[220px] min-w-[220px] whitespace-normal border-r border-teal-50/50" },
   { id: "gdcsApproval", label: "Duyệt GĐCS", width: "w-[220px] min-w-[220px] whitespace-normal border-r border-teal-50/50" },
   { id: "result", label: "Kết quả Duyệt", width: "w-32 min-w-[128px]" },
+  { id: "pcgv", label: "PCGV ĐG Học thử", width: "w-[240px] min-w-[240px] whitespace-normal border-r border-teal-50/50" },
   { id: "actions", label: "Thao tác", width: "w-[350px] min-w-[350px]" }
 ];
 
-export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, grades: gradesProp, teachers, departments, currentUser }: { academicYears: AcademicYear[]; campuses: Camp[]; giaoVuCSUsers: any[]; grades: string[]; teachers: any[]; departments: any[]; currentUser: any; }) {
+export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, grades: gradesProp, teachers, departments, currentUser, classes = [] }: { academicYears: AcademicYear[]; campuses: Camp[]; giaoVuCSUsers: any[]; grades: string[]; teachers: any[]; departments: any[]; currentUser: any; classes?: any[]; }) {
   const grades = gradesProp && gradesProp.length > 0 ? gradesProp : ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"];
   const criteriaGrades = ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "3 đến 4 tuổi", "4 đến 5 tuổi", "5 đến 6 tuổi"];
 
@@ -178,6 +179,15 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
   const [isInvitation, setIsInvitation] = useState(true);
   const [isCommitment, setIsCommitment] = useState(false);
   const [selectedReportStudent, setSelectedReportStudent] = useState<any>(null);
+
+  // States for 'PCGV ĐG Học thử' Modal
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [assignStudent, setAssignStudent] = useState<any>(null);
+  const [assignCampusId, setAssignCampusId] = useState("");
+  const [assignGrade, setAssignGrade] = useState("");
+  const [assignClassId, setAssignClassId] = useState("");
+  const [assignTeacherId, setAssignTeacherId] = useState("");
+  const [savingAssignment, setSavingAssignment] = useState(false);
 
   // States for Email Congrats Checklist modal
   const [isEmailCongratsModalOpen, setIsEmailCongratsModalOpen] = useState(false);
@@ -1313,6 +1323,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
   ], [EMAIL_MAP]);
 
   const [cSearch, setCSearch] = useState("");
+  const [approvalFilter, setApprovalFilter] = useState("");
   const [cSelected, setCSelected] = useState<string[]>([]);
   const [cModal, setCModal] = useState(false);
   const [editC, setEditC] = useState<PreschoolChild | null>(null);
@@ -2341,7 +2352,87 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     }
   };
 
-    const openProbationary = async (student: any) => {
+    // Unique preschool grades memoization directly from class list
+  const uniquePreschoolClassGrades = useMemo(() => {
+    const set = new Set(classes.map((c: any) => c.grade).filter(Boolean));
+    return Array.from(set).sort();
+  }, [classes]);
+
+  // Memoize filtered classes and teachers based on chosen Campus/Grade
+  const filteredClassesForAssign = useMemo(() => {
+    if (!assignCampusId) return [];
+    return classes.filter((c: any) => {
+      const matchCampus = c.campusId === assignCampusId;
+      const matchGrade = !assignGrade || c.grade === assignGrade;
+      return matchCampus && matchGrade;
+    });
+  }, [classes, assignCampusId, assignGrade]);
+
+  const openAssignModal = (student: any) => {
+    setAssignStudent(student);
+    // Try to pre-select campus based on student's current admission campus name matching campus
+    const matchedCampus = campuses.find((c: any) => c.campusName === student.admissionCampus || c.id === student.admissionCampus);
+    setAssignCampusId(matchedCampus ? matchedCampus.id : (campuses[0]?.id || ""));
+    setAssignGrade("");
+    setAssignClassId("");
+    setAssignTeacherId("");
+    setIsAssignModalOpen(true);
+  };
+
+  const handleAssignClassChange = (classId: string) => {
+    setAssignClassId(classId);
+    // Find class to auto-select its homeroom teacher
+    const chosenClass = classes.find((c: any) => c.id === classId);
+    if (chosenClass && chosenClass.homeroomTeacherId) {
+      setAssignTeacherId(chosenClass.homeroomTeacherId);
+    } else {
+      setAssignTeacherId("");
+    }
+  };
+
+  const saveAssignment = async () => {
+    if (!assignStudent) return;
+    if (!assignClassId) {
+      notify("Vui lòng chọn Tên lớp", "err");
+      return;
+    }
+    if (!assignTeacherId) {
+      notify("Vui lòng chọn Giáo viên Đánh giá", "err");
+      return;
+    }
+
+    setSavingAssignment(true);
+    try {
+      const chosenClass = classes.find((c: any) => c.id === assignClassId);
+      const chosenTeacher = teachers.find((t: any) => t.id === assignTeacherId);
+
+      const r = await fetch("/api/preschool-probationary-assessment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId: assignStudent.id,
+          probationaryClass: chosenClass ? chosenClass.className : "",
+          probationaryTeacher: chosenTeacher ? chosenTeacher.teacherName : ""
+        })
+      });
+
+      if (r.ok) {
+        setIsAssignModalOpen(false);
+        fetchStudentSummaries();
+        notify("Phân công giáo viên đánh giá học thử thành công!");
+      } else {
+        const errData = await r.json().catch(() => ({}));
+        notify("Lỗi khi phân công: " + (errData?.error || "Vui lòng thử lại"), "err");
+      }
+    } catch (e) {
+      console.error(e);
+      notify("Lỗi kết nối hệ thống", "err");
+    } finally {
+      setSavingAssignment(false);
+    }
+  };
+
+  const openProbationary = async (student: any) => {
     setProbStudent(student);
     setProbScores({});
     setProbPeriod(student.probationaryPeriod || "");
@@ -2450,6 +2541,29 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     try {
       const exportData = studentSummaries
         .filter(s => !cSearch || s.studentCode.toLowerCase().includes(cSearch.toLowerCase()) || s.fullName.toLowerCase().includes(cSearch.toLowerCase()))
+        .filter(s => {
+          if (!approvalFilter) return true;
+          const res = s.generalResult;
+          if (approvalFilter === "CHUA_DUYET") {
+            return !res || res === "" || res === "CHUA_DUYET" || res === "Chưa duyệt";
+          }
+          if (approvalFilter === "DAT_MIEN_HOC_THU") {
+            return res === "DAT_MIEN_HOC_THU" || res === "Đạt - Miễn Học Thử";
+          }
+          if (approvalFilter === "DAT_HOC_THU") {
+            return res === "DAT_HOC_THU" || res === "Đạt - Học Thử" || res === "Học thử" || res === "HOC_THU";
+          }
+          if (approvalFilter === "DAT") {
+            return res === "DAT" || res === "Đạt";
+          }
+          if (approvalFilter === "KHONG_DAT") {
+            return res === "KHONG_DAT" || res === "Không đạt";
+          }
+          if (approvalFilter === "Y_KIEN_KHAC") {
+            return res === "Y_KIEN_KHAC" || res === "Ý kiến khác";
+          }
+          return res === approvalFilter;
+        })
         .map((s, idx) => ({
           "STT": idx + 1,
           "Mã bé": s.studentCode,
@@ -3649,6 +3763,18 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     {selPeriod?.batches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                   </select>
                 </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Kết quả Duyệt:</label>
+                  <select value={approvalFilter} onChange={e => setApprovalFilter(e.target.value)} className="border border-slate-300 rounded-none p-2 text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-violet-300 min-w-[150px]">
+                    <option value="">-- Tất cả --</option>
+                    <option value="CHUA_DUYET">Chưa duyệt</option>
+                    <option value="DAT_MIEN_HOC_THU">Đạt - Miễn Học Thử</option>
+                    <option value="DAT_HOC_THU">Đạt - Học Thử</option>
+                    <option value="DAT">Đạt</option>
+                    <option value="KHONG_DAT">Không đạt</option>
+                    <option value="Y_KIEN_KHAC">Ý kiến khác</option>
+                  </select>
+                </div>
                 <button onClick={fetchStudentSummaries} className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-[#00A19A] bg-[#00A19A]/5 hover:bg-teal-100 rounded-none border border-slate-300"><Search className="w-4 h-4" /> Tìm</button>
 
                 <button
@@ -3683,6 +3809,29 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       <tbody className="divide-y divide-teal-50">
                         {studentSummaries
                           .filter(s => !cSearch || s.studentCode.toLowerCase().includes(cSearch.toLowerCase()) || s.fullName.toLowerCase().includes(cSearch.toLowerCase()))
+                          .filter(s => {
+                            if (!approvalFilter) return true;
+                            const res = s.generalResult;
+                            if (approvalFilter === "CHUA_DUYET") {
+                              return !res || res === "" || res === "CHUA_DUYET" || res === "Chưa duyệt";
+                            }
+                            if (approvalFilter === "DAT_MIEN_HOC_THU") {
+                              return res === "DAT_MIEN_HOC_THU" || res === "Đạt - Miễn Học Thử";
+                            }
+                            if (approvalFilter === "DAT_HOC_THU") {
+                              return res === "DAT_HOC_THU" || res === "Đạt - Học Thử" || res === "Học thử" || res === "HOC_THU";
+                            }
+                            if (approvalFilter === "DAT") {
+                              return res === "DAT" || res === "Đạt";
+                            }
+                            if (approvalFilter === "KHONG_DAT") {
+                              return res === "KHONG_DAT" || res === "Không đạt";
+                            }
+                            if (approvalFilter === "Y_KIEN_KHAC") {
+                              return res === "Y_KIEN_KHAC" || res === "Ý kiến khác";
+                            }
+                            return res === approvalFilter;
+                          })
                           .map((s, idx) => {
                             const getResultBadge = (res: string) => {
                               if (res === "Đạt - Miễn Học Thử" || res === "DAT_MIEN_HOC_THU") {
@@ -3998,6 +4147,30 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                  )}
 
                                 <td className="w-32 min-w-[128px] p-4 align-top">{getResultBadge(s.generalResult)}</td>
+                                <td className="w-[240px] min-w-[240px] p-4 align-top text-xs border-r border-teal-50/50">
+                                  <div className="flex flex-col gap-1.5 w-full">
+                                    {s.probationaryTeacher ? (
+                                      <div className="bg-teal-50/50 border border-teal-100 rounded-none p-2 shadow-[0_1px_2px_rgba(0,0,0,0.01)] flex flex-col gap-0.5">
+                                        <span className="text-[9px] font-black text-[#00A19A] uppercase tracking-wider">GV Đánh Giá</span>
+                                        <span className="text-[11px] font-bold text-slate-700">{s.probationaryTeacher}</span>
+                                        {s.probationaryClass && (
+                                          <>
+                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider mt-1">Lớp Học thử</span>
+                                            <span className="text-[10px] text-slate-500 font-medium">{s.probationaryClass}</span>
+                                          </>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <span className="text-slate-400 italic">Chưa phân công</span>
+                                    )}
+                                    <button
+                                      onClick={() => openAssignModal(s)}
+                                      className="mt-1 flex items-center justify-center gap-1 px-2.5 py-1 text-[10px] font-black text-teal-700 bg-teal-50 hover:bg-[#00A19A] hover:text-white rounded-none border border-teal-100 transition-all shadow-none"
+                                    >
+                                      Phân công
+                                    </button>
+                                  </div>
+                                </td>
                                 <td className="w-[350px] min-w-[350px] p-4 align-top">
                                    <div className="flex items-center gap-2">
                                      {(() => {
@@ -7486,6 +7659,99 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               />
             </div>
           </div>
+        </div>
+      </Modal>
+
+      {/* Modal: Phân công Giáo viên Đánh giá Học thử */}
+      <Modal
+        open={isAssignModalOpen}
+        onClose={() => setIsAssignModalOpen(false)}
+        title="Phân công GVCN đánh giá Học thử"
+        footer={
+          <>
+            <button onClick={() => setIsAssignModalOpen(false)} className="px-4 text-xs font-black uppercase text-slate-400 hover:text-slate-600">
+              Hủy
+            </button>
+            <button
+              onClick={saveAssignment}
+              disabled={savingAssignment}
+              className="flex-1 py-3.5 bg-teal-600 hover:bg-teal-700 text-white rounded-none text-xs font-black uppercase tracking-widest transition-all disabled:opacity-50"
+            >
+              {savingAssignment ? "Đang lưu..." : "Xác nhận Phân công"}
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <Field label="Bậc học">
+            <input
+              type="text"
+              value="Mầm non"
+              disabled
+              className="w-full px-3.5 py-2.5 border border-slate-300 rounded-none text-sm font-medium bg-slate-100 text-slate-500 cursor-not-allowed outline-none"
+            />
+          </Field>
+
+          <Field label="Cơ sở" required>
+            <select
+              value={assignCampusId}
+              onChange={e => {
+                setAssignCampusId(e.target.value);
+                setAssignClassId("");
+                setAssignTeacherId("");
+              }}
+              className="w-full px-3.5 py-2.5 border border-slate-300 rounded-none text-sm font-medium outline-none focus:ring-2 focus:ring-violet-300 bg-white"
+            >
+              <option value="">-- Chọn Cơ sở --</option>
+              {campuses.map((c: any) => (
+                <option key={c.id} value={c.id}>{c.campusName}</option>
+              ))}
+            </select>
+          </Field>
+
+          <Field label="Khối" required>
+            <select
+              value={assignGrade}
+              onChange={e => {
+                setAssignGrade(e.target.value);
+                setAssignClassId("");
+                setAssignTeacherId("");
+              }}
+              className="w-full px-3.5 py-2.5 border border-slate-300 rounded-none text-sm font-medium outline-none focus:ring-2 focus:ring-violet-300 bg-white"
+            >
+              <option value="">-- Tất cả Khối --</option>
+              {uniquePreschoolClassGrades.map((g: string) => (
+                <option key={g} value={g}>{g}</option>
+              ))}
+            </select>
+          </Field>
+
+          <Field label="Tên lớp" required>
+            <select
+              value={assignClassId}
+              onChange={e => handleAssignClassChange(e.target.value)}
+              disabled={!assignCampusId}
+              className="w-full px-3.5 py-2.5 border border-slate-300 rounded-none text-sm font-medium outline-none focus:ring-2 focus:ring-violet-300 bg-white disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <option value="">-- Chọn Lớp --</option>
+              {filteredClassesForAssign.map((c: any) => (
+                <option key={c.id} value={c.id}>{c.className}</option>
+              ))}
+            </select>
+          </Field>
+
+          <Field label="Giáo viên Đánh giá (GVCN bám sát)" required>
+            <select
+              value={assignTeacherId}
+              onChange={e => setAssignTeacherId(e.target.value)}
+              className="w-full px-3.5 py-2.5 border border-slate-300 rounded-none text-sm font-medium outline-none focus:ring-2 focus:ring-violet-300 bg-white"
+            >
+              <option value="">-- Chọn Giáo viên --</option>
+              {teachers.map((t: any) => (
+                <option key={t.id} value={t.id}>{t.teacherName} ({t.campus?.campusCode || "N/A"})</option>
+              ))}
+            </select>
+          </Field>
         </div>
       </Modal>
 

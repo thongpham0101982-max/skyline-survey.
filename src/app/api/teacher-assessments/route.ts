@@ -107,6 +107,64 @@ export async function GET(req: any) {
             }
         }));
 
+        try {
+            const currentTeacher = await prisma.teacher.findUnique({
+                where: { userId: session.user.id }
+            });
+
+            if (currentTeacher) {
+                const probationStudents = await (prisma as any).preschoolInputAssessmentStudent.findMany({
+                    where: {
+                        probationaryTeacher: currentTeacher.teacherName,
+                        ...(academicYearId ? {
+                            period: { academicYearId: academicYearId }
+                        } : {})
+                    },
+                    select: {
+                        periodId: true,
+                        period: {
+                            select: {
+                                id: true,
+                                name: true,
+                                code: true,
+                                status: true,
+                                assignedUser: {
+                                    select: { id: true, fullName: true, email: true }
+                                }
+                            }
+                        }
+                    },
+                    distinct: ["periodId"]
+                });
+
+                probationStudents.forEach((p: any) => {
+                    if (p.period) {
+                        mappedPreschool.push({
+                            id: `preschool-probation-${p.periodId}`,
+                            periodId: p.periodId,
+                            batchId: null,
+                            userId: session.user.id,
+                            subjectId: "preschool-probation",
+                            grade: "Học thử",
+                            isPreschool: true,
+                            isPreschoolProbation: true,
+                            subject: {
+                                id: "preschool-probation",
+                                name: "Đánh giá Học thử (Mầm non)",
+                                code: "PRESCHOOL_PROBATION",
+                                scoreColumns: 1,
+                                commentColumns: 1,
+                            },
+                            batch: null,
+                            period: p.period
+                        });
+                    }
+                });
+            }
+        } catch (eError) {
+            console.error("Error fetching virtual probationary assignments:", eError);
+        }
+
         return NextResponse.json([...assignments, ...mappedPreschool]);
     }
     
@@ -161,6 +219,96 @@ export async function GET(req: any) {
         // Guard: periodId is required
         if (!periodId) {
             return NextResponse.json([], { status: 200 });
+        }
+
+        if (subjectId === "preschool-probation") {
+            try {
+                const currentTeacher = await prisma.teacher.findUnique({
+                    where: { userId: session.user.id }
+                });
+                if (!currentTeacher) {
+                    return NextResponse.json([]);
+                }
+                const students = await (prisma as any).preschoolInputAssessmentStudent.findMany({
+                    where: {
+                        periodId: periodId,
+                        probationaryTeacher: currentTeacher.teacherName,
+                        ...(batchId && batchId !== "all" && batchId !== "null" ? {
+                            OR: [
+                                { batchId: batchId },
+                                { batchId: null }
+                            ]
+                        } : {})
+                    },
+                    select: {
+                        id: true,
+                        studentCode: true,
+                        fullName: true,
+                        grade: true,
+                        gender: true,
+                        dateOfBirth: true,
+                        admissionCampus: true,
+                        batchId: true,
+                        probationaryScoreText: true,
+                        probationaryResult: true,
+                        probationaryComment: true,
+                        probationaryPeriod: true,
+                        probationaryClass: true,
+                        probationaryTeacher: true,
+                        surveyFormType: true,
+                        admissionResult: true,
+                        batch: {
+                            select: {
+                                startDate: true,
+                                endDate: true
+                            }
+                        }
+                    }
+                });
+
+                const criteriaCounts = await (prisma as any).preschoolDevCriteria.groupBy({
+                    by: ["ageGroup"],
+                    where: {
+                        status: "ACTIVE",
+                        area: { type: "PROBATION" }
+                    },
+                    _count: { id: true }
+                });
+                const criteriaMap: Record<string, number> = {};
+                for (const cc of criteriaCounts) {
+                    criteriaMap[cc.ageGroup] = cc._count.id;
+                }
+
+                const enriched = students.map((s: any) => {
+                    let scoredCount = 0;
+                    try {
+                        if (s.probationaryScoreText) {
+                            const scoreMap = JSON.parse(s.probationaryScoreText);
+                            scoredCount = Object.keys(scoreMap).length;
+                        }
+                    } catch (e) {
+                        console.error("Error parsing probationaryScoreText", e);
+                    }
+
+                    const resolvedAgeGroup = s.grade || "Mầm non";
+                    const totalCriteria = criteriaMap[resolvedAgeGroup] || 0;
+
+                    return {
+                        ...s,
+                        scoredCount,
+                        totalCriteria,
+                        isPreschool: true,
+                        isPreschoolProbation: true,
+                        resolvedAgeGroup,
+                        scoreVals: []
+                    };
+                });
+
+                return NextResponse.json(enriched);
+            } catch (err: any) {
+                console.error("Error fetching probationary students:", err);
+                return NextResponse.json({ error: err.message || "Internal Server Error" }, { status: 500 });
+            }
         }
 
         if (subjectId === "preschool") {

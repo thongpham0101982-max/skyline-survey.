@@ -19,6 +19,7 @@ interface Props {
   departments: any[]
   currentUser?: { id: string; role: string; campusIds: string[]; fullName?: string } | null
   rolePermissions?: any[]
+  classes?: any[]
 }
 
 export function XetDuyetKetQuaClient({
@@ -35,7 +36,8 @@ export function XetDuyetKetQuaClient({
   teachers = [],
   departments = [],
   currentUser = null,
-  rolePermissions = []
+  rolePermissions = [],
+  classes = []
 }: Props) {
   const userRole = (currentUser?.role || "").toUpperCase()
   const isAdmin = userRole === "ADMIN" || userRole === "KT_DBCL"
@@ -122,6 +124,7 @@ export function XetDuyetKetQuaClient({
             teachers={teachers}
             departments={departments}
             currentUser={currentUser}
+            classes={classes}
           />
         )}
       </div>

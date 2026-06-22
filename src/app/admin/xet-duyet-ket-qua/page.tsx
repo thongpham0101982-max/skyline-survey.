@@ -42,6 +42,7 @@ export default async function XetDuyetKetQuaPage() {
   let configs: any[] = [];
   let teachers: any[] = [];
   let departments: any[] = [];
+  let mầmNonClasses: any[] = [];
   const preschoolGrades = ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"];
   
   try {
@@ -49,6 +50,12 @@ export default async function XetDuyetKetQuaPage() {
     if (pAny) {
       if (pAny.academicYear) {
         academicYears = await pAny.academicYear.findMany({ orderBy: { startDate: "desc" } }).catch(() => []);
+      }
+      if (pAny.class) {
+        mầmNonClasses = await pAny.class.findMany({
+          where: { level: "Mầm non", status: "ACTIVE" },
+          orderBy: { className: "asc" }
+        }).catch(() => []);
       }
       if (pAny.campus) {
         campuses = await pAny.campus.findMany({ 
@@ -158,6 +165,7 @@ export default async function XetDuyetKetQuaPage() {
   return (
     <div className="p-3 sm:p-4 lg:p-5">
       <XetDuyetKetQuaClient
+        classes={safeJson(mầmNonClasses)}
         academicYears={safeJson(academicYears)}
         campuses={safeJson(campuses)}
         examBoardUsers={safeJson(examBoardUsers)}

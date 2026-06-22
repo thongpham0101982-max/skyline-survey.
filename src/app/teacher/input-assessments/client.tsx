@@ -119,6 +119,11 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 if (!unique.has(key)) {
                     unique.set(key, { ...a, overrideSystemLabel: "", overrideSystemCode: "", grade: "" });
                 }
+            } else if (a.isPreschoolProbation) {
+                const key = "preschool-probation";
+                if (!unique.has(key)) {
+                    unique.set(key, { ...a, id: "preschool-probation-all", grade: "", overrideSystemLabel: "", subject: { ...a.subject, name: "Đánh giá Học thử (Mầm non)" } });
+                }
             } else if (a.isPreschool) {
                 const key = "preschool";
                 if (!unique.has(key)) {
@@ -334,7 +339,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     const subNameNormalized = subName.normalize("NFC");
     const gradeVal = String(currentAssignment?.grade || "").replace("Khối ", "").trim();
     const isPsychSubject = subName.includes("tâm lý") || subCode.includes("tly");
-    const isPreschoolSubject = currentAssignment?.isPreschool || currentAssignment?.subjectId === "preschool";
+    const isPreschoolSubject = currentAssignment?.isPreschool || currentAssignment?.subjectId === "preschool" || currentAssignment?.subjectId === "preschool-probation" || currentAssignment?.isPreschoolProbation;
     const isChildDevSubject = (subNameNormalized.includes("chuẩn phát triển trẻ em") || subNameNormalized.includes("bộ chuẩn phát triển") || subCode.includes("cpt") || subCode.includes("tci")) && (gradeVal === "1" || gradeVal === "Tất cả" || gradeVal === "" || gradeVal === "");
         const isThinkingSkillsSubject = (subNameNormalized.includes("năng lực tư duy") || subCode.includes("nltd")) && (gradeVal === "1" || gradeVal === "Tất cả");
     const hideComments = ["toa", "tvi", "nva"].some(c => subCode.includes(c)) || ["toán", "tiếng việt", "ngữ văn"].some(s => subNameNormalized.includes(s));
@@ -898,10 +903,28 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
             student={activePreschoolStudent}
             onSave={async (studentId, scores, comments) => {
               try {
-                const res = await fetch("/api/preschool-dev-scores", {
+                const isProb = activePreschoolStudent.isPreschoolProbation;
+                const endpoint = isProb ? "/api/preschool-probationary-assessment" : "/api/preschool-dev-scores";
+                
+                let body: any = {};
+                if (isProb) {
+                  body = {
+                    studentId,
+                    probationaryScoreText: JSON.stringify(scores),
+                    probationaryResult: comments.probationaryResult,
+                    probationaryComment: comments.probationaryComment,
+                    probationaryPeriod: comments.probationaryPeriod,
+                    probationaryClass: comments.probationaryClass,
+                    probationaryTeacher: comments.probationaryTeacher
+                  };
+                } else {
+                  body = { studentId, scores, ...comments };
+                }
+
+                const res = await fetch(endpoint, {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ studentId, scores, ...comments })
+                  body: JSON.stringify(body)
                 });
                 if (res.ok) {
                   setIsPreschoolModalOpen(false);

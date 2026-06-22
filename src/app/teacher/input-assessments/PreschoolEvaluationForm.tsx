@@ -6,12 +6,7 @@ import { Baby, X, CheckCircle, AlertCircle, Save, Sparkles, Heart, ClipboardList
 
 interface PreschoolEvaluationFormProps {
   student: any
-  onSave: (studentId: string, scores: any[], comments: {
-    devProfessionalComment: string
-    devPsychologyComment: string
-    devImportantNote: string
-    devAssessmentResult: string
-  }) => Promise<void>
+  onSave: (studentId: string, scores: any, comments: any) => Promise<void>
   onClose: () => void
   isLocked?: boolean
 }
@@ -36,6 +31,13 @@ export default function PreschoolEvaluationForm({
   const [devNote, setDevNote] = useState(student.devImportantNote || "")
   const [devResult, setDevResult] = useState(student.devAssessmentResult || "")
 
+  // Trial Assessment States
+  const [probPeriod, setProbPeriod] = useState(student.probationaryPeriod || "")
+  const [probClass, setProbClass] = useState(student.probationaryClass || "")
+  const [probTeacher, setProbTeacher] = useState(student.probationaryTeacher || "")
+  const [probResult, setProbResult] = useState(student.probationaryResult || "")
+  const [probComment, setProbComment] = useState(student.probationaryComment || "")
+
   // Approvals (from BGH & GDCS) - strictly read only
   const bghApprovalStatus = student.bghApprovalStatus || ""
   const bghApprovalComment = student.bghApprovalComment || ""
@@ -50,18 +52,30 @@ export default function PreschoolEvaluationForm({
     async function loadData() {
       setDevLoading(true)
       try {
-        const scoresRes = await fetch(`/api/preschool-dev-scores?studentId=${student.id}`)
-        let scoredList = []
-        let ageGroup = ""
-        if (scoresRes.ok) {
-          scoredList = await scoresRes.json()
-          const scoreMap: Record<string, { result: string; note: string }> = {}
-          for (const sc of scoredList) {
-            scoreMap[sc.criteriaId] = { result: sc.result, note: sc.note || "" }
+        let ageGroup = "";
+        if (student.isPreschoolProbation) {
+          if (student.probationaryScoreText) {
+            try {
+              const parsed = JSON.parse(student.probationaryScoreText);
+              setStudentScores(parsed);
+            } catch (errParse) {
+              console.error("Error parsing probationaryScoreText:", errParse);
+            }
           }
-          setStudentScores(scoreMap)
-          if (scoredList.length > 0 && scoredList[0].criteria?.ageGroup) {
-            ageGroup = scoredList[0].criteria.ageGroup
+          ageGroup = student.grade || "Mầm non";
+        } else {
+          const scoresRes = await fetch(`/api/preschool-dev-scores?studentId=${student.id}`)
+          let scoredList = []
+          if (scoresRes.ok) {
+            scoredList = await scoresRes.json()
+            const scoreMap: Record<string, { result: string; note: string }> = {}
+            for (const sc of scoredList) {
+              scoreMap[sc.criteriaId] = { result: sc.result, note: sc.note || "" }
+            }
+            setStudentScores(scoreMap)
+            if (scoredList.length > 0 && scoredList[0].criteria?.ageGroup) {
+              ageGroup = scoredList[0].criteria.ageGroup
+            }
           }
         }
 
@@ -70,7 +84,8 @@ export default function PreschoolEvaluationForm({
           ageGroup = getSurveyFormAgeGroup(student.grade, surveyDate)
         }
         
-        const areasRes = await fetch(`/api/preschool-dev-areas?ageGroup=${encodeURIComponent(ageGroup)}`)
+        const typeParam = student.isPreschoolProbation ? "PROBATION" : "INPUT";
+        const areasRes = await fetch(`/api/preschool-dev-areas?type=${typeParam}&ageGroup=${encodeURIComponent(ageGroup)}`)
         if (areasRes.ok) {
           setDevAreas(await areasRes.json())
         }
@@ -138,17 +153,27 @@ export default function PreschoolEvaluationForm({
   const handleSave = async () => {
     setSavingEval(true)
     try {
-      const scoresPayload = Object.entries(studentScores).map(([criteriaId, val]) => ({
-        criteriaId,
-        result: val.result,
-        note: val.note
-      }))
-      await onSave(student.id, scoresPayload, {
-        devProfessionalComment: devProfComment,
-        devPsychologyComment: devPsyComment,
-        devImportantNote: devNote,
-        devAssessmentResult: devResult
-      })
+      if (student.isPreschoolProbation) {
+        await onSave(student.id, studentScores, {
+          probationaryResult: probResult,
+          probationaryComment: probComment,
+          probationaryPeriod: probPeriod,
+          probationaryClass: probClass,
+          probationaryTeacher: probTeacher
+        })
+      } else {
+        const scoresPayload = Object.entries(studentScores).map(([criteriaId, val]) => ({
+          criteriaId,
+          result: val.result,
+          note: val.note
+        }))
+        await onSave(student.id, scoresPayload, {
+          devProfessionalComment: devProfComment,
+          devPsychologyComment: devPsyComment,
+          devImportantNote: devNote,
+          devAssessmentResult: devResult
+        })
+      }
     } catch (e) {
       console.error(e)
       alert("Lỗi khi lưu kết quả đánh giá")
@@ -161,6 +186,12 @@ export default function PreschoolEvaluationForm({
     { key: "CHUA_THE_HIEN", label: "Chưa thể hiện", color: "peer-checked:bg-slate-100 peer-checked:text-slate-700 border-slate-200" },
     { key: "DAT", label: "Đạt", color: "peer-checked:bg-emerald-50 peer-checked:text-emerald-700 peer-checked:border-emerald-200 border-slate-200" },
     { key: "KHONG_DAT", label: "Không đạt", color: "peer-checked:bg-rose-50 peer-checked:text-rose-700 peer-checked:border-rose-200 border-slate-200" }
+  ]
+
+  const probRadioOpts = [
+    { key: "CHUA_THE_HIEN", label: "Chưa thể hiện", color: "peer-checked:bg-amber-50 peer-checked:text-amber-700 peer-checked:border-amber-200 border-slate-200" },
+    { key: "BAT_DAU_THE_HIEN", label: "Bắt đầu thể hiện", color: "peer-checked:bg-indigo-50 peer-checked:text-indigo-700 peer-checked:border-indigo-200 border-slate-200" },
+    { key: "THE_HIEN_TOT", label: "Thể hiện tốt", color: "peer-checked:bg-emerald-50 peer-checked:text-emerald-700 peer-checked:border-emerald-200 border-slate-200" }
   ]
 
   const overallResultOpts = [
@@ -320,8 +351,10 @@ export default function PreschoolEvaluationForm({
                             <div className="space-y-2">
                               {/* Assessment Radios */}
                               <div className="flex flex-wrap gap-2">
-                                {radioOpts.map((opt) => {
-                                  const isChecked = (studentScores[crit.id]?.result || "CHUA_THE_HIEN") === opt.key
+                                {(student.isPreschoolProbation ? probRadioOpts : radioOpts).map((opt) => {
+                                  const isChecked = student.isPreschoolProbation 
+                                    ? studentScores[crit.id]?.result === opt.key 
+                                    : (studentScores[crit.id]?.result || "CHUA_THE_HIEN") === opt.key;
                                   return (
                                     <label
                                       key={opt.key}
@@ -381,65 +414,141 @@ export default function PreschoolEvaluationForm({
           {/* General comments section */}
           <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-5 space-y-4">
             <h3 className="text-[12px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-1.5 pb-2 border-b border-slate-100">
-              <Sparkles className="w-4 h-4 text-pink-400" /> Nhận Xét &amp; Đánh Giá Chung
+              <Sparkles className="w-4 h-4 text-pink-400" /> {student.isPreschoolProbation ? "Nhận Xét & Kết Quả Học Thử" : "Nhận Xét & Đánh Giá Chung"}
             </h3>
 
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest">
-                  Đánh giá chuyên môn
-                </label>
-                <textarea
-                  value={devProfComment}
-                  onChange={e => setDevProfComment(e.target.value)}
-                  placeholder={isAssessmentLocked ? "Chưa có nhận xét" : "Nhận xét về sự phát triển chuyên môn của trẻ..."}
-                  disabled={isAssessmentLocked}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 outline-none focus:border-pink-400 focus:bg-white text-sm font-medium text-slate-700 transition-all h-24 resize-none disabled:opacity-70 disabled:cursor-not-allowed"
-                />
-              </div>
+            {student.isPreschoolProbation ? (
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest">
+                    Thời gian học thử
+                  </label>
+                  <input
+                    type="text"
+                    value={probPeriod}
+                    onChange={e => setProbPeriod(e.target.value)}
+                    placeholder="Ví dụ: 20/05/2026 ~ 03/06/2026"
+                    disabled={isAssessmentLocked}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 outline-none focus:border-pink-400 focus:bg-white text-sm font-medium text-slate-700 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                  />
+                </div>
 
-              <div className="space-y-1.5">
-                <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest">
-                  Nhận xét tâm lý
-                </label>
-                <textarea
-                  value={devPsyComment}
-                  onChange={e => setDevPsyComment(e.target.value)}
-                  placeholder={isAssessmentLocked ? "Chưa có nhận xét" : "Nhận xét về trạng thái tâm lý, cảm xúc của trẻ..."}
-                  disabled={isAssessmentLocked}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 outline-none focus:border-pink-400 focus:bg-white text-sm font-medium text-slate-700 transition-all h-24 resize-none disabled:opacity-70 disabled:cursor-not-allowed"
-                />
-              </div>
+                <div className="space-y-1.5">
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest">
+                    Lớp học thử
+                  </label>
+                  <input
+                    type="text"
+                    value={probClass}
+                    onChange={e => setProbClass(e.target.value)}
+                    placeholder="Ví dụ: Jerry 1"
+                    disabled={isAssessmentLocked}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 outline-none focus:border-pink-400 focus:bg-white text-sm font-medium text-slate-700 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                  />
+                </div>
 
-              <div className="space-y-1.5">
-                <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest">
-                  Lưu ý đặc biệt
-                </label>
-                <textarea
-                  value={devNote}
-                  onChange={e => setDevNote(e.target.value)}
-                  placeholder={isAssessmentLocked ? "Không có lưu ý đặc biệt" : "Những điểm cần lưu ý đặc biệt..."}
-                  disabled={isAssessmentLocked}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 outline-none focus:border-pink-400 focus:bg-white text-sm font-medium text-slate-700 transition-all h-20 resize-none disabled:opacity-70 disabled:cursor-not-allowed"
-                />
-              </div>
+                <div className="space-y-1.5">
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest">
+                    Giáo viên học thử
+                  </label>
+                  <input
+                    type="text"
+                    value={probTeacher}
+                    onChange={e => setProbTeacher(e.target.value)}
+                    placeholder="Ví dụ: Cô Mai, Cô Hằng"
+                    disabled={isAssessmentLocked}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 outline-none focus:border-pink-400 focus:bg-white text-sm font-medium text-slate-700 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                  />
+                </div>
 
-              <div className="space-y-1.5">
-                <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest">
-                  Kết quả khảo sát chung
-                </label>
-                <select
-                  value={devResult}
-                  onChange={e => setDevResult(e.target.value)}
-                  disabled={isAssessmentLocked}
-                  className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 outline-none focus:border-pink-400 focus:ring-4 focus:ring-pink-400/10 text-sm font-medium text-slate-700 transition-all shadow-sm disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
-                >
-                  {overallResultOpts.map((opt) => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
+                <div className="space-y-1.5">
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest">
+                    Kết quả học thử
+                  </label>
+                  <select
+                    value={probResult}
+                    onChange={e => setProbResult(e.target.value)}
+                    disabled={isAssessmentLocked}
+                    className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 outline-none focus:border-pink-400 focus:ring-4 focus:ring-pink-400/10 text-sm font-medium text-slate-700 transition-all shadow-sm disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    <option value="">-- Chưa kết luận --</option>
+                    <option value="DAT">ĐẠT</option>
+                    <option value="CHUA_DAT">CHƯA ĐẠT</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest">
+                    Ý kiến / Ghi chú thêm
+                  </label>
+                  <textarea
+                    value={probComment}
+                    onChange={e => setProbComment(e.target.value)}
+                    placeholder="Nhập ý kiến đánh giá chung, lý do đạt/chưa đạt hoặc hướng phát triển..."
+                    disabled={isAssessmentLocked}
+                    rows={4}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 outline-none focus:border-pink-400 focus:bg-white text-sm font-medium text-slate-700 transition-all resize-none disabled:opacity-70 disabled:cursor-not-allowed"
+                  />
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest">
+                    Đánh giá chuyên môn
+                  </label>
+                  <textarea
+                    value={devProfComment}
+                    onChange={e => setDevProfComment(e.target.value)}
+                    placeholder={isAssessmentLocked ? "Chưa có nhận xét" : "Nhận xét về sự phát triển chuyên môn của trẻ..."}
+                    disabled={isAssessmentLocked}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 outline-none focus:border-pink-400 focus:bg-white text-sm font-medium text-slate-700 transition-all h-24 resize-none disabled:opacity-70 disabled:cursor-not-allowed"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest">
+                    Nhận xét tâm lý
+                  </label>
+                  <textarea
+                    value={devPsyComment}
+                    onChange={e => setDevPsyComment(e.target.value)}
+                    placeholder={isAssessmentLocked ? "Chưa có nhận xét" : "Nhận xét về trạng thái tâm lý, cảm xúc của trẻ..."}
+                    disabled={isAssessmentLocked}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 outline-none focus:border-pink-400 focus:bg-white text-sm font-medium text-slate-700 transition-all h-24 resize-none disabled:opacity-70 disabled:cursor-not-allowed"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest">
+                    Lưu ý đặc biệt
+                  </label>
+                  <textarea
+                    value={devNote}
+                    onChange={e => setDevNote(e.target.value)}
+                    placeholder={isAssessmentLocked ? "Không có lưu ý đặc biệt" : "Những điểm cần lưu ý đặc biệt..."}
+                    disabled={isAssessmentLocked}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 outline-none focus:border-pink-400 focus:bg-white text-sm font-medium text-slate-700 transition-all h-20 resize-none disabled:opacity-70 disabled:cursor-not-allowed"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest">
+                    Kết quả khảo sát chung
+                  </label>
+                  <select
+                    value={devResult}
+                    onChange={e => setDevResult(e.target.value)}
+                    disabled={isAssessmentLocked}
+                    className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 outline-none focus:border-pink-400 focus:ring-4 focus:ring-pink-400/10 text-sm font-medium text-slate-700 transition-all shadow-sm disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    {overallResultOpts.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Approvals section: READ ONLY always */}
