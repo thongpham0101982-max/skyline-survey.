@@ -39,7 +39,9 @@ export default async function AdminClassesPage() {
     educationSystem: c.educationSystem || "",
     studentCount: c._count.students,
     homeroomTeacherId: c.homeroomTeacherId,
-    homeroomTeacher: c.homeroomTeacherId ? teacherMap[c.homeroomTeacherId] || "N/A" : "Chưa phân công"
+    homeroomTeacher: c.homeroomTeacherId 
+      ? c.homeroomTeacherId.split(",").map(id => teacherMap[id.trim()]).filter(Boolean).join(", ") 
+      : "Chưa phân công"
   }))
 
   // Filter campuses based on session scope

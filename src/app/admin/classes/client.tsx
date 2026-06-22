@@ -150,15 +150,35 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
     const res = await deleteClasses([id])
     if (res.success) { alert("Xóa thành công!"); router.refresh(); } else alert("Không thể xóa!")
   }
+  const handleOpenEditModal = (c: any) => {
+    let gvcn1 = "";
+    let gvcn2 = "";
+    if (c.homeroomTeacherId) {
+      const parts = c.homeroomTeacherId.split(",");
+      gvcn1 = parts[0]?.trim() || "";
+      gvcn2 = parts[1]?.trim() || "";
+    }
+    setEditModal({
+      ...c,
+      gvcn1,
+      gvcn2
+    });
+  };
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault()
+    let finalTeacherId = editModal.homeroomTeacherId || null;
+    if (editModal.level === "Mầm non") {
+      const g1 = editModal.gvcn1 || "";
+      const g2 = editModal.gvcn2 || "";
+      finalTeacherId = [g1, g2].filter(Boolean).join(",") || null;
+    }
     const res = await updateClass(editModal.id, {
       className: editModal.className,
       level: editModal.level,
       grade: editModal.grade,
       campusId: editModal.campusId,
       educationSystem: editModal.educationSystem || "",
-      homeroomTeacherId: editModal.homeroomTeacherId || null
+      homeroomTeacherId: finalTeacherId
     })
     if (res.success) { setEditModal(null); router.refresh(); } else alert("Lỗi khi cập nhật!")
   }
@@ -304,7 +324,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
                  <td className="px-4 py-3.5"><span className="flex items-center text-slate-700 bg-slate-100 px-2.5 py-1 rounded-full w-max text-xs font-medium"><Users className="w-3.5 h-3.5 mr-1.5 text-slate-500" /> {c.studentCount}</span></td>
                  <td className="px-4 py-3.5 text-slate-700 font-medium">{c.homeroomTeacher}</td>
                  <td className="px-4 py-3.5 text-right space-x-2">
-                    <button onClick={() => setEditModal({...c})} className="p-1.5 text-blue-500 hover:bg-blue-100 rounded-lg" title="Sửa"><Edit className="w-4 h-4" /></button>
+                    <button onClick={() => handleOpenEditModal(c)} className="p-1.5 text-blue-500 hover:bg-blue-100 rounded-lg" title="Sửa"><Edit className="w-4 h-4" /></button>
                     <button onClick={() => handleDeleteSingle(c.id)} className="p-1.5 text-red-500 hover:bg-red-100 rounded-lg" title="Xóa"><Trash2 className="w-4 h-4" /></button>
                  </td>
                </tr>
@@ -335,13 +355,40 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
                     {eduSystems.map((es: any) => <option key={es.id} value={es.code}>{es.code} - {es.name}</option>)}
                   </select>
                 </div>
-                                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Giáo viên chủ nhiệm (GVCN)</label>
-                  <select value={editModal.homeroomTeacherId || ""} onChange={e => setEditModal({...editModal, homeroomTeacherId: e.target.value})} className="w-full border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-sm">
-                    <option value="">-- Chưa phân công --</option>
-                    {teachers?.map((t: any) => <option key={t.id} value={t.id}>{t.teacherName}</option>)}
-                  </select>
-                </div>
+                                {editModal.level === "Mầm non" ? (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-1">GVCN 1</label>
+                      <select 
+                        value={editModal.gvcn1 || ""} 
+                        onChange={e => setEditModal({...editModal, gvcn1: e.target.value})} 
+                        className="w-full border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
+                      >
+                        <option value="">-- Chưa phân công --</option>
+                        {teachers?.map((t: any) => <option key={t.id} value={t.id}>{t.teacherName}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-1">GVCN 2</label>
+                      <select 
+                        value={editModal.gvcn2 || ""} 
+                        onChange={e => setEditModal({...editModal, gvcn2: e.target.value})} 
+                        className="w-full border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
+                      >
+                        <option value="">-- Chưa phân công --</option>
+                        {teachers?.map((t: any) => <option key={t.id} value={t.id}>{t.teacherName}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">Giáo viên chủ nhiệm (GVCN)</label>
+                    <select value={editModal.homeroomTeacherId || ""} onChange={e => setEditModal({...editModal, homeroomTeacherId: e.target.value})} className="w-full border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white">
+                      <option value="">-- Chưa phân công --</option>
+                      {teachers?.map((t: any) => <option key={t.id} value={t.id}>{t.teacherName}</option>)}
+                    </select>
+                  </div>
+                )}
                 <div className="pt-4 flex items-center justify-end gap-3">
                    <button type="button" onClick={() => setEditModal(null)} className="px-4 py-2 font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl text-sm">Hủy</button>
                    <button type="submit" className="px-5 py-2 font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl text-sm shadow-sm flex items-center"><Save className="w-4 h-4 mr-2" /> Lưu thay đổi</button>

@@ -10,6 +10,7 @@ async function getTeacherClasses(userId: string) {
     where: {
       OR: [
         { homeroomTeacherId: teacher.id },
+        { homeroomTeacherId: { contains: teacher.id } },
         { teachers: { some: { teacherId: teacher.id } } }
       ]
     },

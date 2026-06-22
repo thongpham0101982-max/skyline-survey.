@@ -2384,7 +2384,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     // Find class to auto-select its homeroom teacher
     const chosenClass = classes.find((c: any) => c.id === classId);
     if (chosenClass && chosenClass.homeroomTeacherId) {
-      setAssignTeacherId(chosenClass.homeroomTeacherId);
+      const firstTeacherId = chosenClass.homeroomTeacherId.split(",")[0].trim();
+      setAssignTeacherId(firstTeacherId);
     } else {
       setAssignTeacherId("");
     }

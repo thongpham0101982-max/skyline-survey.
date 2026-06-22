@@ -72,7 +72,14 @@ export default async function TeacherManagerPage() {
     SELECT id as classId, homeroomTeacherId, className FROM Class WHERE homeroomTeacherId IS NOT NULL
   ` as { classId: string, homeroomTeacherId: string, className: string }[]
 
-  const classHomeroomMap = new Map(homeroomAssignments.map(a => [a.homeroomTeacherId, a]))
+  const classHomeroomMap = new Map<string, any>()
+  homeroomAssignments.forEach(a => {
+    if (a.homeroomTeacherId) {
+      a.homeroomTeacherId.split(",").forEach(id => {
+        classHomeroomMap.set(id.trim(), a);
+      });
+    }
+  })
 
   const teachers = rawTeachers.map(t => ({
     id: t.id,

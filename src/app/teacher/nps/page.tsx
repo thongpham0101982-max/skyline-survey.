@@ -21,6 +21,7 @@ export default async function TeacherNpsPage() {
     where: {
       OR: [
         { homeroomTeacherId: teacher.id },
+        { homeroomTeacherId: { contains: teacher.id } },
         { teachers: { some: { teacherId: teacher.id } } }
       ],
       academicYearId: activeYearId
