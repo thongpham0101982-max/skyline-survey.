@@ -18,13 +18,27 @@ export default async function AdminClassesPage() {
 
   // Filter teachers based on session scope (if we want to only assign teachers from same campus)
   const teacherWhere = session.isFullAccess ? {} : { campusId: { in: session.allowedCampusIds } }
-  const teachers = await prisma.teacher.findMany({
+  const rawTeachers = await prisma.teacher.findMany({
     where: teacherWhere,
-    select: { id: true, teacherName: true }
+    select: {
+      id: true,
+      teacherName: true,
+      departmentRel: {
+        select: {
+          blockCM: true
+        }
+      }
+    }
   })
 
   const teacherMap: Record<string, string> = {}
-  teachers.forEach(t => { teacherMap[t.id] = t.teacherName })
+  rawTeachers.forEach(t => { teacherMap[t.id] = t.teacherName })
+
+  const teachers = rawTeachers.map(t => ({
+    id: t.id,
+    teacherName: t.teacherName,
+    blockCM: t.departmentRel?.blockCM || null
+  }))
 
   const mappedClasses = classesData.map((c, index) => ({
     stt: index + 1,

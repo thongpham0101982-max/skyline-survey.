@@ -365,7 +365,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
                         className="w-full border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
                       >
                         <option value="">-- Chưa phân công --</option>
-                        {teachers?.map((t: any) => <option key={t.id} value={t.id}>{t.teacherName}</option>)}
+                        {(teachers?.filter((t: any) => (t.blockCM || "").toLowerCase().includes("mầm non")) || []).map((t: any) => <option key={t.id} value={t.id}>{t.teacherName}</option>)}
                       </select>
                     </div>
                     <div>
@@ -376,7 +376,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
                         className="w-full border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
                       >
                         <option value="">-- Chưa phân công --</option>
-                        {teachers?.map((t: any) => <option key={t.id} value={t.id}>{t.teacherName}</option>)}
+                        {(teachers?.filter((t: any) => (t.blockCM || "").toLowerCase().includes("mầm non")) || []).map((t: any) => <option key={t.id} value={t.id}>{t.teacherName}</option>)}
                       </select>
                     </div>
                   </div>
