@@ -713,64 +713,6 @@ export default function PreschoolEvaluationForm({
             )}
           </div>
 
-          {/* Approvals section: READ ONLY always */}
-          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-5 space-y-4">
-            <h3 className="text-[12px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-1.5 pb-2 border-b border-slate-100">
-              <Heart className="w-4 h-4 text-violet-400" /> Trạng Thái Phê Duyệt Của Hệ Thống
-            </h3>
-
-            <div className="space-y-4">
-              {/* BGH MN Approval */}
-              <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Duyệt BGH MN</span>
-                  {(() => {
-                    if (!bghApprovalStatus) return <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">Chờ Duyệt</span>;
-                    if (bghApprovalStatus === "DAT_MIEN_HOC_THU" || bghApprovalStatus === "DAT") return <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">Đạt - Miễn Học Thử</span>;
-                    if (bghApprovalStatus === "DAT_HOC_THU") return <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200">Đạt - Học Thử</span>;
-                    if (bghApprovalStatus === "KHONG_DAT") return <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-rose-100 text-rose-600 border border-rose-200">Không Đạt</span>;
-                    return <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-250">Ý kiến khác</span>;
-                  })()}
-                </div>
-                {bghApprovalComment && (
-                  <p className="text-xs italic text-slate-600 bg-white border border-slate-100 rounded-lg p-2.5">
-                    "{bghApprovalComment}"
-                  </p>
-                )}
-              </div>
-
-              {/* GDCS Approval */}
-              <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Duyệt GĐCS</span>
-                  {(() => {
-                    if (!gdcsApprovalStatus) return <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">Chờ Duyệt</span>;
-                    if (gdcsApprovalStatus === "DAT_MIEN_HOC_THU" || gdcsApprovalStatus === "DAT") return <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">Đạt - Miễn Học Thử</span>;
-                    if (gdcsApprovalStatus === "DAT_HOC_THU") return <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200">Đạt - Học Thử</span>;
-                    if (gdcsApprovalStatus === "KHONG_DAT") return <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-rose-100 text-rose-600 border border-rose-200">Không Đạt</span>;
-                    return <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-250">Ý kiến khác</span>;
-                  })()}
-                </div>
-                {gdcsApprovalComment && (
-                  <p className="text-xs italic text-slate-600 bg-white border border-slate-100 rounded-lg p-2.5">
-                    "{gdcsApprovalComment}"
-                  </p>
-                )}
-              </div>
-
-              {/* General/Final Result */}
-              <div className="flex items-center justify-between bg-violet-50/40 p-4 rounded-2xl border border-violet-100">
-                <span className="text-xs font-black text-violet-800 uppercase tracking-wider">Kết Quả Tuyển Sinh Cuối</span>
-                <span className={`text-xs font-black px-3 py-1 rounded-full ${
-                  student.admissionResult?.includes("Đạt") ? "bg-emerald-500 text-white shadow-sm" :
-                  student.admissionResult?.includes("Không") ? "bg-rose-500 text-white shadow-sm" : "bg-slate-200 text-slate-700"
-                }`}>
-                  {student.admissionResult || "Chưa Duyệt"}
-                </span>
-              </div>
-            </div>
-          </div>
-
           {/* Lược sử đánh giá mầm non block */}
           {(() => {
             const pastAssessments = historyList.filter((h: any) => h.id !== student.id);
