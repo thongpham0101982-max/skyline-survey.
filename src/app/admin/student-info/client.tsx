@@ -28,6 +28,7 @@ import {
   Loader2
 } from "lucide-react";
 import { confirmEnrollmentAction } from "../student-transfers/actions";
+import { getSurveyFormAgeGroup } from "@/lib/preschool";
 import * as XLSX from "xlsx";
 import { InputAssessmentsClient } from "../input-assessments/client";
 import { PreschoolInputAssessmentsClient } from "../preschool-input-assessments/client";
@@ -99,6 +100,112 @@ export function StudentInfoClient({
   }, [rawPreschoolPeriods]);
 
   const [activeTab, setActiveTab] = useState<"general" | "preschool">("general");
+
+  const [devAreas, setDevAreas] = useState<any[]>([]);
+  const [devAreasLoading, setDevAreasLoading] = useState(false);
+
+  useEffect(() => {
+    if (isDetailsOpen && activeTab === "preschool" && selectedStudent) {
+      const fetchDevAreas = async () => {
+        setDevAreasLoading(true);
+        try {
+          const ageGroup = getSurveyFormAgeGroup(selectedStudent.grade, selectedStudent.batch?.startDate);
+          const res = await fetch(`/api/preschool-dev-areas?type=PROBATION&ageGroup=${encodeURIComponent(ageGroup)}`);
+          if (res.ok) {
+            const data = await res.json();
+            setDevAreas(data);
+          }
+        } catch (err) {
+          console.error("Error fetching dev areas:", err);
+        } finally {
+          setDevAreasLoading(false);
+        }
+      };
+      fetchDevAreas();
+    } else {
+      setDevAreas([]);
+    }
+  }, [isDetailsOpen, activeTab, selectedStudent]);
+
+  const renderProbationaryScores = () => {
+    if (!selectedStudent.probationaryScoreText) return <span className="text-xs text-slate-400">—</span>;
+
+    let scores = {};
+    try {
+      scores = JSON.parse(selectedStudent.probationaryScoreText);
+    } catch (e) {
+      return <span className="text-xs text-rose-500 font-mono">Lỗi định dạng điểm</span>;
+    }
+
+    if (devAreasLoading) {
+      return (
+        <div className="flex items-center gap-1.5 py-1 text-slate-400">
+          <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-500" />
+          <span className="text-xs text-slate-500 font-medium">Đang tải dữ liệu tiêu chí...</span>
+        </div>
+      );
+    }
+
+    if (devAreas.length === 0) {
+      return (
+        <div className="text-xs space-y-1 text-slate-650 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+          {Object.entries(scores).map(([critId, score]) => {
+            const resText = score.result === "THE_HIEN_TOT" ? "Thể hiện tốt" : 
+                            score.result === "BAT_DAU_THE_HIEN" ? "Bắt đầu thể hiện" : 
+                            score.result === "CHUA_THE_HIEN" ? "Chưa thể hiện" : score.result || "Chưa đánh giá";
+            return (
+              <div key={critId} className="flex justify-between border-b border-slate-100 py-1">
+                <span className="font-mono text-[10px] text-slate-450">{critId}</span>
+                <span className="font-semibold text-slate-700">{resText}</span>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-3 max-h-60 overflow-y-auto custom-scrollbar pr-1 mt-1 text-xs">
+        {devAreas.map((area) => {
+          const areaCriteria = area.criteria || [];
+          const hasScoresInArea = areaCriteria.some((c) => scores[c.id]);
+          if (!hasScoresInArea) return null;
+
+          return (
+            <div key={area.id} className="bg-slate-50/50 p-2.5 rounded-lg border border-slate-100/80 space-y-1.5">
+              <div className="font-bold text-indigo-700 text-[10px] uppercase tracking-wider">{area.name}</div>
+              <div className="space-y-1">
+                {areaCriteria.map((crit) => {
+                  const score = scores[crit.id];
+                  if (!score) return null;
+
+                  const resText = score.result === "THE_HIEN_TOT" ? "Thể hiện tốt" : 
+                                  score.result === "BAT_DAU_THE_HIEN" ? "Bắt đầu thể hiện" : 
+                                  score.result === "CHUA_THE_HIEN" ? "Chưa thể hiện" : score.result || "Chưa đánh giá";
+                  
+                  const badgeColor = score.result === "THE_HIEN_TOT" ? "bg-emerald-50 text-emerald-700" :
+                                     score.result === "BAT_DAU_THE_HIEN" ? "bg-amber-50 text-amber-700" :
+                                     score.result === "CHUA_THE_HIEN" ? "bg-rose-50 text-rose-700" : "bg-slate-50 text-slate-500";
+
+                  return (
+                    <div key={crit.id} className="flex items-start justify-between gap-4 py-1 border-b border-slate-100/50 last:border-0">
+                      <div className="flex-1">
+                        <div className="font-medium text-slate-700 leading-snug">{crit.name}</div>
+                        {score.note && <div className="text-[10px] text-slate-400 italic mt-0.5">Ghi chú: {score.note}</div>}
+                      </div>
+                      <span className={`px-2 py-0.5 rounded-md text-[9px] font-semibold whitespace-nowrap ${badgeColor}`}>
+                        {resText}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
   const [subTab, setSubTab] = useState<"input" | "info" | "result">("input");
 
   useEffect(() => {
@@ -2642,10 +2749,6 @@ export function StudentInfoClient({
                         <span className="text-xs font-semibold text-slate-700 mt-0.5 block">{selectedStudent.probationaryPeriod || "-"}</span>
                       </div>
                       <div>
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Điểm học thử</label>
-                        <span className="text-xs font-semibold text-slate-700 mt-0.5 block">{selectedStudent.probationaryScoreText || "-"}</span>
-                      </div>
-                      <div>
                         <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Lớp học thử</label>
                         <span className="text-xs font-semibold text-slate-700 mt-0.5 block">{selectedStudent.probationaryClass || "-"}</span>
                       </div>
@@ -2653,11 +2756,24 @@ export function StudentInfoClient({
                         <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Giáo viên phụ trách</label>
                         <span className="text-xs font-semibold text-slate-700 mt-0.5 block">{selectedStudent.probationaryTeacher || "-"}</span>
                       </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kết quả học thử</label>
+                        <span className="text-xs font-bold text-indigo-700 mt-0.5 block">
+                          {selectedStudent.probationaryResult === "DAT" ? "ĐẠT" : selectedStudent.probationaryResult === "CHUA_DAT" ? "CHƯA ĐẠT" : selectedStudent.probationaryResult || "-"}
+                        </span>
+                      </div>
                     </div>
+                    
+                    {selectedStudent.probationaryScoreText && (
+                      <div className="bg-indigo-50/20 p-4 rounded-2xl border border-indigo-100/40 mt-3">
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Chi tiết đánh giá học thử</label>
+                        {renderProbationaryScores()}
+                      </div>
+                    )}
+
                     <div className="bg-indigo-50/20 p-4 rounded-2xl border border-indigo-100/40 mt-3">
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kết quả học thử</label>
-                      <span className="text-xs font-bold text-indigo-700 mt-0.5 block">{selectedStudent.probationaryResult || "-"}</span>
-                      <p className="text-xs text-slate-500 mt-1.5 font-medium">Nhận xét chi tiết: {selectedStudent.probationaryComment || "Chưa có nhận xét."}</p>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Nhận xét chi tiết</label>
+                      <p className="text-xs text-slate-750 mt-1.5 font-medium leading-relaxed">{selectedStudent.probationaryComment || "Chưa có nhận xét."}</p>
                     </div>
                   </div>
                 </div>
