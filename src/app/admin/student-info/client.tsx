@@ -2617,16 +2617,7 @@ export function StudentInfoClient({
                 </h3>
               </div>
               <div className="flex gap-2 items-center">
-                <button
-                  onClick={() => {
-                    setIsDetailsOpen(false);
-                    openEditModal(selectedStudent);
-                  }}
-                  className="p-2 text-slate-400 hover:text-[#00A6A9] hover:bg-slate-100 rounded-xl transition-all"
-                  title="Chỉnh sửa"
-                >
-                  <Edit2 className="w-4 h-4" />
-                </button>
+
                 <button
                   onClick={() => setIsDetailsOpen(false)}
                   className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
@@ -2937,7 +2928,7 @@ export function StudentInfoClient({
                             }`}>
                               {getApprovalStatusText(selectedStudent.gdcsApprovalStatus).toUpperCase()}
                             </span>
-                            {selectedStudent.gdcsApprovalComment && <span className="text-slate-500 italic">"{selectedStudent.gdcsApprovalComment}"</span>}
+
                           </div>
                         </div>
                       </div>
