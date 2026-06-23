@@ -1635,7 +1635,7 @@ export function StudentInfoClient({
                       )}
                       {subTab === "result" && (
                         <td className="px-4 py-3.5 text-center">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${getResultBadgeClass(s.admissionResult)}`}>
+                          <span className="text-xs font-semibold text-slate-700">
                             {s.admissionResult || "Chưa duyệt"}
                           </span>
                         </td>
@@ -1781,9 +1781,7 @@ export function StudentInfoClient({
                       {subTab === "result" && (
                         <td className="p-2 border border-slate-200">
                           {child.admissionResult ? (
-                            <span className={`text-[10px] font-black px-2.5 py-1 rounded-none border ${child.admissionResult === "Học thử" ? "bg-[#00A19A]/5 text-[#00A6A9] border-[#00A6A9]/30" : child.admissionResult.toUpperCase().includes("ĐẠT") && !child.admissionResult.toUpperCase().includes("KHÔNG") ? "bg-emerald-50 text-emerald-800 border-emerald-300" : child.admissionResult.toUpperCase().includes("KHÔNG") ? "bg-rose-50 text-rose-800 border-rose-300" : "bg-amber-50 text-amber-800 border-amber-300"}`}>
-                              {child.admissionResult}
-                            </span>
+                            <span className="text-xs font-semibold text-slate-700">{child.admissionResult}</span>
                           ) : (
                             <span className="text-xs text-slate-300">Chưa duyệt</span>
                           )}
