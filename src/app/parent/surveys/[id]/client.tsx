@@ -218,7 +218,7 @@ function QuestionCard({ q, idx, total, answer, onChange, onNext, visible }: any)
         <textarea rows={5} placeholder="Chia sẻ cảm nghĩ, mong muốn của bạn với nhà trường..."
           value={answer || ""}
           onChange={(e: any) => onChange(e.target.value)}
-          className="w-full border-2 border-slate-100 bg-slate-50/50 rounded-[2rem] p-6 text-slate-800 font-bold resize-none focus:border-[#00A19A] focus:bg-white outline-none transition-all placeholder:text-slate-300 text-base sm:text-lg shadow-inner focus:shadow-2xl focus:shadow-teal-50/50"
+          className="w-full p-6 text-slate-800 font-bold resize-none focus:border-[#00A19A] focus:bg-white outline-none transition-all placeholder:text-slate-300 text-base sm:text-lg shadow-inner focus:shadow-2xl focus:shadow-teal-50/50 text-xs font-semibold"
         />
       )}
 
@@ -227,7 +227,7 @@ function QuestionCard({ q, idx, total, answer, onChange, onNext, visible }: any)
           <table className="w-full border-collapse">
             <thead>
               <tr>
-                <th className="p-4 text-left bg-slate-50 rounded-l-[1.5rem] text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border-b-2 border-white">Tiêu chí</th>
+                <th className="p-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-xs font-semibold">Tiêu chí</th>
                 {opts.columns?.map((col: string, i: number) => (
                   <th key={i} className={`p-4 text-center bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border-b-2 border-white ${i === opts.columns.length - 1 ? "rounded-r-[1.5rem]" : ""}`}>
                     {col}
@@ -238,7 +238,7 @@ function QuestionCard({ q, idx, total, answer, onChange, onNext, visible }: any)
             <tbody className="divide-y-8 divide-transparent">
               {opts.rows?.map((row: string, rIndex: number) => (
                 <tr key={rIndex} className="group transition-all">
-                  <td className="p-4 text-sm font-black text-slate-700 group-hover:text-[#00A19A] transition-colors">{row}</td>
+                  <td className="p-2 text-sm font-black text-slate-700 group-hover:text-[#00A19A] transition-colors border border-slate-200">{row}</td>
                   {opts.columns?.map((col: string, cIndex: number) => {
                     const isCheckbox = q.questionType === "CB_GRID"
                     const isSelected = isCheckbox 
@@ -246,7 +246,7 @@ function QuestionCard({ q, idx, total, answer, onChange, onNext, visible }: any)
                       : (answer && answer[row] === col)
                     
                     return (
-                      <td key={cIndex} className="p-4 text-center">
+                      <td key={cIndex} className="p-2 text-center border border-slate-200">
                         <div 
                           onClick={() => {
                             let newValue;
@@ -278,7 +278,7 @@ function QuestionCard({ q, idx, total, answer, onChange, onNext, visible }: any)
             </tbody>
           </table>
           <div className="mt-6 flex justify-center">
-             <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-full text-[9px] font-black text-slate-300 uppercase tracking-widest animate-pulse">
+             <div className="flex items-center gap-2 text-[9px] font-black text-slate-300 uppercase tracking-widest animate-pulse text-xs font-semibold">
                <Edit3 className="w-3 h-3" /> Cuộn ngang để xem hết các mức
              </div>
           </div>
@@ -382,7 +382,7 @@ export function SurveyFormClient({ periodId, student, questions }: any) {
 
   if (done) return (
     <div className="flex flex-col items-center justify-center text-center py-20 px-6 font-outfit animate-in fade-in zoom-in duration-500">
-      <div className="w-32 h-32 rounded-[2.5rem] bg-emerald-50 flex items-center justify-center mb-8 shadow-2xl shadow-emerald-100/50">
+      <div className="w-32 h-32 flex items-center justify-center mb-8 shadow-2xl shadow-emerald-100/50 text-xs font-semibold">
         <CheckCircle2 className="w-16 h-16 text-emerald-500 animate-in zoom-in duration-700" strokeWidth={1.5} />
       </div>
       <h2 className="text-4xl font-black text-slate-900 mb-4">Cảm ơn bạn!</h2>
@@ -430,7 +430,7 @@ export function SurveyFormClient({ periodId, student, questions }: any) {
 
           <div className="flex items-center justify-between mt-12 pt-8 border-t border-slate-50">
             <button type="button" onClick={goBack} disabled={current === 0}
-              className="flex items-center justify-center w-14 h-14 sm:w-auto sm:px-8 rounded-[1.5rem] font-black text-slate-400 bg-slate-50 hover:bg-slate-100 hover:text-slate-600 disabled:opacity-20 transition-all active:scale-90"
+              className="flex items-center justify-center w-14 h-14 sm:w-auto sm:px-8 font-black text-slate-400 hover:bg-slate-100 hover:text-slate-600 disabled:opacity-20 transition-all active:scale-90 text-xs font-semibold"
             >
               <ChevronLeft className="w-6 h-6" />
               <span className="hidden sm:inline ml-2">Quay lại</span>

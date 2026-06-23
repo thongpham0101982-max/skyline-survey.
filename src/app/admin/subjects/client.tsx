@@ -138,27 +138,27 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
         </div>
 
         <div className="overflow-x-auto custom-scrollbar flex-1">
-          <table className="w-full text-left whitespace-nowrap">
-            <thead className="bg-slate-50 border-b border-slate-200">
+          <table className="w-full text-left whitespace-nowrap border-collapse">
+            <thead className="text-xs font-semibold">
               <tr>
                 <th colSpan={4} className="px-6 py-3 font-bold text-slate-600 text-sm border-r border-slate-200 text-center">Thông tin Môn Học</th>
-                <th colSpan={3} className="px-6 py-3 font-bold text-slate-600 text-sm border-r border-slate-200 text-center text-indigo-700 bg-indigo-50/50">Số tiết (Theo Bậc) / tuần</th>
-                <th rowSpan={2} className="px-6 py-4 font-bold text-slate-600 text-sm text-right">Thao tác</th>
+                <th colSpan={3} className="font-bold text-slate-600 text-sm text-center text-indigo-700 text-xs font-semibold">Số tiết (Theo Bậc) / tuần</th>
+                <th rowSpan={2} className="p-2 p-2 font-bold text-slate-600 text-sm text-right border border-slate-200">Thao tác</th>
               </tr>
-              <tr className="border-b border-slate-200 hover:bg-slate-50/50">
-                <th className="px-4 py-2 font-semibold text-slate-600 text-xs">Mã môn</th>
+              <tr className="hover:bg-slate-50/50 text-xs font-semibold">
+                <th className="p-2 p-2 font-semibold text-slate-600 text-xs border border-slate-200">Mã môn</th>
                 <th className="px-4 py-2 font-semibold text-slate-600 text-xs border-r border-slate-200">Tên môn</th>
                 <th className="px-4 py-2 font-semibold text-slate-600 text-xs border-r border-slate-200">Hệ học</th>
                 <th className="px-4 py-2 font-semibold text-slate-600 text-xs border-r border-slate-200">Ghi chúú</th>
-                <th className="px-4 py-2 font-semibold text-blue-800 text-xs text-center border-r border-slate-200 bg-blue-50/50">Tiểu học</th>
-                <th className="px-4 py-2 font-semibold text-emerald-800 text-xs text-center border-r border-slate-200 bg-emerald-50/50">THCS</th>
-                <th className="px-4 py-2 font-semibold text-amber-800 text-xs text-center border-r border-slate-200 bg-amber-50/50">THPT</th>
+                <th className="font-semibold text-blue-800 text-xs text-center text-xs font-semibold">Tiểu học</th>
+                <th className="font-semibold text-emerald-800 text-xs text-center text-xs font-semibold">THCS</th>
+                <th className="font-semibold text-amber-800 text-xs text-center text-xs font-semibold">THPT</th>
               </tr>
             </thead>
             <tbody>
               {editingId === "new" && (
-                <tr className="bg-indigo-50/50">
-                  <td className="px-4 py-3"><input value={formData.code} onChange={e=>setFormData({...formData, code: e.target.value})} className="w-24 p-1.5 rounded border text-sm outline-none" placeholder="VD: TOAN"/></td>
+                <tr className="text-xs font-semibold">
+                  <td className="p-2 p-2 border border-slate-200"><input value={formData.code} onChange={e=>setFormData({...formData, code: e.target.value})} className="w-24 p-1.5 rounded border text-sm outline-none" placeholder="VD: TOAN"/></td>
                                     <td className="px-4 py-3 border-r border-slate-200"><input value={formData.name} onChange={e=>setFormData({...formData, name: e.target.value})} className="w-40 p-1.5 rounded border text-sm outline-none" placeholder="VD: Toán học"/></td>
                   <td className="px-4 py-3 border-r border-slate-200 bg-white">
                     <div className="flex flex-col gap-1 text-xs">
@@ -197,7 +197,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                     </div>
                   </td>
                   <td className="px-4 py-3 text-center border-r border-slate-200 bg-white"><input type="number" min={0} value={formData.quota} onChange={e=>setFormData({...formData, quota: parseInt(e.target.value)||0})} className="w-16 p-1 rounded border text-center text-sm font-bold text-indigo-700 outline-none" /></td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="p-2 p-2 text-right border border-slate-200">
                     <button onClick={handleSave} disabled={loading} className="p-2 text-green-600 hover:bg-green-100 rounded-lg mr-2"><CheckCircle2 className="w-5 h-5"/></button>
                     <button onClick={cancelEdit} className="p-2 text-slate-400 hover:bg-slate-200 rounded-lg"><X className="w-5 h-5"/></button>
                   </td>
@@ -206,8 +206,8 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
               {displayedSubjects.map((s:any) => {
                 const q = getQuota(s);
                 return editingId === s.id ? (
-                  <tr key={s.id} className="bg-indigo-50/50 border-b border-indigo-100">
-                    <td className="px-4 py-3"><input value={formData.code} onChange={e=>setFormData({...formData, code: e.target.value})} className="w-24 p-1.5 rounded border text-sm outline-none"/></td>
+                  <tr key={s.id} className="text-xs font-semibold">
+                    <td className="p-2 p-2 border border-slate-200"><input value={formData.code} onChange={e=>setFormData({...formData, code: e.target.value})} className="w-24 p-1.5 rounded border text-sm outline-none"/></td>
                                         <td className="px-4 py-3 border-r border-slate-200"><input value={formData.name} onChange={e=>setFormData({...formData, name: e.target.value})} className="w-40 p-1.5 rounded border text-sm outline-none"/></td>
                     <td className="px-4 py-3 border-r border-slate-200 bg-white">
                       <div className="flex flex-col gap-1 text-xs">
@@ -226,30 +226,30 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                       </div>
                     </td>
                     <td className="px-4 py-3 border-r border-slate-200"><input value={formData.desc} onChange={e=>setFormData({...formData, desc: e.target.value})} className="w-40 p-1.5 rounded border text-sm outline-none"/></td>
-                    <td className="px-4 py-3 text-center border-r border-slate-200 bg-blue-50/50"><input type="number" min={0} value={formData.quotaPrimary} onChange={e=>setFormData({...formData, quotaPrimary: parseInt(e.target.value)||0})} className="w-16 p-1 rounded border text-center text-sm font-bold text-blue-700 outline-none" /></td>
-                    <td className="px-4 py-3 text-center border-r border-slate-200 bg-emerald-50/50"><input type="number" min={0} value={formData.quotaMiddle} onChange={e=>setFormData({...formData, quotaMiddle: parseInt(e.target.value)||0})} className="w-16 p-1 rounded border text-center text-sm font-bold text-emerald-700 outline-none" /></td>
-                    <td className="px-4 py-3 text-center border-r border-slate-200 bg-amber-50/50"><input type="number" min={0} value={formData.quotaHigh} onChange={e=>setFormData({...formData, quotaHigh: parseInt(e.target.value)||0})} className="w-16 p-1 rounded border text-center text-sm font-bold text-amber-700 outline-none" /></td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="text-center text-xs font-semibold"><input type="number" min={0} value={formData.quotaPrimary} onChange={e=>setFormData({...formData, quotaPrimary: parseInt(e.target.value)||0})} className="w-16 p-1 rounded border text-center text-sm font-bold text-blue-700 outline-none" /></td>
+                    <td className="text-center text-xs font-semibold"><input type="number" min={0} value={formData.quotaMiddle} onChange={e=>setFormData({...formData, quotaMiddle: parseInt(e.target.value)||0})} className="w-16 p-1 rounded border text-center text-sm font-bold text-emerald-700 outline-none" /></td>
+                    <td className="text-center text-xs font-semibold"><input type="number" min={0} value={formData.quotaHigh} onChange={e=>setFormData({...formData, quotaHigh: parseInt(e.target.value)||0})} className="w-16 p-1 rounded border text-center text-sm font-bold text-amber-700 outline-none" /></td>
+                    <td className="p-2 p-2 text-right border border-slate-200">
                       <button onClick={handleSave} disabled={loading} className="p-2 text-green-600 hover:bg-green-100 rounded-lg mr-2"><CheckCircle2 className="w-5 h-5"/></button>
                       <button onClick={cancelEdit} className="p-2 text-slate-400 hover:bg-slate-200 rounded-lg"><X className="w-5 h-5"/></button>
                     </td>
                   </tr>
                 ) : (
-                  <tr key={s.id} className="border-b border-slate-100 hover:bg-slate-50/50">
-                    <td className="px-4 py-3 font-bold text-slate-700 text-sm">{s.subjectCode}</td>
+                  <tr key={s.id} className="hover:bg-slate-50/50 text-xs font-semibold">
+                    <td className="p-2 p-2 font-bold text-slate-700 text-sm border border-slate-200">{s.subjectCode}</td>
                                         <td className="px-4 py-3 font-bold text-indigo-700 text-sm border-r border-slate-200">{s.subjectName}</td>
                     <td className="px-4 py-3 text-slate-600 text-xs border-r border-slate-200 min-w-[120px]">
                       <div className="flex flex-wrap gap-1">
                         {s.studyPrograms ? s.studyPrograms.split(', ').filter((p: string) => filterProgram === "ALL_PROGRAMS" || p === filterProgram).map((p: string) => (
-                          <span key={p} className="inline-block bg-indigo-50 text-indigo-700 border border-indigo-100 rounded px-1.5 py-0.5 whitespace-nowrap font-medium">{p}</span>
+                          <span key={p} className="inline-block text-indigo-700 whitespace-nowrap font-medium text-xs font-semibold">{p}</span>
                         )) : '-'}
                       </div>
                     </td>
                     <td className="px-4 py-3 text-slate-500 text-sm border-r border-slate-200 max-w-[150px] truncate">{s.description || '-'}</td>
-                    <td className="px-4 py-3 text-center font-bold text-blue-700 text-sm border-r border-slate-200 bg-blue-50/30">{q.quotaPrimary > 0 ? q.quotaPrimary + ' tiết' : '-'}</td>
-                    <td className="px-4 py-3 text-center font-bold text-emerald-700 text-sm border-r border-slate-200 bg-emerald-50/30">{q.quotaMiddle > 0 ? q.quotaMiddle + ' tiết' : '-'}</td>
-                    <td className="px-4 py-3 text-center font-bold text-amber-700 text-sm border-r border-slate-200 bg-amber-50/30">{q.quotaHigh > 0 ? q.quotaHigh + ' tiết' : '-'}</td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="text-center font-bold text-blue-700 text-sm text-xs font-semibold">{q.quotaPrimary > 0 ? q.quotaPrimary + ' tiết' : '-'}</td>
+                    <td className="text-center font-bold text-emerald-700 text-sm text-xs font-semibold">{q.quotaMiddle > 0 ? q.quotaMiddle + ' tiết' : '-'}</td>
+                    <td className="text-center font-bold text-amber-700 text-sm text-xs font-semibold">{q.quotaHigh > 0 ? q.quotaHigh + ' tiết' : '-'}</td>
+                    <td className="p-2 p-2 text-right border border-slate-200">
                       <button onClick={() => startEdit(s)} className="p-2 text-slate-400 hover:text-[#00A19A] rounded-lg"><Edit2 className="w-4 h-4"/></button>
                       <button onClick={() => handleDelete(s.id)} className="p-2 text-slate-400 hover:text-red-600 rounded-lg"><Trash2 className="w-4 h-4"/></button>
                     </td>
@@ -257,7 +257,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                 )
               })}
             </tbody>
-            <tfoot className="bg-slate-50 border-t-2 border-slate-200">
+            <tfoot className="text-xs font-semibold">
               <tr>
                 <td colSpan={4} className="px-6 py-4 font-bold text-slate-700 text-sm text-right border-r border-slate-200">
                   Tổng số tiết {filterProgram !== "ALL_PROGRAMS" ? `theo ${filterProgram}` : "trên hệ thống"}:
@@ -277,7 +277,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                     {totalHigh} / 40
                   </span>
                 </td>
-                <td></td>
+                <td className="p-2 border border-slate-200"></td>
               </tr>
             </tfoot>
           </table>

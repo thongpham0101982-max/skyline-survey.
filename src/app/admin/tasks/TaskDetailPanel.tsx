@@ -211,8 +211,8 @@ export function TaskDetailPanel({ task, currentUserId, isAdmin, onClose }: TaskD
                 const IconComp = getFileIcon(a.contentType)
                 const isImage = a.contentType?.startsWith("image")
                 return (
-                  <div key={a.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 hover:border-indigo-200 hover:bg-[#00A19A]/10/30 transition-all group">
-                    <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <div key={a.id} className="flex items-center gap-3 p-3 hover:border-indigo-200 hover:bg-[#00A19A]/10/30 transition-all group text-xs font-semibold">
+                    <div className="w-10 h-10 flex items-center justify-center flex-shrink-0 text-xs font-semibold">
                       <IconComp className="w-5 h-5 text-[#00A19A]" />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -220,11 +220,11 @@ export function TaskDetailPanel({ task, currentUserId, isAdmin, onClose }: TaskD
                       <p className="text-xs text-slate-400">{formatSize(a.fileSize)} • {a.user?.fullName} • {formatTime(a.createdAt)}</p>
                     </div>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => handleDownload(a)} className="p-1.5 text-[#00A19A] hover:bg-indigo-100 rounded-lg" title="Tải xuống">
+                      <button onClick={() => handleDownload(a)} className="p-1.5 text-[#00A19A] hover:bg-indigo-100 text-xs font-semibold" title="Tải xuống">
                         <Download className="w-4 h-4" />
                       </button>
                       {(a.userId === currentUserId || isAdmin) && (
-                        <button onClick={() => handleDeleteAttachment(a.id)} className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg" title="Xoa">
+                        <button onClick={() => handleDeleteAttachment(a.id)} className="p-1.5 text-red-500 hover:bg-red-50 text-xs font-semibold" title="Xoa">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       )}
@@ -237,7 +237,7 @@ export function TaskDetailPanel({ task, currentUserId, isAdmin, onClose }: TaskD
         </div>
 
         {/* Bottom Action Bar */}
-        <div className="border-t border-slate-200 p-3 bg-slate-50">
+        <div className="p-3 text-xs font-semibold">
           {tab === "comments" ? (
             <div className="flex items-end gap-2">
               <textarea

@@ -158,25 +158,25 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div>
             <label className="block text-xs font-bold text-slate-500 mb-1.5">Tháng</label>
-            <select value={month} onChange={e => setMonth(+e.target.value)} className="w-full border rounded-xl p-2.5 text-sm font-medium outline-none focus:ring-2 focus:ring-amber-200 bg-amber-50/50">
+            <select value={month} onChange={e => setMonth(+e.target.value)} className="w-full p-2.5 text-sm font-medium outline-none focus:ring-2 focus:ring-amber-200 text-xs font-semibold">
               {Array.from({length:12},(_,i)=>i+1).map(m => <option key={m} value={m}>Tháng {m}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-xs font-bold text-slate-500 mb-1.5">Năm</label>
-            <select value={year} onChange={e => setYear(+e.target.value)} className="w-full border rounded-xl p-2.5 text-sm font-medium outline-none focus:ring-2 focus:ring-amber-200 bg-amber-50/50">
+            <select value={year} onChange={e => setYear(+e.target.value)} className="w-full p-2.5 text-sm font-medium outline-none focus:ring-2 focus:ring-amber-200 text-xs font-semibold">
               {[2024,2025,2026,2027].map(y => <option key={y} value={y}>{y}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-xs font-bold text-slate-500 mb-1.5">Năm học</label>
-            <select value={academicYearId} onChange={e => setAcademicYearId(e.target.value)} className="w-full border rounded-xl p-2.5 text-sm font-medium outline-none focus:ring-2 focus:ring-amber-200 bg-amber-50/50">
+            <select value={academicYearId} onChange={e => setAcademicYearId(e.target.value)} className="w-full p-2.5 text-sm font-medium outline-none focus:ring-2 focus:ring-amber-200 text-xs font-semibold">
               {(years||[]).filter((y: any) => !y.isOff).map((y: any) => <option key={y.id} value={y.id}>{y.name}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-xs font-bold text-slate-500 mb-1.5">Tuần</label>
-            <select value={selectedWeek} onChange={e => setSelectedWeek(+e.target.value)} className="w-full border rounded-xl p-2.5 text-sm font-medium outline-none focus:ring-2 focus:ring-amber-200 bg-amber-50/50">
+            <select value={selectedWeek} onChange={e => setSelectedWeek(+e.target.value)} className="w-full p-2.5 text-sm font-medium outline-none focus:ring-2 focus:ring-amber-200 text-xs font-semibold">
               {weeks.map(w => <option key={w.weekNum} value={w.weekNum}>{w.label}</option>)}
             </select>
           </div>
@@ -184,7 +184,7 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
         {activeTab === "personal" && isAdmin && (
           <div className="mt-3 pt-3 border-t border-slate-100">
             <label className="block text-xs font-bold text-slate-500 mb-1.5"><User className="w-3 h-3 inline" /> Xem báo cáo của</label>
-            <select value={viewUserId} onChange={e => setViewUserId(e.target.value)} className="w-full border rounded-xl p-2.5 text-sm outline-none focus:ring-2 focus:ring-amber-200 bg-amber-50/50">
+            <select value={viewUserId} onChange={e => setViewUserId(e.target.value)} className="w-full p-2.5 text-sm outline-none focus:ring-2 focus:ring-amber-200 text-xs font-semibold">
               {Object.entries(groupedStaff).map(([roleName, users]) => (
                 <optgroup key={roleName} label={roleName}>
                   {users.map((u: any) => (
@@ -200,7 +200,7 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
         {activeTab === "consolidated" && isAdmin && (
           <div className="mt-3 pt-3 border-t border-slate-100">
             <label className="block text-xs font-bold text-slate-500 mb-1.5"><Users className="w-3 h-3 inline" /> Nhóm quyền</label>
-            <select value={selectedRoleCode} onChange={e => setSelectedRoleCode(e.target.value)} className="w-full border rounded-xl p-2.5 text-sm outline-none focus:ring-2 focus:ring-amber-200 bg-amber-50/50">
+            <select value={selectedRoleCode} onChange={e => setSelectedRoleCode(e.target.value)} className="w-full p-2.5 text-sm outline-none focus:ring-2 focus:ring-amber-200 text-xs font-semibold">
               <option value="ALL">-- Tất cả nhóm --</option>
               {(roles||[]).map((r: any) => <option key={r.code} value={r.code}>{r.name} ({r.code})</option>)}
             </select>
@@ -234,7 +234,7 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
 
               {/* Chart: Employee progress by week */}
               <div className="bg-white border rounded-2xl shadow-sm overflow-hidden">
-                <div className="bg-amber-50 border-b border-amber-100 px-5 py-3 flex items-center gap-2">
+                <div className="flex items-center gap-2 text-xs font-semibold">
                   <TrendingUp className="w-4 h-4 text-amber-700" />
                   <h3 className="text-sm font-bold text-amber-800">Tiến độ công việc theo tuần - Thang {month}/{year}</h3>
                 </div>
@@ -254,9 +254,9 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
                       </div>
                       {/* Chart bars */}
                       {Object.entries(chartData).map(([uid, userData]: any) => (
-                        <div key={uid} className="border rounded-xl p-4 hover:bg-slate-50 transition-colors">
+                        <div key={uid} className="p-4 hover:bg-slate-50 transition-colors text-xs font-semibold">
                           <div className="font-semibold text-sm text-slate-800 mb-3 flex items-center gap-2">
-                            <div className="w-7 h-7 bg-amber-100 rounded-full flex items-center justify-center"><User className="w-3.5 h-3.5 text-amber-700" /></div>
+                            <div className="w-7 h-7 flex items-center justify-center text-xs font-semibold"><User className="w-3.5 h-3.5 text-amber-700" /></div>
                             {userData.name}
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
@@ -297,27 +297,27 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
           {/* ============ CONSOLIDATED TAB ============ */}
           {activeTab === "consolidated" && isAdmin && (
             <div className="bg-white border rounded-2xl shadow-sm overflow-hidden">
-              <div className="bg-amber-50 border-b border-amber-100 px-5 py-3 flex items-center justify-between">
+              <div className="flex items-center justify-between text-xs font-semibold">
                 <h3 className="text-sm font-bold text-amber-800 flex items-center gap-2"><Table2 className="w-4 h-4" /> Tổng hợp bao cao Tuan {selectedWeek} - Thang {month}/{year}</h3>
                 <span className="text-xs text-amber-600">{consolidatedData.length} báo cáo</span>
               </div>
               <div className="overflow-x-auto custom-scrollbar flex-1">
                 <table className="w-full text-left text-sm whitespace-nowrap border-collapse">
                   <thead>
-                    <tr className="bg-slate-50 border-b">
-                      <th className="px-3 py-3 text-left text-xs font-bold text-slate-600 uppercase w-10">STT</th>
-                      <th className="px-3 py-3 text-left text-xs font-bold text-slate-600 uppercase min-w-[100px]">Mã NV</th>
-                      <th className="px-3 py-3 text-left text-xs font-bold text-slate-600 uppercase min-w-[140px]">Họ và Tên</th>
-                      <th className="px-3 py-3 text-left text-xs font-bold text-slate-600 uppercase min-w-[130px]">Task chính</th>
-                      <th className="px-3 py-3 text-left text-xs font-bold text-slate-600 uppercase min-w-[180px]">Nội dung công việc</th>
-                      <th className="px-3 py-3 text-left text-xs font-bold text-slate-600 uppercase min-w-[120px]">Tiến độ</th>
-                      <th className="px-3 py-3 text-left text-xs font-bold text-slate-600 uppercase min-w-[140px]">Đề xuất giải pháp</th>
-                      <th className="px-3 py-3 text-left text-xs font-bold text-slate-600 uppercase min-w-[140px]">Nhận xét của QL</th>
+                    <tr className="text-xs font-semibold">
+                      <th className="p-2 p-2 text-left text-xs font-bold text-slate-600 uppercase w-10 border border-slate-200">STT</th>
+                      <th className="p-2 p-2 text-left text-xs font-bold text-slate-600 uppercase min-w-[100px] border border-slate-200">Mã NV</th>
+                      <th className="p-2 p-2 text-left text-xs font-bold text-slate-600 uppercase min-w-[140px] border border-slate-200">Họ và Tên</th>
+                      <th className="p-2 p-2 text-left text-xs font-bold text-slate-600 uppercase min-w-[130px] border border-slate-200">Task chính</th>
+                      <th className="p-2 p-2 text-left text-xs font-bold text-slate-600 uppercase min-w-[180px] border border-slate-200">Nội dung công việc</th>
+                      <th className="p-2 p-2 text-left text-xs font-bold text-slate-600 uppercase min-w-[120px] border border-slate-200">Tiến độ</th>
+                      <th className="p-2 p-2 text-left text-xs font-bold text-slate-600 uppercase min-w-[140px] border border-slate-200">Đề xuất giải pháp</th>
+                      <th className="p-2 p-2 text-left text-xs font-bold text-slate-600 uppercase min-w-[140px] border border-slate-200">Nhận xét của QL</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {consolidatedData.length === 0 && (
-                      <tr><td colSpan={8} className="px-5 py-12 text-center text-slate-400">
+                      <tr><td colSpan={8} className="p-2 p-2 text-center text-slate-400 border border-slate-200">
                         <Table2 className="w-10 h-10 mx-auto mb-2 opacity-30" />Chưa có báo cáo nào cho tuần này
                       </td></tr>
                     )}
@@ -330,18 +330,18 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
                           const isFirst = idx === 0
                           return (
                             <tr key={item.id || stt} className={"hover:bg-slate-50 transition-colors " + (isFirst && stt > 1 ? "border-t-2 border-amber-200" : "")}>
-                              <td className="px-3 py-3 text-center text-slate-400 font-bold">{stt}</td>
-                              <td className="px-3 py-3">
+                              <td className="p-2 p-2 text-center text-slate-400 font-bold border border-slate-200">{stt}</td>
+                              <td className="p-2 p-2 border border-slate-200">
                                 {isFirst && <span className="text-xs font-mono bg-slate-100 px-2 py-0.5 rounded">{report.user.email}</span>}
                               </td>
-                              <td className="px-3 py-3">
+                              <td className="p-2 p-2 border border-slate-200">
                                 {isFirst && <span className="font-semibold text-slate-800">{report.user.fullName}</span>}
                               </td>
-                              <td className="px-3 py-3 font-medium text-slate-700">{item.mainTask}</td>
-                              <td className="px-3 py-3 text-slate-600">{item.workContent}</td>
-                              <td className="px-3 py-3"><span className={"text-xs px-2 py-1 rounded-full font-semibold " + prog.color}>{prog.label}</span></td>
-                              <td className="px-3 py-3 text-slate-500 italic">{item.proposedSolution || "-"}</td>
-                              <td className="px-3 py-3">
+                              <td className="p-2 p-2 font-medium text-slate-700 border border-slate-200">{item.mainTask}</td>
+                              <td className="p-2 p-2 text-slate-600 border border-slate-200">{item.workContent}</td>
+                              <td className="p-2 p-2 border border-slate-200"><span className={"text-xs px-2 py-1 rounded-full font-semibold " + prog.color}>{prog.label}</span></td>
+                              <td className="p-2 p-2 text-slate-500 italic border border-slate-200">{item.proposedSolution || "-"}</td>
+                              <td className="p-2 p-2 border border-slate-200">
                                 {item.managerNote ? (
                                   <span className="text-sm text-indigo-700 bg-[#00A19A]/10 px-2 py-1 rounded-lg inline-block">{item.managerNote}</span>
                                 ) : (
@@ -379,19 +379,19 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
                 <div className="overflow-x-auto custom-scrollbar flex-1">
                   <table className="w-full text-left text-sm whitespace-nowrap border-collapse">
                     <thead>
-                      <tr className="bg-amber-50 border-b border-amber-100">
-                        <th className="px-3 py-3 text-left text-xs font-bold text-amber-800 uppercase w-10">STT</th>
-                        <th className="px-3 py-3 text-left text-xs font-bold text-amber-800 uppercase min-w-[140px]">Task chính</th>
-                        <th className="px-3 py-3 text-left text-xs font-bold text-amber-800 uppercase min-w-[200px]">Nội dung công việc</th>
-                        <th className="px-3 py-3 text-left text-xs font-bold text-amber-800 uppercase min-w-[140px]">Tiến độ</th>
-                        <th className="px-3 py-3 text-left text-xs font-bold text-amber-800 uppercase min-w-[160px]">Đề xuất giải pháp</th>
-                        <th className="px-3 py-3 text-left text-xs font-bold text-amber-800 uppercase min-w-[160px]">Nhận xét QL</th>
-                        {!isAdmin && <th className="px-3 py-3 w-10"></th>}
+                      <tr className="text-xs font-semibold">
+                        <th className="p-2 p-2 text-left text-xs font-bold text-amber-800 uppercase w-10 border border-slate-200">STT</th>
+                        <th className="p-2 p-2 text-left text-xs font-bold text-amber-800 uppercase min-w-[140px] border border-slate-200">Task chính</th>
+                        <th className="p-2 p-2 text-left text-xs font-bold text-amber-800 uppercase min-w-[200px] border border-slate-200">Nội dung công việc</th>
+                        <th className="p-2 p-2 text-left text-xs font-bold text-amber-800 uppercase min-w-[140px] border border-slate-200">Tiến độ</th>
+                        <th className="p-2 p-2 text-left text-xs font-bold text-amber-800 uppercase min-w-[160px] border border-slate-200">Đề xuất giải pháp</th>
+                        <th className="p-2 p-2 text-left text-xs font-bold text-amber-800 uppercase min-w-[160px] border border-slate-200">Nhận xét QL</th>
+                        {!isAdmin && <th className="p-2 p-2 w-10 border border-slate-200"></th>}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {items.length === 0 && (
-                        <tr><td colSpan={7} className="px-5 py-12 text-center text-slate-400">
+                        <tr><td colSpan={7} className="p-2 p-2 text-center text-slate-400 border border-slate-200">
                           <FileText className="w-10 h-10 mx-auto mb-2 opacity-30" />
                           {isAdmin ? "Nhân viên chưa nộp báo cáo" : "Nhấn '+ Thêm dòng' để bắt đầu!"}
                         </td></tr>
@@ -399,13 +399,13 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
                       {items.map((item, i) => {
                         const prog = PROGRESS.find(p => p.value === item.progress) || PROGRESS[0]
                         return (
-                          <tr key={i} className="hover:bg-slate-50 transition-colors">
-                            <td className="px-3 py-3 text-center text-slate-400 font-bold">{i+1}</td>
-                            <td className="px-3 py-3">{isAdmin ? <span className="font-medium text-slate-800">{item.mainTask}</span> : <input value={item.mainTask} onChange={e => updateItem(i,"mainTask",e.target.value)} className="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-amber-200" placeholder="Nhập task..." />}</td>
-                            <td className="px-3 py-3">{isAdmin ? <span className="text-slate-700">{item.workContent}</span> : <textarea value={item.workContent} onChange={e => updateItem(i,"workContent",e.target.value)} rows={2} className="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-amber-200 resize-none" placeholder="Mô tả..." />}</td>
-                            <td className="px-3 py-3">{isAdmin ? <span className={"text-xs px-2 py-1 rounded-full font-semibold " + prog.color}>{prog.label}</span> : <select value={item.progress} onChange={e => updateItem(i,"progress",e.target.value)} className={"w-full border rounded-lg p-2 text-xs font-semibold outline-none cursor-pointer " + prog.color}>{PROGRESS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}</select>}</td>
-                            <td className="px-3 py-3">{isAdmin ? <span className="text-slate-600 italic">{item.proposedSolution || "-"}</span> : <textarea value={item.proposedSolution} onChange={e => updateItem(i,"proposedSolution",e.target.value)} rows={2} className="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-amber-200 resize-none" placeholder="Đề xuất..." />}</td>
-                            <td className="px-3 py-3">
+                          <tr key={i} className="hover:bg-slate-50 transition-colors text-xs font-semibold">
+                            <td className="p-2 p-2 text-center text-slate-400 font-bold border border-slate-200">{i+1}</td>
+                            <td className="p-2 p-2 border border-slate-200">{isAdmin ? <span className="font-medium text-slate-800">{item.mainTask}</span> : <input value={item.mainTask} onChange={e => updateItem(i,"mainTask",e.target.value)} className="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-amber-200" placeholder="Nhập task..." />}</td>
+                            <td className="p-2 p-2 border border-slate-200">{isAdmin ? <span className="text-slate-700">{item.workContent}</span> : <textarea value={item.workContent} onChange={e => updateItem(i,"workContent",e.target.value)} rows={2} className="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-amber-200 resize-none" placeholder="Mô tả..." />}</td>
+                            <td className="p-2 p-2 border border-slate-200">{isAdmin ? <span className={"text-xs px-2 py-1 rounded-full font-semibold " + prog.color}>{prog.label}</span> : <select value={item.progress} onChange={e => updateItem(i,"progress",e.target.value)} className={"w-full border rounded-lg p-2 text-xs font-semibold outline-none cursor-pointer " + prog.color}>{PROGRESS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}</select>}</td>
+                            <td className="p-2 p-2 border border-slate-200">{isAdmin ? <span className="text-slate-600 italic">{item.proposedSolution || "-"}</span> : <textarea value={item.proposedSolution} onChange={e => updateItem(i,"proposedSolution",e.target.value)} rows={2} className="w-full border rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-amber-200 resize-none" placeholder="Đề xuất..." />}</td>
+                            <td className="p-2 p-2 border border-slate-200">
                               {isAdmin ? (
                                 editingItemNote === (item.id || String(i)) ? (
                                   <div className="flex flex-col gap-1">
@@ -421,7 +421,7 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
                                 item.managerNote ? <span className="text-sm text-indigo-700 bg-[#00A19A]/10 px-2 py-1 rounded-lg inline-block">{item.managerNote}</span> : <span className="text-xs text-slate-400 italic">Chưa có</span>
                               )}
                             </td>
-                            {!isAdmin && <td className="px-2 py-3"><button onClick={() => removeRow(i)} className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4" /></button></td>}
+                            {!isAdmin && <td className="p-2 p-2 border border-slate-200"><button onClick={() => removeRow(i)} className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 text-xs font-semibold"><Trash2 className="w-4 h-4" /></button></td>}
                           </tr>
                         )
                       })}
@@ -431,8 +431,8 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
               </div>
               {!isAdmin && (
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <button onClick={addRow} className="flex items-center justify-center gap-2 bg-white border-2 border-dashed border-amber-300 text-amber-700 px-5 py-2.5 rounded-xl hover:bg-amber-50 font-semibold text-sm"><Plus className="w-4 h-4" /> Thêm dòng</button>
-                  <button onClick={handleSave} disabled={saving || items.length === 0} className="flex items-center justify-center gap-2 bg-amber-600 text-white px-6 py-2.5 rounded-xl hover:bg-amber-700 font-semibold text-sm disabled:opacity-50 shadow-sm shadow-amber-200"><Save className="w-4 h-4" /> {saving ? "Đang lưu..." : "Lưu báo cáo"}</button>
+                  <button onClick={addRow} className="flex items-center justify-center gap-2 text-amber-700 hover:bg-amber-50 font-semibold text-sm text-xs font-semibold"><Plus className="w-4 h-4" /> Thêm dòng</button>
+                  <button onClick={handleSave} disabled={saving || items.length === 0} className="flex items-center justify-center gap-2 text-white hover:bg-amber-700 font-semibold text-sm disabled:opacity-50 shadow-sm shadow-amber-200 text-xs font-semibold"><Save className="w-4 h-4" /> {saving ? "Đang lưu..." : "Lưu báo cáo"}</button>
                 </div>
               )}
               {managerComment && (

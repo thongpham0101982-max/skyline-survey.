@@ -314,7 +314,7 @@ export function StudentInfoClient({
     return (
       <div className="space-y-3 max-h-60 overflow-y-auto custom-scrollbar pr-1 mt-1 text-xs">
         {Object.entries(scoresByArea).map(([areaId, areaData]) => (
-          <div key={areaId} className="bg-slate-50/50 p-2.5 rounded-lg border border-slate-100/80 space-y-1.5">
+          <div key={areaId} className="p-2.5 space-y-1.5 text-xs font-semibold">
             <div className="font-bold text-[#00A6A9] text-[10px] uppercase tracking-wider">{areaData.areaName}</div>
             <div className="space-y-1">
               {areaData.scores.map((sc) => {
@@ -388,7 +388,7 @@ export function StudentInfoClient({
           if (!hasScoresInArea) return null;
 
           return (
-            <div key={area.id} className="bg-slate-50/50 p-2.5 rounded-lg border border-slate-100/80 space-y-1.5">
+            <div key={area.id} className="p-2.5 space-y-1.5 text-xs font-semibold">
               <div className="font-bold text-indigo-700 text-[10px] uppercase tracking-wider">{area.name}</div>
               <div className="space-y-1">
                 {areaCriteria.map((crit) => {
@@ -1234,7 +1234,7 @@ export function StudentInfoClient({
           {subTab === "info" && selectedIds.length > 0 && (
             <button
               onClick={handleDeleteSelected}
-              className="flex items-center gap-1.5 px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-bold border border-rose-200 shadow-sm transition-all active:scale-95 cursor-pointer"
+              className="flex items-center gap-1.5 hover:bg-rose-100 text-rose-600 text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer text-xs font-semibold"
             >
               <Trash2 className="w-4 h-4" />
               Xóa đã chọn ({selectedIds.length})
@@ -1259,7 +1259,7 @@ export function StudentInfoClient({
                   setImportSuccessCount(null);
                   setIsImportOpen(true);
                 }}
-                className="flex items-center gap-1.5 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl text-xs font-bold border border-indigo-200 shadow-sm transition-all active:scale-95 cursor-pointer"
+                className="flex items-center gap-1.5 hover:bg-indigo-100 text-indigo-600 text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer text-xs font-semibold"
               >
                 <Upload className="w-4 h-4" />
                 Nhập Excel
@@ -1336,7 +1336,7 @@ export function StudentInfoClient({
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+          <div className="p-3 text-emerald-600 text-xs font-semibold">
             <CheckCircle2 className="w-6 h-6" />
           </div>
           <div>
@@ -1346,7 +1346,7 @@ export function StudentInfoClient({
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-rose-50 text-rose-600 rounded-xl">
+          <div className="p-3 text-rose-600 text-xs font-semibold">
             <XCircle className="w-6 h-6" />
           </div>
           <div>
@@ -1356,7 +1356,7 @@ export function StudentInfoClient({
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
+          <div className="p-3 text-amber-600 text-xs font-semibold">
             <AlertCircle className="w-6 h-6" />
           </div>
           <div>
@@ -1502,7 +1502,7 @@ export function StudentInfoClient({
           {activeTab === "general" ? (
             /* Phổ thông K-12 Table (Matched style of original general assessments) */
             <table className="w-full text-sm text-left whitespace-nowrap border border-slate-200 border-collapse">
-              <thead className="bg-slate-50 border-b border-slate-200">
+              <thead className="text-xs font-semibold">
                 <tr>
                   {subTab === "info" && (
                     <th className="p-2 border border-slate-200 w-12 text-center">
@@ -1545,7 +1545,7 @@ export function StudentInfoClient({
               <tbody className="divide-y divide-slate-200 text-slate-700">
                 {paginatedStudents.length === 0 ? (
                   <tr>
-                    <td colSpan={selectedPeriod?.toLowerCase().includes("open day") ? (subTab === "info" ? 16 : 11) : (subTab === "info" ? 14 : 9)} className="px-6 py-12 text-center text-slate-400 font-medium">
+                    <td colSpan={selectedPeriod?.toLowerCase().includes("open day") ? (subTab === "info" ? 16 : 11) : (subTab === "info" ? 14 : 9)} className="p-2 p-2 text-center text-slate-400 font-medium border border-slate-200">
                       Không tìm thấy dữ liệu học sinh phù hợp.
                     </td>
                   </tr>
@@ -1609,7 +1609,7 @@ export function StudentInfoClient({
                                 setRetestPeriodId("");
                                 setRetestBatchId("");
                               }}
-                              className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-200 rounded-xl text-[11px] font-black tracking-wide shadow-sm hover:shadow transition-all duration-200 flex items-center gap-1.5 mx-auto cursor-pointer"
+                              className="hover:bg-indigo-100 text-indigo-600 text-[11px] font-black tracking-wide shadow-sm hover:shadow transition-all duration-200 flex items-center gap-1.5 mx-auto cursor-pointer text-xs font-semibold"
                             >
                               <RefreshCw className="w-3.5 h-3.5" />
                               Đăng ký thi lại
@@ -1619,10 +1619,10 @@ export function StudentInfoClient({
                       )}
                       {selectedPeriod?.toLowerCase().includes("open day") && (
                         <>
-                          <td className="px-4 py-3.5 text-center text-xs text-slate-650">
+                          <td className="p-2 p-2 text-center text-xs text-slate-650 border border-slate-200">
                             {campuses.find(c => c.id === s.registeredCampus)?.campusName || s.registeredCampus || "-"}
                           </td>
-                          <td className="px-4 py-3.5 text-center text-xs text-slate-650 font-bold">
+                          <td className="p-2 p-2 text-center text-xs text-slate-650 font-bold border border-slate-200">
                             {campuses.find(c => c.id === s.registeredCampus)?.manager?.fullName || "-"}
                           </td>
                         </>
@@ -1641,7 +1641,7 @@ export function StudentInfoClient({
                               {!s.enrollmentStatus ? (
                                 <button
                                   onClick={() => handleConfirmEnrollment(s)}
-                                  className="p-1.5 text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 rounded-lg transition-all"
+                                  className="p-1.5 text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 transition-all text-xs font-semibold"
                                   title="Xác nhận Nhập học"
                                 >
                                   <UserCheck className="w-4 h-4" />
@@ -1679,7 +1679,7 @@ export function StudentInfoClient({
                               </button>
                               <button
                                 onClick={(e) => handleDeleteStudent(s, e)}
-                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all text-xs font-semibold"
                                 title="Xóa học sinh"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -1696,7 +1696,7 @@ export function StudentInfoClient({
           ) : (
             /* Mầm non Preschool Table (Matched style of original preschool Ds Trẻ) */
             <table className="w-full text-left text-sm whitespace-nowrap border border-slate-200 border-collapse">
-              <thead className="bg-slate-50 border-b border-slate-200">
+              <thead className="text-xs font-semibold">
                 <tr>
                   {subTab === "info" && (
                     <th className="p-2 border border-slate-200 w-12 text-center">
@@ -1724,7 +1724,7 @@ export function StudentInfoClient({
               <tbody className="divide-y divide-slate-200">
                 {paginatedStudents.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="p-12 text-center text-slate-400 font-medium">
+                    <td colSpan={10} className="p-2 text-center text-slate-400 font-medium border border-slate-200">
                       Không tìm thấy dữ liệu học sinh phù hợp.
                     </td>
                   </tr>
@@ -1788,7 +1788,7 @@ export function StudentInfoClient({
                               {!child.enrollmentStatus ? (
                                 <button
                                   onClick={() => handleConfirmEnrollment(child, true)}
-                                  className="p-1.5 text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 rounded-lg transition-all"
+                                  className="p-1.5 text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 transition-all text-xs font-semibold"
                                   title="Xác nhận Nhập học"
                                 >
                                   <UserCheck className="w-4 h-4" />
@@ -1824,7 +1824,7 @@ export function StudentInfoClient({
                               </button>
                               <button
                                 onClick={(e) => handleDeleteStudent(child, e)}
-                                className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-none transition-all"
+                                className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all text-xs font-semibold"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
@@ -1842,7 +1842,7 @@ export function StudentInfoClient({
 
         {/* Pagination Controls */}
         {filteredStudents.length > 0 && (
-          <div className="p-4 border-t border-slate-100 bg-slate-50/30 flex items-center justify-between">
+          <div className="p-4 flex items-center justify-between text-xs font-semibold">
             <span className="text-xs text-slate-500 font-medium">
               Hiển thị {Math.min(filteredStudents.length, (currentPage - 1) * pageSize + 1)}-
               {Math.min(filteredStudents.length, currentPage * pageSize)} trong tổng số{" "}
@@ -1852,7 +1852,7 @@ export function StudentInfoClient({
               <button
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-50 transition-all cursor-pointer"
+                className="p-1.5 hover:bg-slate-50 disabled:opacity-50 transition-all cursor-pointer text-xs font-semibold"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -1881,7 +1881,7 @@ export function StudentInfoClient({
               <button
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-50 transition-all cursor-pointer"
+                className="p-1.5 hover:bg-slate-50 disabled:opacity-50 transition-all cursor-pointer text-xs font-semibold"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -1896,7 +1896,7 @@ export function StudentInfoClient({
       {isFormOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-50 p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col animate-in scale-in duration-200">
-            <div className="p-6 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+            <div className="p-6 flex justify-between items-center text-xs font-semibold">
               <div>
                 <h3 className="text-lg font-black text-slate-800">
                   {formMode === "create" ? (activeTab === "general" ? "Thêm mới học sinh" : "Thêm bé") : "Chỉnh sửa thông tin học sinh"}
@@ -1907,7 +1907,7 @@ export function StudentInfoClient({
               </div>
               <button
                 onClick={() => setIsFormOpen(false)}
-                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all text-xs font-semibold"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -2070,7 +2070,7 @@ export function StudentInfoClient({
 
                   <div>
                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Đối tượng Tuyển sinh</label>
-                    <div className="bg-slate-50 rounded-2xl p-3.5 border border-slate-200/80 space-y-3">
+                    <div className="p-3.5 space-y-3 text-xs font-semibold">
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Chọn một hoặc nhiều đối tượng tuyển sinh:</span>
                       <div className="flex flex-wrap gap-2">
                         {configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => {
@@ -2462,7 +2462,7 @@ export function StudentInfoClient({
       {isImportOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-50 p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col animate-in zoom-in-95 duration-200">
-            <div className="p-6 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+            <div className="p-6 flex justify-between items-center text-xs font-semibold">
               <div>
                 <h3 className="text-lg font-black text-slate-800">Nhập học sinh từ Excel</h3>
                 <p className="text-xs text-slate-400 font-bold uppercase mt-0.5 tracking-wider">
@@ -2471,7 +2471,7 @@ export function StudentInfoClient({
               </div>
               <button
                 onClick={() => setIsImportOpen(false)}
-                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all text-xs font-semibold"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -2508,13 +2508,13 @@ export function StudentInfoClient({
               </div>
 
               {/* Download template */}
-              <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between">
+              <div className="p-4 flex items-center justify-between text-xs font-semibold">
                 <div className="text-xs font-medium text-slate-500">
                   Tải file Excel mẫu đúng định dạng chuẩn để nhập dữ liệu.
                 </div>
                 <button
                   onClick={handleDownloadTemplate}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
+                  className="flex items-center gap-1.5 hover:bg-slate-50 text-slate-700 text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap text-xs font-semibold"
                 >
                   <Download className="w-3.5 h-3.5" />
                   Mẫu file
@@ -2523,20 +2523,20 @@ export function StudentInfoClient({
 
               {/* Show Status */}
               {importing && (
-                <div className="flex items-center justify-center gap-3 p-4 bg-blue-50 text-blue-700 border border-blue-150 rounded-2xl">
+                <div className="flex items-center justify-center gap-3 p-4 text-blue-700 text-xs font-semibold">
                   <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
                   <span className="text-xs font-bold">Đang xử lý dữ liệu và tải lên hệ thống...</span>
                 </div>
               )}
 
               {importError && (
-                <div className="p-4 bg-rose-50 text-rose-800 border border-rose-200 rounded-2xl text-xs font-semibold">
+                <div className="p-4 text-rose-800 text-xs font-semibold text-xs font-semibold">
                   Lỗi: {importError}
                 </div>
               )}
 
               {importSuccessCount !== null && (
-                <div className="p-4 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-2xl text-xs font-semibold">
+                <div className="p-4 text-emerald-800 text-xs font-semibold text-xs font-semibold">
                   Đã import thành công {importSuccessCount} học sinh vào hệ thống!
                 </div>
               )}
@@ -2579,9 +2579,9 @@ export function StudentInfoClient({
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-50 p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl w-full max-w-4xl max-h-[85vh] overflow-hidden shadow-2xl flex flex-col animate-in slide-in-from-bottom-4 duration-300">
             {/* Modal Header */}
-            <div className="p-6 bg-slate-50 border-b border-slate-100 flex justify-between items-start">
+            <div className="p-6 flex justify-between items-start text-xs font-semibold">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-widest bg-indigo-50 text-indigo-600 border border-indigo-100 px-2.5 py-1 rounded-full">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-600 text-xs font-semibold">
                   {activeTab === "general" ? "Học sinh Phổ thông" : "Học sinh Mầm non"}
                 </span>
                 <h3 className="text-xl font-extrabold text-slate-800 mt-2 flex items-center gap-2">
@@ -2593,7 +2593,7 @@ export function StudentInfoClient({
 
                 <button
                   onClick={() => setIsDetailsOpen(false)}
-                  className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                  className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all text-xs font-semibold"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -2608,7 +2608,7 @@ export function StudentInfoClient({
                   <Calendar className="w-3.5 h-3.5 text-[#00A6A9]" />
                   Thông tin hành chính
                 </h4>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 text-xs font-semibold">
                   <div>
                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ngày sinh</label>
                     <span className="text-sm font-semibold text-slate-700 mt-0.5 block">{formatDate(selectedStudent.dateOfBirth)}</span>
@@ -2758,7 +2758,7 @@ export function StudentInfoClient({
                           </span>
                         </div>
                         {totalScore !== null && (
-                          <div className="bg-indigo-50/50 p-4 rounded-2xl border-2 border-indigo-150 text-center flex flex-col justify-center">
+                          <div className="p-4 text-center flex flex-col justify-center text-xs font-semibold">
                             <span className="block text-[10px] font-bold text-indigo-600 uppercase tracking-wider">Tổng điểm Tiếng Anh</span>
                             <span className="text-2xl font-black text-indigo-700 mt-1 block">
                               {totalScore}/100
@@ -2776,45 +2776,45 @@ export function StudentInfoClient({
                   })()}
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                    <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                    <div className="p-4 text-xs font-semibold">
                       <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Diện tuyển sinh</label>
                       <span className="text-sm font-semibold text-slate-700 mt-1 block">{selectedStudent.admissionCriteria || "-"}</span>
                     </div>
-                    <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                    <div className="p-4 text-xs font-semibold">
                       <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Hình thức KS</label>
                       <span className="text-sm font-semibold text-slate-700 mt-1 block">{selectedStudent.surveySystem || "-"}</span>
                     </div>
-                    <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                    <div className="p-4 text-xs font-semibold">
                       <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Hệ Khảo sát</label>
                       <span className="text-sm font-semibold text-slate-700 mt-1 block">{selectedStudent.surveyFormType || "-"}</span>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                    <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                    <div className="p-4 text-xs font-semibold">
                       <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Học bạ tiểu học / THCS</label>
                       <span className="text-sm text-slate-600 mt-1 block">{selectedStudent.kqgdTieuHoc || "-"}</span>
                     </div>
-                    <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                    <div className="p-4 text-xs font-semibold">
                       <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kết quả học tập</label>
                       <span className="text-sm text-slate-600 mt-1 block">{selectedStudent.kqHocTap || "-"}</span>
                     </div>
-                    <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                    <div className="p-4 text-xs font-semibold">
                       <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kết quả rèn luyện</label>
                       <span className="text-sm text-slate-600 mt-1 block">{selectedStudent.kqRenLuyen || "-"}</span>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                    <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                    <div className="p-4 text-xs font-semibold">
                       <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Hồ sơ / Bảng điểm</label>
                       <span className="text-sm text-slate-600 mt-1 block">{selectedStudent.hoSoCtQuocTe || "-"}</span>
                     </div>
-                    <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                    <div className="p-4 text-xs font-semibold">
                       <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Học kỳ / Năm TS</label>
                       <span className="text-sm text-slate-600 mt-1 block">{selectedStudent.hocKy || "-"}</span>
                     </div>
-                    <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                    <div className="p-4 text-xs font-semibold">
                       <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Đối tượng Tuyển sinh</label>
                       <span className="text-sm text-slate-600 mt-1 block">{selectedStudent.targetType || "-"}</span>
                     </div>
@@ -2849,7 +2849,7 @@ export function StudentInfoClient({
                         <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ghi chú quan trọng</label>
                         <p className="text-sm text-rose-600 font-semibold mt-1">{selectedStudent.devImportantNote || "-"}</p>
                       </div>
-                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                      <div className="p-4 text-xs font-semibold">
                         <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kết quả đánh giá chung</label>
                         <p className="text-sm text-slate-800 font-bold mt-1">{selectedStudent.devAssessmentResult || "-"}</p>
                       </div>
@@ -2862,7 +2862,7 @@ export function StudentInfoClient({
                     </div>
 
                     {/* Nhật ký phê duyệt của BGH Mầm non và GĐCS */}
-                    <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-200 space-y-3 mt-4">
+                    <div className="p-4 space-y-3 mt-4 text-xs font-semibold">
                       <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Nhật ký phê duyệt kết quả khảo sát năng lực mầm non</label>
                       <div className="space-y-3.5 divide-y divide-slate-100">
                         {/* Row 1: BGH Mầm non */}
@@ -2915,7 +2915,7 @@ export function StudentInfoClient({
                         <FileText className="w-3.5 h-3.5 text-indigo-650" />
                         Thông tin học thử (nếu có)
                       </h4>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-indigo-50/20 p-4 rounded-2xl border border-indigo-100/40">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 text-xs font-semibold">
                         <div>
                           <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Thời gian học thử</label>
                           <span className="text-xs font-semibold text-slate-700 mt-0.5 block">{selectedStudent.probationaryPeriod || "-"}</span>
@@ -2937,19 +2937,19 @@ export function StudentInfoClient({
                       </div>
                       
                       {selectedStudent.probationaryScoreText && (
-                        <div className="bg-indigo-50/20 p-4 rounded-2xl border border-indigo-100/40 mt-3">
+                        <div className="p-4 mt-3 text-xs font-semibold">
                           <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Chi tiết đánh giá học thử</label>
                           {renderProbationaryScores()}
                         </div>
                       )}
 
-                      <div className="bg-indigo-50/20 p-4 rounded-2xl border border-indigo-100/40 mt-3">
+                      <div className="p-4 mt-3 text-xs font-semibold">
                         <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Nhận xét chi tiết</label>
                         <p className="text-xs text-slate-750 mt-1.5 font-medium leading-relaxed">{selectedStudent.probationaryComment || "Chưa có nhận xét."}</p>
                       </div>
 
                       {/* Approval log of Preschool BGH */}
-                      <div className="bg-indigo-50/20 p-4 rounded-2xl border border-indigo-100/40 mt-3">
+                      <div className="p-4 mt-3 text-xs font-semibold">
                         <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Nhật ký Ban Giám hiệu Mầm non Phê duyệt</label>
                         {(() => {
                           let logs = [];
@@ -2992,7 +2992,7 @@ export function StudentInfoClient({
                   <FileText className="w-3.5 h-3.5 text-[#00A6A9]" />
                   Quyết định Ban Giám Hiệu sau khi Học thử
                 </h4>
-                <div className="bg-slate-50/50 p-5 rounded-2xl border border-slate-100 space-y-4">
+                <div className="p-5 space-y-4 text-xs font-semibold">
                   <div className="flex flex-wrap items-center gap-4">
                     <div>
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Kết quả chung cuộc</span>
@@ -3018,7 +3018,7 @@ export function StudentInfoClient({
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+            <div className="p-4 flex justify-end text-xs font-semibold">
               <button
                 onClick={() => setIsDetailsOpen(false)}
                 className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-bold transition-all shadow-sm cursor-pointer"
@@ -3034,7 +3034,7 @@ export function StudentInfoClient({
       {retestStudent && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-50 p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col animate-in zoom-in-95 duration-200">
-            <div className="p-6 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+            <div className="p-6 flex justify-between items-center text-xs font-semibold">
               <div>
                 <h3 className="text-lg font-black text-slate-800">Đăng ký Khảo sát lại</h3>
                 <p className="text-xs text-slate-400 font-bold uppercase mt-0.5 tracking-wider">
@@ -3043,7 +3043,7 @@ export function StudentInfoClient({
               </div>
               <button
                 onClick={() => setRetestStudent(null)}
-                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all text-xs font-semibold"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -3094,7 +3094,7 @@ export function StudentInfoClient({
               )}
             </div>
 
-            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2">
+            <div className="p-4 flex justify-end gap-2 text-xs font-semibold">
               <button
                 type="button"
                 disabled={retestRegisterLoading}
@@ -3107,7 +3107,7 @@ export function StudentInfoClient({
                 type="button"
                 disabled={retestRegisterLoading || !retestPeriodId}
                 onClick={handleRegisterRetest}
-                className="flex items-center gap-1.5 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                className="flex items-center gap-1.5 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-50 text-xs font-semibold"
               >
                 {retestRegisterLoading ? <Loader2 className="w-4 h-4 animate-spin"/> : <RefreshCw className="w-4 h-4"/>}
                 Xác nhận

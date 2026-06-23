@@ -84,19 +84,19 @@ export function TeachingClient({ teachers, classes, subjects, years, initialAssi
     <div className="flex flex-col lg:flex-row gap-6 items-start">
       {/* LEFT: MAIN TABLE */}
       <div className="bg-white rounded-2xl shadow-sm border-2 border-teal-100 flex-1 w-full overflow-hidden">
-        <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+        <div className="p-4 flex justify-between items-center text-xs font-semibold">
           <div className="font-bold text-slate-700 flex items-center"><Layers className="w-5 h-5 mr-2 text-indigo-500"/>Bảng phân công</div>
           <select value={selectedYear} onChange={e=>setSelectedYear(e.target.value)} className="p-2 rounded-lg border border-slate-200 font-semibold text-sm outline-none">
             {years.filter((y: any) => !y.isOff).map((y:any) => <option key={y.id} value={y.id}>{y.name}</option>)}
           </select>
         </div>
         <div className="overflow-x-auto max-h-[70vh] overflow-y-auto">
-          <table className="w-full text-left text-sm">
+          <table className="w-full text-left text-sm border-collapse">
             <thead className="bg-slate-100 text-slate-600 sticky top-0 shadow-sm">
               <tr>
-                <th className="px-4 py-3 font-bold w-1/4">Giáo viên</th>
-                <th className="px-4 py-3 font-bold w-3/8">Phân công học kỳ 1</th>
-                <th className="px-4 py-3 font-bold w-3/8">Phân công học kỳ 2</th>
+                <th className="p-2 p-2 font-bold w-1/4 border border-slate-200">Giáo viên</th>
+                <th className="p-2 p-2 font-bold w-3/8 border border-slate-200">Phân công học kỳ 1</th>
+                <th className="p-2 p-2 font-bold w-3/8 border border-slate-200">Phân công học kỳ 2</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -106,9 +106,9 @@ export function TeachingClient({ teachers, classes, subjects, years, initialAssi
                   onClick={() => setSelectedTeacherId(row.teacher.id)}
                   className={`cursor-pointer transition-colors ${selectedTeacherId === row.teacher.id ? 'bg-[#00A19A]/10 hover:bg-indigo-100' : 'hover:bg-slate-50'}`}
                 >
-                  <td className="px-4 py-3 font-semibold text-slate-800">{row.teacher.teacherName}</td>
-                  <td className="px-4 py-3 text-slate-600">{row.hk1 || <span className="text-slate-300 italic">Chưa PC</span>}</td>
-                  <td className="px-4 py-3 text-slate-600">{row.hk2 || <span className="text-slate-300 italic">Chưa PC</span>}</td>
+                  <td className="p-2 p-2 font-semibold text-slate-800 border border-slate-200">{row.teacher.teacherName}</td>
+                  <td className="p-2 p-2 text-slate-600 border border-slate-200">{row.hk1 || <span className="text-slate-300 italic">Chưa PC</span>}</td>
+                  <td className="p-2 p-2 text-slate-600 border border-slate-200">{row.hk2 || <span className="text-slate-300 italic">Chưa PC</span>}</td>
                 </tr>
               ))}
             </tbody>
@@ -127,7 +127,7 @@ export function TeachingClient({ teachers, classes, subjects, years, initialAssi
           <div className="p-4 flex-1 overflow-y-auto flex flex-col gap-6">
             
             {/* ADD FORM */}
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <div className="p-4 text-xs font-semibold">
               <h4 className="font-bold text-slate-700 text-sm mb-3">Thêm phân công mới</h4>
               <div className="space-y-3">
                 <select value={newSubj} onChange={e=>setNewSubj(e.target.value)} className="w-full p-2 border rounded-lg text-sm">
@@ -168,7 +168,7 @@ export function TeachingClient({ teachers, classes, subjects, years, initialAssi
                           <span className="bg-slate-100 px-1.5 py-0.5 rounded text-[10px]">HK{a.semester}</span>
                         </div>
                       </div>
-                      <button onClick={()=>handleDelete(a.id)} disabled={loading} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg">
+                      <button onClick={()=>handleDelete(a.id)} disabled={loading} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 text-xs font-semibold">
                         <Trash2 className="w-4 h-4"/>
                       </button>
                     </div>

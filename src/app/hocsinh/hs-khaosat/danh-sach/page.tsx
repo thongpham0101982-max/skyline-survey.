@@ -176,7 +176,7 @@ export default async function HsDanhSachPage() {
           <div className="space-y-6">
             <div className="flex items-center justify-between px-2">
               <h2 className="text-xl font-black text-slate-800 flex items-center gap-3">
-                 <div className="w-10 h-10 rounded-2xl bg-amber-50 flex items-center justify-center border border-amber-100">
+                 <div className="w-10 h-10 flex items-center justify-center text-xs font-semibold">
                     <Timer className="w-5 h-5 text-amber-500" />
                  </div>
                  Khảo sát cần thực hiện
@@ -207,7 +207,7 @@ export default async function HsDanhSachPage() {
                             : 'bg-amber-50 text-amber-600 border-amber-100'}`}>
                           {item.statusLabel}
                         </span>
-                        {!item.isAssigned && <span className="px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider bg-teal-50 text-[#135E5B] border border-teal-100">Tự chọn</span>}
+                        {!item.isAssigned && <span className="text-[10px] font-black uppercase tracking-wider text-[#135E5B] text-xs font-semibold">Tự chọn</span>}
                       </div>
                       <h3 className="text-xl font-black text-slate-800 leading-tight">{item.name}</h3>
                       <div className="flex items-center gap-4 text-xs font-bold text-slate-400">
@@ -224,7 +224,7 @@ export default async function HsDanhSachPage() {
                           Bắt đầu ngay <ArrowRight className="w-4 h-4" />
                         </Link>
                       ) : (
-                        <div className="px-8 py-4 rounded-2xl text-sm font-black text-slate-300 bg-slate-50 border border-slate-100 flex items-center gap-2 cursor-not-allowed">
+                        <div className="text-sm font-black text-slate-300 flex items-center gap-2 cursor-not-allowed text-xs font-semibold">
                           Chưa mở <Clock className="w-4 h-4" />
                         </div>
                       )}
@@ -251,7 +251,7 @@ export default async function HsDanhSachPage() {
                    </div>
                  )}
                  {allItems.filter(i => i.status === 'COMPLETED').map(item => (
-                   <div key={item.id} className="bg-slate-50 rounded-2xl p-4 border border-slate-100 flex items-center justify-between group hover:bg-emerald-50 transition-colors">
+                   <div key={item.id} className="p-4 flex items-center justify-between group hover:bg-emerald-50 transition-colors text-xs font-semibold">
                       <div className="flex items-center gap-3">
                          <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center text-emerald-500 border border-slate-200">
                             <CheckCircle2 className="w-4 h-4" />
@@ -278,12 +278,12 @@ export default async function HsDanhSachPage() {
                  {allItems.filter(i => i.status === 'EXPIRED').map(item => (
                    <div key={item.id} className="bg-white rounded-2xl p-4 border border-slate-100 flex items-center justify-between grayscale opacity-60">
                       <div className="flex items-center gap-3">
-                         <div className="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-200">
+                         <div className="w-8 h-8 flex items-center justify-center text-slate-400 text-xs font-semibold">
                             <AlertCircle className="w-4 h-4" />
                          </div>
                          <p className="font-bold text-slate-500 text-sm line-clamp-1">{item.name}</p>
                       </div>
-                      <span className="text-[9px] font-black text-rose-600 bg-rose-50 border border-rose-100 px-2.5 py-1 rounded-lg uppercase tracking-wider">Hết hạn</span>
+                      <span className="text-[9px] font-black text-rose-600 uppercase tracking-wider text-xs font-semibold">Hết hạn</span>
                    </div>
                  ))}
               </div>
@@ -296,7 +296,7 @@ export default async function HsDanhSachPage() {
       {/* Empty State */}
       {allItems.length === 0 && (
         <div className="py-20 text-center space-y-4">
-          <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mx-auto border border-slate-100">
+          <div className="w-24 h-24 flex items-center justify-center mx-auto text-xs font-semibold">
              <ClipboardList className="w-10 h-10 text-slate-200" />
           </div>
           <div className="space-y-2">

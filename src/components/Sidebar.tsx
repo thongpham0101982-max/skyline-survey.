@@ -181,7 +181,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                           {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">{m.name}</span>}
                         </div>
                         {m.code === "TASKS" && taskCount > 0 && (
-                          <span className="px-1.5 py-0.5 text-[9px] font-black bg-red-500 text-white rounded-full min-w-[18px] text-center shadow-lg shadow-red-500/40">
+                          <span className="text-[9px] font-black text-white min-w-[18px] text-center shadow-lg shadow-red-500/40 text-xs font-semibold">
                             {taskCount}
                           </span>
                         )}

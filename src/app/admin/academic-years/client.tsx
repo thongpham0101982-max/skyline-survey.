@@ -79,7 +79,7 @@ export function AcademicYearsClient({ initialYears, updateAction, deleteAction, 
 
   return (
     <div className="space-y-4">
-      <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-700 font-medium">
+      <div className="text-sm text-amber-700 font-medium text-xs font-semibold">
         <Star className="inline w-4 h-4 mr-1.5 text-amber-500" />
         Năm học <strong>ACTIVE</strong> sẽ được dùng làm mặc định khi tạo tài khoản GV/PHHS mới.
         Click <strong>&quot;Đặt Active&quot;</strong> để thay đổi năm học hiện tại.
@@ -121,7 +121,7 @@ export function AcademicYearsClient({ initialYears, updateAction, deleteAction, 
                       <div>
                         <div className="flex items-center gap-3 flex-wrap">
                           <h3 className="font-extrabold text-slate-800 text-xl">{y.name}</h3>
-                          {y.isOff && <span className="text-xs font-bold bg-rose-500 text-white px-2.5 py-0.5 rounded-full shadow-sm">Đã khóa (OFF)</span>}
+                          {y.isOff && <span className="text-xs font-bold text-white shadow-sm text-xs font-semibold">Đã khóa (OFF)</span>}
                           {!y.isOff && isActive && <span className="text-xs font-bold bg-[#1E8B87] text-white px-2.5 py-0.5 rounded-full shadow-sm">Đang hoạt động</span>}
 
                         </div>
@@ -135,15 +135,15 @@ export function AcademicYearsClient({ initialYears, updateAction, deleteAction, 
                   {!isEditing && (
                     <div className="flex items-center gap-4 text-sm">
                       <div className="flex items-center gap-1.5">
-                        <div className="w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center"><GraduationCap className="w-3.5 h-3.5 text-amber-600" /></div>
+                        <div className="w-7 h-7 flex items-center justify-center text-xs font-semibold"><GraduationCap className="w-3.5 h-3.5 text-amber-600" /></div>
                         <span className="font-bold text-slate-800">{y.teacherCount ?? 0}</span><span className="text-slate-400 text-xs">GV</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center"><Users className="w-3.5 h-3.5 text-blue-600" /></div>
+                        <div className="w-7 h-7 flex items-center justify-center text-xs font-semibold"><Users className="w-3.5 h-3.5 text-blue-600" /></div>
                         <span className="font-bold text-slate-800">{y.parentCount ?? 0}</span><span className="text-slate-400 text-xs">PHHS</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center"><BookOpen className="w-3.5 h-3.5 text-emerald-600" /></div>
+                        <div className="w-7 h-7 flex items-center justify-center text-xs font-semibold"><BookOpen className="w-3.5 h-3.5 text-emerald-600" /></div>
                         <span className="font-bold text-slate-800">{y._count?.classes ?? 0}</span><span className="text-slate-400 text-xs">Lớp</span>
                       </div>
                     </div>
@@ -152,7 +152,7 @@ export function AcademicYearsClient({ initialYears, updateAction, deleteAction, 
                   <div className="flex items-center gap-2 flex-shrink-0">
                     {isEditing ? (
                       <>
-                        <button onClick={() => handleSave(y.id)} disabled={saving} className="p-2 text-green-600 hover:bg-green-50 rounded-lg"><Check className="w-5 h-5" /></button>
+                        <button onClick={() => handleSave(y.id)} disabled={saving} className="p-2 text-green-600 hover:bg-green-50 text-xs font-semibold"><Check className="w-5 h-5" /></button>
                         <button onClick={() => setEditingId(null)} className="p-2 text-slate-400 hover:bg-slate-100 rounded-lg"><X className="w-5 h-5" /></button>
                       </>
                     ) : (
@@ -166,15 +166,15 @@ export function AcademicYearsClient({ initialYears, updateAction, deleteAction, 
                           <div className="ml-2 text-xs font-bold text-slate-500">{y.isOff ? "Đã khóa" : "Mở"}</div>
                         </label>
                         {!isActive && <button onClick={() => handleSetActive(y.id)} disabled={saving || y.isOff} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${y.isOff ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed' : 'bg-teal-50 text-[#1E8B87] hover:bg-teal-100 border border-teal-200'}`}><Star className="w-3.5 h-3.5" />Đặt Active</button>}
-                        <button onClick={() => handleEdit(y)} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg"><Edit2 className="w-4 h-4" /></button>
-                        <button onClick={() => handleDelete(y.id, y.name)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4" /></button>
+                        <button onClick={() => handleEdit(y)} className="p-2 text-blue-500 hover:bg-blue-50 text-xs font-semibold"><Edit2 className="w-4 h-4" /></button>
+                        <button onClick={() => handleDelete(y.id, y.name)} className="p-2 text-red-500 hover:bg-red-50 text-xs font-semibold"><Trash2 className="w-4 h-4" /></button>
                       </>
                     )}
                   </div>
                 </div>
 
                 {/* HE HOC SECTION */}
-                <div className="border-t border-slate-100 px-5 py-4 bg-slate-50/50">
+                <div className="text-xs font-semibold">
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="text-sm font-bold text-slate-700 flex items-center gap-2">
                       <Layers className="w-4 h-4 text-indigo-500" /> Hệ học ({(y.educationSystems || []).length})

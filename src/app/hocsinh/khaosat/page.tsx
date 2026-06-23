@@ -39,7 +39,7 @@ export default async function StudentSurveyPage() {
     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       {/* Student Welcome Card */}
       <div className="bg-white rounded-[2.5rem] p-8 border-2 border-indigo-100 shadow-sm relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-slate-50 rounded-full -mr-20 -mt-20 opacity-50" />
+        <div className="absolute top-0 right-0 w-64 h-64 -mr-20 -mt-20 opacity-50 text-xs font-semibold" />
         <div className="relative z-10 flex flex-col md:flex-row justify-between gap-6">
           <div>
             <h2 className="text-3xl font-black text-slate-900 tracking-tight">Chào {student?.studentName || "bạn"}, 👋</h2>
@@ -52,11 +52,11 @@ export default async function StudentSurveyPage() {
           </div>
           
           <div className="flex gap-4">
-             <div className="bg-teal-50 border border-teal-100 p-4 rounded-3xl text-center min-w-[100px]">
+             <div className="p-4 text-center min-w-[100px] text-xs font-semibold">
                 <p className="text-[10px] font-black text-[#00A19A] uppercase tracking-widest mb-1">Cần làm</p>
                 <p className="text-2xl font-black text-[#00A19A]">{surveys.length - submittedIds.size}</p>
              </div>
-             <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-3xl text-center min-w-[100px]">
+             <div className="p-4 text-center min-w-[100px] text-xs font-semibold">
                 <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">Hoàn thành</p>
                 <p className="text-2xl font-black text-emerald-600">{submittedIds.size}</p>
              </div>
@@ -74,7 +74,7 @@ export default async function StudentSurveyPage() {
         <div className="grid gap-4">
           {surveys.length === 0 ? (
             <div className="bg-white rounded-[2rem] p-16 text-center border-2 border-emerald-100 border-dashed">
-               <div className="bg-slate-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+               <div className="w-20 h-20 flex items-center justify-center mx-auto mb-4 text-xs font-semibold">
                   <Clock className="w-10 h-10 text-slate-300" />
                </div>
                <p className="text-slate-400 font-bold">Hiện tại không có đợt khảo sát nào đang diễn ra.</p>
@@ -99,7 +99,7 @@ export default async function StudentSurveyPage() {
 
                       <div className="w-full sm:w-auto">
                         {isDone ? (
-                           <div className="px-6 py-3 bg-emerald-50 text-emerald-600 rounded-2xl text-xs font-black uppercase tracking-widest text-center border border-emerald-100">
+                           <div className="text-emerald-600 text-xs font-black uppercase tracking-widest text-center text-xs font-semibold">
                               Đã hoàn thành
                            </div>
                         ) : (

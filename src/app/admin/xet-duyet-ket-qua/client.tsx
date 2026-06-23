@@ -55,7 +55,7 @@ export function XetDuyetKetQuaClient({
   if (!hasK12 && !hasPreschool) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center max-w-md mx-auto">
-        <div className="w-16 h-16 bg-rose-50 rounded-2xl flex items-center justify-center mb-5 border border-rose-100">
+        <div className="w-16 h-16 flex items-center justify-center mb-5 text-xs font-semibold">
           <AlertCircle className="w-8 h-8 text-rose-500" />
         </div>
         <h3 className="text-base font-black text-slate-800 mb-1">Không có quyền truy cập</h3>

@@ -201,7 +201,7 @@ export function ResultsDashboard({ periodId, periodName, periodCode, questions, 
            </div>
         </div>
 
-        <div className="flex items-center gap-3 bg-slate-50 p-1.5 rounded-2xl border border-slate-200 shadow-inner">
+        <div className="flex items-center gap-3 p-1.5 shadow-inner text-xs font-semibold">
            <div className="relative group">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 group-focus-within:text-red-500 transition-colors" />
               <input 
@@ -222,7 +222,7 @@ export function ResultsDashboard({ periodId, periodName, periodCode, questions, 
               <option value="ALL">ALL {compareBy}</option>
               {groups.map(g => <option key={g} value={g}>{g}</option>)}
            </select>
-           <button className="p-2 bg-white rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors shadow-sm text-slate-400"><Download className="w-4 h-4" /></button>
+           <button className="p-2 hover:bg-slate-50 transition-colors shadow-sm text-slate-400 text-xs font-semibold"><Download className="w-4 h-4" /></button>
         </div>
       </header>
 
@@ -237,7 +237,7 @@ export function ResultsDashboard({ periodId, periodName, periodCode, questions, 
              { label: 'Phản hồi chi tiết', val: questionAnalytics.reduce((a, b) => a + b.opinions.length, 0), sub: 'Ý kiến đóng góp', icon: <MessageSquare className="w-5 h-5" />, bg: 'bg-white', text: 'text-slate-900', trend: 'Cần phản hồi' }
            ].map((k, i) => (
              <div key={i} className="group relative bg-white p-7 rounded-[2rem] border-2 border-rose-100/60 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-full -mr-10 -mt-10 group-hover:scale-110 transition-transform duration-500" />
+                <div className="absolute top-0 right-0 w-32 h-32 -mr-10 -mt-10 group-hover:scale-110 transition-transform duration-500 text-xs font-semibold" />
                 <div className="relative z-10">
                    <div className="flex justify-between items-center mb-6">
                       <div className={"p-3 rounded-2xl " + (i === 0 ? 'bg-red-50 text-red-600' : 'bg-slate-100 text-slate-600') + " group-hover:scale-110 transition-transform"}>{k.icon}</div>
@@ -261,8 +261,8 @@ export function ResultsDashboard({ periodId, periodName, periodCode, questions, 
                  <h2 className="text-xl font-black text-slate-900 tracking-tight uppercase">Phân tích chi tiết câu hỏi</h2>
               </div>
               <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400">
-                 <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-red-500" /> Cần chú ý</span>
-                 <span className="flex items-center gap-1 ml-4"><div className="w-2 h-2 rounded-full bg-emerald-500" /> Tích cực</span>
+                 <span className="flex items-center gap-1"><div className="w-2 h-2 text-xs font-semibold" /> Cần chú ý</span>
+                 <span className="flex items-center gap-1 ml-4"><div className="w-2 h-2 text-xs font-semibold" /> Tích cực</span>
               </div>
            </div>
 
@@ -271,7 +271,7 @@ export function ResultsDashboard({ periodId, periodName, periodCode, questions, 
                 <div key={q.id} className={"bg-white rounded-[2.5rem] border border-slate-200/60 shadow-sm overflow-hidden flex flex-col hover:border-red-100 transition-colors group " + (q.isOpinion ? 'xl:col-span-2' : '')}>
                    
                    {/* SHEET HEADER */}
-                   <div className="px-8 py-6 bg-slate-50/30 border-b border-slate-100 flex justify-between items-center group-hover:bg-red-50/10 transition-colors">
+                   <div className="flex justify-between items-center group-hover:bg-red-50/10 transition-colors text-xs font-semibold">
                       <div className="flex items-center gap-4">
                          <div className="w-8 h-8 rounded-xl bg-slate-900 text-white text-[11px] font-black flex items-center justify-center group-hover:bg-red-600 transition-colors">Q{i+1}</div>
                          <div className="max-w-[400px]">
@@ -298,9 +298,9 @@ export function ResultsDashboard({ periodId, periodName, periodCode, questions, 
                                </div>
                             ) : (
                                q.opinions.map((op, idx) => (
-                                 <div key={idx} className="flex items-start gap-4 py-3 border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors px-2 rounded-lg">
+                                 <div key={idx} className="flex items-start gap-4 last:border-0 hover:bg-slate-50/50 transition-colors text-xs font-semibold">
                                     <div className="min-w-[90px] pt-0.5 shrink-0">
-                                       <span className="bg-red-50 text-red-600 px-2 py-0.5 rounded text-[10px] font-black tracking-wider uppercase border border-red-100">
+                                       <span className="text-red-600 text-[10px] font-black tracking-wider uppercase text-xs font-semibold">
                                           {op.class}
                                        </span>
                                        <div className="text-[9px] font-bold text-slate-400 uppercase mt-1.5 ml-1">{op.campus}</div>
@@ -336,7 +336,7 @@ export function ResultsDashboard({ periodId, periodName, periodCode, questions, 
                             <div className="space-y-3">
                                <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest border-b border-slate-100 pb-3">Phân bổ phản hồi</p>
                                {q.chartData.map((item, idx) => (
-                                  <div key={idx} className="flex items-center justify-between group/row p-2 rounded-xl hover:bg-slate-50 transition-colors">
+                                  <div key={idx} className="flex items-center justify-between group/row p-2 hover:bg-slate-50 transition-colors text-xs font-semibold">
                                      <div className="flex items-center gap-3">
                                         <div className="w-2.5 h-2.5 rounded-[4px]" style={{ backgroundColor: TABLEAU_PALETTE[idx % TABLEAU_PALETTE.length] }} />
                                         <span className="text-[11px] font-bold text-slate-600 group-hover/row:text-slate-900 transition-colors line-clamp-1">{item.name}</span>
@@ -368,7 +368,7 @@ export function ResultsDashboard({ periodId, periodName, periodCode, questions, 
                             </div>
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
                                {q.chartData.slice(0, 5).map((item, idx) => (
-                                  <div key={idx} className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex flex-col items-center justify-center group/kpi hover:bg-white hover:shadow-md transition-all">
+                                  <div key={idx} className="p-4 flex flex-col items-center justify-center group/kpi hover:bg-white hover:shadow-md transition-all text-xs font-semibold">
                                      <p className="text-[18px] font-black text-slate-900 tracking-tighter">{item.percentage}%</p>
                                      <p className="text-[8px] font-black text-slate-400 uppercase truncate max-w-full">{item.name}</p>
                                   </div>
@@ -386,7 +386,7 @@ export function ResultsDashboard({ periodId, periodName, periodCode, questions, 
 
       <footer className="bg-white border-t border-slate-200 py-10 px-8 text-center">
          <div className="flex flex-col items-center gap-4">
-            <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center border border-slate-100">
+            <div className="w-12 h-12 flex items-center justify-center text-xs font-semibold">
                <Database className="w-5 h-5 text-slate-300" />
             </div>
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Skyline Survey BI • Enterprise Edition v5.2</p>

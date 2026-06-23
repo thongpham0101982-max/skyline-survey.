@@ -56,7 +56,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex min-h-screen text-xs font-semibold">
       <Sidebar 
         role="ADMIN" 
         permissionModules={readableModules} 
@@ -79,7 +79,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <UserMenu session={session} />
           </div>
         </header>
-        <div className="p-4 sm:p-6 md:p-8 flex-1 overflow-x-hidden overflow-y-auto bg-slate-50/50">
+        <div className="p-4 sm:p-6 md:p-8 flex-1 overflow-x-hidden overflow-y-auto text-xs font-semibold">
           {children}
         </div>
         

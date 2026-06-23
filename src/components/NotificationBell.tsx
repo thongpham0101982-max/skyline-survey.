@@ -37,11 +37,11 @@ export function NotificationBell() {
     <div className="fixed top-6 right-8 z-50 drop-shadow-xl" ref={ref}>
       <button 
         onClick={handleOpen}
-        className="relative p-3.5 bg-white rounded-full border border-slate-200 shadow-md hover:bg-slate-50 transition-colors focus:outline-none"
+        className="relative p-3.5 shadow-md hover:bg-slate-50 transition-colors focus:outline-none text-xs font-semibold"
       >
         <Bell className="w-6 h-6 text-slate-700" />
         {unread > 0 && (
-          <span className="absolute top-0 right-0 inline-flex items-center justify-center w-6 h-6 text-xs font-bold text-white bg-rose-500 border-2 border-white rounded-full translate-x-1 -translate-y-1 animate-bounce shadow-sm">
+          <span className="absolute top-0 right-0 inline-flex items-center justify-center w-6 h-6 text-xs font-bold text-white translate-x-1 -translate-y-1 animate-bounce shadow-sm text-xs font-semibold">
             {unread}
           </span>
         )}
@@ -49,9 +49,9 @@ export function NotificationBell() {
 
       {open && (
         <div className="absolute right-0 mt-3 w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
-          <div className="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+          <div className="p-4 flex justify-between items-center text-xs font-semibold">
             <h3 className="font-bold text-slate-800 text-lg">Thông báo hệ thống</h3>
-            {unread > 0 && <span className="bg-rose-100 text-rose-700 text-xs px-2 py-1 rounded-full font-bold">{unread} mới</span>}
+            {unread > 0 && <span className="text-rose-700 text-xs font-bold text-xs font-semibold">{unread} mới</span>}
           </div>
           <div className="max-h-[400px] overflow-y-auto">
             {notifs.length === 0 ? (
@@ -73,7 +73,7 @@ export function NotificationBell() {
               ))
             )}
           </div>
-          <div className="p-3 bg-slate-50 border-t border-slate-200 text-center">
+          <div className="p-3 text-center text-xs font-semibold">
             <button className="text-xs font-bold text-indigo-600 hover:text-indigo-800 uppercase tracking-widest" onClick={() => setOpen(false)}>Đóng</button>
           </div>
         </div>

@@ -61,7 +61,7 @@ export default async function StudentSurveyFormPage({ params }: { params: { id: 
 
          {/* Form Body - Placeholder for Survey Logic */}
          <div className="p-10 space-y-12">
-            <div className="text-center py-10 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
+            <div className="text-center text-xs font-semibold">
                <p className="text-slate-400 font-bold">Giao diện bộ câu hỏi đang được tối ưu hóa...</p>
                <p className="text-slate-300 text-xs mt-1">Hệ thống sẽ cập nhật đầy đủ các lựa chọn trả lời trong giây lát.</p>
             </div>

@@ -49,7 +49,7 @@ export default async function TeacherViewResultPage({ params }: any) {
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border-2 border-rose-100 overflow-hidden">
-        <div className="p-6 border-b border-slate-100 bg-slate-50">
+        <div className="p-6 text-xs font-semibold">
           <h2 className="font-semibold text-slate-800">Chi tiết câu trả lời</h2>
         </div>
         
@@ -74,16 +74,16 @@ export default async function TeacherViewResultPage({ params }: any) {
               else if (res.numericScore !== null) answerDisplay = String(res.numericScore)
               
               return (
-                <div key={res.id} className="p-6 hover:bg-slate-50/50 transition-colors">
+                <div key={res.id} className="p-6 hover:bg-slate-50/50 transition-colors text-xs font-semibold">
                   <div className="flex gap-4">
-                    <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm shrink-0 mt-0.5">
+                    <div className="w-8 h-8 text-indigo-700 flex items-center justify-center font-bold text-sm shrink-0 mt-0.5 text-xs font-semibold">
                       {index + 1}
                     </div>
                     <div className="flex-1 space-y-3">
                       <h3 className="font-medium text-slate-900 leading-relaxed">
                         {q.questionText}
                       </h3>
-                      <div className="bg-slate-50 rounded-xl p-4 border border-slate-200/60 shadow-inner">
+                      <div className="p-4 shadow-inner text-xs font-semibold">
                         {q.questionType === 'MC_GRID' || q.questionType === 'CB_GRID' ? (
                           <pre className="text-sm text-slate-700 whitespace-pre-wrap font-sans">{res.textAnswer}</pre>
                         ) : (

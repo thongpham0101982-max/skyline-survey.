@@ -173,7 +173,7 @@ export function LoginClient() {
             </div>
 
             {/* Premium Role Switcher */}
-            <div className="bg-slate-50 p-1.5 rounded-2xl mb-6 flex gap-1 border border-slate-200/50">
+            <div className="p-1.5 mb-6 flex gap-1 text-xs font-semibold">
               {['STAFF', 'PARENT', 'STUDENT'].map((r) => {
                 const labels = { STAFF: 'CBGV', PARENT: 'Phụ huynh', STUDENT: 'Học sinh' };
                 const icons = { STAFF: ShieldCheck, PARENT: Users, STUDENT: GraduationCap };
@@ -197,7 +197,7 @@ export function LoginClient() {
             </div>
 
             {error && (
-              <div className="mb-6 p-4 rounded-2xl flex items-start gap-3 bg-rose-50 text-rose-700 border border-rose-100 animate-in fade-in zoom-in-95 duration-200">
+              <div className="mb-6 p-4 flex items-start gap-3 text-rose-700 animate-in fade-in zoom-in-95 duration-200 text-xs font-semibold">
                 <AlertCircle className="w-4 h-4 shrink-0 text-rose-500 mt-0.5" />
                 <p className="text-xs font-black leading-relaxed">{error}</p>
               </div>
@@ -217,7 +217,7 @@ export function LoginClient() {
                     value={identifier}
                     onChange={e => setIdentifier(e.target.value)} 
                     placeholder={role === 'STAFF' ? 'admin@skyline.edu' : role === 'PARENT' ? 'Nhập SĐT phụ huynh' : 'Nhập mã học sinh'}
-                    className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl text-sm font-semibold text-slate-800 placeholder-slate-400 hover:border-[#00A99D]/40 focus:bg-white focus:border-[#00A99D] focus:ring-4 focus:ring-[#00A99D]/10 outline-none transition-all duration-300"
+                    className="w-full pl-11 pr-4 text-sm font-semibold text-slate-800 placeholder-slate-400 hover:border-[#00A99D]/40 focus:bg-white focus:border-[#00A99D] focus:ring-4 focus:ring-[#00A99D]/10 outline-none transition-all duration-300 text-xs font-semibold"
                   />
                 </div>
               </div>
@@ -234,7 +234,7 @@ export function LoginClient() {
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     placeholder="••••••••••"
-                    className="w-full pl-11 pr-11 py-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl text-sm font-semibold text-slate-800 placeholder-slate-400 hover:border-[#00A99D]/40 focus:bg-white focus:border-[#00A99D] focus:ring-4 focus:ring-[#00A99D]/10 outline-none transition-all duration-300"
+                    className="w-full pl-11 pr-11 text-sm font-semibold text-slate-800 placeholder-slate-400 hover:border-[#00A99D]/40 focus:bg-white focus:border-[#00A99D] focus:ring-4 focus:ring-[#00A99D]/10 outline-none transition-all duration-300 text-xs font-semibold"
                   />
                   <button
                     type="button"

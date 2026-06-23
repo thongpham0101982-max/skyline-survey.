@@ -108,13 +108,13 @@ export function ChatbotConfigsClient({ initialConfigs = [] }: any) {
       {(showAddForm || editingId) && (
         <div className="bg-white border border-slate-200 rounded-3xl p-8 shadow-2xl shadow-slate-200/50 animate-in fade-in slide-in-from-top-4">
           <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-3">
-            <div className="p-2 bg-indigo-100 rounded-xl">
+            <div className="p-2 text-xs font-semibold">
               <Settings className="w-6 h-6 text-[#00A19A]" />
             </div>
             {editingId ? "Cập nhật Cấu hình Chatbot" : "Thêm Cấu hình Chatbot Mới"}
           </h3>
           
-          {error && <div className="bg-red-50 border border-red-100 text-red-600 p-4 rounded-xl text-sm font-semibold mb-6 flex items-center gap-2">
+          {error && <div className="text-red-600 p-4 text-sm font-semibold mb-6 flex items-center gap-2 text-xs font-semibold">
             <X className="w-5 h-5" /> {error}
           </div>}
 
@@ -128,7 +128,7 @@ export function ChatbotConfigsClient({ initialConfigs = [] }: any) {
               <label className="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Mã Định Danh *</label>
               <input type="text" value={form.code} onChange={e => setForm({...form, code: e.target.value.toUpperCase()})}
                 disabled={!!editingId}
-                placeholder="VD: TEACHER_ASSISTANT" className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all disabled:bg-slate-50 disabled:text-slate-400" />
+                placeholder="VD: TEACHER_ASSISTANT" className="w-full text-sm font-bold outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all disabled:bg-slate-50 disabled:text-slate-400 text-xs font-semibold" />
             </div>
           </div>
 
@@ -183,20 +183,20 @@ export function ChatbotConfigsClient({ initialConfigs = [] }: any) {
         <div className="overflow-x-auto custom-scrollbar flex-1">
           <table className="w-full text-left whitespace-nowrap border-collapse">
             <thead>
-              <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th className="px-8 py-5 text-[11px] font-black text-slate-400 uppercase tracking-widest">Tên Trợ Lý</th>
-                <th className="px-8 py-5 text-[11px] font-black text-slate-400 uppercase tracking-widest">Mã định danh</th>
-                <th className="px-8 py-5 text-[11px] font-black text-slate-400 uppercase tracking-widest">Quyền hạn truy cập</th>
-                <th className="px-8 py-5 text-[11px] font-black text-slate-400 uppercase tracking-widest">Trạng thái</th>
-                <th className="px-8 py-5 text-[11px] font-black text-slate-400 uppercase tracking-widest text-right">Hành động</th>
+              <tr className="text-xs font-semibold">
+                <th className="p-2 p-2 text-[11px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">Tên Trợ Lý</th>
+                <th className="p-2 p-2 text-[11px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">Mã định danh</th>
+                <th className="p-2 p-2 text-[11px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">Quyền hạn truy cập</th>
+                <th className="p-2 p-2 text-[11px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">Trạng thái</th>
+                <th className="p-2 p-2 text-[11px] font-black text-slate-400 uppercase tracking-widest text-right border border-slate-200">Hành động</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {filtered.map((c: any) => (
                 <tr key={c.id} className="hover:bg-[#00A19A]/10/30 transition-colors group">
-                  <td className="px-8 py-6">
+                  <td className="p-2 p-2 border border-slate-200">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 bg-teal-50 text-[#00A19A] rounded-xl flex items-center justify-center font-bold">
+                      <div className="w-9 h-9 text-[#00A19A] flex items-center justify-center font-bold text-xs font-semibold">
                         <MessageSquareText className="w-5 h-5" />
                       </div>
                       <div>
@@ -207,15 +207,15 @@ export function ChatbotConfigsClient({ initialConfigs = [] }: any) {
                       </div>
                     </div>
                   </td>
-                  <td className="px-8 py-6">
+                  <td className="p-2 p-2 border border-slate-200">
                     <span className="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg font-mono text-xs font-bold border border-slate-200">
                       {c.code}
                     </span>
                   </td>
-                  <td className="px-8 py-6">
+                  <td className="p-2 p-2 border border-slate-200">
                     <div className="flex flex-wrap gap-1">
                       {c.allowedRoles ? c.allowedRoles.split(",").map((role: string) => (
-                        <span key={role} className="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-100 font-bold text-[10px]">
+                        <span key={role} className="text-indigo-700 font-bold text-[10px] text-xs font-semibold">
                           {role}
                         </span>
                       )) : (
@@ -223,23 +223,23 @@ export function ChatbotConfigsClient({ initialConfigs = [] }: any) {
                       )}
                     </div>
                   </td>
-                  <td className="px-8 py-6">
+                  <td className="p-2 p-2 border border-slate-200">
                     {c.isActive ? (
-                      <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 font-black text-[10px]">
+                      <span className="text-emerald-700 font-black text-[10px] text-xs font-semibold">
                         Hoạt động
                       </span>
                     ) : (
-                      <span className="px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-100 font-black text-[10px]">
+                      <span className="text-rose-700 font-black text-[10px] text-xs font-semibold">
                         Đã tắt
                       </span>
                     )}
                   </td>
-                  <td className="px-8 py-6 text-right">
+                  <td className="p-2 p-2 text-right border border-slate-200">
                     <div className="flex items-center justify-end gap-2 opacity-70 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => startEdit(c)} className="p-2 text-slate-400 hover:text-[#00A19A] hover:bg-slate-50 rounded-xl transition-all">
+                      <button onClick={() => startEdit(c)} className="p-2 text-slate-400 hover:text-[#00A19A] hover:bg-slate-50 transition-all text-xs font-semibold">
                         <Edit2 className="w-4 h-4" />
                       </button>
-                      <button onClick={() => handleDelete(c.id, c.name)} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all">
+                      <button onClick={() => handleDelete(c.id, c.name)} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all text-xs font-semibold">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -248,7 +248,7 @@ export function ChatbotConfigsClient({ initialConfigs = [] }: any) {
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-8 py-12 text-center text-slate-400 italic text-sm">
+                  <td colSpan={5} className="p-2 p-2 text-center text-slate-400 italic text-sm border border-slate-200">
                     Không tìm thấy cấu hình chatbot nào.
                   </td>
                 </tr>

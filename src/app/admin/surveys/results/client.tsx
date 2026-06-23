@@ -83,7 +83,7 @@ export function ResultsPageClient({ surveyStats, years }: Props) {
             placeholder="Tìm kiếm theo tên hoặc mã đợt..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-slate-50 hover:bg-slate-100/50 border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A19A]/10 focus:border-[#00A19A] transition-all outline-none"
+            className="w-full hover:bg-slate-100/50 pl-10 pr-4 text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A19A]/10 focus:border-[#00A19A] transition-all outline-none text-xs font-semibold"
           />
         </div>
 
@@ -92,7 +92,7 @@ export function ResultsPageClient({ surveyStats, years }: Props) {
           <select 
             value={selectedYear} 
             onChange={(e) => setSelectedYear(e.target.value)}
-            className="w-full md:w-48 bg-slate-50 hover:bg-slate-100/50 border border-slate-200 rounded-xl px-4 py-2 text-xs font-black text-slate-700 outline-none hover:border-[#00A19A] focus:border-[#00A19A] transition-all cursor-pointer"
+            className="w-full md:w-48 hover:bg-slate-100/50 text-xs font-black text-slate-700 outline-none hover:border-[#00A19A] focus:border-[#00A19A] transition-all cursor-pointer text-xs font-semibold"
           >
             <option value="ALL">Tất cả năm học</option>
             {years.map(y => <option key={y.id} value={y.name}>{y.name}</option>)}

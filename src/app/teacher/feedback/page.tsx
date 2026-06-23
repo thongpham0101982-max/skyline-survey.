@@ -88,9 +88,9 @@ export default async function TeacherFeedbackPage() {
         ) : (
           <div className="flex flex-col gap-2 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
             {feedbacks.map(fb => (
-               <div key={fb.id} className="flex items-start gap-4 py-3 bg-white border border-slate-200 hover:bg-slate-50 transition-colors px-4 rounded-xl shadow-sm">
+               <div key={fb.id} className="flex items-start gap-4 hover:bg-slate-50 transition-colors shadow-sm text-xs font-semibold">
                   <div className="min-w-[120px] pt-1 shrink-0">
-                     <span className="bg-teal-50 text-[#00A19A] px-2.5 py-1 rounded-md text-[10px] font-black tracking-wider uppercase border border-teal-100">
+                     <span className="text-[#00A19A] text-[10px] font-black tracking-wider uppercase text-xs font-semibold">
                         {fb.className}
                      </span>
                      <div className="text-[11px] font-bold text-slate-700 mt-2">{fb.student}</div>

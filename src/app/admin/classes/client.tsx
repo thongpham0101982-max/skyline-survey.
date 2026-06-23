@@ -336,13 +336,13 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
             <h2 className="text-lg font-bold text-slate-800">Quản lý lớp học</h2>
             {selectedIds.length > 0 && (
               <button onClick={handleDeleteMany} disabled={deleting}
-                className="flex items-center text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 font-semibold py-1.5 px-3 rounded-md border border-red-200 text-sm">
+                className="flex items-center text-red-600 hover:text-red-700 hover:bg-red-100 font-semibold text-sm text-xs font-semibold">
                 <Trash2 className="w-4 h-4 mr-2" /> {deleting ? "Đang xóa..." : "Xóa " + selectedIds.length + " lớp"}
               </button>
             )}
           </div>
           <div className="flex gap-3 items-center">
-            <button onClick={handleDownloadTemplate} className="flex items-center text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 font-semibold py-2 px-4 rounded-md border border-blue-200 text-sm">
+            <button onClick={handleDownloadTemplate} className="flex items-center text-blue-600 hover:text-blue-700 hover:bg-blue-100 font-semibold text-sm text-xs font-semibold">
               <Download className="w-4 h-4 mr-2" /> Tải File Mẫu
             </button>
             <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept=".xlsx, .xls, .csv" className="hidden" />
@@ -356,48 +356,48 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
 
       {/* Table */}
       <div className="bg-white rounded-xl shadow-sm border overflow-x-auto">
-        <table className="w-full text-left text-sm">
+        <table className="w-full text-left text-sm border-collapse">
           <thead className="bg-[#F0FDFA] sticky top-0 z-10 shadow-[0_1px_0_#CCFBF1]">
             <tr>
-              <th className="px-4 py-4 w-12 text-center"><input type="checkbox" className="w-4 h-4 rounded text-blue-600" checked={filteredClasses.length > 0 && selectedIds.length === filteredClasses.length} onChange={handleSelectAll} /></th>
-              <th className="px-4 py-4 font-semibold text-slate-500 uppercase text-xs w-12">STT</th>
-              <th className="px-4 py-4 font-semibold text-slate-500 uppercase text-xs">Cơ sở</th>
-              <th className="px-4 py-4 font-semibold text-slate-500 uppercase text-xs">Bậc học</th>
-              <th className="px-4 py-4 font-semibold text-slate-500 uppercase text-xs">Khối</th>
-              <th className="px-4 py-4 font-semibold text-slate-500 uppercase text-xs">Tên lớp</th>
-              <th className="px-4 py-4 font-semibold text-slate-500 uppercase text-xs">Hệ học</th>
-              <th className="px-4 py-4 font-semibold text-slate-500 uppercase text-xs">Sỹ số</th>
-              <th className="px-4 py-4 font-semibold text-slate-500 uppercase text-xs">GVCN</th>
-              <th className="px-4 py-4 font-semibold text-slate-500 uppercase text-xs text-right">Thao tác</th>
+              <th className="p-2 p-2 w-12 text-center border border-slate-200"><input type="checkbox" className="w-4 h-4 rounded text-blue-600" checked={filteredClasses.length > 0 && selectedIds.length === filteredClasses.length} onChange={handleSelectAll} /></th>
+              <th className="p-2 p-2 font-semibold text-slate-500 uppercase text-xs w-12 border border-slate-200">STT</th>
+              <th className="p-2 p-2 font-semibold text-slate-500 uppercase text-xs border border-slate-200">Cơ sở</th>
+              <th className="p-2 p-2 font-semibold text-slate-500 uppercase text-xs border border-slate-200">Bậc học</th>
+              <th className="p-2 p-2 font-semibold text-slate-500 uppercase text-xs border border-slate-200">Khối</th>
+              <th className="p-2 p-2 font-semibold text-slate-500 uppercase text-xs border border-slate-200">Tên lớp</th>
+              <th className="p-2 p-2 font-semibold text-slate-500 uppercase text-xs border border-slate-200">Hệ học</th>
+              <th className="p-2 p-2 font-semibold text-slate-500 uppercase text-xs border border-slate-200">Sỹ số</th>
+              <th className="p-2 p-2 font-semibold text-slate-500 uppercase text-xs border border-slate-200">GVCN</th>
+              <th className="p-2 p-2 font-semibold text-slate-500 uppercase text-xs text-right border border-slate-200">Thao tác</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {filteredClasses.length === 0 && (
-              <tr><td colSpan={10} className="p-8 text-center text-slate-400">Chưa có lớp học nào trong năm học này.</td></tr>
+              <tr><td colSpan={10} className="p-2 text-center text-slate-400 border border-slate-200">Chưa có lớp học nào trong năm học này.</td></tr>
             )}
             {filteredClasses.map((c: any, i: number) => (
                <tr key={c.id} className={"hover:bg-slate-50 transition-colors " + (selectedIds.includes(c.id) ? "bg-blue-50/50" : "")}>
-                 <td className="px-4 py-3.5 text-center"><input type="checkbox" className="w-4 h-4 rounded text-blue-600" checked={selectedIds.includes(c.id)} onChange={e => handleSelectRow(c.id, e.target.checked)} /></td>
-                 <td className="px-4 py-3.5 text-slate-400 text-center">{i + 1}</td>
-                 <td className="px-4 py-3.5"><span className="flex items-center gap-1.5"><Building2 className="w-3.5 h-3.5 text-indigo-500" /><span className="text-slate-700">{c.campus}</span></span></td>
-                 <td className="px-4 py-3.5">
+                 <td className="p-2 p-2 text-center border border-slate-200"><input type="checkbox" className="w-4 h-4 rounded text-blue-600" checked={selectedIds.includes(c.id)} onChange={e => handleSelectRow(c.id, e.target.checked)} /></td>
+                 <td className="p-2 p-2 text-slate-400 text-center border border-slate-200">{i + 1}</td>
+                 <td className="p-2 p-2 border border-slate-200"><span className="flex items-center gap-1.5"><Building2 className="w-3.5 h-3.5 text-indigo-500" /><span className="text-slate-700">{c.campus}</span></span></td>
+                 <td className="p-2 p-2 border border-slate-200">
                    {c.level ? (<span className={"text-xs px-2 py-1 rounded-full font-medium " + (["tiểu học", "tieu hoc"].includes(c.level.toLowerCase()) ? "bg-amber-50 text-amber-700" : ["thcs"].includes(c.level.toLowerCase()) ? "bg-blue-50 text-blue-700" : ["thpt"].includes(c.level.toLowerCase()) ? "bg-purple-50 text-purple-700" : ["mầm non", "nhà trẻ", "mẫu giáo bé", "mẫu giáo nhỡ", "mẫu giáo lớn"].includes(c.level.toLowerCase()) ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600")}>{["mầm non", "nhà trẻ", "mẫu giáo bé", "mẫu giáo nhỡ", "mẫu giáo lớn"].includes(c.level.toLowerCase()) ? "Mầm non" : c.level}</span>) : <span className="text-slate-300">--</span>}
                  </td>
-                 <td className="px-4 py-3.5">
+                 <td className="p-2 p-2 border border-slate-200">
                    {c.grade ? (<span className="flex items-center gap-1.5"><Layers className="w-3.5 h-3.5 text-emerald-500" /><span className="text-slate-700 font-medium">{c.grade}</span></span>) : <span className="text-slate-300">--</span>}
                  </td>
-                 <td className="px-4 py-3.5">
+                 <td className="p-2 p-2 border border-slate-200">
                    <Link href={"/admin/classes/" + c.id} className="text-blue-600 hover:text-blue-800 hover:underline flex items-center font-semibold">
-                     <div className="bg-blue-100 p-1.5 rounded-lg mr-2"><BookOpen className="w-3.5 h-3.5 text-blue-600" /></div>{c.className}
+                     <div className="p-1.5 mr-2 text-xs font-semibold"><BookOpen className="w-3.5 h-3.5 text-blue-600" /></div>{c.className}
                    </Link>
                  </td>
-                 <td className="px-4 py-3.5">
+                 <td className="p-2 p-2 border border-slate-200">
                    {c.educationSystem ? (<span className={"text-xs px-2.5 py-1 rounded-full font-bold " + getEduBadgeColor(c.educationSystem)}>{c.educationSystem}</span>) : <span className="text-slate-300">--</span>}
                  </td>
-                 <td className="px-4 py-3.5"><span className="flex items-center text-slate-700 bg-slate-100 px-2.5 py-1 rounded-full w-max text-xs font-medium"><Users className="w-3.5 h-3.5 mr-1.5 text-slate-500" /> {c.studentCount}</span></td>
-                 <td className="px-4 py-3.5 text-slate-700 font-medium">{c.homeroomTeacher}</td>
-                 <td className="px-4 py-3.5 text-right space-x-2">
-                    <button onClick={() => handleOpenEditModal(c)} className="p-1.5 text-blue-500 hover:bg-blue-100 rounded-lg" title="Sửa"><Edit className="w-4 h-4" /></button>
+                 <td className="p-2 p-2 border border-slate-200"><span className="flex items-center text-slate-700 bg-slate-100 px-2.5 py-1 rounded-full w-max text-xs font-medium"><Users className="w-3.5 h-3.5 mr-1.5 text-slate-500" /> {c.studentCount}</span></td>
+                 <td className="p-2 p-2 text-slate-700 font-medium border border-slate-200">{c.homeroomTeacher}</td>
+                 <td className="p-2 p-2 text-right space-x-2 border border-slate-200">
+                    <button onClick={() => handleOpenEditModal(c)} className="p-1.5 text-blue-500 hover:bg-blue-100 text-xs font-semibold" title="Sửa"><Edit className="w-4 h-4" /></button>
                     <button onClick={() => handleDeleteSingle(c.id)} className="p-1.5 text-red-500 hover:bg-red-100 rounded-lg" title="Xóa"><Trash2 className="w-4 h-4" /></button>
                  </td>
                </tr>
@@ -410,7 +410,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
       {editModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
-             <div className="p-5 border-b bg-slate-50/50 flex items-center justify-between">
+             <div className="p-5 flex items-center justify-between text-xs font-semibold">
                 <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2"><Edit className="w-5 h-5 text-blue-500" /> Sửa thông tin lớp</h3>
                 <button onClick={() => setEditModal(null)} className="p-1 rounded-full hover:bg-slate-200 text-slate-500"><X className="w-5 h-5" /></button>
              </div>
@@ -477,7 +477,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
                 )}
                 <div className="pt-4 flex items-center justify-end gap-3">
                    <button type="button" onClick={() => setEditModal(null)} className="px-4 py-2 font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl text-sm">Hủy</button>
-                   <button type="submit" className="px-5 py-2 font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl text-sm shadow-sm flex items-center"><Save className="w-4 h-4 mr-2" /> Lưu thay đổi</button>
+                   <button type="submit" className="font-medium text-white hover:bg-blue-700 text-sm shadow-sm flex items-center text-xs font-semibold"><Save className="w-4 h-4 mr-2" /> Lưu thay đổi</button>
                 </div>
              </form>
            </div>

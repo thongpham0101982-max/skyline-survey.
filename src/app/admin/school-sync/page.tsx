@@ -143,7 +143,7 @@ export default function SchoolSyncPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between border-b border-slate-200 pb-6">
         <div className="flex items-center gap-4">
-          <div className="bg-indigo-600 p-3 rounded-2xl text-white shadow-lg shadow-indigo-600/20">
+          <div className="p-3 text-white shadow-lg shadow-indigo-600/20 text-xs font-semibold">
             <RefreshCcw className="w-8 h-8 animate-spin" style={{ animationDuration: '6s' }} />
           </div>
           <div>
@@ -151,7 +151,7 @@ export default function SchoolSyncPage() {
             <p className="text-slate-500 font-medium">Tích hợp và đồng bộ hóa trực tiếp dữ liệu học sinh, năm học từ Skyline School Central Portal</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 bg-indigo-50 border border-indigo-100 px-4 py-2 rounded-2xl">
+        <div className="flex items-center gap-2 text-xs font-semibold">
           <Activity className="w-4 h-4 text-indigo-600 animate-pulse" />
           <span className="text-xs font-black text-indigo-700 uppercase tracking-widest">Skyline API v1.0</span>
         </div>
@@ -211,7 +211,7 @@ export default function SchoolSyncPage() {
                 type="text" 
                 value={username}
                 onChange={e => setUsername(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-sm"
+                className="w-full text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-sm text-xs font-semibold"
                 placeholder="Nhập tên đăng nhập"
                 required
               />
@@ -223,7 +223,7 @@ export default function SchoolSyncPage() {
                 type="password" 
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-sm"
+                className="w-full text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-sm text-xs font-semibold"
                 placeholder="Nhập mật khẩu"
                 required
               />
@@ -236,7 +236,7 @@ export default function SchoolSyncPage() {
               <button 
                 type="submit"
                 disabled={connectionStatus === "TESTING"}
-                className="flex items-center gap-2 bg-slate-900 text-white hover:bg-indigo-600 disabled:bg-slate-300 px-6 py-2.5 rounded-2xl font-bold transition-all shadow-md text-sm cursor-pointer"
+                className="flex items-center gap-2 text-white hover:bg-indigo-600 disabled:bg-slate-300 font-bold transition-all shadow-md text-sm cursor-pointer text-xs font-semibold"
               >
                 {connectionStatus === "TESTING" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4" />}
                 Kiểm tra Kết nối
@@ -260,7 +260,7 @@ export default function SchoolSyncPage() {
         {/* Sync Year Block */}
         <div className="bg-white rounded-3xl p-6 border-2 border-rose-100 shadow-sm flex flex-col justify-between space-y-6">
           <div className="space-y-3">
-            <div className="bg-indigo-50 p-2.5 rounded-2xl text-indigo-600 w-fit">
+            <div className="p-2.5 text-indigo-600 w-fit text-xs font-semibold">
               <CalendarRange className="w-6 h-6" />
             </div>
             <h4 className="text-lg font-black text-slate-800">Đồng bộ Năm học</h4>
@@ -271,7 +271,7 @@ export default function SchoolSyncPage() {
           <button
             onClick={handleSyncYear}
             disabled={syncingYear}
-            className="flex items-center justify-center gap-2 w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white rounded-2xl font-bold text-sm transition-all shadow-md cursor-pointer"
+            className="flex items-center justify-center gap-2 w-full hover:bg-indigo-700 disabled:bg-indigo-300 text-white font-bold text-sm transition-all shadow-md cursor-pointer text-xs font-semibold"
           >
             {syncingYear ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
             Đồng bộ Năm học
@@ -281,7 +281,7 @@ export default function SchoolSyncPage() {
         {/* Sync Services Block */}
         <div className="bg-white rounded-3xl p-6 border-2 border-teal-100 shadow-sm flex flex-col justify-between space-y-6">
           <div className="space-y-3">
-            <div className="bg-sky-50 p-2.5 rounded-2xl text-sky-600 w-fit">
+            <div className="p-2.5 text-sky-600 w-fit text-xs font-semibold">
               <Settings className="w-6 h-6" />
             </div>
             <h4 className="text-lg font-black text-slate-800">Đồng bộ Dịch vụ</h4>
@@ -302,7 +302,7 @@ export default function SchoolSyncPage() {
         {/* Sync Teacher Classroom Block */}
         <div className="bg-white rounded-3xl p-6 border-2 border-blue-100 shadow-sm flex flex-col justify-between space-y-6">
           <div className="space-y-3">
-            <div className="bg-emerald-50 p-2.5 rounded-2xl text-emerald-600 w-fit">
+            <div className="p-2.5 text-emerald-600 w-fit text-xs font-semibold">
               <UserCheck className="w-6 h-6" />
             </div>
             <h4 className="text-lg font-black text-slate-800">Đồng bộ Danh sách Lớp</h4>
@@ -317,13 +317,13 @@ export default function SchoolSyncPage() {
               value={teacherInput}
               onChange={e => setTeacherInput(e.target.value)}
               placeholder="Nhập tài khoản Giáo viên (ví dụ: gv01)"
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-xs"
+              className="w-full text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-xs text-xs font-semibold"
               required
             />
             <button
               type="submit"
               disabled={syncingTeacher}
-              className="flex items-center justify-center gap-2 w-full py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white rounded-2xl font-bold text-sm transition-all shadow-md cursor-pointer"
+              className="flex items-center justify-center gap-2 w-full hover:bg-emerald-700 disabled:bg-emerald-300 text-white font-bold text-sm transition-all shadow-md cursor-pointer text-xs font-semibold"
             >
               {syncingTeacher ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCcw className="w-4 h-4" />}
               Đồng bộ Học sinh Lớp

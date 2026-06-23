@@ -13,7 +13,7 @@ export default async function MaintenancePage() {
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-700">
       <div className="flex items-center gap-4 border-b border-slate-200 pb-6">
-         <div className="bg-amber-100 p-3 rounded-2xl text-amber-600">
+         <div className="p-3 text-amber-600 text-xs font-semibold">
             <ShieldAlert className="w-8 h-8" />
          </div>
          <div>

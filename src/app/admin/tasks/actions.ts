@@ -157,22 +157,22 @@ export async function createTask(data: any) {
                   <p style="font-size: 15px; color: #475569;">Bạn nhận được một công việc mới được phân công từ quản trị viên:</p>
                   
                   <div style="background-color: #f1f5f9; border-left: 4px solid ${task.isImportant ? '#ef4444' : '#00A19A'}; border-radius: 8px; padding: 20px; margin: 24px 0;">
-                    <table style="width: 100%; border-collapse: collapse;">
+                    <table style="width: 100%; border-collapse: collapse;" className="border border-slate-200 border-collapse">
                       <tr>
-                        <td style="padding: 4px 0; font-size: 13px; font-weight: 600; color: #64748b; width: 120px; text-transform: uppercase;">Danh mục:</td>
-                        <td style="padding: 4px 0; font-size: 14px; font-weight: 600; color: ${task.isImportant ? '#ef4444' : '#00A19A'};">${task.category || "Công việc"}</td>
+                        <td style="padding: 4px 0; font-size: 13px; font-weight: 600; color: #64748b; width: 120px; text-transform: uppercase;" className="p-2 border border-slate-200">Danh mục:</td>
+                        <td style="padding: 4px 0; font-size: 14px; font-weight: 600; color: ${task.isImportant ? '#ef4444' : '#00A19A'};" className="p-2 border border-slate-200">${task.category || "Công việc"}</td>
                       </tr>
                       <tr>
-                        <td style="padding: 4px 0; font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase; vertical-align: top;">Nội dung:</td>
-                        <td style="padding: 4px 0; font-size: 15px; font-weight: 700; color: #1e293b;">${task.title}</td>
+                        <td style="padding: 4px 0; font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase; vertical-align: top;" className="p-2 border border-slate-200">Nội dung:</td>
+                        <td style="padding: 4px 0; font-size: 15px; font-weight: 700; color: #1e293b;" className="p-2 border border-slate-200">${task.title}</td>
                       </tr>
                       <tr>
-                        <td style="padding: 4px 0; font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase;">Người giao:</td>
-                        <td style="padding: 4px 0; font-size: 14px; color: #334155;">${adminName}</td>
+                        <td style="padding: 4px 0; font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase;" className="p-2 border border-slate-200">Người giao:</td>
+                        <td style="padding: 4px 0; font-size: 14px; color: #334155;" className="p-2 border border-slate-200">${adminName}</td>
                       </tr>
                       <tr>
-                        <td style="padding: 4px 0; font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase;">Hạn chót:</td>
-                        <td style="padding: 4px 0; font-size: 14px; font-weight: 700; color: #ef4444;">${formattedDate}</td>
+                        <td style="padding: 4px 0; font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase;" className="p-2 border border-slate-200">Hạn chót:</td>
+                        <td style="padding: 4px 0; font-size: 14px; font-weight: 700; color: #ef4444;" className="p-2 border border-slate-200">${formattedDate}</td>
                       </tr>
                     </table>
                   </div>
@@ -370,22 +370,22 @@ export async function remindTask(id: string) {
                   <p style="font-size: 15px; color: #475569;">Bạn có thông báo nhắc nhở thực hiện công việc từ người điều hành:</p>
                   
                   <div style="background-color: #f1f5f9; border-left: 4px solid ${task.isImportant ? '#ef4444' : '#00A19A'}; border-radius: 8px; padding: 20px; margin: 24px 0;">
-                    <table style="width: 100%; border-collapse: collapse;">
+                    <table style="width: 100%; border-collapse: collapse;" className="border border-slate-200 border-collapse">
                       <tr>
-                        <td style="padding: 4px 0; font-size: 13px; font-weight: 600; color: #64748b; width: 120px; text-transform: uppercase;">Danh mục:</td>
-                        <td style="padding: 4px 0; font-size: 14px; font-weight: 600; color: ${task.isImportant ? '#ef4444' : '#00A19A'};">${task.category || "Công việc"}</td>
+                        <td style="padding: 4px 0; font-size: 13px; font-weight: 600; color: #64748b; width: 120px; text-transform: uppercase;" className="p-2 border border-slate-200">Danh mục:</td>
+                        <td style="padding: 4px 0; font-size: 14px; font-weight: 600; color: ${task.isImportant ? '#ef4444' : '#00A19A'};" className="p-2 border border-slate-200">${task.category || "Công việc"}</td>
                       </tr>
                       <tr>
-                        <td style="padding: 4px 0; font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase; vertical-align: top;">Nội dung:</td>
-                        <td style="padding: 4px 0; font-size: 15px; font-weight: 700; color: #1e293b;">${task.title}</td>
+                        <td style="padding: 4px 0; font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase; vertical-align: top;" className="p-2 border border-slate-200">Nội dung:</td>
+                        <td style="padding: 4px 0; font-size: 15px; font-weight: 700; color: #1e293b;" className="p-2 border border-slate-200">${task.title}</td>
                       </tr>
                       <tr>
-                        <td style="padding: 4px 0; font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase;">Người giao:</td>
-                        <td style="padding: 4px 0; font-size: 14px; color: #334155;">${task.assignedBy.fullName}</td>
+                        <td style="padding: 4px 0; font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase;" className="p-2 border border-slate-200">Người giao:</td>
+                        <td style="padding: 4px 0; font-size: 14px; color: #334155;" className="p-2 border border-slate-200">${task.assignedBy.fullName}</td>
                       </tr>
                       <tr>
-                        <td style="padding: 4px 0; font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase;">Hạn chót:</td>
-                        <td style="padding: 4px 0; font-size: 14px; font-weight: 700; color: #ef4444;">${formattedDate}</td>
+                        <td style="padding: 4px 0; font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase;" className="p-2 border border-slate-200">Hạn chót:</td>
+                        <td style="padding: 4px 0; font-size: 14px; font-weight: 700; color: #ef4444;" className="p-2 border border-slate-200">${formattedDate}</td>
                       </tr>
                     </table>
                   </div>
@@ -532,22 +532,22 @@ export async function checkAndNotifyUpcomingTasks() {
                         <p style="font-size: 15px; color: #475569;">Vui lòng hoàn thành công việc sau trước hạn chót:</p>
                         
                         <div style="background-color: #f1f5f9; border-left: 4px solid ${task.isImportant ? '#ef4444' : '#00A19A'}; border-radius: 8px; padding: 20px; margin: 24px 0;">
-                          <table style="width: 100%; border-collapse: collapse;">
+                          <table style="width: 100%; border-collapse: collapse;" className="border border-slate-200 border-collapse">
                             <tr>
-                              <td style="padding: 4px 0; font-size: 13px; font-weight: 600; color: #64748b; width: 120px; text-transform: uppercase;">Danh mục:</td>
-                              <td style="padding: 4px 0; font-size: 14px; font-weight: 600; color: ${task.isImportant ? '#ef4444' : '#00A19A'};">${task.category || "Công việc"}</td>
+                              <td style="padding: 4px 0; font-size: 13px; font-weight: 600; color: #64748b; width: 120px; text-transform: uppercase;" className="p-2 border border-slate-200">Danh mục:</td>
+                              <td style="padding: 4px 0; font-size: 14px; font-weight: 600; color: ${task.isImportant ? '#ef4444' : '#00A19A'};" className="p-2 border border-slate-200">${task.category || "Công việc"}</td>
                             </tr>
                             <tr>
-                              <td style="padding: 4px 0; font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase; vertical-align: top;">Nội dung:</td>
-                              <td style="padding: 4px 0; font-size: 15px; font-weight: 700; color: #1e293b;">${task.title}</td>
+                              <td style="padding: 4px 0; font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase; vertical-align: top;" className="p-2 border border-slate-200">Nội dung:</td>
+                              <td style="padding: 4px 0; font-size: 15px; font-weight: 700; color: #1e293b;" className="p-2 border border-slate-200">${task.title}</td>
                             </tr>
                             <tr>
-                              <td style="padding: 4px 0; font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase;">Người giao:</td>
-                              <td style="padding: 4px 0; font-size: 14px; color: #334155;">${task.assignedBy.fullName}</td>
+                              <td style="padding: 4px 0; font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase;" className="p-2 border border-slate-200">Người giao:</td>
+                              <td style="padding: 4px 0; font-size: 14px; color: #334155;" className="p-2 border border-slate-200">${task.assignedBy.fullName}</td>
                             </tr>
                             <tr>
-                              <td style="padding: 4px 0; font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase;">Hạn chót:</td>
-                              <td style="padding: 4px 0; font-size: 14px; font-weight: 700; color: #ef4444;">${formattedDate}</td>
+                              <td style="padding: 4px 0; font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase;" className="p-2 border border-slate-200">Hạn chót:</td>
+                              <td style="padding: 4px 0; font-size: 14px; font-weight: 700; color: #ef4444;" className="p-2 border border-slate-200">${formattedDate}</td>
                             </tr>
                           </table>
                         </div>

@@ -99,12 +99,12 @@ function Modal({ open, onClose, title, size="md", children, footer }: {
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"/>
       <div className={`relative bg-white w-full ${w} rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200`} onClick={e=>e.stopPropagation()}>
-        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-slate-50/50">
+        <div className="flex items-center justify-between text-xs font-semibold">
           <h3 className="text-base font-black text-slate-800">{title}</h3>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl bg-white border border-slate-200 hover:bg-slate-50 transition-colors text-slate-500 shadow-sm"><X className="w-4 h-4"/></button>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center hover:bg-slate-50 transition-colors text-slate-500 shadow-sm text-xs font-semibold"><X className="w-4 h-4"/></button>
         </div>
         <div className="overflow-y-auto flex-1 px-6 py-5">{children}</div>
-        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex gap-3 flex-shrink-0">{footer}</div>
+        <div className="flex gap-3 flex-shrink-0 text-xs font-semibold">{footer}</div>
       </div>
     </div>
   )
@@ -116,14 +116,14 @@ function ConfirmDialog({ open, onClose, onConfirm, message }: { open:boolean; on
     <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose}/>
       <div className="relative bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center animate-in zoom-in-95 duration-200">
-        <div className="w-14 h-14 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-rose-200">
+        <div className="w-14 h-14 flex items-center justify-center mx-auto mb-4 text-xs font-semibold">
           <AlertCircle className="w-7 h-7 text-rose-600"/>
         </div>
         <h3 className="text-base font-black text-slate-800 mb-2">Xác nhận xóa</h3>
         <p className="text-sm text-slate-500 mb-6">{message}</p>
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 py-3 border border-slate-200 rounded-2xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors">Hủy</button>
-          <button onClick={()=>{onConfirm(); onClose()}} className="flex-1 py-3 bg-rose-600 text-white rounded-2xl text-sm font-bold hover:bg-rose-700 shadow-lg shadow-rose-100 transition-all">Xóa</button>
+          <button onClick={onClose} className="flex-1 text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors text-xs font-semibold">Hủy</button>
+          <button onClick={()=>{onConfirm(); onClose()}} className="flex-1 text-white text-sm font-bold hover:bg-rose-700 shadow-lg shadow-rose-100 transition-all text-xs font-semibold">Xóa</button>
         </div>
       </div>
     </div>
@@ -143,7 +143,7 @@ function Spin() { return <div className="flex justify-center py-20"><Loader2 cla
 function Empty({ icon:Icon, text, sub }: { icon:any; text:string; sub?:string }) {
   return (
     <div className="flex flex-col items-center justify-center py-24 text-center">
-      <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mb-5 border-2 border-dashed border-slate-200"><Icon className="w-10 h-10 text-slate-200"/></div>
+      <div className="w-20 h-20 flex items-center justify-center mb-5 text-xs font-semibold"><Icon className="w-10 h-10 text-slate-200"/></div>
       <p className="font-black text-slate-400 text-lg">{text}</p>
       {sub && <p className="text-xs text-slate-300 mt-1 font-bold uppercase tracking-widest">{sub}</p>}
     </div>
@@ -1453,7 +1453,7 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
           return '<tr style="border-bottom: 1px solid #000000;">' +
             '<td style="padding: 10px; border-right: 1px solid #000000; text-align: center; color: #000000;">' + (idx + 1) + '</td>' +
             '<td style="padding: 10px 15px; border-right: 1px solid #000000; font-weight: bold; color: #000000;">' + item.name + '</td>' +
-            '<td style="padding: 10px; text-align: center; font-weight: bold; color: #000000;">' + item.qty + '</td>' +
+            '<td style="padding: 10px; text-align: center; font-weight: bold; color: #000000;" className="p-2 border border-slate-200">' + item.qty + '</td>' +
           '</tr>';
         }).join("");
 
@@ -1471,12 +1471,12 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
               '<h2>DANH MỤC HỒ SƠ NHẬP HỌC</h2>' +
             '</div>' +
             '<div style="margin-top: 30px; border: 1px solid #000000; overflow: hidden; position: relative; z-index: 10;">' +
-              '<table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; color: #000000; font-family: \'Times New Roman\', Times, serif;">' +
+              '<table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; color: #000000; font-family: \'Times New Roman\', Times, serif;" className="border border-slate-200 border-collapse">' +
                 '<thead>' +
                   '<tr style="background-color: #ffffff; border-bottom: 1px solid #000000;">' +
                     '<th style="padding: 10px; border-right: 1px solid #000000; text-align: center; font-weight: bold; width: 60px; text-transform: uppercase; color: #000000;">STT</th>' +
                     '<th style="padding: 10px 15px; border-right: 1px solid #000000; text-align: center; font-weight: bold; text-transform: uppercase; color: #000000;">Tên hồ sơ</th>' +
-                    '<th style="padding: 10px; text-align: center; font-weight: bold; width: 120px; text-transform: uppercase; color: #000000;">Số lượng</th>' +
+                    '<th style="padding: 10px; text-align: center; font-weight: bold; width: 120px; text-transform: uppercase; color: #000000;" className="p-2 border border-slate-200">Số lượng</th>' +
                   '</tr>' +
                 '</thead>' +
                 '<tbody>' +
@@ -3445,7 +3445,7 @@ return {
       {/* HEADER BAR */}
       <div className="bg-white border border-slate-200 shadow-sm rounded-xl px-4 py-3 flex items-center justify-between gap-3 min-h-[56px]">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 bg-indigo-600 rounded-lg flex items-center justify-center flex-shrink-0">
+          <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 text-xs font-semibold">
             <ClipboardCheck className="w-4 h-4 text-white"/>
           </div>
           <div className="min-w-0">
@@ -3453,7 +3453,7 @@ return {
             <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest hidden sm:block">Tổng hợp kết quả khảo sát & xét duyệt học sinh phổ thông</p>
           </div>
         </div>
-        <div className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 rounded-lg border border-slate-200 flex-shrink-0">
+        <div className="flex items-center gap-1.5 flex-shrink-0 text-xs font-semibold">
           <Calendar className="w-3.5 h-3.5 text-slate-400"/>
           <select value={yearId} onChange={e=>{setYearId(e.target.value); setSPeriodId(""); setAsPeriodId(""); setStudents([]); setAssignments([])}} className="bg-transparent text-xs font-bold text-slate-700 outline-none cursor-pointer max-w-[140px] sm:max-w-none">
             {academicYears.filter(ay=>!ay.isOff).map(ay=><option key={ay.id} value={ay.id}>Năm học {ay.name}</option>)}
@@ -3465,13 +3465,13 @@ return {
       {tab==="assignments" && (
         <div className={"space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500 " + (isReadOnly ? "select-none" : "")}>
           {isReadOnly && (
-            <div className="no-print bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-2xl flex items-center gap-2.5 text-xs font-semibold shadow-sm mb-2">
+            <div className="no-print text-amber-800 flex items-center gap-2.5 text-xs font-semibold shadow-sm mb-2 text-xs font-semibold">
               <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 animate-pulse" />
               Chế độ xem (Đọc dữ liệu). Các chức năng Thêm mới, Chỉnh sửa và Xóa bị khóa đối với tài khoản này.
             </div>
           )}
           <div className="flex items-center gap-4 bg-white p-5 rounded-3xl border-2 border-teal-100 shadow-sm">
-             <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center flex-shrink-0 animate-pulse">
+             <div className="w-12 h-12 flex items-center justify-center flex-shrink-0 animate-pulse text-xs font-semibold">
                 <UserCheck className="w-6 h-6 text-indigo-500"/>
              </div>
              <div>
@@ -3483,11 +3483,11 @@ return {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left: Configuration */}
             <div className="bg-white rounded-[2rem] border-2 border-slate-100 shadow-sm overflow-hidden flex flex-col">
-              <div className="h-1.5 bg-indigo-500 w-full flex-shrink-0"/>
+              <div className="h-1.5 w-full flex-shrink-0 text-xs font-semibold"/>
               <div className="p-8 space-y-8 flex-1">
                 <div>
                   <div className="flex items-center gap-3 mb-6">
-                    <div className="w-7 h-7 bg-indigo-500 rounded-full flex items-center justify-center text-[11px] font-black text-white shadow-lg shadow-indigo-100">1</div>
+                    <div className="w-7 h-7 flex items-center justify-center text-[11px] font-black text-white shadow-lg shadow-indigo-100 text-xs font-semibold">1</div>
                     <span className="font-black text-slate-800 tracking-tight">Kỳ Khảo sát & Người phụ trách</span>
                   </div>
 
@@ -3526,11 +3526,11 @@ return {
 
             {/* Right: Scope Selection */}
             <div className="bg-white rounded-[2rem] border-2 border-slate-100 shadow-sm overflow-hidden flex flex-col">
-              <div className="h-1.5 bg-emerald-500 w-full flex-shrink-0"/>
+              <div className="h-1.5 w-full flex-shrink-0 text-xs font-semibold"/>
               <div className="p-8 space-y-8 flex-1">
                  <div>
                   <div className="flex items-center gap-3 mb-6">
-                    <div className="w-7 h-7 bg-emerald-500 rounded-full flex items-center justify-center text-[11px] font-black text-white shadow-lg shadow-emerald-100">2</div>
+                    <div className="w-7 h-7 flex items-center justify-center text-[11px] font-black text-white shadow-lg shadow-emerald-100 text-xs font-semibold">2</div>
                     <span className="font-black text-slate-800 tracking-tight">Phạm vi Phân công</span>
                   </div>
 
@@ -3558,7 +3558,7 @@ return {
 
                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                       {/* Grades Tags */}
-                      <div className="bg-slate-50/50 p-6 rounded-3xl border border-slate-100">
+                      <div className="p-6 text-xs font-semibold">
                         <div className="flex items-center justify-between mb-4">
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Layers className="w-3.5 h-3.5"/> Khối *</label>
                           <button onClick={() => setAsSelGrades(asSelGrades.length === activeGrades.length ? [] : activeGrades)} className={"text-[9px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg " + (isReadOnly ? "pointer-events-none opacity-40 cursor-not-allowed" : "")} disabled={isReadOnly}>Chọn hết</button>
@@ -3577,7 +3577,7 @@ return {
                       </div>
 
                       {/* System Tags */}
-                      <div className="bg-slate-50/50 p-6 rounded-3xl border border-slate-100">
+                      <div className="p-6 text-xs font-semibold">
                         <div className="flex items-center justify-between mb-4">
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><GraduationCap className="w-3.5 h-3.5"/> Hệ học *</label>
                           <button onClick={() => setAsSelSystems(asSelSystems.length === currentEduSystems.length ? [] : currentEduSystems.map(es=>es.code))} className={"text-[9px] font-black text-amber-600 bg-amber-50 px-2 py-1 rounded-lg " + (isReadOnly ? "pointer-events-none opacity-40 cursor-not-allowed" : "")} disabled={isReadOnly}>Chọn hết</button>
@@ -3619,11 +3619,11 @@ return {
                 <div className="flex items-center gap-3">
                    <h3 className="text-base font-black text-slate-800 flex items-center gap-2"><Search className="w-5 h-5 text-indigo-500"/> Danh sách đã Phân công</h3>
                    {asFilterBatchId && (
-                      <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs font-black">{groupedAssignments.length} nhóm phân công</span>
+                      <span className="text-indigo-600 text-xs font-black text-xs font-semibold">{groupedAssignments.length} nhóm phân công</span>
                    )}
                 </div>
                 {asPeriodId && (
-                   <div className="flex flex-wrap items-center gap-3 self-end sm:self-auto bg-slate-50 border border-slate-100 rounded-2xl px-4 py-2">
+                   <div className="flex flex-wrap items-center gap-3 self-end sm:self-auto text-xs font-semibold">
                       <div className="flex items-center gap-2">
                          <Filter className="w-4 h-4 text-indigo-500" />
                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Lọc đợt:</span>
@@ -3654,7 +3654,7 @@ return {
              <div className="bg-white border border-slate-200 rounded-[2rem] shadow-sm overflow-hidden">
                 {!asFilterBatchId ? (
                   <div className="flex flex-col items-center justify-center py-16 text-center">
-                    <div className="w-16 h-16 bg-teal-50 rounded-full flex items-center justify-center mb-4">
+                    <div className="w-16 h-16 flex items-center justify-center mb-4 text-xs font-semibold">
                       <Filter className="w-8 h-8 text-[#00A19A]" />
                     </div>
                     <p className="font-black text-slate-500 text-sm">Vui lòng chọn Đợt lọc</p>
@@ -3664,22 +3664,22 @@ return {
                   <Empty icon={UserPlus} text="Chưa có phân công nào" sub="Sử dụng form bên trên để tiến hành phân công GV"/>
                 ) : (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left whitespace-nowrap">
-                      <thead className="bg-slate-50 border-b border-slate-100">
+                    <table className="w-full text-left whitespace-nowrap border-collapse">
+                      <thead className="text-xs font-semibold">
                         <tr>
-                          <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Giáo viên</th>
-                          <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Môn học</th>
-                          <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Khối</th>
-                          <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Hệ học</th>
-                          <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Thao tác</th>
+                          <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">Giáo viên</th>
+                          <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">Môn học</th>
+                          <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">Khối</th>
+                          <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">Hệ học</th>
+                          <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right border border-slate-200">Thao tác</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-50">
                         {groupedAssignments.map(a => (
-                          <tr key={a.id} className="group hover:bg-slate-50/70 transition-colors">
-                            <td className="p-5">
+                          <tr key={a.id} className="group hover:bg-slate-50/70 transition-colors text-xs font-semibold">
+                            <td className="p-2 border border-slate-200">
                               <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 font-black text-xs">
+                                <div className="w-9 h-9 flex items-center justify-center text-indigo-600 font-black text-xs text-xs font-semibold">
                                   {a.user?.fullName?.charAt(0)}
                                 </div>
                                 <div>
@@ -3688,28 +3688,28 @@ return {
                                 </div>
                               </div>
                             </td>
-                            <td className="p-5 px-6">
+                            <td className="p-2 p-2 border border-slate-200">
                                 <div className="flex flex-wrap gap-1">
                                   {a.subjects.map((sub: string) => (
                                     <span key={sub} className="px-3 py-1 bg-white border border-indigo-100 rounded-lg text-xs font-black text-indigo-600 shadow-sm">{sub}</span>
                                   ))}
                                 </div>
                               </td>
-                            <td className="p-5">
+                            <td className="p-2 border border-slate-200">
                                 <div className="flex flex-wrap gap-1">
                                   {a.grades.map((g: string) => (
                                     <span key={g} className="text-xs font-black text-slate-600 bg-slate-100 px-2 py-1 rounded-md">{g}</span>
                                   ))}
                                 </div>
                               </td>
-                            <td className="p-5">
+                            <td className="p-2 border border-slate-200">
                                 <div className="flex flex-wrap gap-1">
                                   {a.educationSystems.map((sys: string) => (
-                                    <span key={sys} className="px-2 py-0.5 border border-amber-100 bg-amber-50 text-amber-700 rounded-md text-[10px] font-black uppercase">{sys}</span>
+                                    <span key={sys} className="text-amber-700 text-[10px] font-black uppercase text-xs font-semibold">{sys}</span>
                                   ))}
                                 </div>
                               </td>
-                            <td className="p-5 text-right flex items-center justify-end">
+                            <td className="p-2 text-right flex items-center justify-end border border-slate-200">
                                <button 
                                  onClick={() => sendTeacherNotification(a)}
                                  disabled={asNotifyingId === a.id}
@@ -3746,7 +3746,7 @@ return {
       {tab==="periods" && (
         <div className={"space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500 " + (isReadOnly ? "select-none" : "")}>
           {isReadOnly && (
-            <div className="no-print bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-2xl flex items-center gap-2.5 text-xs font-semibold shadow-sm mb-2">
+            <div className="no-print text-amber-800 flex items-center gap-2.5 text-xs font-semibold shadow-sm mb-2 text-xs font-semibold">
               <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 animate-pulse" />
               Chế độ xem (Đọc dữ liệu). Các chức năng Thêm mới, Chỉnh sửa và Xóa bị khóa đối với tài khoản này.
             </div>
@@ -3767,7 +3767,7 @@ return {
                 <div key={p.id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden group/p hover:border-indigo-200 transition-all">
                   <div className="px-4 py-3.5 flex flex-wrap items-center justify-between gap-3 cursor-pointer" onClick={()=>setExpandedId(expandedId===p.id?null:p.id)}>
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center flex-shrink-0 group-hover/p:bg-indigo-600 group-hover/p:text-white transition-all">
+                      <div className="w-12 h-12 flex items-center justify-center flex-shrink-0 group-hover/p:bg-indigo-600 group-hover/p:text-white transition-all text-xs font-semibold">
                         <Clock className="w-5 h-5"/>
                       </div>
                       <div>
@@ -3792,21 +3792,21 @@ return {
                     </div>
                   </div>
                   {expandedId===p.id && (
-                    <div className="border-t border-slate-100 p-6 bg-slate-50/30">
+                    <div className="p-6 text-xs font-semibold">
                        {(!p.batches || p.batches.length === 0) ? (
                          <div className="text-center py-8 text-slate-400 font-bold text-xs uppercase tracking-wider bg-white rounded-2xl border-2 border-dashed border-slate-200">Chưa có Đợt khảo sát nào ghi nhận</div>
                        ) : (
                          <div className="overflow-x-auto bg-white border border-slate-200 rounded-2xl shadow-sm">
                            <table className="w-full text-left border-collapse">
                              <thead>
-                               <tr className="bg-slate-50/70 border-b border-slate-100">
-                                 <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest pl-6">Mã Đợt</th>
-                                 <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Nội dung khảo sát</th>
-                                 <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Cơ sở</th>
-                                 <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Thời gian</th>
-                                 <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Trạng thái</th>
-                                 <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Người phụ trách</th>
-                                 <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right pr-6">Thao tác</th>
+                               <tr className="text-xs font-semibold">
+                                 <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest pl-6 border border-slate-200">Mã Đợt</th>
+                                 <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">Nội dung khảo sát</th>
+                                 <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">Cơ sở</th>
+                                 <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">Thời gian</th>
+                                 <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">Trạng thái</th>
+                                 <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">Người phụ trách</th>
+                                 <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right pr-6 border border-slate-200">Thao tác</th>
                                </tr>
                              </thead>
                              <tbody className="divide-y divide-slate-100">
@@ -3826,22 +3826,22 @@ return {
                                  }
 
                                  return (
-                                   <tr key={b.id} className="group hover:bg-slate-50/50 transition-colors">
-                                     <td className="p-4 pl-6">
-                                       <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-50 font-black text-indigo-600 text-xs">
+                                   <tr key={b.id} className="group hover:bg-slate-50/50 transition-colors text-xs font-semibold">
+                                     <td className="p-2 pl-6 border border-slate-200">
+                                       <span className="inline-flex items-center justify-center w-8 h-8 font-black text-indigo-600 text-xs text-xs font-semibold">
                                          #{b.batchNumber}
                                        </span>
                                      </td>
-                                     <td className="p-4">
+                                     <td className="p-2 border border-slate-200">
                                        <p className="text-sm font-black text-slate-700">{baseName}</p>
                                        <p className="text-[10px] font-bold text-slate-400 truncate max-w-xs">{b.name}</p>
                                      </td>
-                                     <td className="p-4">
-                                       <span className="px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-black text-slate-600">
+                                     <td className="p-2 border border-slate-200">
+                                       <span className="text-[11px] font-black text-slate-600 text-xs font-semibold">
                                          {campusName}
                                        </span>
                                      </td>
-                                     <td className="p-4">
+                                     <td className="p-2 border border-slate-200">
                                        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500">
                                          <Calendar className="w-3.5 h-3.5 text-slate-400" />
                                          <span>{b.startDate?.slice(0, 10).split('-').reverse().join('/')}</span>
@@ -3849,7 +3849,7 @@ return {
                                          <span>{b.endDate?.slice(0, 10).split('-').reverse().join('/')}</span>
                                        </div>
                                      </td>
-                                     <td className="p-4">
+                                     <td className="p-2 border border-slate-200">
                                        <div className="flex items-center gap-2">
                                        <button
                                          onClick={async () => {
@@ -3878,10 +3878,10 @@ return {
                                        </span>
                                      </div>
                                      </td>
-                                                                           <td className="p-4">
+                                                                           <td className="p-2 border border-slate-200">
                                         <div className="flex items-center justify-between gap-2 group/assignee">
                                           <div className="flex items-center gap-2">
-                                            <div className="w-6 h-6 bg-emerald-50 rounded-full flex items-center justify-center text-[10px] font-black text-emerald-600 border border-emerald-100">
+                                            <div className="w-6 h-6 flex items-center justify-center text-[10px] font-black text-emerald-600 text-xs font-semibold">
                                               {assigneeName.charAt(0)}
                                             </div>
                                             <span className="text-xs font-bold text-slate-600">{assigneeName}</span>
@@ -3909,7 +3909,7 @@ return {
                                                   setSendingEmailBatchId(null);
                                                 }
                                               }}
-                                              className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-all ml-2"
+                                              className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all ml-2 text-xs font-semibold"
                                               disabled={sendingEmailBatchId === b.id}
                                               title="Gửi email thông báo cho người phụ trách"
                                             >
@@ -3922,7 +3922,7 @@ return {
                                           )}
                                         </div>
                                       </td>
-                                     <td className="p-4 text-right pr-6">
+                                     <td className="p-2 text-right pr-6 border border-slate-200">
                                        <div className="flex items-center justify-end gap-1">
                                          <button onClick={() => openEditBatch(b)} className={"p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate} title="Chỉnh sửa">
                                            <Edit2 className="w-3.5 h-3.5" />
@@ -3952,7 +3952,7 @@ return {
       {tab==="students" && (
         <div className={"space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 " + (isReadOnly ? "select-none" : "")}>
           {isReadOnly && (
-            <div className="no-print bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-2xl flex items-center gap-2.5 text-xs font-semibold shadow-sm mb-2">
+            <div className="no-print text-amber-800 flex items-center gap-2.5 text-xs font-semibold shadow-sm mb-2 text-xs font-semibold">
               <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 animate-pulse" />
               Chế độ xem (Đọc dữ liệu). Các chức năng Thêm mới, Chỉnh sửa và Xóa bị khóa đối với tài khoản này.
             </div>
@@ -3971,7 +3971,7 @@ return {
               <span className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 text-xs font-bold border border-slate-200">
                 Tổng cộng: <span className="text-[#00A19A] ml-1">{filtStu.length}</span> HS
               </span>
-              <button onClick={handleDownloadTemplate} disabled={!sPeriodId || sPeriodId === "all"} className="h-10 px-4 bg-white text-slate-600 border border-slate-200 rounded-xl flex items-center justify-center hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 shadow-sm transition-all disabled:opacity-50 text-sm font-semibold group" title={sPeriodId === "all" ? "Vui lòng chọn một kỳ cụ thể" : ""}>
+              <button onClick={handleDownloadTemplate} disabled={!sPeriodId || sPeriodId === "all"} className="h-10 text-slate-600 flex items-center justify-center hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 shadow-sm transition-all disabled:opacity-50 text-sm font-semibold group text-xs font-semibold" title={sPeriodId === "all" ? "Vui lòng chọn một kỳ cụ thể" : ""}>
                  <Download className="w-4 h-4 sm:mr-2 group-hover:-translate-y-0.5 transition-transform"/>
                  <span className="hidden sm:inline">Tải mẫu</span>
               </button>
@@ -4025,7 +4025,7 @@ return {
               <div className="flex-1 flex items-center justify-center py-20"><Spin/></div>
             ) : filtStu.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center py-20 text-slate-500">
-                <div className="w-16 h-16 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center mb-4">
+                <div className="w-16 h-16 flex items-center justify-center mb-4 text-xs font-semibold">
                   <Users className="w-8 h-8 text-slate-300"/>
                 </div>
                 <p className="font-bold text-slate-700">Không tìm thấy dữ liệu</p>
@@ -4038,61 +4038,61 @@ return {
                   <table className="w-full text-left whitespace-nowrap border-collapse">
                     <thead className="bg-[#F0FDFA] sticky top-0 z-10 shadow-[0_1px_0_#CCFBF1]">
                        <tr>
-                          <th className="px-5 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest">Mã HS KS</th>
-                          <th className="px-5 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest">Họ và Tên</th>
-                          <th className="px-3 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center">Khối</th>
-                          <th className="px-3 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center">Giới tính</th>
-                          <th className="px-4 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center">Ngày sinh</th>
-                          <th className="px-4 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center">Hệ Khảo sát</th>
-                           <th className="px-4 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center">Kết quả Học tập</th>
-                           <th className="px-4 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center">Kết quả Rèn luyện</th>
-                          <th className="px-4 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center">Hồ sơ / Bảng điểm</th>
-                          <th className="px-4 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center">Học kỳ / Năm TS</th>
-                          <th className="px-4 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center">Đối tượng TS</th>
+                          <th className="p-2 p-2 text-[10px] font-black text-[#006662] uppercase tracking-widest border border-slate-200">Mã HS KS</th>
+                          <th className="p-2 p-2 text-[10px] font-black text-[#006662] uppercase tracking-widest border border-slate-200">Họ và Tên</th>
+                          <th className="p-2 p-2 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center border border-slate-200">Khối</th>
+                          <th className="p-2 p-2 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center border border-slate-200">Giới tính</th>
+                          <th className="p-2 p-2 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center border border-slate-200">Ngày sinh</th>
+                          <th className="p-2 p-2 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center border border-slate-200">Hệ Khảo sát</th>
+                           <th className="p-2 p-2 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center border border-slate-200">Kết quả Học tập</th>
+                           <th className="p-2 p-2 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center border border-slate-200">Kết quả Rèn luyện</th>
+                          <th className="p-2 p-2 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center border border-slate-200">Hồ sơ / Bảng điểm</th>
+                          <th className="p-2 p-2 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center border border-slate-200">Học kỳ / Năm TS</th>
+                          <th className="p-2 p-2 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center border border-slate-200">Đối tượng TS</th>
                            {selPeriod?.name?.toLowerCase().includes("open day") && (
                              <>
-                               <th className="px-4 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center">Đăng ký CS</th>
-                               <th className="px-4 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center">Ủy quyền xét duyệt</th>
+                               <th className="p-2 p-2 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center border border-slate-200">Đăng ký CS</th>
+                               <th className="p-2 p-2 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center border border-slate-200">Ủy quyền xét duyệt</th>
                              </>
                            )}
-                          <th className="px-4 py-4 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center">Thao tác</th>
+                          <th className="p-2 p-2 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center border border-slate-200">Thao tác</th>
                        </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {filtStu.map((s, idx) => (
                         <tr key={s.id} className={`group hover:bg-slate-50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
-                           <td className="px-5 py-3.5"><span className="font-mono text-xs font-black text-[#00A19A] bg-[#00A19A]/10 border border-[#00A19A]/20 px-2.5 py-1 rounded-md">{s.studentCode}</span></td>
-                           <td className="px-5 py-3.5">
+                           <td className="p-2 p-2 border border-slate-200"><span className="font-mono text-xs font-black text-[#00A19A] bg-[#00A19A]/10 border border-[#00A19A]/20 px-2.5 py-1 rounded-md">{s.studentCode}</span></td>
+                           <td className="p-2 p-2 border border-slate-200">
                              <div className="flex flex-col">
                                <span className="text-sm font-bold text-slate-800">{s.fullName}</span>
                                <span className="text-[10px] font-semibold text-slate-400 mt-0.5">{s.surveySystem || "Chưa xếp hệ"}</span>
                              </div>
                            </td>
-                           <td className="px-3 py-3.5 text-center text-xs font-bold text-slate-500 bg-slate-50/50 group-hover:bg-transparent">{s.grade}</td>
-                           <td className="px-3 py-3.5 text-center text-xs font-bold text-slate-500">{s.gender || "-"}</td>
-                           <td className="px-4 py-3.5 text-center"><span className="text-xs font-semibold text-slate-600">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString('vi-VN') : "-"}</span></td>
-                           <td className="px-4 py-3.5 text-center">
-                             <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-600 border border-indigo-100">
+                           <td className="p-2 p-2 text-center text-xs font-bold text-slate-500 group-hover:bg-transparent text-xs font-semibold">{s.grade}</td>
+                           <td className="p-2 p-2 text-center text-xs font-bold text-slate-500 border border-slate-200">{s.gender || "-"}</td>
+                           <td className="p-2 p-2 text-center border border-slate-200"><span className="text-xs font-semibold text-slate-600">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString('vi-VN') : "-"}</span></td>
+                           <td className="p-2 p-2 text-center border border-slate-200">
+                             <span className="inline-flex items-center text-[10px] font-bold uppercase tracking-wider text-indigo-600 text-xs font-semibold">
                                {s.surveyFormType || "-"}
                              </span>
                            </td>
-                           <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.kqHocTap || "-"}</td>
-                           <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.kqRenLuyen || "-"}</td>
-                           <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.hoSoCtQuocTe || "-"}</td>
-                           <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.hocKy || "-"}</td>
-                           <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.targetType || "-"}</td>
+                           <td className="p-2 p-2 text-center text-xs text-slate-600 border border-slate-200">{s.kqHocTap || "-"}</td>
+                           <td className="p-2 p-2 text-center text-xs text-slate-600 border border-slate-200">{s.kqRenLuyen || "-"}</td>
+                           <td className="p-2 p-2 text-center text-xs text-slate-600 border border-slate-200">{s.hoSoCtQuocTe || "-"}</td>
+                           <td className="p-2 p-2 text-center text-xs text-slate-600 border border-slate-200">{s.hocKy || "-"}</td>
+                           <td className="p-2 p-2 text-center text-xs text-slate-600 border border-slate-200">{s.targetType || "-"}</td>
                            {selPeriod?.name?.toLowerCase().includes("open day") && (
                              <>
-                               <td className="px-4 py-3.5 text-center text-xs text-slate-650">
+                               <td className="p-2 p-2 text-center text-xs text-slate-650 border border-slate-200">
                                  {campuses.find(c => c.id === s.registeredCampus)?.campusName || s.registeredCampus || "-"}
                                </td>
-                               <td className="px-4 py-3.5 text-center text-xs text-slate-650 font-bold">
+                               <td className="p-2 p-2 text-center text-xs text-slate-650 font-bold border border-slate-200">
                                  {campuses.find(c => c.id === s.registeredCampus)?.manager?.fullName || "-"}
                                </td>
                              </>
                            )}
                            
-                           <td className="px-4 py-3.5 text-center sticky right-0 bg-white group-hover:bg-slate-50 transition-colors shadow-[-10px_0_15px_-10px_rgba(0,0,0,0.05)] border-l border-slate-100">
+                           <td className="text-center sticky right-0 group-hover:bg-slate-50 transition-colors shadow-[-10px_0_15px_-10px_rgba(0,0,0,0.05)] text-xs font-semibold">
                               <div className="flex items-center justify-center gap-1.5">
                                  <button onClick={()=>openEditStudent(s)} className={"p-1.5 text-slate-400 hover:text-[#00A19A] hover:bg-[#00A19A]/10 rounded-lg transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate} title="Sửa hồ sơ"><Edit2 className="w-4 h-4"/></button>
                                  <button onClick={()=>setConfirm({msg:`Xóa hồ sơ học sinh ${s.fullName}?`,fn:()=>doDeleteStudent(s.id)})} className={"p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete} title="Xóa hồ sơ"><Trash2 className="w-4 h-4"/></button>
@@ -4105,7 +4105,7 @@ return {
                 </div>
 
                 {/* Mobile Card List View */}
-                <div className="md:hidden flex flex-col p-4 gap-4 bg-slate-50/50">
+                <div className="md:hidden flex flex-col p-4 gap-4 text-xs font-semibold">
                   {filtStu.map(s => (
                     <div key={s.id} className="bg-white p-4 rounded-2xl border-2 border-blue-100 shadow-sm relative">
                       <div className="flex justify-between items-start mb-3">
@@ -4142,7 +4142,7 @@ return {
                 </div>
 
                 {/* Footer Pagination (Visual only for now) */}
-                <div className="border-t border-slate-200 p-4 bg-slate-50 flex items-center justify-between text-xs font-medium text-slate-500">
+                <div className="p-4 flex items-center justify-between text-xs font-medium text-slate-500 text-xs font-semibold">
                   <span>Hiển thị <span className="font-bold text-slate-700">{filtStu.length}</span> kết quả</span>
                   {/* Future real pagination can go here */}
                 </div>
@@ -4156,7 +4156,7 @@ return {
       {tab==="categories" && (
         <div className={"grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500 " + (isReadOnly ? "select-none" : "")}>
           {isReadOnly && (
-            <div className="no-print bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-2xl flex items-center gap-2.5 text-xs font-semibold shadow-sm mb-2 col-span-full">
+            <div className="no-print text-amber-800 flex items-center gap-2.5 text-xs font-semibold shadow-sm mb-2 col-span-full text-xs font-semibold">
               <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 animate-pulse" />
               Chế độ xem (Đọc dữ liệu). Các chức năng Thêm mới, Chỉnh sửa và Xóa bị khóa đối với tài khoản này.
             </div>
@@ -4173,7 +4173,7 @@ return {
                 </div>
                 <div className="p-4 flex-1 space-y-1.5">
                    {configs.filter(c => c.categoryType === type.code).map(c => (
-                     <div key={c.id} className="group flex items-center justify-between p-3 rounded-2xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100">
+                     <div key={c.id} className="group flex items-center justify-between p-3 hover:bg-slate-50 transition-all hover:border-slate-100 text-xs font-semibold">
                         <span className="text-xs font-black text-slate-600 truncate">{c.name}</span>
                         <div className="flex items-center gap-0.5 ">
                            <button onClick={()=>openEditConfig(c)} className={"p-1.5 text-slate-300 hover:text-indigo-600 " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate}><Edit2 className="w-3 h-3"/></button>
@@ -4191,7 +4191,7 @@ return {
       {tab === "subjects" && (
         <div className={"space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500 " + (isReadOnly ? "select-none" : "")}>
           {isReadOnly && (
-            <div className="no-print bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-2xl flex items-center gap-2.5 text-xs font-semibold shadow-sm mb-2">
+            <div className="no-print text-amber-800 flex items-center gap-2.5 text-xs font-semibold shadow-sm mb-2 text-xs font-semibold">
               <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 animate-pulse" />
               Chế độ xem (Đọc dữ liệu). Các chức năng Thêm mới, Chỉnh sửa và Xóa bị khóa đối với tài khoản này.
             </div>
@@ -4211,17 +4211,17 @@ return {
           ) : (
             <div className="bg-white border border-slate-200 rounded-[2rem] shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-left whitespace-nowrap">
-                  <thead className="bg-slate-50 border-b border-slate-100">
+                <table className="w-full text-left whitespace-nowrap border-collapse">
+                  <thead className="text-xs font-semibold">
                     <tr>
-                      <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Mã Môn</th>
-                      <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Tên Môn</th>
+                      <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">Mã Môn</th>
+                      <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">Tên Môn</th>
                       
-                      <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Cột Điểm</th>
-                      <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Cột NX</th>
-                      <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Trạng thái</th>
-                      <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Miễn giảm</th>
-                      <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Thao tác</th>
+                      <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center border border-slate-200">Cột Điểm</th>
+                      <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center border border-slate-200">Cột NX</th>
+                      <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center border border-slate-200">Trạng thái</th>
+                      <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center border border-slate-200">Miễn giảm</th>
+                      <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right border border-slate-200">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
@@ -4229,17 +4229,17 @@ return {
                       let parsedCols = { scores: [], comments: [], showScoreInReport: [], showCommentInReport: [] };
                       try { if (sub.columnNames) parsedCols = JSON.parse(sub.columnNames); } catch {}
                       return (
-                        <tr key={sub.id} className="group hover:bg-slate-50/70 transition-colors">
-                          <td className="p-5"><span className="font-mono text-xs font-black text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg">{sub.code}</span></td>
-                          <td className="p-5"><span className="text-sm font-black text-slate-700">{sub.name}</span></td>
+                        <tr key={sub.id} className="group hover:bg-slate-50/70 transition-colors text-xs font-semibold">
+                          <td className="p-2 border border-slate-200"><span className="font-mono text-xs font-black text-indigo-600 text-xs font-semibold">{sub.code}</span></td>
+                          <td className="p-2 border border-slate-200"><span className="text-sm font-black text-slate-700">{sub.name}</span></td>
                           
-                          <td className="p-5 text-center"><span className="w-7 h-7 rounded-full bg-indigo-50 text-indigo-700 font-black text-xs inline-flex items-center justify-center">{sub.scoreColumns ?? 0}</span></td>
-                          <td className="p-5 text-center"><span className="w-7 h-7 rounded-full bg-emerald-50 text-emerald-700 font-black text-xs inline-flex items-center justify-center">{sub.commentColumns ?? 0}</span></td>
-                          <td className="p-5 text-center"><Badge s={sub.status || "ACTIVE"}/></td>
-                          <td className="p-5 text-center">
-                            {(() => { try { const arr = JSON.parse(sub.exemptCriteria || "[]"); return (Array.isArray(arr) && arr.length > 0) ? <div className="flex flex-wrap gap-1 justify-center">{arr.map((c: string) => <span key={c} className="text-[10px] font-bold text-violet-700 bg-violet-50 border border-violet-200 px-2 py-0.5 rounded-full">{c}</span>)}</div> : <span className="text-slate-300 text-xs">—</span>; } catch { return <span className="text-slate-300 text-xs">—</span>; } })()}
+                          <td className="p-2 text-center border border-slate-200"><span className="w-7 h-7 text-indigo-700 font-black text-xs inline-flex items-center justify-center text-xs font-semibold">{sub.scoreColumns ?? 0}</span></td>
+                          <td className="p-2 text-center border border-slate-200"><span className="w-7 h-7 text-emerald-700 font-black text-xs inline-flex items-center justify-center text-xs font-semibold">{sub.commentColumns ?? 0}</span></td>
+                          <td className="p-2 text-center border border-slate-200"><Badge s={sub.status || "ACTIVE"}/></td>
+                          <td className="p-2 text-center border border-slate-200">
+                            {(() => { try { const arr = JSON.parse(sub.exemptCriteria || "[]"); return (Array.isArray(arr) && arr.length > 0) ? <div className="flex flex-wrap gap-1 justify-center">{arr.map((c: string) => <span key={c} className="text-[10px] font-bold text-violet-700 text-xs font-semibold">{c}</span>)}</div> : <span className="text-slate-300 text-xs">—</span>; } catch { return <span className="text-slate-300 text-xs">—</span>; } })()}
                           </td>
-                          <td className="p-5 text-right">
+                          <td className="p-2 text-right border border-slate-200">
                             <div className="flex items-center justify-end gap-1">
                               <button title="Cấu hình tên cột" onClick={() => { setColumnConfigForm({ subjectId: sub.id, name: sub.name, scoreColumns: sub.scoreColumns ?? 1, commentColumns: sub.commentColumns ?? 1, scoreNames: parsedCols.scores || [], commentNames: parsedCols.comments || [], showScoreInReport: parsedCols.showScoreInReport || [], showCommentInReport: parsedCols.showCommentInReport || [] }); setIsColumnConfigOpen(true); }} className={"p-2.5 text-slate-300 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate}><PenLine className="w-4 h-4"/></button>
                               <button onClick={() => { setEditingSubjectId(sub.id); setSubjectForm({ code: sub.code, name: sub.name, subjectType: sub.subjectType || "", scoreColumns: sub.scoreColumns ?? 1, commentColumns: sub.commentColumns ?? 1, status: sub.status || "ACTIVE", exemptCriteria: (() => { try { return JSON.parse(sub.exemptCriteria || "[]"); } catch { return []; } })() }); setIsSubjectOpen(true); }} className={"p-2.5 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate}><Edit2 className="w-4 h-4"/></button>
@@ -4259,7 +4259,7 @@ return {
       {tab === "mapping" && (
         <div className={"space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500 " + (isReadOnly ? "select-none" : "")}>
           {isReadOnly && (
-            <div className="no-print bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-2xl flex items-center gap-2.5 text-xs font-semibold shadow-sm mb-2">
+            <div className="no-print text-amber-800 flex items-center gap-2.5 text-xs font-semibold shadow-sm mb-2 text-xs font-semibold">
               <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 animate-pulse" />
               Chế độ xem (Đọc dữ liệu). Các chức năng Thêm mới, Chỉnh sửa và Xóa bị khóa đối với tài khoản này.
             </div>
@@ -4278,7 +4278,7 @@ return {
             
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
               {/* Left: Grade & Edu */}
-              <div className="lg:col-span-5 space-y-6 bg-slate-50/60 p-5 rounded-2xl border border-slate-200">
+              <div className="lg:col-span-5 space-y-6 p-5 text-xs font-semibold">
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="block font-black text-slate-850 text-xs uppercase tracking-wider">Khối:</span>
@@ -4309,7 +4309,7 @@ return {
               </div>
 
               {/* Right: Subjects to Assign */}
-              <div className="lg:col-span-7 bg-slate-50/60 p-5 rounded-2xl border border-slate-200 flex flex-col">
+              <div className="lg:col-span-7 p-5 flex flex-col text-xs font-semibold">
                 <div className="flex items-center justify-between mb-3">
                   <span className="block font-black text-slate-855 text-xs uppercase tracking-wider">Chọn Môn Khảo Sát:</span>
                   <button onClick={() => setAssignSelSubjects(assignSelSubjects.length === subjectsList.length ? [] : subjectsList.map((s:any)=>s.id))} className={"text-[10px] font-black uppercase tracking-wider text-[#00A19A] bg-[#00A19A]/10 hover:bg-[#00A19A]/20 px-2.5 py-1 rounded-md transition-colors border border-[#00A19A]/20 " + (isReadOnly ? "pointer-events-none opacity-40" : "")} disabled={isReadOnly}>Chọn tất cả</button>
@@ -4365,7 +4365,7 @@ return {
 
           {/* BOTTOM PANEL: Table of existing configurations */}
           <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-200 bg-slate-50/80 flex justify-between items-center">
+            <div className="flex justify-between items-center text-xs font-semibold">
               <h4 className="font-black text-slate-800 flex items-center gap-2"><Layers className="w-4 h-4 text-[#00A19A]"/> Danh sách Cấu hình đã lưu</h4>
               <button onClick={fetchAllMappings} className="text-xs text-[#00A19A] hover:underline font-bold">Làm mới</button>
             </div>
@@ -4376,14 +4376,14 @@ return {
               <div className="p-12 text-center text-slate-455 font-semibold">Chưa có cấu hình môn khảo sát nào.</div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 border-b border-slate-200">
+                <table className="w-full text-left text-sm border-collapse">
+                  <thead className="text-xs font-semibold">
                     <tr>
-                      <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest w-16">STT</th>
-                      <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">Môn Khảo Sát</th>
-                      <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">Khối Áp Dụng</th>
-                      <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">Hệ Áp Dụng</th>
-                      <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest text-center w-24">Thao tác</th>
+                      <th className="p-2 p-2 text-xs font-black text-slate-400 uppercase tracking-widest w-16 border border-slate-200">STT</th>
+                      <th className="p-2 p-2 text-xs font-black text-slate-400 uppercase tracking-widest border border-slate-200">Môn Khảo Sát</th>
+                      <th className="p-2 p-2 text-xs font-black text-slate-400 uppercase tracking-widest border border-slate-200">Khối Áp Dụng</th>
+                      <th className="p-2 p-2 text-xs font-black text-slate-400 uppercase tracking-widest border border-slate-200">Hệ Áp Dụng</th>
+                      <th className="p-2 p-2 text-xs font-black text-slate-400 uppercase tracking-widest text-center w-24 border border-slate-200">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -4406,9 +4406,9 @@ return {
                         const allEdus = currentEduSystems.length > 0 && g.edus.size === currentEduSystems.length;
                         
                         return (
-                          <tr key={g.subject?.id} className="hover:bg-slate-50/50 transition-colors">
-                            <td className="px-6 py-4 font-medium text-slate-400">{i+1}</td>
-                            <td className="px-6 py-4">
+                          <tr key={g.subject?.id} className="hover:bg-slate-50/50 transition-colors text-xs font-semibold">
+                            <td className="p-2 p-2 font-medium text-slate-400 border border-slate-200">{i+1}</td>
+                            <td className="p-2 p-2 border border-slate-200">
                               <div className="flex items-center gap-2">
                                 <span className="font-bold text-slate-800 text-base">{g.subject?.name}</span>
                                 {g.subject?.code && <span className="text-xs font-mono text-slate-400">{g.subject.code}</span>}
@@ -4419,7 +4419,7 @@ return {
                                 )}
                               </div>
                             </td>
-                            <td className="px-6 py-4">
+                            <td className="p-2 p-2 border border-slate-200">
                               {allGrades ? (
                                 <span className="font-bold text-[#00A19A] bg-[#00A19A]/5 border border-[#00A19A]/20 px-2.5 py-1 rounded-md text-xs">Tất cả Khối</span>
                               ) : (
@@ -4430,18 +4430,18 @@ return {
                                 </div>
                               )}
                             </td>
-                            <td className="px-6 py-4">
+                            <td className="p-2 p-2 border border-slate-200">
                               {allEdus ? (
-                                <span className="font-bold text-teal-850 bg-teal-50 border border-teal-200 px-2.5 py-1 rounded-md text-xs">Tất cả Hệ học</span>
+                                <span className="font-bold text-teal-850 text-xs text-xs font-semibold">Tất cả Hệ học</span>
                               ) : (
                                 <div className="flex flex-wrap gap-1.5">
                                   {Array.from(g.edus).sort().map((edu:any) => (
-                                    <span key={edu} className="font-bold text-teal-850 bg-teal-50 border border-teal-200 px-2 py-1 rounded-md text-xs">{edu}</span>
+                                    <span key={edu} className="font-bold text-teal-850 text-xs text-xs font-semibold">{edu}</span>
                                   ))}
                                 </div>
                               )}
                             </td>
-                            <td className="px-6 py-4 text-center">
+                            <td className="p-2 p-2 text-center border border-slate-200">
                               <div className="flex justify-center gap-1">
                                 <button onClick={() => {
                                   setSelGrades(Array.from(g.grades) as string[]);
@@ -4480,7 +4480,7 @@ return {
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
           <div className="bg-white/80 backdrop-blur-md p-6 rounded-3xl shadow-sm border border-slate-200/60 flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 shadow-inner">
+              <div className="w-12 h-12 flex items-center justify-center text-indigo-600 shadow-inner text-xs font-semibold">
                 <Tag className="w-6 h-6" />
               </div>
               <div>
@@ -4516,7 +4516,7 @@ return {
                   setDocFormSelectedGrades(docGroupGrades[selectedDocGroup] || []);
                   setIsDocModalOpen(true);
                 }}
-                className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-2 shadow-lg shadow-indigo-100"
+                className="hover:bg-indigo-700 text-white text-xs font-black transition-all flex items-center gap-2 shadow-lg shadow-indigo-100 text-xs font-semibold"
               >
                 <Plus className="w-3.5 h-3.5" />
                 Thêm hồ sơ mới
@@ -4532,7 +4532,7 @@ return {
                   <select 
                     value={selectedDocGroup} 
                     onChange={(e) => setSelectedDocGroup(e.target.value)} 
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 pr-10 text-sm font-black text-slate-700 outline-none appearance-none cursor-pointer hover:bg-slate-100/50 focus:border-indigo-500 focus:bg-white transition-all duration-300"
+                    className="w-full pr-10 text-sm font-black text-slate-700 outline-none appearance-none cursor-pointer hover:bg-slate-100/50 focus:border-indigo-500 focus:bg-white transition-all duration-300 text-xs font-semibold"
                   >
                     {docGroups.map(g => (
                       <option key={g.id} value={g.id}>{g.label}</option>
@@ -4552,7 +4552,7 @@ return {
                       setSelectedDocGroup(newId);
                     }
                   }}
-                  className="px-4 py-3.5 rounded-2xl bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center gap-2 text-xs font-black transition-all border border-indigo-100 shadow-sm"
+                  className="hover:bg-indigo-100 text-indigo-600 flex items-center gap-2 text-xs font-black transition-all shadow-sm text-xs font-semibold"
                   title="Thêm đối tượng mới"
                 >
                   <Plus className="w-4 h-4" />
@@ -4571,7 +4571,7 @@ return {
                           localStorage.setItem('admission_doc_groups', JSON.stringify(updated));
                         }
                       }}
-                      className="w-10 h-10 rounded-2xl bg-amber-50 hover:bg-amber-100 text-amber-600 flex items-center justify-center transition-all border border-amber-100 shadow-sm"
+                      className="w-10 h-10 hover:bg-amber-100 text-amber-600 flex items-center justify-center transition-all shadow-sm text-xs font-semibold"
                       title="Sửa tên đối tượng"
                     >
                       <Pencil className="w-4 h-4" />
@@ -4590,7 +4590,7 @@ return {
                           }
                         });
                       }}
-                      className="w-10 h-10 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-600 flex items-center justify-center transition-all border border-rose-100 shadow-sm"
+                      className="w-10 h-10 hover:bg-rose-100 text-rose-600 flex items-center justify-center transition-all shadow-sm text-xs font-semibold"
                       title="Xóa đối tượng"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -4601,7 +4601,7 @@ return {
             </div>
 
             {/* Association checkboxes */}
-            <div className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100 space-y-4">
+            <div className="p-4 space-y-4 text-xs font-semibold">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <span className="block text-[10px] font-bold tracking-wider uppercase text-slate-400 ml-1">
                   Áp dụng cho Đối tượng Tuyển sinh (từ Danh mục):
@@ -4611,7 +4611,7 @@ return {
                     localStorage.setItem('admission_doc_targets', JSON.stringify(docGroupTargets));
                     notify("Đã lưu cấu hình áp dụng đối tượng tuyển sinh thành công!");
                   }}
-                  className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow-md shadow-emerald-100"
+                  className="hover:bg-emerald-700 text-white text-xs font-black transition-all flex items-center gap-1.5 shadow-md shadow-emerald-100 text-xs font-semibold"
                 >
                   <Check className="w-3.5 h-3.5" />
                   Lưu cấu hình áp dụng
@@ -4621,7 +4621,7 @@ return {
                 {configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => {
                   const isChecked = (docGroupTargets[selectedDocGroup] || []).includes(c.name);
                   return (
-                    <label key={c.id} className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-slate-200/60 shadow-sm cursor-pointer hover:bg-indigo-50/20 hover:border-indigo-200 transition-all select-none">
+                    <label key={c.id} className="flex items-center gap-2 shadow-sm cursor-pointer hover:bg-indigo-50/20 hover:border-indigo-200 transition-all select-none text-xs font-semibold">
                       <input 
                         type="checkbox" 
                         checked={isChecked}
@@ -4650,7 +4650,7 @@ return {
             </div>
 
             {/* Grade association checkboxes */}
-            <div className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100 space-y-4">
+            <div className="p-4 space-y-4 text-xs font-semibold">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <span className="block text-[10px] font-bold tracking-wider uppercase text-slate-400 ml-1">
                   Áp dụng cho Khối lớp học:
@@ -4664,7 +4664,7 @@ return {
                       localStorage.setItem('admission_doc_grades_mapping', JSON.stringify(updatedMappings));
                     }}
                     type="button"
-                    className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg text-[10px] font-black transition-all border border-indigo-100"
+                    className="hover:bg-indigo-100 text-indigo-600 text-[10px] font-black transition-all text-xs font-semibold"
                   >
                     Chọn nhanh Khối 2,3,4,5
                   </button>
@@ -4674,7 +4674,7 @@ return {
                       notify("Đã lưu cấu hình áp dụng khối lớp thành công!");
                     }}
                     type="button"
-                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow-md shadow-emerald-100"
+                    className="hover:bg-emerald-700 text-white text-xs font-black transition-all flex items-center gap-1.5 shadow-md shadow-emerald-100 text-xs font-semibold"
                   >
                     <Check className="w-3.5 h-3.5" />
                     Lưu cấu hình Khối
@@ -4685,7 +4685,7 @@ return {
                 {["Khối 1", "Khối 2", "Khối 3", "Khối 4", "Khối 5", "Khối 6", "Khối 7", "Khối 8", "Khối 9", "Khối 10", "Khối 11", "Khối 12"].map(g => {
                   const isChecked = (docGroupGrades[selectedDocGroup] || []).includes(g);
                   return (
-                    <label key={g} className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-slate-200/60 shadow-sm cursor-pointer hover:bg-indigo-50/20 hover:border-indigo-200 transition-all select-none">
+                    <label key={g} className="flex items-center gap-2 shadow-sm cursor-pointer hover:bg-indigo-50/20 hover:border-indigo-200 transition-all select-none text-xs font-semibold">
                       <input 
                         type="checkbox" 
                         checked={isChecked}
@@ -4712,7 +4712,7 @@ return {
 
             {filteredDocList.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center border-2 border-dashed border-slate-100 rounded-3xl">
-                <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-4 border border-slate-100">
+                <div className="w-16 h-16 flex items-center justify-center mb-4 text-xs font-semibold">
                   <Tag className="w-8 h-8 text-slate-300" />
                 </div>
                 <p className="font-bold text-slate-400">Chưa cấu hình hồ sơ nào cho đối tượng này</p>
@@ -4722,32 +4722,32 @@ return {
               <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-inner">
                 <table className="w-full border-collapse text-left text-sm text-slate-700">
                   <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200">
-                      <th className="px-6 py-4 font-black text-slate-900 text-center w-16">TT</th>
-                      <th className="px-6 py-4 font-black text-slate-900">Hồ sơ yêu cầu</th>
-                      <th className="px-6 py-4 font-black text-slate-900 text-center w-36">Số lượng</th>
-                      <th className="px-6 py-4 font-black text-slate-900 text-center w-48">Ghi chú</th>
-                      <th className="px-6 py-4 font-black text-slate-900 text-center w-32">Thao tác</th>
+                    <tr className="text-xs font-semibold">
+                      <th className="p-2 p-2 font-black text-slate-900 text-center w-16 border border-slate-200">TT</th>
+                      <th className="p-2 p-2 font-black text-slate-900 border border-slate-200">Hồ sơ yêu cầu</th>
+                      <th className="p-2 p-2 font-black text-slate-900 text-center w-36 border border-slate-200">Số lượng</th>
+                      <th className="p-2 p-2 font-black text-slate-900 text-center w-48 border border-slate-200">Ghi chú</th>
+                      <th className="p-2 p-2 font-black text-slate-900 text-center w-32 border border-slate-200">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 bg-white">
                     {filteredDocList.map((item, idx) => (
-                      <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="px-6 py-3.5 text-center font-bold text-slate-400">{idx + 1}</td>
-                        <td className="px-6 py-3.5">
+                      <tr key={item.id} className="hover:bg-slate-50/50 transition-colors text-xs font-semibold">
+                        <td className="p-2 p-2 text-center font-bold text-slate-400 border border-slate-200">{idx + 1}</td>
+                        <td className="p-2 p-2 border border-slate-200">
                           <div className="font-bold text-slate-800">{item.name}</div>
                           <div className="flex flex-wrap gap-1 mt-1">
                             {item.grades && item.grades.length > 0 && item.grades.map(g => (
-                              <span key={g} className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 rounded text-[9px] font-black border border-emerald-100">{g}</span>
+                              <span key={g} className="text-emerald-700 text-[9px] font-black text-xs font-semibold">{g}</span>
                             ))}
                             {item.targets && item.targets.length > 0 && item.targets.map(t => (
-                              <span key={t} className="px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded text-[9px] font-black border border-indigo-100">{t}</span>
+                              <span key={t} className="text-indigo-600 text-[9px] font-black text-xs font-semibold">{t}</span>
                             ))}
                           </div>
                         </td>
-                        <td className="px-6 py-3.5 text-center font-bold text-slate-600">{item.qty || "—"}</td>
-                        <td className="px-6 py-3.5 text-center text-xs italic text-slate-400 font-semibold">{item.note || "—"}</td>
-                        <td className="px-6 py-3.5 text-center">
+                        <td className="p-2 p-2 text-center font-bold text-slate-600 border border-slate-200">{item.qty || "—"}</td>
+                        <td className="p-2 p-2 text-center text-xs italic text-slate-400 font-semibold border border-slate-200">{item.note || "—"}</td>
+                        <td className="p-2 p-2 text-center border border-slate-200">
                           <div className="flex items-center justify-center gap-2">
                             <button 
                               onClick={() => {
@@ -4759,7 +4759,7 @@ return {
                                 setDocFormSelectedGrades(item.grades || []);
                                 setIsDocModalOpen(true);
                               }}
-                              className="w-8 h-8 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center transition-colors"
+                              className="w-8 h-8 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center transition-colors text-xs font-semibold"
                               title="Sửa hồ sơ"
                             >
                               <Pencil className="w-3.5 h-3.5" />
@@ -4775,7 +4775,7 @@ return {
                                   }
                                 });
                               }}
-                              className="w-8 h-8 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 flex items-center justify-center transition-colors"
+                              className="w-8 h-8 hover:bg-rose-100 text-rose-600 flex items-center justify-center transition-colors text-xs font-semibold"
                               title="Xóa hồ sơ"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -4796,9 +4796,9 @@ return {
       {isDocModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-100">
-            <div className="bg-slate-50 px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+            <div className="flex items-center justify-between text-xs font-semibold">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center">
+                <div className="w-10 h-10 text-indigo-600 flex items-center justify-center text-xs font-semibold">
                   <Tag className="w-5 h-5" />
                 </div>
                 <div>
@@ -4819,7 +4819,7 @@ return {
                   value={docFormName} 
                   onChange={(e) => setDocFormName(e.target.value)} 
                   placeholder="Ví dụ: Đơn đăng ký nhập học" 
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-sm font-bold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white transition-all animate-none"
+                  className="w-full text-sm font-bold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white transition-all animate-none text-xs font-semibold"
                 />
               </div>
 
@@ -4831,7 +4831,7 @@ return {
                     value={docFormQty} 
                     onChange={(e) => setDocFormQty(e.target.value)} 
                     placeholder="Ví dụ: 01 bản" 
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-sm font-bold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white transition-all animate-none"
+                    className="w-full text-sm font-bold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white transition-all animate-none text-xs font-semibold"
                   />
                 </div>
                 <div>
@@ -4841,7 +4841,7 @@ return {
                     value={docFormNote} 
                     onChange={(e) => setDocFormNote(e.target.value)} 
                     placeholder="Ví dụ: Bản sao y" 
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-sm font-bold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white transition-all animate-none"
+                    className="w-full text-sm font-bold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white transition-all animate-none text-xs font-semibold"
                   />
                 </div>
               </div>
@@ -4851,7 +4851,7 @@ return {
                   {["Khối 1", "Khối 2", "Khối 3", "Khối 4", "Khối 5", "Khối 6", "Khối 7", "Khối 8", "Khối 9", "Khối 10", "Khối 11", "Khối 12"].map(g => {
                     const isChecked = docFormSelectedGrades.includes(g);
                     return (
-                      <label key={g} className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-50 hover:bg-emerald-50/50 rounded-lg border border-slate-200 cursor-pointer select-none transition-colors">
+                      <label key={g} className="flex items-center gap-1 hover:bg-emerald-50/50 cursor-pointer select-none transition-colors text-xs font-semibold">
                         <input type="checkbox" checked={isChecked} onChange={(e) => { if(e.target.checked) setDocFormSelectedGrades(p=>[...p,g]); else setDocFormSelectedGrades(p=>p.filter(x=>x!==g)); }} className="w-3.5 h-3.5 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300" />
                         <span className="text-[11px] font-bold text-slate-600">{g}</span>
                       </label>
@@ -4863,7 +4863,7 @@ return {
                   {configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => {
                     const isChecked = docFormSelectedTargets.includes(c.name);
                     return (
-                      <label key={c.id} className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 hover:bg-indigo-50/50 rounded-xl border border-slate-200 cursor-pointer select-none transition-colors">
+                      <label key={c.id} className="flex items-center gap-1.5 hover:bg-indigo-50/50 cursor-pointer select-none transition-colors text-xs font-semibold">
                         <input 
                           type="checkbox" 
                           checked={isChecked}
@@ -4884,7 +4884,7 @@ return {
               </div>
             </div>
 
-            <div className="bg-slate-50 px-6 py-4 border-t border-slate-100 flex items-center justify-end gap-3">
+            <div className="flex items-center justify-end gap-3 text-xs font-semibold">
               <button 
                 onClick={() => setIsDocModalOpen(false)} 
                 className="px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-600 rounded-xl text-xs font-black transition-colors"
@@ -4910,7 +4910,7 @@ return {
                   localStorage.setItem(getDocStorageKey(selectedDocGroup), JSON.stringify(updated));
                   setIsDocModalOpen(false);
                 }} 
-                className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black transition-colors shadow-lg shadow-indigo-100"
+                className="hover:bg-indigo-700 text-white text-xs font-black transition-colors shadow-lg shadow-indigo-100 text-xs font-semibold"
               >
                 Lưu hồ sơ
               </button>
@@ -4924,7 +4924,7 @@ return {
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
           
           {/* Sub-tab Navigation & Actions Bar */}
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-4 bg-slate-50/50 p-3.5 rounded-3xl border border-slate-100 shadow-sm">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-4 p-3.5 shadow-sm text-xs font-semibold">
             <div className="hidden md:block flex-1"></div>
             <div className="bg-slate-100 p-1 rounded-2xl border border-slate-200/60 flex gap-1 shadow-inner">
               <button
@@ -4998,7 +4998,7 @@ return {
                     <button
                       onClick={handleSendBatchApprovalEmail}
                       disabled={sendingBatchEmail}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-black text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-all border border-indigo-200/50 shadow-sm disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 text-xs font-black text-indigo-600 hover:text-indigo-700 hover:bg-indigo-100 transition-all shadow-sm disabled:opacity-50 text-xs font-semibold"
                     >
                       {sendingBatchEmail ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
                       Thông báo GĐCS xét duyệt đợt
@@ -5041,10 +5041,10 @@ return {
             <div className="xl:col-span-4 grid grid-cols-2 gap-4">
               {/* Card 1: Tổng Học sinh */}
               <div className="relative overflow-hidden bg-gradient-to-br from-white to-slate-50/50 p-6 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-between group hover:border-indigo-300 hover:shadow-lg hover:shadow-indigo-50/30 transition-all duration-300">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-50 rounded-full -mt-8 -mr-8 mix-blend-multiply filter blur-xl opacity-70 group-hover:scale-110 transition-transform duration-300"></div>
+                <div className="absolute top-0 right-0 w-24 h-24 -mt-8 -mr-8 mix-blend-multiply filter blur-xl opacity-70 group-hover:scale-110 transition-transform duration-300 text-xs font-semibold"></div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-black uppercase tracking-widest text-slate-450">Tổng Học sinh</span>
-                  <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-2xl group-hover:scale-115 transition-all duration-300 shadow-sm shadow-indigo-100">
+                  <div className="p-2.5 text-indigo-600 group-hover:scale-115 transition-all duration-300 shadow-sm shadow-indigo-100 text-xs font-semibold">
                     <Users className="w-5 h-5" />
                   </div>
                 </div>
@@ -5056,25 +5056,25 @@ return {
 
               {/* Card 2: Đã xét duyệt */}
               <div className="relative overflow-hidden bg-gradient-to-br from-white to-slate-50/50 p-6 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-between group hover:border-violet-300 hover:shadow-lg hover:shadow-violet-50/30 transition-all duration-300">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-violet-50 rounded-full -mt-8 -mr-8 mix-blend-multiply filter blur-xl opacity-70 group-hover:scale-110 transition-transform duration-300"></div>
+                <div className="absolute top-0 right-0 w-24 h-24 -mt-8 -mr-8 mix-blend-multiply filter blur-xl opacity-70 group-hover:scale-110 transition-transform duration-300 text-xs font-semibold"></div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-black uppercase tracking-widest text-slate-455">Đã xét duyệt</span>
-                  <div className="p-2.5 bg-violet-50 text-violet-600 rounded-2xl group-hover:scale-115 transition-all duration-300 shadow-sm shadow-violet-100">
+                  <div className="p-2.5 text-violet-600 group-hover:scale-115 transition-all duration-300 shadow-sm shadow-violet-100 text-xs font-semibold">
                     <CheckCircle2 className="w-5 h-5" />
                   </div>
                 </div>
                 <div className="flex items-baseline gap-1 mt-4 z-10 flex-wrap">
                   <span className="text-3xl font-black text-slate-800 group-hover:text-violet-600 transition-colors">{overallKPIs.total - overallKPIs.pending}</span>
-                  <span className="text-[10px] font-black text-violet-600 bg-violet-50 px-2 py-0.5 rounded-full border border-violet-100/50">({overallKPIs.approvedRate}%)</span>
+                  <span className="text-[10px] font-black text-violet-600 text-xs font-semibold">({overallKPIs.approvedRate}%)</span>
                 </div>
               </div>
 
               {/* Card 3: Tổng Đạt */}
               <div className="relative overflow-hidden bg-gradient-to-br from-emerald-50/35 to-emerald-50/10 p-6 rounded-[2rem] border border-emerald-100 shadow-sm flex flex-col justify-between group hover:border-emerald-300 hover:shadow-lg hover:shadow-emerald-50/30 transition-all duration-300">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-100/40 rounded-full -mt-8 -mr-8 mix-blend-multiply filter blur-xl opacity-70 group-hover:scale-110 transition-transform duration-300"></div>
+                <div className="absolute top-0 right-0 w-24 h-24 -mt-8 -mr-8 mix-blend-multiply filter blur-xl opacity-70 group-hover:scale-110 transition-transform duration-300 text-xs font-semibold"></div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Tổng Đạt</span>
-                  <div className="p-2.5 bg-emerald-100/60 text-emerald-700 rounded-2xl group-hover:scale-115 transition-all duration-300 shadow-sm shadow-emerald-100">
+                  <div className="p-2.5 text-emerald-700 group-hover:scale-115 transition-all duration-300 shadow-sm shadow-emerald-100 text-xs font-semibold">
                     <GraduationCap className="w-5 h-5" />
                   </div>
                 </div>
@@ -5086,10 +5086,10 @@ return {
 
               {/* Card 4: Đạt Cam kết */}
               <div className="relative overflow-hidden bg-gradient-to-br from-amber-50/35 to-amber-50/10 p-6 rounded-[2rem] border border-amber-100 shadow-sm flex flex-col justify-between group hover:border-amber-300 hover:shadow-lg hover:shadow-amber-50/30 transition-all duration-300">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-amber-100/40 rounded-full -mt-8 -mr-8 mix-blend-multiply filter blur-xl opacity-70 group-hover:scale-110 transition-transform duration-300"></div>
+                <div className="absolute top-0 right-0 w-24 h-24 -mt-8 -mr-8 mix-blend-multiply filter blur-xl opacity-70 group-hover:scale-110 transition-transform duration-300 text-xs font-semibold"></div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-black uppercase tracking-widest text-amber-600">Đạt Cam kết</span>
-                  <div className="p-2.5 bg-amber-100/60 text-amber-700 rounded-2xl group-hover:scale-115 transition-all duration-300 shadow-sm shadow-amber-100">
+                  <div className="p-2.5 text-amber-700 group-hover:scale-115 transition-all duration-300 shadow-sm shadow-amber-100 text-xs font-semibold">
                     <ClipboardCheck className="w-5 h-5" />
                   </div>
                 </div>
@@ -5105,72 +5105,72 @@ return {
               <div className="flex items-center justify-between mb-5 border-b border-slate-100/80 pb-4">
                 <h4 className="font-black text-slate-800 text-sm tracking-tight uppercase flex items-center gap-2.5">
                   <span className="flex h-2.5 w-2.5 relative">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-600"></span>
+                    <span className="animate-ping absolute inline-flex h-full w-full opacity-75 text-xs font-semibold"></span>
+                    <span className="relative inline-flex h-2.5 w-2.5 text-xs font-semibold"></span>
                   </span>
                   Số liệu phân theo Cơ sở tuyển sinh
                 </h4>
-                <span className="text-[9px] font-black bg-indigo-50 border border-indigo-100 text-indigo-600 px-3 py-1 rounded-xl uppercase tracking-wider">Chi tiết các cơ sở</span>
+                <span className="text-[9px] font-black text-indigo-600 uppercase tracking-wider text-xs font-semibold">Chi tiết các cơ sở</span>
               </div>
               
               <div className="overflow-x-auto">
-                <table className="w-full text-left whitespace-nowrap table-auto">
+                <table className="w-full text-left whitespace-nowrap table-auto border-collapse">
                   <thead>
                     <tr className="border-b border-slate-100/50">
-                      <th className="pb-3.5 text-[9px] font-black text-slate-400 uppercase tracking-widest pl-2">Cơ sở</th>
-                      <th className="pb-3.5 text-center text-[9px] font-black text-slate-400 uppercase tracking-widest">Tổng HS</th>
-                      <th className="pb-3.5 text-center text-[9px] font-black text-emerald-500 uppercase tracking-widest">Đạt</th>
-                      <th className="pb-3.5 text-center text-[9px] font-black text-amber-500 uppercase tracking-widest">Cam kết</th>
-                      <th className="pb-3.5 text-center text-[9px] font-black text-rose-500 uppercase tracking-widest">Không Đạt</th>
-                      <th className="pb-3.5 text-center text-[9px] font-black text-slate-400 uppercase tracking-widest">Chưa Duyệt</th>
-                      <th className="pb-3.5 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest pr-2">Tỷ lệ duyệt</th>
+                      <th className="pb-3.5 text-[9px] font-black text-slate-400 uppercase tracking-widest pl-2 p-2 border border-slate-200">Cơ sở</th>
+                      <th className="pb-3.5 text-center text-[9px] font-black text-slate-400 uppercase tracking-widest p-2 border border-slate-200">Tổng HS</th>
+                      <th className="pb-3.5 text-center text-[9px] font-black text-emerald-500 uppercase tracking-widest p-2 border border-slate-200">Đạt</th>
+                      <th className="pb-3.5 text-center text-[9px] font-black text-amber-500 uppercase tracking-widest p-2 border border-slate-200">Cam kết</th>
+                      <th className="pb-3.5 text-center text-[9px] font-black text-rose-500 uppercase tracking-widest p-2 border border-slate-200">Không Đạt</th>
+                      <th className="pb-3.5 text-center text-[9px] font-black text-slate-400 uppercase tracking-widest p-2 border border-slate-200">Chưa Duyệt</th>
+                      <th className="pb-3.5 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest pr-2 p-2 border border-slate-200">Tỷ lệ duyệt</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
                     {campusStats.map(stat => {
                       const campusApprovedRate = stat.total > 0 ? Math.round(((stat.total - stat.pending) / stat.total) * 100) : 0;
                       return (
-                        <tr key={stat.id} className="hover:bg-indigo-50/15 transition-all duration-200 rounded-2xl group/row">
-                          <td className="py-3.5 pl-2">
+                        <tr key={stat.id} className="hover:bg-indigo-50/15 transition-all duration-200 group/row text-xs font-semibold">
+                          <td className="p-2 pl-2 border border-slate-200">
                             <div className="flex items-center gap-2">
-                              <div className="w-7 h-7 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 group-hover/row:bg-white group-hover/row:border-indigo-100 transition-all duration-200">
+                              <div className="w-7 h-7 flex items-center justify-center group-hover/row:bg-white group-hover/row:border-indigo-100 transition-all duration-200 text-xs font-semibold">
                                 <span className="text-[10px] font-black text-slate-500 group-hover/row:text-indigo-600">{stat.campusName?.replace("Cơ sở ", "CS")}</span>
                               </div>
                               <span className="text-sm font-black text-slate-700 group-hover/row:text-indigo-600 transition-colors">{stat.campusName}</span>
                             </div>
                           </td>
-                          <td className="py-3.5 text-center">
+                          <td className="p-2 text-center border border-slate-200">
                             <span className="font-bold text-slate-600 text-sm">{stat.total}</span>
                           </td>
-                          <td className="py-3.5 text-center">
+                          <td className="p-2 text-center border border-slate-200">
                             {stat.passed > 0 ? (
-                              <span className="font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-100/60 text-xs inline-block min-w-[32px]">{stat.passed}</span>
+                              <span className="font-black text-emerald-700 text-xs inline-block min-w-[32px] text-xs font-semibold">{stat.passed}</span>
                             ) : (
                               <span className="text-slate-300 font-bold text-xs">—</span>
                             )}
                           </td>
-                          <td className="py-3.5 text-center">
+                          <td className="p-2 text-center border border-slate-200">
                             {stat.committed > 0 ? (
-                              <span className="font-black text-amber-700 bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-100/60 text-xs inline-block min-w-[32px]">{stat.committed}</span>
+                              <span className="font-black text-amber-700 text-xs inline-block min-w-[32px] text-xs font-semibold">{stat.committed}</span>
                             ) : (
                               <span className="text-slate-300 font-bold text-xs">—</span>
                             )}
                           </td>
-                          <td className="py-3.5 text-center">
+                          <td className="p-2 text-center border border-slate-200">
                             {stat.failed > 0 ? (
-                              <span className="font-black text-rose-700 bg-rose-50 px-2.5 py-1 rounded-xl border border-rose-100/60 text-xs inline-block min-w-[32px]">{stat.failed}</span>
+                              <span className="font-black text-rose-700 text-xs inline-block min-w-[32px] text-xs font-semibold">{stat.failed}</span>
                             ) : (
                               <span className="text-slate-300 font-bold text-xs">—</span>
                             )}
                           </td>
-                          <td className="py-3.5 text-center">
+                          <td className="p-2 text-center border border-slate-200">
                             {stat.pending > 0 ? (
-                              <span className="font-black text-slate-500 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-200/50 text-xs inline-block min-w-[32px]">{stat.pending}</span>
+                              <span className="font-black text-slate-500 text-xs inline-block min-w-[32px] text-xs font-semibold">{stat.pending}</span>
                             ) : (
                               <span className="text-slate-300 font-bold text-xs">—</span>
                             )}
                           </td>
-                          <td className="py-3.5 text-right pr-2">
+                          <td className="p-2 text-right pr-2 border border-slate-200">
                             <div className="flex items-center justify-end gap-2.5">
                               <span className="text-xs font-black text-slate-700">{campusApprovedRate}%</span>
                               <div className="w-20 h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-100 shadow-inner">
@@ -5183,7 +5183,7 @@ return {
                     })}
                     {campusStats.length === 0 && (
                       <tr>
-                        <td colSpan={7} className="py-8 text-center text-xs font-bold text-slate-400 uppercase">Không có dữ liệu cơ sở</td>
+                        <td colSpan={7} className="p-2 text-center text-xs font-bold text-slate-400 uppercase border border-slate-200">Không có dữ liệu cơ sở</td>
                       </tr>
                     )}
                   </tbody>
@@ -5201,67 +5201,67 @@ return {
                   </span>
                   Số liệu phân theo Đợt khảo sát
                 </h4>
-                <span className="text-[9px] font-black bg-violet-50 border border-violet-100 text-violet-600 px-3 py-1 rounded-xl uppercase tracking-wider">Chi tiết các đợt</span>
+                <span className="text-[9px] font-black text-violet-600 uppercase tracking-wider text-xs font-semibold">Chi tiết các đợt</span>
               </div>
               
               <div className="overflow-x-auto">
-                <table className="w-full text-left whitespace-nowrap table-auto">
+                <table className="w-full text-left whitespace-nowrap table-auto border-collapse">
                   <thead>
                     <tr className="border-b border-slate-100/50">
-                      <th className="pb-3.5 text-[9px] font-black text-slate-400 uppercase tracking-widest pl-2">Đợt khảo sát</th>
-                      <th className="pb-3.5 text-center text-[9px] font-black text-slate-400 uppercase tracking-widest">Tổng HS</th>
-                      <th className="pb-3.5 text-center text-[9px] font-black text-emerald-500 uppercase tracking-widest">Đạt</th>
-                      <th className="pb-3.5 text-center text-[9px] font-black text-amber-500 uppercase tracking-widest">Cam kết</th>
-                      <th className="pb-3.5 text-center text-[9px] font-black text-rose-500 uppercase tracking-widest">Không Đạt</th>
-                      <th className="pb-3.5 text-center text-[9px] font-black text-slate-400 uppercase tracking-widest">Chưa Duyệt</th>
-                      <th className="pb-3.5 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest pr-2">Tỷ lệ duyệt</th>
+                      <th className="pb-3.5 text-[9px] font-black text-slate-400 uppercase tracking-widest pl-2 p-2 border border-slate-200">Đợt khảo sát</th>
+                      <th className="pb-3.5 text-center text-[9px] font-black text-slate-400 uppercase tracking-widest p-2 border border-slate-200">Tổng HS</th>
+                      <th className="pb-3.5 text-center text-[9px] font-black text-emerald-500 uppercase tracking-widest p-2 border border-slate-200">Đạt</th>
+                      <th className="pb-3.5 text-center text-[9px] font-black text-amber-500 uppercase tracking-widest p-2 border border-slate-200">Cam kết</th>
+                      <th className="pb-3.5 text-center text-[9px] font-black text-rose-500 uppercase tracking-widest p-2 border border-slate-200">Không Đạt</th>
+                      <th className="pb-3.5 text-center text-[9px] font-black text-slate-400 uppercase tracking-widest p-2 border border-slate-200">Chưa Duyệt</th>
+                      <th className="pb-3.5 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest pr-2 p-2 border border-slate-200">Tỷ lệ duyệt</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
                     {batchStats.map(stat => {
                       const batchApprovedRate = stat.total > 0 ? Math.round(((stat.total - stat.pending) / stat.total) * 100) : 0;
                       return (
-                        <tr key={stat.id} className="hover:bg-indigo-50/15 transition-all duration-200 rounded-2xl group/row">
-                          <td className="py-3.5 pl-2">
+                        <tr key={stat.id} className="hover:bg-indigo-50/15 transition-all duration-200 group/row text-xs font-semibold">
+                          <td className="p-2 pl-2 border border-slate-200">
                             <div className="flex items-center gap-2">
-                              <div className="w-7 h-7 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 group-hover/row:bg-white group-hover/row:border-violet-100 transition-all duration-200">
+                              <div className="w-7 h-7 flex items-center justify-center group-hover/row:bg-white group-hover/row:border-violet-100 transition-all duration-200 text-xs font-semibold">
                                 <Layers className="w-4 h-4 text-slate-400 group-hover/row:text-violet-600" />
                               </div>
                               <span className="text-sm font-black text-slate-700 group-hover/row:text-violet-600 transition-colors">{stat.batchName}</span>
                             </div>
                           </td>
-                          <td className="py-3.5 text-center">
+                          <td className="p-2 text-center border border-slate-200">
                             <span className="font-bold text-slate-600 text-sm">{stat.total}</span>
                           </td>
-                          <td className="py-3.5 text-center">
+                          <td className="p-2 text-center border border-slate-200">
                             {stat.passed > 0 ? (
-                              <span className="font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-100/60 text-xs inline-block min-w-[32px]">{stat.passed}</span>
+                              <span className="font-black text-emerald-700 text-xs inline-block min-w-[32px] text-xs font-semibold">{stat.passed}</span>
                             ) : (
                               <span className="text-slate-300 font-bold text-xs">—</span>
                             )}
                           </td>
-                          <td className="py-3.5 text-center">
+                          <td className="p-2 text-center border border-slate-200">
                             {stat.committed > 0 ? (
-                              <span className="font-black text-amber-700 bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-100/60 text-xs inline-block min-w-[32px]">{stat.committed}</span>
+                              <span className="font-black text-amber-700 text-xs inline-block min-w-[32px] text-xs font-semibold">{stat.committed}</span>
                             ) : (
                               <span className="text-slate-300 font-bold text-xs">—</span>
                             )}
                           </td>
-                          <td className="py-3.5 text-center">
+                          <td className="p-2 text-center border border-slate-200">
                             {stat.failed > 0 ? (
-                              <span className="font-black text-rose-700 bg-rose-50 px-2.5 py-1 rounded-xl border border-rose-100/60 text-xs inline-block min-w-[32px]">{stat.failed}</span>
+                              <span className="font-black text-rose-700 text-xs inline-block min-w-[32px] text-xs font-semibold">{stat.failed}</span>
                             ) : (
                               <span className="text-slate-300 font-bold text-xs">—</span>
                             )}
                           </td>
-                          <td className="py-3.5 text-center">
+                          <td className="p-2 text-center border border-slate-200">
                             {stat.pending > 0 ? (
-                              <span className="font-black text-slate-500 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-200/50 text-xs inline-block min-w-[32px]">{stat.pending}</span>
+                              <span className="font-black text-slate-500 text-xs inline-block min-w-[32px] text-xs font-semibold">{stat.pending}</span>
                             ) : (
                               <span className="text-slate-300 font-bold text-xs">—</span>
                             )}
                           </td>
-                          <td className="py-3.5 text-right pr-2">
+                          <td className="p-2 text-right pr-2 border border-slate-200">
                             <div className="flex items-center justify-end gap-2.5">
                               <span className="text-xs font-black text-slate-700">{batchApprovedRate}%</span>
                               <div className="w-20 h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-100 shadow-inner">
@@ -5274,7 +5274,7 @@ return {
                     })}
                     {batchStats.length === 0 && (
                       <tr>
-                        <td colSpan={7} className="py-8 text-center text-xs font-bold text-slate-400 uppercase">Không có dữ liệu đợt khảo sát</td>
+                        <td colSpan={7} className="p-2 text-center text-xs font-bold text-slate-400 uppercase border border-slate-200">Không có dữ liệu đợt khảo sát</td>
                       </tr>
                     )}
                   </tbody>
@@ -5299,7 +5299,7 @@ return {
             <>
               {/* STUDENT HEADER BANNER (COMPACT & MODERN) */}
               <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm relative overflow-hidden mb-4 text-left">
-                <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-50/50 rounded-full -mt-16 -mr-16 mix-blend-multiply filter blur-3xl opacity-70"></div>
+                <div className="absolute top-0 right-0 w-48 h-48 -mt-16 -mr-16 mix-blend-multiply filter blur-3xl opacity-70 text-xs font-semibold"></div>
                 
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
                   {/* Left Part: Avatar & Primary Info */}
@@ -5310,7 +5310,7 @@ return {
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="font-black text-slate-800 text-base leading-tight">{selectedReportStudent.fullName}</h3>
-                        <span className="font-mono font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full text-[10px] border border-indigo-100/50">
+                        <span className="font-mono font-bold text-indigo-600 text-[10px] text-xs font-semibold">
                           {selectedReportStudent.studentCode}
                         </span>
                       </div>
@@ -5337,7 +5337,7 @@ return {
                     <div className="flex flex-col">
                       <span className="text-slate-400 font-black uppercase text-[7px] tracking-wider mb-0.5">Hệ Khảo sát</span>
                       <div>
-                        <span className="font-black text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100/70 text-[9px] inline-block">{selectedReportStudent.surveyFormType || "—"}</span>
+                        <span className="font-black text-amber-700 text-[9px] inline-block text-xs font-semibold">{selectedReportStudent.surveyFormType || "—"}</span>
                       </div>
                     </div>
                     <div className="flex flex-col">
@@ -5367,12 +5367,12 @@ return {
                   <div className="flex items-start lg:items-end flex-col shrink-0 lg:border-l border-slate-100 lg:pl-4 pt-3 lg:pt-0">
                     <span className="text-slate-400 font-black uppercase text-[7px] tracking-wider mb-0.5 block self-start lg:self-end">Trạng thái duyệt</span>
                     {selectedReportStudent.admissionResult ? (
-                      <span className="font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200 text-[11px] flex items-center gap-1 shadow-sm">
-                        <span className="w-1 h-1 bg-emerald-500 rounded-full animate-pulse"></span>
+                      <span className="font-black text-emerald-700 text-[11px] flex items-center gap-1 shadow-sm text-xs font-semibold">
+                        <span className="w-1 h-1 animate-pulse text-xs font-semibold"></span>
                         {selectedReportStudent.admissionResult}
                       </span>
                     ) : (
-                      <span className="font-black text-slate-500 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-200 text-[11px]">
+                      <span className="font-black text-slate-500 text-[11px] text-xs font-semibold">
                         Chưa duyệt
                       </span>
                     )}
@@ -5398,8 +5398,8 @@ return {
                         Xét duyệt Tuyển sinh
                       </span>
                       {selectedReportStudent.admissionResult ? (
-                        <span className="px-2 py-0.5 text-[9px] font-black bg-emerald-100 text-emerald-700 rounded-full border border-emerald-200 uppercase tracking-wider flex items-center gap-1 shadow-sm">
-                          <span className="w-1 h-1 bg-emerald-500 rounded-full animate-pulse"></span>
+                        <span className="text-[9px] font-black text-emerald-700 uppercase tracking-wider flex items-center gap-1 shadow-sm text-xs font-semibold">
+                          <span className="w-1 h-1 animate-pulse text-xs font-semibold"></span>
                           Đã duyệt
                         </span>
                       ) : (
@@ -5410,7 +5410,7 @@ return {
                     </h4>
                     
                     {!canApprove && (
-                      <div className="bg-rose-50 text-rose-600 p-2.5 rounded-xl text-[10px] font-semibold border border-rose-100 flex items-center gap-1.5 animate-pulse mb-1">
+                      <div className="text-rose-600 p-2.5 text-[10px] font-semibold flex items-center gap-1.5 animate-pulse mb-1 text-xs font-semibold">
                         <AlertCircle className="w-3.5 h-3.5 flex-shrink-0"/>
                         {selectedReportStudent?.batch?.status === "LOCKED" || selectedReportStudent?.batch?.status === "CLOSED" ? 
                           "Đợt khảo sát đã BỊ KHÓA." : 
@@ -5437,7 +5437,7 @@ return {
 
                     {reportForm.admissionResult === "Đạt cam kết" && (
                       <Field label="Môn Cam Kết">
-                        <div className="grid grid-cols-2 gap-1.5 bg-slate-50 p-3 rounded-xl border border-slate-200 max-h-36 overflow-y-auto">
+                        <div className="grid grid-cols-2 gap-1.5 p-3 max-h-36 overflow-y-auto text-xs font-semibold">
                           {initialSubjects.map(sub => {
                             const isChecked = reportForm.committedSubjects.includes(sub.name);
                             return (
@@ -5466,7 +5466,7 @@ return {
 
                     {reportForm.admissionResult === "Không đạt - Kiểm tra lại" && (
                       <Field label="Môn Kiểm tra lại">
-                        <div className="grid grid-cols-2 gap-1.5 bg-slate-50 p-3 rounded-xl border border-slate-200 max-h-36 overflow-y-auto">
+                        <div className="grid grid-cols-2 gap-1.5 p-3 max-h-36 overflow-y-auto text-xs font-semibold">
                           {initialSubjects.map(sub => {
                             const isChecked = reportForm.committedSubjects.includes(sub.name);
                             return (
@@ -5497,7 +5497,7 @@ return {
                       <>
                         <Field label="Người duyệt / Phê duyệt">
                           {selectedReportStudent.admissionResult ? (
-                            <div className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-black text-slate-700 flex items-center gap-2 shadow-sm select-none transition-all">
+                            <div className="text-xs font-black text-slate-700 flex items-center gap-2 shadow-sm select-none transition-all text-xs font-semibold">
                               <UserCheck className="w-3.5 h-3.5 text-indigo-500" />
                               {reportForm.signatureName || selectedReportStudent.signatureName || autoCampusDirectorName || "Hệ thống ghi nhận"}
                             </div>
@@ -5531,7 +5531,7 @@ return {
                     <button
                       onClick={handleSaveReportResult}
                       disabled={saveReportLoading || !canApprove}
-                      className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-[11px] uppercase tracking-wider shadow-md disabled:opacity-50 transition-all flex justify-center items-center gap-1.5 cursor-pointer"
+                      className="w-full hover:bg-indigo-700 text-white font-black text-[11px] uppercase tracking-wider shadow-md disabled:opacity-50 transition-all flex justify-center items-center gap-1.5 cursor-pointer text-xs font-semibold"
                     >
                       {saveReportLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin"/> : <Check className="w-3.5 h-3.5"/>}
                       Lưu kết quả tổng hợp
@@ -5544,7 +5544,7 @@ return {
                           setRetestPeriodId("");
                           setRetestBatchId("");
                         }}
-                        className="w-full mt-2 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-200 rounded-xl font-black text-[11px] uppercase tracking-wider transition-all flex justify-center items-center gap-1.5 cursor-pointer shadow-sm"
+                        className="w-full mt-2 hover:bg-indigo-100 text-indigo-600 font-black text-[11px] uppercase tracking-wider transition-all flex justify-center items-center gap-1.5 cursor-pointer shadow-sm text-xs font-semibold"
                       >
                         <RefreshCw className="w-3.5 h-3.5"/>
                         Đăng ký Khảo sát lại (Thi lại)
@@ -5571,7 +5571,7 @@ return {
                           <RefreshCw className="w-3.5 h-3.5 text-indigo-500 animate-spin-slow shrink-0" />
                           Lịch sử Khảo sát & Thi lại
                         </span>
-                        <span className="text-[9px] font-black bg-indigo-50 text-indigo-700 border border-indigo-100 px-1.5 py-0.5 rounded-lg shrink-0 shadow-sm">
+                        <span className="text-[9px] font-black text-indigo-700 shrink-0 shadow-sm text-xs font-semibold">
                           {retestHistory.length} Đợt
                         </span>
                       </h4>
@@ -5628,17 +5628,17 @@ return {
                                       {hist.admissionResult}
                                     </span>
                                   ) : (
-                                    <span className="text-[9px] font-black bg-slate-50 text-slate-450 px-1.5 py-0.2 rounded border border-slate-200/50">Chưa duyệt</span>
+                                    <span className="text-[9px] font-black text-slate-450 text-xs font-semibold">Chưa duyệt</span>
                                   )}
                                 </div>
 
                                 {/* Retest subjects warning */}
                                 {retestMuns.length > 0 && (
-                                  <div className="text-[9px] bg-indigo-50/20 border border-indigo-100/50 p-2 rounded-xl mt-1 space-y-1">
+                                  <div className="text-[9px] p-2 mt-1 space-y-1 text-xs font-semibold">
                                     <span className="font-black text-indigo-600 uppercase tracking-wider text-[8px] block">Môn cần thi lại/cam kết:</span>
                                     <div className="flex flex-wrap gap-1">
                                       {retestMuns.map(m => (
-                                        <span key={m} className="bg-indigo-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md shadow-sm">
+                                        <span key={m} className="text-white text-[8px] font-black shadow-sm text-xs font-semibold">
                                           {m}
                                         </span>
                                       ))}
@@ -5648,7 +5648,7 @@ return {
 
                                 {/* Brief scores list from past attempt */}
                                 {!isCurrent && (parsedScores.length > 0 || hist.psychologyScore != null || hist.mathScore != null || hist.literatureScore != null || hist.writtenEnglishScore != null || hist.oralEnglishScore != null) && (
-                                  <div className="text-[9px] border border-slate-200/50 p-2 rounded-xl mt-1 space-y-1 bg-slate-50/50">
+                                  <div className="text-[9px] p-2 mt-1 space-y-1 text-xs font-semibold">
                                     <span className="font-black text-slate-400 uppercase tracking-wider text-[8px] block">Điểm đợt thi cũ:</span>
                                     <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[9px] font-bold text-slate-600">
                                       {hist.psychologyScore != null && <div><span className="text-slate-400 font-normal">Tâm lý:</span> {hist.psychologyScore}đ</div>}
@@ -5705,7 +5705,7 @@ return {
                 <div className="lg:col-span-8 space-y-4">
                   <div className="flex items-center justify-between bg-white px-4 py-2.5 rounded-2xl border border-slate-200/80 shadow-sm text-left">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 shadow-inner shrink-0 select-none">
+                      <div className="w-8 h-8 flex items-center justify-center text-indigo-600 shadow-inner shrink-0 select-none text-xs font-semibold">
                         <BookOpen className="w-4.5 h-4.5" />
                       </div>
                       <div>
@@ -5713,14 +5713,14 @@ return {
                         <p className="text-[11px] text-slate-400 font-semibold mt-0.5">Chi tiết nhận định năng lực và đánh giá chuyên môn</p>
                       </div>
                     </div>
-                    <span className="text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-100/50 px-2.5 py-1 rounded-full font-black shadow-sm shrink-0">
+                    <span className="text-[10px] text-indigo-700 font-black shadow-sm shrink-0 text-xs font-semibold">
                       {(selectedReportStudent.scores || []).length} Môn đã chấm
                     </span>
                   </div>
 
                   {(!selectedReportStudent.scores || selectedReportStudent.scores.length === 0) ? (
                     <div className="bg-white border border-slate-200/80 rounded-2xl p-12 text-center text-slate-455 shadow-sm flex flex-col items-center justify-center gap-2">
-                      <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 shadow-inner border border-slate-100">
+                      <div className="w-12 h-12 flex items-center justify-center text-slate-400 shadow-inner text-xs font-semibold">
                         <BookOpen className="w-6 h-6" />
                       </div>
                       <div>
@@ -5806,17 +5806,17 @@ return {
                           <>
                             {/* RESULTS SUMMARY TABLE (ALL SCORES & COMMENTS AT A GLANCE) */}
                             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden text-left">
-                              <div className="px-4 py-2 bg-slate-50/70 border-b border-slate-200 flex justify-between items-center">
+                              <div className="flex justify-between items-center text-xs font-semibold">
                                 <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider">Bảng tổng quan kết quả & Nhận xét</span>
                                 <span className="text-[9px] text-slate-400 font-semibold italic">Nhấp vào từng dòng để xem biểu đồ chi tiết</span>
                               </div>
                               <div className="overflow-x-auto">
                                 <table className="w-full text-left table-fixed border-collapse">
                                   <thead>
-                                    <tr className="border-b border-slate-200/60 bg-slate-50/30">
-                                      <th className="py-2 px-3 text-[9px] font-black text-slate-400 uppercase tracking-wider w-1/4">Môn khảo sát</th>
-                                      <th className="py-2 px-3 text-[9px] font-black text-slate-400 uppercase tracking-wider w-1/4 text-center">Kết quả</th>
-                                      <th className="py-2 px-3 text-[9px] font-black text-slate-400 uppercase tracking-wider w-1/2">Ý kiến nhận xét chính từ giáo viên</th>
+                                    <tr className="text-xs font-semibold">
+                                      <th className="p-2 p-2 text-[9px] font-black text-slate-400 uppercase tracking-wider w-1/4 border border-slate-200">Môn khảo sát</th>
+                                      <th className="p-2 p-2 text-[9px] font-black text-slate-400 uppercase tracking-wider w-1/4 text-center border border-slate-200">Kết quả</th>
+                                      <th className="p-2 p-2 text-[9px] font-black text-slate-400 uppercase tracking-wider w-1/2 border border-slate-200">Ý kiến nhận xét chính từ giáo viên</th>
                                     </tr>
                                   </thead>
                                   <tbody className="divide-y divide-slate-100">
@@ -5906,7 +5906,7 @@ return {
                                               : "hover:bg-slate-50/60 border-l-4 border-transparent"
                                           }`}
                                         >
-                                          <td className="py-1.5 px-3">
+                                          <td className="p-2 p-2 border border-slate-200">
                                             <div className="flex flex-col">
                                               <span className={`text-[11px] ${isActive ? "text-indigo-900 font-black" : "text-slate-700 font-bold group-hover/row:text-indigo-600"}`}>
                                                 {sName}
@@ -5918,12 +5918,12 @@ return {
                                               )}
                                             </div>
                                           </td>
-                                          <td className="py-1.5 px-3 text-center">
+                                          <td className="p-2 p-2 text-center border border-slate-200">
                                             <span className={`px-2 py-0.5 rounded-lg border text-[10px] font-black inline-block shadow-sm ${badgeColor}`}>
                                               {sCode.includes("tly") && rawScore ? `${val} (${rawScore}đ)` : val}
                                             </span>
                                           </td>
-                                          <td className="py-1.5 px-3">
+                                          <td className="p-2 p-2 border border-slate-200">
                                             <p className={`text-[11px] leading-relaxed truncate group-hover/row:whitespace-normal group-hover/row:line-clamp-none line-clamp-1 italic ${
                                               commentPreview !== "—" ? "text-slate-600" : "text-slate-400"
                                             }`} title={commentPreview !== "—" ? commentPreview : undefined}>
@@ -5949,7 +5949,7 @@ return {
                                       : "—";
                                       
                                     return (
-                                      <div key={sc.id} className="bg-violet-50/20 border border-violet-200 p-4 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden text-left animate-fade-in">
+                                      <div key={sc.id} className="p-4 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden text-left animate-fade-in text-xs font-semibold">
                                         <div className="absolute top-0 left-0 w-1.5 h-full bg-violet-600"></div>
                                         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3 mb-4">
                                           <div>
@@ -5961,19 +5961,19 @@ return {
                                         </div>
                                         <div className="space-y-3">
                                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
-                                            <div className="border rounded-xl px-3 py-2 text-center shadow-sm flex flex-col justify-between bg-slate-50 border-slate-200/60 text-slate-600">
+                                            <div className="text-center shadow-sm flex flex-col justify-between text-slate-600 text-xs font-semibold">
                                               <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 truncate block leading-tight">Tiếng Anh (Vấn đáp)</span>
                                               <div className="text-lg font-black mt-1 leading-none text-slate-800">
                                                 {oralScoreText !== "—" ? `${oralScoreText}/30` : "—/30"}
                                               </div>
                                             </div>
-                                            <div className="border rounded-xl px-3 py-2 text-center shadow-sm flex flex-col justify-between bg-slate-50 border-slate-200/60 text-slate-600">
+                                            <div className="text-center shadow-sm flex flex-col justify-between text-slate-600 text-xs font-semibold">
                                               <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 truncate block leading-tight">Tiếng Anh (Viết)</span>
                                               <div className="text-lg font-black mt-1 leading-none text-slate-800">
                                                 {writtenScoreText !== "—" ? `${writtenScoreText}/70` : "—/70"}
                                               </div>
                                             </div>
-                                            <div className="border rounded-xl px-3 py-2 text-center shadow-sm flex flex-col justify-between bg-indigo-50/50 border-indigo-150 text-indigo-700">
+                                            <div className="text-center shadow-sm flex flex-col justify-between text-indigo-700 text-xs font-semibold">
                                               <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 truncate block leading-tight">Tổng điểm</span>
                                               <div className="text-lg font-black mt-1 leading-none text-indigo-700">
                                                 {totalVal !== "—" ? `${totalVal}/100` : "—/100"}
@@ -6030,7 +6030,7 @@ return {
                                         <div>
                                           <div className="flex items-center gap-2">
                                             <h4 className="font-black text-slate-800 text-sm leading-none">{subject.name}</h4>
-                                            {subject.code && <span className="font-mono text-[9px] font-black text-slate-400 bg-slate-50 border border-slate-200/50 px-1.5 py-0.5 rounded-lg select-none">{subject.code}</span>}
+                                            {subject.code && <span className="font-mono text-[9px] font-black text-slate-400 select-none text-xs font-semibold">{subject.code}</span>}
                                             {subject.subjectType === "VIET_NAM" && (
                                               <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border shadow-sm bg-[#00A19A]/5 text-[#00A19A] border-[#00A19A]/20`}>
                                                 Giáo viên Việt Nam
@@ -6068,7 +6068,7 @@ return {
                                             return (
                                               <div className="space-y-3">
                                                 {/* Diagnosis Badge Box */}
-                                                <div className="flex items-center justify-between bg-slate-50 border border-slate-200/80 rounded-xl p-3 shadow-inner">
+                                                <div className="flex items-center justify-between p-3 shadow-inner text-xs font-semibold">
                                                   <div>
                                                     <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Tổng điểm đánh giá</span>
                                                     <div className="text-lg font-black text-indigo-700 mt-0.5">{score} Điểm</div>
@@ -6108,9 +6108,9 @@ return {
 
                                           {/* Comments / Recommendations */}
                                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-left">
-                                            <div className="space-y-1 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                            <div className="space-y-1 p-3 text-xs font-semibold">
                                               <span className="text-[9px] font-black uppercase tracking-widest text-slate-455 flex items-center gap-1">
-                                                <span className="w-1 h-1 bg-indigo-500 rounded-full"></span>
+                                                <span className="w-1 h-1 text-xs font-semibold"></span>
                                                 Kết luận sơ bộ từ chuyên viên
                                               </span>
                                               <p className={`text-xs font-medium leading-relaxed whitespace-pre-wrap ${commentVals[0] ? "text-slate-700" : "text-slate-450 italic"}`}>
@@ -6118,7 +6118,7 @@ return {
                                               </p>
                                             </div>
                                             
-                                            <div className="space-y-1 bg-amber-50/30 p-3 rounded-xl border border-amber-100/50">
+                                            <div className="space-y-1 p-3 text-xs font-semibold">
                                               <span className="text-[9px] font-black uppercase tracking-widest text-amber-600 flex items-center gap-1">
                                                 <Info className="w-3 h-3 text-amber-500" />
                                                 Khuyến nghị phụ huynh
@@ -6133,15 +6133,15 @@ return {
                                         <div className="space-y-4">
                                           {/* Segmented Metrics Row */}
                                           <div className="grid grid-cols-3 gap-2">
-                                            <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-2 text-center shadow-inner">
+                                            <div className="p-2 text-center shadow-inner text-xs font-semibold">
                                               <div className="text-[9px] font-black uppercase tracking-wider text-emerald-600 flex items-center justify-center gap-0.5"><Check className="w-3 h-3"/> Đạt</div>
                                               <div className="text-xl font-black text-emerald-700 mt-0.5">{(Array.isArray(scoreVals) ? scoreVals : []).filter(v => v === "3").length}</div>
                                             </div>
-                                            <div className="bg-rose-50/50 border border-rose-100 rounded-xl p-2 text-center shadow-inner">
+                                            <div className="p-2 text-center shadow-inner text-xs font-semibold">
                                               <div className="text-[9px] font-black uppercase tracking-wider text-rose-600 flex items-center justify-center gap-0.5"><AlertCircle className="w-3 h-3"/> Không đạt</div>
                                               <div className="text-xl font-black text-rose-700 mt-0.5">{(Array.isArray(scoreVals) ? scoreVals : []).filter(v => v === "2").length}</div>
                                             </div>
-                                            <div className="bg-slate-50 border border-slate-200 rounded-xl p-2 text-center shadow-inner">
+                                            <div className="p-2 text-center shadow-inner text-xs font-semibold">
                                               <div className="text-[9px] font-black uppercase tracking-wider text-slate-500 flex items-center justify-center gap-0.5"><Info className="w-3 h-3"/> Không làm</div>
                                               <div className="text-xl font-black text-slate-600 mt-0.5">{(Array.isArray(scoreVals) ? scoreVals : []).filter(v => v === "1").length}</div>
                                             </div>
@@ -6150,12 +6150,12 @@ return {
                                           {/* Chi tiết tiêu chí không đạt hoặc không làm */}
                                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-left">
                                             {scoreVals.some(v => v === "2") ? (
-                                              <div className="bg-rose-50/20 border border-rose-100 rounded-xl p-3">
+                                              <div className="p-3 text-xs font-semibold">
                                                 <span className="text-[9px] font-black uppercase tracking-widest text-rose-600 mb-2 block flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5 text-rose-500"/> Tiêu chí Không đạt</span>
                                                 <div className="space-y-1.5 max-h-[160px] overflow-y-auto pr-1 scrollbar-thin">
                                                   {scoreVals.map((v, idx) => v === "2" ? (
                                                     <div key={idx} className="flex items-start gap-2 text-[11px] font-bold text-rose-800 leading-normal bg-white border border-rose-100/50 p-2 rounded-lg shadow-sm">
-                                                      <span className="mt-1.5 w-1 h-1 rounded-full bg-rose-500 shrink-0"></span>
+                                                      <span className="mt-1.5 w-1 h-1 shrink-0 text-xs font-semibold"></span>
                                                       <span className="font-medium text-slate-700">
                                                         {parsedCols.scores[idx] || [
                                                           "Chỉ số 65. Có thói quen chào hỏi, cảm ơn, xin phép và xưng hô lễ phép với người lớn",
@@ -6181,7 +6181,7 @@ return {
                                                 </div>
                                               </div>
                                             ) : (
-                                              <div className="bg-emerald-50/20 border border-emerald-100 rounded-xl p-4 text-center flex flex-col justify-center items-center gap-1.5">
+                                              <div className="p-4 text-center flex flex-col justify-center items-center gap-1.5 text-xs font-semibold">
                                                 <CheckCircle2 className="w-6 h-6 text-emerald-500" />
                                                 <p className="text-[10px] font-black text-emerald-800 uppercase tracking-wider">Hoàn thành tốt!</p>
                                                 <p className="text-[11px] text-slate-555 font-semibold">Học sinh hoàn thành xuất sắc, không có tiêu chí nào Không Đạt.</p>
@@ -6223,7 +6223,7 @@ return {
                                           </div>
 
                                           {commentVals[0] && (
-                                            <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 relative text-left">
+                                            <div className="p-3 relative text-left text-xs font-semibold">
                                               <span className="block text-[9px] font-black uppercase tracking-widest text-slate-455 mb-1">Nhận xét từ giáo viên</span>
                                               <p className="text-xs font-semibold text-slate-700 italic leading-relaxed">"{commentVals[0]}"</p>
                                             </div>
@@ -6270,7 +6270,7 @@ return {
                                           {/* Premium overall challenge completion indicator */}
                                           <div className="bg-gradient-to-r from-indigo-50 to-violet-50/50 border border-indigo-100 rounded-xl p-3 flex items-center justify-between shadow-sm text-left">
                                             <div className="flex items-center gap-2">
-                                              <div className="p-2 bg-indigo-500 text-white rounded-lg shadow-md shrink-0">
+                                              <div className="p-2 text-white shadow-md shrink-0 text-xs font-semibold">
                                                 <BarChart3 className="w-3.5 h-3.5"/>
                                               </div>
                                               <div>
@@ -6281,13 +6281,13 @@ return {
                                             <div className="text-right">
                                               <span className="text-lg font-black text-indigo-750">{scoreVals[4] || "0"}%</span>
                                               <div className="w-20 bg-slate-100 rounded-full h-1.5 mt-0.5 border border-slate-200/50 overflow-hidden shadow-inner shrink-0">
-                                                <div className="bg-indigo-600 h-1.5 rounded-full" style={{ width: `${scoreVals[4] || 0}%` }}></div>
+                                                <div className="h-1.5 text-xs font-semibold" style={{ width: `${scoreVals[4] || 0}%` }}></div>
                                               </div>
                                             </div>
                                           </div>
 
                                           {commentVals[0] && (
-                                            <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 relative text-left">
+                                            <div className="p-3 relative text-left text-xs font-semibold">
                                               <span className="block text-[9px] font-black uppercase tracking-widest text-slate-455 mb-1">Nhận xét tổng quan</span>
                                               <p className="text-xs font-semibold text-slate-700 italic leading-relaxed">"{commentVals[0]}"</p>
                                             </div>
@@ -6328,7 +6328,7 @@ return {
 
                                           {/* Display standard comments comments columns */}
                                           {commentVals.length > 0 && commentVals.some(v => v) && (
-                                            <div className="space-y-2.5 bg-slate-50 p-4 rounded-2xl border border-slate-100/70 text-left">
+                                            <div className="space-y-2.5 p-4 text-left text-xs font-semibold">
                                               <span className="block text-[9px] font-black uppercase tracking-widest text-slate-455 mb-1.5">Nhận xét bộ môn</span>
                                               <div className="space-y-2">
                                                 {Array.from({length: (subject.commentColumns ?? 1)}).map((_, colIdx) => {
@@ -6339,7 +6339,7 @@ return {
 
                                                   return (
                                                     <div key={colIdx} className="bg-white p-2.5 rounded-xl border-2 border-emerald-100/60 shadow-sm flex items-start gap-2.5 text-left animate-fade-in">
-                                                      <div className="w-6 h-6 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 text-[10px] font-black select-none shrink-0">
+                                                      <div className="w-6 h-6 flex items-center justify-center text-indigo-600 text-[10px] font-black select-none shrink-0 text-xs font-semibold">
                                                         {colName.charAt(0)}
                                                       </div>
                                                       <div className="flex-1">
@@ -6382,7 +6382,7 @@ return {
 
       {/* ============= MODALS ============= */}
 
-      <Modal open={isSubjectOpen} onClose={()=>setIsSubjectOpen(false)} title="Thông tin Môn Khảo sát" footer={<><button onClick={()=>setIsSubjectOpen(false)} className="flex-1 py-3 text-xs font-black uppercase text-slate-400">Hủy</button> <button onClick={handleSubjectSubmit} className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-100">Hoàn tất</button></>}>
+      <Modal open={isSubjectOpen} onClose={()=>setIsSubjectOpen(false)} title="Thông tin Môn Khảo sát" footer={<><button onClick={()=>setIsSubjectOpen(false)} className="flex-1 py-3 text-xs font-black uppercase text-slate-400">Hủy</button> <button onClick={handleSubjectSubmit} className="flex-1 text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-100 text-xs font-semibold">Hoàn tất</button></>}>
         <div className="space-y-4">
            <Field label="Mã Môn" required><input value={subjectForm.code} onChange={e=>setSubjectForm(f=>({...f,code:e.target.value.toUpperCase()}))} className={inp}/></Field>
            <Field label="Tên Môn" required><input value={subjectForm.name} onChange={e=>setSubjectForm(f=>({...f,name:e.target.value}))} className={inp}/></Field>
@@ -6390,7 +6390,7 @@ return {
            <div className="grid grid-cols-2 gap-3"><Field label="Số cột Điểm"><input type="number" min="0" max="5" value={subjectForm.scoreColumns} onChange={e=>setSubjectForm(f=>({...f,scoreColumns:parseInt(e.target.value)||0}))} className={inp}/></Field><Field label="Số cột Nhận xét"><input type="number" min="0" max="5" value={subjectForm.commentColumns} onChange={e=>setSubjectForm(f=>({...f,commentColumns:parseInt(e.target.value)||0}))} className={inp}/></Field></div>
            <Field label="Trạng thái"><select value={subjectForm.status} onChange={e=>setSubjectForm(f=>({...f,status:e.target.value}))} className={inp}><option value="ACTIVE">Hoạt động</option><option value="INACTIVE">Ngừng</option></select></Field>
            <Field label="Miễn giảm theo Diện KS">
-             <div className="flex flex-wrap gap-2 p-3 bg-violet-50/50 rounded-xl border border-violet-100">
+             <div className="flex flex-wrap gap-2 p-3 text-xs font-semibold">
                {configs.filter(c => c.categoryType === "DIEN_KS").map(c => (
                  <button type="button" key={c.code} onClick={() => setSubjectForm(f => ({...f, exemptCriteria: f.exemptCriteria.includes(c.name) ? f.exemptCriteria.filter(x => x !== c.name) : [...f.exemptCriteria, c.name]}))}
                    className={`text-xs px-3 py-1.5 rounded-lg font-bold border transition-all ${subjectForm.exemptCriteria.includes(c.name) ? 'bg-violet-500 text-white border-violet-500 shadow-md shadow-violet-200' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-300'}`}
@@ -6403,7 +6403,7 @@ return {
         </div>
       </Modal>
 
-      <Modal open={isColumnConfigOpen} onClose={()=>setIsColumnConfigOpen(false)} title={`Cấu hình cột: ${columnConfigForm.name}`} footer={<><button onClick={()=>setIsColumnConfigOpen(false)} className="flex-1 py-3 text-xs font-black uppercase text-slate-400">Hủy</button> <button onClick={handleColumnConfigSubmit} className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-100">Lưu cấu hình</button></>}>
+      <Modal open={isColumnConfigOpen} onClose={()=>setIsColumnConfigOpen(false)} title={`Cấu hình cột: ${columnConfigForm.name}`} footer={<><button onClick={()=>setIsColumnConfigOpen(false)} className="flex-1 py-3 text-xs font-black uppercase text-slate-400">Hủy</button> <button onClick={handleColumnConfigSubmit} className="flex-1 text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-100 text-xs font-semibold">Lưu cấu hình</button></>}>
         <div className="space-y-6 max-h-[70vh] overflow-y-auto">
            <div>
               <h4 className="text-sm font-black text-slate-700 mb-3 border-b pb-2">Tên cột Điểm (Tối đa {columnConfigForm.scoreColumns})</h4>
@@ -6460,12 +6460,12 @@ return {
          </div>
       </Modal>
 
-      <Modal open={bModal} onClose={()=>setBModal(false)} title="Thông tin Đợt khảo sát" size="md" footer={<><button onClick={()=>setBModal(false)} className="flex-1 py-3 text-xs font-black uppercase text-slate-400">Hủy</button> <button onClick={saveBatch} className="flex-1 py-4 bg-emerald-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-emerald-50">Hoàn tất</button></>}>
+      <Modal open={bModal} onClose={()=>setBModal(false)} title="Thông tin Đợt khảo sát" size="md" footer={<><button onClick={()=>setBModal(false)} className="flex-1 py-3 text-xs font-black uppercase text-slate-400">Hủy</button> <button onClick={saveBatch} className="flex-1 text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-emerald-50 text-xs font-semibold">Hoàn tất</button></>}>
         <div className="space-y-4">
            <div className="grid grid-cols-2 gap-3"><Field label="Số đợt"><input type="number" value={bForm.batchNumber} onChange={e=>setBForm(f=>({...f,batchNumber:e.target.value}))} className={inp}/></Field><Field label="Trạng thái"><select value={bForm.status} onChange={e=>setBForm(f=>({...f,status:e.target.value}))} className={inp}>{STATUS_OPTS.map(o=><option key={o} value={o}>{STATUS_MAP[o].label}</option>)}</select></Field></div>
            <Field label="Tên đợt" required>
              <input value={bForm.name} onChange={e=>setBForm(f=>({...f,name:e.target.value}))} placeholder="Vd: Khảo sát lẻ, Đánh giá Năng lực" className={inp}/>
-             <div className="mt-1.5 p-3 bg-indigo-50/50 border border-indigo-100 rounded-xl">
+             <div className="mt-1.5 p-3 text-xs font-semibold">
                <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Hiển thị khoa học & Xét duyệt:</p>
                <p className="text-xs font-bold text-indigo-600 truncate">
                  {`Đợt ${bForm.batchNumber || "1"} - ${bForm.name || "Khảo sát đầu vào"} | ${campuses.find(c => c.id === bForm.campusId)?.campusName || "Chưa chọn cơ sở"} (${bForm.startDate ? bForm.startDate.split('-').reverse().join('/') : "__/__/____"} ~ ${bForm.endDate ? bForm.endDate.split('-').reverse().join('/') : "__/__/____"})`}
@@ -6494,7 +6494,7 @@ return {
         </div>
       </Modal>
 
-      <Modal open={sModal} onClose={()=>setSModal(false)} title="Thông tin Học sinh" size="lg" footer={<><button onClick={()=>setSModal(false)} className="flex-1 text-xs font-black uppercase text-slate-400">Đóng</button> <button onClick={saveStudent} className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-indigo-50">Lưu dữ liệu</button></>}>
+      <Modal open={sModal} onClose={()=>setSModal(false)} title="Thông tin Học sinh" size="lg" footer={<><button onClick={()=>setSModal(false)} className="flex-1 text-xs font-black uppercase text-slate-400">Đóng</button> <button onClick={saveStudent} className="flex-1 text-white text-xs font-black uppercase tracking-widest shadow-xl shadow-indigo-50 text-xs font-semibold">Lưu dữ liệu</button></>}>
         <div className="space-y-4 pt-1">
            <div className="grid grid-cols-2 gap-4">
               <Field label="Mã HS KS" required><input value={sForm.studentCode} onChange={e=>setSForm(f=>({...f,studentCode:e.target.value}))} className={inp} disabled={!!editS}/></Field>
@@ -6530,13 +6530,13 @@ return {
 
            <div className="space-y-4">
              <Field label="Đối tượng Tuyển sinh">
-               <div className="bg-slate-50 rounded-2xl p-3.5 border border-slate-200/80 space-y-3">
+               <div className="p-3.5 space-y-3 text-xs font-semibold">
                  <div className="flex items-center justify-between">
                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Chọn một hoặc nhiều đối tượng tuyển sinh:</span>
                    <button 
                      type="button"
                      onClick={() => openAddConfig("DOI_TUONG_TS")}
-                     className="px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center gap-1.5 text-xs font-black transition-all border border-indigo-100"
+                     className="hover:bg-indigo-100 text-indigo-600 flex items-center gap-1.5 text-xs font-black transition-all text-xs font-semibold"
                    >
                      <Plus className="w-3.5 h-3.5" />
                      Thêm đối tượng
@@ -6612,7 +6612,7 @@ return {
         </div>
       </Modal>
 
-      <Modal open={cModal} onClose={()=>setCModal(false)} title="Giá trị Danh mục" size="sm" footer={<><button onClick={()=>setCModal(false)} className="flex-1 text-xs font-black uppercase text-slate-400">Hủy</button> <button onClick={saveConfig} className="flex-1 py-4 bg-amber-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest">Lưu</button></>}>
+      <Modal open={cModal} onClose={()=>setCModal(false)} title="Giá trị Danh mục" size="sm" footer={<><button onClick={()=>setCModal(false)} className="flex-1 text-xs font-black uppercase text-slate-400">Hủy</button> <button onClick={saveConfig} className="flex-1 text-white text-xs font-black uppercase tracking-widest text-xs font-semibold">Lưu</button></>}>
         <div className="space-y-4">
            <Field label="Loại"><input value={cForm.categoryType} disabled className={inp}/></Field>
            <Field label="Mã (Code)"><input value={cForm.code} onChange={e=>setCForm(f=>({...f,code:e.target.value.toUpperCase()}))} className={inp}/></Field>
@@ -7083,7 +7083,7 @@ return {
             className="relative bg-white rounded-3xl shadow-2xl flex flex-col w-[210mm] shrink-0 max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 cursor-default"
           >
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50 no-print">
+            <div className="flex items-center justify-between no-print text-xs font-semibold">
               <div className="flex items-center gap-2">
                 {isInvitation ? <Mail className="w-5 h-5 text-indigo-600"/> : <GraduationCap className="w-5 h-5 text-indigo-600"/>}
                 <h3 className="text-base font-black text-slate-800">{isInvitation ? "Mẫu Thư mời khảo sát" : isCommitment ? "Bản Cam kết học tập" : "Mẫu Thư Chúc mừng"}</h3>
@@ -7139,7 +7139,7 @@ return {
                       }
                     }
                   }}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md shadow-emerald-100 flex items-center gap-2 transition-all"
+                  className="hover:bg-emerald-700 text-white text-xs font-black uppercase tracking-wider shadow-md shadow-emerald-100 flex items-center gap-2 transition-all text-xs font-semibold"
                 >
                   <Download className="w-4 h-4" />
                   Lưu File (PDF)
@@ -7147,7 +7147,7 @@ return {
                 
                 <button type="button"
                   onClick={() => { setIsPrintModalOpen(false); setMockPreviewStudent(null); }}
-                  className="w-8 h-8 flex items-center justify-center rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 shadow-sm transition-all cursor-pointer"
+                  className="w-8 h-8 flex items-center justify-center hover:bg-slate-50 text-slate-500 shadow-sm transition-all cursor-pointer text-xs font-semibold"
                 >
                   <X className="w-4 h-4 pointer-events-none"/>
                 </button>
@@ -7221,7 +7221,7 @@ return {
                           Nhằm tạo điều kiện tốt nhất để nhà trường hiểu rõ hơn về năng lực tư duy, ngôn ngữ cũng như thiên hướng phát triển tự nhiên của học sinh, qua đó xây dựng lộ trình rèn luyện tối ưu nhất, chúng tôi trân trọng kính mời Quý phụ huynh cùng học sinh tham gia buổi <strong className="font-bold">Khảo sát Năng lực Đầu vào</strong> hệ <strong className="font-bold">{selectedReportStudent.surveyFormType || "Hội nhập Global"}</strong> năm học <strong className="font-bold">2026-2027</strong>.
                         </p>
                         
-                        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-2 text-sm text-slate-700 ml-4 font-sans leading-relaxed shadow-inner">
+                        <div className="p-5 space-y-2 text-sm text-slate-700 ml-4 font-sans leading-relaxed shadow-inner text-xs font-semibold">
                           <p><strong>• Thời gian khảo sát:</strong> Theo lịch hẹn cụ thể được sắp xếp từ Ban Tuyển sinh.</p>
                           
                           <p><strong>• Nội dung khảo sát:</strong> Đánh giá tư duy ngôn ngữ, tư duy logic tự nhiên và khả năng tương tác xã hội phù hợp theo độ tuổi.</p>
@@ -7435,7 +7435,7 @@ return {
                             <tr className="bg-white border-b border-slate-950">
                               <th className="px-3 py-2.5 font-bold border-r border-slate-950 text-center uppercase text-slate-950 w-16" style={{ borderRightWidth: '1px', borderColor: '#000' }}>STT</th>
                               <th className="px-5 py-2.5 font-bold border-r border-slate-950 text-center uppercase text-slate-950" style={{ borderRightWidth: '1px', borderColor: '#000' }}>Tên hồ sơ</th>
-                              <th className="px-5 py-2.5 font-bold text-center uppercase text-slate-950 w-32">Số lượng</th>
+                              <th className="p-2 p-2 font-bold text-center uppercase text-slate-950 w-32 border border-slate-200">Số lượng</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -7443,7 +7443,7 @@ return {
                               <tr key={item.id} className="border-b border-slate-950 last:border-b-0">
                                 <td className="px-3 py-2.5 border-r border-slate-950 text-center text-slate-900" style={{ borderRightWidth: '1px', borderColor: '#000' }}>{idx + 1}</td>
                                 <td className="px-5 py-2.5 border-r border-slate-950 font-medium text-slate-900" style={{ borderRightWidth: '1px', borderColor: '#000' }}>{item.name}</td>
-                                <td className="px-5 py-2.5 text-center text-slate-950 font-bold">{item.qty}</td>
+                                <td className="p-2 p-2 text-center text-slate-950 font-bold border border-slate-200">{item.qty}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -7618,7 +7618,7 @@ return {
                               <ul className="space-y-2 list-none">
                                 {failedCriteria.map((name, i) => (
                                   <li key={i} className="flex items-start gap-3 text-[14px]">
-                                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0"></span>
+                                    <span className="mt-1.5 w-1.5 h-1.5 shrink-0 text-xs font-semibold"></span>
                                     {name}
                                   </li>
                                 ))}
@@ -7748,7 +7748,7 @@ return {
                         const manualEmails = currentEmails.filter(e => !allMapEmails.includes(e));
                         setRecipientEmail(manualEmails.join(', ') || (currentUser?.email || "bankhaothi@skylineschool.edu.vn"));
                       }}
-                      className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-[10px] rounded-lg transition-colors cursor-pointer select-none"
+                      className="hover:bg-rose-100 text-rose-600 font-bold text-[10px] transition-colors cursor-pointer select-none text-xs font-semibold"
                     >
                       Xóa chọn
                     </button>
@@ -7892,33 +7892,33 @@ return {
                   <table className="w-full text-left text-xs border-collapse">
                     <thead className="bg-[#f8fafc] sticky top-0 border-b border-slate-100 z-10">
                       <tr>
-                        <th className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">STT</th>
-                        <th className="p-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">HỌ VÀ TÊN</th>
-                        <th className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">KHỐI</th>
-                        <th className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">PHÁI</th>
-                        <th className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">NGÀY SINH</th>
-                        <th className="p-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">HỆ KHẢO SÁT</th>
-                        <th className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">KẾT QUẢ HỌC TẬP</th>
-                        <th className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">KẾT QUẢ RÈN LUYỆN</th>
-                        <th className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">KẾT QUẢ</th>
-                        <th className="p-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">CƠ SỞ NHẬN</th>
+                        <th className="p-2 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">STT</th>
+                        <th className="p-2 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">HỌ VÀ TÊN</th>
+                        <th className="p-2 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">KHỐI</th>
+                        <th className="p-2 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">PHÁI</th>
+                        <th className="p-2 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">NGÀY SINH</th>
+                        <th className="p-2 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">HỆ KHẢO SÁT</th>
+                        <th className="p-2 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">KẾT QUẢ HỌC TẬP</th>
+                        <th className="p-2 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">KẾT QUẢ RÈN LUYỆN</th>
+                        <th className="p-2 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">KẾT QUẢ</th>
+                        <th className="p-2 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">CƠ SỞ NHẬN</th>
                         {attachLetters && (
-                          <th className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc]">HỒ SƠ ĐÍNH KÈM</th>
+                          <th className="p-2 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">HỒ SƠ ĐÍNH KÈM</th>
                         )}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 bg-white">
                       {emailStudents.map((s, idx) => (
-                        <tr key={s.id} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="p-4 text-center text-slate-400 font-semibold">{idx + 1}</td>
-                          <td className="p-4 font-bold text-slate-700">{s.fullName}</td>
-                          <td className="p-4 text-center font-bold text-slate-600">K{s.grade}</td>
-                          <td className="p-4 text-center font-medium text-slate-500">{s.gender === "M" || s.gender === "Nam" ? "Nam" : s.gender === "F" || s.gender === "Nữ" ? "Nữ" : s.gender || "—"}</td>
-                          <td className="p-4 text-center text-slate-500">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
-                          <td className="p-4 text-slate-600 font-medium">{s.surveyFormType || s.surveySystem || "—"}</td>
-                          <td className="p-4 text-center text-slate-600 font-medium">{s.kqHocTap || "—"}</td>
-                          <td className="p-4 text-center text-slate-600 font-medium">{s.kqRenLuyen || "—"}</td>
-                          <td className="p-4 text-center">
+                        <tr key={s.id} className="hover:bg-slate-50/50 transition-colors text-xs font-semibold">
+                          <td className="p-2 text-center text-slate-400 font-semibold border border-slate-200">{idx + 1}</td>
+                          <td className="p-2 font-bold text-slate-700 border border-slate-200">{s.fullName}</td>
+                          <td className="p-2 text-center font-bold text-slate-600 border border-slate-200">K{s.grade}</td>
+                          <td className="p-2 text-center font-medium text-slate-500 border border-slate-200">{s.gender === "M" || s.gender === "Nam" ? "Nam" : s.gender === "F" || s.gender === "Nữ" ? "Nữ" : s.gender || "—"}</td>
+                          <td className="p-2 text-center text-slate-500 border border-slate-200">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
+                          <td className="p-2 text-slate-600 font-medium border border-slate-200">{s.surveyFormType || s.surveySystem || "—"}</td>
+                          <td className="p-2 text-center text-slate-600 font-medium border border-slate-200">{s.kqHocTap || "—"}</td>
+                          <td className="p-2 text-center text-slate-600 font-medium border border-slate-200">{s.kqRenLuyen || "—"}</td>
+                          <td className="p-2 text-center border border-slate-200">
                             <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-black ${
                               s.admissionResult === "Đạt" ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
                               s.admissionResult === "Đạt cam kết" ? "bg-amber-50 text-amber-600 border border-amber-100" :
@@ -7929,21 +7929,21 @@ return {
                               {s.admissionResult || "Chưa duyệt"}
                             </span>
                           </td>
-                          <td className="p-4 font-bold text-slate-600">{s.admissionCampus || "—"}</td>
+                          <td className="p-2 font-bold text-slate-600 border border-slate-200">{s.admissionCampus || "—"}</td>
                           {attachLetters && (
-                            <td className="p-4 text-center">
+                            <td className="p-2 text-center border border-slate-200">
                               <div className="flex flex-col gap-1 items-center justify-center">
                                 {s.admissionResult === "Đạt" && (
-                                  <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] font-black rounded border border-emerald-100">
+                                  <span className="text-emerald-600 text-[10px] font-black text-xs font-semibold">
                                     Thư chúc mừng
                                   </span>
                                 )}
                                 {s.admissionResult === "Đạt cam kết" && (
                                   <>
-                                    <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] font-black rounded border border-emerald-100 mb-0.5">
+                                    <span className="text-emerald-600 text-[10px] font-black mb-0.5 text-xs font-semibold">
                                       Thư chúc mừng
                                     </span>
-                                    <span className="px-2.5 py-0.5 bg-amber-50 text-amber-600 text-[10px] font-black rounded border border-amber-100">
+                                    <span className="text-amber-600 text-[10px] font-black text-xs font-semibold">
                                       Bản cam kết
                                     </span>
                                   </>
@@ -7958,7 +7958,7 @@ return {
                       ))}
                       {emailStudents.length === 0 && (
                         <tr>
-                          <td colSpan={attachLetters ? 9 : 8} className="p-8 text-center text-slate-400 font-bold bg-slate-50/30">Không có học sinh nào có kết quả xét duyệt dưới đợt/kỳ này.</td>
+                          <td colSpan={attachLetters ? 9 : 8} className="p-2 text-center text-slate-400 font-bold text-xs font-semibold">Không có học sinh nào có kết quả xét duyệt dưới đợt/kỳ này.</td>
                         </tr>
                       )}
                     </tbody>
@@ -8008,13 +8008,13 @@ return {
                                 navigator.clipboard.writeText(emailResult.html || "");
                                 alert("Đã sao chép nội dung HTML! Bạn có thể dán trực tiếp vào Outlook/Gmail để gửi.");
                               }}
-                              className="bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-bold text-xs px-4 py-2 rounded-xl transition-all cursor-pointer"
+                              className="hover:bg-slate-50 text-slate-700 font-bold text-xs transition-all cursor-pointer text-xs font-semibold"
                             >
                               📋 Sao chép HTML Email
                             </button>
                             <a
                               href={`mailto:${recipientEmail}?subject=${encodeURIComponent(emailSubject)}&body=Xin mời xem bảng HTML báo cáo khảo sát đính kèm.`}
-                              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all"
+                              className="hover:bg-indigo-700 text-white font-bold text-xs transition-all text-xs font-semibold"
                             >
                               📧 Mở Hòm thư Outlook/Gmail
                             </a>
@@ -8039,7 +8039,7 @@ return {
               <button
                 onClick={handleExportDirectPDFs}
                 disabled={emailSending || emailStudents.length === 0}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                className="hover:bg-emerald-700 text-white font-bold text-xs shadow-md hover:shadow-lg transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-xs font-semibold"
               >
                 {emailSending && emailSendingStatus.includes("tải") ? (
                   <>
@@ -8080,7 +8080,7 @@ return {
       {isRetestModalOpen && selectedReportStudent && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-50 p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col animate-in zoom-in-95 duration-200">
-            <div className="p-6 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+            <div className="p-6 flex justify-between items-center text-xs font-semibold">
               <div>
                 <h3 className="text-lg font-black text-slate-800">Đăng ký Khảo sát lại</h3>
                 <p className="text-xs text-slate-400 font-bold uppercase mt-0.5 tracking-wider">
@@ -8089,7 +8089,7 @@ return {
               </div>
               <button
                 onClick={() => setIsRetestModalOpen(false)}
-                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all text-xs font-semibold"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -8140,7 +8140,7 @@ return {
               )}
             </div>
 
-            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2">
+            <div className="p-4 flex justify-end gap-2 text-xs font-semibold">
               <button
                 type="button"
                 disabled={retestRegisterLoading}
@@ -8156,7 +8156,7 @@ return {
                   await handleRegisterRetest();
                   setIsRetestModalOpen(false);
                 }}
-                className="flex items-center gap-1.5 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                className="flex items-center gap-1.5 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-50 text-xs font-semibold"
               >
                 {retestRegisterLoading ? <Loader2 className="w-4 h-4 animate-spin"/> : <RefreshCw className="w-4 h-4"/>}
                 Xác nhận

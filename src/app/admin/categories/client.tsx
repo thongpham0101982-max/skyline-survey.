@@ -84,7 +84,7 @@ export function CategoriesClient({ initialCategories }) {
             Tao Danh Muc Moi
           </h3>
           {errorMsg && (
-            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm font-medium">
+            <div className="mb-4 text-red-700 text-sm font-medium text-xs font-semibold">
               {errorMsg}
             </div>
           )}
@@ -144,7 +144,7 @@ export function CategoriesClient({ initialCategories }) {
 
       {/* List */}
       <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200/80 animate-in fade-in slide-in-from-bottom-4 duration-500 border-2 border-indigo-100 overflow-hidden">
-        <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center gap-3">
+        <div className="flex items-center gap-3 text-xs font-semibold">
           <Tag className="w-5 h-5 text-indigo-500" />
           <span className="font-bold text-slate-700">Danh Sach Danh Muc ({categories.length})</span>
         </div>
@@ -160,9 +160,9 @@ export function CategoriesClient({ initialCategories }) {
             {categories.map((cat) => {
               const isEditing = editingId === cat.id
               return (
-                <div key={cat.id} className="px-6 py-5 flex items-center gap-4 hover:bg-slate-50/70 transition-colors group">
+                <div key={cat.id} className="flex items-center gap-4 hover:bg-slate-50/70 transition-colors group text-xs font-semibold">
                   <GripVertical className="w-5 h-5 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
-                  <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 flex items-center justify-center flex-shrink-0 text-xs font-semibold">
                     <Tag className="w-5 h-5 text-[#00A19A]" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -196,7 +196,7 @@ export function CategoriesClient({ initialCategories }) {
                         </span>
                         <span className="text-xs text-slate-400">Thu tu: {cat.sortOrder}</span>
                         {cat._count && (
-                          <span className="text-xs bg-blue-50 text-blue-600 border border-blue-100 px-2 py-0.5 rounded-full font-medium">
+                          <span className="text-xs text-blue-600 font-medium text-xs font-semibold">
                             {cat._count.questions} cau hoi
                           </span>
                         )}
@@ -217,7 +217,7 @@ export function CategoriesClient({ initialCategories }) {
                   <div className="flex items-center gap-2 flex-shrink-0">
                     {isEditing ? (
                       <>
-                        <button onClick={() => handleSaveEdit(cat.id)} disabled={saving} className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-60" title="Luu">
+                        <button onClick={() => handleSaveEdit(cat.id)} disabled={saving} className="p-2 text-green-600 hover:bg-green-50 transition-colors disabled:opacity-60 text-xs font-semibold" title="Luu">
                           <Check className="w-5 h-5" />
                         </button>
                         <button onClick={() => setEditingId(null)} className="p-2 text-slate-400 hover:bg-slate-100 rounded-lg transition-colors" title="Huy">
@@ -226,10 +226,10 @@ export function CategoriesClient({ initialCategories }) {
                       </>
                     ) : (
                       <>
-                        <button onClick={() => handleEdit(cat)} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100" title="Sua">
+                        <button onClick={() => handleEdit(cat)} className="p-2 text-blue-500 hover:bg-blue-50 transition-colors opacity-0 group-hover:opacity-100 text-xs font-semibold" title="Sua">
                           <Edit2 className="w-4 h-4" />
                         </button>
-                        <button onClick={() => handleDelete(cat.id, cat.name)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100" title="Xoa">
+                        <button onClick={() => handleDelete(cat.id, cat.name)} className="p-2 text-red-500 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100 text-xs font-semibold" title="Xoa">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </>
@@ -243,8 +243,8 @@ export function CategoriesClient({ initialCategories }) {
       </div>
 
       {/* Info Note */}
-      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm text-blue-700 flex items-start gap-3">
-        <div className="w-5 h-5 bg-blue-200 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold">i</div>
+      <div className="p-4 text-sm text-blue-700 flex items-start gap-3 text-xs font-semibold">
+        <div className="w-5 h-5 flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold text-xs font-semibold">i</div>
         <div>
           <span className="font-semibold">Huong dan:</span> Sau khi tao danh muc, hay vao{" "}
           <strong>Manage Surveys &rarr; Bo cau hoi</strong> de gan tung cau hoi vao danh muc tuong ung.

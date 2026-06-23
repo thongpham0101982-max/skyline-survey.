@@ -96,7 +96,7 @@ export function RolesClient({ initialRoles }: any) {
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
       {/* Roles List */}
       <div className="lg:col-span-1 bg-white rounded-3xl shadow-lg border border-slate-100/90 overflow-hidden flex flex-col h-fit backdrop-blur-md">
-        <div className="p-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+        <div className="p-5 flex justify-between items-center text-xs font-semibold">
           <h3 className="font-black text-slate-800 text-sm tracking-wide flex items-center gap-2">
             <Shield className="w-5 h-5 text-[#00A19A] animate-pulse"/> NHÓM QUYỀN
           </h3>
@@ -117,7 +117,7 @@ export function RolesClient({ initialRoles }: any) {
                 <div className="flex items-center justify-between">
                   <div className={`font-bold text-sm ${activeRole === r.code ? "text-slate-800" : "text-slate-700"}`}>{r.name}</div>
                   {r.isSystem && (
-                    <span className="text-[9px] font-black tracking-widest text-[#00A19A] bg-teal-50 px-2 py-0.5 rounded-full uppercase leading-none select-none">Hệ thống</span>
+                    <span className="text-[9px] font-black tracking-widest text-[#00A19A] uppercase leading-none select-none text-xs font-semibold">Hệ thống</span>
                   )}
                 </div>
                 <div className="text-xs font-semibold text-slate-400 mt-1 line-clamp-1 leading-snug">{r.description || r.code}</div>
@@ -132,7 +132,7 @@ export function RolesClient({ initialRoles }: any) {
                          if(res.success) window.location.reload();
                          else alert("Lỗi: " + res.error);
                       }
-                  }} className="p-2 text-slate-400 hover:text-red-600 hover:bg-rose-50 rounded-lg transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
+                  }} className="p-2 text-slate-400 hover:text-red-600 hover:bg-rose-50 transition-all text-xs font-semibold"><Trash2 className="w-3.5 h-3.5" /></button>
                 </div>
               )}
             </div>
@@ -142,7 +142,7 @@ export function RolesClient({ initialRoles }: any) {
 
       {/* Permissions Matrix */}
       <div className="lg:col-span-3 bg-white rounded-3xl shadow-lg border border-slate-100 overflow-hidden backdrop-blur-md">
-        <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50/50">
+        <div className="p-4 flex justify-between items-center text-xs font-semibold">
           <div>
             <h3 className="font-bold text-slate-800 text-lg tracking-tight">Ma Trận Phân Quyền</h3>
             <p className="text-sm text-slate-500 mt-0.5">
@@ -161,12 +161,12 @@ export function RolesClient({ initialRoles }: any) {
         <div className="overflow-x-auto custom-scrollbar flex-1 relative max-h-[70vh]">
           <table className="w-full text-left whitespace-nowrap border-collapse">
             <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-200 sticky top-0 z-30 backdrop-blur-md">
-                <th className="px-6 py-4.5 font-bold text-slate-700 text-xs uppercase tracking-wider w-[40%] bg-slate-50/90">Chức năng / Module</th>
-                <th className="px-4 py-4.5 font-bold text-slate-600 text-[10px] uppercase tracking-widest text-center bg-slate-50/90 w-[15%]">Xem</th>
-                <th className="px-4 py-4.5 font-bold text-slate-600 text-[10px] uppercase tracking-widest text-center bg-slate-50/90 w-[15%]">Thêm</th>
-                <th className="px-4 py-4.5 font-bold text-slate-600 text-[10px] uppercase tracking-widest text-center bg-slate-50/90 w-[15%]">Sửa</th>
-                <th className="px-4 py-4.5 font-bold text-slate-600 text-[10px] uppercase tracking-widest text-center bg-slate-50/90 w-[15%]">Xóa</th>
+              <tr className="sticky top-0 z-30 backdrop-blur-md text-xs font-semibold">
+                <th className="p-2 p-2 font-bold text-slate-700 text-xs uppercase tracking-wider w-[40%] text-xs font-semibold">Chức năng / Module</th>
+                <th className="p-2 p-2 font-bold text-slate-600 text-[10px] uppercase tracking-widest text-center w-[15%] text-xs font-semibold">Xem</th>
+                <th className="p-2 p-2 font-bold text-slate-600 text-[10px] uppercase tracking-widest text-center w-[15%] text-xs font-semibold">Thêm</th>
+                <th className="p-2 p-2 font-bold text-slate-600 text-[10px] uppercase tracking-widest text-center w-[15%] text-xs font-semibold">Sửa</th>
+                <th className="p-2 p-2 font-bold text-slate-600 text-[10px] uppercase tracking-widest text-center w-[15%] text-xs font-semibold">Xóa</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -189,8 +189,8 @@ export function RolesClient({ initialRoles }: any) {
                     
                     return (
                       <Fragment key={m.code}>
-                        <tr className="hover:bg-slate-50/80 transition-all duration-150 group">
-                          <td className="px-8 py-4.5">
+                        <tr className="hover:bg-slate-50/80 transition-all duration-150 group text-xs font-semibold">
+                          <td className="p-2 p-2 border border-slate-200">
                             <div className="flex items-center gap-3">
                                {hasSub ? (
                                  <button onClick={() => toggleExpand(m.code)} className="p-1.5 hover:bg-slate-100/85 rounded-lg transition-all duration-200 text-slate-400 hover:text-slate-800 mr-0.5 active:scale-90">
@@ -199,7 +199,7 @@ export function RolesClient({ initialRoles }: any) {
                                ) : (
                                  <div className="w-7 h-7 mr-0.5" />
                                )}
-                               <div className="p-2 rounded-xl bg-slate-50 group-hover:bg-white transition-all duration-200 border border-slate-100/80 group-hover:border-indigo-100 group-hover:shadow-md group-hover:shadow-indigo-50/50">
+                               <div className="p-2 group-hover:bg-white transition-all duration-200 group-hover:border-indigo-100 group-hover:shadow-md group-hover:shadow-indigo-50/50 text-xs font-semibold">
                                  <m.icon className="w-4.5 h-4.5 text-slate-400 group-hover:text-[#00A19A] transition-colors" />
                                 </div>
                                 <div>
@@ -211,7 +211,7 @@ export function RolesClient({ initialRoles }: any) {
                             </div>
                           </td>
                           {(["canRead","canCreate","canUpdate","canDelete"] as const).map(field => (
-                            <td key={field} className="px-4 py-4.5 text-center">
+                            <td key={field} className="p-2 p-2 text-center border border-slate-200">
                               <label className="inline-flex items-center justify-center cursor-pointer p-1 active:scale-95 transition-transform select-none">
                                 <input type="checkbox" checked={!!p[field]}
                                   onChange={() => togglePerm(m.code, field)}
@@ -239,7 +239,7 @@ export function RolesClient({ initialRoles }: any) {
                         {hasSub && isExpanded && m.subModules.map(sm => {
                           const subP = permissions.find(x => x.module === sm.code) || emptyPerm(sm.code);
                           return (
-                            <tr key={sm.code} className="bg-slate-50/40 hover:bg-slate-100/50 transition-all duration-150 group">
+                            <tr key={sm.code} className="hover:bg-slate-100/50 transition-all duration-150 group text-xs font-semibold">
                               <td className="pl-16 pr-8 py-3.5 border-l-2 border-indigo-400">
                                 <div className="flex items-center gap-3">
                                    <div className="p-1.5 rounded-lg bg-white border border-slate-100 shadow-sm">
@@ -252,7 +252,7 @@ export function RolesClient({ initialRoles }: any) {
                                 </div>
                               </td>
                               {(["canRead","canCreate","canUpdate","canDelete"] as const).map(field => (
-                                <td key={field} className="px-4 py-3.5 text-center">
+                                <td key={field} className="p-2 p-2 text-center border border-slate-200">
                                   <label className="inline-flex items-center justify-center cursor-pointer p-1 active:scale-95 transition-transform select-none">
                                     <input type="checkbox" checked={!!subP[field]}
                                       onChange={() => togglePerm(sm.code, field)}
@@ -291,7 +291,7 @@ export function RolesClient({ initialRoles }: any) {
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+            <div className="flex justify-between items-center text-xs font-semibold">
               <h3 className="font-bold text-slate-800">{modalMode === 'ADD' ? 'Thêm Nhóm Quyền' : 'Sửa Nhóm Quyền'}</h3>
               <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5"/></button>
             </div>
@@ -309,7 +309,7 @@ export function RolesClient({ initialRoles }: any) {
                 <textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} rows={3} placeholder="Mô tả chức năng của nhóm quyền này..." className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 resize-none" />
               </div>
             </div>
-            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+            <div className="flex justify-end gap-3 text-xs font-semibold">
               <button onClick={() => setModalOpen(false)} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-200 rounded-xl transition-colors">Hủy</button>
               <button disabled={loading || !formData.code || !formData.name} onClick={async () => {
                  setLoading(true);

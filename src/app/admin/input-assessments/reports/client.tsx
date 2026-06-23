@@ -275,7 +275,7 @@ function Modal({ open, onClose, title, children, footer, size = "md" }: any) {
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-all"><X className="w-4 h-4" /></button>
         </div>
         <div className="p-6 overflow-y-auto max-h-[75vh]">{children}</div>
-        {footer && <div className="flex gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50/50">{footer}</div>}
+        {footer && <div className="flex gap-3 text-xs font-semibold">{footer}</div>}
       </div>
     </div>
   );
@@ -1440,7 +1440,7 @@ export function ReportsClient({
           return '<tr style="border-bottom: 1px solid #000000;">' +
             '<td style="padding: 10px; border-right: 1px solid #000000; text-align: center; color: #000000;">' + (idx + 1) + '</td>' +
             '<td style="padding: 10px 15px; border-right: 1px solid #000000; font-weight: bold; color: #000000;">' + item.name + '</td>' +
-            '<td style="padding: 10px; text-align: center; font-weight: bold; color: #000000;">' + item.qty + '</td>' +
+            '<td style="padding: 10px; text-align: center; font-weight: bold; color: #000000;" className="p-2 border border-slate-200">' + item.qty + '</td>' +
           '</tr>';
         }).join("");
 
@@ -1458,12 +1458,12 @@ export function ReportsClient({
               '<h2>DANH MỤC HỒ SƠ NHẬP HỌC</h2>' +
             '</div>' +
             '<div style="margin-top: 30px; border: 1px solid #000000; overflow: hidden; position: relative; z-index: 10;">' +
-              '<table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; color: #000000; font-family: \'Times New Roman\', Times, serif;">' +
+              '<table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; color: #000000; font-family: \'Times New Roman\', Times, serif;" className="border border-slate-200 border-collapse">' +
                 '<thead>' +
                   '<tr style="background-color: #ffffff; border-bottom: 1px solid #000000;">' +
                     '<th style="padding: 10px; border-right: 1px solid #000000; text-align: center; font-weight: bold; width: 60px; text-transform: uppercase; color: #000000;">STT</th>' +
                     '<th style="padding: 10px 15px; border-right: 1px solid #000000; text-align: center; font-weight: bold; text-transform: uppercase; color: #000000;">Tên hồ sơ</th>' +
-                    '<th style="padding: 10px; text-align: center; font-weight: bold; width: 120px; text-transform: uppercase; color: #000000;">Số lượng</th>' +
+                    '<th style="padding: 10px; text-align: center; font-weight: bold; width: 120px; text-transform: uppercase; color: #000000;" className="p-2 border border-slate-200">Số lượng</th>' +
                   '</tr>' +
                 '</thead>' +
                 '<tbody>' +
@@ -2262,20 +2262,20 @@ export function ReportsClient({
                 </h2>
 
                 <div style={{ marginTop: "10px", overflow: "hidden", border: "1.5px solid #0f172a", borderRadius: "8px" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "13px", color: "#0f172a" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "13px", color: "#0f172a" }} className="border border-slate-200 border-collapse">
                     <thead>
                       <tr style={{ backgroundColor: "#f8fafc", borderBottom: "1.5px solid #0f172a" }}>
-                        <th style={{ padding: "10px 15px", fontWeight: "bold", borderRight: "1.5px solid #0f172a", textAlign: "center", width: "60px", textTransform: "uppercase" }}>STT</th>
-                        <th style={{ padding: "10px 15px", fontWeight: "bold", borderRight: "1.5px solid #0f172a", textTransform: "uppercase" }}>Tên hồ sơ / Giấy tờ</th>
-                        <th style={{ padding: "10px 15px", fontWeight: "bold", textAlign: "center", width: "120px", textTransform: "uppercase" }}>Số lượng</th>
+                        <th style={{ padding: "10px 15px", fontWeight: "bold", borderRight: "1.5px solid #0f172a", textAlign: "center", width: "60px", textTransform: "uppercase" }} className="p-2 border border-slate-200">STT</th>
+                        <th style={{ padding: "10px 15px", fontWeight: "bold", borderRight: "1.5px solid #0f172a", textTransform: "uppercase" }} className="p-2 border border-slate-200">Tên hồ sơ / Giấy tờ</th>
+                        <th style={{ padding: "10px 15px", fontWeight: "bold", textAlign: "center", width: "120px", textTransform: "uppercase" }} className="p-2 border border-slate-200">Số lượng</th>
                       </tr>
                     </thead>
                     <tbody>
                       {modalDocList.map((item, idx) => (
                         <tr key={item.id || idx} style={{ borderBottom: "1px solid #0f172a" }}>
-                          <td style={{ padding: "10px 15px", borderRight: "1.5px solid #0f172a", textAlign: "center" }}>{idx + 1}</td>
-                          <td style={{ padding: "10px 15px", borderRight: "1.5px solid #0f172a", fontWeight: "500" }}>{item.name}</td>
-                          <td style={{ padding: "10px 15px", textAlign: "center", fontWeight: "bold" }}>{item.qty}</td>
+                          <td style={{ padding: "10px 15px", borderRight: "1.5px solid #0f172a", textAlign: "center" }} className="p-2 border border-slate-200">{idx + 1}</td>
+                          <td style={{ padding: "10px 15px", borderRight: "1.5px solid #0f172a", fontWeight: "500" }} className="p-2 border border-slate-200">{item.name}</td>
+                          <td style={{ padding: "10px 15px", textAlign: "center", fontWeight: "bold" }} className="p-2 border border-slate-200">{item.qty}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -2335,7 +2335,7 @@ export function ReportsClient({
 
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto md:justify-end">
           {/* School Year Selector */}
-          <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 rounded-2xl border border-slate-200 hover:border-slate-300 transition-colors shadow-sm relative group cursor-pointer">
+          <div className="flex items-center gap-2 hover:border-slate-300 transition-colors shadow-sm relative group cursor-pointer text-xs font-semibold">
             <Calendar className="w-4 h-4 text-indigo-500" />
             <select
               value={yearId}
@@ -2402,7 +2402,7 @@ export function ReportsClient({
           {/* Left panel settings */}
           <div className="lg:col-span-5 bg-white border border-slate-200 shadow-sm rounded-3xl p-8 space-y-6">
             <div className="flex items-center gap-3 border-b pb-4 mb-2">
-              <div className="w-10 h-10 bg-indigo-50 text-teal-600 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 text-teal-600 flex items-center justify-center text-xs font-semibold">
                 <Settings className="w-5 h-5"/>
               </div>
               <div>
@@ -2552,7 +2552,7 @@ export function ReportsClient({
               </div>
             </div>
 
-            <button onClick={saveReportConfig} className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-lg shadow-indigo-100 transition-all flex items-center justify-center gap-2 cursor-pointer">
+            <button onClick={saveReportConfig} className="w-full hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 transition-all flex items-center justify-center gap-2 cursor-pointer text-xs font-semibold">
               <Check className="w-4 h-4" /> Lưu cấu hình mẫu in
             </button>
           </div>
@@ -2595,7 +2595,7 @@ export function ReportsClient({
             let page2ParagraphsTemp = isSplitTemp ? tempParagraphs.slice(splitIndexTemp) : [];
 
             return (
-              <div className="lg:col-span-7 bg-slate-50 border border-slate-200 shadow-inner rounded-3xl p-8 flex flex-col justify-between min-h-[500px]">
+              <div className="lg:col-span-7 shadow-inner p-8 flex flex-col justify-between min-h-[500px] text-xs font-semibold">
                 <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
                   <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Khung Xem trước thiết kế A4 thực tế</span>
                   {((selectedLevel === "high" && rcReportType === "thu_chuc_mung") || (rcReportType === "cam_ket_hoc_tap" && isSplitTemp)) && (
@@ -2663,7 +2663,7 @@ export function ReportsClient({
                                 <tr className="bg-white border-b border-slate-950 font-bold text-slate-950">
                                   <th className="px-2 py-1.5 border-r border-slate-950 text-center uppercase w-10" style={{ borderRightWidth: '1px', borderColor: '#000' }}>STT</th>
                                   <th className="px-3 py-1.5 border-r border-slate-950 text-center uppercase" style={{ borderRightWidth: '1px', borderColor: '#000' }}>Tên hồ sơ</th>
-                                  <th className="px-3 py-1.5 text-center uppercase w-16">Số lượng</th>
+                                  <th className="p-2 p-2 text-center uppercase w-16 border border-slate-200">Số lượng</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -2671,12 +2671,12 @@ export function ReportsClient({
                                   <tr key={item.id || idx} className="border-b border-slate-950 last:border-b-0">
                                     <td className="px-2 py-1.5 border-r border-slate-950 text-center text-slate-900" style={{ borderRightWidth: '1px', borderColor: '#000' }}>{idx + 1}</td>
                                     <td className="px-3 py-1.5 border-r border-slate-950 font-medium text-slate-900" style={{ borderRightWidth: '1px', borderColor: '#000' }}>{item.name}</td>
-                                    <td className="px-3 py-1.5 text-center text-slate-950 font-bold">{item.qty || "—"}</td>
+                                    <td className="p-2 p-2 text-center text-slate-950 font-bold border border-slate-200">{item.qty || "—"}</td>
                                   </tr>
                                 ))}
                                 {previewDocList.length === 0 && (
                                   <tr>
-                                    <td colSpan={3} className="text-center py-4 text-slate-400 italic">Chưa cấu hình hồ sơ nào cho đối tượng này</td>
+                                    <td colSpan={3} className="text-center p-2 text-slate-400 italic border border-slate-200">Chưa cấu hình hồ sơ nào cho đối tượng này</td>
                                   </tr>
                                 )}
                               </tbody>
@@ -2879,7 +2879,7 @@ export function ReportsClient({
             </div>
           </div>
 
-          <div className="flex flex-col md:flex-row items-center justify-between gap-5 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-5 p-4 text-xs font-semibold">
             {/* Filters Bar */}
             <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
               <div className="flex flex-col group">
@@ -2948,7 +2948,7 @@ export function ReportsClient({
                   link.click();
                   document.body.removeChild(link);
                 }}
-                className="w-full md:w-auto px-4 py-2.5 bg-teal-50 hover:bg-teal-100 text-teal-700 rounded-xl font-bold text-xs uppercase tracking-wider shadow-sm transition-all flex justify-center items-center gap-2 border border-indigo-100 whitespace-nowrap"
+                className="w-full md:w-auto hover:bg-teal-100 text-teal-700 font-bold text-xs uppercase tracking-wider shadow-sm transition-all flex justify-center items-center gap-2 whitespace-nowrap text-xs font-semibold"
               >
                 <Download className="w-4 h-4"/>
                 Xuất File
@@ -2986,14 +2986,14 @@ export function ReportsClient({
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm border-collapse">
-                  <thead className="bg-slate-50">
+                  <thead className="text-xs font-semibold">
                     <tr className="text-slate-500 text-[10px] font-black uppercase tracking-widest border-b border-slate-200">
-                      <th className="px-6 py-4 text-center w-14">STT</th>
-                      <th className="px-6 py-4">Học sinh</th>
-                      <th className="px-6 py-4">Kết quả Phê duyệt</th>
-                      <th className="px-6 py-4">Môn Cam kết</th>
-                      <th className="px-6 py-4">Ý kiến / Ghi chú Hội đồng</th>
-                      <th className="px-6 py-4 text-center w-[120px]">Thao tác</th>
+                      <th className="p-2 p-2 text-center w-14 border border-slate-200">STT</th>
+                      <th className="p-2 p-2 border border-slate-200">Học sinh</th>
+                      <th className="p-2 p-2 border border-slate-200">Kết quả Phê duyệt</th>
+                      <th className="p-2 p-2 border border-slate-200">Môn Cam kết</th>
+                      <th className="p-2 p-2 border border-slate-200">Ý kiến / Ghi chú Hội đồng</th>
+                      <th className="p-2 p-2 text-center w-[120px] border border-slate-200">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 bg-white">
@@ -3005,13 +3005,13 @@ export function ReportsClient({
                       const isPassed = (result.includes("Đạt") && !result.includes("Không")) || result.includes("Đại") || result.includes("MIỄN") || result.includes("DAT");
 
                       return (
-                        <tr key={s.id} className="even:bg-slate-50/50 hover:bg-teal-50/30 transition-all duration-150 group/row">
-                          <td className="px-6 py-4 text-center text-slate-400 font-semibold">{idx + 1}</td>
-                          <td className="px-6 py-4">
+                        <tr key={s.id} className="even:bg-slate-50/50 hover:bg-teal-50/30 transition-all duration-150 group/row text-xs font-semibold">
+                          <td className="p-2 p-2 text-center text-slate-400 font-semibold border border-slate-200">{idx + 1}</td>
+                          <td className="p-2 p-2 border border-slate-200">
                             <div className="flex flex-col gap-1">
                               <div className="flex items-center gap-2">
                                 <span className="font-bold text-slate-800 text-sm group-hover/row:text-teal-700 transition-colors">{s.fullName}</span>
-                                <span className="font-mono text-[10px] font-black text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded border border-teal-100/50">
+                                <span className="font-mono text-[10px] font-black text-teal-700 text-xs font-semibold">
                                   {s.studentCode || "—"}
                                 </span>
                               </div>
@@ -3024,23 +3024,23 @@ export function ReportsClient({
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="p-2 p-2 border border-slate-200">
                             {(() => {
                               const isGreen = result.includes("Đạt") && !result.includes("cam kết") && !result.includes("Không");
                               const isAmber = result.includes("cam kết");
                               const isRed = result.includes("Không đạt");
                               
-                              if (isGreen) return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200/50"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>{result}</span>;
-                              if (isAmber) return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200/50"><span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>{result}</span>;
-                              if (isRed) return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200/50"><span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>{result}</span>;
+                              if (isGreen) return <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-emerald-700 text-xs font-semibold"><span className="w-1.5 h-1.5 text-xs font-semibold"></span>{result}</span>;
+                              if (isAmber) return <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-amber-700 text-xs font-semibold"><span className="w-1.5 h-1.5 text-xs font-semibold"></span>{result}</span>;
+                              if (isRed) return <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-rose-700 text-xs font-semibold"><span className="w-1.5 h-1.5 text-xs font-semibold"></span>{result}</span>;
                               return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-600">{result}</span>;
                             })()}
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="p-2 p-2 border border-slate-200">
                             <div className="flex flex-wrap gap-1 max-w-[180px]">
                               {extractCommittedSubjects(s).length > 0 ? (
                                 extractCommittedSubjects(s).map((sub: string, subIdx: number) => (
-                                  <span key={subIdx} className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200/50 px-2 py-0.5 rounded-md whitespace-nowrap">
+                                  <span key={subIdx} className="text-[10px] font-bold text-amber-700 whitespace-nowrap text-xs font-semibold">
                                     {sub.trim()}
                                   </span>
                                 ))
@@ -3049,7 +3049,7 @@ export function ReportsClient({
                               )}
                             </div>
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="p-2 p-2 border border-slate-200">
                             <div className="text-[11px] font-medium text-slate-600 max-w-[200px] group/note relative cursor-default">
                               <p className="line-clamp-2 leading-relaxed">{extractCleanNote(s) || <span className="text-slate-300">—</span>}</p>
                               {extractCleanNote(s) && (
@@ -3060,13 +3060,13 @@ export function ReportsClient({
                               )}
                             </div>
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="p-2 p-2 border border-slate-200">
                             <div className="flex gap-2 justify-center">
                               {isPassed ? (
                                 <>
                                   <button
                                     onClick={() => { setIsInvitation(false); setIsCommitment(false); setSelectedReportStudent(s); setIsPrintModalOpen(true); }}
-                                    className="p-2 text-emerald-600 bg-emerald-50 border border-emerald-100/80 rounded-xl hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all shadow-sm tooltip-trigger relative group/btn"
+                                    className="p-2 text-emerald-600 hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all shadow-sm tooltip-trigger relative group/btn text-xs font-semibold"
                                     title="Thư Chúc mừng"
                                   >
                                     <Send className="w-4 h-4 transition-colors" />
@@ -3074,7 +3074,7 @@ export function ReportsClient({
                                   {selectedLevel !== "preschool" && (result.includes("cam kết") || result.includes("Đạt cam kết")) && (
                                     <button
                                       onClick={() => { setIsInvitation(false); setIsCommitment(true); setSelectedReportStudent(s); setIsPrintModalOpen(true); }}
-                                      className="p-2 text-amber-600 bg-amber-50 border border-amber-100/80 rounded-xl hover:bg-amber-500 hover:text-white hover:border-amber-500 transition-all shadow-sm tooltip-trigger relative group/btn"
+                                      className="p-2 text-amber-600 hover:bg-amber-500 hover:text-white hover:border-amber-500 transition-all shadow-sm tooltip-trigger relative group/btn text-xs font-semibold"
                                       title="Cam kết học tập"
                                     >
                                       <PenLine className="w-4 h-4 transition-colors" />
@@ -3101,7 +3101,7 @@ export function ReportsClient({
       {tab === "results" && (
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
           {/* Filters Bar for Results Tab */}
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-4 text-xs font-semibold">
             <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
               <div className="flex flex-col">
                 <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider mb-1 ml-1">Kỳ Khảo sát</span>
@@ -3127,12 +3127,12 @@ export function ReportsClient({
             <h3 className="text-base font-extrabold text-slate-800 border-b pb-3 mb-2 flex items-center gap-2"><BarChart3 className="w-5 h-5 text-indigo-500"/> Thống kê tổng quan</h3>
             
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-indigo-50/50 border border-indigo-100 p-4 rounded-2xl text-center space-y-1">
+              <div className="p-4 text-center space-y-1 text-xs font-semibold">
                 <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest block">Tổng học sinh</span>
                 <span className="text-2xl font-black text-slate-800 block">{filteredStudents.length}</span>
               </div>
 
-              <div className="bg-emerald-50/50 border border-emerald-100 p-4 rounded-2xl text-center space-y-1">
+              <div className="p-4 text-center space-y-1 text-xs font-semibold">
                 <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest block">Số em đạt</span>
                 <span className="text-2xl font-black text-slate-800 block">
                   {filteredStudents.filter(s => {
@@ -3149,7 +3149,7 @@ export function ReportsClient({
                 {Array.from(new Set(students.map(s => s.admissionResult || s.devAssessmentResult || "Chưa duyệt"))).map(st => {
                   const count = students.filter(s => (s.admissionResult || s.devAssessmentResult || "Chưa duyệt") === st).length;
                   return (
-                    <div key={st} className="flex justify-between items-center bg-slate-50 px-4 py-2.5 rounded-xl border border-slate-100 text-xs font-semibold text-slate-600">
+                    <div key={st} className="flex justify-between items-center text-xs font-semibold text-slate-600 text-xs font-semibold">
                       <span>{st}</span>
                       <span className="bg-white border px-2 py-0.5 rounded-lg text-slate-800 font-bold">{count}</span>
                     </div>
@@ -3165,14 +3165,14 @@ export function ReportsClient({
               <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2"><Mail className="w-5 h-5 text-indigo-500"/> Trả kết quả / Gửi mail nhanh</h3>
               <button
                 onClick={handleOpenEmailModal}
-                className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black shadow-md shadow-indigo-100 flex items-center gap-2 cursor-pointer"
+                className="hover:bg-indigo-700 text-white text-xs font-black shadow-md shadow-indigo-100 flex items-center gap-2 cursor-pointer text-xs font-semibold"
               >
                 <Send className="w-3.5 h-3.5"/>
                 Gửi Email báo cáo nhanh
               </button>
             </div>
 
-            <div className="bg-slate-50 border border-slate-100 p-5 rounded-2xl space-y-3 text-xs leading-relaxed text-slate-600">
+            <div className="p-5 space-y-3 text-xs leading-relaxed text-slate-600 text-xs font-semibold">
               <p className="font-bold text-slate-700 text-sm">💡 Chức năng Trả kết quả & Email nhanh:</p>
               <p>1. Gửi email tổng hợp nhanh danh sách kết quả xét tuyển cho Ban giám hiệu, các bộ phận tuyển sinh và tư vấn của cơ sở.</p>
               <p>2. Hệ thống tự động tạo, tối ưu hóa kích thước và đính kèm các tệp **PDF Thư chúc mừng / Bản cam kết** trực tiếp cho từng bé đạt yêu cầu khi gửi mail.</p>
@@ -3190,7 +3190,7 @@ export function ReportsClient({
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
           <div className="bg-white/80 backdrop-blur-md p-6 rounded-3xl shadow-sm border border-slate-200/60 flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-teal-600 shadow-inner">
+              <div className="w-12 h-12 flex items-center justify-center text-teal-600 shadow-inner text-xs font-semibold">
                 <Tag className="w-6 h-6" />
               </div>
               <div>
@@ -3226,7 +3226,7 @@ export function ReportsClient({
                   setDocFormSelectedGrades(docGroupGrades[selectedDocGroup] || []);
                   setIsDocModalOpen(true);
                 }}
-                className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-2 shadow-lg shadow-indigo-100 cursor-pointer"
+                className="hover:bg-indigo-700 text-white text-xs font-black transition-all flex items-center gap-2 shadow-lg shadow-indigo-100 cursor-pointer text-xs font-semibold"
               >
                 <Plus className="w-3.5 h-3.5" />
                 Thêm hồ sơ mới
@@ -3244,7 +3244,7 @@ export function ReportsClient({
                     <select 
                       value={selectedDocGroup} 
                       onChange={(e) => setSelectedDocGroup(e.target.value)} 
-                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 pr-10 text-sm font-black text-slate-700 outline-none appearance-none cursor-pointer hover:bg-slate-100/50 focus:border-indigo-500 focus:bg-white transition-all duration-300"
+                      className="w-full pr-10 text-sm font-black text-slate-700 outline-none appearance-none cursor-pointer hover:bg-slate-100/50 focus:border-indigo-500 focus:bg-white transition-all duration-300 text-xs font-semibold"
                     >
                       {docGroups.map(g => (
                         <option key={g.id} value={g.id}>{g.label}</option>
@@ -3265,7 +3265,7 @@ export function ReportsClient({
                           setSelectedDocGroup(newId);
                         }
                       }}
-                      className="flex-1 py-3 px-4 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-teal-600 flex items-center justify-center gap-2 text-xs font-black transition-all border border-indigo-100 shadow-sm"
+                      className="flex-1 hover:bg-indigo-100 text-teal-600 flex items-center justify-center gap-2 text-xs font-black transition-all shadow-sm text-xs font-semibold"
                       title="Thêm đối tượng mới"
                     >
                       <Plus className="w-4 h-4" />
@@ -3284,7 +3284,7 @@ export function ReportsClient({
                               localStorage.setItem('admission_doc_groups', JSON.stringify(updated));
                             }
                           }}
-                          className="w-10 h-10 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-600 flex items-center justify-center transition-all border border-amber-100 shadow-sm"
+                          className="w-10 h-10 hover:bg-amber-100 text-amber-600 flex items-center justify-center transition-all shadow-sm text-xs font-semibold"
                           title="Sửa tên đối tượng"
                         >
                           <Pencil className="w-4 h-4" />
@@ -3303,7 +3303,7 @@ export function ReportsClient({
                               }
                             });
                           }}
-                          className="w-10 h-10 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 flex items-center justify-center transition-all border border-rose-100 shadow-sm"
+                          className="w-10 h-10 hover:bg-rose-100 text-rose-600 flex items-center justify-center transition-all shadow-sm text-xs font-semibold"
                           title="Xóa đối tượng"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -3315,7 +3315,7 @@ export function ReportsClient({
               </div>
 
               {/* Association checkboxes */}
-              <div className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100 space-y-4">
+              <div className="p-4 space-y-4 text-xs font-semibold">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <span className="block text-[10px] font-bold tracking-wider uppercase text-slate-400 ml-1">
                     Áp dụng cho Đối tượng Tuyển sinh:
@@ -3325,7 +3325,7 @@ export function ReportsClient({
                       localStorage.setItem('admission_doc_targets', JSON.stringify(docGroupTargets));
                       notify("Đã lưu cấu hình áp dụng đối tượng tuyển sinh thành công!");
                     }}
-                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-1 shadow-md shadow-emerald-100 cursor-pointer"
+                    className="hover:bg-emerald-700 text-white text-xs font-black transition-all flex items-center gap-1 shadow-md shadow-emerald-100 cursor-pointer text-xs font-semibold"
                   >
                     <Check className="w-3 h-3" />
                     Lưu
@@ -3335,7 +3335,7 @@ export function ReportsClient({
                   {configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => {
                     const isChecked = (docGroupTargets[selectedDocGroup] || []).includes(c.name);
                     return (
-                      <label key={c.id} className="flex items-center gap-2 px-2.5 py-1.5 bg-white rounded-lg border border-slate-200/60 shadow-sm cursor-pointer hover:bg-indigo-50/20 hover:border-indigo-200 transition-all select-none">
+                      <label key={c.id} className="flex items-center gap-2 shadow-sm cursor-pointer hover:bg-indigo-50/20 hover:border-indigo-200 transition-all select-none text-xs font-semibold">
                         <input 
                           type="checkbox" 
                           checked={isChecked}
@@ -3364,7 +3364,7 @@ export function ReportsClient({
               </div>
 
               {/* Grade association checkboxes */}
-              <div className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100 space-y-4">
+              <div className="p-4 space-y-4 text-xs font-semibold">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <span className="block text-[10px] font-bold tracking-wider uppercase text-slate-400 ml-1">
                     Áp dụng cho Khối lớp học:
@@ -3378,7 +3378,7 @@ export function ReportsClient({
                         localStorage.setItem('admission_doc_grades_mapping', JSON.stringify(updatedMappings));
                       }}
                       type="button"
-                      className="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-teal-600 rounded-lg text-[9px] font-black transition-all border border-indigo-100"
+                      className="hover:bg-indigo-100 text-teal-600 text-[9px] font-black transition-all text-xs font-semibold"
                     >
                       Chọn nhanh 2,3,4,5
                     </button>
@@ -3388,7 +3388,7 @@ export function ReportsClient({
                         notify("Đã lưu cấu hình áp dụng khối lớp thành công!");
                       }}
                       type="button"
-                      className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-1 shadow-md shadow-emerald-100"
+                      className="hover:bg-emerald-700 text-white text-xs font-black transition-all flex items-center gap-1 shadow-md shadow-emerald-100 text-xs font-semibold"
                     >
                       <Check className="w-3.5 h-3.5" />
                       Lưu
@@ -3399,7 +3399,7 @@ export function ReportsClient({
                   {["Khối 1", "Khối 2", "Khối 3", "Khối 4", "Khối 5", "Khối 6", "Khối 7", "Khối 8", "Khối 9", "Khối 10", "Khối 11", "Khối 12"].map(g => {
                     const isChecked = (docGroupGrades[selectedDocGroup] || []).includes(g);
                     return (
-                      <label key={g} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white rounded-lg border border-slate-200/60 shadow-sm cursor-pointer hover:bg-indigo-50/20 hover:border-indigo-200 transition-all select-none font-medium">
+                      <label key={g} className="flex items-center gap-1.5 shadow-sm cursor-pointer hover:bg-indigo-50/20 hover:border-indigo-200 transition-all select-none font-medium text-xs font-semibold">
                         <input 
                           type="checkbox" 
                           checked={isChecked}
@@ -3433,22 +3433,22 @@ export function ReportsClient({
                 <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-inner">
                   <table className="w-full border-collapse text-left text-xs text-slate-700">
                     <thead>
-                      <tr className="bg-slate-50 border-b border-slate-200">
-                        <th className="px-4 py-3 font-black text-slate-900 text-center w-12">TT</th>
-                        <th className="px-4 py-3 font-black text-slate-900">Hồ sơ</th>
-                        <th className="px-4 py-3 font-black text-slate-900 text-center w-20">SL</th>
-                        <th className="px-4 py-3 font-black text-slate-900 text-center w-24">Thao tác</th>
+                      <tr className="text-xs font-semibold">
+                        <th className="p-2 p-2 font-black text-slate-900 text-center w-12 border border-slate-200">TT</th>
+                        <th className="p-2 p-2 font-black text-slate-900 border border-slate-200">Hồ sơ</th>
+                        <th className="p-2 p-2 font-black text-slate-900 text-center w-20 border border-slate-200">SL</th>
+                        <th className="p-2 p-2 font-black text-slate-900 text-center w-24 border border-slate-200">Thao tác</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 bg-white">
                       {filteredDocList.map((item, idx) => (
-                        <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="px-4 py-2.5 text-center font-bold text-slate-400">{idx + 1}</td>
-                          <td className="px-4 py-2.5">
+                        <tr key={item.id} className="hover:bg-slate-50/50 transition-colors text-xs font-semibold">
+                          <td className="p-2 p-2 text-center font-bold text-slate-400 border border-slate-200">{idx + 1}</td>
+                          <td className="p-2 p-2 border border-slate-200">
                             <div className="font-bold text-slate-800 text-[11px] truncate max-w-[120px] sm:max-w-none" title={item.name}>{item.name}</div>
                           </td>
-                          <td className="px-4 py-2.5 text-center font-bold text-slate-600">{item.qty || "—"}</td>
-                          <td className="px-4 py-2.5 text-center">
+                          <td className="p-2 p-2 text-center font-bold text-slate-600 border border-slate-200">{item.qty || "—"}</td>
+                          <td className="p-2 p-2 text-center border border-slate-200">
                             <div className="flex items-center justify-center gap-1.5">
                               <button 
                                 onClick={() => {
@@ -3460,7 +3460,7 @@ export function ReportsClient({
                                   setDocFormSelectedGrades(item.grades || []);
                                   setIsDocModalOpen(true);
                                 }}
-                                className="w-7 h-7 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-teal-600 flex items-center justify-center transition-colors"
+                                className="w-7 h-7 hover:bg-indigo-100 text-teal-600 flex items-center justify-center transition-colors text-xs font-semibold"
                                 title="Sửa hồ sơ"
                               >
                                 <Pencil className="w-3 h-3" />
@@ -3476,7 +3476,7 @@ export function ReportsClient({
                                     }
                                   });
                                 }}
-                                className="w-7 h-7 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 flex items-center justify-center transition-colors"
+                                className="w-7 h-7 hover:bg-rose-100 text-rose-600 flex items-center justify-center transition-colors text-xs font-semibold"
                                 title="Xóa hồ sơ"
                               >
                                 <Trash2 className="w-3 h-3" />
@@ -3492,7 +3492,7 @@ export function ReportsClient({
             </div>
 
             {/* Right side live A4 design preview stack */}
-            <div className="lg:col-span-7 bg-slate-50 border border-slate-200 shadow-inner rounded-3xl p-8 flex flex-col justify-between min-h-[500px]">
+            <div className="lg:col-span-7 shadow-inner p-8 flex flex-col justify-between min-h-[500px] text-xs font-semibold">
               <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-5">Khung Xem trước thiết kế A4 thực tế</span>
               <div className="bg-white rounded-2xl border border-slate-200 p-10 shadow-lg flex flex-col justify-between w-full aspect-[210/297] relative overflow-hidden select-none font-serif text-slate-800 leading-normal" style={{ fontFamily: '"Open Sans", sans-serif' }}>
                 {/* Background Watermark for Preview */}
@@ -3539,7 +3539,7 @@ export function ReportsClient({
                           <tr className="bg-white border-b border-slate-950 font-bold text-slate-950">
                             <th className="px-2 py-1.5 border-r border-slate-950 text-center uppercase w-10" style={{ borderRightWidth: '1px', borderColor: '#000' }}>STT</th>
                             <th className="px-3 py-1.5 border-r border-slate-950 text-center uppercase" style={{ borderRightWidth: '1px', borderColor: '#000' }}>Tên hồ sơ</th>
-                            <th className="px-3 py-1.5 text-center uppercase w-16">Số lượng</th>
+                            <th className="p-2 p-2 text-center uppercase w-16 border border-slate-200">Số lượng</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -3547,12 +3547,12 @@ export function ReportsClient({
                             <tr key={item.id || idx} className="border-b border-slate-950 last:border-b-0">
                               <td className="px-2 py-1.5 border-r border-slate-950 text-center text-slate-900" style={{ borderRightWidth: '1px', borderColor: '#000' }}>{idx + 1}</td>
                               <td className="px-3 py-1.5 border-r border-slate-950 font-medium text-slate-900" style={{ borderRightWidth: '1px', borderColor: '#000' }}>{item.name}</td>
-                              <td className="px-3 py-1.5 text-center text-slate-950 font-bold">{item.qty || "—"}</td>
+                              <td className="p-2 p-2 text-center text-slate-950 font-bold border border-slate-200">{item.qty || "—"}</td>
                             </tr>
                           ))}
                           {filteredDocList.length === 0 && (
                             <tr>
-                              <td colSpan={3} className="text-center py-4 text-slate-400 italic">Chưa cấu hình hồ sơ nào cho đối tượng này</td>
+                              <td colSpan={3} className="text-center p-2 text-slate-400 italic border border-slate-200">Chưa cấu hình hồ sơ nào cho đối tượng này</td>
                             </tr>
                           )}
                         </tbody>
@@ -3580,8 +3580,8 @@ export function ReportsClient({
           </div>
         </div>
       )}
-      <Modal open={isPrintModalOpen} onClose={() => setIsPrintModalOpen(false)} title={isInvitation ? "Mẫu Thư mời khảo sát" : isCommitment ? "Bản Cam kết học tập" : "Mẫu Thư Chúc mừng"} size="xl" footer={<><button onClick={() => setIsPrintModalOpen(false)} className="flex-1 text-xs font-black uppercase text-slate-400 hover:text-slate-600">Đóng</button><button onClick={handlePrintPDF} className="flex-1 py-3.5 bg-indigo-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 cursor-pointer"><Printer className="w-4 h-4" /> In / Tải PDF</button></>}>
-        <div className="bg-slate-50 p-4 border border-slate-100 rounded-3xl overflow-y-auto max-h-[60vh] flex flex-col items-center justify-start gap-8 w-full animate-none">
+      <Modal open={isPrintModalOpen} onClose={() => setIsPrintModalOpen(false)} title={isInvitation ? "Mẫu Thư mời khảo sát" : isCommitment ? "Bản Cam kết học tập" : "Mẫu Thư Chúc mừng"} size="xl" footer={<><button onClick={() => setIsPrintModalOpen(false)} className="flex-1 text-xs font-black uppercase text-slate-400 hover:text-slate-600">Đóng</button><button onClick={handlePrintPDF} className="flex-1 text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 cursor-pointer text-xs font-semibold"><Printer className="w-4 h-4" /> In / Tải PDF</button></>}>
+        <div className="p-4 overflow-y-auto max-h-[60vh] flex flex-col items-center justify-start gap-8 w-full animate-none text-xs font-semibold">
           <div className="flex flex-col items-center gap-8 w-full">
             {renderPrintPages()}
           </div>
@@ -3599,9 +3599,9 @@ export function ReportsClient({
       {isDocModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-100">
-            <div className="bg-slate-50 px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+            <div className="flex items-center justify-between text-xs font-semibold">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-indigo-100 text-teal-600 rounded-xl flex items-center justify-center">
+                <div className="w-10 h-10 text-teal-600 flex items-center justify-center text-xs font-semibold">
                   <Tag className="w-5 h-5" />
                 </div>
                 <div>
@@ -3622,7 +3622,7 @@ export function ReportsClient({
                   value={docFormName} 
                   onChange={(e) => setDocFormName(e.target.value)} 
                   placeholder="Ví dụ: Đơn đăng ký nhập học" 
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-sm font-bold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white transition-all animate-none"
+                  className="w-full text-sm font-bold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white transition-all animate-none text-xs font-semibold"
                 />
               </div>
 
@@ -3634,7 +3634,7 @@ export function ReportsClient({
                     value={docFormQty} 
                     onChange={(e) => setDocFormQty(e.target.value)} 
                     placeholder="Ví dụ: 01 bản" 
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-sm font-bold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white transition-all animate-none"
+                    className="w-full text-sm font-bold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white transition-all animate-none text-xs font-semibold"
                   />
                 </div>
                 <div>
@@ -3644,7 +3644,7 @@ export function ReportsClient({
                     value={docFormNote} 
                     onChange={(e) => setDocFormNote(e.target.value)} 
                     placeholder="Ví dụ: Bản sao y" 
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-sm font-bold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white transition-all animate-none"
+                    className="w-full text-sm font-bold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white transition-all animate-none text-xs font-semibold"
                   />
                 </div>
               </div>
@@ -3654,7 +3654,7 @@ export function ReportsClient({
                   {["Khối 1", "Khối 2", "Khối 3", "Khối 4", "Khối 5", "Khối 6", "Khối 7", "Khối 8", "Khối 9", "Khối 10", "Khối 11", "Khối 12"].map(g => {
                     const isChecked = docFormSelectedGrades.includes(g);
                     return (
-                      <label key={g} className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-50 hover:bg-emerald-50/50 rounded-lg border border-slate-200 cursor-pointer select-none transition-colors">
+                      <label key={g} className="flex items-center gap-1 hover:bg-emerald-50/50 cursor-pointer select-none transition-colors text-xs font-semibold">
                         <input type="checkbox" checked={isChecked} onChange={(e) => { if(e.target.checked) setDocFormSelectedGrades(p=>[...p,g]); else setDocFormSelectedGrades(p=>p.filter(x=>x!==g)); }} className="w-3.5 h-3.5 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300" />
                         <span className="text-[11px] font-bold text-slate-600">{g}</span>
                       </label>
@@ -3666,7 +3666,7 @@ export function ReportsClient({
                   {configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => {
                     const isChecked = docFormSelectedTargets.includes(c.name);
                     return (
-                      <label key={c.id} className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 hover:bg-indigo-50/50 rounded-xl border border-slate-200 cursor-pointer select-none transition-colors">
+                      <label key={c.id} className="flex items-center gap-1.5 hover:bg-indigo-50/50 cursor-pointer select-none transition-colors text-xs font-semibold">
                         <input 
                           type="checkbox" 
                           checked={isChecked}
@@ -3687,7 +3687,7 @@ export function ReportsClient({
               </div>
             </div>
 
-            <div className="bg-slate-50 px-6 py-4 border-t border-slate-100 flex items-center justify-end gap-3">
+            <div className="flex items-center justify-end gap-3 text-xs font-semibold">
               <button 
                 onClick={() => setIsDocModalOpen(false)} 
                 className="px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-600 rounded-xl text-xs font-black transition-colors"
@@ -3713,7 +3713,7 @@ export function ReportsClient({
                   localStorage.setItem(getDocStorageKey(selectedDocGroup), JSON.stringify(updated));
                   setIsDocModalOpen(false);
                 }} 
-                className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black transition-colors shadow-lg shadow-indigo-100"
+                className="hover:bg-indigo-700 text-white text-xs font-black transition-colors shadow-lg shadow-indigo-100 text-xs font-semibold"
               >
                 Lưu hồ sơ
               </button>
@@ -3724,7 +3724,7 @@ export function ReportsClient({
 
 
       {/* EMAIL QUICK MODAL */}
-      <Modal open={isEmailModalOpen} onClose={() => setIsEmailModalOpen(false)} title="Gửi email Báo cáo Nhanh" size="xl" footer={<><button onClick={() => setIsEmailModalOpen(false)} className="flex-1 text-xs font-black uppercase text-slate-400 hover:text-slate-600">Hủy</button><button onClick={handleSendEmailsSubmit} disabled={emailSending} className="flex-1 py-3.5 bg-indigo-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 cursor-pointer">{emailSending ? <Loader2 className="w-4 h-4 animate-spin"/> : <Send className="w-4 h-4" />}{emailSending ? emailSendingStatus : "Gửi ngay"}</button></>}>
+      <Modal open={isEmailModalOpen} onClose={() => setIsEmailModalOpen(false)} title="Gửi email Báo cáo Nhanh" size="xl" footer={<><button onClick={() => setIsEmailModalOpen(false)} className="flex-1 text-xs font-black uppercase text-slate-400 hover:text-slate-600">Hủy</button><button onClick={handleSendEmailsSubmit} disabled={emailSending} className="flex-1 text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 cursor-pointer text-xs font-semibold">{emailSending ? <Loader2 className="w-4 h-4 animate-spin"/> : <Send className="w-4 h-4" />}{emailSending ? emailSendingStatus : "Gửi ngay"}</button></>}>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 max-h-[70vh] overflow-y-auto pr-1">
           {/* Left inputs column */}
           <div className="lg:col-span-7 space-y-4 text-left">
@@ -3809,7 +3809,7 @@ export function ReportsClient({
             </div>
 
             {/* Attachment checkbox */}
-            <div className="flex items-start gap-3 p-4 bg-indigo-50/40 border border-indigo-100 rounded-3xl transition-all hover:bg-indigo-50/60">
+            <div className="flex items-start gap-3 p-4 transition-all hover:bg-indigo-50/60 text-xs font-semibold">
               <input type="checkbox" id="attach_checkbox" checked={attachLetters} onChange={e => setAttachLetters(e.target.checked)} className="w-5 h-5 text-teal-600 border-slate-300 rounded mt-0.5 cursor-pointer focus:ring-indigo-500" />
               <div>
                 <label htmlFor="attach_checkbox" className="text-xs font-black text-indigo-900 cursor-pointer select-none">Tự động đính kèm tệp mẫu Thư PDF cho từng học sinh</label>
@@ -3844,7 +3844,7 @@ export function ReportsClient({
             </div>
 
             {/* Students list container */}
-            <div className="border border-slate-200 rounded-3xl bg-slate-50 p-4 space-y-2 overflow-y-auto max-h-[350px] shadow-inner w-full">
+            <div className="p-4 space-y-2 overflow-y-auto max-h-[350px] shadow-inner w-full text-xs font-semibold">
               {filteredStudents.map(s => {
                 const isSelected = selectedEmailStudentIds.includes(s.id);
                 return (
@@ -3993,13 +3993,13 @@ function ConfirmDialog({ open, onClose, onConfirm, message }: any) {
   return (
     <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-sm text-center animate-in zoom-in-95 duration-200">
-        <div className="w-14 h-14 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <div className="w-14 h-14 flex items-center justify-center mx-auto mb-4 text-xs font-semibold">
           <AlertCircle className="w-7 h-7 text-rose-500" />
         </div>
         <p className="font-black text-slate-800 text-base mb-6">{message}</p>
         <div className="flex gap-3">
           <button onClick={onClose} className="flex-1 py-3 bg-slate-100 text-slate-600 font-black rounded-2xl hover:bg-slate-200 transition-all cursor-pointer">Hủy</button>
-          <button onClick={() => { onConfirm(); onClose(); }} className="flex-1 py-3 bg-rose-500 text-white font-black rounded-2xl hover:bg-rose-600 transition-all cursor-pointer">Xác nhận</button>
+          <button onClick={() => { onConfirm(); onClose(); }} className="flex-1 text-white font-black hover:bg-rose-600 transition-all cursor-pointer text-xs font-semibold">Xác nhận</button>
         </div>
       </div>
     </div>

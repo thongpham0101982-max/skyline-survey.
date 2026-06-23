@@ -54,7 +54,7 @@ export default function ThinkingSkillsForm({ student, onClose, onSave, isLocked 
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 overflow-y-auto">
             <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
                 {/* Header */}
-                <div className="bg-indigo-600 p-6 text-white shrink-0 relative overflow-hidden">
+                <div className="p-6 text-white shrink-0 relative overflow-hidden text-xs font-semibold">
                     <div className="absolute top-0 right-0 p-8 opacity-10">
                         <BrainCircuit className="w-32 h-32" />
                     </div>
@@ -70,7 +70,7 @@ export default function ThinkingSkillsForm({ student, onClose, onSave, isLocked 
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar bg-slate-50">
+                <div className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar text-xs font-semibold">
                     <div className="space-y-6 max-w-lg mx-auto bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                         
                         {criteria.map((item, idx) => (
@@ -105,7 +105,7 @@ export default function ThinkingSkillsForm({ student, onClose, onSave, isLocked 
                                     value={percent}
                                     onChange={(e) => setPercent(e.target.value)}
                                     disabled={isLocked}
-                                    className="w-full text-center text-xl font-black text-indigo-700 p-4 border-2 border-slate-200 rounded-xl outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all bg-slate-50 focus:bg-white"
+                                    className="w-full text-center text-xl font-black text-indigo-700 p-4 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all focus:bg-white text-xs font-semibold"
                                     placeholder="Ví dụ: 95"
                                 />
                                 <div className="absolute right-4 top-1/2 -translate-y-1/2 text-xl font-bold text-slate-400">%</div>
@@ -126,7 +126,7 @@ export default function ThinkingSkillsForm({ student, onClose, onSave, isLocked 
                         <button
                             onClick={handleSave}
                             disabled={isSaving || isLocked}
-                            className="flex items-center gap-2 px-8 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md shadow-indigo-200 transition-all disabled:opacity-50 text-sm"
+                            className="flex items-center gap-2 hover:bg-indigo-700 text-white font-bold shadow-md shadow-indigo-200 transition-all disabled:opacity-50 text-sm text-xs font-semibold"
                         >
                             {isSaving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <Save className="w-4 h-4" />}
                             Lưu Kết Quả

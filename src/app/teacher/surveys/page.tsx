@@ -56,7 +56,7 @@ export default async function TeacherSurveysPage() {
       
       <div className="grid gap-4 mt-8">
         {surveys.length === 0 ? (
-          <div className="bg-slate-50 rounded-xl p-12 text-center border border-slate-200">
+          <div className="p-12 text-center text-xs font-semibold">
             <FileText className="w-12 h-12 text-slate-300 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-slate-900">Chưa có dữ liệu khảo sát</h3>
             <p className="text-slate-500 mt-1">Hiện tại không có đợt khảo sát nào được giao cho các lớp bạn phụ trách.</p>
@@ -99,7 +99,7 @@ export default async function TeacherSurveysPage() {
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-8 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <div className="flex items-center gap-8 p-4 text-xs font-semibold">
                       <div className="text-center">
                         <div className="text-2xl font-bold text-slate-900">{submittedForms} <span className="text-base font-normal text-slate-500">/ {totalForms}</span></div>
                         <div className="text-xs font-medium text-slate-500 uppercase tracking-wider mt-1">Đã nộp</div>
@@ -112,7 +112,7 @@ export default async function TeacherSurveysPage() {
                     </div>
                   </div>
                 </div>
-                <div className="bg-slate-50 px-6 py-3 border-t border-slate-100 flex justify-end">
+                <div className="flex justify-end text-xs font-semibold">
                   <Link href="/teacher/classes" className="text-sm font-bold text-[#00A19A] hover:text-[#008c85] flex items-center gap-1">
                     Xem chi tiết tại danh sách lớp &rarr;
                   </Link>

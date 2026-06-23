@@ -84,7 +84,7 @@ export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProp
         <div className="p-6">
           {success ? (
             <div className="flex flex-col items-center justify-center py-8 text-center space-y-4">
-              <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center">
+              <div className="w-16 h-16 text-emerald-600 flex items-center justify-center text-xs font-semibold">
                 <CheckCircle2 className="w-8 h-8" />
               </div>
               <div>
@@ -95,7 +95,7 @@ export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProp
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3 text-red-600 text-sm">
+                <div className="p-3 flex items-start gap-3 text-red-600 text-sm text-xs font-semibold">
                   <AlertCircle className="w-5 h-5 shrink-0" />
                   <p>{error}</p>
                 </div>
@@ -108,7 +108,7 @@ export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProp
                   required
                   value={oldPassword}
                   onChange={(e) => setOldPassword(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-[#1E8B87] focus:ring-2 focus:ring-[#1E8B87]/20 transition-all outline-none"
+                  className="w-full focus:bg-white focus:border-[#1E8B87] focus:ring-2 focus:ring-[#1E8B87]/20 transition-all outline-none text-xs font-semibold"
                   placeholder="Nhập mật khẩu hiện tại"
                 />
               </div>
@@ -120,7 +120,7 @@ export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProp
                   required
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-[#1E8B87] focus:ring-2 focus:ring-[#1E8B87]/20 transition-all outline-none"
+                  className="w-full focus:bg-white focus:border-[#1E8B87] focus:ring-2 focus:ring-[#1E8B87]/20 transition-all outline-none text-xs font-semibold"
                   placeholder="Nhập mật khẩu mới"
                 />
               </div>
@@ -132,7 +132,7 @@ export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProp
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-[#1E8B87] focus:ring-2 focus:ring-[#1E8B87]/20 transition-all outline-none"
+                  className="w-full focus:bg-white focus:border-[#1E8B87] focus:ring-2 focus:ring-[#1E8B87]/20 transition-all outline-none text-xs font-semibold"
                   placeholder="Nhập lại mật khẩu mới"
                 />
               </div>

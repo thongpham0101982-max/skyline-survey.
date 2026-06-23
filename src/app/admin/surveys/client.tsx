@@ -131,7 +131,7 @@ export function AdminSurveysClient({ initialSurveys, years, campuses, createActi
             placeholder="Tìm theo tên đợt..." 
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl text-sm focus:ring-1 focus:ring-slate-300 transition-all outline-none"
+            className="w-full pl-10 pr-4 text-sm focus:ring-1 focus:ring-slate-300 transition-all outline-none text-xs font-semibold"
           />
         </div>
         <div className="flex items-center gap-2">
@@ -150,21 +150,21 @@ export function AdminSurveysClient({ initialSurveys, years, campuses, createActi
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-100">
-                <th className="pl-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Đợt khảo sát</th>
-                <th className="px-4 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Đối tượng</th>
-                <th className="px-4 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Năm học</th>
-                <th className="px-4 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Thời gian</th>
-                <th className="px-4 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Trạng thái</th>
-                <th className="pr-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Thao tác</th>
+              <tr className="text-xs font-semibold">
+                <th className="pl-6 p-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest border border-slate-200">Đợt khảo sát</th>
+                <th className="p-2 p-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest border border-slate-200">Đối tượng</th>
+                <th className="p-2 p-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center border border-slate-200">Năm học</th>
+                <th className="p-2 p-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center border border-slate-200">Thời gian</th>
+                <th className="p-2 p-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center border border-slate-200">Trạng thái</th>
+                <th className="pr-6 p-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right border border-slate-200">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {filteredSurveys.map((s: any) => {
                 const aud = getAud(s.targetAudience)
                 return (
-                  <tr key={s.id} className="group hover:bg-slate-50/50 transition-colors">
-                    <td className="pl-6 py-5">
+                  <tr key={s.id} className="group hover:bg-slate-50/50 transition-colors text-xs font-semibold">
+                    <td className="pl-6 p-2 border border-slate-200">
                       <div className="flex items-center gap-3">
                         <div className={`p-2.5 rounded-xl ${aud.light}`}>
                           <ClipboardList className={`w-4 h-4 ${aud.text}`} />
@@ -174,46 +174,46 @@ export function AdminSurveysClient({ initialSurveys, years, campuses, createActi
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-5">
+                    <td className="p-2 p-2 border border-slate-200">
                       <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-tight border ${aud.text} ${aud.light} ${aud.border}`}>
                         <aud.icon className="w-3 h-3" /> {aud.label.split("(")[0]}
                       </div>
                     </td>
-                    <td className="px-4 py-5 text-center">
+                    <td className="p-2 p-2 text-center border border-slate-200">
                       <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md">
                         {s.academicYear?.name || "N/A"}
                       </span>
                     </td>
-                    <td className="px-4 py-5 font-medium text-slate-600 text-[12px] text-center">
+                    <td className="p-2 p-2 font-medium text-slate-600 text-[12px] text-center border border-slate-200">
                       <div className="flex items-center justify-center gap-2">
                          <span>{new Date(s.startDate).toLocaleDateString("vi-VN")}</span>
                          <span className="text-slate-300">-</span>
                          <span>{new Date(s.endDate).toLocaleDateString("vi-VN")}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-5">
+                    <td className="p-2 p-2 border border-slate-200">
                       <div className="flex justify-center">
                         <button onClick={() => handleToggleStatus(s.id, s.status)} className={`w-10 h-5 rounded-full p-0.5 transition-colors relative ${s.status === "ACTIVE" ? "bg-emerald-500" : "bg-slate-200"}`}>
                           <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${s.status === "ACTIVE" ? "translate-x-5" : "translate-x-0"}`} />
                         </button>
                       </div>
                     </td>
-                    <td className="pr-6 py-5">
+                    <td className="pr-6 p-2 border border-slate-200">
                       <div className="flex justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                         <Tooltip label="Sửa">
                            <button onClick={() => handleOpenEdit(s)} className="p-2 text-slate-400 hover:text-[#00A19A] hover:bg-[#00A19A]/10 rounded-lg"><Edit2 className="w-4 h-4" /></button>
                         </Tooltip>
                         <Tooltip label="Bộ câu hỏi">
-                           <Link href={"/admin/surveys/"+s.id+"/questions"} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"><Settings2 className="w-4 h-4" /></Link>
+                           <Link href={"/admin/surveys/"+s.id+"/questions"} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 text-xs font-semibold"><Settings2 className="w-4 h-4" /></Link>
                         </Tooltip>
                         <Tooltip label="Phát hành">
-                           <Link href={"/admin/surveys/"+s.id+"/publish"} className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg"><Send className="w-4 h-4" /></Link>
+                           <Link href={"/admin/surveys/"+s.id+"/publish"} className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 text-xs font-semibold"><Send className="w-4 h-4" /></Link>
                         </Tooltip>
                         <Tooltip label="Kết quả">
                            <Link href={"/admin/surveys/"+s.id+"/results"} className="p-2 text-slate-400 hover:text-[#00A19A] hover:bg-[#00A19A]/10 rounded-lg"><BarChart3 className="w-4 h-4" /></Link>
                         </Tooltip>
                         <Tooltip label="Xóa">
-                           <button onClick={() => handleDelete(s.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4" /></button>
+                           <button onClick={() => handleDelete(s.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 text-xs font-semibold"><Trash2 className="w-4 h-4" /></button>
                         </Tooltip>
                       </div>
                     </td>
@@ -240,14 +240,14 @@ export function AdminSurveysClient({ initialSurveys, years, campuses, createActi
                 </div>
                 <h4 className="text-lg font-bold text-slate-800 mb-2 truncate group-hover:text-[#BE1E2E] transition-colors">{s.name}</h4>
                 <div className="flex items-center gap-4 text-[11px] font-bold text-slate-500 mb-6">
-                   <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-lg"><Calendar className="w-3 h-3" /> {s.academicYear?.name}</div>
+                   <div className="flex items-center gap-1.5 text-xs font-semibold"><Calendar className="w-3 h-3" /> {s.academicYear?.name}</div>
                    <div className={`flex items-center gap-1.5 ${aud.light} ${aud.text} px-2 py-1 rounded-lg`}><aud.icon className="w-3 h-3" /> {aud.label.split("(")[0]}</div>
                 </div>
                 <div className="grid grid-cols-3 gap-2 mt-auto">
-                   <Link href={"/admin/surveys/"+s.id+"/questions"} className="flex items-center justify-center gap-1.5 py-2.5 bg-slate-100 hover:bg-blue-600 hover:text-white rounded-xl text-xs font-bold transition-all">
+                   <Link href={"/admin/surveys/"+s.id+"/questions"} className="flex items-center justify-center gap-1.5 hover:bg-blue-600 hover:text-white text-xs font-bold transition-all text-xs font-semibold">
                       <Settings2 className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Câu hỏi</span>
                    </Link>
-                   <Link href={"/admin/surveys/"+s.id+"/publish"} className="flex items-center justify-center gap-1.5 py-2.5 bg-slate-100 hover:bg-emerald-600 hover:text-white rounded-xl text-xs font-bold transition-all">
+                   <Link href={"/admin/surveys/"+s.id+"/publish"} className="flex items-center justify-center gap-1.5 hover:bg-emerald-600 hover:text-white text-xs font-bold transition-all text-xs font-semibold">
                       <Send className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Phát hành</span>
                    </Link>
                    <Link href={"/admin/surveys/"+s.id+"/results"} className="flex items-center justify-center gap-1.5 py-2.5 bg-slate-100 hover:bg-[#00A19A] hover:text-white rounded-xl text-xs font-bold transition-all">
@@ -272,23 +272,23 @@ export function AdminSurveysClient({ initialSurveys, years, campuses, createActi
                     <button onClick={() => setModalType(null)} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><X className="w-5 h-5 text-slate-400" /></button>
                  </div>
 
-                 {errorMsg && <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-2xl text-xs font-bold flex items-center gap-2 border border-red-100"><AlertCircle className="w-4 h-4" /> {errorMsg}</div>}
+                 {errorMsg && <div className="mb-6 p-4 text-red-600 text-xs font-bold flex items-center gap-2 text-xs font-semibold"><AlertCircle className="w-4 h-4" /> {errorMsg}</div>}
 
                  <div className="space-y-5">
                     <div>
                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-2 block">Tên đợt khảo sát</label>
-                       <input type="text" value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-sm focus:ring-2 focus:ring-indigo-500 transition-all" placeholder="Ví dụ: Review HK1..." />
+                       <input type="text" value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full text-sm focus:ring-2 focus:ring-indigo-500 transition-all text-xs font-semibold" placeholder="Ví dụ: Review HK1..." />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                        <div>
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-2 block">Năm học</label>
-                          <select value={form.academicYearId} onChange={e => setForm({...form, academicYearId: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                          <select value={form.academicYearId} onChange={e => setForm({...form, academicYearId: e.target.value})} className="w-full text-sm focus:ring-2 focus:ring-indigo-500 outline-none text-xs font-semibold">
                              {years.filter((y: any) => !y.isOff).map((y: any) => <option key={y.id} value={y.id}>{y.name}</option>)}
                           </select>
                        </div>
                        <div>
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-2 block">Đối tượng</label>
-                          <select value={form.targetAudience} onChange={e => setForm({...form, targetAudience: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-sm font-bold text-[#00A19A] focus:ring-2 focus:ring-indigo-500 outline-none">
+                          <select value={form.targetAudience} onChange={e => setForm({...form, targetAudience: e.target.value})} className="w-full text-sm font-bold text-[#00A19A] focus:ring-2 focus:ring-indigo-500 outline-none text-xs font-semibold">
                              {audiences.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
                           </select>
                        </div>
@@ -296,11 +296,11 @@ export function AdminSurveysClient({ initialSurveys, years, campuses, createActi
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-2 block">Ngày bắt đầu</label>
-                           <input type="date" value={form.startDate} onChange={e => setForm({...form, startDate: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-sm focus:ring-2 focus:ring-indigo-500" />
+                           <input type="date" value={form.startDate} onChange={e => setForm({...form, startDate: e.target.value})} className="w-full text-sm focus:ring-2 focus:ring-indigo-500 text-xs font-semibold" />
                         </div>
                         <div>
                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-2 block">Ngày kết thúc</label>
-                           <input type="date" value={form.endDate} onChange={e => setForm({...form, endDate: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-sm focus:ring-2 focus:ring-indigo-500" />
+                           <input type="date" value={form.endDate} onChange={e => setForm({...form, endDate: e.target.value})} className="w-full text-sm focus:ring-2 focus:ring-indigo-500 text-xs font-semibold" />
                         </div>
                     </div>
                  </div>

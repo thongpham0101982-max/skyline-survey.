@@ -101,7 +101,7 @@ export default function PublishSurveyClient({ initialSurvey, classes, eduSystems
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <Link href="/admin/surveys" className="p-3 rounded-2xl bg-white border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors">←</Link>
+          <Link href="/admin/surveys" className="p-3 shadow-sm hover:bg-slate-50 transition-colors text-xs font-semibold">←</Link>
           <div>
             <h1 className="text-2xl font-black text-slate-900 leading-tight">Quản lý Phát hành & Thu hồi</h1>
             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{survey.name} • {aud.label} • {survey.academicYear?.name}</p>
@@ -113,11 +113,11 @@ export default function PublishSurveyClient({ initialSurvey, classes, eduSystems
               <span className="block text-[8px] font-black text-slate-400 uppercase tracking-wider mb-1">Tổng số lớp</span>
               <span className="text-sm font-black text-slate-700">{classes.length}</span>
            </div>
-           <div className="bg-emerald-50 rounded-xl px-4 py-2 text-center border border-emerald-100">
+           <div className="text-center text-xs font-semibold">
               <span className="block text-[8px] font-black text-emerald-400 uppercase tracking-wider mb-1">Đã gán</span>
               <span className="text-sm font-black text-emerald-700">{classes.filter((c:any) => c._count.surveyForms > 0).length}</span>
            </div>
-           <div className="bg-rose-50 rounded-xl px-4 py-2 text-center border border-rose-100">
+           <div className="text-center text-xs font-semibold">
               <span className="block text-[8px] font-black text-rose-400 uppercase tracking-wider mb-1">Chưa gán</span>
               <span className="text-sm font-black text-rose-700">{classes.filter((c:any) => c._count.surveyForms === 0).length}</span>
            </div>
@@ -218,7 +218,7 @@ export default function PublishSurveyClient({ initialSurvey, classes, eduSystems
                   }`}>
                   
                   {isAssigned && !isSelected && (
-                    <div className="absolute top-3 right-3 bg-emerald-500 text-white px-2 py-0.5 rounded-full text-[8px] font-black uppercase">ĐÃ GÁN</div>
+                    <div className="absolute top-3 right-3 text-white text-[8px] font-black uppercase text-xs font-semibold">ĐÃ GÁN</div>
                   )}
 
                   {/* Hệ học badge */}
@@ -250,12 +250,12 @@ export default function PublishSurveyClient({ initialSurvey, classes, eduSystems
            </div>
 
            <button onClick={handleDispatch} disabled={isLoading || selectedClassIds.length === 0}
-             className="flex-1 py-4 rounded-[2rem] bg-emerald-500 text-white font-black shadow-lg hover:bg-emerald-600 transition-all disabled:opacity-20 active:scale-95">
+             className="flex-1 text-white font-black shadow-lg hover:bg-emerald-600 transition-all disabled:opacity-20 active:scale-95 text-xs font-semibold">
              {isLoading ? "ĐANG XỬ LÝ..." : `PHÁT HÀNH (${selectedClassIds.length})`}
            </button>
            
            <button onClick={handleRevoke} disabled={isLoading || selectedClassIds.length === 0}
-             className="flex-1 py-4 rounded-[2rem] bg-rose-600 text-white font-black shadow-lg hover:bg-rose-700 transition-all disabled:opacity-20 active:scale-95">
+             className="flex-1 text-white font-black shadow-lg hover:bg-rose-700 transition-all disabled:opacity-20 active:scale-95 text-xs font-semibold">
              {isLoading ? "ĐANG XOÁ..." : `THU HỒI (${selectedClassIds.length})`}
            </button>
         </div>

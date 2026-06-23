@@ -159,16 +159,16 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
         <div className="flex items-center justify-between bg-white p-4 rounded-3xl shadow-xl shadow-slate-100 border border-slate-100 mb-6 sticky top-0 z-30 w-full overflow-x-auto whitespace-nowrap scrollbar-hide">
           <h2 className="font-black text-slate-800 text-lg mr-4">Builder</h2>
           <div className="flex space-x-2">
-            <button onClick={() => addQuestion("MULTIPLE_CHOICE")} className="px-4 py-2 bg-red-50 text-red-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-100 flex items-center gap-1.5 transition-all">
+            <button onClick={() => addQuestion("MULTIPLE_CHOICE")} className="text-red-600 text-[10px] font-black uppercase tracking-widest hover:bg-red-100 flex items-center gap-1.5 transition-all text-xs font-semibold">
               <Plus className="w-3.5 h-3.5" /> Radio
             </button>
-            <button onClick={() => addQuestion("CHECKBOX")} className="px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-100 flex items-center gap-1.5 border border-emerald-100 transition-all">
+            <button onClick={() => addQuestion("CHECKBOX")} className="text-emerald-700 text-[10px] font-black uppercase tracking-widest hover:bg-emerald-100 flex items-center gap-1.5 transition-all text-xs font-semibold">
               <CheckSquare className="w-3.5 h-3.5" /> Checkbox
             </button>
-            <button onClick={() => addQuestion("MC_GRID")} className="px-4 py-2 bg-violet-50 text-violet-700 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-violet-100 flex items-center gap-1.5 border border-violet-100 transition-all">
+            <button onClick={() => addQuestion("MC_GRID")} className="text-violet-700 text-[10px] font-black uppercase tracking-widest hover:bg-violet-100 flex items-center gap-1.5 transition-all text-xs font-semibold">
               <LayoutGrid className="w-3.5 h-3.5" /> Lưới Radio
             </button>
-            <button onClick={() => addQuestion("CB_GRID")} className="px-4 py-2 bg-pink-50 text-pink-700 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-pink-100 flex items-center gap-1.5 border border-pink-100 transition-all">
+            <button onClick={() => addQuestion("CB_GRID")} className="text-pink-700 text-[10px] font-black uppercase tracking-widest hover:bg-pink-100 flex items-center gap-1.5 transition-all text-xs font-semibold">
               <CheckSquare className="w-3.5 h-3.5" /> Lưới Check
             </button>
             <button onClick={() => addQuestion("TEXT")} className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 flex items-center gap-1.5 transition-all">
@@ -186,7 +186,7 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
           ) : (
             questions.map((q, qIndex) => (
               <div key={q.id} className="bg-white rounded-[2.5rem] shadow-2xl shadow-slate-200/40 border border-slate-100 overflow-hidden relative group animate-in fade-in slide-in-from-bottom-4">
-                <div className="absolute left-0 top-0 bottom-0 w-8 bg-slate-50 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all border-r border-slate-100 cursor-move">
+                <div className="absolute left-0 top-0 bottom-0 w-8 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all cursor-move text-xs font-semibold">
                   <GripVertical className="w-4 h-4 text-slate-300" />
                 </div>
                 <div className="p-8 md:pl-14">
@@ -202,7 +202,7 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
                       <div className="flex flex-wrap items-center gap-4 mt-5 text-[10px] font-black uppercase tracking-widest text-slate-400">
                         <label className="flex items-center gap-2">
                           <span>Mã:</span>
-                          <input type="text" value={q.code} onChange={e => updateQuestion(qIndex, "code", e.target.value)} className="border-none focus:ring-2 focus:ring-red-100 outline-none w-32 bg-slate-50 px-3 py-1.5 rounded-lg text-slate-900 font-bold" />
+                          <input type="text" value={q.code} onChange={e => updateQuestion(qIndex, "code", e.target.value)} className="focus:ring-2 focus:ring-red-100 outline-none w-32 text-slate-900 font-bold text-xs font-semibold" />
                         </label>
                         <select
                           value={q.questionType}
@@ -237,10 +237,10 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
 
                   <div className="space-y-4">
                     {(q.questionType === "MULTIPLE_CHOICE" || q.questionType === "CHECKBOX" || q.questionType === "DROPDOWN") && (
-                      <div className="space-y-3 bg-slate-50/50 p-6 rounded-[2rem] border border-slate-100">
+                      <div className="space-y-3 p-6 text-xs font-semibold">
                         <div className="flex items-center justify-between mb-4">
                            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tùy chọn trả lời</h4>
-                           {q.questionType === "CHECKBOX" && <span className="bg-emerald-100 text-emerald-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter">Chọn nhiều mục</span>}
+                           {q.questionType === "CHECKBOX" && <span className="text-emerald-600 text-[9px] font-black uppercase tracking-tighter text-xs font-semibold">Chọn nhiều mục</span>}
                         </div>
                         {(q.options.choices || []).map((opt, optIndex) => (
                           <div key={optIndex} className="flex items-center gap-3 group/opt animate-in fade-in slide-in-from-left-2">
@@ -301,13 +301,13 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
                                 <button onClick={() => removeGridItem(qIndex, "columns", cIndex)} className="p-2.5 text-red-400 opacity-0 group-hover/grid:opacity-100 hover:text-red-600 transition-all"><X className="w-4 h-4"/></button>
                               </div>
                             ))}
-                            <button onClick={() => addGridItem(qIndex, "columns")} className="w-full text-[10px] font-black text-emerald-600 hover:text-white hover:bg-emerald-600 border-2 border-dashed border-emerald-100 rounded-xl py-3 transition-all mt-3 uppercase tracking-widest bg-white/50 shadow-sm">+ Thêm cột</button>
+                            <button onClick={() => addGridItem(qIndex, "columns")} className="w-full text-[10px] font-black text-emerald-600 hover:text-white hover:bg-emerald-600 transition-all mt-3 uppercase tracking-widest shadow-sm text-xs font-semibold">+ Thêm cột</button>
                           </div>
                         </div>
                       </div>
                     )}
                     
-                    {q.questionType === "TEXT" && <div className="bg-slate-50 p-10 rounded-[2rem] border-2 border-dashed border-slate-100 text-slate-300 font-bold text-center italic text-sm">Văn bản trả lời tự luận của khách hàng...</div>}
+                    {q.questionType === "TEXT" && <div className="p-10 text-slate-300 font-bold text-center italic text-sm text-xs font-semibold">Văn bản trả lời tự luận của khách hàng...</div>}
                     {q.questionType === "RATING" && <div className="flex items-center justify-center gap-6 text-amber-400 text-5xl py-8 animate-pulse">★ ★ ★ ★ ★</div>}
                     {q.questionType === "NPS" && <div className="flex items-center justify-center gap-2 flex-wrap py-6">{[0,1,2,3,4,5,6,7,8,9,10].map(n => <div key={n} className="w-11 h-11 rounded-2xl border-2 border-slate-100 bg-white flex items-center justify-center text-sm font-black text-slate-400 shadow-sm hover:border-red-400 cursor-default transition-all">{n}</div>)}</div>}
                   </div>
@@ -320,14 +320,14 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
                       </label>
                       <label className="flex items-center gap-4">
                         <span>Trọng số:</span>
-                        <input type="number" value={q.weight} onChange={(e) => updateQuestion(qIndex, "weight", parseFloat(e.target.value))} className="w-20 border-none rounded-xl px-4 py-2 text-center bg-slate-50 focus:ring-2 focus:ring-red-100 outline-none font-black text-slate-900 shadow-inner" min="0" step="0.1" />
+                        <input type="number" value={q.weight} onChange={(e) => updateQuestion(qIndex, "weight", parseFloat(e.target.value))} className="w-20 text-center focus:ring-2 focus:ring-red-100 outline-none font-black text-slate-900 shadow-inner text-xs font-semibold" min="0" step="0.1" />
                       </label>
                     </div>
                     <div className="flex items-center gap-2">
-                      <button onClick={() => moveQuestion(qIndex, -1)} className="p-4 text-slate-400 hover:text-red-600 bg-slate-50 rounded-2xl transition-all active:scale-90"><ArrowUp className="w-5 h-5" /></button>
-                      <button onClick={() => moveQuestion(qIndex, 1)} className="p-4 text-slate-400 hover:text-red-600 bg-slate-50 rounded-2xl transition-all active:scale-90"><ArrowDown className="w-5 h-5" /></button>
+                      <button onClick={() => moveQuestion(qIndex, -1)} className="p-4 text-slate-400 hover:text-red-600 transition-all active:scale-90 text-xs font-semibold"><ArrowUp className="w-5 h-5" /></button>
+                      <button onClick={() => moveQuestion(qIndex, 1)} className="p-4 text-slate-400 hover:text-red-600 transition-all active:scale-90 text-xs font-semibold"><ArrowDown className="w-5 h-5" /></button>
                       <div className="w-px h-8 bg-slate-100 mx-3" />
-                      <button onClick={() => removeQuestion(qIndex)} className="p-4 text-red-500 hover:text-white hover:bg-red-500 rounded-2xl transition-all active:scale-90 shadow-md border border-red-50"><Trash2 className="w-5 h-5" /></button>
+                      <button onClick={() => removeQuestion(qIndex)} className="p-4 text-red-500 hover:text-white hover:bg-red-500 transition-all active:scale-90 shadow-md text-xs font-semibold"><Trash2 className="w-5 h-5" /></button>
                     </div>
                   </div>
                 </div>
@@ -363,16 +363,16 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
                         <table className="w-full border-collapse">
                           <thead>
                             <tr className="border-b-2 border-slate-50">
-                              <th className="p-4 text-[10px] font-black text-slate-300 text-left uppercase tracking-tighter w-1/3">Tiêu chí</th>
-                              {opts.columns?.map((col, i) => <th key={i} className="p-4 text-[10px] font-black text-slate-300 text-center uppercase tracking-tighter">{col}</th>)}
+                              <th className="p-2 text-[10px] font-black text-slate-300 text-left uppercase tracking-tighter w-1/3 border border-slate-200">Tiêu chí</th>
+                              {opts.columns?.map((col, i) => <th key={i} className="p-2 text-[10px] font-black text-slate-300 text-center uppercase tracking-tighter border border-slate-200">{col}</th>)}
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-50">
                             {opts.rows?.map((row, rIndex) => (
                               <tr key={rIndex}>
-                                <td className="p-4 py-5 text-sm font-bold text-slate-600 leading-tight">{row}</td>
+                                <td className="p-2 p-2 text-sm font-bold text-slate-600 leading-tight border border-slate-200">{row}</td>
                                 {opts.columns?.map((_, cIndex) => (
-                                  <td key={cIndex} className="p-4 text-center">
+                                  <td key={cIndex} className="p-2 text-center border border-slate-200">
                                     <div className={`w-6 h-6 border-2 border-slate-100 mx-auto bg-slate-50 shadow-inner ${q.questionType === "CB_GRID" ? "rounded-xl" : "rounded-full"}`} />
                                   </td>
                                 ))}
@@ -386,13 +386,13 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
                     {(q.questionType === "MULTIPLE_CHOICE" || q.questionType === "CHECKBOX") && (
                       <div className="space-y-3">
                         {choices.map((o,i)=>(
-                          <div key={i} className="flex items-center gap-5 p-5 rounded-[1.75rem] border border-slate-100 bg-slate-50/50 group-hover/preview:bg-white transition-all shadow-sm">
+                          <div key={i} className="flex items-center gap-5 p-5 group-hover/preview:bg-white transition-all shadow-sm text-xs font-semibold">
                             <div className={`w-6 h-6 border-2 border-slate-200 transition-all ${q.questionType === "CHECKBOX" ? "rounded-xl" : "rounded-full"}`} />
                             <span className="text-base font-bold text-slate-600">{o}</span>
                           </div>
                         ))}
                         {opts.hasOther && (
-                          <div className="flex flex-col gap-3 p-6 rounded-[2rem] border-2 border-amber-50 bg-amber-50/30">
+                          <div className="flex flex-col gap-3 p-6 text-xs font-semibold">
                             <div className="flex items-center gap-5">
                               <div className={`w-6 h-6 border-2 border-amber-300 bg-white shadow-xl shadow-amber-100 ${q.questionType === "CHECKBOX" ? "rounded-xl" : "rounded-full"}`} />
                               <span className="text-base font-black text-amber-700">Lựa chọn khác...</span>
@@ -403,9 +403,9 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
                       </div>
                     )}
 
-                    {q.questionType === "TEXT" && <div className="p-10 h-32 rounded-[2.5rem] border-2 border-dashed border-slate-100 bg-slate-50 flex items-center justify-center text-slate-200 text-sm font-bold italic">Vùng trả lời</div>}
+                    {q.questionType === "TEXT" && <div className="p-10 h-32 flex items-center justify-center text-slate-200 text-sm font-bold italic text-xs font-semibold">Vùng trả lời</div>}
                     {q.questionType === "RATING" && <div className="flex justify-center text-amber-300 text-5xl py-8 drop-shadow-xl tracking-widest">★ ★ ★ ★ ★</div>}
-                    {q.questionType === "NPS" && <div className="flex items-center justify-between gap-1.5 mt-4">{[0,1,2,3,4,5,6,7,8,9,10].map(n => <div key={n} className="flex-1 aspect-square rounded-xl border border-slate-50 bg-slate-50 flex items-center justify-center text-[11px] font-black text-slate-300">{n}</div>)}</div>}
+                    {q.questionType === "NPS" && <div className="flex items-center justify-between gap-1.5 mt-4">{[0,1,2,3,4,5,6,7,8,9,10].map(n => <div key={n} className="flex-1 aspect-square flex items-center justify-center text-[11px] font-black text-slate-300 text-xs font-semibold">{n}</div>)}</div>}
                   </div>
                 </div>
               )
@@ -417,7 +417,7 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
       {/* ACTION BAR */}
       <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-3xl border-t border-slate-100 p-8 flex justify-center z-40 md:left-64 shadow-[0_-20px_60px_-10px_rgba(0,0,0,0.08)] font-outfit">
         <div className="flex items-center space-x-6">
-          <button onClick={() => handleSave(false)} disabled={saving} className="px-10 py-5 flex items-center bg-white border-2 border-slate-100 text-slate-400 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-50 hover:text-red-600 active:scale-95 transition-all shadow-xl">
+          <button onClick={() => handleSave(false)} disabled={saving} className="flex items-center text-slate-400 font-black text-xs uppercase tracking-widest hover:bg-slate-50 hover:text-red-600 active:scale-95 transition-all shadow-xl text-xs font-semibold">
              Lưu Nháp
           </button>
           <button onClick={() => handleSave(true)} disabled={saving} className="px-16 py-5 flex items-center bg-[#d90429] text-white rounded-[1.75rem] font-black text-xs uppercase tracking-[0.2em] hover:bg-red-700 active:scale-95 transition-all shadow-2xl shadow-red-300/60">

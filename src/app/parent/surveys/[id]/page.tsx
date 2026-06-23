@@ -28,7 +28,7 @@ export default async function SurveyPage({ params, searchParams }: any) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center px-4">
         <div className="bg-white p-12 text-center rounded-3xl shadow-xl shadow-emerald-100/50 border border-emerald-100 flex flex-col items-center max-w-lg w-full">
-          <div className="w-24 h-24 bg-emerald-100 text-emerald-500 rounded-full flex items-center justify-center mb-6 shadow-lg">
+          <div className="w-24 h-24 text-emerald-500 flex items-center justify-center mb-6 shadow-lg text-xs font-semibold">
             <CheckCircle2 className="w-12 h-12" strokeWidth={1.5} />
           </div>
           <h1 className="text-3xl font-black text-slate-800 mb-3">Da ghi nhan Phan hoi!</h1>
@@ -55,7 +55,7 @@ export default async function SurveyPage({ params, searchParams }: any) {
         <Link href="/parent/surveys" className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-[#00A19A] transition-colors font-medium mb-2">
           <ArrowLeft className="w-4 h-4" />Quay lai
         </Link>
-        <div className="inline-flex items-center gap-2 text-xs font-bold text-[#00A19A] bg-teal-50 border border-teal-100 px-3 py-1.5 rounded-full uppercase tracking-wider">
+        <div className="inline-flex items-center gap-2 text-xs font-bold text-[#00A19A] uppercase tracking-wider text-xs font-semibold">
           <BookOpen className="w-3.5 h-3.5" />{period.name}
         </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 leading-tight">

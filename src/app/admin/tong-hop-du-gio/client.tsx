@@ -578,7 +578,7 @@ export function AdminTongHopClient({
         <div>
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">
-              <div className="p-2 bg-teal-50 text-[#00A19A] rounded-xl border border-teal-100">
+              <div className="p-2 text-[#00A19A] text-xs font-semibold">
                 <PieChart className="w-5 h-5" />
               </div>
               <h1 className="text-2xl font-black text-[#0A3230] tracking-tight">Tổng hợp kết quả dự giờ</h1>
@@ -606,15 +606,15 @@ export function AdminTongHopClient({
         </div>
 
         {/* Horizontal Statistics Summary */}
-        <div className="flex flex-wrap items-center gap-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-200/80 text-xs shrink-0 shadow-sm backdrop-blur-xs">
+        <div className="flex flex-wrap items-center gap-4 p-4 text-xs shrink-0 shadow-sm backdrop-blur-xs text-xs font-semibold">
           <div className="flex items-center gap-2">
             <span className="font-extrabold text-slate-500 uppercase tracking-wider text-[9px] flex items-center gap-1.5">
               <ClipboardList className="w-4 h-4 text-slate-400"/> Tổng tiết dạy:
             </span>
-            <span className="px-2.5 py-1 bg-amber-50/60 text-amber-700 border border-amber-200 rounded-lg font-black text-[10px] tracking-wide shadow-2xs">
+            <span className="text-amber-700 font-black text-[10px] tracking-wide shadow-2xs text-xs font-semibold">
               MẦM NON: {departmentSummary.taughtMamNon}
             </span>
-            <span className="px-2.5 py-1 bg-indigo-50/60 text-indigo-700 border border-indigo-200 rounded-lg font-black text-[10px] tracking-wide shadow-2xs">
+            <span className="text-indigo-700 font-black text-[10px] tracking-wide shadow-2xs text-xs font-semibold">
               PHỔ THÔNG: {departmentSummary.taughtPhoThong}
             </span>
           </div>
@@ -623,10 +623,10 @@ export function AdminTongHopClient({
             <span className="font-extrabold text-slate-500 uppercase tracking-wider text-[9px] flex items-center gap-1.5">
               <CheckCircle className="w-4 h-4 text-slate-400"/> Tổng tiết dự:
             </span>
-            <span className="px-2.5 py-1 bg-amber-50/60 text-amber-700 border border-amber-200 rounded-lg font-black text-[10px] tracking-wide shadow-2xs">
+            <span className="text-amber-700 font-black text-[10px] tracking-wide shadow-2xs text-xs font-semibold">
               MẦM NON: {departmentSummary.observedMamNon}
             </span>
-            <span className="px-2.5 py-1 bg-violet-50/60 text-violet-700 border border-violet-200 rounded-lg font-black text-[10px] tracking-wide shadow-2xs">
+            <span className="text-violet-700 font-black text-[10px] tracking-wide shadow-2xs text-xs font-semibold">
               PHỔ THÔNG: {departmentSummary.observedPhoThong}
             </span>
           </div>
@@ -685,15 +685,15 @@ export function AdminTongHopClient({
             <div className="flex flex-col gap-2">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tổ chuyên môn</label>
               {isTTCM ? (
-                <div className="w-full text-sm font-bold rounded-xl border border-slate-200 p-3.5 bg-slate-50 text-slate-700 flex items-center justify-between">
+                <div className="w-full text-sm font-bold p-3.5 text-slate-700 flex items-center justify-between text-xs font-semibold">
                   <span>{selectedDeptName}</span>
-                  <span className="px-2 py-0.5 bg-amber-50 text-amber-600 border border-amber-150 rounded text-[9px] font-black uppercase">TTCM</span>
+                  <span className="text-amber-600 text-[9px] font-black uppercase text-xs font-semibold">TTCM</span>
                 </div>
               ) : (
                 <select 
                   value={selectedDeptId} 
                   onChange={e => { setSelectedDeptId(e.target.value); setSelectedTeacherId(null); setSearchTeacherQuery(""); setActiveDetailTab("to-cm"); }}
-                  className="w-full text-sm font-semibold rounded-xl border border-slate-250 p-3 bg-slate-50/50 hover:bg-slate-50 text-slate-800 focus:bg-white focus:border-[#00A19A] focus:ring-4 focus:ring-[#00A19A]/10 transition-all outline-none appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2523475569%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:0.65rem_auto] bg-[right_1rem_center] bg-no-repeat pr-8"
+                  className="w-full text-sm font-semibold p-3 hover:bg-slate-50 text-slate-800 focus:bg-white focus:border-[#00A19A] focus:ring-4 focus:ring-[#00A19A]/10 transition-all outline-none appearance-none pr-8 text-xs font-semibold"
                 >
                   {activeDepartments.map(dept => (
                     <option key={dept.id} value={dept.id}>{dept.name}</option>
@@ -708,7 +708,7 @@ export function AdminTongHopClient({
               <select 
                 value={selectedMonth} 
                 onChange={e => { setSelectedMonth(e.target.value); setSelectedTeacherId(null); setActiveDetailTab("to-cm"); }}
-                className="w-full text-sm font-semibold rounded-xl border border-slate-250 p-3 bg-slate-50/50 hover:bg-slate-50 text-slate-800 focus:bg-white focus:border-[#00A19A] focus:ring-4 focus:ring-[#00A19A]/10 transition-all outline-none appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2523475569%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:0.65rem_auto] bg-[right_1rem_center] bg-no-repeat pr-8"
+                className="w-full text-sm font-semibold p-3 hover:bg-slate-50 text-slate-800 focus:bg-white focus:border-[#00A19A] focus:ring-4 focus:ring-[#00A19A]/10 transition-all outline-none appearance-none pr-8 text-xs font-semibold"
               >
                 <option value="all">Tất cả các tháng</option>
                 {availableMonths.map(m => {
@@ -728,7 +728,7 @@ export function AdminTongHopClient({
                   placeholder="Tìm tên hoặc mã giáo viên..."
                   value={searchTeacherQuery}
                   onChange={e => { setSearchTeacherQuery(e.target.value); setSelectedTeacherId(null); setActiveDetailTab("to-cm"); }}
-                  className="w-full text-xs font-semibold rounded-xl border border-slate-200 pl-9 pr-8 py-3 bg-slate-50/50 text-slate-850 placeholder-slate-400 focus:bg-white focus:ring-4 focus:ring-[#00A19A]/10 focus:border-[#00A19A] transition-all outline-none"
+                  className="w-full text-xs font-semibold pl-9 pr-8 text-slate-850 placeholder-slate-400 focus:bg-white focus:ring-4 focus:ring-[#00A19A]/10 focus:border-[#00A19A] transition-all outline-none text-xs font-semibold"
                 />
                 {searchTeacherQuery && (
                   <button onClick={() => { setSearchTeacherQuery(""); setSelectedTeacherId(null); setActiveDetailTab("to-cm"); }} className="absolute right-3 top-3.5 text-slate-450 hover:text-slate-700">
@@ -791,11 +791,11 @@ export function AdminTongHopClient({
                       <div className="flex flex-col gap-1 items-end shrink-0">
                         <div className="flex items-center gap-1 text-[8px] font-black uppercase tracking-wider">
                           <span className="text-slate-450 font-bold text-[7px]">Dạy:</span>
-                          <span className="px-1.5 py-0.2 bg-emerald-50 text-emerald-700 border border-emerald-200/60 rounded font-bold">{stats.taughtCount}{teacher.requiredTaught ? `/${teacher.requiredTaught}` : ""} tiết</span>
+                          <span className="text-emerald-700 font-bold text-xs font-semibold">{stats.taughtCount}{teacher.requiredTaught ? `/${teacher.requiredTaught}` : ""} tiết</span>
                         </div>
                         <div className="flex items-center gap-1 text-[8px] font-black uppercase tracking-wider">
                           <span className="text-slate-450 font-bold text-[7px]">Dự:</span>
-                          <span className="px-1.5 py-0.2 bg-violet-50 text-violet-700 border border-violet-200/60 rounded font-bold">{stats.observedCount}{teacher.requiredObserved ? `/${teacher.requiredObserved}` : ""} tiết</span>
+                          <span className="text-violet-700 font-bold text-xs font-semibold">{stats.observedCount}{teacher.requiredObserved ? `/${teacher.requiredObserved}` : ""} tiết</span>
                         </div>
                       </div>
                     </button>
@@ -859,7 +859,7 @@ export function AdminTongHopClient({
                   <>
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
                       <div className="md:col-span-5 flex justify-center">
-                        <div className="flex flex-col items-center bg-slate-50/50 p-4 rounded-3xl border border-slate-200/60">
+                        <div className="flex flex-col items-center p-4 text-xs font-semibold">
                           <span className="text-[10px] font-black text-violet-600 uppercase tracking-widest mb-2">Bản đồ Năng lực Tổ CM</span>
                           <svg width="250" height="250" viewBox="0 0 300 300" className="overflow-visible">
                             {gl2.map((lv, ix) => <polygon key={lv} points={gp2[ix]} fill="none" stroke="#e2e8f0" strokeWidth="1" strokeDasharray={lv === 100 ? "none" : "3,3"} />)}
@@ -870,7 +870,7 @@ export function AdminTongHopClient({
                           </svg>
                         </div>
                       </div>
-                      <div className="md:col-span-7 space-y-3 bg-slate-50/30 p-4 rounded-3xl border border-slate-200/60">
+                      <div className="md:col-span-7 space-y-3 p-4 text-xs font-semibold">
                         <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5"><Award className="w-4 h-4 text-violet-600" /><span>Năng lực dạy học toàn Tổ</span></h4>
                         <div className="space-y-3">{dc.map(item => {
                           let cl2 = "from-violet-500 to-indigo-500";
@@ -899,7 +899,7 @@ export function AdminTongHopClient({
             );
           })() : !selectedTeacherId ? (
             <div className="flex flex-col items-center justify-center flex-1 text-slate-400 py-16">
-              <div className="w-16 h-16 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-350 mb-4 shadow-2xs">
+              <div className="w-16 h-16 flex items-center justify-center text-slate-350 mb-4 shadow-2xs text-xs font-semibold">
                 <User className="w-8 h-8 stroke-1" />
               </div>
               <p className="text-xs font-black uppercase tracking-widest text-slate-500">Chọn giáo viên để xem chi tiết tiết dạy</p>
@@ -956,7 +956,7 @@ export function AdminTongHopClient({
               const valuePath = valuePoints.join(" ");
 
               return (
-                <div className="flex flex-col items-center justify-center bg-slate-50/50 p-4 rounded-3xl border border-slate-200/60 shadow-xs relative">
+                <div className="flex flex-col items-center justify-center p-4 shadow-xs relative text-xs font-semibold">
                   <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Bản đồ Năng lực dạy học</span>
                   <svg width="250" height="250" viewBox="0 0 300 300" className="overflow-visible">
                     {gridLayers.map((level, idx) => (
@@ -1054,12 +1054,12 @@ export function AdminTongHopClient({
                       {selTeacher && (selTeacher.observerType || selTeacher.observeeType) && (
                         <div className="flex flex-wrap gap-1.5 mt-1.5 text-[9px] font-extrabold">
                           {selTeacher.observerType && (
-                            <span className="px-1.5 py-0.5 bg-violet-50 text-violet-755 border border-violet-200 rounded-lg">
+                            <span className="text-violet-755 text-xs font-semibold">
                               Dự: {selTeacher.requiredObserved} tiết/{selTeacher.observedUnit} ({selTeacher.observerType})
                             </span>
                           )}
                           {selTeacher.observeeType && (
-                            <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-755 border border-emerald-200 rounded-lg">
+                            <span className="text-emerald-755 text-xs font-semibold">
                               Dạy: {selTeacher.requiredTaught} tiết/{selTeacher.taughtUnit} ({selTeacher.observeeType})
                             </span>
                           )}
@@ -1079,7 +1079,7 @@ export function AdminTongHopClient({
                 {activeDetailTab === "lich-su" ? (
                   <>
                     {/* Slot Search & Filter controls */}
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-200/60 shrink-0">
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-2 p-3 shrink-0 text-xs font-semibold">
                       <div className="md:col-span-6 relative">
                         <Search className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
                         <input
@@ -1141,10 +1141,10 @@ export function AdminTongHopClient({
                                     <span className={"px-2 py-0.5 text-[8px] font-extrabold rounded uppercase tracking-wider " + (
                                       isMamNonBlock ? "bg-amber-50 text-amber-700 border border-amber-250/60" : "bg-indigo-50 text-indigo-700 border border-indigo-250/60"
                                     )}>{slot.level}</span>
-                                    <span className="px-2 py-0.5 text-[8px] font-extrabold bg-slate-50 text-slate-655 border border-slate-200 rounded uppercase tracking-wider">{slot.grade}</span>
-                                    <span className="px-2 py-0.5 text-[8px] font-extrabold bg-rose-50 text-rose-600 border border-rose-200 rounded uppercase tracking-wider">{slot.startTime}</span>
+                                    <span className="text-[8px] font-extrabold text-slate-655 uppercase tracking-wider text-xs font-semibold">{slot.grade}</span>
+                                    <span className="text-[8px] font-extrabold text-rose-600 uppercase tracking-wider text-xs font-semibold">{slot.startTime}</span>
                                     <span className="text-[10px] font-bold text-slate-450">{slotDate.toLocaleDateString("vi-VN")}</span>
-                                    {slot.className && <span className="px-2 py-0.5 text-[8px] font-bold bg-teal-50 text-teal-700 border border-teal-200 rounded">Lớp: {slot.className}</span>}
+                                    {slot.className && <span className="text-[8px] font-bold text-teal-700 text-xs font-semibold">Lớp: {slot.className}</span>}
                                   </div>
                                   <h4 className="font-black text-[15px] text-[#0A3230] mt-2 tracking-tight">{slot.topic}</h4>
                                 </div>
@@ -1154,7 +1154,7 @@ export function AdminTongHopClient({
                                       ĐTB chung: {typeof avgScore === "number" ? avgScore.toFixed(2) + "/20.00đ" : avgScore}
                                     </span>
                                   ) : (
-                                    <span className="px-3 py-1.5 bg-slate-50 text-slate-400 border border-slate-200 rounded-xl font-bold text-xs">
+                                    <span className="text-slate-400 font-bold text-xs text-xs font-semibold">
                                       ĐTB chung: --
                                     </span>
                                   )}
@@ -1167,7 +1167,7 @@ export function AdminTongHopClient({
                                   <span>Đánh giá của giáo viên dự ({evals.length})</span>
                                 </h5>
                                 {evals.length === 0 ? (
-                                  <p className="text-xs text-slate-400 italic bg-slate-50 p-4 rounded-xl text-center border border-dashed border-slate-200">Chưa nhận được phiếu đánh giá nào.</p>
+                                  <p className="text-xs text-slate-400 italic p-4 text-center text-xs font-semibold">Chưa nhận được phiếu đánh giá nào.</p>
                                 ) : (
                                   <div className="space-y-3">
                                     {evals.map((reg) => {
@@ -1177,7 +1177,7 @@ export function AdminTongHopClient({
                                         : (evalData.totalScore !== null && evalData.totalScore !== undefined ? evalData.totalScore >= 14 : (evalData.overallRating === "Giỏi" || evalData.overallRating === "Khá"));
 
                                       return (
-                                        <div key={reg.id} className="p-4 bg-slate-50/50 border border-slate-200/60 rounded-xl space-y-3 hover:bg-slate-50 hover:shadow-2xs transition-all duration-200">
+                                        <div key={reg.id} className="p-4 space-y-3 hover:bg-slate-50 hover:shadow-2xs transition-all duration-200 text-xs font-semibold">
                                           <div className="flex items-center justify-between gap-2 border-b border-slate-200/50 pb-2.5">
                                             <div className="min-w-0 flex items-center gap-2">
                                               <div className="w-6 h-6 rounded-full bg-slate-200 text-slate-655 flex items-center justify-center font-bold text-[10px]">
@@ -1189,15 +1189,15 @@ export function AdminTongHopClient({
                                               </div>
                                             </div>
                                             <div className="flex items-center gap-1.5 shrink-0">
-                                              <span className="px-2 py-0.5 text-[9px] font-extrabold rounded-lg bg-violet-50 text-violet-755 border border-violet-200">
+                                              <span className="text-[9px] font-extrabold text-violet-755 text-xs font-semibold">
                                                 {evalData.totalScore !== null && evalData.totalScore !== undefined
                                                   ? evalData.totalScore.toFixed(2) + "đ"
                                                   : evalData.overallRating}
                                               </span>
                                               {passed ? (
-                                                <span className="px-2 py-0.5 text-[9px] font-black rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-250 uppercase tracking-widest">ĐẠT</span>
+                                                <span className="text-[9px] font-black text-emerald-700 uppercase tracking-widest text-xs font-semibold">ĐẠT</span>
                                               ) : (
-                                                <span className="px-2 py-0.5 text-[9px] font-black rounded-lg bg-rose-50 text-rose-700 border border-rose-250 uppercase tracking-widest">CHƯA ĐẠT</span>
+                                                <span className="text-[9px] font-black text-rose-700 uppercase tracking-widest text-xs font-semibold">CHƯA ĐẠT</span>
                                               )}
                                             </div>
                                           </div>
@@ -1265,7 +1265,7 @@ export function AdminTongHopClient({
 
                                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[10px] border-t border-slate-200/50 pt-2.5">
                                             {evalData.strengths && (
-                                              <div className="bg-emerald-50/30 border border-emerald-100/60 p-2.5 rounded-xl text-emerald-800">
+                                              <div className="p-2.5 text-emerald-800 text-xs font-semibold">
                                                 <span className="font-extrabold flex items-center gap-1 mb-0.5">
                                                   <ThumbsUp className="w-3.5 h-3.5 text-emerald-600" />
                                                   <span>Ưu điểm:</span>
@@ -1274,7 +1274,7 @@ export function AdminTongHopClient({
                                               </div>
                                             )}
                                             {evalData.improvements && (
-                                              <div className="bg-amber-50/30 border border-amber-100/60 p-2.5 rounded-xl text-amber-800">
+                                              <div className="p-2.5 text-amber-800 text-xs font-semibold">
                                                 <span className="font-extrabold flex items-center gap-1 mb-0.5">
                                                   <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
                                                   <span>Góp ý phát triển:</span>
@@ -1298,7 +1298,7 @@ export function AdminTongHopClient({
                 ) : (
                   evaluations.length === 0 ? (
                     <div className="flex flex-col items-center justify-center flex-1 text-slate-400 py-16">
-                      <div className="w-16 h-16 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-350 mb-4 shadow-2xs">
+                      <div className="w-16 h-16 flex items-center justify-center text-slate-350 mb-4 shadow-2xs text-xs font-semibold">
                         <PieChart className="w-8 h-8 stroke-1" />
                       </div>
                       <p className="text-xs font-black uppercase tracking-widest text-slate-500">Chưa có dữ liệu đánh giá</p>
@@ -1310,7 +1310,7 @@ export function AdminTongHopClient({
                         <div className="md:col-span-5 flex justify-center">
                           {renderRadarChart()}
                         </div>
-                        <div className="md:col-span-7 space-y-3 bg-slate-50/30 p-4 rounded-3xl border border-slate-200/60 shadow-xs">
+                        <div className="md:col-span-7 space-y-3 p-4 shadow-xs text-xs font-semibold">
                           <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
                             <Award className={"w-4 h-4 " + theme.text} />
                             <span>Biểu đồ năng lực dạy học</span>

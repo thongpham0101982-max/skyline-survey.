@@ -27,7 +27,7 @@ export default async function ChildrenPage() {
                 <p className="mb-3 text-sm font-medium text-slate-800">Active Survey: {activePeriod.name}</p>
                 <Link 
                   href={`/parent/surveys/${activePeriod.id}/${child.id}`}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium inline-block text-sm transition-colors"
+                  className="hover:bg-blue-700 text-white font-medium inline-block text-sm transition-colors text-xs font-semibold"
                 >
                   Take Survey
                 </Link>

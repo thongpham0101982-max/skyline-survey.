@@ -56,7 +56,7 @@ export default async function NpsDashboardPage() {
           return (
             <div key={p.id} className="bg-white rounded-[2rem] border-2 border-indigo-100 shadow-sm hover:shadow-xl hover:border-indigo-200 transition-all duration-300 p-6 group">
               <div className="flex flex-col md:flex-row md:items-center gap-6">
-                <div className="w-14 h-14 rounded-[1.2rem] bg-indigo-50 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-300">
+                <div className="w-14 h-14 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-300 text-xs font-semibold">
                   <ClipboardList className="w-7 h-7 text-indigo-500" />
                 </div>
                 <div className="flex-1 space-y-2">
@@ -72,7 +72,7 @@ export default async function NpsDashboardPage() {
                     <span className="text-emerald-600">Da nop: {submitted}</span>
                     <div className="flex items-center gap-2">
                       <div className="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-emerald-500 rounded-full" style={{ width: rate + "%" }} />
+                        <div className="h-full text-xs font-semibold" style={{ width: rate + "%" }} />
                       </div>
                       <span>{rate}%</span>
                     </div>
@@ -80,7 +80,7 @@ export default async function NpsDashboardPage() {
                 </div>
                 <Link
                   href={"/admin/surveys/" + p.id + "/results"}
-                  className="flex items-center justify-center gap-2 px-8 py-4 rounded-2xl text-sm font-black text-white shadow-lg shadow-indigo-100 transition-all hover:scale-105 active:scale-95 whitespace-nowrap bg-indigo-600 hover:bg-indigo-700"
+                  className="flex items-center justify-center gap-2 text-sm font-black text-white shadow-lg shadow-indigo-100 transition-all hover:scale-105 active:scale-95 whitespace-nowrap hover:bg-indigo-700 text-xs font-semibold"
                 >
                   <BarChart3 className="w-4 h-4" /> Phan tich NPS <ArrowRight className="w-4 h-4" />
                 </Link>

@@ -47,7 +47,7 @@ export default async function ParentDashboard() {
   )
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-20 animate-in fade-in duration-1000">
+    <div className="min-h-screen pb-20 animate-in fade-in duration-1000 text-xs font-semibold">
       {/* Header Bar */}
       <nav className="bg-white border-b border-slate-200 sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-6 h-20 flex justify-between items-center">
@@ -65,7 +65,7 @@ export default async function ParentDashboard() {
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tài khoản</p>
                   <p className="text-sm font-bold text-slate-800">{session?.user?.name}</p>
                </div>
-               <Link href="/api/auth/signout" className="p-3 text-slate-400 hover:text-[#00A19A] hover:bg-teal-50 rounded-2xl transition-all">
+               <Link href="/api/auth/signout" className="p-3 text-slate-400 hover:text-[#00A19A] hover:bg-teal-50 transition-all text-xs font-semibold">
                   <LogOut className="w-5 h-5" />
                </Link>
             </div>
@@ -83,10 +83,10 @@ export default async function ParentDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
            {children.map((child: any) => (
              <div key={child.id} className="bg-white rounded-[2.5rem] border-2 border-teal-100 p-8 hover:shadow-2xl transition-all group relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-full -mr-12 -mt-12 opacity-50 transition-transform group-hover:scale-110" />
+                <div className="absolute top-0 right-0 w-32 h-32 -mr-12 -mt-12 opacity-50 transition-transform group-hover:scale-110 text-xs font-semibold" />
                 <div className="relative z-10">
                    <div className="flex justify-between items-start mb-6">
-                      <div className="w-16 h-16 bg-teal-50 rounded-[1.5rem] flex items-center justify-center text-[#00A19A] transition-colors group-hover:bg-[#00A19A] group-hover:text-white">
+                      <div className="w-16 h-16 flex items-center justify-center text-[#00A19A] transition-colors group-hover:bg-[#00A19A] group-hover:text-white text-xs font-semibold">
                          <GraduationCap className="w-8 h-8" />
                       </div>
                       <div className="flex flex-col items-end">
@@ -138,7 +138,7 @@ export default async function ParentDashboard() {
 
         {children.length === 0 && (
           <div className="bg-white rounded-[3rem] p-20 text-center border-2 border-dashed border-slate-200">
-             <div className="bg-slate-50 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
+             <div className="w-24 h-24 flex items-center justify-center mx-auto mb-6 text-xs font-semibold">
                 <Users className="w-10 h-10 text-slate-300" />
              </div>
              <h3 className="text-2xl font-black text-slate-900 mb-2">Chưa gán thông tin con em</h3>

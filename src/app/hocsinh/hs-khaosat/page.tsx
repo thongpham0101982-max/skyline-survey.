@@ -26,14 +26,14 @@ export default function HsLoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-[#FFF9E6] relative overflow-hidden font-sans">
-      <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-amber-200/30 rounded-full blur-[100px]" />
-      <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] bg-amber-300/20 rounded-full blur-[80px]" />
+      <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] blur-[100px] text-xs font-semibold" />
+      <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] blur-[80px] text-xs font-semibold" />
 
       <div className="relative z-10 w-full max-w-[450px]">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-24 h-24 bg-[#78350f] rounded-[2rem] mb-6 shadow-2xl relative">
             <GraduationCap className="w-12 h-12 text-white" />
-            <div className="absolute -top-1 -right-1 w-7 h-7 bg-amber-500 rounded-full border-4 border-[#FFF9E6] flex items-center justify-center text-[10px] font-black text-[#78350f]">HS</div>
+            <div className="absolute -top-1 -right-1 w-7 h-7 flex items-center justify-center text-[10px] font-black text-[#78350f] text-xs font-semibold">HS</div>
           </div>
           <h1 className="text-5xl font-black text-[#451a03] tracking-[10px] uppercase">SQMS</h1>
           <p className="text-[#a16207] text-[10px] font-black uppercase tracking-[4px] mt-2 opacity-60">KHAO SAT HOC SINH SKYLINE</p>
@@ -44,7 +44,7 @@ export default function HsLoginPage() {
           <p className="text-[#78350f]/60 text-center text-xs font-bold mb-8 uppercase tracking-widest">Khao sat chat luong giao duc</p>
 
           {err && (
-            <div className="mb-6 p-4 rounded-2xl flex items-center gap-3 bg-red-50 text-red-700 border border-red-100">
+            <div className="mb-6 p-4 flex items-center gap-3 text-red-700 text-xs font-semibold">
               <AlertCircle className="w-5 h-5 shrink-0" />
               <p className="text-sm font-black">{err}</p>
             </div>

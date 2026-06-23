@@ -273,22 +273,22 @@ async function notifyBatchAssignment(batch: any, appUrl?: string) {
           <p>Kính gửi quý thầy/cô Giáo vụ Cơ sở,</p>
           <p>Hệ thống trân trọng thông báo thông tin đợt khảo sát mới đã được gán người phụ trách:</p>
           <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
-            <table width="100%" cellpadding="5" cellspacing="0" style="border-collapse: collapse;">
+            <table width="100%" cellpadding="5" cellspacing="0" style="border-collapse: collapse;" className="border border-slate-200 border-collapse">
               <tr>
-                <td width="35%" style="font-weight: bold; color: #475569;">Mã Đợt:</td>
-                <td><strong>${batchCode}</strong> (${batch.name || ""})</td>
+                <td width="35%" style="font-weight: bold; color: #475569;" className="p-2 border border-slate-200">Mã Đợt:</td>
+                <td className="p-2 border border-slate-200"><strong>${batchCode}</strong> (${batch.name || ""})</td>
               </tr>
               <tr>
-                <td style="font-weight: bold; color: #475569;">Nội dung khảo sát:</td>
-                <td>${surveyContent}</td>
+                <td style="font-weight: bold; color: #475569;" className="p-2 border border-slate-200">Nội dung khảo sát:</td>
+                <td className="p-2 border border-slate-200">${surveyContent}</td>
               </tr>
               <tr>
-                <td style="font-weight: bold; color: #475569;">Cơ sở:</td>
-                <td>${campusName}</td>
+                <td style="font-weight: bold; color: #475569;" className="p-2 border border-slate-200">Cơ sở:</td>
+                <td className="p-2 border border-slate-200">${campusName}</td>
               </tr>
               <tr>
-                <td style="font-weight: bold; color: #475569;">Thời gian:</td>
-                <td>${timeDisplay}</td>
+                <td style="font-weight: bold; color: #475569;" className="p-2 border border-slate-200">Thời gian:</td>
+                <td className="p-2 border border-slate-200">${timeDisplay}</td>
               </tr>
             </table>
           </div>

@@ -76,7 +76,7 @@ export default function HsFormClient({ formId, periodName, studentName, classNam
   if (done) return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-[#f0fdf4]">
       <div className="bg-white rounded-[3rem] p-12 max-w-sm w-full text-center shadow-2xl border border-emerald-100">
-        <div className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-8 bg-emerald-50">
+        <div className="w-24 h-24 flex items-center justify-center mx-auto mb-8 text-xs font-semibold">
           <CheckCircle2 className="w-12 h-12 text-emerald-500" />
         </div>
         <h2 className="text-3xl font-black text-slate-800 mb-4">Hoàn tất!</h2>
@@ -116,7 +116,7 @@ export default function HsFormClient({ formId, periodName, studentName, classNam
 
       <div className="max-w-2xl mx-auto px-6 py-10 pb-40">
         {err && (
-          <div className="mb-8 p-5 rounded-[2rem] flex items-start gap-4 text-[#00A19A] border-2 border-teal-100 bg-teal-50/50 animate-in slide-in-from-top-4 shadow-sm">
+          <div className="mb-8 p-5 flex items-start gap-4 text-[#00A19A] animate-in slide-in-from-top-4 shadow-sm text-xs font-semibold">
             <AlertCircle className="w-5 h-5 shrink-0" />
             <p className="text-sm font-black">{err}</p>
           </div>
@@ -293,16 +293,16 @@ export default function HsFormClient({ formId, periodName, studentName, classNam
                         <table className="w-full border-collapse">
                           <thead>
                             <tr>
-                              <th className="p-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest pb-6">Tiêu chí</th>
+                              <th className="p-2 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest pb-6 border border-slate-200">Tiêu chí</th>
                               {gridOpts.columns.map((col, ci) => (
-                                <th key={ci} className="p-3 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest pb-6 min-w-[70px]">{col}</th>
+                                <th key={ci} className="p-2 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest pb-6 min-w-[70px] border border-slate-200">{col}</th>
                               ))}
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-50">
                             {gridOpts.rows.map((row, ri) => (
-                              <tr key={ri} className="group/row hover:bg-slate-50/50 transition-colors">
-                                <td className="p-4 py-6 text-sm font-bold text-slate-700 leading-tight pr-4">{row}</td>
+                              <tr key={ri} className="group/row hover:bg-slate-50/50 transition-colors text-xs font-semibold">
+                                <td className="p-2 p-2 text-sm font-bold text-slate-700 leading-tight pr-4 border border-slate-200">{row}</td>
                                 {gridOpts.columns.map((_, ci) => {
                                   const rowVal = currentGrid[ri]
                                   const isSelected = isCheckGrid 
@@ -310,7 +310,7 @@ export default function HsFormClient({ formId, periodName, studentName, classNam
                                     : rowVal === ci
                                   
                                   return (
-                                    <td key={ci} className="p-4 text-center">
+                                    <td key={ci} className="p-2 text-center border border-slate-200">
                                       <button
                                         onClick={() => {
                                           const nextGrid = { ...currentGrid }
@@ -338,7 +338,7 @@ export default function HsFormClient({ formId, periodName, studentName, classNam
                   })()}
 
                   {!['RATING', 'NPS', 'LIKERT', 'SATISFACTION', 'TEXT', 'OPEN_ENDED', 'COMMENT', 'ESSAY', 'CHOICE', 'MULTIPLE_CHOICE', 'DROPDOWN', 'RADIO', 'SINGLE_CHOICE', 'CHECKBOX', 'MULTI_SELECT', 'MC_GRID', 'CB_GRID', 'GRID'].includes(type) && (
-                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs font-bold text-slate-400 text-center">
+                    <div className="p-4 text-xs font-bold text-slate-400 text-center text-xs font-semibold">
                       Giao diện cho loại câu hỏi "{type}" đang được cập nhật...
                     </div>
                   )}
@@ -352,7 +352,7 @@ export default function HsFormClient({ formId, periodName, studentName, classNam
       <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-2xl border-t border-slate-100 p-6 z-40 shadow-[0_-15px_40px_rgba(0,0,0,0.04)]">
         <div className="max-w-2xl mx-auto flex gap-4">
           {step > 0 && (
-            <button onClick={prev} className="flex items-center gap-2 px-8 py-4 rounded-2xl font-black text-sm transition-all bg-slate-50 text-slate-400 hover:bg-slate-100 active:scale-95">
+            <button onClick={prev} className="flex items-center gap-2 font-black text-sm transition-all text-slate-400 hover:bg-slate-100 active:scale-95 text-xs font-semibold">
               <ArrowLeft className="w-5 h-5" /> Lùi
             </button>
           )}

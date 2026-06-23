@@ -219,9 +219,9 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
       {showAssignModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="px-6 py-4 border-b bg-emerald-50 flex items-center justify-between">
+            <div className="flex items-center justify-between text-xs font-semibold">
                <h3 className="font-bold text-emerald-800">Gán Khảo Sát cho {assigningStudent?.studentName}</h3>
-               <button onClick={() => setShowAssignModal(false)} className="p-1 hover:bg-emerald-200 rounded-full transition-colors"><X className="w-5 h-5 text-emerald-500" /></button>
+               <button onClick={() => setShowAssignModal(false)} className="p-1 hover:bg-emerald-200 transition-colors text-xs font-semibold"><X className="w-5 h-5 text-emerald-500" /></button>
             </div>
             <div className="p-6 space-y-4">
                <div>
@@ -236,7 +236,7 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
                </div>
                <div className="pt-4 flex gap-3">
                  <button onClick={() => setShowAssignModal(false)} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl transition-all">Hủy</button>
-                 <button onClick={handleAssign} disabled={submitting || !selectedSurveyId} className="flex-[2] bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl transition-all shadow-lg shadow-emerald-200 disabled:opacity-50">
+                 <button onClick={handleAssign} disabled={submitting || !selectedSurveyId} className="flex-[2] hover:bg-emerald-700 text-white font-bold transition-all shadow-lg shadow-emerald-200 disabled:opacity-50 text-xs font-semibold">
                    {submitting ? "Đang xử lý..." : "Xác nhận Gán"}
                  </button>
                </div>
@@ -248,7 +248,7 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="px-6 py-4 border-b bg-slate-50 flex items-center justify-between">
+            <div className="flex items-center justify-between text-xs font-semibold">
                <h3 className="font-bold text-slate-800">{editingStudent ? "Sửa Thông Tin" : "Thêm Học Sinh Mới"}</h3>
                <button onClick={() => setShowAddModal(false)} className="p-1 hover:bg-slate-200 rounded-full transition-colors"><X className="w-5 h-5 text-slate-500" /></button>
             </div>
@@ -278,7 +278,7 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
                </div>
                <div className="pt-4 flex gap-3">
                  <button type="button" onClick={() => setShowAddModal(false)} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl transition-all">Hủy</button>
-                 <button type="submit" disabled={submitting} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-200 disabled:opacity-50">{submitting ? "Đang xử lý..." : "Lưu Lại"}</button>
+                 <button type="submit" disabled={submitting} className="flex-1 hover:bg-indigo-700 text-white font-bold transition-all shadow-lg shadow-indigo-200 disabled:opacity-50 text-xs font-semibold">{submitting ? "Đang xử lý..." : "Lưu Lại"}</button>
                </div>
             </form>
           </div>
@@ -289,16 +289,16 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
         <div className="flex items-center gap-4">
            <h2 className="text-lg font-bold text-slate-800">Danh sách học sinh ({students.length})</h2>
            {selectedIds.length > 0 && (
-             <button onClick={handleDeleteMany} disabled={submitting} className="flex items-center gap-2 bg-red-50 text-red-600 hover:bg-red-100 px-3 py-1.5 rounded-lg font-semibold text-sm border border-red-100 transition-colors">
+             <button onClick={handleDeleteMany} disabled={submitting} className="flex items-center gap-2 text-red-600 hover:bg-red-100 font-semibold text-sm transition-colors text-xs font-semibold">
                 <Trash2 className="w-4 h-4" /> Xóa {selectedIds.length} HS đã chọn
              </button>
            )}
         </div>
         <div className="flex flex-wrap gap-3 items-center">
-          <button onClick={openAdd} className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors shadow-sm text-sm">
+          <button onClick={openAdd} className="flex items-center hover:bg-indigo-700 text-white font-semibold transition-colors shadow-sm text-sm text-xs font-semibold">
             <Plus className="w-4 h-4 mr-2" /> Thêm Học Sinh
           </button>
-          <button onClick={handleDownloadTemplate} className="flex items-center text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 font-semibold py-2 px-4 rounded-md transition-colors border border-blue-200 text-sm">
+          <button onClick={handleDownloadTemplate} className="flex items-center text-blue-600 hover:text-blue-700 hover:bg-blue-100 font-semibold transition-colors text-sm text-xs font-semibold">
             <Download className="w-4 h-4 mr-2" /> Tải File Mẫu
           </button>
           <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept=".xlsx, .xls, .csv" className="hidden" />
@@ -309,8 +309,8 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
       </div>
       
       <div className="overflow-x-auto">
-        <table className="w-full text-left whitespace-nowrap">
-          <thead className="bg-slate-50 border border-slate-200 uppercase text-[10px] tracking-wider text-slate-500 font-bold">
+        <table className="w-full text-left whitespace-nowrap border-collapse">
+          <thead className="uppercase text-[10px] tracking-wider text-slate-500 font-bold text-xs font-semibold">
             <tr>
               <th className="px-4 py-3 border-r border-slate-200 w-10 text-center">
                 <input type="checkbox" className="w-4 h-4 rounded" checked={students.length > 0 && selectedIds.length === students.length} onChange={handleSelectAll} />
@@ -320,13 +320,13 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
               <th className="px-6 py-4 border-r border-slate-200">Họ và Tên</th>
               <th className="px-6 py-4 border-r border-slate-200">Giới tính</th>
               <th className="px-6 py-4 border-r border-slate-200">Ngày sinh</th><th className="px-6 py-4 border-r border-slate-200">Trạng thái</th>
-              <th className="px-6 py-4 text-center">Thao tác</th>
+              <th className="p-2 p-2 text-center border border-slate-200">Thao tác</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
             {students.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-6 py-12 text-center text-slate-400 font-medium border border-t-0 border-slate-200 bg-slate-50/50">
+                <td colSpan={7} className="text-center text-slate-400 font-medium text-xs font-semibold">
                   <UserCircle2 className="w-12 h-12 mx-auto mb-4 opacity-20" />
                   Chưa có học sinh nào. Hãy import hoặc thêm mới.
                 </td>
@@ -354,15 +354,15 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
                       {(!student.status || student.status === "ACTIVE") ? "HOẠT ĐỘNG" : "BỊ KHÓA"}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-center">
+                  <td className="p-2 p-2 text-center border border-slate-200">
                      <div className="flex justify-center gap-1">
-                        <button onClick={() => { setAssigningStudent(student); setSelectedSurveyId(''); setShowAssignModal(true); }} className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors" title="Gán khảo sát">
+                        <button onClick={() => { setAssigningStudent(student); setSelectedSurveyId(''); setShowAssignModal(true); }} className="p-2 text-emerald-600 hover:bg-emerald-50 transition-colors text-xs font-semibold" title="Gán khảo sát">
                           <Send className="w-4 h-4" />
                         </button>
-                        <button onClick={() => openEdit(student)} className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Sửa">
+                        <button onClick={() => openEdit(student)} className="p-2 text-indigo-600 hover:bg-indigo-50 transition-colors text-xs font-semibold" title="Sửa">
                           <Edit2 className="w-4 h-4" />
                         </button>
-                        <button onClick={() => handleDeleteOne(student.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Xóa">
+                        <button onClick={() => handleDeleteOne(student.id)} className="p-2 text-red-500 hover:bg-red-50 transition-colors text-xs font-semibold" title="Xóa">
                           <Trash2 className="w-4 h-4" />
                         </button>
                      </div>

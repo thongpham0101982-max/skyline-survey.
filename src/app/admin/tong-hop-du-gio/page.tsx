@@ -25,7 +25,7 @@ export default async function AdminTongHopPage(props: {
 
   if (!isSuperAdmin && !isTTCM) {
     return (
-      <div className="p-6 text-red-500 font-bold bg-red-50 rounded-2xl border border-red-200">
+      <div className="p-6 text-red-500 font-bold text-xs font-semibold">
         Bạn không có quyền truy cập trang này.
       </div>
     )
@@ -43,7 +43,7 @@ export default async function AdminTongHopPage(props: {
   const refDataResult = await getObservationData(academicYearId)
   if (!refDataResult.success) {
     return (
-      <div className="p-6 text-red-500 font-bold bg-red-50 rounded-2xl border border-red-200">
+      <div className="p-6 text-red-500 font-bold text-xs font-semibold">
         Error: {refDataResult.error || "Failed to load reference data."}
       </div>
     )

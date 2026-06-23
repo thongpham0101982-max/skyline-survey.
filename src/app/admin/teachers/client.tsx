@@ -1,27 +1,27 @@
 ﻿"use client"
 function PositionBadge({ position }) {
   if (position === "TTCM") return (
-    <span className="inline-flex items-center px-2.5 py-1 rounded-xl text-[10px] font-extrabold uppercase tracking-wide bg-amber-50 text-amber-700">
+    <span className="inline-flex items-center text-[10px] font-extrabold uppercase tracking-wide text-amber-700 text-xs font-semibold">
       TTCM
     </span>
   );
   if (position === "QLCM") return (
-    <span className="inline-flex items-center px-2.5 py-1 rounded-xl text-[10px] font-extrabold uppercase tracking-wide bg-indigo-50 text-indigo-700">
+    <span className="inline-flex items-center text-[10px] font-extrabold uppercase tracking-wide text-indigo-700 text-xs font-semibold">
       QLCM
     </span>
   );
   if (position === "Ban ĐHCM") return (
-    <span className="inline-flex items-center px-2.5 py-1 rounded-xl text-[10px] font-extrabold uppercase tracking-wide bg-violet-50 text-violet-700">
+    <span className="inline-flex items-center text-[10px] font-extrabold uppercase tracking-wide text-violet-700 text-xs font-semibold">
       Ban ĐHCM
     </span>
   );
   if (position === "GĐCS") return (
-    <span className="inline-flex items-center px-2.5 py-1 rounded-xl text-[10px] font-extrabold uppercase tracking-wide bg-rose-50 text-rose-700">
+    <span className="inline-flex items-center text-[10px] font-extrabold uppercase tracking-wide text-rose-700 text-xs font-semibold">
       GĐCS
     </span>
   );
   return (
-    <span className="inline-flex items-center px-2.5 py-1 rounded-xl text-[10px] font-semibold uppercase tracking-wide bg-slate-50 text-slate-500">
+    <span className="inline-flex items-center text-[10px] font-semibold uppercase tracking-wide text-slate-500 text-xs font-semibold">
       {position || "GV"}
     </span>
   );
@@ -54,13 +54,13 @@ function getDeptColor(dept) { return DEPT_COLORS[dept] || DEPT_COLORS["default"]
 
 function StatusBadge({ status }) {
   if (status === "ACTIVE") return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[10px] font-extrabold bg-emerald-50 text-emerald-700 uppercase tracking-wider">
-      <span className="w-1.5 h-1.5 rounded-full bg-emerald-550 animate-pulse" />On
+    <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold text-emerald-700 uppercase tracking-wider text-xs font-semibold">
+      <span className="w-1.5 h-1.5 animate-pulse text-xs font-semibold" />On
     </span>
   )
   return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[10px] font-extrabold bg-rose-50 text-rose-700 uppercase tracking-wider">
-      <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />Off
+    <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold text-rose-700 uppercase tracking-wider text-xs font-semibold">
+      <span className="w-1.5 h-1.5 text-xs font-semibold" />Off
     </span>
   )
 }
@@ -246,7 +246,7 @@ export function TeacherManagerClient({
 
       {/* Toast */}
       {errorMsg && (
-        <div className="flex items-center gap-2.5 bg-rose-50 border-l-4 border-rose-500 border-y border-r border-rose-100 text-rose-800 rounded-xl px-4 py-3 text-sm font-medium shadow-sm transition-all duration-200">
+        <div className="flex items-center gap-2.5 text-rose-800 text-sm font-medium shadow-sm transition-all duration-200 text-xs font-semibold">
           <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-500" />
           <span>{errorMsg}</span>
           <button onClick={() => setErrorMsg("")} className="ml-auto text-rose-450 hover:text-rose-600 transition-colors">
@@ -255,7 +255,7 @@ export function TeacherManagerClient({
         </div>
       )}
       {successMsg && (
-        <div className="flex items-center gap-2.5 bg-emerald-50 border-l-4 border-emerald-500 border-y border-r border-emerald-100 text-emerald-800 rounded-xl px-4 py-3 text-sm font-medium shadow-sm transition-all duration-200">
+        <div className="flex items-center gap-2.5 text-emerald-800 text-sm font-medium shadow-sm transition-all duration-200 text-xs font-semibold">
           <ShieldCheck className="w-4 h-4 flex-shrink-0 text-emerald-600" />
           <span>{successMsg}</span>
         </div>
@@ -273,7 +273,7 @@ export function TeacherManagerClient({
           </div>
         </div>
         <div className="bg-white border border-slate-100 rounded-2xl p-6 flex items-center gap-4 hover:border-emerald-500/30 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 shadow-sm border-l-4 border-l-emerald-550">
-          <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
+          <div className="w-12 h-12 flex items-center justify-center flex-shrink-0 text-xs font-semibold">
             <UserCheck className="w-6 h-6 text-emerald-600" />
           </div>
           <div>
@@ -282,7 +282,7 @@ export function TeacherManagerClient({
           </div>
         </div>
         <div className="bg-white border border-slate-100 rounded-2xl p-6 flex items-center gap-4 hover:border-violet-500/30 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 shadow-sm border-l-4 border-l-violet-600">
-          <div className="w-12 h-12 rounded-xl bg-violet-50 flex items-center justify-center flex-shrink-0">
+          <div className="w-12 h-12 flex items-center justify-center flex-shrink-0 text-xs font-semibold">
             <Building2 className="w-6 h-6 text-violet-600" />
           </div>
           <div>
@@ -291,7 +291,7 @@ export function TeacherManagerClient({
           </div>
         </div>
         <div className="bg-white border border-slate-100 rounded-2xl p-6 flex items-center gap-4 hover:border-amber-500/30 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 shadow-sm border-l-4 border-l-amber-500">
-          <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0">
+          <div className="w-12 h-12 flex items-center justify-center flex-shrink-0 text-xs font-semibold">
             <GraduationCap className="w-6 h-6 text-amber-650" />
           </div>
           <div>
@@ -357,7 +357,7 @@ export function TeacherManagerClient({
             {search && <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"><X className="w-4 h-4" /></button>}
           </div>
           <div className="flex flex-wrap items-center gap-2 justify-start lg:justify-end">
-            <button onClick={downloadTemplate} className="flex items-center gap-1.5 px-4 py-2.5 border border-slate-200 rounded-xl text-slate-700 hover:bg-slate-50 hover:border-slate-350 text-sm font-bold transition-all cursor-pointer">
+            <button onClick={downloadTemplate} className="flex items-center gap-1.5 text-slate-700 hover:bg-slate-50 hover:border-slate-350 text-sm font-bold transition-all cursor-pointer text-xs font-semibold">
               <Download className="w-4 h-4" /><span>Tải mẫu</span>
             </button>
             <label className="flex items-center gap-1.5 px-4 py-2.5 border border-[#00A19A]/20 bg-[#00A19A]/5 rounded-xl text-[#00A19A] hover:bg-[#00A19A]/15 text-sm font-black cursor-pointer transition-all">
@@ -390,7 +390,7 @@ export function TeacherManagerClient({
           </select>
           {hasFilters && (
             <button onClick={() => { setSearch(""); setFilterDepartment(""); setFilterSubject(""); setFilterStatus("") }}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-rose-600 border border-rose-200 rounded-xl bg-rose-50/50 hover:bg-rose-50 hover:border-rose-400 transition-all cursor-pointer">
+              className="flex items-center gap-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 hover:border-rose-400 transition-all cursor-pointer text-xs font-semibold">
               <RefreshCw className="w-3 h-3" />Xóa lọc
             </button>
           )}
@@ -462,7 +462,7 @@ export function TeacherManagerClient({
           {(campuses || []).length > 1 && (
             <div className="mt-4">
               <label className="block text-xs font-black text-slate-550 mb-2 uppercase tracking-wider">Cơ sở làm việc thêm</label>
-              <div className="flex flex-wrap gap-2 p-3.5 bg-slate-50/50 rounded-xl border border-slate-100">
+              <div className="flex flex-wrap gap-2 p-3.5 text-xs font-semibold">
                 {(campuses || []).filter((c) => {
                   const sel = (campuses || []).find((cx) => cx.campusName === newForm.campus)
                   return c.id !== sel?.id
@@ -487,14 +487,14 @@ export function TeacherManagerClient({
               {saving ? <><RefreshCw className="w-4 h-4 animate-spin" />Đang lưu...</> : <><Check className="w-4 h-4" />Lưu Giáo Viên</>}
             </button>
             <button onClick={() => { setShowAddForm(false); setErrorMsg("") }}
-              className="px-5 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-800 rounded-xl font-bold text-sm transition-all border border-slate-250 cursor-pointer">Hủy</button>
+              className="hover:bg-slate-100 text-slate-800 font-bold text-sm transition-all cursor-pointer text-xs font-semibold">Hủy</button>
           </div>
         </div>
       )}
 
       {/* Table */}
       <div className="bg-white border border-slate-150 rounded-3xl overflow-hidden shadow-md shadow-slate-100/40 border-t-4 border-t-[#0A3230]">
-        <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-4 border-b border-slate-150 bg-slate-50/50">
+        <div className="flex flex-wrap items-center justify-between gap-4 text-xs font-semibold">
           <div className="flex items-center gap-4 flex-wrap">
             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
               Danh sách giáo viên{hasFilters && <span className="ml-1.5 text-[#00A19A] font-black">| Đang lọc: {displayed.length} kết quả</span>}
@@ -533,15 +533,15 @@ export function TeacherManagerClient({
             )}
           </div>
           <div className="flex items-center gap-2 border border-slate-200/60 px-3 py-1 bg-white font-bold text-xs rounded-lg">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="w-2 h-2 animate-pulse text-xs font-semibold" />
             <span className="text-slate-655 font-bold">{activeCount} On</span>
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm border-collapse">
             <thead>
               <tr className="border-b border-slate-200 bg-[#0A3230] text-white">
-                <th className="px-5 py-4 text-center text-[11px] font-black uppercase tracking-wider w-12">
+                <th className="p-2 p-2 text-center text-[11px] font-black uppercase tracking-wider w-12 border border-slate-200">
                   <input type="checkbox" className="w-4 h-4 rounded text-[#00A19A] cursor-pointer"
                     checked={displayed.length > 0 && selectedDisplayedIds.length === displayed.length}
                     onChange={(e) => {
@@ -550,22 +550,22 @@ export function TeacherManagerClient({
                     }}
                   />
                 </th>
-                <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-wider w-12">#</th>
-                <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-wider w-28">Mã GV</th>
-                <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-wider min-w-[200px]">Họ và Tên</th>
-                <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-wider w-40">Cơ sở</th>
-                <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-wider w-48">Tổ chuyên môn</th>
-                <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-wider w-36">Chức vụ</th>
-                <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-wider w-56">Tài khoản đăng nhập</th>
-                <th className="px-5 py-4 text-center text-[11px] font-black uppercase tracking-wider w-32">Trạng thái</th>
-                <th className="px-5 py-4 text-center text-[11px] font-black uppercase tracking-wider w-32">Thao tác</th>
+                <th className="p-2 p-2 text-left text-[11px] font-black uppercase tracking-wider w-12 border border-slate-200">#</th>
+                <th className="p-2 p-2 text-left text-[11px] font-black uppercase tracking-wider w-28 border border-slate-200">Mã GV</th>
+                <th className="p-2 p-2 text-left text-[11px] font-black uppercase tracking-wider min-w-[200px] border border-slate-200">Họ và Tên</th>
+                <th className="p-2 p-2 text-left text-[11px] font-black uppercase tracking-wider w-40 border border-slate-200">Cơ sở</th>
+                <th className="p-2 p-2 text-left text-[11px] font-black uppercase tracking-wider w-48 border border-slate-200">Tổ chuyên môn</th>
+                <th className="p-2 p-2 text-left text-[11px] font-black uppercase tracking-wider w-36 border border-slate-200">Chức vụ</th>
+                <th className="p-2 p-2 text-left text-[11px] font-black uppercase tracking-wider w-56 border border-slate-200">Tài khoản đăng nhập</th>
+                <th className="p-2 p-2 text-center text-[11px] font-black uppercase tracking-wider w-32 border border-slate-200">Trạng thái</th>
+                <th className="p-2 p-2 text-center text-[11px] font-black uppercase tracking-wider w-32 border border-slate-200">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {displayed.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="px-6 py-16 text-center">
-                    <div className="w-16 h-16 rounded-2xl border border-dashed border-slate-250 flex items-center justify-center mx-auto mb-4 bg-slate-50">
+                  <td colSpan={10} className="p-2 p-2 text-center border border-slate-200">
+                    <div className="w-16 h-16 flex items-center justify-center mx-auto mb-4 text-xs font-semibold">
                       <GraduationCap className="w-8 h-8 text-slate-400" />
                     </div>
                     <p className="font-black text-slate-600">Không có giáo viên phù hợp</p>
@@ -582,7 +582,7 @@ export function TeacherManagerClient({
                     return (
                       <tr key={t.id} className={`group transition-all ${isEditing ? "bg-[#00A19A]/5 border-l-4 border-l-[#00A19A]" : "hover:bg-slate-50/20"} ${selectedDisplayedIds.includes(t.id) ? "bg-[#00A19A]/5" : ""}`}>
 
-                      <td className="px-5 py-4 text-center">
+                      <td className="p-2 p-2 text-center border border-slate-200">
                         <input type="checkbox" className="w-4 h-4 rounded text-[#00A19A] cursor-pointer"
                           checked={selectedDisplayedIds.includes(t.id)}
                           onChange={(e) => {
@@ -591,15 +591,15 @@ export function TeacherManagerClient({
                           }}
                         />
                       </td>
-                      <td className="px-5 py-4 text-slate-400 text-xs font-mono font-bold tabular-nums">{idx + 1}</td>
+                      <td className="p-2 p-2 text-slate-400 text-xs font-mono font-bold tabular-nums border border-slate-200">{idx + 1}</td>
 
-                      <td className="px-5 py-4">
+                      <td className="p-2 p-2 border border-slate-200">
                         <span className="inline-block font-mono font-bold text-[#00A19A] bg-[#00A19A]/5 px-2.5 py-1 rounded-xl text-xs tracking-wide">
                           {t.teacherCode}
                         </span>
                       </td>
 
-                      <td className="px-5 py-4">
+                      <td className="p-2 p-2 border border-slate-200">
                         {isEditing ? (
                           <div className="flex flex-col gap-1.5 max-w-xs">
                             <input type="text" value={editForm.teacherName}
@@ -615,7 +615,7 @@ export function TeacherManagerClient({
                           <div className="flex flex-col gap-1">
                             <span className="font-bold text-slate-800 text-sm leading-tight">{t.teacherName}</span>
                             {t.email ? (
-                              <span className="inline-flex items-center gap-1.5 text-[10px] font-medium text-slate-450 bg-slate-50 px-2 py-0.5 rounded-lg self-start">
+                              <span className="inline-flex items-center gap-1.5 text-[10px] font-medium text-slate-450 self-start text-xs font-semibold">
                                 <Mail className="w-3 h-3 text-slate-400" />{t.email}
                               </span>
                             ) : (
@@ -627,7 +627,7 @@ export function TeacherManagerClient({
                         )}
                       </td>
 
-                      <td className="px-5 py-4">
+                      <td className="p-2 p-2 border border-slate-200">
                         {isEditing ? (
                           <div className="flex flex-col gap-2 max-w-xs">
                             <select value={editForm.campusId} onChange={e => {
@@ -637,7 +637,7 @@ export function TeacherManagerClient({
                               <option value="">-- Cơ sở chính --</option>
                               {(campuses || []).map((c) => <option key={c.id} value={c.id}>{c.campusName}</option>)}
                             </select>
-                            <div className="flex flex-col gap-1 p-2 bg-slate-50/50 border border-slate-200 rounded-xl max-h-24 overflow-y-auto w-full">
+                            <div className="flex flex-col gap-1 p-2 max-h-24 overflow-y-auto w-full text-xs font-semibold">
                               <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-1 mb-1">Cơ sở làm việc thêm:</p>
                               {(campuses || []).filter((c) => c.id !== editForm.campusId).map((c) => {
                                 const isChk = editForm.additionalCampusIds?.includes(c.id)
@@ -662,7 +662,7 @@ export function TeacherManagerClient({
                             {t.additionalCampuses?.length > 0 && (
                               <div className="flex flex-wrap gap-1.5 pl-5.5">
                                 {t.additionalCampuses.map((ac) => (
-                                  <span key={ac.id} className="text-[9px] bg-slate-50 text-slate-500 border border-slate-200 px-2 py-0.5 rounded-md font-bold uppercase tracking-wide">{ac.campusName}</span>
+                                  <span key={ac.id} className="text-[9px] text-slate-500 font-bold uppercase tracking-wide text-xs font-semibold">{ac.campusName}</span>
                                 ))}
                               </div>
                             )}
@@ -670,7 +670,7 @@ export function TeacherManagerClient({
                         )}
                       </td>
 
-                      <td className="px-5 py-4">
+                      <td className="p-2 p-2 border border-slate-200">
                         {isEditing ? (
                           <div className="flex flex-col gap-1.5 max-w-xs">
                             <select value={editForm.department} onChange={e => setEditForm({ ...editForm, department: e.target.value })}
@@ -692,7 +692,7 @@ export function TeacherManagerClient({
                         )}
                       </td>
 
-                      <td className="px-5 py-4">
+                      <td className="p-2 p-2 border border-slate-200">
                         {isEditing ? (
                           <select value={editForm.position} onChange={e => setEditForm({ ...editForm, position: e.target.value })}
                             className="border border-[#00A19A] rounded-xl px-2.5 py-1.5 text-xs outline-none bg-white font-bold focus:border-[#00A19A] w-full cursor-pointer">
@@ -705,19 +705,19 @@ export function TeacherManagerClient({
                         )}
                       </td>
 
-                      <td className="px-5 py-4">
+                      <td className="p-2 p-2 border border-slate-200">
                         <div className="flex items-center gap-1.5 group/key">
-                          <span className="font-mono text-xs font-semibold text-slate-500 bg-slate-50/50 px-2.5 py-1 rounded-xl tracking-wide">
+                          <span className="font-mono text-xs font-semibold text-slate-500 tracking-wide text-xs font-semibold">
                             {t.user?.email || t.teacherCode}
                           </span>
                           <button onClick={() => handleResetPassword(t.id, t.teacherCode, t.teacherName)}
-                            className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all cursor-pointer" title="Reset mật khẩu">
+                            className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 opacity-0 group-hover:opacity-100 transition-all cursor-pointer text-xs font-semibold" title="Reset mật khẩu">
                             <Key className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </td>
 
-                      <td className="px-5 py-4 text-center">
+                      <td className="p-2 p-2 text-center border border-slate-200">
                         {isEditing ? (
                           <select value={editForm.status} onChange={e => setEditForm({ ...editForm, status: e.target.value })}
                             className="border border-[#00A19A]/60 rounded-xl px-2 py-1.5 text-xs outline-none bg-white font-bold w-28 focus:border-[#00A19A] cursor-pointer">
@@ -726,23 +726,23 @@ export function TeacherManagerClient({
                           </select>
                         ) : (
                           t.status === "ACTIVE" ? (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[10px] font-extrabold bg-emerald-50 text-emerald-700 uppercase tracking-wider">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-550 animate-pulse" />On
+                            <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold text-emerald-700 uppercase tracking-wider text-xs font-semibold">
+                              <span className="w-1.5 h-1.5 animate-pulse text-xs font-semibold" />On
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[10px] font-extrabold bg-rose-50 text-rose-700 uppercase tracking-wider">
-                              <span className="w-1.5 h-1.5 rounded-full bg-rose-550" />Off
+                            <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold text-rose-700 uppercase tracking-wider text-xs font-semibold">
+                              <span className="w-1.5 h-1.5 text-xs font-semibold" />Off
                             </span>
                           )
                         )}
                       </td>
 
-                      <td className="px-5 py-4 text-center">
+                      <td className="p-2 p-2 text-center border border-slate-200">
                         <div className="flex items-center justify-center gap-1">
                           {isEditing ? (
                             <>
                               <button onClick={() => handleSaveEdit(t.id)} disabled={saving}
-                                className="p-2 text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg transition-all shadow-md shadow-emerald-500/10 disabled:opacity-60 cursor-pointer" title="Lưu">
+                                className="p-2 text-white hover:bg-emerald-600 transition-all shadow-md shadow-emerald-500/10 disabled:opacity-60 cursor-pointer text-xs font-semibold" title="Lưu">
                                 <Check className="w-4 h-4" />
                               </button>
                               <button onClick={() => setEditingId(null)}
@@ -757,7 +757,7 @@ export function TeacherManagerClient({
                                 <Edit2 className="w-4 h-4" />
                               </button>
                               <button onClick={() => handleDelete(t.id, t.teacherName)}
-                                className="p-2 text-rose-500 hover:bg-rose-50 hover:text-rose-700 rounded-xl transition-all opacity-0 group-hover:opacity-100 cursor-pointer" title="Xóa">
+                                className="p-2 text-rose-500 hover:bg-rose-50 hover:text-rose-700 transition-all opacity-0 group-hover:opacity-100 cursor-pointer text-xs font-semibold" title="Xóa">
                                 <Trash2 className="w-4 h-4" />
                               </button>
                             </>
@@ -773,7 +773,7 @@ export function TeacherManagerClient({
           </table>
         </div>
         {displayed.length > 0 && (
-          <div className="px-5 py-3.5 border-t border-slate-150 bg-slate-50/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-semibold">
             <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-xs text-slate-450 font-bold">
               <p>
                 Hiển thị <span className="font-black text-slate-700">{Math.min(displayed.length, (currentPage - 1) * itemsPerPage + 1)}-{Math.min(displayed.length, currentPage * itemsPerPage)}</span> trong số <span className="font-black text-slate-700">{displayed.length}</span> giáo viên
@@ -789,7 +789,7 @@ export function TeacherManagerClient({
                 <button
                   onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
-                  className="px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:hover:bg-white transition-all cursor-pointer"
+                  className="text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:hover:bg-white transition-all cursor-pointer text-xs font-semibold"
                 >
                   Trước
                 </button>
@@ -809,7 +809,7 @@ export function TeacherManagerClient({
                 <button
                   onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(displayed.length / itemsPerPage)))}
                   disabled={currentPage === Math.ceil(displayed.length / itemsPerPage)}
-                  className="px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:hover:bg-white transition-all cursor-pointer"
+                  className="text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:hover:bg-white transition-all cursor-pointer text-xs font-semibold"
                 >
                   Sau
                 </button>

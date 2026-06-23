@@ -65,12 +65,12 @@ export function CampusManagerClient({ initialCampuses, gdcsUsers = [] }: any) {
       {(showAddForm || editingId) && (
         <div className="bg-white border border-slate-200 rounded-3xl p-8 shadow-2xl shadow-slate-200/50 animate-in fade-in slide-in-from-top-4">
           <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-3">
-            <div className="p-2 bg-indigo-100 rounded-xl">
+            <div className="p-2 text-xs font-semibold">
               <Building2 className="w-6 h-6 text-[#00A19A]" />
             </div>
             {editingId ? "Cập nhật Cơ sở" : "Thêm Cơ sở Mới"}
           </h3>
-          {error && <div className="bg-red-50 border border-red-100 text-red-600 p-4 rounded-xl text-sm font-semibold mb-6 flex items-center gap-2">
+          {error && <div className="text-red-600 p-4 text-sm font-semibold mb-6 flex items-center gap-2 text-xs font-semibold">
             <X className="w-5 h-5" /> {error}
           </div>}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -113,36 +113,36 @@ export function CampusManagerClient({ initialCampuses, gdcsUsers = [] }: any) {
         <div className="overflow-x-auto custom-scrollbar flex-1">
           <table className="w-full text-left whitespace-nowrap border-collapse">
             <thead>
-              <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th className="px-8 py-5 text-[11px] font-black text-slate-400 uppercase tracking-widest">Mã Cơ sở</th>
-                <th className="px-8 py-5 text-[11px] font-black text-slate-400 uppercase tracking-widest">Tên Cơ sở</th>
-                <th className="px-8 py-5 text-[11px] font-black text-slate-400 uppercase tracking-widest">Tên đầy đủ</th>
-                <th className="px-8 py-5 text-[11px] font-black text-slate-400 uppercase tracking-widest">Người phụ trách</th>
-                <th className="px-8 py-5 text-[11px] font-black text-slate-400 uppercase tracking-widest">Trạng thái</th>
-                <th className="px-8 py-5 text-[11px] font-black text-slate-400 uppercase tracking-widest text-right">Hành động</th>
+              <tr className="text-xs font-semibold">
+                <th className="p-2 p-2 text-[11px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">Mã Cơ sở</th>
+                <th className="p-2 p-2 text-[11px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">Tên Cơ sở</th>
+                <th className="p-2 p-2 text-[11px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">Tên đầy đủ</th>
+                <th className="p-2 p-2 text-[11px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">Người phụ trách</th>
+                <th className="p-2 p-2 text-[11px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">Trạng thái</th>
+                <th className="p-2 p-2 text-[11px] font-black text-slate-400 uppercase tracking-widest text-right border border-slate-200">Hành động</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {filtered.map((c: any) => (
                 <tr key={c.id} className="hover:bg-[#00A19A]/10/30 transition-colors group">
-                  <td className="px-8 py-6">
-                    <span className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg font-black text-xs tracking-wider border border-indigo-100">
+                  <td className="p-2 p-2 border border-slate-200">
+                    <span className="text-indigo-700 font-black text-xs tracking-wider text-xs font-semibold">
                       {c.campusCode}
                     </span>
                   </td>
-                  <td className="px-8 py-6">
+                  <td className="p-2 p-2 border border-slate-200">
                     <div className="font-extrabold text-slate-900">{c.campusName}</div>
                   </td>
-                  <td className="px-8 py-6">
+                  <td className="p-2 p-2 border border-slate-200">
                     <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
                       <MapPin className="w-4 h-4 text-slate-300" />
                       {c.address || "Chưa cập nhật"}
                     </div>
                   </td>
-                  <td className="px-8 py-6">
+                  <td className="p-2 p-2 border border-slate-200">
                     <div className="font-semibold text-slate-700 text-sm">
                       {c.manager ? (
-                        <span className="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-100 font-bold text-xs">
+                        <span className="text-indigo-700 font-bold text-xs text-xs font-semibold">
                           {c.manager.fullName}
                         </span>
                       ) : (
@@ -150,13 +150,13 @@ export function CampusManagerClient({ initialCampuses, gdcsUsers = [] }: any) {
                       )}
                     </div>
                   </td>
-                  <td className="px-8 py-6">
+                  <td className="p-2 p-2 border border-slate-200">
                     <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${c.status === "ACTIVE" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
                       <div className={`w-1.5 h-1.5 rounded-full ${c.status === "ACTIVE" ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`} />
                       {c.status === "ACTIVE" ? "Hoạt động" : "Ngưng"}
                     </span>
                   </td>
-                  <td className="px-8 py-6 text-right">
+                  <td className="p-2 p-2 text-right border border-slate-200">
                     <div className="flex items-center justify-end gap-3 opacity-100 transition-all ">
                       <button onClick={() => { setEditingId(c.id); setForm({ code: c.campusCode, name: c.campusName, address: c.address || "", managerId: c.managerId || "" }); setShowAddForm(false); }}
                         className="p-2.5 text-[#00A19A] hover:bg-white hover:shadow-md rounded-xl transition-all border border-transparent hover:border-indigo-100">
@@ -172,7 +172,7 @@ export function CampusManagerClient({ initialCampuses, gdcsUsers = [] }: any) {
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-8 py-20 text-center">
+                  <td colSpan={6} className="p-2 p-2 text-center border border-slate-200">
                     <div className="flex flex-col items-center gap-3 text-slate-400">
                       <Building2 className="w-12 h-12 opacity-20" />
                       <p className="font-bold">Không tìm thấy cơ sở nào phù hợp</p>

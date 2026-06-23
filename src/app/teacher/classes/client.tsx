@@ -25,7 +25,7 @@ export function TeacherClassesClient({ initialClasses, academicYears }: { initia
             <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest hidden sm:block">Quản lý các lớp học được phân công và xem kết quả khảo sát</p>
           </div>
         </div>
-        <div className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 rounded-lg border border-slate-200 flex-shrink-0">
+        <div className="flex items-center gap-1.5 flex-shrink-0 text-xs font-semibold">
           <CalendarDays className="w-3.5 h-3.5 text-slate-400"/>
           <select 
             value={selectedYearId} 
@@ -77,7 +77,7 @@ export function TeacherClassesClient({ initialClasses, academicYears }: { initia
                 </div>
               </div>
               
-              <div className="bg-slate-50 px-6 py-3.5 border-t border-slate-100 flex justify-end">
+              <div className="flex justify-end text-xs font-semibold">
                 <Link 
                   href={`/teacher/classes/${c.id}`} 
                   className="text-xs font-bold text-[#00A19A] hover:text-[#008c85] transition-colors flex items-center gap-1.5"

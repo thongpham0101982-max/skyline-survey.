@@ -125,17 +125,17 @@ export async function POST(req: Request) {
 
         return `
           <tr style="border-bottom:1px solid #f1f5f9; background:${idx % 2 === 0 ? "#fff" : "#f8fafc"};">
-            <td style="padding:12px 10px; text-align:center; font-size:13px; font-weight:600; color:#64748b;">${idx + 1}</td>
-            <td style="padding:12px 10px; font-size:13px; font-weight:700; color:#1E1B4B;">${s.fullName || "—"}</td>
-            <td style="padding:12px 10px; text-align:center; font-size:13px; color:#334155;">${s.studentCode || "—"}</td>
-            <td style="padding:12px 10px; text-align:center; font-size:13px; color:#334155;">K${s.grade || "—"}</td>
-            <td style="padding:12px 10px; text-align:center; font-size:13px; color:#334155;">${dob}</td>
-            <td style="padding:12px 10px; text-align:center;">
+            <td style="padding:12px 10px; text-align:center; font-size:13px; font-weight:600; color:#64748b;" className="p-2 border border-slate-200">${idx + 1}</td>
+            <td style="padding:12px 10px; font-size:13px; font-weight:700; color:#1E1B4B;" className="p-2 border border-slate-200">${s.fullName || "—"}</td>
+            <td style="padding:12px 10px; text-align:center; font-size:13px; color:#334155;" className="p-2 border border-slate-200">${s.studentCode || "—"}</td>
+            <td style="padding:12px 10px; text-align:center; font-size:13px; color:#334155;" className="p-2 border border-slate-200">K${s.grade || "—"}</td>
+            <td style="padding:12px 10px; text-align:center; font-size:13px; color:#334155;" className="p-2 border border-slate-200">${dob}</td>
+            <td style="padding:12px 10px; text-align:center;" className="p-2 border border-slate-200">
               <span style="display:inline-block; padding:4px 10px; border-radius:50px; font-size:10px; font-weight:700; color:${resColor}; background:${resBg}; border:1px solid ${resBorder}; text-transform:uppercase;">
                 ${resultText}
               </span>
             </td>
-            <td style="padding:12px 10px; font-size:13px; color:#4b5563;">${detailNote}</td>
+            <td style="padding:12px 10px; font-size:13px; color:#4b5563;" className="p-2 border border-slate-200">${detailNote}</td>
           </tr>
         `;
       }).join("");
@@ -181,13 +181,13 @@ body{margin:0;padding:0;background:#f1f5f9;font-family:'Be Vietnam Pro', 'Segoe 
     <!-- KY & DOT INFO -->
     <div style="padding:0 32px 20px 32px;">
       <div style="padding:20px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;">
-        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" className="border border-slate-200 border-collapse">
           <tr>
-            <td width="50%" style="vertical-align:middle;padding-right:12px;">
+            <td width="50%" style="vertical-align:middle;padding-right:12px;" className="p-2 border border-slate-200">
               <div style="font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;">Kỳ Khảo sát</div>
               <div style="font-size:16px;font-weight:800;color:#1E1B4B;margin-top:3px;">${periodName}</div>
             </td>
-            <td width="50%" style="vertical-align:middle;text-align:right;">
+            <td width="50%" style="vertical-align:middle;text-align:right;" className="p-2 border border-slate-200">
               <div style="font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;text-align:right;">Đợt Khảo sát</div>
               <div style="font-size:16px;font-weight:800;color:#1E1B4B;margin-top:3px;text-align:right;">${batchName}</div>
             </td>
@@ -198,35 +198,35 @@ body{margin:0;padding:0;background:#f1f5f9;font-family:'Be Vietnam Pro', 'Segoe 
 
     <!-- STATS CARDS -->
     <div style="padding:0 32px 20px 32px;">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" className="border border-slate-200 border-collapse">
         <tr>
-          <td width="20%" style="padding-right:8px;">
+          <td width="20%" style="padding-right:8px;" className="p-2 border border-slate-200">
             <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;text-align:center;">
               <div style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;">Tổng số HS</div>
               <div style="font-size:20px;font-weight:800;color:#1E1B4B;margin-top:4px;">${totalStudentsCount}</div>
             </div>
           </td>
-          <td width="20%" style="padding-right:8px;">
+          <td width="20%" style="padding-right:8px;" className="p-2 border border-slate-200">
             <div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;padding:12px;text-align:center;">
               <div style="font-size:9px;font-weight:700;color:#047857;text-transform:uppercase;">Đạt / Học thử</div>
               <div style="font-size:20px;font-weight:800;color:#059669;margin-top:4px;">${passed}</div>
             </div>
           </td>
           ${!isPreschool ? `
-          <td width="20%" style="padding-right:8px;">
+          <td width="20%" style="padding-right:8px;" className="p-2 border border-slate-200">
             <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:12px;text-align:center;">
               <div style="font-size:9px;font-weight:700;color:#b45309;text-transform:uppercase;">Đạt cam kết</div>
               <div style="font-size:20px;font-weight:800;color:#d97706;margin-top:4px;">${committed}</div>
             </div>
           </td>
           ` : ""}
-          <td width="20%" style="padding-right:8px;">
+          <td width="20%" style="padding-right:8px;" className="p-2 border border-slate-200">
             <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:12px;text-align:center;">
               <div style="font-size:9px;font-weight:700;color:#b91c1c;text-transform:uppercase;">Không đạt</div>
               <div style="font-size:20px;font-weight:800;color:#dc2626;margin-top:4px;">${failed}</div>
             </div>
           </td>
-          <td width="20%">
+          <td width="20%" className="p-2 border border-slate-200">
             <div style="background:#fffbeb;border:1px solid #fef3c7;border-radius:10px;padding:12px;text-align:center;">
               <div style="font-size:9px;font-weight:700;color:#d97706;text-transform:uppercase;">Chưa duyệt</div>
               <div style="font-size:20px;font-weight:800;color:#b45309;margin-top:4px;">${pending}</div>
@@ -240,16 +240,16 @@ body{margin:0;padding:0;background:#f1f5f9;font-family:'Be Vietnam Pro', 'Segoe 
     <div style="padding:10px 32px 30px 32px;">
       <h2 style="font-size:15px;font-weight:800;color:#1E1B4B;border-left:4px solid #00A6A9;padding-left:12px;margin:0 0 16px;text-transform:uppercase;letter-spacing:0.5px;">Danh sách kết quả học sinh</h2>
       <div style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
-        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;" className="border border-slate-200 border-collapse">
           <thead>
             <tr style="background:#00A6A9;">
-              <th style="padding:12px 10px;text-align:center;font-size:11px;font-weight:800;color:#fff;text-transform:uppercase;width:7%;">STT</th>
-              <th style="padding:12px 10px;text-align:left;font-size:11px;font-weight:800;color:#fff;text-transform:uppercase;">Họ và Tên</th>
-              <th style="padding:12px 10px;text-align:center;font-size:11px;font-weight:800;color:#fff;text-transform:uppercase;width:15%;">Mã HS</th>
-              <th style="padding:12px 10px;text-align:center;font-size:11px;font-weight:800;color:#fff;text-transform:uppercase;width:10%;">Khối</th>
-              <th style="padding:12px 10px;text-align:center;font-size:11px;font-weight:800;color:#fff;text-transform:uppercase;width:15%;">Ngày sinh</th>
-              <th style="padding:12px 10px;text-align:center;font-size:11px;font-weight:800;color:#fff;text-transform:uppercase;width:20%;">Đề xuất</th>
-              <th style="padding:12px 10px;text-align:left;font-size:11px;font-weight:800;color:#fff;text-transform:uppercase;width:20%;">Ghi chú</th>
+              <th style="padding:12px 10px;text-align:center;font-size:11px;font-weight:800;color:#fff;text-transform:uppercase;width:7%;" className="p-2 border border-slate-200">STT</th>
+              <th style="padding:12px 10px;text-align:left;font-size:11px;font-weight:800;color:#fff;text-transform:uppercase;" className="p-2 border border-slate-200">Họ và Tên</th>
+              <th style="padding:12px 10px;text-align:center;font-size:11px;font-weight:800;color:#fff;text-transform:uppercase;width:15%;" className="p-2 border border-slate-200">Mã HS</th>
+              <th style="padding:12px 10px;text-align:center;font-size:11px;font-weight:800;color:#fff;text-transform:uppercase;width:10%;" className="p-2 border border-slate-200">Khối</th>
+              <th style="padding:12px 10px;text-align:center;font-size:11px;font-weight:800;color:#fff;text-transform:uppercase;width:15%;" className="p-2 border border-slate-200">Ngày sinh</th>
+              <th style="padding:12px 10px;text-align:center;font-size:11px;font-weight:800;color:#fff;text-transform:uppercase;width:20%;" className="p-2 border border-slate-200">Đề xuất</th>
+              <th style="padding:12px 10px;text-align:left;font-size:11px;font-weight:800;color:#fff;text-transform:uppercase;width:20%;" className="p-2 border border-slate-200">Ghi chú</th>
             </tr>
           </thead>
           <tbody>
@@ -270,12 +270,12 @@ body{margin:0;padding:0;background:#f1f5f9;font-family:'Be Vietnam Pro', 'Segoe 
 
       <!-- Premium Login Instruction Box -->
       <div style="background: #f0fdfa; border: 1px dashed #0d9488; border-radius: 12px; padding: 16px 20px; text-align: left; max-width: 600px; margin: 0 auto;">
-        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" className="border border-slate-200 border-collapse">
           <tr>
-            <td style="vertical-align: top; width: 32px; padding-top: 2px;">
+            <td style="vertical-align: top; width: 32px; padding-top: 2px;" className="p-2 border border-slate-200">
               <span style="display: inline-block; background: #0d9488; color: #fff; width: 22px; height: 22px; line-height: 22px; border-radius: 50%; text-align: center; font-size: 12px; font-weight: bold;">i</span>
             </td>
-            <td style="vertical-align: top;">
+            <td style="vertical-align: top;" className="p-2 border border-slate-200">
               <div style="font-size: 13px; font-weight: 700; color: #0f766e; margin-bottom: 6px;">Hướng dẫn đăng nhập hệ thống:</div>
               <div style="font-size: 12px; color: #374151; line-height: 1.6;">
                 • Để đăng nhập Hệ thống vui lòng đăng nhập <strong>mã số SKL</strong> của Thầy/Cô.<br>

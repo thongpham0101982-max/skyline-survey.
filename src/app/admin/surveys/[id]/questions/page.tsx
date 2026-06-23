@@ -24,7 +24,7 @@ export default async function SurveyQuestionsPage({ params }) {
     <div className="h-[calc(100vh-100px)] flex flex-col">
       <div className="mb-4 pl-1">
         <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Studio Tao/Chinh Sửa Form</h1>
-        <p className="text-sm font-semibold text-indigo-600 mt-1 uppercase tracking-wider bg-indigo-50 inline-block px-3 py-1 rounded-full border border-indigo-200 shadow-sm">Target: {period.name}</p>
+        <p className="text-sm font-semibold text-indigo-600 mt-1 uppercase tracking-wider inline-block shadow-sm text-xs font-semibold">Target: {period.name}</p>
       </div>
       <SurveyQuestionBuilderClient surveyPeriodId={period.id} initialQuestions={questions} categories={categories} />
     </div>

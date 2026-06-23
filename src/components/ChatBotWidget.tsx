@@ -194,7 +194,7 @@ export function ChatBotWidget({ role = "TEACHER", chatbotCode }: ChatBotWidgetPr
           </div>
 
           {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/50 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar text-xs font-semibold">
             {messages.map((msg, index) => {
               const isBot = msg.role === "model"
               return (
@@ -236,7 +236,7 @@ export function ChatBotWidget({ role = "TEACHER", chatbotCode }: ChatBotWidgetPr
 
             {/* Error Notification */}
             {error && (
-              <div className="p-3 bg-rose-50 border border-rose-100 text-rose-600 rounded-2xl flex items-center gap-2 text-xs">
+              <div className="p-3 text-rose-600 flex items-center gap-2 text-xs text-xs font-semibold">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{error}</span>
               </div>
@@ -247,7 +247,7 @@ export function ChatBotWidget({ role = "TEACHER", chatbotCode }: ChatBotWidgetPr
 
           {/* Gợi ý câu hỏi nhanh */}
           {messages.length === 1 && !isLoading && (
-            <div className="px-4 py-2.5 bg-slate-50 border-t border-slate-100 flex flex-col gap-1.5 shrink-0">
+            <div className="flex flex-col gap-1.5 shrink-0 text-xs font-semibold">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-0.5">Gợi ý câu hỏi nhanh:</p>
               <div className="flex flex-wrap gap-1.5">
                 {sampleQuestions.map((q, idx) => (
@@ -273,7 +273,7 @@ export function ChatBotWidget({ role = "TEACHER", chatbotCode }: ChatBotWidgetPr
               placeholder="Nhập nội dung cần tra cứu..."
               value={input}
               onChange={e => setInput(e.target.value)}
-              className="flex-1 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-xs md:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#00A19A] focus:ring-1 focus:ring-[#00A19A] transition"
+              className="flex-1 text-xs md:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#00A19A] focus:ring-1 focus:ring-[#00A19A] transition text-xs font-semibold"
             />
             <button 
               type="submit"

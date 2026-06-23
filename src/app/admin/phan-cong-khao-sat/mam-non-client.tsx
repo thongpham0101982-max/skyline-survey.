@@ -23,7 +23,7 @@ function Spin() {
 function Empty({ text, sub }: { text: string; sub?: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-24 text-center">
-      <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mb-5 border-2 border-dashed border-slate-200"><UserCheck className="w-10 h-10 text-slate-200" /></div>
+      <div className="w-20 h-20 flex items-center justify-center mb-5 text-xs font-semibold"><UserCheck className="w-10 h-10 text-slate-200" /></div>
       <p className="font-black text-slate-400 text-lg">{text}</p>
       {sub && <p className="text-xs text-slate-300 mt-1 font-bold uppercase tracking-widest">{sub}</p>}
     </div>
@@ -51,12 +51,12 @@ function ConfirmDialog({ open, onClose, onConfirm, message }: { open: boolean; o
     <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center animate-in zoom-in-95 duration-200">
-        <div className="w-14 h-14 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4"><AlertCircle className="w-7 h-7 text-rose-600" /></div>
+        <div className="w-14 h-14 flex items-center justify-center mx-auto mb-4 text-xs font-semibold"><AlertCircle className="w-7 h-7 text-rose-600" /></div>
         <h3 className="text-base font-black text-slate-800 mb-2">Xác nhận</h3>
         <p className="text-sm text-slate-500 mb-6">{message}</p>
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 py-3 border border-slate-200 rounded-2xl text-sm font-bold text-slate-600 hover:bg-slate-50">Hủy</button>
-          <button onClick={() => { onConfirm(); onClose() }} className="flex-1 py-3 bg-rose-600 text-white rounded-2xl text-sm font-bold hover:bg-rose-700 shadow-lg">Xác nhận</button>
+          <button onClick={onClose} className="flex-1 text-sm font-bold text-slate-600 hover:bg-slate-50 text-xs font-semibold">Hủy</button>
+          <button onClick={() => { onConfirm(); onClose() }} className="flex-1 text-white text-sm font-bold hover:bg-rose-700 shadow-lg text-xs font-semibold">Xác nhận</button>
         </div>
       </div>
     </div>
@@ -325,7 +325,7 @@ export function PhanCongMamNonClient({
             {aNotifyingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
             Gửi thông báo tất cả
           </button>
-          <div className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 rounded-lg border border-slate-200">
+          <div className="flex items-center gap-1.5 text-xs font-semibold">
             <Calendar className="w-3.5 h-3.5 text-slate-400" />
             <select value={yearId} onChange={e => { setYearId(e.target.value); setAPeriodId(""); setAssignments([]) }}
               className="bg-transparent text-xs font-bold text-slate-700 outline-none cursor-pointer max-w-[160px]">
@@ -369,7 +369,7 @@ export function PhanCongMamNonClient({
 
                 {/* Thống kê Nhóm tuổi */}
                 {aPeriodId && (
-                  <div className="bg-slate-50 border border-slate-200/60 rounded-2xl p-4.5 space-y-3 animate-in fade-in duration-350">
+                  <div className="p-4.5 space-y-3 animate-in fade-in duration-350 text-xs font-semibold">
                     <div className="flex items-center justify-between border-b border-slate-200/50 pb-2">
                       <div className="flex items-center gap-2">
                         <Users className="w-4 h-4" style={{ color: TEAL }} />
@@ -426,7 +426,7 @@ export function PhanCongMamNonClient({
                 )}
 
                 {!aActiveBatch && (
-                  <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 text-xs text-slate-500 font-medium flex items-start gap-2">
+                  <div className="p-3 text-xs text-slate-500 font-medium flex items-start gap-2 text-xs font-semibold">
                     <Info className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
                     <p>Chọn một Đợt Khảo sát cụ thể để hiển thị bảng ánh xạ nhóm tuổi tương ứng.</p>
                   </div>
@@ -474,7 +474,7 @@ export function PhanCongMamNonClient({
                 <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input type="text" placeholder="Tìm theo tên hoặc mã GV..."
                   value={aSearchTeacher} onChange={e => setASearchTeacher(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 outline-none text-sm font-medium text-slate-700 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-teal-100 transition-all" />
+                  className="w-full pl-10 pr-4 outline-none text-sm font-medium text-slate-700 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-teal-100 transition-all text-xs font-semibold" />
                 {aSearchTeacher && (
                   <button onClick={() => setASearchTeacher("")} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                     <X className="w-3.5 h-3.5" />
@@ -513,7 +513,7 @@ export function PhanCongMamNonClient({
                             {teacherAssigns.length > 0 && (
                               <div className="flex flex-wrap gap-1 mt-1.5">
                                 {teacherAssigns.map((assign: any) => (
-                                  <span key={assign.id} className="text-[9px] font-black uppercase px-2 py-0.5 rounded border border-slate-100 text-slate-500 bg-slate-50">
+                                  <span key={assign.id} className="text-[9px] font-black uppercase text-slate-500 text-xs font-semibold">
                                     {assign.grade}
                                   </span>
                                 ))}
@@ -555,7 +555,7 @@ export function PhanCongMamNonClient({
                     const isNotifying = aNotifyingId === assign.id
 
                     return (
-                      <div key={assign.id} className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl border border-slate-200 hover:bg-white hover:shadow-sm transition-all group">
+                      <div key={assign.id} className="flex items-center justify-between p-4 hover:bg-white hover:shadow-sm transition-all group text-xs font-semibold">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm text-white" style={{ background: TEAL }}>
                             {tName.split(" ").slice(-1)[0].charAt(0)}
@@ -564,7 +564,7 @@ export function PhanCongMamNonClient({
                             <div className="text-sm font-black text-slate-800 flex items-center gap-2">
                               <span>{tName}</span>
                               {t?.departmentRel?.name && (
-                                <span className="text-[9px] font-black uppercase bg-emerald-50 text-emerald-600 border border-emerald-100 px-1.5 py-0.5 rounded tracking-wider">{t.departmentRel.name}</span>
+                                <span className="text-[9px] font-black uppercase text-emerald-600 tracking-wider text-xs font-semibold">{t.departmentRel.name}</span>
                               )}
                             </div>
                             <div className="text-[11px] text-slate-400 font-semibold">{tCode} • {tEmail}</div>
@@ -573,7 +573,7 @@ export function PhanCongMamNonClient({
                                 {assign.grade}
                               </span>
                               {assign.batch && (
-                                <span className="text-[9px] font-black uppercase bg-fuchsia-50 text-fuchsia-600 border border-fuchsia-100 px-2 py-0.5 rounded-full tracking-wider max-w-[150px] truncate">
+                                <span className="text-[9px] font-black uppercase text-fuchsia-600 tracking-wider max-w-[150px] truncate text-xs font-semibold">
                                   {assign.batch.name?.split(" | ")[0]}
                                 </span>
                               )}
@@ -584,12 +584,12 @@ export function PhanCongMamNonClient({
                         <div className="flex gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
                           <button onClick={() => sendTeacherNotification(assign.id, tName)} disabled={isNotifying || !canUpdate}
                             title="Gửi email thông báo"
-                            className="w-9 h-9 flex items-center justify-center bg-white text-slate-500 hover:text-fuchsia-600 hover:bg-fuchsia-50 rounded-xl border border-slate-200 hover:border-fuchsia-200 transition-all disabled:opacity-30">
+                            className="w-9 h-9 flex items-center justify-center text-slate-500 hover:text-fuchsia-600 hover:bg-fuchsia-50 hover:border-fuchsia-200 transition-all disabled:opacity-30 text-xs font-semibold">
                             {isNotifying ? <Loader2 className="w-4 h-4 animate-spin text-fuchsia-500" /> : <Mail className="w-4 h-4" />}
                           </button>
                           <button onClick={() => setConfirm({ msg: `Hủy phân công khảo sát cho giáo viên ${tName}?`, fn: () => deleteAssignment(assign.id, tName) })}
                             disabled={!canDelete} title="Hủy phân công"
-                            className="w-9 h-9 flex items-center justify-center bg-white text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl border border-slate-200 hover:border-rose-200 transition-all disabled:opacity-30">
+                            className="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-200 transition-all disabled:opacity-30 text-xs font-semibold">
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>

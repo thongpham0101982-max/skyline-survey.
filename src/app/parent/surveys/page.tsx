@@ -92,22 +92,22 @@ export default async function ParentSurveysPage() {
                       <p className="text-sm text-slate-500">Lớp: {task.student.class?.className || 'N/A'}</p>
                     </div>
                     {isCompleted ? (
-                      <span className="flex items-center bg-teal-50 text-[#00A19A] text-xs font-bold px-2.5 py-1 rounded-full border border-teal-100">
+                      <span className="flex items-center text-[#00A19A] text-xs font-bold text-xs font-semibold">
                         <CheckCircle2 className="w-3 h-3 mr-1" /> Đã hoàn thành
                       </span>
                     ) : (
-                      <span className="flex items-center bg-amber-50 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-full border border-amber-200">
+                      <span className="flex items-center text-amber-700 text-xs font-bold text-xs font-semibold">
                         <Clock className="w-3 h-3 mr-1" /> Chưa hoàn thành
                       </span>
                     )}
                   </div>
                   
-                  <div className="text-sm text-slate-500 mt-4 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                  <div className="text-sm text-slate-500 mt-4 p-3 text-xs font-semibold">
                     <p>Hạn chót: <span className="font-bold text-slate-700">{new Date(task.period.endDate).toLocaleDateString('vi-VN')}</span></p>
                   </div>
                 </div>
                 
-                <div className="bg-slate-50 px-6 py-4 border-t border-slate-100 flex justify-end">
+                <div className="flex justify-end text-xs font-semibold">
                   {isCompleted ? (
                     <button disabled className="text-sm font-bold text-slate-400 cursor-not-allowed">
                       Đã nộp ngày {task.form?.submissionDateTime ? new Date(task.form.submissionDateTime).toLocaleDateString('vi-VN') : 'N/A'}

@@ -59,7 +59,7 @@ export default async function AdminSurveysPage() {
           </div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Quản lý Khảo sát</h1>
           {error && (
-            <div className="bg-red-50 p-4 rounded-2xl border border-red-100 flex items-center gap-3 text-red-600 font-bold text-xs">
+            <div className="p-4 flex items-center gap-3 text-red-600 font-bold text-xs text-xs font-semibold">
                <AlertCircle className="w-4 h-4" /> Hệ thống đang bận hoặc có lỗi cấu trúc: {error}
             </div>
           )}

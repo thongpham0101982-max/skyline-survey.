@@ -25,12 +25,12 @@ export default async function DebugPage() {
            </div>
         </div>
 
-        <div className="bg-slate-50 p-6 rounded-xl border-2 border-slate-200 mb-8">
+        <div className="p-6 mb-8 text-xs font-semibold">
            <h2 className="font-bold mb-2">Toàn bộ Năm học trong DB:</h2>
            {JSON.stringify(academicYears, null, 2)}
         </div>
         
-        <div className="bg-slate-50 p-6 rounded-xl border-2 border-slate-200">
+        <div className="p-6 text-xs font-semibold">
            <h2 className="font-bold mb-2">Toàn bộ Cơ sở trong DB:</h2>
            {JSON.stringify(campuses, null, 2)}
         </div>

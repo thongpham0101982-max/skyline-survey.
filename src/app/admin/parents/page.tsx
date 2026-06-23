@@ -30,14 +30,14 @@ export default async function ParentAccountsPage() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-4 sm:px-0">
         <div className="space-y-2">
           <div className="flex items-center gap-2 mb-2">
-            <div className="h-0.5 w-6 bg-red-500 rounded-full" />
+            <div className="h-0.5 w-6 text-xs font-semibold" />
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Hệ thống quản trị</span>
           </div>
           <h1 className="text-4xl font-black text-slate-900 tracking-tight leading-none">Danh Mục Tài Khoản PHHS</h1>
           <p className="text-slate-400 font-bold text-sm">Kho lưu trữ và khởi tạo quyền truy cập dành cho Phụ huynh học sinh.</p>
         </div>
         <div className="flex items-center gap-4 bg-white/60 backdrop-blur-md p-4 rounded-3xl border border-white shadow-xl shadow-slate-200/20">
-           <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-500 shadow-inner">
+           <div className="w-12 h-12 flex items-center justify-center text-emerald-500 shadow-inner text-xs font-semibold">
               <ShieldCheck className="w-6 h-6" />
            </div>
            <div className="pr-4">

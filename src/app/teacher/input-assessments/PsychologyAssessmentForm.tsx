@@ -394,7 +394,7 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
     const evaluation = isScoredForm ? getEvaluation(totalScore) : null;
 
     return (
-        <div className="bg-slate-50 min-h-screen p-3 md:p-6 font-sans text-slate-900 border-x">
+        <div className="min-h-screen p-3 md:p-6 font-sans text-slate-900 text-xs font-semibold">
             <div className="max-w-5xl mx-auto space-y-4">
                 {/* Header Profile Section */}
                 <div className="bg-white rounded-2xl p-5 shadow-sm border-2 border-violet-100 flex flex-col md:flex-row gap-5 items-center relative overflow-hidden">
@@ -403,7 +403,7 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
                     </div>
                     <div className="flex-1 text-center md:text-left">
                         <div className="flex justify-center md:justify-start gap-2 items-center mb-1">
-                            <span className="bg-indigo-100 text-indigo-700 px-2.5 py-0.5 rounded text-xs font-bold border border-indigo-200">Khối {rawGrade || "N/A"}</span>
+                            <span className="text-indigo-700 text-xs font-bold text-xs font-semibold">Khối {rawGrade || "N/A"}</span>
                             <span className="text-slate-500 text-xs font-medium">ID: {student?.studentCode}</span>
                         </div>
                         <h1 className="text-xl md:text-2xl font-bold text-slate-900 mb-1">{student?.fullName}</h1>
@@ -429,7 +429,7 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
                             <div className="flex items-center gap-2 pb-3 border-b">
                                 <ClipboardCheck size={18} className="text-indigo-600" />
                                 <h3 className="font-bold text-slate-800 text-sm">Lược sử điểm đánh giá các đợt trước</h3>
-                                <span className="text-[10px] font-bold bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">{pastAssessments.length} đợt</span>
+                                <span className="text-[10px] font-bold text-indigo-700 text-xs font-semibold">{pastAssessments.length} đợt</span>
                             </div>
                             {loadingHistory ? (
                                 <div className="text-xs text-slate-500 py-2">Đang tải lược sử...</div>
@@ -466,13 +466,13 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
                                         const evalInfo = getEvaluation(scoreVal);
 
                                         return (
-                                            <div key={histRec.id} className="border border-slate-200 rounded-xl overflow-hidden shadow-sm transition-all hover:shadow-md bg-slate-50/50">
+                                            <div key={histRec.id} className="overflow-hidden shadow-sm transition-all hover:shadow-md text-xs font-semibold">
                                                 <div 
                                                     onClick={() => setExpandedHistoryId(isExpanded ? null : histRec.id)}
                                                     className="flex flex-col sm:flex-row sm:items-center justify-between p-4 cursor-pointer gap-3 bg-white"
                                                 >
                                                     <div className="flex items-start gap-3">
-                                                        <div className="w-2 h-2 rounded-full bg-indigo-500 mt-2 shrink-0"></div>
+                                                        <div className="w-2 h-2 mt-2 shrink-0 text-xs font-semibold"></div>
                                                         <div>
                                                             <h4 className="font-bold text-slate-800 text-xs sm:text-sm">{histRec.period?.name || "Kỳ khảo sát"}</h4>
                                                             <p className="text-[10px] sm:text-xs text-slate-500 mt-0.5">
@@ -496,7 +496,7 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
                                                 </div>
 
                                                 {isExpanded && (
-                                                    <div className="p-4 border-t border-slate-100 bg-slate-50/30 space-y-3">
+                                                    <div className="p-4 space-y-3 text-xs font-semibold">
                                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                                                             <div className="bg-white p-3 rounded-lg border border-amber-100">
                                                                 <h5 className="font-bold text-amber-800 mb-1">Kết luận sơ bộ:</h5>
@@ -520,7 +520,7 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
 
                 
                 {isScoredForm && (
-                    <div className="bg-indigo-50/50 rounded-xl p-4 border border-indigo-100 shadow-sm text-sm">
+                    <div className="p-4 shadow-sm text-sm text-xs font-semibold">
                         <h3 className="font-bold text-indigo-800 mb-2">5. Thang điểm chung cho mỗi câu hỏi:</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 mb-4">
                             <div className="flex gap-2"><span className="font-bold text-indigo-600 w-4">0</span> <span className="text-slate-700">Không bao giờ / Không có biểu hiện</span></div>
@@ -555,12 +555,12 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
 
                 {/* Question List (Compact Layout) */}
                 <div className="bg-white rounded-2xl shadow-sm border-2 border-teal-100 overflow-hidden">
-                    <div className="bg-slate-50 px-5 py-3 border-b border-slate-200 flex justify-between items-center">
+                    <div className="flex justify-between items-center text-xs font-semibold">
                         <h2 className="font-bold text-slate-700 text-sm flex items-center gap-2">
                             <ChevronRight size={16} className="text-indigo-500" />
                             {sections[activeSection].title}
                         </h2>
-                        <div className="bg-indigo-100 px-3 py-1 rounded-md text-[11px] font-bold text-indigo-700">
+                        <div className="text-[11px] font-bold text-indigo-700 text-xs font-semibold">
                             Điểm phần này: {calculateSectionScore(activeSection)}
                         </div>
                     </div>
@@ -569,7 +569,7 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
                         {currentQuestions.map((q, qIdx) => {
                             const actualIdx = currentOffset + qIdx
                             return (
-                                <div key={qIdx} className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-6 items-center p-4 md:p-5 border-b border-slate-100 hover:bg-slate-50/80 transition-colors">
+                                <div key={qIdx} className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-6 items-center p-4 md:p-5 hover:bg-slate-50/80 transition-colors text-xs font-semibold">
                                     <div className="lg:col-span-5 xl:col-span-6 flex items-start gap-3">
                                         <span className="text-slate-400 font-bold text-sm w-5 shrink-0 mt-0.5">{actualIdx + 1}.</span>
                                         <span className="text-slate-700 text-sm md:text-base font-medium leading-relaxed">{q.text.replace(/^\d+\.\s*/, "")}</span>
@@ -664,7 +664,7 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
                                 </div>
                             )}
                             {progress < 100 && (
-                                <div className="flex-1 p-3 rounded-xl border border-slate-200 bg-slate-50 text-center sm:text-left">
+                                <div className="flex-1 p-3 text-center sm:text-left text-xs font-semibold">
                                     <span className="text-xs font-medium text-slate-500 italic">Vui lòng đánh giá đủ 20 câu hỏi để xem kết quả phân tích mức độ tự động.</span>
                                 </div>
                             )}
@@ -683,7 +683,7 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
                             disabled={isLocked}
                             value={conclusion}
                             onChange={(e) => setConclusion(e.target.value)}
-                            className="flex-1 w-full min-h-[120px] p-4 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-amber-400 focus:ring-2 focus:ring-amber-50 outline-none transition-all text-sm text-slate-700 resize-y"
+                            className="flex-1 w-full min-h-[120px] p-4 focus:bg-white focus:border-amber-400 focus:ring-2 focus:ring-amber-50 outline-none transition-all text-sm text-slate-700 resize-y text-xs font-semibold"
                             placeholder="Nhận định tổng quát..."
                         ></textarea>
                     </div>
@@ -697,7 +697,7 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
                             disabled={isLocked}
                             value={recommendation}
                             onChange={(e) => setRecommendation(e.target.value)}
-                            className="flex-1 w-full min-h-[120px] p-4 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-400 focus:ring-2 focus:ring-emerald-50 outline-none transition-all text-sm text-slate-700 resize-y"
+                            className="flex-1 w-full min-h-[120px] p-4 focus:bg-white focus:border-emerald-400 focus:ring-2 focus:ring-emerald-50 outline-none transition-all text-sm text-slate-700 resize-y text-xs font-semibold"
                             placeholder="Gợi ý can thiệp, hỗ trợ..."
                         ></textarea>
                     </div>
@@ -711,7 +711,7 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
                     </div>
                     
                     {progress === 100 && !isLocked && (
-                        <div className="hidden md:flex text-emerald-600 text-xs font-bold items-center gap-1.5 bg-emerald-50 px-3 py-1.5 rounded-lg">
+                        <div className="hidden md:flex text-emerald-600 text-xs font-bold items-center gap-1.5 text-xs font-semibold">
                             <CheckCircle2 size={14} /> Hoàn tất đánh giá
                         </div>
                     )}
@@ -719,7 +719,7 @@ export default function PsychologyAssessmentForm({ student, onSave, isLocked }: 
                     <button
                         onClick={handleSave}
                         disabled={isSaving || isLocked}
-                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 hover:bg-indigo-700 text-white font-bold text-sm shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed text-xs font-semibold"
                     >
                         {isSaving ? (
                             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>

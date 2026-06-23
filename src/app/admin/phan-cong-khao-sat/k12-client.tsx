@@ -23,7 +23,7 @@ function Spin() {
 function Empty({ icon: Icon, text, sub }: { icon: any; text: string; sub?: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-24 text-center">
-      <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mb-5 border-2 border-dashed border-slate-200"><Icon className="w-10 h-10 text-slate-200" /></div>
+      <div className="w-20 h-20 flex items-center justify-center mb-5 text-xs font-semibold"><Icon className="w-10 h-10 text-slate-200" /></div>
       <p className="font-black text-slate-400 text-lg">{text}</p>
       {sub && <p className="text-xs text-slate-300 mt-1 font-bold uppercase tracking-widest">{sub}</p>}
     </div>
@@ -50,12 +50,12 @@ function ConfirmDialog({ open, onClose, onConfirm, message }: { open: boolean; o
     <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center animate-in zoom-in-95 duration-200">
-        <div className="w-14 h-14 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-rose-200"><AlertCircle className="w-7 h-7 text-rose-600" /></div>
+        <div className="w-14 h-14 flex items-center justify-center mx-auto mb-4 text-xs font-semibold"><AlertCircle className="w-7 h-7 text-rose-600" /></div>
         <h3 className="text-base font-black text-slate-800 mb-2">Xác nhận xóa</h3>
         <p className="text-sm text-slate-500 mb-6">{message}</p>
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 py-3 border border-slate-200 rounded-2xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors">Hủy</button>
-          <button onClick={() => { onConfirm(); onClose() }} className="flex-1 py-3 bg-rose-600 text-white rounded-2xl text-sm font-bold hover:bg-rose-700 shadow-lg shadow-rose-100 transition-all">Xóa</button>
+          <button onClick={onClose} className="flex-1 text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors text-xs font-semibold">Hủy</button>
+          <button onClick={() => { onConfirm(); onClose() }} className="flex-1 text-white text-sm font-bold hover:bg-rose-700 shadow-lg shadow-rose-100 transition-all text-xs font-semibold">Xóa</button>
         </div>
       </div>
     </div>
@@ -354,7 +354,7 @@ export function PhanCongK12Client({
       {/* Header */}
       <div className="bg-white border border-slate-200 shadow-sm rounded-xl px-5 py-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center flex-shrink-0">
+          <div className="w-10 h-10 flex items-center justify-center flex-shrink-0 text-xs font-semibold">
             <UserCheck className="w-5 h-5 text-white" />
           </div>
           <div>
@@ -366,7 +366,7 @@ export function PhanCongK12Client({
           <button onClick={fetchPeriods} className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all">
             <RefreshCw className="w-4 h-4" />
           </button>
-          <div className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 rounded-lg border border-slate-200">
+          <div className="flex items-center gap-1.5 text-xs font-semibold">
             <Calendar className="w-3.5 h-3.5 text-slate-400" />
             <select value={yearId} onChange={e => { setYearId(e.target.value); setAsPeriodId(""); setAssignments([]) }} className="bg-transparent text-xs font-bold text-slate-700 outline-none cursor-pointer max-w-[160px]">
               {academicYears.filter(ay => !ay.isOff).map(ay => (
@@ -384,11 +384,11 @@ export function PhanCongK12Client({
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left: Config */}
           <div className="bg-white rounded-[2rem] border-2 border-slate-100 shadow-sm overflow-hidden flex flex-col">
-            <div className="h-1.5 bg-indigo-500 w-full flex-shrink-0" />
+            <div className="h-1.5 w-full flex-shrink-0 text-xs font-semibold" />
             <div className="p-8 space-y-8 flex-1">
               <div>
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="w-7 h-7 bg-indigo-500 rounded-full flex items-center justify-center text-[11px] font-black text-white shadow-lg shadow-indigo-100">1</div>
+                  <div className="w-7 h-7 flex items-center justify-center text-[11px] font-black text-white shadow-lg shadow-indigo-100 text-xs font-semibold">1</div>
                   <span className="font-black text-slate-800 tracking-tight">Kỳ Khảo sát & Người phụ trách</span>
                 </div>
                 <div className="space-y-5">
@@ -407,7 +407,7 @@ export function PhanCongK12Client({
 
                   {/* Thống kê theo Khối */}
                   {asPeriodId && (
-                    <div className="bg-slate-50 border border-slate-200/60 rounded-2xl p-4.5 space-y-3 animate-in fade-in duration-350">
+                    <div className="p-4.5 space-y-3 animate-in fade-in duration-350 text-xs font-semibold">
                       <div className="flex items-center justify-between border-b border-slate-200/50 pb-2">
                         <div className="flex items-center gap-2">
                           <Users className="w-4 h-4 text-indigo-600" />
@@ -429,7 +429,7 @@ export function PhanCongK12Client({
                           {Object.entries(studentStats).map(([grade, count]) => (
                             <div key={grade} className="flex items-center justify-between bg-white border border-slate-100 px-3 py-2.5 rounded-xl text-xs shadow-sm">
                               <span className="font-bold text-slate-600 truncate mr-2" title={grade}>{grade}</span>
-                              <span className="text-[10px] font-black px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded-full flex-shrink-0">
+                              <span className="text-[10px] font-black text-indigo-600 flex-shrink-0 text-xs font-semibold">
                                 {count} HS
                               </span>
                             </div>
@@ -455,7 +455,7 @@ export function PhanCongK12Client({
                   {asTeacherId && (() => {
                     const currentTeacherAssigns = assignments.filter(a => a.userId === asTeacherId)
                     return (
-                      <div className="p-3.5 bg-slate-50/80 border border-slate-200/60 rounded-xl space-y-2 animate-in fade-in duration-300">
+                      <div className="p-3.5 space-y-2 animate-in fade-in duration-300 text-xs font-semibold">
                         <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
                           <BookOpen className="w-3.5 h-3.5 text-[#00A99D]" /> 
                           <span>Phân công hiện tại của GV</span>
@@ -485,11 +485,11 @@ export function PhanCongK12Client({
 
           {/* Right: Scope */}
           <div className="bg-white rounded-[2rem] border-2 border-slate-100 shadow-sm overflow-hidden flex flex-col">
-            <div className="h-1.5 bg-emerald-500 w-full flex-shrink-0" />
+            <div className="h-1.5 w-full flex-shrink-0 text-xs font-semibold" />
             <div className="p-8 space-y-8 flex-1">
               <div>
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="w-7 h-7 bg-emerald-500 rounded-full flex items-center justify-center text-[11px] font-black text-white shadow-lg shadow-emerald-100">2</div>
+                  <div className="w-7 h-7 flex items-center justify-center text-[11px] font-black text-white shadow-lg shadow-emerald-100 text-xs font-semibold">2</div>
                   <span className="font-black text-slate-800 tracking-tight">Phạm vi Phân công</span>
                 </div>
                 <div className="space-y-8">
@@ -497,7 +497,7 @@ export function PhanCongK12Client({
                   <div>
                     <div className="flex items-center justify-between mb-3 px-1">
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><BookOpen className="w-3.5 h-3.5" /> Môn khảo sát *</label>
-                      <button onClick={() => setAsSelSubjects(asSelSubjects.length === initialSubjects.length ? [] : initialSubjects.map(s => s.id))} className="text-[10px] font-black text-indigo-500 hover:bg-indigo-50 px-2 py-1 rounded-lg uppercase tracking-wider transition-colors">
+                      <button onClick={() => setAsSelSubjects(asSelSubjects.length === initialSubjects.length ? [] : initialSubjects.map(s => s.id))} className="text-[10px] font-black text-indigo-500 hover:bg-indigo-50 uppercase tracking-wider transition-colors text-xs font-semibold">
                         {asSelSubjects.length === initialSubjects.length ? "Bỏ chọn hết" : "Chọn tất cả"}
                       </button>
                     </div>
@@ -513,10 +513,10 @@ export function PhanCongK12Client({
 
                   <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                     {/* Grades */}
-                    <div className="bg-slate-50/50 p-6 rounded-3xl border border-slate-100">
+                    <div className="p-6 text-xs font-semibold">
                       <div className="flex items-center justify-between mb-4">
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Layers className="w-3.5 h-3.5" /> Khối *</label>
-                        <button onClick={() => setAsSelGrades(asSelGrades.length === activeGrades.length ? [] : activeGrades)} className="text-[9px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">Chọn hết</button>
+                        <button onClick={() => setAsSelGrades(asSelGrades.length === activeGrades.length ? [] : activeGrades)} className="text-[9px] font-black text-emerald-600 text-xs font-semibold">Chọn hết</button>
                       </div>
                       <div className="grid grid-cols-4 gap-2">
                         {activeGrades.map(g => (
@@ -529,10 +529,10 @@ export function PhanCongK12Client({
                     </div>
 
                     {/* Systems */}
-                    <div className="bg-slate-50/50 p-6 rounded-3xl border border-slate-100">
+                    <div className="p-6 text-xs font-semibold">
                       <div className="flex items-center justify-between mb-4">
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><GraduationCap className="w-3.5 h-3.5" /> Hệ học *</label>
-                        <button onClick={() => setAsSelSystems(asSelSystems.length === currentEduSystems.length ? [] : currentEduSystems.map((es: any) => es.code))} className="text-[9px] font-black text-amber-600 bg-amber-50 px-2 py-1 rounded-lg">Chọn hết</button>
+                        <button onClick={() => setAsSelSystems(asSelSystems.length === currentEduSystems.length ? [] : currentEduSystems.map((es: any) => es.code))} className="text-[9px] font-black text-amber-600 text-xs font-semibold">Chọn hết</button>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {currentEduSystems.map((es: any) => (
@@ -564,10 +564,10 @@ export function PhanCongK12Client({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-2">
             <div className="flex items-center gap-3">
               <h3 className="text-base font-black text-slate-800 flex items-center gap-2"><Search className="w-5 h-5 text-indigo-500" /> Danh sách đã Phân công</h3>
-              {asFilterBatchId && <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs font-black">{groupedAssignments.length} nhóm phân công</span>}
+              {asFilterBatchId && <span className="text-indigo-600 text-xs font-black text-xs font-semibold">{groupedAssignments.length} nhóm phân công</span>}
             </div>
             {asPeriodId && (
-              <div className="flex flex-wrap items-center gap-3 self-end sm:self-auto bg-slate-50 border border-slate-100 rounded-2xl px-4 py-2">
+              <div className="flex flex-wrap items-center gap-3 self-end sm:self-auto text-xs font-semibold">
                 <div className="flex items-center gap-2">
                   <Filter className="w-4 h-4 text-indigo-500" />
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Lọc đợt:</span>
@@ -579,7 +579,7 @@ export function PhanCongK12Client({
                 </div>
                 {asFilterBatchId && (
                   <button onClick={sendAllNotifications} disabled={asNotifyingAll || groupedAssignments.length === 0 || !canUpdate}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-xl text-xs font-black hover:bg-indigo-700 transition-all shadow-sm disabled:opacity-50"
+                    className="flex items-center gap-1.5 text-white text-xs font-black hover:bg-indigo-700 transition-all shadow-sm disabled:opacity-50 text-xs font-semibold"
                     title="Gửi email thông báo phân công cho tất cả giáo viên">
                     {asNotifyingAll ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
                     Gửi email hàng loạt
@@ -592,7 +592,7 @@ export function PhanCongK12Client({
           <div className="bg-white border border-slate-200 rounded-[2rem] shadow-sm overflow-hidden">
             {!asFilterBatchId ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
-                <div className="w-16 h-16 bg-teal-50 rounded-full flex items-center justify-center mb-4"><Filter className="w-8 h-8 text-[#00A19A]" /></div>
+                <div className="w-16 h-16 flex items-center justify-center mb-4 text-xs font-semibold"><Filter className="w-8 h-8 text-[#00A19A]" /></div>
                 <p className="font-black text-slate-500 text-sm">Vui lòng chọn Đợt lọc</p>
                 <p className="text-xs text-slate-400 mt-1 font-medium">Chọn một Đợt ở bộ lọc phía trên để hiển thị danh sách giáo viên đã được phân công</p>
               </div>
@@ -600,54 +600,54 @@ export function PhanCongK12Client({
               <Empty icon={UserPlus} text="Chưa có phân công nào" sub="Sử dụng form bên trên để tiến hành phân công GV" />
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left whitespace-nowrap">
-                  <thead className="bg-slate-50 border-b border-slate-100">
+                <table className="w-full text-left whitespace-nowrap border-collapse">
+                  <thead className="text-xs font-semibold">
                     <tr>
-                      <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Giáo viên</th>
-                      <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Môn học</th>
-                      <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Khối</th>
-                      <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Hệ học</th>
-                      <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Thao tác</th>
+                      <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">Giáo viên</th>
+                      <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">Môn học</th>
+                      <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">Khối</th>
+                      <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">Hệ học</th>
+                      <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right border border-slate-200">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
                     {groupedAssignments.map(a => (
-                      <tr key={a.id} className="group hover:bg-slate-50/70 transition-colors">
-                        <td className="p-5">
+                      <tr key={a.id} className="group hover:bg-slate-50/70 transition-colors text-xs font-semibold">
+                        <td className="p-2 border border-slate-200">
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 font-black text-xs">{a.user?.fullName?.charAt(0)}</div>
+                            <div className="w-9 h-9 flex items-center justify-center text-indigo-600 font-black text-xs text-xs font-semibold">{a.user?.fullName?.charAt(0)}</div>
                             <div>
                               <p className="text-sm font-black text-slate-700">{a.user?.fullName}</p>
                               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{a.batch?.name || "Tất cả đợt"}</p>
                             </div>
                           </div>
                         </td>
-                        <td className="p-5 px-6">
+                        <td className="p-2 p-2 border border-slate-200">
                           <div className="flex flex-wrap gap-1">
                             {a.subjects.map((sub: string) => <span key={sub} className="px-3 py-1 bg-white border border-indigo-100 rounded-lg text-xs font-black text-indigo-600 shadow-sm">{sub}</span>)}
                           </div>
                         </td>
-                        <td className="p-5">
+                        <td className="p-2 border border-slate-200">
                           <div className="flex flex-wrap gap-1">
                             {a.grades.map((g: string) => <span key={g} className="text-xs font-black text-slate-600 bg-slate-100 px-2 py-1 rounded-md">{g}</span>)}
                           </div>
                         </td>
-                        <td className="p-5">
+                        <td className="p-2 border border-slate-200">
                           <div className="flex flex-wrap gap-1">
-                            {a.educationSystems.map((sys: string) => <span key={sys} className="px-2 py-0.5 border border-amber-100 bg-amber-50 text-amber-700 rounded-md text-[10px] font-black uppercase">{sys}</span>)}
+                            {a.educationSystems.map((sys: string) => <span key={sys} className="text-amber-700 text-[10px] font-black uppercase text-xs font-semibold">{sys}</span>)}
                           </div>
                         </td>
-                        <td className="p-5 text-right flex items-center justify-end gap-1">
+                        <td className="p-2 text-right flex items-center justify-end gap-1 border border-slate-200">
                           <button onClick={() => sendTeacherNotification(a)} disabled={asNotifyingId === a.id || !canUpdate}
-                            className="p-2.5 text-slate-300 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all disabled:opacity-30" title="Gửi email thông báo">
+                            className="p-2.5 text-slate-300 hover:text-emerald-600 hover:bg-emerald-50 transition-all disabled:opacity-30 text-xs font-semibold" title="Gửi email thông báo">
                             {asNotifyingId === a.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
                           </button>
                           <button onClick={() => openEditAssignment(a)} disabled={!canUpdate}
-                            className="p-2.5 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all disabled:opacity-30">
+                            className="p-2.5 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 transition-all disabled:opacity-30 text-xs font-semibold">
                             <Edit2 className="w-4 h-4" />
                           </button>
                           <button onClick={() => setConfirm({ msg: `Xóa phân công của GV ${a.user?.fullName}?`, fn: () => deleteAssignment(a.ids) })} disabled={!canDelete}
-                            className="p-2.5 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all disabled:opacity-30">
+                            className="p-2.5 text-slate-300 hover:text-rose-600 hover:bg-rose-50 transition-all disabled:opacity-30 text-xs font-semibold">
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </td>

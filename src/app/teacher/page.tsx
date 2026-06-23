@@ -130,7 +130,7 @@ export default function TeacherDashboard() {
             </h3>
           </div>
           <div className="space-y-3">
-            <Link href="/teacher/input-assessments?type=general" className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50 hover:bg-[#F0FDFA] hover:border-[#99F6E4] transition-colors group">
+            <Link href="/teacher/input-assessments?type=general" className="flex items-center justify-between p-4 hover:bg-[#F0FDFA] hover:border-[#99F6E4] transition-colors group text-xs font-semibold">
               <div>
                 <h4 className="font-bold text-slate-700 group-hover:text-[#00A19A]">Nhập kết quả Khảo sát</h4>
                 <p className="text-xs text-slate-500 mt-1">Cập nhật điểm số và nhận xét học sinh</p>
@@ -139,7 +139,7 @@ export default function TeacherDashboard() {
                 <ArrowRight className="w-4 h-4" />
               </div>
             </Link>
-            <Link href="/teacher/classes" className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-200 transition-colors group">
+            <Link href="/teacher/classes" className="flex items-center justify-between p-4 hover:bg-indigo-50 hover:border-indigo-200 transition-colors group text-xs font-semibold">
               <div>
                 <h4 className="font-bold text-slate-700 group-hover:text-indigo-600">Lớp học của tôi</h4>
                 <p className="text-xs text-slate-500 mt-1">Quản lý và xem danh sách học sinh</p>

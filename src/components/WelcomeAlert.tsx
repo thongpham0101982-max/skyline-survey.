@@ -32,7 +32,7 @@ export function WelcomeAlert({ name }: { name: string }) {
           </div>
 
           <div className="flex items-center gap-2 w-full md:w-auto">
-            <button onClick={() => setIsModalOpen(true)} className="flex-1 md:flex-none px-4 py-2 bg-white text-[#0A3230] rounded-lg font-bold text-xs shadow-sm hover:bg-slate-50 transition-all flex items-center justify-center gap-1.5">
+            <button onClick={() => setIsModalOpen(true)} className="flex-1 md:flex-none text-[#0A3230] font-bold text-xs shadow-sm hover:bg-slate-50 transition-all flex items-center justify-center gap-1.5 text-xs font-semibold">
               <KeyRound className="w-3.5 h-3.5" />
               Đổi mật khẩu
             </button>

@@ -145,31 +145,31 @@ export default async function TeacherClassDetailPage({ params }: any) {
       <div className="bg-white rounded-xl shadow-sm border-2 border-violet-100 p-6 flex flex-col mt-8">
         <h3 className="text-xl font-bold mb-4">Trạng thái Khảo sát theo Học sinh</h3>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-slate-50 text-slate-600 border-b border-slate-200">
+          <table className="w-full text-sm text-left border-collapse">
+            <thead className="text-slate-600 text-xs font-semibold">
               <tr>
-                <th className="px-4 py-3 font-semibold rounded-tl-lg">Mã Học sinh</th>
-                <th className="px-4 py-3 font-semibold">Họ và Tên</th>
-                <th className="px-4 py-3 font-semibold">Số TK Phụ huynh</th>
-                <th className="px-4 py-3 font-semibold rounded-tr-lg">Trạng thái</th>
+                <th className="p-2 p-2 font-semibold rounded-tl-lg border border-slate-200">Mã Học sinh</th>
+                <th className="p-2 p-2 font-semibold border border-slate-200">Họ và Tên</th>
+                <th className="p-2 p-2 font-semibold border border-slate-200">Số TK Phụ huynh</th>
+                <th className="p-2 p-2 font-semibold rounded-tr-lg border border-slate-200">Trạng thái</th>
               </tr>
             </thead>
             <tbody>
               {classInfo.students.length === 0 ? (
-                <tr><td colSpan={4} className="text-center py-6 text-slate-500">Chưa có học sinh nào trong lớp.</td></tr>
+                <tr><td colSpan={4} className="text-center p-2 text-slate-500 border border-slate-200">Chưa có học sinh nào trong lớp.</td></tr>
               ) : (
                 classInfo.students.map((student) => {
                   const studentForms = forms.filter(f => f.studentId === student.id)
                   const hasSubmitted = studentForms.some(f => f.status === "SUBMITTED")
                   
                   return (
-                    <tr key={student.id} className="border-b last:border-b-0 border-slate-100 hover:bg-slate-50 transition-colors">
-                      <td className="px-4 py-4 font-medium text-slate-900">{student.studentCode}</td>
-                      <td className="px-4 py-4 font-medium text-slate-700">{student.studentName}</td>
-                      <td className="px-4 py-4">{student.parents.length}</td>
-                      <td className="px-4 py-4">
+                    <tr key={student.id} className="last:border-b-0 hover:bg-slate-50 transition-colors text-xs font-semibold">
+                      <td className="p-2 p-2 font-medium text-slate-900 border border-slate-200">{student.studentCode}</td>
+                      <td className="p-2 p-2 font-medium text-slate-700 border border-slate-200">{student.studentName}</td>
+                      <td className="p-2 p-2 border border-slate-200">{student.parents.length}</td>
+                      <td className="p-2 p-2 border border-slate-200">
                         {hasSubmitted ? (
-                          <a href={`/teacher/classes/${classId}/${studentForms.find(f => f.status === "SUBMITTED" || f.status === "ĐÃ HOÀN THÀNH")?.id}`} className="inline-block bg-teal-50 text-[#00A19A] border border-teal-100 hover:bg-teal-100 hover:text-[#008c85] px-3 py-1.5 rounded-full text-xs font-bold tracking-wide transition-colors cursor-pointer">ĐÃ HOÀN THÀNH (XEM)</a>
+                          <a href={`/teacher/classes/${classId}/${studentForms.find(f => f.status === "SUBMITTED" || f.status === "ĐÃ HOÀN THÀNH")?.id}`} className="inline-block text-[#00A19A] hover:bg-teal-100 hover:text-[#008c85] text-xs font-bold tracking-wide transition-colors cursor-pointer text-xs font-semibold">ĐÃ HOÀN THÀNH (XEM)</a>
                         ) : (
                           <span className="bg-slate-100 text-slate-500 border border-slate-200 px-3 py-1.5 rounded-full text-xs font-bold tracking-wide">CHƯA KHẢO SÁT</span>
                         )}

@@ -207,20 +207,20 @@ export async function POST(req: NextRequest) {
             <title>Phân công Khảo sát Năng lực Mầm non</title>
           </head>
           <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; color: #334155;">
-            <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; padding: 20px 0;">
+            <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; padding: 20px 0;" className="border border-slate-200 border-collapse">
               <tr>
-                <td align="center">
-                  <table width="650" border="0" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); border: 1px solid #e2e8f0;">
+                <td align="center" className="p-2 border border-slate-200">
+                  <table width="650" border="0" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); border: 1px solid #e2e8f0;" className="border border-slate-200 border-collapse">
                     <!-- Header -->
                     <tr>
-                      <td style="background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%); padding: 35px 30px; text-align: center;">
+                      <td style="background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%); padding: 35px 30px; text-align: center;" className="p-2 border border-slate-200">
                         <h1 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: 800; letter-spacing: -0.5px;">THÔNG BÁO PHÂN CÔNG KHẢO SÁT</h1>
                         <p style="margin: 5px 0 0 0; color: #fdf2f8; font-size: 13px; font-weight: 500; text-transform: uppercase; tracking-wider: 1px;">Bậc Mầm non - Hệ thống Trường Sky-Line</p>
                       </td>
                     </tr>
                     <!-- Greetings -->
                     <tr>
-                      <td style="padding: 30px 30px 15px 30px;">
+                      <td style="padding: 30px 30px 15px 30px;" className="p-2 border border-slate-200">
                         <p style="margin: 0; font-size: 15px; font-weight: 700; color: #1e293b;">Kính gửi Thầy/Cô ${user.fullName},</p>
                         <p style="margin: 10px 0 0 0; font-size: 14px; color: #475569; line-height: 1.6;">
                           Ban Khảo thí xin thông báo Thầy/Cô đã được phân công thực hiện đánh giá năng lực đầu vào cho các bé bậc Mầm non. Chi tiết thông tin phân công như sau:
@@ -229,8 +229,8 @@ export async function POST(req: NextRequest) {
                     </tr>
                     <!-- Assignment Card -->
                     <tr>
-                      <td style="padding: 0 30px;">
-                        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f5f3ff; border-radius: 12px; border: 1px solid #ddd6fe; padding: 20px;">
+                      <td style="padding: 0 30px;" className="p-2 border border-slate-200">
+                        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f5f3ff; border-radius: 12px; border: 1px solid #ddd6fe; padding: 20px;" className="border border-slate-200 border-collapse">
                           <tr>
                             <td style="padding-bottom: 10px; border-bottom: 1px dashed #c084fc;">
                               <span style="font-size: 11px; font-weight: bold; color: #7c3aed; text-transform: uppercase;">Kỳ Khảo sát</span>
@@ -252,7 +252,7 @@ export async function POST(req: NextRequest) {
                           </tr>
                           ` : ""}
                           <tr>
-                            <td style="padding-top: 10px;">
+                            <td style="padding-top: 10px;" className="p-2 border border-slate-200">
                               <span style="font-size: 11px; font-weight: bold; color: #7c3aed; text-transform: uppercase;">Nhóm tuổi được phân công</span>
                               <div style="font-size: 14px; font-weight: bold; color: #1e1b4b; margin-top: 2px;">${gradeLabel}</div>
                             </td>
@@ -262,7 +262,7 @@ export async function POST(req: NextRequest) {
                     </tr>
                     <!-- Action Link -->
                     <tr>
-                      <td style="padding: 25px 30px; text-align: center;">
+                      <td style="padding: 25px 30px; text-align: center;" className="p-2 border border-slate-200">
                         <p style="margin: 0 0 15px 0; font-size: 13px; color: #64748b; font-style: italic;">
                           Vui lòng truy cập cổng thông tin khảo sát để cập nhật điểm và nhận xét cho các bé.
                         </p>

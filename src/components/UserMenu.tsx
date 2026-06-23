@@ -59,11 +59,11 @@ export function UserMenu({ session }: UserMenuProps) {
         <div className="relative" ref={notifRef}>
           <button 
             onClick={handleOpenNotifs}
-            className="p-2.5 bg-white rounded-full border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors focus:outline-none group relative"
+            className="p-2.5 shadow-sm hover:bg-slate-50 transition-colors focus:outline-none group relative text-xs font-semibold"
           >
             <Bell className="w-5 h-5 text-slate-700 group-hover:text-[#1E8B87] transition-colors" />
             {unread > 0 && (
-              <span className="absolute top-0 right-0 w-3 h-3 bg-rose-500 border-2 border-white rounded-full translate-x-0.5 -translate-y-0.5"></span>
+              <span className="absolute top-0 right-0 w-3 h-3 translate-x-0.5 -translate-y-0.5 text-xs font-semibold"></span>
             )}
           </button>
 
@@ -73,7 +73,7 @@ export function UserMenu({ session }: UserMenuProps) {
                 <h3 className="font-bold text-base flex items-center gap-2"><Bell className="w-4 h-4" /> Thông báo hệ thống</h3>
                 <button onClick={() => setShowNotifs(false)} className="p-1 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"><X className="w-4 h-4" /></button>
               </div>
-              <div className="max-h-[350px] overflow-y-auto bg-slate-50">
+              <div className="max-h-[350px] overflow-y-auto text-xs font-semibold">
                 {notifs.length === 0 ? (
                   <div className="p-8 text-center text-slate-400 font-medium">
                     <Bell className="w-10 h-10 mx-auto text-slate-200 mb-2" />
@@ -132,7 +132,7 @@ export function UserMenu({ session }: UserMenuProps) {
                     setIsOpen(false);
                     setIsModalOpen(true);
                   }}
-                  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-600 hover:text-[#1E8B87] hover:bg-slate-50 transition-colors"
+                  className="w-full flex items-center gap-2 text-sm text-slate-600 hover:text-[#1E8B87] hover:bg-slate-50 transition-colors text-xs font-semibold"
                 >
                   <KeyRound className="w-4 h-4" />
                   Đổi mật khẩu
@@ -141,7 +141,7 @@ export function UserMenu({ session }: UserMenuProps) {
                 <div className="border-t border-slate-50 mt-1 pt-1">
                   <button
                     onClick={() => signOut({ callbackUrl: "/login" })}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                    className="w-full flex items-center gap-2 text-sm text-red-600 hover:bg-red-50 transition-colors text-xs font-semibold"
                   >
                     <LogOut className="w-4 h-4" />
                     Đăng xuất

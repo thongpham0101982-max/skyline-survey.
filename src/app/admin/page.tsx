@@ -72,8 +72,8 @@ export default function AdminDashboard() {
           <p className="text-slate-500 text-sm font-medium mt-0.5">Năm học đang hoạt động: <span className="font-bold text-[#00A19A]">{finalMetrics.academicYearName || "---"}</span> | Số liệu thống kê chi tiết theo phạm vi Cơ sở của bạn.</p>
         </div>
         {campusIds.length > 0 && (
-          <span className="px-3 py-1 text-[10px] font-black bg-indigo-50 border border-indigo-100 text-indigo-700 rounded-full uppercase tracking-wider shadow-sm flex items-center gap-1.5 self-start md:self-auto">
-            <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse"></span>
+          <span className="text-[10px] font-black text-indigo-700 uppercase tracking-wider shadow-sm flex items-center gap-1.5 self-start md:self-auto text-xs font-semibold">
+            <span className="w-1.5 h-1.5 animate-pulse text-xs font-semibold"></span>
             Đang lọc: {campusIds.length} Cơ sở
           </span>
         )}
@@ -84,9 +84,9 @@ export default function AdminDashboard() {
         
         {/* CARD 1: TỔNG HỌC SINH */}
         <div className="relative bg-white rounded-2xl border-2 border-blue-100 p-5 shadow-sm hover:shadow-md transition-all duration-300 group overflow-hidden">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-full -mt-8 -mr-8 mix-blend-multiply filter blur-xl opacity-70 group-hover:scale-110 transition-transform"></div>
+          <div className="absolute top-0 right-0 w-24 h-24 -mt-8 -mr-8 mix-blend-multiply filter blur-xl opacity-70 group-hover:scale-110 transition-transform text-xs font-semibold"></div>
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-sm">
+            <div className="w-12 h-12 flex items-center justify-center text-blue-600 shadow-sm text-xs font-semibold">
               <Users className="w-6 h-6" />
             </div>
             <div>
@@ -98,9 +98,9 @@ export default function AdminDashboard() {
 
         {/* CARD 2: SỐ LỚP CƠ SỞ */}
         <div className="relative bg-white rounded-2xl border-2 border-indigo-100 p-5 shadow-sm hover:shadow-md transition-all duration-300 group overflow-hidden">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-50 rounded-full -mt-8 -mr-8 mix-blend-multiply filter blur-xl opacity-70 group-hover:scale-110 transition-transform"></div>
+          <div className="absolute top-0 right-0 w-24 h-24 -mt-8 -mr-8 mix-blend-multiply filter blur-xl opacity-70 group-hover:scale-110 transition-transform text-xs font-semibold"></div>
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shadow-sm">
+            <div className="w-12 h-12 flex items-center justify-center text-indigo-600 shadow-sm text-xs font-semibold">
               <Layers className="w-6 h-6" />
             </div>
             <div>
@@ -112,9 +112,9 @@ export default function AdminDashboard() {
 
         {/* CARD 3: HỌC SINH LƯU CHUYỂN */}
         <div className="relative bg-white rounded-2xl border-2 border-amber-100 p-5 shadow-sm hover:shadow-md transition-all duration-300 group overflow-hidden">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-amber-50 rounded-full -mt-8 -mr-8 mix-blend-multiply filter blur-xl opacity-70 group-hover:scale-110 transition-transform"></div>
+          <div className="absolute top-0 right-0 w-24 h-24 -mt-8 -mr-8 mix-blend-multiply filter blur-xl opacity-70 group-hover:scale-110 transition-transform text-xs font-semibold"></div>
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shadow-sm">
+            <div className="w-12 h-12 flex items-center justify-center text-amber-600 shadow-sm text-xs font-semibold">
               <ArrowRightLeft className="w-6 h-6" />
             </div>
             <div>
@@ -126,9 +126,9 @@ export default function AdminDashboard() {
 
         {/* CARD 4: TỶ LỆ HOÀN THÀNH */}
         <div className="relative bg-white rounded-2xl border-2 border-emerald-100 p-5 shadow-sm hover:shadow-md transition-all duration-300 group overflow-hidden">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-full -mt-8 -mr-8 mix-blend-multiply filter blur-xl opacity-70 group-hover:scale-110 transition-transform"></div>
+          <div className="absolute top-0 right-0 w-24 h-24 -mt-8 -mr-8 mix-blend-multiply filter blur-xl opacity-70 group-hover:scale-110 transition-transform text-xs font-semibold"></div>
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shadow-sm">
+            <div className="w-12 h-12 flex items-center justify-center text-emerald-600 shadow-sm text-xs font-semibold">
               <ClipboardCheck className="w-6 h-6" />
             </div>
             <div>
@@ -145,7 +145,7 @@ export default function AdminDashboard() {
         {/* SECTION LEFT: SURVEY RESULTS BY GRADE */}
         <div className="bg-white rounded-2xl border-2 border-violet-100 p-6 shadow-sm space-y-6">
           <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-            <div className="w-10 h-10 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center">
+            <div className="w-10 h-10 text-violet-600 flex items-center justify-center text-xs font-semibold">
               <TrendingUp className="w-5 h-5" />
             </div>
             <div>
@@ -164,7 +164,7 @@ export default function AdminDashboard() {
                     <span className="font-black text-indigo-600">{g._count} học sinh</span>
                   </div>
                   <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                    <div className="bg-indigo-500 h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(100, (g._count / (finalMetrics.totalStudents || 1)) * 100)}%` }}></div>
+                    <div className="h-full transition-all duration-500 text-xs font-semibold" style={{ width: `${Math.min(100, (g._count / (finalMetrics.totalStudents || 1)) * 100)}%` }}></div>
                   </div>
                 </div>
               )
@@ -178,7 +178,7 @@ export default function AdminDashboard() {
         {/* SECTION RIGHT: ADMISSION RESULTS */}
         <div className="bg-white rounded-2xl border-2 border-emerald-100 p-6 shadow-sm space-y-6">
           <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <div className="w-10 h-10 text-emerald-600 flex items-center justify-center text-xs font-semibold">
               <Award className="w-5 h-5" />
             </div>
             <div>
