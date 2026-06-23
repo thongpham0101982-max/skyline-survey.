@@ -1701,11 +1701,11 @@ export function StudentInfoClient({
             </table>
           ) : (
             /* Mầm non Preschool Table (Matched style of original preschool Ds Trẻ) */
-            <table className="w-full text-left text-sm whitespace-nowrap border-collapse">
-              <thead className="bg-[#00A19A]/5 border-b border-slate-300">
+            <table className="w-full text-left text-sm whitespace-nowrap border border-slate-200 border-collapse">
+              <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
                   {subTab === "info" && (
-                    <th className="p-4 w-12 text-center">
+                    <th className="p-2 border border-slate-200 w-12 text-center">
                       <input
                         type="checkbox"
                         className="w-4 h-4 rounded accent-[#00A19A]"
@@ -1714,20 +1714,20 @@ export function StudentInfoClient({
                       />
                     </th>
                   )}
-                  <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-14">STT</th>
-                  <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-28">Mã bé</th>
-                  <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Họ và tên</th>
-                  <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-24">Ngày sinh</th>
-                  <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-24">Giới tính</th>
-                  <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-28">Nhóm tuổi</th>
-                  <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-36">Cơ sở</th>
+                  <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 w-14">STT</th>
+                  <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 w-28">Mã bé</th>
+                  <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600">Họ và tên</th>
+                  <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 w-24">Ngày sinh</th>
+                  <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 w-24">Giới tính</th>
+                  <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 w-28">Nhóm tuổi</th>
+                  <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 w-36">Cơ sở</th>
                   {subTab === "result" && (
-                    <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-36">Kết quả</th>
+                    <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 w-36">Kết quả</th>
                   )}
-                  <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-32 text-center">Thao tác</th>
+                  <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 w-32 text-center">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-teal-50">
+              <tbody className="divide-y divide-slate-200">
                 {paginatedStudents.length === 0 ? (
                   <tr>
                     <td colSpan={10} className="p-12 text-center text-slate-400 font-medium">
@@ -1745,7 +1745,7 @@ export function StudentInfoClient({
                       }}
                     >
                       {subTab === "info" && (
-                        <td className="p-4 text-center" onClick={(e) => e.stopPropagation()}>
+                        <td className="p-2 border border-slate-200 text-center" onClick={(e) => e.stopPropagation()}>
                           <input
                             type="checkbox"
                             className="w-4 h-4 rounded accent-[#00A19A]"
@@ -1754,51 +1754,32 @@ export function StudentInfoClient({
                           />
                         </td>
                       )}
-                      <td className="p-4 text-slate-400 text-sm">{(currentPage - 1) * pageSize + i + 1}</td>
-                      <td className="p-4">
-                        <span className="font-mono text-xs font-black text-[#00A19A] bg-[#00A19A]/5 px-2 py-1 rounded-none">
-                          {child.studentCode}
-                        </span>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-500 to-fuchsia-400 flex items-center justify-center text-white font-black text-xs shadow-none">
-                            {child.fullName?.charAt(0)}
-                          </div>
-                          <div className="flex flex-col">
-                            <div className="flex items-center gap-1.5">
-                              <span className="font-bold text-slate-800 text-sm">{child.fullName}</span>
-                              {child.enrollmentStatus === "COMPLETED" && (
-                                <span className="px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200 rounded">
-                                  Lớp: {child.enrollmentClass?.className || child.enrollmentClassId || ""}
-                                </span>
-                              )}
-                            </div>
-                          </div>
+                      <td className="p-2 border border-slate-200 text-slate-400 text-xs">{(currentPage - 1) * pageSize + i + 1}</td>
+                      <td className="p-2 border border-slate-200 font-mono text-xs text-slate-650">{child.studentCode}</td>
+                      <td className="p-2 border border-slate-200">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-slate-800 text-xs">{child.fullName}</span>
+                          {child.enrollmentStatus === "COMPLETED" && (
+                            <span className="px-1.5 py-0.5 text-[9px] font-black uppercase bg-emerald-50 text-emerald-800 border border-emerald-200 rounded">
+                              Lớp: {child.enrollmentClass?.className || child.enrollmentClassId || ""}
+                            </span>
+                          )}
                         </div>
                       </td>
-                      <td className="p-4 text-sm text-slate-500">
+                      <td className="p-2 border border-slate-200 text-xs text-slate-500">
                         {formatDate(child.dateOfBirth)}
                       </td>
-                      <td className="p-4">
-                        {child.gender ? (
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-none border ${child.gender === "Nữ" || child.gender === "F" || child.gender === "FEMALE" ? "bg-teal-50 text-[#00A19A] border-teal-200" : "bg-blue-50 text-blue-700 border-blue-200"}`}>
-                            {child.gender === "MALE" || child.gender === "Nam" || child.gender === "M" ? "Nam" : "Nữ"}
-                          </span>
-                        ) : (
-                          <span className="text-slate-300">—</span>
-                        )}
-                      </td>
-                      <td className="p-4">
-                        <span className="text-xs font-bold text-[#00A6A9] bg-[#00A6A9]/5 px-2 py-1 rounded-none border border-[#00A6A9]/30">
-                          {child.grade || "—"}
+                      <td className="p-2 border border-slate-200">
+                        <span className="text-sm font-semibold text-slate-700">
+                          {child.gender ? (child.gender === "MALE" || child.gender === "Nam" || child.gender === "M" ? "Nam" : "Nữ") : "—"}
                         </span>
                       </td>
-                      <td className="p-4 text-xs font-semibold text-slate-600">
+                      <td className="p-2 border border-slate-200 text-xs font-semibold text-slate-650">{child.grade || "—"}</td>
+                      <td className="p-2 border border-slate-200 text-xs font-semibold text-slate-650">
                         {child.admissionCampus || "—"}
                       </td>
                       {subTab === "result" && (
-                        <td className="p-4">
+                        <td className="p-2 border border-slate-200">
                           {child.admissionResult ? (
                             <span className={`text-[10px] font-black px-2.5 py-1 rounded-none border ${child.admissionResult === "Học thử" ? "bg-[#00A19A]/5 text-[#00A6A9] border-[#00A6A9]/30" : child.admissionResult.toUpperCase().includes("ĐẠT") && !child.admissionResult.toUpperCase().includes("KHÔNG") ? "bg-emerald-50 text-emerald-800 border-emerald-300" : child.admissionResult.toUpperCase().includes("KHÔNG") ? "bg-rose-50 text-rose-800 border-rose-300" : "bg-amber-50 text-amber-800 border-amber-300"}`}>
                               {child.admissionResult}
@@ -1808,7 +1789,7 @@ export function StudentInfoClient({
                           )}
                         </td>
                       )}
-                      <td className="p-4 text-center" onClick={(e) => e.stopPropagation()}>
+                      <td className="p-2 border border-slate-200 text-center" onClick={(e) => e.stopPropagation()}>
                         <div className="flex justify-center gap-1 items-center">
                           {subTab === "result" && child.admissionResult && child.admissionResult.toUpperCase().includes("ĐẠT") && !child.admissionResult.toUpperCase().includes("KHÔNG") && (
                             <>
