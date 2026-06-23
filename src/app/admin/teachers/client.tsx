@@ -557,7 +557,7 @@ export function TeacherManagerClient({
                 <th className="p-2 p-2 text-left text-[11px] font-black uppercase tracking-wider w-40 border border-slate-200">Cơ sở</th>
                 <th className="p-2 p-2 text-left text-[11px] font-black uppercase tracking-wider w-48 border border-slate-200">Tổ chuyên môn</th>
                 <th className="p-2 p-2 text-left text-[11px] font-black uppercase tracking-wider w-36 border border-slate-200">Chức vụ</th>
-                <th className="p-2 p-2 text-left text-[11px] font-black uppercase tracking-wider w-56 border border-slate-200">Tài khoản đăng nhập</th>
+                <th className="p-2 p-2 text-left text-[11px] font-black uppercase tracking-wider w-56 border border-slate-200">Tài khoản</th>
                 <th className="p-2 p-2 text-center text-[11px] font-black uppercase tracking-wider w-32 border border-slate-200">Trạng thái</th>
                 <th className="p-2 p-2 text-center text-[11px] font-black uppercase tracking-wider w-32 border border-slate-200">Thao tác</th>
               </tr>
