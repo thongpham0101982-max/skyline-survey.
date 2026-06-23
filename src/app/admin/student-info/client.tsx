@@ -237,6 +237,16 @@ export function StudentInfoClient({
       setPreschoolAssignments([]);
     }
   }, [isDetailsOpen, activeTab, selectedStudent]);
+  const getApprovalStatusText = (status) => {
+    if (!status) return "Chưa duyệt";
+    if (status === "DAT") return "Đạt";
+    if (status === "DAT_MIEN_HOC_THU") return "Đạt - Miễn Học Thử";
+    if (status === "DAT_HOC_THU") return "Đạt - Học Thử";
+    if (status === "KHONG_DAT") return "Không đạt";
+    if (status === "Y_KIEN_KHAC") return "Ý kiến khác";
+    return status;
+  };
+
   const getAssignedTeachersText = () => {
     if (!selectedStudent) return "";
     if (preschoolInputLoading && !preschoolAssignments.length) return "Đang tải...";
@@ -2887,17 +2897,49 @@ export function StudentInfoClient({
                       {renderInputDevScores()}
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-dashed border-slate-200 pt-4">
-                      <div className="bg-emerald-50/30 p-4 rounded-2xl border border-emerald-100/55">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100/60 px-2 py-0.5 rounded">Ban Giám Hiệu</span>
-                        <div className="mt-2 text-sm font-semibold text-slate-700">Trạng thái: <span className="text-emerald-600 font-bold">{selectedStudent.bghApprovalStatus || "Chưa duyệt"}</span></div>
-                        <p className="text-xs text-slate-500 mt-1 italic">Ý kiến: {selectedStudent.bghApprovalComment || "Không có ý kiến."}</p>
-                      </div>
+                    {/* Nhật ký phê duyệt của BGH Mầm non và GĐCS */}
+                    <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-200 space-y-3 mt-4">
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Nhật ký phê duyệt kết quả khảo sát năng lực mầm non</label>
+                      <div className="space-y-3.5 divide-y divide-slate-100">
+                        {/* Row 1: BGH Mầm non */}
+                        <div className="pt-0 text-xs text-slate-650 leading-relaxed font-semibold">
+                          <div className="flex justify-between items-center text-slate-400">
+                            <span>👤 BGH Mầm non Phê duyệt: <strong className="text-slate-700">{selectedStudent.bghApprovalUser || "—"}</strong></span>
+                            <span>{selectedStudent.bghApprovalDate ? new Date(selectedStudent.bghApprovalDate).toLocaleString("vi-VN") : "—"}</span>
+                          </div>
+                          <div className="mt-1 flex items-center gap-2">
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black tracking-wider ${
+                              selectedStudent.bghApprovalStatus === "DAT" || selectedStudent.bghApprovalStatus === "DAT_MIEN_HOC_THU" || selectedStudent.bghApprovalStatus === "DAT_HOC_THU" 
+                                ? "bg-emerald-50 text-emerald-700 border border-emerald-250" 
+                                : selectedStudent.bghApprovalStatus === "KHONG_DAT" 
+                                ? "bg-rose-50 text-rose-700 border border-rose-250" 
+                                : "bg-amber-50 text-amber-700 border border-amber-250"
+                            }`}>
+                              {getApprovalStatusText(selectedStudent.bghApprovalStatus).toUpperCase()}
+                            </span>
+                            {selectedStudent.bghApprovalComment && <span className="text-slate-500 italic">"${selectedStudent.bghApprovalComment}"</span>}
+                          </div>
+                        </div>
 
-                      <div className="bg-teal-50/30 p-4 rounded-2xl border border-teal-100/55">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-teal-700 bg-teal-100/60 px-2 py-0.5 rounded">GĐCS</span>
-                        <div className="mt-2 text-sm font-semibold text-slate-700">Trạng thái: <span className="text-teal-600 font-bold">{selectedStudent.gdcsApprovalStatus || "Chưa duyệt"}</span></div>
-                        <p className="text-xs text-slate-500 mt-1 italic">Ý kiến: {selectedStudent.gdcsApprovalComment || "Không có ý kiến."}</p>
+                        {/* Row 2: GĐCS */}
+                        <div className="pt-3.5 text-xs text-slate-650 leading-relaxed font-semibold">
+                          <div className="flex justify-between items-center text-slate-400">
+                            <span>👤 GĐCS Phê duyệt: <strong className="text-slate-700">{selectedStudent.gdcsApprovalUser || "—"}</strong></span>
+                            <span>{selectedStudent.gdcsApprovalDate ? new Date(selectedStudent.gdcsApprovalDate).toLocaleString("vi-VN") : "—"}</span>
+                          </div>
+                          <div className="mt-1 flex items-center gap-2">
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black tracking-wider ${
+                              selectedStudent.gdcsApprovalStatus === "DAT" || selectedStudent.gdcsApprovalStatus === "DAT_MIEN_HOC_THU" || selectedStudent.gdcsApprovalStatus === "DAT_HOC_THU" 
+                                ? "bg-teal-50 text-teal-700 border border-teal-250" 
+                                : selectedStudent.gdcsApprovalStatus === "KHONG_DAT" 
+                                ? "bg-rose-50 text-rose-700 border border-rose-250" 
+                                : "bg-amber-50 text-amber-700 border border-amber-250"
+                            }`}>
+                              {getApprovalStatusText(selectedStudent.gdcsApprovalStatus).toUpperCase()}
+                            </span>
+                            {selectedStudent.gdcsApprovalComment && <span className="text-slate-500 italic">"${selectedStudent.gdcsApprovalComment}"</span>}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
