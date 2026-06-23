@@ -32,7 +32,8 @@ export async function GET(req: NextRequest) {
         probationaryBghComment: true,
         probationaryBghUser: true,
         probationaryBghDate: true,
-        probationaryBghLog: true
+        probationaryBghLog: true,
+        probationaryTeacherLog: true
       }
     })
 
@@ -101,6 +102,32 @@ export async function POST(req: NextRequest) {
       probationaryPeriod: probationaryPeriod !== undefined ? probationaryPeriod : undefined,
       probationaryClass: probationaryClass !== undefined ? probationaryClass : undefined,
       probationaryTeacher: probationaryTeacher !== undefined ? probationaryTeacher : undefined
+    }
+
+    const isTeacherUpdate = probationaryScoreText !== undefined || 
+                            probationaryResult !== undefined || 
+                            probationaryComment !== undefined || 
+                            probationaryClass !== undefined || 
+                            probationaryTeacher !== undefined;
+
+    if (isTeacherUpdate) {
+      const logEntry = {
+        user: currentUser?.name || currentUser?.email || probationaryTeacher || "Giáo viên",
+        result: probationaryResult !== undefined ? probationaryResult : (student.probationaryResult || ""),
+        comment: probationaryComment !== undefined ? probationaryComment : (student.probationaryComment || ""),
+        class: probationaryClass !== undefined ? probationaryClass : (student.probationaryClass || ""),
+        teacher: probationaryTeacher !== undefined ? probationaryTeacher : (student.probationaryTeacher || ""),
+        period: probationaryPeriod !== undefined ? probationaryPeriod : (student.probationaryPeriod || ""),
+        date: new Date().toISOString()
+      };
+      let currentLog = [];
+      if (student.probationaryTeacherLog) {
+        try {
+          currentLog = JSON.parse(student.probationaryTeacherLog);
+        } catch (e) {}
+      }
+      currentLog.push(logEntry);
+      dataToUpdate.probationaryTeacherLog = JSON.stringify(currentLog);
     }
 
     if (canApproveBGH) {

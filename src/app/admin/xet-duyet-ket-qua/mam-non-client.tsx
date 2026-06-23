@@ -1420,6 +1420,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
   const [probBghUser, setProbBghUser] = useState("");
   const [probBghDate, setProbBghDate] = useState("");
   const [probBghLog, setProbBghLog] = useState("");
+  const [probTeacherLog, setProbTeacherLog] = useState("");
 
     const defaultPreschoolCongratulations = `Chúc mừng con đã vượt qua kỳ khảo sát đầu vào lớp {{grade}} hệ {{surveyFormType}} năm học {{academicYear}}. Con đã chính thức đặt bước chân đầu tiên trên con đường trở thành học sinh của Trường Mầm non Sky-Line (Cơ sở {{admissionCampus}}) – một cột mốc quan trọng trong hành trình phát triển của con.
 
@@ -2481,6 +2482,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     setProbBghUser(student.probationaryBghUser || "");
     setProbBghDate(student.probationaryBghDate || "");
     setProbBghLog(student.probationaryBghLog || "");
+    setProbTeacherLog(student.probationaryTeacherLog || "");
     setProbModal(true);
     setDevLoading(true);
     try {
@@ -7672,6 +7674,44 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       )}
                     </div>
                   )}
+
+                  {/* Teacher Evaluation Logs / Nhật ký đánh giá của Giáo viên */}
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-black text-slate-450 uppercase tracking-widest">Nhật ký Đánh giá của Giáo viên</label>
+                    {(() => {
+                      let logs = [];
+                      if (probTeacherLog) {
+                        try { logs = JSON.parse(probTeacherLog); } catch (e) {}
+                      }
+                      if (logs.length === 0) {
+                        return <p className="text-[11px] text-slate-400 font-semibold italic">Chưa có nhật ký đánh giá.</p>;
+                      }
+                      return (
+                        <div className="space-y-2 max-h-40 overflow-y-auto border border-slate-200 p-3 bg-white divide-y divide-slate-100">
+                          {logs.map((log, idx) => (
+                            <div key={idx} className="pt-2 first:pt-0 text-[11px] text-slate-650 leading-relaxed font-semibold">
+                              <div className="flex justify-between items-center text-slate-400">
+                                <span>👤 <strong className="text-slate-700">{log.user}</strong></span>
+                                <span>{log.date ? new Date(log.date).toLocaleString("vi-VN") : ""}</span>
+                              </div>
+                              <div className="mt-1">
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-black tracking-wider ${
+                                    log.result === "DAT" ? "bg-emerald-50 text-emerald-700 border border-emerald-250" : "bg-rose-50 text-rose-700 border border-rose-250"
+                                  }`}>
+                                    {log.result === "DAT" ? "ĐẠT" : log.result === "CHUA_DAT" ? "CHƯA ĐẠT" : "CHƯA XÁC ĐỊNH"}
+                                  </span>
+                                  {log.class && <span className="text-slate-400 text-[10px]">Lớp: {log.class}</span>}
+                                  {log.teacher && <span className="text-slate-400 text-[10px]">GV: {log.teacher}</span>}
+                                </div>
+                                {log.comment && <div className="mt-1 text-slate-500 italic">"{log.comment}"</div>}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  </div>
 
                   {/* Audit Logs / Nhật ký phê duyệt */}
                   <div className="space-y-2">

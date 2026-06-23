@@ -270,6 +270,7 @@ export async function GET(req: any) {
                         probationaryBghUser: true,
                         probationaryBghDate: true,
                         probationaryBghLog: true,
+                        probationaryTeacherLog: true,
                         surveyFormType: true,
                         admissionResult: true,
                         batch: {

@@ -553,6 +553,7 @@ export function TeacherManagerClient({
                 <th className="p-2 p-2 text-left text-[11px] font-black uppercase tracking-wider w-12 border border-slate-200">#</th>
                 <th className="p-2 p-2 text-left text-[11px] font-black uppercase tracking-wider w-28 border border-slate-200">Mã GV</th>
                 <th className="p-2 p-2 text-left text-[11px] font-black uppercase tracking-wider min-w-[200px] border border-slate-200">Họ và Tên</th>
+                <th className="p-2 p-2 text-left text-[11px] font-black uppercase tracking-wider min-w-[180px] border border-slate-200">Email</th>
                 <th className="p-2 p-2 text-left text-[11px] font-black uppercase tracking-wider w-40 border border-slate-200">Cơ sở</th>
                 <th className="p-2 p-2 text-left text-[11px] font-black uppercase tracking-wider w-48 border border-slate-200">Tổ chuyên môn</th>
                 <th className="p-2 p-2 text-left text-[11px] font-black uppercase tracking-wider w-36 border border-slate-200">Chức vụ</th>
@@ -564,7 +565,7 @@ export function TeacherManagerClient({
             <tbody className="divide-y divide-slate-100">
               {displayed.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="p-2 p-2 text-center border border-slate-200">
+                  <td colSpan={11} className="p-2 p-2 text-center border border-slate-200">
                     <div className="w-16 h-16 flex items-center justify-center mx-auto mb-4 text-xs font-semibold">
                       <GraduationCap className="w-8 h-8 text-slate-400" />
                     </div>
@@ -601,29 +602,31 @@ export function TeacherManagerClient({
 
                       <td className="p-2 p-2 border border-slate-200">
                         {isEditing ? (
-                          <div className="flex flex-col gap-1.5 max-w-xs">
-                            <input type="text" value={editForm.teacherName}
-                              onChange={e => setEditForm({ ...editForm, teacherName: e.target.value })}
-                              className="border border-[#00A19A] rounded-xl px-2.5 py-1.5 text-sm w-full outline-none font-bold bg-white"
-                              placeholder="Tên giáo viên" />
-                            <input type="email" value={editForm.email || ""}
-                              onChange={e => setEditForm({ ...editForm, email: e.target.value })}
-                              className="border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs w-full outline-none text-slate-600 bg-white font-medium focus:border-[#00A19A]"
-                              placeholder="Email thông báo" />
-                          </div>
+                          <input type="text" value={editForm.teacherName}
+                            onChange={e => setEditForm({ ...editForm, teacherName: e.target.value })}
+                            className="border border-[#00A19A] rounded-xl px-2.5 py-1.5 text-sm w-full outline-none font-bold bg-white"
+                            placeholder="Tên giáo viên" />
                         ) : (
-                          <div className="flex flex-col gap-1">
-                            <span className="font-bold text-slate-800 text-sm leading-tight">{t.teacherName}</span>
-                            {t.email ? (
-                              <span className="inline-flex items-center gap-1.5 text-[10px] font-medium text-slate-450 self-start text-xs font-semibold">
-                                <Mail className="w-3 h-3 text-slate-400" />{t.email}
-                              </span>
-                            ) : (
-                              <span className="text-[10px] font-black text-amber-500 uppercase tracking-wide flex items-center gap-1 self-start">
-                                <AlertCircle className="w-3 h-3 text-amber-450" />Chưa có Email
-                              </span>
-                            )}
-                          </div>
+                          <span className="font-bold text-slate-800 text-sm leading-tight">{t.teacherName}</span>
+                        )}
+                      </td>
+
+                      <td className="p-2 p-2 border border-slate-200">
+                        {isEditing ? (
+                          <input type="email" value={editForm.email || ""}
+                            onChange={e => setEditForm({ ...editForm, email: e.target.value })}
+                            className="border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs w-full outline-none text-slate-600 bg-white font-medium focus:border-[#00A19A]"
+                            placeholder="Email thông báo" />
+                        ) : (
+                          t.email ? (
+                            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-650">
+                              <Mail className="w-3.5 h-3.5 text-slate-400" />{t.email}
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-black text-amber-500 uppercase tracking-wide flex items-center gap-1">
+                              <AlertCircle className="w-3.5 h-3.5 text-amber-450" />Chưa có Email
+                            </span>
+                          )
                         )}
                       </td>
 
