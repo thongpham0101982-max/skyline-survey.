@@ -1575,7 +1575,7 @@ export function StudentInfoClient({
                           <div className="flex items-center gap-1.5">
                             <span className="text-xs font-bold text-slate-800">{s.fullName}</span>
                             {s.enrollmentStatus === "COMPLETED" && (
-                              <span className="px-1.5 py-0.5 text-[9px] font-black uppercase bg-emerald-50 text-emerald-800 border border-emerald-200 rounded">
+                              <span className="text-[9px] font-semibold text-emerald-600">
                                 Lớp: {s.enrollmentClass?.className || s.enrollmentClassId || ""}
                               </span>
                             )}
@@ -1647,11 +1647,11 @@ export function StudentInfoClient({
                                   <UserCheck className="w-4 h-4" />
                                 </button>
                               ) : s.enrollmentStatus === "PENDING" ? (
-                                <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200" title="Chờ xếp lớp">
+                                <span className="text-[10px] font-semibold text-amber-600" title="Chờ xếp lớp">
                                   Chờ nhập học
                                 </span>
                               ) : (
-                                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200" title={`Nhập học vào ${s.enrollmentClass?.className || s.enrollmentClassId || ""}`}>
+                                <span className="text-[10px] font-semibold text-emerald-600" title={`Nhập học vào ${s.enrollmentClass?.className || s.enrollmentClassId || ""}`}>
                                   Đã nhập học
                                 </span>
                               )}
@@ -1754,7 +1754,7 @@ export function StudentInfoClient({
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-slate-800 text-xs">{child.fullName}</span>
                           {child.enrollmentStatus === "COMPLETED" && (
-                            <span className="px-1.5 py-0.5 text-[9px] font-black uppercase bg-emerald-50 text-emerald-800 border border-emerald-200 rounded">
+                            <span className="text-[9px] font-semibold text-emerald-600">
                               Lớp: {child.enrollmentClass?.className || child.enrollmentClassId || ""}
                             </span>
                           )}
@@ -1794,11 +1794,11 @@ export function StudentInfoClient({
                                   <UserCheck className="w-4 h-4" />
                                 </button>
                               ) : child.enrollmentStatus === "PENDING" ? (
-                                <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200" title="Chờ xếp lớp">
+                                <span className="text-[10px] font-semibold text-amber-600" title="Chờ xếp lớp">
                                   Chờ nhập học
                                 </span>
                               ) : (
-                                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200" title={`Nhập học vào ${child.enrollmentClass?.className || child.enrollmentClassId || ""}`}>
+                                <span className="text-[10px] font-semibold text-emerald-600" title={`Nhập học vào ${child.enrollmentClass?.className || child.enrollmentClassId || ""}`}>
                                   Đã nhập học
                                 </span>
                               )}
