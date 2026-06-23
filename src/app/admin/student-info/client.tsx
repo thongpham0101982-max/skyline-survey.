@@ -1501,11 +1501,11 @@ export function StudentInfoClient({
         <div className="overflow-x-auto">
           {activeTab === "general" ? (
             /* Phổ thông K-12 Table (Matched style of original general assessments) */
-            <table className="w-full text-sm text-left whitespace-nowrap">
-              <thead className="bg-[#00A19A]/5 border-b border-slate-200">
+            <table className="w-full text-sm text-left whitespace-nowrap border border-slate-200 border-collapse">
+              <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
                   {subTab === "info" && (
-                    <th className="px-5 py-4 w-12 text-center">
+                    <th className="p-2 border border-slate-200 w-12 text-center">
                       <input
                         type="checkbox"
                         className="w-4 h-4 rounded text-[#00A6A9] accent-[#00A6A9]"
@@ -1514,35 +1514,35 @@ export function StudentInfoClient({
                       />
                     </th>
                   )}
-                  <th className="px-5 py-4 w-28 text-[10px] font-black text-slate-400 uppercase tracking-widest">Mã học sinh</th>
-                  <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Họ và tên</th>
-                  <th className="px-3 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-16">Khối</th>
-                  <th className="px-3 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-16">Giới tính</th>
-                  <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-24">Ngày sinh</th>
-                  <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-20">Hệ KS</th>
+                  <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 w-28">Mã học sinh</th>
+                  <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600">Họ và tên</th>
+                  <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 w-16 text-center">Khối</th>
+                  <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 w-16 text-center">Giới tính</th>
+                  <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 w-24 text-center">Ngày sinh</th>
+                  <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 w-20 text-center">Hệ KS</th>
                   {subTab === "info" && (
                     <>
-                      <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-24">Học lực</th>
-                      <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-24">Hạnh kiểm</th>
-                      <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-28">Học bạ</th>
-                      <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Học kỳ / Năm TS</th>
-                      <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Đối tượng TS</th>
-                      <th className="px-4 py-4 text-center text-[10px] font-black text-[#00A19A] uppercase tracking-widest w-48">Đăng ký Khảo sát lại</th>
+                      <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 w-24 text-center">Học lực</th>
+                      <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 w-24 text-center">Hạnh kiểm</th>
+                      <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 w-28 text-center">Học bạ</th>
+                      <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 text-center">Học kỳ / Năm TS</th>
+                      <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 text-center">Đối tượng TS</th>
+                      <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 w-48 text-center">Đăng ký Khảo sát lại</th>
                     </>
                   )}
                   {selectedPeriod?.toLowerCase().includes("open day") && (
                     <>
-                      <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-24">Đăng ký CS</th>
-                      <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-32">Ủy quyền xét duyệt</th>
+                      <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 w-24 text-center">Đăng ký CS</th>
+                      <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 w-32 text-center">Ủy quyền xét duyệt</th>
                     </>
                   )}
                   {subTab === "result" && (
-                    <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Kết quả duyệt</th>
+                    <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 text-center">Kết quả duyệt</th>
                   )}
-                  <th className="px-4 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-32">Thao tác</th>
+                  <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 w-32 text-center">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700">
+              <tbody className="divide-y divide-slate-200 text-slate-700">
                 {paginatedStudents.length === 0 ? (
                   <tr>
                     <td colSpan={selectedPeriod?.toLowerCase().includes("open day") ? (subTab === "info" ? 16 : 11) : (subTab === "info" ? 14 : 9)} className="px-6 py-12 text-center text-slate-400 font-medium">
@@ -1560,7 +1560,7 @@ export function StudentInfoClient({
                       }}
                     >
                       {subTab === "info" && (
-                        <td className="px-5 py-3.5 text-center" onClick={(e) => e.stopPropagation()}>
+                        <td className="p-2 border border-slate-200 text-center" onClick={(e) => e.stopPropagation()}>
                           <input
                             type="checkbox"
                             className="w-4 h-4 rounded text-[#00A6A9] accent-[#00A6A9]"
@@ -1569,46 +1569,40 @@ export function StudentInfoClient({
                           />
                         </td>
                       )}
-                      <td className="px-5 py-3.5">
-                        <span className="font-mono text-xs font-black text-[#00A19A] bg-[#00A19A]/10 border border-[#00A19A]/20 px-2.5 py-1 rounded-md">
-                          {s.studentCode}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3.5">
+                      <td className="p-2 border border-slate-200 font-mono text-xs text-slate-650">{s.studentCode}</td>
+                      <td className="p-2 border border-slate-200">
                         <div className="flex flex-col">
                           <div className="flex items-center gap-1.5">
-                            <span className="text-sm font-bold text-slate-800">{s.fullName}</span>
+                            <span className="text-xs font-bold text-slate-800">{s.fullName}</span>
                             {s.enrollmentStatus === "COMPLETED" && (
-                              <span className="px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200 rounded">
+                              <span className="px-1.5 py-0.5 text-[9px] font-black uppercase bg-emerald-50 text-emerald-800 border border-emerald-200 rounded">
                                 Lớp: {s.enrollmentClass?.className || s.enrollmentClassId || ""}
                               </span>
                             )}
                           </div>
-                          <span className="text-[10px] font-semibold text-slate-400 mt-0.5">{s.surveySystem || "Chưa xếp hệ"}</span>
+                          <span className="text-[10px] font-medium text-slate-450 mt-0.5">{s.surveySystem || "Chưa xếp hệ"}</span>
                         </div>
                       </td>
-                      <td className="px-3 py-3.5 text-center text-xs font-bold text-slate-500 bg-slate-50/50 group-hover:bg-transparent">
+                      <td className="p-2 border border-slate-200 text-center text-xs font-semibold text-slate-650">
                         {s.grade}
                       </td>
-                      <td className="px-3 py-3.5 text-center text-xs font-bold text-slate-500">
+                      <td className="p-2 border border-slate-200 text-center text-xs font-semibold text-slate-650">
                         {s.gender || "-"}
                       </td>
-                      <td className="px-4 py-3.5 text-center">
-                        <span className="text-xs font-semibold text-slate-600">{formatDate(s.dateOfBirth)}</span>
+                      <td className="p-2 border border-slate-200 text-center text-xs text-slate-500">
+                        {formatDate(s.dateOfBirth)}
                       </td>
-                      <td className="px-4 py-3.5 text-center">
-                        <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-600 border border-indigo-100">
-                          {s.surveyFormType || "-"}
-                        </span>
+                      <td className="p-2 border border-slate-200 text-center text-xs text-slate-650">
+                        {s.surveyFormType || "-"}
                       </td>
                       {subTab === "info" && (
                         <>
-                          <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.kqHocTap || "-"}</td>
-                          <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.kqRenLuyen || "-"}</td>
-                          <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.kqgdTieuHoc || "-"}</td>
-                          <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.hocKy || "-"}</td>
-                          <td className="px-4 py-3.5 text-center text-xs text-slate-600">{s.targetType || "-"}</td>
-                          <td className="px-4 py-3.5 text-center" onClick={(e) => e.stopPropagation()}>
+                          <td className="p-2 border border-slate-200 text-center text-xs text-slate-600">{s.kqHocTap || "-"}</td>
+                          <td className="p-2 border border-slate-200 text-center text-xs text-slate-600">{s.kqRenLuyen || "-"}</td>
+                          <td className="p-2 border border-slate-200 text-center text-xs text-slate-600">{s.kqgdTieuHoc || "-"}</td>
+                          <td className="p-2 border border-slate-200 text-center text-xs text-slate-600">{s.hocKy || "-"}</td>
+                          <td className="p-2 border border-slate-200 text-center text-xs text-slate-600">{s.targetType || "-"}</td>
+                          <td className="p-2 border border-slate-200 text-center" onClick={(e) => e.stopPropagation()}>
                             <button
                               onClick={() => {
                                 setRetestStudent(s);
@@ -1634,13 +1628,13 @@ export function StudentInfoClient({
                         </>
                       )}
                       {subTab === "result" && (
-                        <td className="px-4 py-3.5 text-center">
+                        <td className="p-2 border border-slate-200 text-center">
                           <span className="text-xs font-semibold text-slate-700">
                             {s.admissionResult || "Chưa duyệt"}
                           </span>
                         </td>
                       )}
-                      <td className="px-4 py-3.5 text-center" onClick={(e) => e.stopPropagation()}>
+                      <td className="p-2 border border-slate-200 text-center" onClick={(e) => e.stopPropagation()}>
                         <div className="flex justify-center items-center gap-1.5">
                           {subTab === "result" && s.admissionResult && s.admissionResult.toUpperCase().includes("ĐẠT") && !s.admissionResult.toUpperCase().includes("KHÔNG") && (
                             <>
