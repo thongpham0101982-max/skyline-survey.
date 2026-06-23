@@ -409,6 +409,11 @@ export function PhanCongMamNonClient({
                       <span className="text-[11px] font-black text-slate-800 uppercase tracking-widest">Ánh xạ Nhóm tuổi ({stageMappings.stageTitle})</span>
                     </div>
                     <div className="space-y-1.5">
+                      <div className="flex items-center gap-2 px-3 text-[9px] font-black text-slate-400 uppercase tracking-wider">
+                        <span className="w-36">Form Khảo sát</span>
+                        <span className="w-4"></span>
+                        <span>Khối Áp dụng</span>
+                      </div>
                       {stageMappings.mappings.map((m, i) => (
                         <div key={i} className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-slate-100 text-xs">
                           <span className="font-bold text-slate-700 w-36">{m.form}</span>

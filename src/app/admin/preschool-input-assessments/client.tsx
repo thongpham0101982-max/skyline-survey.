@@ -3077,9 +3077,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         </div>
                         <div className="space-y-2">
                           <div className="grid grid-cols-12 gap-2 text-[9px] font-black text-slate-400 uppercase tracking-wider px-2">
-                            <span className="col-span-5">Chọn Nhóm tuổi (Form)</span>
+                            <span className="col-span-5">Form Khảo sát</span>
                             <span className="col-span-1 text-center"></span>
-                            <span className="col-span-6">Cho các lớp thực tế</span>
+                            <span className="col-span-6">Khối Áp dụng</span>
                           </div>
                           {mappings.map((m, idx) => (
                             <div key={idx} className="grid grid-cols-12 gap-2 items-center bg-white border border-teal-50 px-3 py-2.5 rounded-none shadow-2xs hover:border-[#00A19A]/30 hover:shadow-xs transition-all duration-200">
