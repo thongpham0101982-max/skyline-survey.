@@ -4,9 +4,15 @@ import { useState, useMemo } from "react"
 import { Plus, Trash2, CheckCircle2, User, BookOpen, Layers } from "lucide-react"
 import { saveAssignment, deleteAssignment } from "./actions"
 
-export function TeachingClient({ teachers, classes, subjects, years, initialAssignments }: any) {
+export function TeachingClient({ teachers, classes, subjects, years, departments, initialAssignments }: any) {
   const [selectedYear, setSelectedYear] = useState(() => getDefaultAcademicYearClient(years)?.id || "")
+  const [selectedDeptId, setSelectedDeptId] = useState("")
   const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null)
+
+  const filteredTeachers = useMemo(() => {
+    if (!selectedDeptId) return teachers;
+    return teachers.filter((t: any) => t.departmentId === selectedDeptId);
+  }, [teachers, selectedDeptId])
   const [assignments, setAssignments] = useState(initialAssignments)
   const [loading, setLoading] = useState(false)
 
@@ -56,7 +62,7 @@ export function TeachingClient({ teachers, classes, subjects, years, initialAssi
   }
 
   // Build summary for the table
-  const tableData = teachers.map((t:any) => {
+  const tableData = filteredTeachers.map((t:any) => {
     const tAssigns = assignments.filter((a:any) => a.teacherId === t.id && a.academicYearId === selectedYear)
     
     // Group by semester and subject
@@ -84,11 +90,17 @@ export function TeachingClient({ teachers, classes, subjects, years, initialAssi
     <div className="flex flex-col lg:flex-row gap-6 items-start">
       {/* LEFT: MAIN TABLE */}
       <div className="bg-white rounded-2xl shadow-sm border-2 border-teal-100 flex-1 w-full overflow-hidden">
-        <div className="p-4 flex justify-between items-center text-xs font-semibold">
+        <div className="p-4 flex flex-wrap gap-3 justify-between items-center text-xs font-semibold">
           <div className="font-bold text-slate-700 flex items-center"><Layers className="w-5 h-5 mr-2 text-indigo-500"/>Bảng phân công</div>
-          <select value={selectedYear} onChange={e=>setSelectedYear(e.target.value)} className="p-2 rounded-lg border border-slate-200 font-semibold text-sm outline-none">
-            {years.filter((y: any) => !y.isOff).map((y:any) => <option key={y.id} value={y.id}>{y.name}</option>)}
-          </select>
+          <div className="flex gap-2">
+            <select value={selectedDeptId} onChange={e=>setSelectedDeptId(e.target.value)} className="p-2 rounded-lg border border-slate-200 font-semibold text-sm outline-none">
+              <option value="">Tất cả Tổ chuyên môn</option>
+              {(departments || []).map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
+            </select>
+            <select value={selectedYear} onChange={e=>setSelectedYear(e.target.value)} className="p-2 rounded-lg border border-slate-200 font-semibold text-sm outline-none">
+              {years.filter((y: any) => !y.isOff).map((y:any) => <option key={y.id} value={y.id}>{y.name}</option>)}
+            </select>
+          </div>
         </div>
         <div className="overflow-x-auto max-h-[70vh] overflow-y-auto">
           <table className="w-full text-left text-sm border-collapse">

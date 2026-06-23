@@ -17,6 +17,10 @@ export default async function TeachingAssignmentsPage() {
     const lvl = (c.level || "").toLowerCase().trim();
     return !["nhà trẻ", "mẫu giáo bé", "mẫu giáo nhỡ", "mẫu giáo lớn", "mầm non", "mam non"].includes(lvl);
   })
+  const departments = await prisma.department.findMany({
+    where: { status: "ACTIVE" },
+    orderBy: { name: 'asc' }
+  })
   const subjects = await prisma.subject.findMany({ orderBy: { subjectName: 'asc' } })
   const years = await prisma.academicYear.findMany({ orderBy: { startDate: 'desc' } })
   
@@ -50,6 +54,7 @@ export default async function TeachingAssignmentsPage() {
         classes={classes} 
         subjects={subjects} 
         years={years}
+        departments={departments}
         initialAssignments={formattedAssignments}
       />
     </div>
