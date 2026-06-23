@@ -2917,7 +2917,7 @@ export function StudentInfoClient({
                             }`}>
                               {getApprovalStatusText(selectedStudent.bghApprovalStatus).toUpperCase()}
                             </span>
-                            {selectedStudent.bghApprovalComment && <span className="text-slate-500 italic">"${selectedStudent.bghApprovalComment}"</span>}
+                            {selectedStudent.bghApprovalComment && <span className="text-slate-500 italic">"{selectedStudent.bghApprovalComment}"</span>}
                           </div>
                         </div>
 
@@ -2937,7 +2937,7 @@ export function StudentInfoClient({
                             }`}>
                               {getApprovalStatusText(selectedStudent.gdcsApprovalStatus).toUpperCase()}
                             </span>
-                            {selectedStudent.gdcsApprovalComment && <span className="text-slate-500 italic">"${selectedStudent.gdcsApprovalComment}"</span>}
+                            {selectedStudent.gdcsApprovalComment && <span className="text-slate-500 italic">"{selectedStudent.gdcsApprovalComment}"</span>}
                           </div>
                         </div>
                       </div>
