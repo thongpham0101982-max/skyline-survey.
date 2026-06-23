@@ -3,8 +3,20 @@ import { prisma } from "@/lib/db"
 import { TeachingClient } from "./client"
 
 export default async function TeachingAssignmentsPage() {
-  const teachers = await prisma.teacher.findMany({ orderBy: { teacherName: 'asc' } })
-  const classes = await prisma.class.findMany({ orderBy: { className: 'asc' } })
+  const rawTeachers = await prisma.teacher.findMany({
+    orderBy: { teacherName: 'asc' },
+    include: { departmentRel: true }
+  })
+  const teachers = rawTeachers.filter(t => {
+    const block = (t.departmentRel?.blockCM || "").toLowerCase().trim();
+    return block !== "mầm non" && block !== "mam non";
+  })
+
+  const rawClasses = await prisma.class.findMany({ orderBy: { className: 'asc' } })
+  const classes = rawClasses.filter(c => {
+    const lvl = (c.level || "").toLowerCase().trim();
+    return !["nhà trẻ", "mẫu giáo bé", "mẫu giáo nhỡ", "mẫu giáo lớn", "mầm non", "mam non"].includes(lvl);
+  })
   const subjects = await prisma.subject.findMany({ orderBy: { subjectName: 'asc' } })
   const years = await prisma.academicYear.findMany({ orderBy: { startDate: 'desc' } })
   
