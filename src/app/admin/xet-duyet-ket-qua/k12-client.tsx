@@ -90,11 +90,11 @@ function Field({ label, required, children }: { label:string; required?:boolean;
 const inp = "w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition-all placeholder:text-slate-300 shadow-sm"
 
 function Modal({ open, onClose, title, size="md", children, footer }: {
-  open:boolean; onClose:()=>void; title:string; size?:"sm"|"md"|"lg";
+  open:boolean; onClose:()=>void; title:string; size?:"sm"|"md"|"lg"|"xl"|"2xl";
   children:React.ReactNode; footer:React.ReactNode
 }) {
   if (!open) return null
-  const w = size==="lg" ? "max-w-3xl" : size==="sm" ? "max-w-sm" : "max-w-lg"
+  const w = size==="2xl" ? "max-w-6xl" : size==="xl" ? "max-w-5xl" : size==="lg" ? "max-w-3xl" : size==="sm" ? "max-w-sm" : "max-w-lg"
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"/>
@@ -5345,12 +5345,15 @@ return {
                 </div>
               </div>
 
-              {!selectedReportStudent ? (
-                <div className="bg-white border border-slate-200 rounded-[2rem] p-12 text-center text-slate-400">
-                  Vui lòng chọn học sinh và nhấn nút "Chi tiết" để hiển thị chi tiết: Kết quả khảo sát các môn và Xét duyệt Tuyển sinh.
-                </div>
-              ) : (
-                <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
+              {selectedReportStudent && (
+                <Modal
+                  open={!!selectedReportStudent}
+                  onClose={() => setReportStudentId("")}
+                  title={`Chi tiết kết quả & Xét duyệt - ${selectedReportStudent.fullName}`}
+                  size="2xl"
+                  footer={<button onClick={() => setReportStudentId("")} className="flex-1 py-3 text-xs font-black uppercase text-slate-500 hover:text-slate-800 transition-colors border-t border-slate-100">Đóng</button>}
+                >
+                  <div className="space-y-4">
               {/* STUDENT HEADER BANNER (COMPACT & MODERN) */}
               <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm relative overflow-hidden mb-4 text-left">
                 <div className="absolute top-0 right-0 w-48 h-48 -mt-16 -mr-16 mix-blend-multiply filter blur-3xl opacity-70 text-xs font-semibold"></div>
@@ -6423,7 +6426,8 @@ return {
 
               </div>
             </div>
-          )}
+          </Modal>
+        )}
         </>
       )}
 
