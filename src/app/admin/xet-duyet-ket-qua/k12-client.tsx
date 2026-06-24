@@ -2052,6 +2052,7 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
 
   const [saveReportLoading, setSaveReportLoading] = useState(false);
   const [sendingApproval, setSendingApproval] = useState(false);
+  const [sendingApprovalId, setSendingApprovalId] = useState("");
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [isInvitation, setIsInvitation] = useState(false);
   const [isCommitment, setIsCommitment] = useState(false);
@@ -2122,6 +2123,73 @@ ${reportForm.directorNote}`;
       notify("Lỗi hệ thống", "err");
     }
     setSaveReportLoading(false);
+  };
+
+  const handleSendGdcsApprovalRequestForStudent = async (student: any) => {
+    if (!student) return;
+    setSendingApprovalId(student.id);
+    try {
+      const studentSelPeriod = periods.find(p => p.id === student.periodId);
+      const isOpenDay = studentSelPeriod?.name?.toLowerCase().includes("open day");
+      
+      let csCode = null;
+      if (isOpenDay && student.registeredCampus) {
+        const matchingCampus = campuses.find(c => c.id === student.registeredCampus);
+        if (matchingCampus) {
+          csCode = matchingCampus.campusCode;
+        }
+      }
+      
+      if (!csCode) {
+        let tc = campuses.find(c => 
+          c.campusName && (c.campusName === student.admissionCampus)
+        );
+        if (!tc && student.batchId) {
+          const b = reportBatches.find(bx => bx.id === student.batchId);
+          if (b?.campusId) {
+            tc = campuses.find(c => c.id === b.campusId);
+          }
+        }
+        if (tc) {
+          csCode = tc.campusCode;
+        }
+      }
+      
+      if (!csCode) {
+        const campusName = student.admissionCampus || "";
+        if (campusName.includes("CS1") || campusName.includes("Cơ sở 1")) csCode = "CS1";
+        else if (campusName.includes("CS2") || campusName.includes("Cơ sở 2")) csCode = "CS2";
+        else if (campusName.includes("CS3") || campusName.includes("Cơ sở 3")) csCode = "CS3";
+        else if (campusName.includes("CS4") || campusName.includes("Cơ sở 4")) csCode = "CS4";
+        else if (campusName.includes("CS5") || campusName.includes("Cơ sở 5")) csCode = "CS5";
+      }
+
+      const gdcsEmail = (csCode && EMAIL_MAP.gdcs[csCode as keyof typeof EMAIL_MAP.gdcs]) 
+        || EMAIL_MAP.gdcs.CS1;
+
+      const res = await fetch("/api/input-assessment-students", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "SEND_APPROVAL_REQUEST",
+          data: {
+            studentId: student.id,
+            gdcsEmail: gdcsEmail
+          }
+        })
+      });
+
+      const result = await res.json();
+      if (res.ok && result.success) {
+        notify(`Đã gửi yêu cầu phê duyệt thành công đến email GĐCS: ${gdcsEmail}!`);
+      } else {
+        notify(result.error || "Gửi yêu cầu phê duyệt thất bại", "err");
+      }
+    } catch (err) {
+      notify("Có lỗi xảy ra khi gửi yêu cầu phê duyệt", "err");
+    } finally {
+      setSendingApprovalId("");
+    }
   };
 
   const handleSendGdcsApprovalRequest = async () => {
@@ -5284,6 +5352,7 @@ return {
                         <th className="p-2.5 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Hệ Khảo sát</th>
                         <th className="p-2.5 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Diện Khảo sát</th>
                         <th className="p-2.5 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Trạng thái duyệt</th>
+                        <th className="p-2.5 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">YC Xét duyệt</th>
                         <th className="p-2.5 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Kết quả</th>
                       </tr>
                     </thead>
@@ -5312,6 +5381,24 @@ return {
                                 <span className="text-slate-500 bg-slate-50 px-2 py-0.5 rounded text-[11px]">
                                   Chưa duyệt
                                 </span>
+                              )}
+                            </td>
+                            <td className="p-2.5 border border-slate-300 text-center">
+                              {!s.admissionResult ? (
+                                <button
+                                  onClick={() => handleSendGdcsApprovalRequestForStudent(s)}
+                                  disabled={sendingApprovalId === s.id}
+                                  title="Gửi yêu cầu xét duyệt đến GĐCS"
+                                  className="p-1.5 rounded-lg hover:bg-slate-100 text-indigo-600 disabled:opacity-50 inline-flex items-center justify-center cursor-pointer transition-colors"
+                                >
+                                  {sendingApprovalId === s.id ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : (
+                                    <Mail className="w-4 h-4" />
+                                  )}
+                                </button>
+                              ) : (
+                                <span className="text-slate-300">—</span>
                               )}
                             </td>
                             <td className="p-2.5 border border-slate-300 text-center">
@@ -5613,16 +5700,7 @@ return {
                       </button>
                     )}
 
-                    {!selectedReportStudent.admissionResult && (
-                      <button
-                        onClick={handleSendGdcsApprovalRequest}
-                        disabled={sendingApproval || !canApprove}
-                        className="w-full mt-2 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-xl font-black text-[11px] uppercase tracking-wider shadow-md active:scale-[0.98] disabled:opacity-50 disabled:scale-100 transition-all flex justify-center items-center gap-1.5 cursor-pointer"
-                      >
-                        {sendingApproval ? <Loader2 className="w-3.5 h-3.5 animate-spin"/> : <Mail className="w-3.5 h-3.5"/>}
-                        Gửi yêu cầu đến GĐCS
-                      </button>
-                    )}
+
                   </div>
 
                   {/* RETEST HISTORY TIMELINE CARD */}
