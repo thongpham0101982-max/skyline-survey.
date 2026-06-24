@@ -38,24 +38,6 @@ export const APP_CATEGORIES = [
     ]
   },
   {
-    id: "KTDBCL",
-    name: "Khảo thí & ĐBCL",
-    color: "sky",
-    icon: Shield,
-    modules: [
-      {
-        code: "KTDBCL_EXAMS",
-        name: "Quản lý Kỳ thi Học sinh",
-        icon: ClipboardList,
-        href: "/ktdbcl/exams",
-        subModules: [
-          { code: "KTDBCL_EXAM_LIST", name: "Danh sách Kỳ thi", href: "/ktdbcl/exams" },
-          { code: "KTDBCL_EXAM_STUDENTS", name: "Đăng ký Dự thi", href: "/ktdbcl/students" },
-          { code: "KTDBCL_EXAM_RESULTS", name: "Nhập điểm & Kết quả", href: "/ktdbcl/results" },
-        ]
-      }
-    ]
-  },
   {
     id: "TRAINING",
     name: "Quản lý Đào tạo",
