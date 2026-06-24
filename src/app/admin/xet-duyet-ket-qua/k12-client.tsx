@@ -87,7 +87,7 @@ function Field({ label, required, children }: { label:string; required?:boolean;
     </div>
   )
 }
-const inp = "w-full bg-white border border-slate-200 rounded-none px-3.5 py-2.5 text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition-all placeholder:text-slate-300 shadow-sm"
+const inp = "h-11 w-full px-3.5 bg-white border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-lg outline-none transition-all focus:ring-4 focus:ring-[#00B5E2]/10 focus:border-[#00B5E2] disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
 
 function Modal({ open, onClose, title, size="md", children, footer }: {
   open:boolean; onClose:()=>void; title:string; size?:"sm"|"md"|"lg"|"xl"|"2xl";
@@ -6637,7 +6637,7 @@ return {
         </div>
       </Modal>
 
-      <Modal open={sModal} onClose={()=>setSModal(false)} title="Thông tin Học sinh" size="lg" footer={<><button onClick={()=>setSModal(false)} className="flex-1 text-xs font-black uppercase text-slate-500 border border-slate-200 py-3 rounded-none hover:bg-slate-50">Đóng</button> <button onClick={saveStudent} className="flex-1 text-white bg-indigo-600 hover:bg-indigo-700 text-xs font-black uppercase tracking-widest py-3 rounded-none text-xs font-semibold">Lưu dữ liệu</button></>}>
+      <Modal open={sModal} onClose={()=>setSModal(false)} title="Thông tin Học sinh" size="lg" footer={<><button onClick={()=>setSModal(false)} className="flex-1 px-6 py-3 border border-[#D9E2EC] text-[#64748B] hover:text-[#1E293B] hover:bg-slate-100 rounded-lg transition-all cursor-pointer text-xs font-bold uppercase tracking-wider">Đóng</button> <button onClick={saveStudent} className="flex-1 px-6 py-3 bg-[#00B5E2] hover:bg-[#0098C2] text-white rounded-lg text-xs font-bold shadow-md shadow-[#00B5E2]/15 transition-all active:scale-95 cursor-pointer uppercase tracking-wider">Lưu dữ liệu</button></>}>
         <div className="space-y-4 pt-1">
            <div className="grid grid-cols-2 gap-4">
               <Field label="Mã HS KS" required><input value={sForm.studentCode} onChange={e=>setSForm(f=>({...f,studentCode:e.target.value}))} className={inp} disabled={!!editS}/></Field>
@@ -6690,48 +6690,52 @@ return {
 
            <div className="space-y-4">
              <Field label="Đối tượng Tuyển sinh">
-               <div className="p-3.5 space-y-3 text-xs font-semibold">
-                 <div className="flex items-center justify-between">
-                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Chọn một hoặc nhiều đối tượng tuyển sinh:</span>
-                   <button 
-                     type="button"
-                     onClick={() => openAddConfig("DOI_TUONG_TS")}
-                     className="hover:bg-indigo-100 text-indigo-600 flex items-center gap-1.5 text-xs font-black transition-all text-xs font-semibold"
-                   >
-                     <Plus className="w-3.5 h-3.5" />
-                     Thêm đối tượng
-                   </button>
-                 </div>
-                 <div className="flex flex-wrap gap-2">
-                   {configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => {
-                     const selectedTargets = sForm.targetType ? sForm.targetType.split(",").map(t => t.trim()).filter(Boolean) : [];
-                     const isChecked = selectedTargets.includes(c.name);
-                     return (
-                       <label key={c.id} className={"flex items-center gap-1.5 px-3 py-2 rounded-none border cursor-pointer select-none transition-all " + (isChecked ? "bg-indigo-600 text-white border-indigo-600 shadow-none font-bold" : "bg-white hover:bg-slate-50 border-slate-200 text-slate-600")}>
-                         <input 
-                           type="checkbox" 
-                           checked={isChecked}
-                           onChange={(e) => {
-                             let updated;
-                             if (e.target.checked) {
-                               updated = [...selectedTargets, c.name];
-                             } else {
-                               updated = selectedTargets.filter(t => t !== c.name);
-                             }
-                             setSForm(f => ({ ...f, targetType: updated.join(", ") }));
-                           }}
-                           className={"w-4 h-4 rounded border-slate-300 " + (isChecked ? "text-white focus:ring-offset-indigo-600" : "text-indigo-600 focus:ring-indigo-500")}
-                         />
-                         <span className="text-xs">{c.name}</span>
-                       </label>
-                     );
-                   })}
-                   {configs.filter(c => c.categoryType === "DOI_TUONG_TS").length === 0 && (
-                     <span className="text-xs text-slate-400 italic">Chưa có đối tượng tuyển sinh nào trong danh mục</span>
-                   )}
-                 </div>
-               </div>
-             </Field>
+                <div className="p-4 bg-white border border-[#D9E2EC] rounded-lg space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider">Chọn một hoặc nhiều đối tượng tuyển sinh:</span>
+                    <button 
+                      type="button"
+                      onClick={() => openAddConfig("DOI_TUONG_TS")}
+                      className="px-3 py-1.5 bg-[#E6F8FD] hover:bg-[#00B5E2]/25 text-[#004C97] border border-[#00B5E2]/30 rounded-lg flex items-center gap-1.5 text-xs font-bold transition-all active:scale-95 cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      Thêm đối tượng
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => {
+                      const selectedTargets = sForm.targetType ? sForm.targetType.split(",").map(t => t.trim()).filter(Boolean) : [];
+                      const isChecked = selectedTargets.includes(c.name);
+                      return (
+                        <button
+                          type="button"
+                          key={c.id}
+                          onClick={() => {
+                            let updated;
+                            if (isChecked) {
+                              updated = selectedTargets.filter(t => t !== c.name);
+                            } else {
+                              updated = [...selectedTargets, c.name];
+                            }
+                            setSForm(f => ({ ...f, targetType: updated.join(", ") }));
+                          }}
+                          className={`px-4 py-2 border rounded-lg flex items-center gap-1.5 transition-all text-xs font-semibold select-none cursor-pointer ${isChecked ? 'bg-[#E6F8FD] border-[#00B5E2] text-[#004C97] font-bold shadow-sm' : 'bg-[#F8FAFC] border-[#D9E2EC] text-[#64748B] hover:bg-slate-100/50'}`}
+                        >
+                          {isChecked ? (
+                            <span className="text-[#00B5E2] font-black text-sm">✓</span>
+                          ) : (
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                          )}
+                          <span>{c.name}</span>
+                        </button>
+                      );
+                    })}
+                    {configs.filter(c => c.categoryType === "DOI_TUONG_TS").length === 0 && (
+                      <span className="text-xs text-slate-400 italic">Chưa có đối tượng tuyển sinh nào trong danh mục</span>
+                    )}
+                  </div>
+                </div>
+              </Field>
 
              <div className="grid grid-cols-2 gap-4">
                  <Field label="Diện Khảo sát">
