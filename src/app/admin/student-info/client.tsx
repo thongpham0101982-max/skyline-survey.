@@ -501,7 +501,13 @@ export function StudentInfoClient({
         if (!matchesName && !matchesCode) return false;
       }
       if (selectedPeriod && student.period?.name !== selectedPeriod) return false;
-      if (selectedBatch && student.batch?.name !== selectedBatch) return false;
+      if (selectedBatch) {
+        if (selectedBatch === "UNASSIGNED") {
+          if (student.batch?.name) return false;
+        } else if (student.batch?.name !== selectedBatch) {
+          return false;
+        }
+      }
       if (selectedResult && student.admissionResult !== selectedResult) return false;
       if (selectedGrade && student.grade !== selectedGrade) return false;
 
@@ -1457,6 +1463,7 @@ export function StudentInfoClient({
             className="px-3 py-2 rounded-xl text-sm border border-slate-300 focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer text-slate-700 font-medium"
           >
             <option value="">Tất cả Đợt</option>
+            <option value="UNASSIGNED">Khác / Chưa phân đợt</option>
             {uniqueBatchNames.map((name) => (
               <option key={name} value={name}>{name}</option>
             ))}
