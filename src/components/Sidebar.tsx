@@ -145,14 +145,25 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
               >
                 {/* Category Header */}
                 <div className="px-3 py-2.5 cursor-pointer select-none flex items-center justify-between text-white/60 hover:text-white/90 transition-colors group">
-                  {!isCollapsed ? (<span className="text-[10.5px] font-bold uppercase tracking-[0.12em] group-hover:text-white/90 transition-colors whitespace-nowrap overflow-hidden text-ellipsis">
-                    {cat.name}
-                  </span>) : (<span className="w-full text-center text-white/50 block text-xs">•••</span>)}
-                  <ChevronDown 
-                    className={`w-3.5 h-3.5 text-white/50 group-hover/cat:text-white/70 transition-transform duration-300 ${
-                      hasActiveChild ? 'rotate-180 text-[#1E8B87]' : 'group-hover/cat:rotate-180'
-                    }`} 
-                  />
+                  {!isCollapsed ? (
+                    <div className="flex items-center gap-3">
+                      <cat.icon className="w-4 h-4 text-white/60 group-hover:text-white transition-colors" />
+                      <span className="text-[10.5px] font-bold uppercase tracking-[0.12em] group-hover:text-white/90 transition-colors whitespace-nowrap overflow-hidden text-ellipsis">
+                        {cat.name}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="w-full flex justify-center">
+                      <cat.icon className="w-4 h-4 text-white/50" />
+                    </div>
+                  )}
+                  {!isCollapsed && (
+                    <ChevronDown 
+                      className={`w-3.5 h-3.5 text-white/50 group-hover/cat:text-white/70 transition-transform duration-300 ${
+                        hasActiveChild ? 'rotate-180 text-[#1E8B87]' : 'group-hover/cat:rotate-180'
+                      }`} 
+                    />
+                  )}
                 </div>
 
                 {/* Sub-items Container (Expanded on Hover, or if it has an Active Child) */}
