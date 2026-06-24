@@ -5007,7 +5007,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       {/* Modal: Child */}
       <Modal open={cModal} onClose={() => setCModal(false)} title={editC ? "Sửa thông tin Trẻ" : "Thêm Trẻ Mầm non"} size="lg" footer={<><button onClick={() => setCModal(false)} className="flex-1 text-xs font-black uppercase text-slate-400">Đóng</button><button onClick={saveChild} className="flex-1 py-3.5 bg-[#00A19A] text-white rounded-none text-xs font-black uppercase tracking-widest shadow-none shadow-teal-100">Lưu</button></>}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Field label="Mã bé" required><input value={cForm.studentCode} onChange={e => setCForm({...cForm, studentCode: e.target.value})} disabled={!!editC} className={inp + (editC ? " bg-[#00A19A]/5/50" : "")} placeholder="MN001" /></Field>
+          <Field label="Mã bé" required><input value={cForm.studentCode} disabled className={inp + " bg-slate-150 cursor-not-allowed"} placeholder="MN001" /></Field>
           <Field label="Họ và tên" required><input value={cForm.fullName} onChange={e => setCForm({...cForm, fullName: e.target.value})} className={inp} placeholder="Họ và tên đầy đủ" /></Field>
           <Field label="Ngày sinh">
             <input
@@ -5106,18 +5106,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               ))}
             </select>
           </Field>
-          <Field label="Xét duyệt">
-            <select
-              value={cForm.admissionResult}
-              onChange={e => setCForm({...cForm, admissionResult: e.target.value})}
-              className={inp}
-            >
-              <option value="">Chưa duyệt</option>
-              <option value="Đạt">Đạt</option>
-              <option value="Không đạt">Không đạt</option>
-              <option value="Học thử">Học thử</option>
-            </select>
-          </Field>
+
         </div>
       </Modal>
 
