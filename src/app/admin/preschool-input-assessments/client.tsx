@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import * as XLSX from "xlsx"
 import { getSurveyFormAgeGroup } from "@/lib/preschool";
 import {
-  Baby, Clock, Settings, Users, BarChart3, Calendar,
+  Baby, Clock, Settings, Users, BarChart3, Calendar, Layers,
   Plus, Trash2, Edit2, Search, RefreshCw, ChevronDown, ChevronUp,
   X, CheckCircle, CheckCircle2, AlertCircle, Download, Upload, Star, Heart, Sparkles, UserCheck, Eye, Send, ClipboardList, Mail, GraduationCap, Phone, Loader2, Info
 } from "lucide-react"
@@ -3461,51 +3461,81 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       {/* Tab: Dev Assess */}
       {tab === "devAssess" && (
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
-          <div className="flex gap-2 border-b border-slate-300 pb-2">
+          <div className="bg-slate-100/80 backdrop-blur-md p-1.5 rounded-2xl flex gap-1.5 w-fit border border-slate-200 shadow-sm no-print mb-6">
             <button
               onClick={() => setDevTab("assess")}
-              className={`px-4 py-2 text-xs font-bold rounded-none transition-all ${devTab === "assess" ? "bg-[#00A19A] text-white shadow-none" : "text-slate-500 hover:bg-[#00A19A]/5"}`}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black tracking-tight transition-all duration-300 ${devTab === "assess" ? "bg-white text-[#00A19A] shadow-sm scale-[1.02]" : "text-slate-500 hover:text-slate-800"}`}
             >
-              Đánh giá Trẻ
+              <Users className="w-3.5 h-3.5 text-[#00A19A]"/>
+              GV Đánh Giá
             </button>
             <button
               onClick={() => setDevTab("xetDuyet")}
-              className={`px-4 py-2 text-xs font-bold rounded-none transition-all ${devTab === "xetDuyet" ? "bg-[#00A19A] text-white shadow-none" : "text-slate-500 hover:bg-[#00A19A]/5"}`}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black tracking-tight transition-all duration-300 ${devTab === "xetDuyet" ? "bg-white text-[#00A19A] shadow-sm scale-[1.02]" : "text-slate-500 hover:text-slate-800"}`}
             >
-              Xét duyệt học thử
+              <CheckCircle2 className="w-3.5 h-3.5 text-[#00A19A]"/>
+              Duyệt KQĐG
             </button>
 
             <button
               onClick={() => setDevTab("dgkqHocThu")}
-              className={`px-4 py-2 text-xs font-bold rounded-none transition-all ${devTab === "dgkqHocThu" ? "bg-[#00A19A] text-white shadow-none" : "text-slate-500 hover:bg-[#00A19A]/5"}`}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black tracking-tight transition-all duration-300 ${devTab === "dgkqHocThu" ? "bg-white text-[#00A19A] shadow-sm scale-[1.02]" : "text-slate-500 hover:text-slate-800"}`}
             >
-              Đánh giá Học thử
+              <Sparkles className="w-3.5 h-3.5 text-[#00A19A]"/>
+              Duyệt KQ Học thử
             </button>
-            
           </div>
 
           {/* Sub-tab: Đánh giá Trẻ */}
           {/* Sub-tab: Đánh giá Trẻ */}
           {devTab === "assess" && (
             <div className="space-y-4">
-              <div className="bg-white rounded-none border border-slate-300 shadow-none p-4 flex flex-wrap items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Kỳ KS:</label>
-                  <select value={cPeriodId} onChange={e => { setCPeriodId(e.target.value); setCBatchId(""); }} className="border border-slate-300 rounded-none p-2 text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-violet-300 min-w-[160px]">
-                    <option value="">-- Chọn Kỳ --</option>
-                    {periods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                  </select>
+              <div className="bg-white/80 backdrop-blur-md p-6 rounded-3xl shadow-sm border border-slate-200/60 grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-4 text-left items-end">
+                <div className="group">
+                  <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-[#00A19A]/80 flex items-center gap-2 ml-1">
+                    <Calendar className="w-3.5 h-3.5 text-[#00A19A]"/> Kỳ Khảo sát
+                  </label>
+                  <div className="relative">
+                    <select value={cPeriodId} onChange={e => { setCPeriodId(e.target.value); setCBatchId(""); }} className="w-full bg-white border border-slate-200 rounded-2xl pl-4 pr-10 py-2.5 outline-none focus:border-[#00A19A] focus:ring-4 focus:ring-[#00A19A]/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer text-xs">
+                      <option value="">-- Chọn Kỳ --</option>
+                      {periods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A19A] transition-colors">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Đợt:</label>
-                  <select value={cBatchId} onChange={e => setCBatchId(e.target.value)} className="border border-slate-300 rounded-none p-2 text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-violet-300 min-w-[140px]" disabled={!cPeriodId}>
-                    <option value="">Tất cả đợt</option>
-                    {selPeriod?.batches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                  </select>
-                </div>
-                <button onClick={fetchStudentSummaries} className="flex items-center gap-1.5 text-sm font-bold text-[#00A19A] hover:bg-teal-100 text-xs font-semibold"><Search className="w-4 h-4" /> Tìm</button>
 
-                <div className="ml-auto relative"><Search className="w-4 h-4 text-slate-300 absolute left-3 top-1/2 -translate-y-1/2" /><input value={cSearch} onChange={e => setCSearch(e.target.value)} placeholder="Tìm bé..." className="pl-9 pr-4 py-2 border border-slate-300 rounded-none text-sm outline-none focus:ring-2 focus:ring-violet-300 min-w-[200px]" /></div>
+                <div className="group">
+                  <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-[#00A19A]/80 flex items-center gap-2 ml-1">
+                    <Layers className="w-3.5 h-3.5 text-[#00A19A]"/> Đợt khảo sát
+                  </label>
+                  <div className="relative">
+                    <select value={cBatchId} onChange={e => setCBatchId(e.target.value)} className="w-full bg-white border border-slate-200 rounded-2xl pl-4 pr-10 py-2.5 outline-none focus:border-[#00A19A] focus:ring-4 focus:ring-[#00A19A]/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer text-xs" disabled={!cPeriodId}>
+                      <option value="">Tất cả đợt</option>
+                      {selPeriod?.batches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A19A] transition-colors">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="group flex gap-2">
+                  <button onClick={fetchStudentSummaries} className="h-9 px-4 text-xs font-black uppercase text-white bg-[#00A19A] hover:bg-[#008F89] rounded-2xl shadow-sm hover:shadow-md transition-all flex items-center gap-1.5 cursor-pointer">
+                    <Search className="w-3.5 h-3.5" /> Tìm kiếm
+                  </button>
+                </div>
+
+                <div className="group xl:col-span-1">
+                  <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-[#00A19A]/80 flex items-center gap-2 ml-1">
+                    <Search className="w-3.5 h-3.5 text-[#00A19A]"/> Tìm nhanh
+                  </label>
+                  <div className="relative">
+                    <input value={cSearch} onChange={e => setCSearch(e.target.value)} placeholder="Tên hoặc mã bé..." className="w-full bg-white border border-slate-200 rounded-2xl pl-10 pr-4 py-2 outline-none focus:border-[#00A19A] focus:ring-4 focus:ring-[#00A19A]/10 font-semibold text-slate-700 shadow-sm transition-all text-xs" />
+                    <Search className="w-4 h-4 text-slate-350 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  </div>
+                </div>
               </div>
 
               <div className="bg-white rounded-none border border-slate-300 shadow-none overflow-hidden">
@@ -3599,31 +3629,59 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           {/* Sub-tab: Xét duyệt học thử */}
           {devTab === "xetDuyet" && (
             <div className="space-y-4">
-              <div className="bg-white rounded-none border border-slate-300 shadow-none p-4 flex flex-wrap items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Kỳ KS:</label>
-                  <select value={cPeriodId} onChange={e => { setCPeriodId(e.target.value); setCBatchId(""); }} className="border border-slate-300 rounded-none p-2 text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-violet-300 min-w-[160px]">
-                    <option value="">-- Chọn Kỳ --</option>
-                    {periods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                  </select>
+              <div className="bg-white/80 backdrop-blur-md p-6 rounded-3xl shadow-sm border border-slate-200/60 grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-4 text-left items-end">
+                <div className="group">
+                  <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-[#00A19A]/80 flex items-center gap-2 ml-1">
+                    <Calendar className="w-3.5 h-3.5 text-[#00A19A]"/> Kỳ Khảo sát
+                  </label>
+                  <div className="relative">
+                    <select value={cPeriodId} onChange={e => { setCPeriodId(e.target.value); setCBatchId(""); }} className="w-full bg-white border border-slate-200 rounded-2xl pl-4 pr-10 py-2.5 outline-none focus:border-[#00A19A] focus:ring-4 focus:ring-[#00A19A]/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer text-xs">
+                      <option value="">-- Chọn Kỳ --</option>
+                      {periods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A19A] transition-colors">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Đợt:</label>
-                  <select value={cBatchId} onChange={e => setCBatchId(e.target.value)} className="border border-slate-300 rounded-none p-2 text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-violet-300 min-w-[140px]" disabled={!cPeriodId}>
-                    <option value="">Tất cả đợt</option>
-                    {selPeriod?.batches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                  </select>
-                </div>
-                <button onClick={fetchStudentSummaries} className="flex items-center gap-1.5 text-sm font-bold text-[#00A19A] hover:bg-teal-100 text-xs font-semibold"><Search className="w-4 h-4" /> Tìm</button>
 
-                <button
-                  onClick={exportDevExcel}
-                  disabled={studentSummaries.length === 0}
-                  className="flex items-center gap-1.5 text-sm font-bold text-emerald-700 hover:bg-emerald-100 disabled:opacity-50 transition-all shadow-none text-xs font-semibold"
-                >
-                  <Download className="w-4 h-4" /> Xuất Excel Đánh Giá
-                </button>
-                <div className="ml-auto relative"><Search className="w-4 h-4 text-slate-300 absolute left-3 top-1/2 -translate-y-1/2" /><input value={cSearch} onChange={e => setCSearch(e.target.value)} placeholder="Tìm bé..." className="pl-9 pr-4 py-2 border border-slate-300 rounded-none text-sm outline-none focus:ring-2 focus:ring-violet-300 min-w-[200px]" /></div>
+                <div className="group">
+                  <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-[#00A19A]/80 flex items-center gap-2 ml-1">
+                    <Layers className="w-3.5 h-3.5 text-[#00A19A]"/> Đợt khảo sát
+                  </label>
+                  <div className="relative">
+                    <select value={cBatchId} onChange={e => setCBatchId(e.target.value)} className="w-full bg-white border border-slate-200 rounded-2xl pl-4 pr-10 py-2.5 outline-none focus:border-[#00A19A] focus:ring-4 focus:ring-[#00A19A]/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer text-xs" disabled={!cPeriodId}>
+                      <option value="">Tất cả đợt</option>
+                      {selPeriod?.batches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A19A] transition-colors">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="group flex gap-2">
+                  <button onClick={fetchStudentSummaries} className="h-9 px-4 text-xs font-black uppercase text-white bg-[#00A19A] hover:bg-[#008F89] rounded-2xl shadow-sm hover:shadow-md transition-all flex items-center gap-1.5 cursor-pointer">
+                    <Search className="w-3.5 h-3.5" /> Tìm kiếm
+                  </button>
+                  <button
+                    onClick={exportDevExcel}
+                    disabled={studentSummaries.length === 0}
+                    className="h-9 px-4 text-xs font-black uppercase text-emerald-700 bg-white border border-emerald-300 hover:bg-emerald-50 disabled:opacity-40 transition-all rounded-2xl shadow-sm flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Download className="w-3.5 h-3.5" /> Xuất Excel
+                  </button>
+                </div>
+
+                <div className="group">
+                  <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-[#00A19A]/80 flex items-center gap-2 ml-1">
+                    <Search className="w-3.5 h-3.5 text-[#00A19A]"/> Tìm nhanh
+                  </label>
+                  <div className="relative">
+                    <input value={cSearch} onChange={e => setCSearch(e.target.value)} placeholder="Tên hoặc mã bé..." className="w-full bg-white border border-slate-200 rounded-2xl pl-10 pr-4 py-2 outline-none focus:border-[#00A19A] focus:ring-4 focus:ring-[#00A19A]/10 font-semibold text-slate-700 shadow-sm transition-all text-xs" />
+                    <Search className="w-4 h-4 text-slate-350 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  </div>
+                </div>
               </div>
 
               <div className="bg-white rounded-none border border-slate-300 shadow-none overflow-hidden">
@@ -4000,24 +4058,52 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           {/* Sub-tab: Đánh giá Học thử */}
           {devTab === "dgkqHocThu" && (
             <div className="space-y-4">
-              <div className="bg-white rounded-none border border-slate-300 shadow-none p-4 flex flex-wrap items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Kỳ KS:</label>
-                  <select value={cPeriodId} onChange={e => { setCPeriodId(e.target.value); setCBatchId(""); }} className="border border-slate-300 rounded-none p-2 text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-violet-300 min-w-[160px]">
-                    <option value="">-- Chọn Kỳ --</option>
-                    {periods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                  </select>
+              <div className="bg-white/80 backdrop-blur-md p-6 rounded-3xl shadow-sm border border-slate-200/60 grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-4 text-left items-end">
+                <div className="group">
+                  <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-[#00A19A]/80 flex items-center gap-2 ml-1">
+                    <Calendar className="w-3.5 h-3.5 text-[#00A19A]"/> Kỳ Khảo sát
+                  </label>
+                  <div className="relative">
+                    <select value={cPeriodId} onChange={e => { setCPeriodId(e.target.value); setCBatchId(""); }} className="w-full bg-white border border-slate-200 rounded-2xl pl-4 pr-10 py-2.5 outline-none focus:border-[#00A19A] focus:ring-4 focus:ring-[#00A19A]/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer text-xs">
+                      <option value="">-- Chọn Kỳ --</option>
+                      {periods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A19A] transition-colors">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Đợt:</label>
-                  <select value={cBatchId} onChange={e => setCBatchId(e.target.value)} className="border border-slate-300 rounded-none p-2 text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-violet-300 min-w-[140px]" disabled={!cPeriodId}>
-                    <option value="">Tất cả đợt</option>
-                    {selPeriod?.batches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                  </select>
-                </div>
-                <button onClick={fetchStudentSummaries} className="flex items-center gap-1.5 text-sm font-bold text-[#00A19A] hover:bg-teal-100 text-xs font-semibold"><Search className="w-4 h-4" /> Tìm</button>
 
-                <div className="ml-auto relative"><Search className="w-4 h-4 text-slate-300 absolute left-3 top-1/2 -translate-y-1/2" /><input value={cSearch} onChange={e => setCSearch(e.target.value)} placeholder="Tìm bé..." className="pl-9 pr-4 py-2 border border-slate-300 rounded-none text-sm outline-none focus:ring-2 focus:ring-violet-300 min-w-[200px]" /></div>
+                <div className="group">
+                  <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-[#00A19A]/80 flex items-center gap-2 ml-1">
+                    <Layers className="w-3.5 h-3.5 text-[#00A19A]"/> Đợt khảo sát
+                  </label>
+                  <div className="relative">
+                    <select value={cBatchId} onChange={e => setCBatchId(e.target.value)} className="w-full bg-white border border-slate-200 rounded-2xl pl-4 pr-10 py-2.5 outline-none focus:border-[#00A19A] focus:ring-4 focus:ring-[#00A19A]/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer text-xs" disabled={!cPeriodId}>
+                      <option value="">Tất cả đợt</option>
+                      {selPeriod?.batches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A19A] transition-colors">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="group flex gap-2">
+                  <button onClick={fetchStudentSummaries} className="h-9 px-4 text-xs font-black uppercase text-white bg-[#00A19A] hover:bg-[#008F89] rounded-2xl shadow-sm hover:shadow-md transition-all flex items-center gap-1.5 cursor-pointer">
+                    <Search className="w-3.5 h-3.5" /> Tìm kiếm
+                  </button>
+                </div>
+
+                <div className="group xl:col-span-1">
+                  <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-[#00A19A]/80 flex items-center gap-2 ml-1">
+                    <Search className="w-3.5 h-3.5 text-[#00A19A]"/> Tìm nhanh
+                  </label>
+                  <div className="relative">
+                    <input value={cSearch} onChange={e => setCSearch(e.target.value)} placeholder="Tên hoặc mã bé..." className="w-full bg-white border border-slate-200 rounded-2xl pl-10 pr-4 py-2 outline-none focus:border-[#00A19A] focus:ring-4 focus:ring-[#00A19A]/10 font-semibold text-slate-700 shadow-sm transition-all text-xs" />
+                    <Search className="w-4 h-4 text-slate-350 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  </div>
+                </div>
               </div>
 
               <div className="bg-white rounded-none border border-slate-300 shadow-none overflow-hidden">
