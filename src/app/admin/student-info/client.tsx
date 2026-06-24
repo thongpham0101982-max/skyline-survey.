@@ -1203,7 +1203,7 @@ export function StudentInfoClient({
       )}
 
       {/* Tab Selector & Actions */}
-      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 border-b border-slate-300">
         <div className="flex gap-4">
           <button
             onClick={() => handleTabChange("general")}
@@ -1270,7 +1270,7 @@ export function StudentInfoClient({
           {subTab === "result" && (
             <button
               onClick={handleExportExcel}
-              className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold border border-slate-200 shadow-sm transition-all active:scale-95 cursor-pointer"
+              className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold border border-slate-300 shadow-sm transition-all active:scale-95 cursor-pointer"
             >
               <Download className="w-4 h-4" />
               Export Excel
@@ -1280,7 +1280,7 @@ export function StudentInfoClient({
       </div>
 
       {/* Sub-tab Selector */}
-      <div className="flex bg-slate-100/80 p-1 rounded-xl w-fit gap-1 border border-slate-200/50">
+      <div className="flex bg-slate-100/80 p-1 rounded-xl w-fit gap-1 border border-slate-300/50">
         <button
           onClick={() => {
             setSubTab("input");
@@ -1325,7 +1325,7 @@ export function StudentInfoClient({
       {/* Statistics Cards */}
       {subTab === "result" && (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+        <div className="bg-white p-5 rounded-2xl border border-slate-300 shadow-sm flex items-center gap-4">
           <div className="p-3 bg-slate-100 text-slate-600 rounded-xl">
             <Users2 className="w-6 h-6" />
           </div>
@@ -1335,7 +1335,7 @@ export function StudentInfoClient({
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+        <div className="bg-white p-5 rounded-2xl border border-slate-300 shadow-sm flex items-center gap-4">
           <div className="p-3 text-emerald-600 text-xs font-semibold">
             <CheckCircle2 className="w-6 h-6" />
           </div>
@@ -1345,7 +1345,7 @@ export function StudentInfoClient({
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+        <div className="bg-white p-5 rounded-2xl border border-slate-300 shadow-sm flex items-center gap-4">
           <div className="p-3 text-rose-600 text-xs font-semibold">
             <XCircle className="w-6 h-6" />
           </div>
@@ -1355,7 +1355,7 @@ export function StudentInfoClient({
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+        <div className="bg-white p-5 rounded-2xl border border-slate-300 shadow-sm flex items-center gap-4">
           <div className="p-3 text-amber-600 text-xs font-semibold">
             <AlertCircle className="w-6 h-6" />
           </div>
@@ -1402,7 +1402,7 @@ export function StudentInfoClient({
       ) : (
         <>
           {/* Filters & Search Control Panel */}
-          <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+          <div className="bg-white rounded-2xl p-5 border border-slate-300 shadow-sm space-y-4">
         <div className="flex items-center gap-2 text-[#1E1B4B] font-bold text-sm">
           <Filter className="w-4 h-4 text-[#00A6A9]" />
           Bộ lọc & Tìm kiếm nhanh
@@ -1419,7 +1419,7 @@ export function StudentInfoClient({
                 setCurrentPage(1);
               }}
               placeholder="Tên hoặc mã HS..."
-              className="w-full pl-9 pr-8 py-2 rounded-xl text-sm border border-slate-200 focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none transition-all"
+              className="w-full pl-9 pr-8 py-2 rounded-xl text-sm border border-slate-300 focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none transition-all"
             />
             {searchQuery && (
               <button
@@ -1439,7 +1439,7 @@ export function StudentInfoClient({
               setSelectedBatch(""); // Reset batch when period changes
               setCurrentPage(1);
             }}
-            className="px-3 py-2 rounded-xl text-sm border border-slate-200 focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer text-slate-700 font-medium"
+            className="px-3 py-2 rounded-xl text-sm border border-slate-300 focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer text-slate-700 font-medium"
           >
             <option value="">Tất cả Kỳ khảo sát</option>
             {uniquePeriodNames.map((name) => (
@@ -1454,7 +1454,7 @@ export function StudentInfoClient({
               setSelectedBatch(e.target.value);
               setCurrentPage(1);
             }}
-            className="px-3 py-2 rounded-xl text-sm border border-slate-200 focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer text-slate-700 font-medium"
+            className="px-3 py-2 rounded-xl text-sm border border-slate-300 focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer text-slate-700 font-medium"
           >
             <option value="">Tất cả Đợt</option>
             {uniqueBatchNames.map((name) => (
@@ -1469,7 +1469,7 @@ export function StudentInfoClient({
               setSelectedGrade(e.target.value);
               setCurrentPage(1);
             }}
-            className="px-3 py-2 rounded-xl text-sm border border-slate-200 focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer text-slate-700 font-medium"
+            className="px-3 py-2 rounded-xl text-sm border border-slate-300 focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer text-slate-700 font-medium"
           >
             <option value="">Tất cả Khối</option>
             {filterOptions.grades.map((g) => (
@@ -1485,7 +1485,7 @@ export function StudentInfoClient({
                 setSelectedResult(e.target.value);
                 setCurrentPage(1);
               }}
-              className="px-3 py-2 rounded-xl text-sm border border-slate-200 focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer text-slate-700 font-medium"
+              className="px-3 py-2 rounded-xl text-sm border border-slate-300 focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer text-slate-700 font-medium"
             >
               <option value="">Tất cả Kết quả</option>
               {filterOptions.results.map((r) => (
@@ -1497,15 +1497,15 @@ export function StudentInfoClient({
       </div>
 
       {/* Main Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-300 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           {activeTab === "general" ? (
             /* Phổ thông K-12 Table (Matched style of original general assessments) */
-            <table className="w-full text-sm text-left whitespace-nowrap border border-slate-200 border-collapse">
+            <table className="w-full text-sm text-left whitespace-nowrap border border-slate-300 border-collapse">
               <thead className="text-xs font-semibold">
                 <tr>
                   {subTab === "info" && (
-                    <th className="p-2 border border-slate-200 w-12 text-center">
+                    <th className="p-2 border border-slate-300 w-12 text-center">
                       <input
                         type="checkbox"
                         className="w-4 h-4 rounded text-[#00A6A9] accent-[#00A6A9]"
@@ -1514,38 +1514,38 @@ export function StudentInfoClient({
                       />
                     </th>
                   )}
-                  <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 w-28">Mã học sinh</th>
-                  <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600">Họ và tên</th>
-                  <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 w-16 text-center">Khối</th>
-                  <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 w-16 text-center">Giới tính</th>
-                  <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 w-24 text-center">Ngày sinh</th>
-                  <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 w-20 text-center">Hệ KS</th>
+                  <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600 w-28">Mã học sinh</th>
+                  <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600">Họ và tên</th>
+                  <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600 w-16 text-center">Khối</th>
+                  <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600 w-16 text-center">Giới tính</th>
+                  <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600 w-24 text-center">Ngày sinh</th>
+                  <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600 w-20 text-center">Hệ KS</th>
                   {subTab === "info" && (
                     <>
-                      <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 w-24 text-center">Học lực</th>
-                      <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 w-24 text-center">Hạnh kiểm</th>
-                      <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 w-28 text-center">Học bạ</th>
-                      <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 text-center">Học kỳ / Năm TS</th>
-                      <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 text-center">Đối tượng TS</th>
-                      <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 w-48 text-center">Đăng ký Khảo sát lại</th>
+                      <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600 w-24 text-center">Học lực</th>
+                      <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600 w-24 text-center">Hạnh kiểm</th>
+                      <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600 w-28 text-center">Học bạ</th>
+                      <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600 text-center">Học kỳ / Năm TS</th>
+                      <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600 text-center">Đối tượng TS</th>
+                      <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600 w-48 text-center">Đăng ký Khảo sát lại</th>
                     </>
                   )}
                   {selectedPeriod?.toLowerCase().includes("open day") && (
                     <>
-                      <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 w-24 text-center">Đăng ký CS</th>
-                      <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 w-32 text-center">Ủy quyền xét duyệt</th>
+                      <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600 w-24 text-center">Đăng ký CS</th>
+                      <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600 w-32 text-center">Ủy quyền xét duyệt</th>
                     </>
                   )}
                   {subTab === "result" && (
-                    <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 text-center">Kết quả duyệt</th>
+                    <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600 text-center">Kết quả duyệt</th>
                   )}
-                  <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 w-32 text-center">Thao tác</th>
+                  <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600 w-32 text-center">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 text-slate-700">
+              <tbody className="divide-y divide-slate-300 text-slate-700">
                 {paginatedStudents.length === 0 ? (
                   <tr>
-                    <td colSpan={selectedPeriod?.toLowerCase().includes("open day") ? (subTab === "info" ? 16 : 11) : (subTab === "info" ? 14 : 9)} className="p-2 p-2 text-center text-slate-400 font-medium border border-slate-200">
+                    <td colSpan={selectedPeriod?.toLowerCase().includes("open day") ? (subTab === "info" ? 16 : 11) : (subTab === "info" ? 14 : 9)} className="p-2 p-2 text-center text-slate-400 font-medium border border-slate-300">
                       Không tìm thấy dữ liệu học sinh phù hợp.
                     </td>
                   </tr>
@@ -1560,7 +1560,7 @@ export function StudentInfoClient({
                       }}
                     >
                       {subTab === "info" && (
-                        <td className="p-2 border border-slate-200 text-center" onClick={(e) => e.stopPropagation()}>
+                        <td className="p-2 border border-slate-300 text-center" onClick={(e) => e.stopPropagation()}>
                           <input
                             type="checkbox"
                             className="w-4 h-4 rounded text-[#00A6A9] accent-[#00A6A9]"
@@ -1569,8 +1569,8 @@ export function StudentInfoClient({
                           />
                         </td>
                       )}
-                      <td className="p-2 border border-slate-200 font-mono text-xs text-slate-650">{s.studentCode}</td>
-                      <td className="p-2 border border-slate-200">
+                      <td className="p-2 border border-slate-300 font-mono text-xs text-slate-650">{s.studentCode}</td>
+                      <td className="p-2 border border-slate-300">
                         <div className="flex flex-col">
                           <div className="flex items-center gap-1.5">
                             <span className="text-xs font-bold text-slate-800">{s.fullName}</span>
@@ -1583,26 +1583,26 @@ export function StudentInfoClient({
                           <span className="text-[10px] font-medium text-slate-450 mt-0.5">{s.surveySystem || "Chưa xếp hệ"}</span>
                         </div>
                       </td>
-                      <td className="p-2 border border-slate-200 text-center text-xs font-semibold text-slate-650">
+                      <td className="p-2 border border-slate-300 text-center text-xs font-semibold text-slate-650">
                         {s.grade}
                       </td>
-                      <td className="p-2 border border-slate-200 text-center text-xs font-semibold text-slate-650">
+                      <td className="p-2 border border-slate-300 text-center text-xs font-semibold text-slate-650">
                         {s.gender || "-"}
                       </td>
-                      <td className="p-2 border border-slate-200 text-center text-xs text-slate-500">
+                      <td className="p-2 border border-slate-300 text-center text-xs text-slate-500">
                         {formatDate(s.dateOfBirth)}
                       </td>
-                      <td className="p-2 border border-slate-200 text-center text-xs text-slate-650">
+                      <td className="p-2 border border-slate-300 text-center text-xs text-slate-650">
                         {s.surveyFormType || "-"}
                       </td>
                       {subTab === "info" && (
                         <>
-                          <td className="p-2 border border-slate-200 text-center text-xs text-slate-600">{s.kqHocTap || "-"}</td>
-                          <td className="p-2 border border-slate-200 text-center text-xs text-slate-600">{s.kqRenLuyen || "-"}</td>
-                          <td className="p-2 border border-slate-200 text-center text-xs text-slate-600">{s.kqgdTieuHoc || "-"}</td>
-                          <td className="p-2 border border-slate-200 text-center text-xs text-slate-600">{s.hocKy || "-"}</td>
-                          <td className="p-2 border border-slate-200 text-center text-xs text-slate-600">{s.targetType || "-"}</td>
-                          <td className="p-2 border border-slate-200 text-center" onClick={(e) => e.stopPropagation()}>
+                          <td className="p-2 border border-slate-300 text-center text-xs text-slate-600">{s.kqHocTap || "-"}</td>
+                          <td className="p-2 border border-slate-300 text-center text-xs text-slate-600">{s.kqRenLuyen || "-"}</td>
+                          <td className="p-2 border border-slate-300 text-center text-xs text-slate-600">{s.kqgdTieuHoc || "-"}</td>
+                          <td className="p-2 border border-slate-300 text-center text-xs text-slate-600">{s.hocKy || "-"}</td>
+                          <td className="p-2 border border-slate-300 text-center text-xs text-slate-600">{s.targetType || "-"}</td>
+                          <td className="p-2 border border-slate-300 text-center" onClick={(e) => e.stopPropagation()}>
                             <button
                               onClick={() => {
                                 setRetestStudent(s);
@@ -1619,22 +1619,22 @@ export function StudentInfoClient({
                       )}
                       {selectedPeriod?.toLowerCase().includes("open day") && (
                         <>
-                          <td className="p-2 p-2 text-center text-xs text-slate-650 border border-slate-200">
+                          <td className="p-2 p-2 text-center text-xs text-slate-650 border border-slate-300">
                             {campuses.find(c => c.id === s.registeredCampus)?.campusName || s.registeredCampus || "-"}
                           </td>
-                          <td className="p-2 p-2 text-center text-xs text-slate-650 font-bold border border-slate-200">
+                          <td className="p-2 p-2 text-center text-xs text-slate-650 font-bold border border-slate-300">
                             {campuses.find(c => c.id === s.registeredCampus)?.manager?.fullName || "-"}
                           </td>
                         </>
                       )}
                       {subTab === "result" && (
-                        <td className="p-2 border border-slate-200 text-center">
+                        <td className="p-2 border border-slate-300 text-center">
                           <span className="text-xs font-semibold text-slate-700">
                             {s.admissionResult || "Chưa duyệt"}
                           </span>
                         </td>
                       )}
-                      <td className="p-2 border border-slate-200 text-center" onClick={(e) => e.stopPropagation()}>
+                      <td className="p-2 border border-slate-300 text-center" onClick={(e) => e.stopPropagation()}>
                         <div className="flex justify-center items-center gap-1.5">
                           {subTab === "result" && s.admissionResult && s.admissionResult.toUpperCase().includes("ĐẠT") && !s.admissionResult.toUpperCase().includes("KHÔNG") && (
                             <>
@@ -1695,11 +1695,11 @@ export function StudentInfoClient({
             </table>
           ) : (
             /* Mầm non Preschool Table (Matched style of original preschool Ds Trẻ) */
-            <table className="w-full text-left text-sm whitespace-nowrap border border-slate-200 border-collapse">
+            <table className="w-full text-left text-sm whitespace-nowrap border border-slate-300 border-collapse">
               <thead className="text-xs font-semibold">
                 <tr>
                   {subTab === "info" && (
-                    <th className="p-2 border border-slate-200 w-12 text-center">
+                    <th className="p-2 border border-slate-300 w-12 text-center">
                       <input
                         type="checkbox"
                         className="w-4 h-4 rounded accent-[#00A19A]"
@@ -1708,23 +1708,23 @@ export function StudentInfoClient({
                       />
                     </th>
                   )}
-                  <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 w-14">STT</th>
-                  <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 w-28">Mã bé</th>
-                  <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600">Họ và tên</th>
-                  <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 w-24">Ngày sinh</th>
-                  <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 w-24">Giới tính</th>
-                  <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 w-28">Nhóm tuổi</th>
-                  <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 w-36">Cơ sở</th>
+                  <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600 w-14">STT</th>
+                  <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600 w-28">Mã bé</th>
+                  <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600">Họ và tên</th>
+                  <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600 w-24">Ngày sinh</th>
+                  <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600 w-24">Giới tính</th>
+                  <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600 w-28">Nhóm tuổi</th>
+                  <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600 w-36">Cơ sở</th>
                   {subTab === "result" && (
-                    <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 w-36">Kết quả</th>
+                    <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600 w-36">Kết quả</th>
                   )}
-                  <th className="p-2 border border-slate-200 text-xs font-bold text-slate-600 w-32 text-center">Thao tác</th>
+                  <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600 w-32 text-center">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200">
+              <tbody className="divide-y divide-slate-300">
                 {paginatedStudents.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="p-2 text-center text-slate-400 font-medium border border-slate-200">
+                    <td colSpan={10} className="p-2 text-center text-slate-400 font-medium border border-slate-300">
                       Không tìm thấy dữ liệu học sinh phù hợp.
                     </td>
                   </tr>
@@ -1739,7 +1739,7 @@ export function StudentInfoClient({
                       }}
                     >
                       {subTab === "info" && (
-                        <td className="p-2 border border-slate-200 text-center" onClick={(e) => e.stopPropagation()}>
+                        <td className="p-2 border border-slate-300 text-center" onClick={(e) => e.stopPropagation()}>
                           <input
                             type="checkbox"
                             className="w-4 h-4 rounded accent-[#00A19A]"
@@ -1748,9 +1748,9 @@ export function StudentInfoClient({
                           />
                         </td>
                       )}
-                      <td className="p-2 border border-slate-200 text-slate-400 text-xs">{(currentPage - 1) * pageSize + i + 1}</td>
-                      <td className="p-2 border border-slate-200 font-mono text-xs text-slate-650">{child.studentCode}</td>
-                      <td className="p-2 border border-slate-200">
+                      <td className="p-2 border border-slate-300 text-slate-400 text-xs">{(currentPage - 1) * pageSize + i + 1}</td>
+                      <td className="p-2 border border-slate-300 font-mono text-xs text-slate-650">{child.studentCode}</td>
+                      <td className="p-2 border border-slate-300">
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-slate-800 text-xs">{child.fullName}</span>
                           {child.enrollmentStatus === "COMPLETED" && (
@@ -1760,20 +1760,20 @@ export function StudentInfoClient({
                           )}
                         </div>
                       </td>
-                      <td className="p-2 border border-slate-200 text-xs text-slate-500">
+                      <td className="p-2 border border-slate-300 text-xs text-slate-500">
                         {formatDate(child.dateOfBirth)}
                       </td>
-                      <td className="p-2 border border-slate-200">
+                      <td className="p-2 border border-slate-300">
                         <span className="text-sm font-semibold text-slate-700">
                           {child.gender ? (child.gender === "MALE" || child.gender === "Nam" || child.gender === "M" ? "Nam" : "Nữ") : "—"}
                         </span>
                       </td>
-                      <td className="p-2 border border-slate-200 text-xs font-semibold text-slate-650">{child.grade || "—"}</td>
-                      <td className="p-2 border border-slate-200 text-xs font-semibold text-slate-650">
+                      <td className="p-2 border border-slate-300 text-xs font-semibold text-slate-650">{child.grade || "—"}</td>
+                      <td className="p-2 border border-slate-300 text-xs font-semibold text-slate-650">
                         {child.admissionCampus || "—"}
                       </td>
                       {subTab === "result" && (
-                        <td className="p-2 border border-slate-200">
+                        <td className="p-2 border border-slate-300">
                           {child.admissionResult ? (
                             <span className="text-xs font-semibold text-slate-700">{child.admissionResult}</span>
                           ) : (
@@ -1781,7 +1781,7 @@ export function StudentInfoClient({
                           )}
                         </td>
                       )}
-                      <td className="p-2 border border-slate-200 text-center" onClick={(e) => e.stopPropagation()}>
+                      <td className="p-2 border border-slate-300 text-center" onClick={(e) => e.stopPropagation()}>
                         <div className="flex justify-center gap-1 items-center">
                           {subTab === "result" && child.admissionResult && child.admissionResult.toUpperCase().includes("ĐẠT") && !child.admissionResult.toUpperCase().includes("KHÔNG") && (
                             <>
@@ -1871,7 +1871,7 @@ export function StudentInfoClient({
                     className={`px-3 py-1 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
                       currentPage === pageNum
                         ? "bg-[#00A6A9] text-white border-[#00A6A9]"
-                        : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                        : "bg-white text-slate-600 border-slate-300 hover:bg-slate-50"
                     }`}
                   >
                     {pageNum}
@@ -1928,13 +1928,13 @@ export function StudentInfoClient({
                           value={formState.studentCode}
                           onChange={(e) => setFormState({ ...formState, studentCode: e.target.value.toUpperCase().replace(/\s/g, "") })}
                           placeholder="VD: HS001"
-                          className="flex-1 px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none disabled:bg-slate-100 disabled:text-slate-500"
+                          className="flex-1 px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none disabled:bg-slate-100 disabled:text-slate-500"
                         />
                         {formMode === "create" && (
                           <button
                             type="button"
                             onClick={handleAutoGenerateCode}
-                            className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition-all active:scale-95"
+                            className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold transition-all active:scale-95"
                           >
                             Sinh mã
                           </button>
@@ -1947,7 +1947,7 @@ export function StudentInfoClient({
                         type="date"
                         value={formState.dateOfBirth}
                         onChange={(e) => setFormState({ ...formState, dateOfBirth: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
                       />
                     </div>
                   </div>
@@ -1960,7 +1960,7 @@ export function StudentInfoClient({
                       value={formState.fullName}
                       onChange={(e) => setFormState({ ...formState, fullName: e.target.value })}
                       placeholder="VD: Nguyễn Văn A"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
                     />
                   </div>
 
@@ -1970,7 +1970,7 @@ export function StudentInfoClient({
                       <select
                         value={formState.gender}
                         onChange={(e) => setFormState({ ...formState, gender: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer"
                       >
                         <option value="">--</option>
                         <option value="Nam">Nam</option>
@@ -1982,7 +1982,7 @@ export function StudentInfoClient({
                       <select
                         value={formState.grade}
                         onChange={(e) => setFormState({ ...formState, grade: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
                       >
                         <option value="">--</option>
                         {grades.map(g => (
@@ -1998,7 +1998,7 @@ export function StudentInfoClient({
                       <select
                         value={formState.hocKy}
                         onChange={(e) => setFormState({ ...formState, hocKy: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
                       >
                         <option value="">--</option>
                         {configs.filter(c => c.categoryType === "HOC_KY").map(c => (
@@ -2011,7 +2011,7 @@ export function StudentInfoClient({
                       <select
                         value={formState.hoSoCtQuocTe}
                         onChange={(e) => setFormState({ ...formState, hoSoCtQuocTe: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
                       >
                         <option value="">--</option>
                         {configs.filter(c => c.categoryType === "HS_HT_HOC_SINH").map(c => (
@@ -2028,7 +2028,7 @@ export function StudentInfoClient({
                         required
                         value={formState.registeredCampus}
                         onChange={(e) => setFormState({ ...formState, registeredCampus: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer"
                       >
                         <option value="">-- Chọn cơ sở đăng ký --</option>
                         {campuses.map(c => (
@@ -2045,7 +2045,7 @@ export function StudentInfoClient({
                         required
                         value={formState.periodId}
                         onChange={(e) => setFormState({ ...formState, periodId: e.target.value, batchId: "" })}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
                       >
                         <option value="">-- Chọn Kỳ khảo sát --</option>
                         {generalPeriods.map((p) => (
@@ -2058,7 +2058,7 @@ export function StudentInfoClient({
                       <select
                         value={formState.batchId}
                         onChange={(e) => setFormState({ ...formState, batchId: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer"
                       >
                         <option value="">-- Không có / Mặc định --</option>
                         {activeFormBatches.map((b: any) => (
@@ -2077,7 +2077,7 @@ export function StudentInfoClient({
                           const selectedTargets = formState.targetType ? formState.targetType.split(",").map((t: string) => t.trim()).filter(Boolean) : [];
                           const isChecked = selectedTargets.includes(c.name);
                           return (
-                            <label key={c.id} className={"flex items-center gap-1.5 px-3 py-1.5 rounded-xl border cursor-pointer select-none transition-all " + (isChecked ? "bg-[#00A6A9] text-white border-[#00A6A9] font-bold shadow-sm" : "bg-white hover:bg-slate-50 border-slate-200 text-slate-600")}>
+                            <label key={c.id} className={"flex items-center gap-1.5 px-3 py-1.5 rounded-xl border cursor-pointer select-none transition-all " + (isChecked ? "bg-[#00A6A9] text-white border-[#00A6A9] font-bold shadow-sm" : "bg-white hover:bg-slate-50 border-slate-300 text-slate-600")}>
                               <input 
                                 type="checkbox" 
                                 checked={isChecked}
@@ -2106,7 +2106,7 @@ export function StudentInfoClient({
                       <select
                         value={formState.admissionCriteria}
                         onChange={(e) => setFormState({ ...formState, admissionCriteria: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
                       >
                         <option value="">--</option>
                         {configs.filter(c => c.categoryType === "DIEN_KS").map(c => (
@@ -2119,7 +2119,7 @@ export function StudentInfoClient({
                       <select
                         value={formState.surveySystem}
                         onChange={(e) => setFormState({ ...formState, surveySystem: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
                       >
                         <option value="">--</option>
                         {configs.filter(c => c.categoryType === "HINH_THUC_KS").map(c => (
@@ -2135,7 +2135,7 @@ export function StudentInfoClient({
                       <select
                         value={formState.kqHocTap}
                         onChange={(e) => setFormState({ ...formState, kqHocTap: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
                       >
                         <option value="">--</option>
                         {configs.filter(c => c.categoryType === "KQ_HOC_TAP").map(c => (
@@ -2148,7 +2148,7 @@ export function StudentInfoClient({
                       <select
                         value={formState.kqRenLuyen}
                         onChange={(e) => setFormState({ ...formState, kqRenLuyen: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
                       >
                         <option value="">--</option>
                         {configs.filter(c => c.categoryType === "KQ_REN_LUYEN").map(c => (
@@ -2161,7 +2161,7 @@ export function StudentInfoClient({
                       <select
                         value={formState.surveyFormType}
                         onChange={(e) => setFormState({ ...formState, surveyFormType: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
                       >
                         <option value="">--</option>
                         {currentEduSystems.map(es => (
@@ -2184,7 +2184,7 @@ export function StudentInfoClient({
                         value={formState.studentCode}
                         onChange={(e) => setFormState({ ...formState, studentCode: e.target.value })}
                         placeholder="VD: MN001"
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none disabled:bg-slate-100 disabled:text-slate-500"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none disabled:bg-slate-100 disabled:text-slate-500"
                       />
                     </div>
                     <div>
@@ -2195,7 +2195,7 @@ export function StudentInfoClient({
                         value={formState.fullName}
                         onChange={(e) => setFormState({ ...formState, fullName: e.target.value })}
                         placeholder="VD: Nguyễn Bé An"
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
                       />
                     </div>
                   </div>
@@ -2217,10 +2217,10 @@ export function StudentInfoClient({
                             return nextState;
                           });
                         }}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
                       />
                       {ageInfo.months !== null && (
-                        <div className="text-[11px] font-black text-[#00A6A9] mt-1.5 uppercase tracking-wider bg-[#00A6A9]/5 rounded px-3 py-1.5 border border-slate-200 flex items-center gap-1.5 animate-in fade-in duration-200">
+                        <div className="text-[11px] font-black text-[#00A6A9] mt-1.5 uppercase tracking-wider bg-[#00A6A9]/5 rounded px-3 py-1.5 border border-slate-300 flex items-center gap-1.5 animate-in fade-in duration-200">
                           <Sparkles className="w-3.5 h-3.5" />
                           Xác minh: {ageInfo.months} tháng tuổi ({ageInfo.surveyDateStr})
                         </div>
@@ -2231,7 +2231,7 @@ export function StudentInfoClient({
                       <select
                         value={formState.gender}
                         onChange={(e) => setFormState({ ...formState, gender: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer"
                       >
                         <option value="">-- Chọn --</option>
                         <option value="Nam">Nam</option>
@@ -2246,7 +2246,7 @@ export function StudentInfoClient({
                       <select
                         value={formState.grade}
                         onChange={(e) => setFormState({ ...formState, grade: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
                       >
                         <option value="">-- Chọn nhóm tuổi --</option>
                         {preschoolGrades.map(g => (
@@ -2259,7 +2259,7 @@ export function StudentInfoClient({
                       <select
                         value={formState.admissionCampus}
                         onChange={(e) => setFormState({ ...formState, admissionCampus: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
                       >
                         <option value="">-- Chọn cơ sở --</option>
                         {campuses.map(c => (
@@ -2276,7 +2276,7 @@ export function StudentInfoClient({
                         required
                         value={formState.periodId}
                         onChange={(e) => setFormState({ ...formState, periodId: e.target.value, batchId: "" })}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
                       >
                         <option value="">-- Chọn Kỳ khảo sát --</option>
                         {preschoolPeriods.map((p) => (
@@ -2307,7 +2307,7 @@ export function StudentInfoClient({
                             return nextState;
                           });
                         }}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer"
                       >
                         <option value="">-- Không gán --</option>
                         {activeFormBatches.map((b: any) => (
@@ -2323,7 +2323,7 @@ export function StudentInfoClient({
                       <select
                         value={formState.surveyFormType}
                         onChange={(e) => setFormState({ ...formState, surveyFormType: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
                       >
                         <option value="">-- Chọn Hệ KS --</option>
                         {preschoolConfigs.filter(c => c.categoryType === "system").map(c => (
@@ -2344,7 +2344,7 @@ export function StudentInfoClient({
                             value={formState.devProfessionalComment}
                             onChange={(e) => setFormState({ ...formState, devProfessionalComment: e.target.value })}
                             rows={2}
-                            className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none resize-none"
+                            className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none resize-none"
                           />
                         </div>
                         <div>
@@ -2353,7 +2353,7 @@ export function StudentInfoClient({
                             value={formState.devPsychologyComment}
                             onChange={(e) => setFormState({ ...formState, devPsychologyComment: e.target.value })}
                             rows={2}
-                            className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none resize-none"
+                            className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none resize-none"
                           />
                         </div>
                       </div>
@@ -2364,7 +2364,7 @@ export function StudentInfoClient({
                           value={formState.devImportantNote}
                           onChange={(e) => setFormState({ ...formState, devImportantNote: e.target.value })}
                           placeholder="VD: Bé còn rụt rè, khó hòa nhập"
-                          className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
+                          className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
                         />
                       </div>
                       <div>
@@ -2374,7 +2374,7 @@ export function StudentInfoClient({
                           value={formState.devAssessmentResult}
                           onChange={(e) => setFormState({ ...formState, devAssessmentResult: e.target.value })}
                           placeholder="VD: Đạt khảo sát"
-                          className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
+                          className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
                         />
                       </div>
                     </div>
@@ -2420,7 +2420,7 @@ export function StudentInfoClient({
                         value={formState.signatureName}
                         onChange={(e) => setFormState({ ...formState, signatureName: e.target.value })}
                         placeholder="Họ tên Giám đốc tuyển sinh"
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
                       />
                     </div>
                   </div>
@@ -2432,7 +2432,7 @@ export function StudentInfoClient({
                       onChange={(e) => setFormState({ ...formState, directorNote: e.target.value })}
                       rows={2}
                       placeholder="Ghi ý kiến chỉ đạo tuyển sinh..."
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
                     />
                   </div>
                 </div>
@@ -2484,7 +2484,7 @@ export function StudentInfoClient({
                 <select
                   value={importPeriodId}
                   onChange={(e) => setImportPeriodId(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
                 >
                   {activePeriodsList.map((p) => (
                     <option key={p.id} value={p.id}>{p.name}</option>
@@ -2498,7 +2498,7 @@ export function StudentInfoClient({
                 <select
                   value={importBatchId}
                   onChange={(e) => setImportBatchId(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
                 >
                   <option value="">Không phân đợt</option>
                   {activeImportBatches.map((b: any) => (
@@ -2733,25 +2733,25 @@ export function StudentInfoClient({
                     
                     return (
                       <div className={`grid grid-cols-2 ${totalScore !== null ? "md:grid-cols-6" : "md:grid-cols-5"} gap-4`}>
-                        <div className="bg-white p-4 rounded-2xl border border-slate-200 text-center">
+                        <div className="bg-white p-4 rounded-2xl border border-slate-300 text-center">
                           <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Điểm Toán</span>
                           <span className="text-2xl font-black text-[#1E1B4B] mt-1 block">
                             {mathVal !== null && mathVal !== undefined ? mathVal : "-"}
                           </span>
                         </div>
-                        <div className="bg-white p-4 rounded-2xl border border-slate-200 text-center">
+                        <div className="bg-white p-4 rounded-2xl border border-slate-300 text-center">
                           <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Điểm Ngữ văn</span>
                           <span className="text-2xl font-black text-[#1E1B4B] mt-1 block">
                             {literatureVal !== null && literatureVal !== undefined ? literatureVal : "-"}
                           </span>
                         </div>
-                        <div className="bg-white p-4 rounded-2xl border border-slate-200 text-center">
+                        <div className="bg-white p-4 rounded-2xl border border-slate-300 text-center">
                           <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tiếng Anh viết</span>
                           <span className="text-2xl font-black text-[#1E1B4B] mt-1 block">
                             {writtenDisplay}
                           </span>
                         </div>
-                        <div className="bg-white p-4 rounded-2xl border border-slate-200 text-center">
+                        <div className="bg-white p-4 rounded-2xl border border-slate-300 text-center">
                           <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tiếng Anh nói</span>
                           <span className="text-2xl font-black text-[#1E1B4B] mt-1 block">
                             {oralDisplay}
@@ -2765,7 +2765,7 @@ export function StudentInfoClient({
                             </span>
                           </div>
                         )}
-                        <div className="bg-white p-4 rounded-2xl border border-slate-200 text-center">
+                        <div className="bg-white p-4 rounded-2xl border border-slate-300 text-center">
                           <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Điểm Tâm lý</span>
                           <span className="text-2xl font-black text-[#1E1B4B] mt-1 block">
                             {psychologyVal !== null && psychologyVal !== undefined ? psychologyVal : "-"}
@@ -2830,22 +2830,22 @@ export function StudentInfoClient({
                     </h4>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="bg-white p-4 rounded-2xl border border-slate-200">
+                      <div className="bg-white p-4 rounded-2xl border border-slate-300">
                         <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Đánh giá chuyên môn</label>
                         <p className="text-sm text-slate-700 font-medium mt-1">{selectedStudent.devProfessionalComment || "Chưa có nhận xét chuyên môn."}</p>
                       </div>
-                      <div className="bg-white p-4 rounded-2xl border border-slate-200">
+                      <div className="bg-white p-4 rounded-2xl border border-slate-300">
                         <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Đánh giá tâm lý</label>
                         <p className="text-sm text-slate-700 font-medium mt-1">{selectedStudent.devPsychologyComment || "Chưa có nhận xét tâm lý."}</p>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="bg-white p-4 rounded-2xl border border-slate-200">
+                      <div className="bg-white p-4 rounded-2xl border border-slate-300">
                         <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">GV phân công khảo sát</label>
                         <p className="text-sm text-slate-700 font-semibold mt-1">{getAssignedTeachersText()}</p>
                       </div>
-                      <div className="bg-white p-4 rounded-2xl border border-slate-200">
+                      <div className="bg-white p-4 rounded-2xl border border-slate-300">
                         <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ghi chú quan trọng</label>
                         <p className="text-sm text-rose-600 font-semibold mt-1">{selectedStudent.devImportantNote || "-"}</p>
                       </div>
@@ -2856,7 +2856,7 @@ export function StudentInfoClient({
                     </div>
 
                     {/* Criteria score results */}
-                    <div className="bg-white p-4 rounded-2xl border border-slate-200">
+                    <div className="bg-white p-4 rounded-2xl border border-slate-300">
                       <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Kết quả tiêu chí khảo sát năng lực mầm non</label>
                       {renderInputDevScores()}
                     </div>
@@ -2910,7 +2910,7 @@ export function StudentInfoClient({
 
                   {/* Section: Thông tin học thử (nếu có) */}
                   {(selectedStudent.probationaryPeriod || selectedStudent.probationaryClass || selectedStudent.probationaryTeacher || selectedStudent.probationaryResult) && (
-                    <div className="border-t-2 border-dashed border-slate-200 pt-6 mt-6 space-y-4">
+                    <div className="border-t-2 border-dashed border-slate-300 pt-6 mt-6 space-y-4">
                       <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
                         <FileText className="w-3.5 h-3.5 text-indigo-650" />
                         Thông tin học thử (nếu có)
@@ -2960,7 +2960,7 @@ export function StudentInfoClient({
                             return <p className="text-xs text-slate-400 font-semibold italic">Chưa có nhật ký ghi nhận.</p>;
                           }
                           return (
-                            <div className="space-y-2 max-h-40 overflow-y-auto border border-slate-200 p-3 bg-white divide-y divide-slate-100 rounded-xl">
+                            <div className="space-y-2 max-h-40 overflow-y-auto border border-slate-300 p-3 bg-white divide-y divide-slate-100 rounded-xl">
                               {logs.map((log, idx) => (
                                 <div key={idx} className="pt-2 first:pt-0 text-xs text-slate-650 leading-relaxed font-semibold">
                                   <div className="flex justify-between items-center text-slate-400">
@@ -3009,7 +3009,7 @@ export function StudentInfoClient({
                   </div>
                   <div>
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Ý kiến chỉ đạo / Ghi chú của Giám đốc</span>
-                    <p className="text-sm font-semibold text-slate-800 bg-white p-3 rounded-xl border border-slate-200 mt-1.5 min-h-[4rem]">
+                    <p className="text-sm font-semibold text-slate-800 bg-white p-3 rounded-xl border border-slate-300 mt-1.5 min-h-[4rem]">
                       {selectedStudent.directorNote || "Chưa có ghi chú chỉ đạo."}
                     </p>
                   </div>
@@ -3065,7 +3065,7 @@ export function StudentInfoClient({
                     setRetestPeriodId(e.target.value);
                     setRetestBatchId("");
                   }}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
                 >
                   <option value="">-- Chọn Kỳ khảo sát mới --</option>
                   {generalPeriods.map((p) => (
@@ -3081,7 +3081,7 @@ export function StudentInfoClient({
                   <select
                     value={retestBatchId}
                     onChange={(e) => setRetestBatchId(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
                   >
                     <option value="">-- Chọn Đợt khảo sát mới (Tất cả / Lẻ) --</option>
                     {(generalPeriods.find(p => p.id === retestPeriodId)?.batches || [])
