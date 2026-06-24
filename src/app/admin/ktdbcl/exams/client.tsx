@@ -132,7 +132,7 @@ export function ExamsClient({
         : filterPriority === "no"
         ? exam.isPriority === false
         : true
-    const matchesGrade = filterGrade ? exam.grade === filterGrade : true
+    const matchesGrade = filterGrade ? (exam.grade ? exam.grade.split(',').includes(filterGrade) : false) : true
 
     return matchesSearch && matchesCategory && matchesRound && matchesDept && matchesPriority && matchesGrade
   })
@@ -306,20 +306,39 @@ export function ExamsClient({
             </div>
 
             {/* Khối lớp */}
-            <div>
-              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">Khối lớp</label>
-              <select
-                value={form.grade}
-                onChange={(e) => setForm({ ...form, grade: e.target.value })}
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-[#00A19A] outline-none font-semibold text-slate-700"
-              >
-                <option value="">-- Chọn khối lớp --</option>
-                {Array.from({ length: 12 }, (_, i) => String(i + 1)).map((g) => (
-                  <option key={g} value={g}>
-                    Khối {g}
-                  </option>
-                ))}
-              </select>
+            <div className="md:col-span-3">
+              <label className="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-wider">
+                Khối lớp (Chọn 1 hoặc nhiều khối)
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {Array.from({ length: 12 }, (_, i) => String(i + 1)).map((g) => {
+                  const selectedGrades = form.grade ? form.grade.split(",") : [];
+                  const isSelected = selectedGrades.includes(g);
+                  const toggleGrade = () => {
+                    let nextGrades;
+                    if (isSelected) {
+                      nextGrades = selectedGrades.filter((item) => item !== g);
+                    } else {
+                      nextGrades = [...selectedGrades, g].sort((a, b) => Number(a) - Number(b));
+                    }
+                    setForm({ ...form, grade: nextGrades.join(",") });
+                  };
+                  return (
+                    <button
+                      key={g}
+                      type="button"
+                      onClick={toggleGrade}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+                        isSelected
+                          ? "bg-[#00A19A] text-white border-[#00A19A] shadow-sm shadow-[#00A19A]/20"
+                          : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                      }`}
+                    >
+                      Khối {g}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Tổ chuyên môn */}
@@ -465,11 +484,11 @@ export function ExamsClient({
                         <span className="font-bold text-slate-800 text-sm flex items-center gap-1">
                           {exam.name}
                         </span>
-                        {exam.grade && (
-                          <span className="text-[10px] bg-[#00A19A]/10 text-[#00A19A] px-2 py-0.5 rounded-md font-bold">
-                            Khối {exam.grade}
+                        {exam.grade && exam.grade.split(",").map((g: any) => (
+                          <span key={g} className="text-[10px] bg-[#00A19A]/10 text-[#00A19A] px-2 py-0.5 rounded-md font-bold mr-1">
+                            Khối {g}
                           </span>
-                        )}
+                        ))}
                         <span className="text-[10px] font-mono bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md font-bold">
                           {exam.code}
                         </span>
@@ -496,7 +515,7 @@ export function ExamsClient({
                         {exam.grade && (
                           <span className="flex items-center gap-1">
                             <Layers className="w-3.5 h-3.5 text-slate-400" />
-                            Khối lớp: <strong className="text-slate-600">Khối {exam.grade}</strong>
+                            Khối lớp: <strong className="text-slate-600">{exam.grade.split(",").map((g: any) => `Khối ${g}`).join(", ")}</strong>
                           </span>
                         )}
 
