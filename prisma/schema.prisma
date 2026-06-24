@@ -1059,8 +1059,20 @@ model Exam {
   endDate        DateTime?
   categoryId     String
   category       ExamCategory  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  roundId        String?
+  round          ExamRound?    @relation(fields: [roundId], references: [id], onDelete: SetNull)
   academicYearId String?
   academicYear   AcademicYear? @relation(fields: [academicYearId], references: [id], onDelete: SetNull)
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
+}
+
+model ExamRound {
+  id          String   @id @default(cuid())
+  name        String
+  code        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  exams       Exam[]
 }
