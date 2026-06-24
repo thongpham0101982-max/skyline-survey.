@@ -173,7 +173,7 @@ export function LoginClient() {
             </div>
 
             {/* Premium Role Switcher */}
-            <div className="p-1.5 mb-6 flex gap-1 text-xs font-semibold">
+            <div className="p-1.5 mb-6 flex gap-1 text-xs font-semibold bg-slate-100/80 border border-slate-200/30 rounded-2xl">
               {['STAFF', 'PARENT', 'STUDENT'].map((r) => {
                 const labels = { STAFF: 'CBGV', PARENT: 'Phụ huynh', STUDENT: 'Học sinh' };
                 const icons = { STAFF: ShieldCheck, PARENT: Users, STUDENT: GraduationCap };
@@ -183,10 +183,10 @@ export function LoginClient() {
                   <button
                     key={r}
                     onClick={() => { setRole(r); setError(''); setLoadingSteps([]); }}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 ${
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-200 ${
                       isActive
-                        ? 'bg-[#003B3A] text-white shadow-md shadow-[#003B3A]/25 border border-white/10 scale-[1.02]'
-                        : 'text-slate-500 hover:text-[#003B3A] hover:bg-slate-100 border border-transparent'
+                        ? 'bg-white text-[#00A99D] shadow-sm border border-slate-200/50 scale-[1.01]'
+                        : 'text-slate-500 hover:text-[#00A99D] hover:bg-white/40 border border-transparent'
                     }`}
                   >
                     <Icon className="w-3.5 h-3.5" />
@@ -217,7 +217,7 @@ export function LoginClient() {
                     value={identifier}
                     onChange={e => setIdentifier(e.target.value)} 
                     placeholder={role === 'STAFF' ? 'admin@skyline.edu' : role === 'PARENT' ? 'Nhập SĐT phụ huynh' : 'Nhập mã học sinh'}
-                    className="w-full pl-11 pr-4 text-sm font-semibold text-slate-800 placeholder-slate-400 hover:border-[#00A99D]/40 focus:bg-white focus:border-[#00A99D] focus:ring-4 focus:ring-[#00A99D]/10 outline-none transition-all duration-300 text-xs font-semibold"
+                    className="w-full h-12 pl-11 pr-4 rounded-xl border border-slate-200 bg-slate-50/50 text-sm font-semibold text-slate-800 placeholder-slate-400 hover:border-[#00A99D]/40 focus:bg-white focus:border-[#00A99D] focus:ring-4 focus:ring-[#00A99D]/10 outline-none transition-all duration-300 text-xs"
                   />
                 </div>
               </div>
@@ -234,7 +234,7 @@ export function LoginClient() {
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     placeholder="••••••••••"
-                    className="w-full pl-11 pr-11 text-sm font-semibold text-slate-800 placeholder-slate-400 hover:border-[#00A99D]/40 focus:bg-white focus:border-[#00A99D] focus:ring-4 focus:ring-[#00A99D]/10 outline-none transition-all duration-300 text-xs font-semibold"
+                    className="w-full h-12 pl-11 pr-11 rounded-xl border border-slate-200 bg-slate-50/50 text-sm font-semibold text-slate-800 placeholder-slate-400 hover:border-[#00A99D]/40 focus:bg-white focus:border-[#00A99D] focus:ring-4 focus:ring-[#00A99D]/10 outline-none transition-all duration-300 text-xs"
                   />
                   <button
                     type="button"
