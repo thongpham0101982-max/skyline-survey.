@@ -5288,7 +5288,7 @@ return {
                         <th className="p-2.5 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Hệ Khảo sát</th>
                         <th className="p-2.5 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Diện Khảo sát</th>
                         <th className="p-2.5 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Trạng thái duyệt</th>
-                        <th className="p-2.5 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Duyệt</th>
+                        <th className="p-2.5 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Kết quả</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200">
@@ -5327,7 +5327,7 @@ return {
                                     : 'bg-white text-[#00A19A] border border-[#00A19A] hover:bg-[#00A19A] hover:text-white'
                                 }`}
                               >
-                                Duyệt
+                                Chi tiết
                               </button>
                             </td>
                           </tr>
@@ -5347,7 +5347,7 @@ return {
 
               {!selectedReportStudent ? (
                 <div className="bg-white border border-slate-200 rounded-[2rem] p-12 text-center text-slate-400">
-                  Vui lòng chọn học sinh và nhấn nút "Duyệt" để hiển thị chi tiết: Kết quả khảo sát các môn và Xét duyệt Tuyển sinh.
+                  Vui lòng chọn học sinh và nhấn nút "Chi tiết" để hiển thị chi tiết: Kết quả khảo sát các môn và Xét duyệt Tuyển sinh.
                 </div>
               ) : (
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
