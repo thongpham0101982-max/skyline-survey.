@@ -175,6 +175,7 @@ model Student {
   surveyForms      SurveyForm[]
   studentTransfers StudentTransfer[]
   //  user           User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  exams            ExamStudent[]
 }
 
 model ParentStudentLink {
@@ -1073,6 +1074,7 @@ model Exam {
   grade          String?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
+  students       ExamStudent[]
 }
 
 model ExamRound {
@@ -1083,4 +1085,17 @@ model ExamRound {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   exams       Exam[]
+}
+
+
+model ExamStudent {
+  id          String   @id @default(cuid())
+  examId      String
+  exam        Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+  studentId   String
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([examId, studentId])
 }
