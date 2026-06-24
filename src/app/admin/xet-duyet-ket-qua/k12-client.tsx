@@ -87,7 +87,7 @@ function Field({ label, required, children }: { label:string; required?:boolean;
     </div>
   )
 }
-const inp = "h-11 w-full px-3.5 bg-white border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-lg outline-none transition-all focus:ring-4 focus:ring-[#00B5E2]/10 focus:border-[#00B5E2] disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+const inp = "h-11 w-full px-3.5 bg-white border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-xl outline-none transition-all focus:ring-4 focus:ring-[#00B5E2]/10 focus:border-[#00B5E2] disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
 
 function Modal({ open, onClose, title, size="md", children, footer }: {
   open:boolean; onClose:()=>void; title:string; size?:"sm"|"md"|"lg"|"xl"|"2xl";
@@ -98,7 +98,7 @@ function Modal({ open, onClose, title, size="md", children, footer }: {
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"/>
-      <div className={`relative bg-white w-full ${w} rounded-none shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200`} onClick={e=>e.stopPropagation()}>
+      <div className={`relative bg-white w-full ${w} rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200`} onClick={e=>e.stopPropagation()}>
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
           <h3 className="text-base font-black text-slate-800">{title}</h3>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center hover:bg-slate-50 transition-colors text-slate-500 shadow-sm text-xs font-semibold"><X className="w-4 h-4"/></button>
@@ -3603,7 +3603,7 @@ return {
                     <div>
                       <div className="flex items-center justify-between mb-3 px-1">
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><BookOpen className="w-3.5 h-3.5"/> Môn khảo sát *</label>
-                        <button onClick={() => setAsSelSubjects(asSelSubjects.length === subjectsList.length ? [] : subjectsList.map(s=>s.id))} className={"text-[10px] font-black text-indigo-500 hover:bg-indigo-50 px-2 py-1 rounded-lg uppercase tracking-wider transition-colors " + (isReadOnly ? "pointer-events-none opacity-40 cursor-not-allowed" : "")} disabled={isReadOnly}>
+                        <button onClick={() => setAsSelSubjects(asSelSubjects.length === subjectsList.length ? [] : subjectsList.map(s=>s.id))} className={"text-[10px] font-black text-indigo-500 hover:bg-indigo-50 px-2 py-1 rounded-xl uppercase tracking-wider transition-colors " + (isReadOnly ? "pointer-events-none opacity-40 cursor-not-allowed" : "")} disabled={isReadOnly}>
                           {asSelSubjects.length === subjectsList.length ? "Bỏ chọn hết" : "Chọn tất cả"}
                         </button>
                       </div>
@@ -3625,7 +3625,7 @@ return {
                       <div className="p-6 text-xs font-semibold">
                         <div className="flex items-center justify-between mb-4">
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Layers className="w-3.5 h-3.5"/> Khối *</label>
-                          <button onClick={() => setAsSelGrades(asSelGrades.length === activeGrades.length ? [] : activeGrades)} className={"text-[9px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg " + (isReadOnly ? "pointer-events-none opacity-40 cursor-not-allowed" : "")} disabled={isReadOnly}>Chọn hết</button>
+                          <button onClick={() => setAsSelGrades(asSelGrades.length === activeGrades.length ? [] : activeGrades)} className={"text-[9px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-xl " + (isReadOnly ? "pointer-events-none opacity-40 cursor-not-allowed" : "")} disabled={isReadOnly}>Chọn hết</button>
                         </div>
                         <div className="grid grid-cols-4 gap-2">
                           {activeGrades.map(g => (
@@ -3644,7 +3644,7 @@ return {
                       <div className="p-6 text-xs font-semibold">
                         <div className="flex items-center justify-between mb-4">
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><GraduationCap className="w-3.5 h-3.5"/> Hệ học *</label>
-                          <button onClick={() => setAsSelSystems(asSelSystems.length === currentEduSystems.length ? [] : currentEduSystems.map(es=>es.code))} className={"text-[9px] font-black text-amber-600 bg-amber-50 px-2 py-1 rounded-lg " + (isReadOnly ? "pointer-events-none opacity-40 cursor-not-allowed" : "")} disabled={isReadOnly}>Chọn hết</button>
+                          <button onClick={() => setAsSelSystems(asSelSystems.length === currentEduSystems.length ? [] : currentEduSystems.map(es=>es.code))} className={"text-[9px] font-black text-amber-600 bg-amber-50 px-2 py-1 rounded-xl " + (isReadOnly ? "pointer-events-none opacity-40 cursor-not-allowed" : "")} disabled={isReadOnly}>Chọn hết</button>
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {currentEduSystems.map(es => (
@@ -3755,7 +3755,7 @@ return {
                             <td className="p-2 p-2 border border-slate-200">
                                 <div className="flex flex-wrap gap-1">
                                   {a.subjects.map((sub: string) => (
-                                    <span key={sub} className="px-3 py-1 bg-white border border-indigo-100 rounded-lg text-xs font-black text-indigo-600 shadow-sm">{sub}</span>
+                                    <span key={sub} className="px-3 py-1 bg-white border border-indigo-100 rounded-xl text-xs font-black text-indigo-600 shadow-sm">{sub}</span>
                                   ))}
                                 </div>
                               </td>
@@ -3988,10 +3988,10 @@ return {
                                       </td>
                                      <td className="p-2 text-right pr-6 border border-slate-200">
                                        <div className="flex items-center justify-end gap-1">
-                                         <button onClick={() => openEditBatch(b)} className={"p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate} title="Chỉnh sửa">
+                                         <button onClick={() => openEditBatch(b)} className={"p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate} title="Chỉnh sửa">
                                            <Edit2 className="w-3.5 h-3.5" />
                                          </button>
-                                         <button onClick={() => setConfirm({ msg: `Xóa đợt "` + b.name + `"?`, fn: () => doDeleteBatch(b.id) })} className={"p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete} title="Xóa">
+                                         <button onClick={() => setConfirm({ msg: `Xóa đợt "` + b.name + `"?`, fn: () => doDeleteBatch(b.id) })} className={"p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete} title="Xóa">
                                            <Trash2 className="w-3.5 h-3.5" />
                                          </button>
                                        </div>
@@ -4158,8 +4158,8 @@ return {
                            
                            <td className="p-2 text-center border border-slate-300 sticky right-0 group-hover:bg-slate-50 transition-colors shadow-[-10px_0_15px_-10px_rgba(0,0,0,0.05)] text-xs font-semibold">
                               <div className="flex items-center justify-center gap-1.5">
-                                 <button onClick={()=>openEditStudent(s)} className={"p-1.5 text-slate-400 hover:text-[#00A19A] hover:bg-[#00A19A]/10 rounded-lg transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate} title="Sửa hồ sơ"><Edit2 className="w-4 h-4"/></button>
-                                 <button onClick={()=>setConfirm({msg:`Xóa hồ sơ học sinh ${s.fullName}?`,fn:()=>doDeleteStudent(s.id)})} className={"p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete} title="Xóa hồ sơ"><Trash2 className="w-4 h-4"/></button>
+                                 <button onClick={()=>openEditStudent(s)} className={"p-1.5 text-slate-400 hover:text-[#00A19A] hover:bg-[#00A19A]/10 rounded-xl transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate} title="Sửa hồ sơ"><Edit2 className="w-4 h-4"/></button>
+                                 <button onClick={()=>setConfirm({msg:`Xóa hồ sơ học sinh ${s.fullName}?`,fn:()=>doDeleteStudent(s.id)})} className={"p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete} title="Xóa hồ sơ"><Trash2 className="w-4 h-4"/></button>
                               </div>
                            </td>
                         </tr>
@@ -4178,8 +4178,8 @@ return {
                           <span className="text-sm font-bold text-slate-800">{s.fullName}</span>
                         </div>
                         <div className="flex items-center gap-1">
-                           <button onClick={()=>openEditStudent(s)} className={"p-2 text-slate-400 hover:text-[#00A19A] bg-slate-50 rounded-lg " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate}><Edit2 className="w-4 h-4"/></button>
-                           <button onClick={()=>setConfirm({msg:`Xóa hồ sơ học sinh ${s.fullName}?`,fn:()=>doDeleteStudent(s.id)})} className={"p-2 text-slate-400 hover:text-rose-600 bg-slate-50 rounded-lg " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete}><Trash2 className="w-4 h-4"/></button>
+                           <button onClick={()=>openEditStudent(s)} className={"p-2 text-slate-400 hover:text-[#00A19A] bg-slate-50 rounded-xl " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate}><Edit2 className="w-4 h-4"/></button>
+                           <button onClick={()=>setConfirm({msg:`Xóa hồ sơ học sinh ${s.fullName}?`,fn:()=>doDeleteStudent(s.id)})} className={"p-2 text-slate-400 hover:text-rose-600 bg-slate-50 rounded-xl " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete}><Trash2 className="w-4 h-4"/></button>
                         </div>
                       </div>
                       
@@ -4350,7 +4350,7 @@ return {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {activeGrades.map((g: string) => (
-                      <button key={g} onClick={() => toggleGrade(g)} className={`text-xs px-3 py-1.5 rounded-lg font-bold transition-all border ${selGrades.includes(g) ? 'bg-[#00A19A] text-white border-[#00A19A] shadow-sm' : 'bg-white text-slate-800 border-slate-300 hover:border-[#00A19A] hover:bg-slate-100/50'} ${isReadOnly ? "pointer-events-none opacity-40" : ""}`} disabled={isReadOnly}>
+                      <button key={g} onClick={() => toggleGrade(g)} className={`text-xs px-3 py-1.5 rounded-xl font-bold transition-all border ${selGrades.includes(g) ? 'bg-[#00A19A] text-white border-[#00A19A] shadow-sm' : 'bg-white text-slate-800 border-slate-300 hover:border-[#00A19A] hover:bg-slate-100/50'} ${isReadOnly ? "pointer-events-none opacity-40" : ""}`} disabled={isReadOnly}>
                         {selGrades.includes(g) && <Check className="w-3 h-3 inline mr-1"/>} {g}
                       </button>
                     ))}
@@ -4364,7 +4364,7 @@ return {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {currentEduSystems.map((es: any) => (
-                      <button key={es.code} onClick={() => toggleEdu(es.code)} className={`text-xs px-3 py-1.5 rounded-lg font-bold transition-all border ${selEdus.includes(es.code) ? 'bg-[#00A19A] text-white border-[#00A19A] shadow-sm' : 'bg-white text-slate-800 border-slate-300 hover:border-[#00A19A] hover:bg-slate-100/50'} ${isReadOnly ? "pointer-events-none opacity-40" : ""}`} disabled={isReadOnly}>
+                      <button key={es.code} onClick={() => toggleEdu(es.code)} className={`text-xs px-3 py-1.5 rounded-xl font-bold transition-all border ${selEdus.includes(es.code) ? 'bg-[#00A19A] text-white border-[#00A19A] shadow-sm' : 'bg-white text-slate-800 border-slate-300 hover:border-[#00A19A] hover:bg-slate-100/50'} ${isReadOnly ? "pointer-events-none opacity-40" : ""}`} disabled={isReadOnly}>
                         {selEdus.includes(es.code) && <Check className="w-3 h-3 inline mr-1"/>} {es.code}
                       </button>
                     ))}
@@ -4513,7 +4513,7 @@ return {
                                   setAssignSelSubjects([g.subject?.id]);
                                   setEditingMappingSubjectId(g.subject?.id);
                                   window.scrollTo({ top: 0, behavior: 'smooth' });
-                                }} className={"p-2 text-slate-400 hover:text-[#00A19A] hover:bg-[#00A19A]/5 rounded-lg transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate} title="Chỉnh sửa (Sẽ nạp lên form phía trên)">
+                                }} className={"p-2 text-slate-400 hover:text-[#00A19A] hover:bg-[#00A19A]/5 rounded-xl transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate} title="Chỉnh sửa (Sẽ nạp lên form phía trên)">
                                   <Pencil className="w-4 h-4"/>
                                 </button>
                                 <button onClick={async () => {
@@ -4523,7 +4523,7 @@ return {
                                     }
                                     fetchAllMappings();
                                   }
-                                }} className={"p-2 text-slate-400 hover:text-red-655 hover:bg-red-50 rounded-lg transition-all " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete} title="Xóa toàn bộ môn này">
+                                }} className={"p-2 text-slate-400 hover:text-red-655 hover:bg-red-50 rounded-xl transition-all " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete} title="Xóa toàn bộ môn này">
                                   <Trash2 className="w-4 h-4"/>
                                 </button>
                               </div>
@@ -4870,7 +4870,7 @@ return {
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Đối tượng: {selectedDocGroup === "khoi_1" ? "Khối 1" : selectedDocGroup === "khoi_2_5" ? "Khối 2 đến 5" : selectedDocGroup === "khoi_6" ? "Khối 6" : selectedDocGroup === "khoi_7_9" ? "Khối 7 đến 9" : selectedDocGroup === "khoi_10" ? "Khối 10" : selectedDocGroup === "khoi_11_12" ? "Khối 11 đến 12" : "Đối tượng Tuyển sinh"}</p>
                 </div>
               </div>
-              <button onClick={() => setIsDocModalOpen(false)} className="w-8 h-8 rounded-lg bg-slate-200/50 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors">
+              <button onClick={() => setIsDocModalOpen(false)} className="w-8 h-8 rounded-xl bg-slate-200/50 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -5389,7 +5389,7 @@ return {
                                   onClick={() => handleSendGdcsApprovalRequestForStudent(s)}
                                   disabled={sendingApprovalId === s.id}
                                   title="Gửi yêu cầu xét duyệt đến GĐCS"
-                                  className="p-1.5 rounded-lg hover:bg-slate-100 text-indigo-600 disabled:opacity-50 inline-flex items-center justify-center cursor-pointer transition-colors"
+                                  className="p-1.5 rounded-xl hover:bg-slate-100 text-indigo-600 disabled:opacity-50 inline-flex items-center justify-center cursor-pointer transition-colors"
                                 >
                                   {sendingApprovalId === s.id ? (
                                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -6059,7 +6059,7 @@ return {
                                             </div>
                                           </td>
                                           <td className="p-2 p-2 text-center border border-slate-200">
-                                            <span className={`px-2 py-0.5 rounded-lg border text-[10px] font-black inline-block shadow-sm ${badgeColor}`}>
+                                            <span className={`px-2 py-0.5 rounded-xl border text-[10px] font-black inline-block shadow-sm ${badgeColor}`}>
                                               {sCode.includes("tly") && rawScore ? `${val} (${rawScore}đ)` : val}
                                             </span>
                                           </td>
@@ -6294,7 +6294,7 @@ return {
                                                 <span className="text-[9px] font-black uppercase tracking-widest text-rose-600 mb-2 block flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5 text-rose-500"/> Tiêu chí Không đạt</span>
                                                 <div className="space-y-1.5 max-h-[160px] overflow-y-auto pr-1 scrollbar-thin">
                                                   {scoreVals.map((v, idx) => v === "2" ? (
-                                                    <div key={idx} className="flex items-start gap-2 text-[11px] font-bold text-rose-800 leading-normal bg-white border border-rose-100/50 p-2 rounded-lg shadow-sm">
+                                                    <div key={idx} className="flex items-start gap-2 text-[11px] font-bold text-rose-800 leading-normal bg-white border border-rose-100/50 p-2 rounded-xl shadow-sm">
                                                       <span className="mt-1.5 w-1 h-1 shrink-0 text-xs font-semibold"></span>
                                                       <span className="font-medium text-slate-700">
                                                         {parsedCols.scores[idx] || [
@@ -6333,7 +6333,7 @@ return {
                                                 <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2 block flex items-center gap-1"><Info className="w-3.5 h-3.5 text-slate-400"/> Tiêu chí Không làm</span>
                                                 <div className="space-y-1.5 max-h-[160px] overflow-y-auto pr-1 scrollbar-thin">
                                                   {scoreVals.map((v, idx) => v === "1" ? (
-                                                    <div key={idx} className="flex items-start gap-2 text-[11px] font-bold text-slate-750 leading-normal bg-white border border-slate-200/65 p-2 rounded-lg shadow-sm">
+                                                    <div key={idx} className="flex items-start gap-2 text-[11px] font-bold text-slate-750 leading-normal bg-white border border-slate-200/65 p-2 rounded-xl shadow-sm">
                                                       <span className="mt-1.5 w-1 h-1 rounded-full bg-slate-400 shrink-0"></span>
                                                       <span className="font-medium text-slate-555">
                                                         {parsedCols.scores[idx] || [
@@ -6536,7 +6536,7 @@ return {
              <div className="flex flex-wrap gap-2 p-3 text-xs font-semibold">
                {configs.filter(c => c.categoryType === "DIEN_KS").map(c => (
                  <button type="button" key={c.code} onClick={() => setSubjectForm(f => ({...f, exemptCriteria: f.exemptCriteria.includes(c.name) ? f.exemptCriteria.filter(x => x !== c.name) : [...f.exemptCriteria, c.name]}))}
-                   className={`text-xs px-3 py-1.5 rounded-lg font-bold border transition-all ${subjectForm.exemptCriteria.includes(c.name) ? 'bg-violet-500 text-white border-violet-500 shadow-md shadow-violet-200' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-300'}`}
+                   className={`text-xs px-3 py-1.5 rounded-xl font-bold border transition-all ${subjectForm.exemptCriteria.includes(c.name) ? 'bg-violet-500 text-white border-violet-500 shadow-md shadow-violet-200' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-300'}`}
                  >{subjectForm.exemptCriteria.includes(c.name) && <span className="mr-1">✓</span>}{c.name}</button>
                ))}
                {configs.filter(c => c.categoryType === "DIEN_KS").length === 0 && <span className="text-xs text-slate-400">Chưa có Diện KS nào trong Danh mục</span>}
@@ -6637,7 +6637,7 @@ return {
         </div>
       </Modal>
 
-      <Modal open={sModal} onClose={()=>setSModal(false)} title="Thông tin Học sinh" size="lg" footer={<><button onClick={()=>setSModal(false)} className="flex-1 px-6 py-3 border border-[#D9E2EC] text-[#64748B] hover:text-[#1E293B] hover:bg-slate-100 rounded-lg transition-all cursor-pointer text-xs font-bold uppercase tracking-wider">Đóng</button> <button onClick={saveStudent} className="flex-1 px-6 py-3 bg-[#00B5E2] hover:bg-[#0098C2] text-white rounded-lg text-xs font-bold shadow-md shadow-[#00B5E2]/15 transition-all active:scale-95 cursor-pointer uppercase tracking-wider">Lưu dữ liệu</button></>}>
+      <Modal open={sModal} onClose={()=>setSModal(false)} title="Thông tin Học sinh" size="lg" footer={<><button onClick={()=>setSModal(false)} className="flex-1 px-6 py-3 border border-[#D9E2EC] text-[#64748B] hover:text-[#1E293B] hover:bg-slate-100 rounded-xl transition-all cursor-pointer text-xs font-bold uppercase tracking-wider">Đóng</button> <button onClick={saveStudent} className="flex-1 px-6 py-3 bg-[#00B5E2] hover:bg-[#0098C2] text-white rounded-xl text-xs font-bold shadow-md shadow-[#00B5E2]/15 transition-all active:scale-95 cursor-pointer uppercase tracking-wider">Lưu dữ liệu</button></>}>
         <div className="space-y-4 pt-1">
            <div className="grid grid-cols-2 gap-4">
               <Field label="Mã HS KS" required><input value={sForm.studentCode} onChange={e=>setSForm(f=>({...f,studentCode:e.target.value}))} className={inp} disabled={!!editS}/></Field>
@@ -6690,13 +6690,13 @@ return {
 
            <div className="space-y-4">
              <Field label="Đối tượng Tuyển sinh">
-                <div className="p-4 bg-white border border-[#D9E2EC] rounded-lg space-y-3">
+                <div className="p-4 bg-white border border-[#D9E2EC] rounded-xl space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider">Chọn một hoặc nhiều đối tượng tuyển sinh:</span>
                     <button 
                       type="button"
                       onClick={() => openAddConfig("DOI_TUONG_TS")}
-                      className="px-3 py-1.5 bg-[#E6F8FD] hover:bg-[#00B5E2]/25 text-[#004C97] border border-[#00B5E2]/30 rounded-lg flex items-center gap-1.5 text-xs font-bold transition-all active:scale-95 cursor-pointer"
+                      className="px-3 py-1.5 bg-[#E6F8FD] hover:bg-[#00B5E2]/25 text-[#004C97] border border-[#00B5E2]/30 rounded-xl flex items-center gap-1.5 text-xs font-bold transition-all active:scale-95 cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       Thêm đối tượng
@@ -6719,7 +6719,7 @@ return {
                             }
                             setSForm(f => ({ ...f, targetType: updated.join(", ") }));
                           }}
-                          className={`px-4 py-2 border rounded-lg flex items-center gap-1.5 transition-all text-xs font-semibold select-none cursor-pointer ${isChecked ? 'bg-[#E6F8FD] border-[#00B5E2] text-[#004C97] font-bold shadow-sm' : 'bg-[#F8FAFC] border-[#D9E2EC] text-[#64748B] hover:bg-slate-100/50'}`}
+                          className={`px-4 py-2 border rounded-xl flex items-center gap-1.5 transition-all text-xs font-semibold select-none cursor-pointer ${isChecked ? 'bg-[#E6F8FD] border-[#00B5E2] text-[#004C97] font-bold shadow-sm' : 'bg-[#F8FAFC] border-[#D9E2EC] text-[#64748B] hover:bg-slate-100/50'}`}
                         >
                           {isChecked ? (
                             <span className="text-[#00B5E2] font-black text-sm">✓</span>
@@ -7900,7 +7900,7 @@ return {
                         const manualEmails = currentEmails.filter(e => !allMapEmails.includes(e));
                         setRecipientEmail([...manualEmails, ...selectedEmails].join(', '));
                       }}
-                      className="px-3 py-1.5 bg-[#0c363f]/5 hover:bg-[#0c363f]/10 text-[#0c363f] font-bold text-[10px] rounded-lg transition-colors cursor-pointer select-none"
+                      className="px-3 py-1.5 bg-[#0c363f]/5 hover:bg-[#0c363f]/10 text-[#0c363f] font-bold text-[10px] rounded-xl transition-colors cursor-pointer select-none"
                     >
                       Chọn nhanh CS1-CS4
                     </button>

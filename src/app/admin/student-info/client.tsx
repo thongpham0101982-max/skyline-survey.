@@ -1293,7 +1293,7 @@ export function StudentInfoClient({
             setSubTab("input");
             setCurrentPage(1);
           }}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold transition-all duration-300 ${
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${
             subTab === "input"
               ? "bg-[#00A6A9] text-white shadow-sm"
               : "text-slate-650 hover:bg-slate-200/60 hover:text-slate-800"
@@ -1306,7 +1306,7 @@ export function StudentInfoClient({
             setSubTab("info");
             setCurrentPage(1);
           }}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold transition-all duration-300 ${
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${
             subTab === "info"
               ? "bg-[#00A6A9] text-white shadow-sm"
               : "text-slate-650 hover:bg-slate-200/60 hover:text-slate-800"
@@ -1319,7 +1319,7 @@ export function StudentInfoClient({
             setSubTab("result");
             setCurrentPage(1);
           }}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold transition-all duration-300 ${
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${
             subTab === "result"
               ? "bg-[#00A6A9] text-white shadow-sm"
               : "text-slate-650 hover:bg-slate-200/60 hover:text-slate-800"
@@ -1670,7 +1670,7 @@ export function StudentInfoClient({
                               setSelectedStudent(s);
                               setIsDetailsOpen(true);
                             }}
-                            className="p-1.5 text-slate-400 hover:text-[#00A6A9] hover:bg-slate-100 rounded-lg transition-all"
+                            className="p-1.5 text-slate-400 hover:text-[#00A6A9] hover:bg-slate-100 rounded-xl transition-all"
                             title="Xem chi tiết"
                           >
                             <Eye className="w-4 h-4" />
@@ -1680,7 +1680,7 @@ export function StudentInfoClient({
 
                               <button
                                 onClick={() => openEditModal(s)}
-                                className="p-1.5 text-slate-400 hover:text-[#00A6A9] hover:bg-slate-100 rounded-lg transition-all"
+                                className="p-1.5 text-slate-400 hover:text-[#00A6A9] hover:bg-slate-100 rounded-xl transition-all"
                                 title="Chỉnh sửa"
                               >
                                 <Edit2 className="w-4 h-4" />
@@ -1817,7 +1817,7 @@ export function StudentInfoClient({
                               setSelectedStudent(child);
                               setIsDetailsOpen(true);
                             }}
-                            className="p-1.5 text-slate-400 hover:text-[#00A6A9] hover:bg-slate-100 rounded-lg transition-all"
+                            className="p-1.5 text-slate-400 hover:text-[#00A6A9] hover:bg-slate-100 rounded-xl transition-all"
                             title="Xem chi tiết"
                           >
                             <Eye className="w-4 h-4" />
@@ -1826,7 +1826,7 @@ export function StudentInfoClient({
                             <>
                               <button
                                 onClick={() => openEditModal(child)}
-                                className="p-2 text-slate-300 hover:text-[#00A19A] hover:bg-[#00A19A]/5 rounded-none transition-all"
+                                className="p-2 text-slate-300 hover:text-[#00A19A] hover:bg-[#00A19A]/5 rounded-xl transition-all"
                               >
                                 <Edit2 className="w-4 h-4" />
                               </button>
@@ -1876,7 +1876,7 @@ export function StudentInfoClient({
                   <button
                     key={pageNum}
                     onClick={() => setCurrentPage(pageNum)}
-                    className={`px-3 py-1 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
+                    className={`px-3 py-1 text-xs font-semibold rounded-xl border transition-all cursor-pointer ${
                       currentPage === pageNum
                         ? "bg-[#00A6A9] text-white border-[#00A6A9]"
                         : "bg-white text-slate-600 border-slate-300 hover:bg-slate-50"
@@ -1903,7 +1903,7 @@ export function StudentInfoClient({
       {/* Dialog Form: Add / Edit Student */}
       {isFormOpen && (
         <div className="fixed inset-0 bg-[#1E293B]/60 backdrop-blur-sm flex justify-center items-center z-50 p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-xl w-full max-w-[900px] max-h-[90vh] overflow-hidden shadow-2xl flex flex-col animate-in scale-in duration-200 border border-[#D9E2EC]">
+          <div className="bg-white rounded-2xl w-full max-w-[900px] max-h-[90vh] overflow-hidden shadow-2xl flex flex-col animate-in scale-in duration-200 border border-[#D9E2EC]">
             {/* Header */}
             <div className="px-6 py-5 flex justify-between items-center bg-white border-b border-[#D9E2EC]">
               <div>
@@ -1923,7 +1923,7 @@ export function StudentInfoClient({
               <button
                 type="button"
                 onClick={() => setIsFormOpen(false)}
-                className="p-2 text-[#64748B] hover:text-[#00B5E2] hover:bg-[#E6F8FD] transition-all rounded-lg cursor-pointer"
+                className="p-2 text-[#64748B] hover:text-[#00B5E2] hover:bg-[#E6F8FD] transition-all rounded-xl cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1953,7 +1953,7 @@ export function StudentInfoClient({
                           }
                         }}
                         placeholder="VD: HS001"
-                        className={`h-11 w-full px-3.5 bg-[#F8FAFC] hover:bg-slate-100/30 focus:bg-white border text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-lg outline-none transition-all focus:ring-4 focus:ring-[#00B5E2]/10 ${formErrors.studentCode ? 'border-[#EF4444] focus:border-[#EF4444] focus:ring-[#EF4444]/10' : 'border-[#D9E2EC] focus:border-[#00B5E2]'}`}
+                        className={`h-11 w-full px-3.5 bg-[#F8FAFC] hover:bg-slate-100/30 focus:bg-white border text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-xl outline-none transition-all focus:ring-4 focus:ring-[#00B5E2]/10 ${formErrors.studentCode ? 'border-[#EF4444] focus:border-[#EF4444] focus:ring-[#EF4444]/10' : 'border-[#D9E2EC] focus:border-[#00B5E2]'}`}
                       />
                       {formMode === "create" && (
                         <button
@@ -1962,7 +1962,7 @@ export function StudentInfoClient({
                             handleAutoGenerateCode();
                             setFormErrors(prev => { const n = {...prev}; delete n.studentCode; return n; });
                           }}
-                          className="px-4 h-11 bg-[#E6F8FD] hover:bg-[#00B5E2]/20 text-[#004C97] border border-[#00B5E2]/30 rounded-lg text-xs font-bold transition-all active:scale-95 cursor-pointer"
+                          className="px-4 h-11 bg-[#E6F8FD] hover:bg-[#00B5E2]/20 text-[#004C97] border border-[#00B5E2]/30 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer"
                         >
                           Sinh mã
                         </button>
@@ -1988,7 +1988,7 @@ export function StudentInfoClient({
                         }
                       }}
                       placeholder="VD: Nguyễn Văn A"
-                      className={`h-11 w-full px-3.5 bg-[#F8FAFC] hover:bg-slate-100/30 focus:bg-white border text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-lg outline-none transition-all focus:ring-4 focus:ring-[#00B5E2]/10 ${formErrors.fullName ? 'border-[#EF4444] focus:border-[#EF4444] focus:ring-[#EF4444]/10' : 'border-[#D9E2EC] focus:border-[#00B5E2]'}`}
+                      className={`h-11 w-full px-3.5 bg-[#F8FAFC] hover:bg-slate-100/30 focus:bg-white border text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-xl outline-none transition-all focus:ring-4 focus:ring-[#00B5E2]/10 ${formErrors.fullName ? 'border-[#EF4444] focus:border-[#EF4444] focus:ring-[#EF4444]/10' : 'border-[#D9E2EC] focus:border-[#00B5E2]'}`}
                     />
                     {formErrors.fullName && (
                       <p className="text-[#EF4444] text-[11px] font-semibold mt-1 flex items-center gap-1">
@@ -2011,7 +2011,7 @@ export function StudentInfoClient({
                           setFormErrors(prev => { const n = {...prev}; delete n.dateOfBirth; return n; });
                         }
                       }}
-                      className={`h-11 w-full px-3.5 bg-[#F8FAFC] hover:bg-slate-100/30 focus:bg-white border text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-lg outline-none transition-all focus:ring-4 focus:ring-[#00B5E2]/10 ${formErrors.dateOfBirth ? 'border-[#EF4444] focus:border-[#EF4444] focus:ring-[#EF4444]/10' : 'border-[#D9E2EC] focus:border-[#00B5E2]'}`}
+                      className={`h-11 w-full px-3.5 bg-[#F8FAFC] hover:bg-slate-100/30 focus:bg-white border text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-xl outline-none transition-all focus:ring-4 focus:ring-[#00B5E2]/10 ${formErrors.dateOfBirth ? 'border-[#EF4444] focus:border-[#EF4444] focus:ring-[#EF4444]/10' : 'border-[#D9E2EC] focus:border-[#00B5E2]'}`}
                     />
                     {formErrors.dateOfBirth && (
                       <p className="text-[#EF4444] text-[11px] font-semibold mt-1 flex items-center gap-1">
@@ -2026,7 +2026,7 @@ export function StudentInfoClient({
                       <select
                         value={formState.gender}
                         onChange={(e) => setFormState({ ...formState, gender: e.target.value })}
-                        className="h-11 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-lg outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                        className="h-11 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
                       >
                         <option value="Nam">Nam</option>
                         <option value="Nữ">Nữ</option>
@@ -2044,7 +2044,7 @@ export function StudentInfoClient({
                             setFormErrors(prev => { const n = {...prev}; delete n.grade; return n; });
                           }
                         }}
-                        className={`h-11 w-full px-3 bg-[#F8FAFC] border text-[#1E293B] text-sm font-semibold rounded-lg outline-none focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer ${formErrors.grade ? 'border-[#EF4444] focus:border-[#EF4444] focus:ring-[#EF4444]/10' : 'border-[#D9E2EC] focus:border-[#00B5E2]'}`}
+                        className={`h-11 w-full px-3 bg-[#F8FAFC] border text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer ${formErrors.grade ? 'border-[#EF4444] focus:border-[#EF4444] focus:ring-[#EF4444]/10' : 'border-[#D9E2EC] focus:border-[#00B5E2]'}`}
                       >
                         <option value="">-- Chọn khối --</option>
                         {activeTab === "general" ? (
@@ -2080,7 +2080,7 @@ export function StudentInfoClient({
                     <select
                       disabled
                       value={activeYearId}
-                      className="h-11 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#64748B] text-sm font-semibold rounded-lg outline-none cursor-not-allowed"
+                      className="h-11 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#64748B] text-sm font-semibold rounded-xl outline-none cursor-not-allowed"
                     >
                       <option value={activeYearId}>{activeYearName}</option>
                     </select>
@@ -2091,7 +2091,7 @@ export function StudentInfoClient({
                     <select
                       value={formState.hocKy}
                       onChange={(e) => setFormState({ ...formState, hocKy: e.target.value })}
-                      className="h-11 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-lg outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                      className="h-11 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
                     >
                       <option value="">-- Chọn học kỳ --</option>
                       {configs.filter(c => c.categoryType === "HOC_KY").map(c => (
@@ -2113,7 +2113,7 @@ export function StudentInfoClient({
                           setFormErrors(prev => { const n = {...prev}; delete n.periodId; return n; });
                         }
                       }}
-                      className={`h-11 w-full px-3 bg-[#F8FAFC] border text-[#1E293B] text-sm font-bold rounded-lg outline-none focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer ${formErrors.periodId ? 'border-[#EF4444] focus:border-[#EF4444] focus:ring-[#EF4444]/10' : 'border-[#D9E2EC] focus:border-[#00B5E2]'}`}
+                      className={`h-11 w-full px-3 bg-[#F8FAFC] border text-[#1E293B] text-sm font-bold rounded-xl outline-none focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer ${formErrors.periodId ? 'border-[#EF4444] focus:border-[#EF4444] focus:ring-[#EF4444]/10' : 'border-[#D9E2EC] focus:border-[#00B5E2]'}`}
                     >
                       <option value="">-- Chọn Kỳ khảo sát --</option>
                       {activeTab === "general" ? (
@@ -2138,7 +2138,7 @@ export function StudentInfoClient({
                     <select
                       value={formState.batchId}
                       onChange={(e) => setFormState({ ...formState, batchId: e.target.value })}
-                      className="h-11 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-lg outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                      className="h-11 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
                     >
                       <option value="">-- Không phân đợt / Mặc định --</option>
                       {activeFormBatches.map((b) => (
@@ -2154,7 +2154,7 @@ export function StudentInfoClient({
                     <select
                       value={formState.hoSoCtQuocTe}
                       onChange={(e) => setFormState({ ...formState, hoSoCtQuocTe: e.target.value })}
-                      className="h-11 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-lg outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                      className="h-11 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
                     >
                       <option value="">-- Chọn hồ sơ --</option>
                       {configs.filter(c => c.categoryType === "HS_HT_HOC_SINH").map(c => (
@@ -2168,7 +2168,7 @@ export function StudentInfoClient({
                     <select
                       value={formState.surveyFormType}
                       onChange={(e) => setFormState({ ...formState, surveyFormType: e.target.value })}
-                      className="h-11 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-lg outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                      className="h-11 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
                     >
                       <option value="">-- Chọn Hệ khảo sát --</option>
                       {activeTab === "general" ? (
@@ -2211,7 +2211,7 @@ export function StudentInfoClient({
                             }
                             setFormState(f => ({ ...f, targetType: updated.join(", ") }));
                           }}
-                          className={`px-4 py-2 border rounded-lg flex items-center gap-1.5 transition-all text-sm font-semibold select-none cursor-pointer ${isChecked ? 'bg-[#E6F8FD] border-[#00B5E2] text-[#004C97] font-bold shadow-sm' : 'bg-[#F8FAFC] border-[#D9E2EC] text-[#64748B] hover:bg-slate-100/50'}`}
+                          className={`px-4 py-2 border rounded-xl flex items-center gap-1.5 transition-all text-sm font-semibold select-none cursor-pointer ${isChecked ? 'bg-[#E6F8FD] border-[#00B5E2] text-[#004C97] font-bold shadow-sm' : 'bg-[#F8FAFC] border-[#D9E2EC] text-[#64748B] hover:bg-slate-100/50'}`}
                         >
                           {isChecked ? (
                             <span className="text-[#00B5E2] font-black text-sm">✓</span>
@@ -2225,7 +2225,7 @@ export function StudentInfoClient({
                     <button
                       type="button"
                       onClick={() => alert("Chức năng thêm cấu hình đối tượng tuyển sinh thực hiện tại trang cấu hình danh mục.")}
-                      className="px-4 py-2 border border-dashed border-[#00B5E2] text-[#00B5E2] bg-transparent hover:bg-[#E6F8FD]/50 rounded-lg flex items-center gap-1.5 transition-all text-sm font-bold cursor-pointer"
+                      className="px-4 py-2 border border-dashed border-[#00B5E2] text-[#00B5E2] bg-transparent hover:bg-[#E6F8FD]/50 rounded-xl flex items-center gap-1.5 transition-all text-sm font-bold cursor-pointer"
                     >
                       <span>+</span>
                       Thêm đối tượng tuyển sinh
@@ -2249,7 +2249,7 @@ export function StudentInfoClient({
                         <select
                           value={formState.admissionCriteria}
                           onChange={(e) => setFormState({ ...formState, admissionCriteria: e.target.value })}
-                          className="h-11 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-lg outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                          className="h-11 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
                         >
                           <option value="">--</option>
                           {configs.filter(c => c.categoryType === "DIEN_KS").map(c => (
@@ -2262,7 +2262,7 @@ export function StudentInfoClient({
                         <select
                           value={formState.surveySystem}
                           onChange={(e) => setFormState({ ...formState, surveySystem: e.target.value })}
-                          className="h-11 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-lg outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                          className="h-11 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
                         >
                           <option value="">--</option>
                           {configs.filter(c => c.categoryType === "HINH_THUC_KS").map(c => (
@@ -2278,7 +2278,7 @@ export function StudentInfoClient({
                         <select
                           value={formState.kqHocTap}
                           onChange={(e) => setFormState({ ...formState, kqHocTap: e.target.value })}
-                          className="h-11 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-lg outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                          className="h-11 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
                         >
                           <option value="">--</option>
                           {configs.filter(c => c.categoryType === "KQ_HOC_TAP").map(c => (
@@ -2291,7 +2291,7 @@ export function StudentInfoClient({
                         <select
                           value={formState.kqRenLuyen}
                           onChange={(e) => setFormState({ ...formState, kqRenLuyen: e.target.value })}
-                          className="h-11 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-lg outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                          className="h-11 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
                         >
                           <option value="">--</option>
                           {configs.filter(c => c.categoryType === "KQ_REN_LUYEN").map(c => (
@@ -2313,7 +2313,7 @@ export function StudentInfoClient({
                               value={formState.devProfessionalComment}
                               onChange={(e) => setFormState({ ...formState, devProfessionalComment: e.target.value })}
                               rows={2}
-                              className="w-full p-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-lg outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 resize-none"
+                              className="w-full p-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 resize-none"
                             />
                           </div>
                           <div>
@@ -2322,7 +2322,7 @@ export function StudentInfoClient({
                               value={formState.devPsychologyComment}
                               onChange={(e) => setFormState({ ...formState, devPsychologyComment: e.target.value })}
                               rows={2}
-                              className="w-full p-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-lg outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 resize-none"
+                              className="w-full p-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 resize-none"
                             />
                           </div>
                         </div>
@@ -2334,7 +2334,7 @@ export function StudentInfoClient({
                               value={formState.devImportantNote}
                               onChange={(e) => setFormState({ ...formState, devImportantNote: e.target.value })}
                               placeholder="VD: Bé còn rụt rè, khó hòa nhập"
-                              className="h-11 w-full px-3.5 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-lg outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10"
+                              className="h-11 w-full px-3.5 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10"
                             />
                           </div>
                           <div>
@@ -2344,7 +2344,7 @@ export function StudentInfoClient({
                               value={formState.devAssessmentResult}
                               onChange={(e) => setFormState({ ...formState, devAssessmentResult: e.target.value })}
                               placeholder="VD: Đạt khảo sát"
-                              className="h-11 w-full px-3.5 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-lg outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10"
+                              className="h-11 w-full px-3.5 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10"
                             />
                           </div>
                         </div>
@@ -2367,7 +2367,7 @@ export function StudentInfoClient({
                       <select
                         value={formState.admissionResult}
                         onChange={(e) => setFormState({ ...formState, admissionResult: e.target.value })}
-                        className="h-11 w-full px-3 bg-white border border-[#D9E2EC] text-[#004C97] text-sm font-bold rounded-lg outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                        className="h-11 w-full px-3 bg-white border border-[#D9E2EC] text-[#004C97] text-sm font-bold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
                       >
                         {activeTab === "general" ? (
                           <Fragment>
@@ -2396,7 +2396,7 @@ export function StudentInfoClient({
                         value={formState.signatureName}
                         onChange={(e) => setFormState({ ...formState, signatureName: e.target.value })}
                         placeholder="Họ tên Giám đốc tuyển sinh"
-                        className="h-11 w-full px-3.5 bg-white border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-lg outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10"
+                        className="h-11 w-full px-3.5 bg-white border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10"
                       />
                     </div>
                   </div>
@@ -2408,7 +2408,7 @@ export function StudentInfoClient({
                       onChange={(e) => setFormState({ ...formState, directorNote: e.target.value })}
                       rows={2}
                       placeholder="Ghi ý kiến chỉ đạo tuyển sinh..."
-                      className="w-full p-3 bg-white border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-lg outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 resize-none"
+                      className="w-full p-3 bg-white border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 resize-none"
                     />
                   </div>
                 </div>
@@ -2419,13 +2419,13 @@ export function StudentInfoClient({
                 <button
                   type="button"
                   onClick={() => setIsFormOpen(false)}
-                  className="px-6 py-2.5 border border-[#D9E2EC] text-[#64748B] hover:text-[#1E293B] hover:bg-slate-100 rounded-lg transition-all cursor-pointer text-xs font-bold uppercase tracking-wider"
+                  className="px-6 py-2.5 border border-[#D9E2EC] text-[#64748B] hover:text-[#1E293B] hover:bg-slate-100 rounded-xl transition-all cursor-pointer text-xs font-bold uppercase tracking-wider"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 bg-[#00B5E2] hover:bg-[#0098C2] text-white rounded-lg text-xs font-bold shadow-md shadow-[#00B5E2]/15 transition-all active:scale-95 cursor-pointer uppercase tracking-wider flex items-center gap-1.5"
+                  className="px-6 py-2.5 bg-[#00B5E2] hover:bg-[#0098C2] text-white rounded-xl text-xs font-bold shadow-md shadow-[#00B5E2]/15 transition-all active:scale-95 cursor-pointer uppercase tracking-wider flex items-center gap-1.5"
                 >
                   Lưu dữ liệu
                 </button>
@@ -2462,7 +2462,7 @@ export function StudentInfoClient({
                 <select
                   value={importPeriodId}
                   onChange={(e) => setImportPeriodId(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-none text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
                 >
                   {activePeriodsList.map((p) => (
                     <option key={p.id} value={p.id}>{p.name}</option>
@@ -2476,7 +2476,7 @@ export function StudentInfoClient({
                 <select
                   value={importBatchId}
                   onChange={(e) => setImportBatchId(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-none text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
                 >
                   <option value="">Không phân đợt</option>
                   {activeImportBatches.map((b: any) => (
@@ -2533,7 +2533,7 @@ export function StudentInfoClient({
                   type="button"
                   disabled={importing}
                   onClick={() => setIsImportOpen(false)}
-                  className="px-5 py-2.5 text-slate-600 font-bold hover:bg-slate-100 rounded-none transition-all disabled:opacity-50 cursor-pointer"
+                  className="px-5 py-2.5 text-slate-600 font-bold hover:bg-slate-100 rounded-xl transition-all disabled:opacity-50 cursor-pointer"
                 >
                   Đóng
                 </button>
@@ -2541,7 +2541,7 @@ export function StudentInfoClient({
                   type="button"
                   disabled={importing || !importPeriodId}
                   onClick={() => importInputRef.current?.click()}
-                  className="flex items-center gap-1.5 px-5 py-2.5 bg-[#00A6A9] hover:bg-[#008c85] text-white rounded-none text-xs font-bold shadow-none transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-5 py-2.5 bg-[#00A6A9] hover:bg-[#008c85] text-white rounded-xl text-xs font-bold shadow-none transition-all active:scale-95 cursor-pointer disabled:opacity-50"
                 >
                   <Upload className="w-4 h-4" />
                   Chọn file tải lên
@@ -2938,7 +2938,7 @@ export function StudentInfoClient({
                             return <p className="text-xs text-slate-400 font-semibold italic">Chưa có nhật ký ghi nhận.</p>;
                           }
                           return (
-                            <div className="space-y-2 max-h-40 overflow-y-auto border border-slate-300 p-3 bg-white divide-y divide-slate-100 rounded-none">
+                            <div className="space-y-2 max-h-40 overflow-y-auto border border-slate-300 p-3 bg-white divide-y divide-slate-100 rounded-xl">
                               {logs.map((log, idx) => (
                                 <div key={idx} className="pt-2 first:pt-0 text-xs text-slate-650 leading-relaxed font-semibold">
                                   <div className="flex justify-between items-center text-slate-400">
@@ -2987,7 +2987,7 @@ export function StudentInfoClient({
                   </div>
                   <div>
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Ý kiến chỉ đạo / Ghi chú của Giám đốc</span>
-                    <p className="text-sm font-semibold text-slate-800 bg-white p-3 rounded-none border border-slate-300 mt-1.5 min-h-[4rem]">
+                    <p className="text-sm font-semibold text-slate-800 bg-white p-3 rounded-xl border border-slate-300 mt-1.5 min-h-[4rem]">
                       {selectedStudent.directorNote || "Chưa có ghi chú chỉ đạo."}
                     </p>
                   </div>
@@ -2999,7 +2999,7 @@ export function StudentInfoClient({
             <div className="p-4 flex justify-end text-xs font-semibold">
               <button
                 onClick={() => setIsDetailsOpen(false)}
-                className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-none text-sm font-bold transition-all shadow-none cursor-pointer"
+                className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-bold transition-all shadow-none cursor-pointer"
               >
                 Đóng thông tin
               </button>
@@ -3043,7 +3043,7 @@ export function StudentInfoClient({
                     setRetestPeriodId(e.target.value);
                     setRetestBatchId("");
                   }}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-none text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
                 >
                   <option value="">-- Chọn Kỳ khảo sát mới --</option>
                   {generalPeriods.map((p) => (
@@ -3059,7 +3059,7 @@ export function StudentInfoClient({
                   <select
                     value={retestBatchId}
                     onChange={(e) => setRetestBatchId(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-none text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
                   >
                     <option value="">-- Chọn Đợt khảo sát mới (Tất cả / Lẻ) --</option>
                     {(generalPeriods.find(p => p.id === retestPeriodId)?.batches || [])
@@ -3077,7 +3077,7 @@ export function StudentInfoClient({
                 type="button"
                 disabled={retestRegisterLoading}
                 onClick={() => setRetestStudent(null)}
-                className="px-5 py-2.5 text-slate-600 font-bold hover:bg-slate-100 rounded-none transition-all disabled:opacity-50 cursor-pointer"
+                className="px-5 py-2.5 text-slate-600 font-bold hover:bg-slate-100 rounded-xl transition-all disabled:opacity-50 cursor-pointer"
               >
                 Hủy
               </button>
