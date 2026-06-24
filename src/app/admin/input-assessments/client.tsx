@@ -2689,7 +2689,7 @@ ${reportForm.directorNote}`;
       setReportStudentId("");
     }
   }, [filteredReportStudents, reportStudentId]);
-  const [sForm, setSForm] = useState({ studentCode:"", fullName:"", dateOfBirth:"", gender:"", grade:"", admissionCriteria:"", className:"", hocKy:"", kqgdTieuHoc:"", kqHocTap:"", kqRenLuyen:"", targetType:"", surveySystem:"", hoSoCtQuocTe:"", surveyFormType:"", batchId:"", registeredCampus:"" })
+  const [sForm, setSForm] = useState({ studentCode:"", fullName:"", dateOfBirth:"", gender:"", grade:"", admissionCriteria:"", className:"", hocKy:"", kqgdTieuHoc:"", kqHocTap:"", kqRenLuyen:"", targetType:"", surveySystem:"", hoSoCtQuocTe:"", surveyFormType:"", batchId:"", registeredCampus:"", periodId:"" })
   const fileRef = useRef<HTMLInputElement>(null)
 
 
@@ -2957,10 +2957,10 @@ ${reportForm.directorNote}`;
       genCode = "HS" + nextNum.toString().padStart(3, "0");
     }
 
-    setSForm({ studentCode: genCode, fullName: "", dateOfBirth: "", grade: "", admissionCriteria: "", className: "", hocKy: "", kqgdTieuHoc: "", kqHocTap: "", kqRenLuyen: "", targetType: "", surveySystem: "", hoSoCtQuocTe: "", surveyFormType: "", gender: "", batchId: initialBatchId, registeredCampus: "" });
+    setSForm({ studentCode: genCode, fullName: "", dateOfBirth: "", grade: "", admissionCriteria: "", className: "", hocKy: "", kqgdTieuHoc: "", kqHocTap: "", kqRenLuyen: "", targetType: "", surveySystem: "", hoSoCtQuocTe: "", surveyFormType: "", gender: "", batchId: initialBatchId, registeredCampus: "", periodId: sPeriodId });
     setSModal(true);
   }
-  const openEditStudent = (s:Student) => { setEditS(s); setSForm({ studentCode:s.studentCode, fullName:s.fullName, dateOfBirth:s.dateOfBirth?.slice(0,10)||"", grade:s.grade||"", admissionCriteria:s.admissionCriteria||"", className:s.className||"", hocKy:s.hocKy||"", kqgdTieuHoc:s.kqgdTieuHoc||"", kqHocTap:s.kqHocTap||"", kqRenLuyen:s.kqRenLuyen||"", targetType:s.targetType||"", surveySystem:s.surveySystem||"", hoSoCtQuocTe:s.hoSoCtQuocTe||"", surveyFormType:s.surveyFormType||"" , gender:s.gender||"", batchId:s.batchId||"", registeredCampus:s.registeredCampus||"" }); setSModal(true) }
+  const openEditStudent = (s:Student) => { setEditS(s); setSForm({ studentCode:s.studentCode, fullName:s.fullName, dateOfBirth:s.dateOfBirth?.slice(0,10)||"", grade:s.grade||"", admissionCriteria:s.admissionCriteria||"", className:s.className||"", hocKy:s.hocKy||"", kqgdTieuHoc:s.kqgdTieuHoc||"", kqHocTap:s.kqHocTap||"", kqRenLuyen:s.kqRenLuyen||"", targetType:s.targetType||"", surveySystem:s.surveySystem||"", hoSoCtQuocTe:s.hoSoCtQuocTe||"", surveyFormType:s.surveyFormType||"" , gender:s.gender||"", batchId:s.batchId||"", registeredCampus:s.registeredCampus||"", periodId:s.periodId||"" }); setSModal(true) }
   const saveStudent = async () => {
     if (editS ? cannotUpdate : cannotCreate) return;
     if (!sForm.studentCode.trim()||!sForm.fullName.trim()) return notify("Cần nhập Mã HS và Họ tên","err")
@@ -6318,18 +6318,35 @@ return {
                </Field>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-               <Field label="Hồ sơ/Bảng điểm">
-                 <select value={sForm.hoSoCtQuocTe} onChange={e=>setSForm(f=>({...f,hoSoCtQuocTe:e.target.value}))} className={inp}>
-                   <option value="">--</option>
-                   {configs.filter(c => c.categoryType === "HS_HT_HOC_SINH").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                 </select>
-               </Field>
-               <Field label="Đợt khảo sát">
-                  <select value={sForm.batchId} onChange={e=>setSForm(f=>({...f,batchId:e.target.value}))} className={inp}>
-                    <option value="">-- Không có / Mặc định --</option>
-                    {selPeriod?.batches?.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
+                         <div className="grid grid-cols-3 gap-4">
+                <Field label="Hồ sơ/Bảng điểm">
+                  <select value={sForm.hoSoCtQuocTe} onChange={e=>setSForm(f=>({...f,hoSoCtQuocTe:e.target.value}))} className={inp}>
+                    <option value="">--</option>
+                    {configs.filter(c => c.categoryType === "HS_HT_HOC_SINH").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                   </select>
+                </Field>
+                <Field label="Kỳ khảo sát" required>
+                  <select
+                    value={sForm.periodId || sPeriodId || ""}
+                    onChange={(e) => {
+                      const pId = e.target.value;
+                      setSForm(f => ({ ...f, periodId: pId, batchId: "" }));
+                    }}
+                    className={inp}
+                  >
+                    <option value="">-- Chọn Kỳ --</option>
+                    {periods.map(p => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Đợt khảo sát">
+                   <select value={sForm.batchId} onChange={e=>setSForm(f=>({...f,batchId:e.target.value}))} className={inp}>
+                     <option value="">-- Không có / Mặc định --</option>
+                     {(periods.find(p => p.id === (sForm.periodId || sPeriodId))?.batches || []).map(b => (
+                       <option key={b.id} value={b.id}>{b.name}</option>
+                     ))}
+                   </select>
                 </Field>
              </div>
 

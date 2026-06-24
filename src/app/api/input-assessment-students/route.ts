@@ -90,7 +90,8 @@ export async function POST(req) {
            mathScore: data.mathScore ? parseFloat(data.mathScore) : null,
            literatureScore: data.literatureScore ? parseFloat(data.literatureScore) : null,
            periodId: data.periodId,
-           batchId: data.batchId || null,
+           periodId: data.periodId || null,
+         batchId: data.batchId || null,
            registeredCampus: data.registeredCampus || null,
         }
       });
