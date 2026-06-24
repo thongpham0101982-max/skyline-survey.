@@ -37,7 +37,8 @@ export function ExamsClient({
     roundId: "",
     departmentId: "",
     teacherId: "",
-    isPriority: false
+    isPriority: false,
+    grade: ""
   })
 
   // Filter states
@@ -46,6 +47,7 @@ export function ExamsClient({
   const [filterRound, setFilterRound] = useState("")
   const [filterDept, setFilterDept] = useState("")
   const [filterPriority, setFilterPriority] = useState("")
+  const [filterGrade, setFilterGrade] = useState("")
 
   const openCreate = () => {
     setForm({
@@ -58,7 +60,8 @@ export function ExamsClient({
       roundId: "",
       departmentId: "",
       teacherId: "",
-      isPriority: false
+      isPriority: false,
+      grade: ""
     })
     setCreating(true)
     setErrorMsg("")
@@ -76,7 +79,8 @@ export function ExamsClient({
       roundId: exam.roundId || "",
       departmentId: exam.departmentId || "",
       teacherId: exam.teacherId || "",
-      isPriority: exam.isPriority || false
+      isPriority: exam.isPriority || false,
+      grade: exam.grade || ""
     })
     setErrorMsg("")
   }
@@ -128,8 +132,9 @@ export function ExamsClient({
         : filterPriority === "no"
         ? exam.isPriority === false
         : true
+    const matchesGrade = filterGrade ? exam.grade === filterGrade : true
 
-    return matchesSearch && matchesCategory && matchesRound && matchesDept && matchesPriority
+    return matchesSearch && matchesCategory && matchesRound && matchesDept && matchesPriority && matchesGrade
   })
 
   return (
@@ -196,6 +201,19 @@ export function ExamsClient({
             <option value="">Mức độ ưu tiên</option>
             <option value="yes">Kỳ thi ưu tiên (*)</option>
             <option value="no">Kỳ thi thường</option>
+          </select>
+
+          <select
+            value={filterGrade}
+            onChange={(e) => setFilterGrade(e.target.value)}
+            className="border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none text-slate-600 focus:border-[#00A19A]"
+          >
+            <option value="">Tất cả khối lớp</option>
+            {Array.from({ length: 12 }, (_, i) => String(i + 1)).map((g) => (
+              <option key={g} value={g}>
+                Khối {g}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -282,6 +300,23 @@ export function ExamsClient({
                 {rounds.map((r) => (
                   <option key={r.id} value={r.id}>
                     {r.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Khối lớp */}
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">Khối lớp</label>
+              <select
+                value={form.grade}
+                onChange={(e) => setForm({ ...form, grade: e.target.value })}
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-[#00A19A] outline-none font-semibold text-slate-700"
+              >
+                <option value="">-- Chọn khối lớp --</option>
+                {Array.from({ length: 12 }, (_, i) => String(i + 1)).map((g) => (
+                  <option key={g} value={g}>
+                    Khối {g}
                   </option>
                 ))}
               </select>
@@ -430,6 +465,11 @@ export function ExamsClient({
                         <span className="font-bold text-slate-800 text-sm flex items-center gap-1">
                           {exam.name}
                         </span>
+                        {exam.grade && (
+                          <span className="text-[10px] bg-[#00A19A]/10 text-[#00A19A] px-2 py-0.5 rounded-md font-bold">
+                            Khối {exam.grade}
+                          </span>
+                        )}
                         <span className="text-[10px] font-mono bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md font-bold">
                           {exam.code}
                         </span>
@@ -450,6 +490,13 @@ export function ExamsClient({
                           <span className="flex items-center gap-1">
                             <Layers className="w-3.5 h-3.5 text-slate-400" />
                             Vòng thi: <strong className="text-slate-600">{exam.round.name}</strong>
+                          </span>
+                        )}
+
+                        {exam.grade && (
+                          <span className="flex items-center gap-1">
+                            <Layers className="w-3.5 h-3.5 text-slate-400" />
+                            Khối lớp: <strong className="text-slate-600">Khối {exam.grade}</strong>
                           </span>
                         )}
 

@@ -1070,6 +1070,7 @@ model Exam {
   department     Department?   @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   teacherId      String?
   teacher        Teacher?      @relation(fields: [teacherId], references: [id], onDelete: SetNull)
+  grade          String?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 }

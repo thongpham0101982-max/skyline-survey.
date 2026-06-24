@@ -14,6 +14,7 @@ export async function createExamAction(data: {
   teacherId?: string
   isPriority?: boolean
   academicYearId?: string
+  grade?: string
 }) {
   await prisma.exam.create({
     data: {
@@ -27,7 +28,8 @@ export async function createExamAction(data: {
       departmentId: data.departmentId || null,
       teacherId: data.teacherId || null,
       isPriority: data.isPriority || false,
-      academicYearId: data.academicYearId || null
+      academicYearId: data.academicYearId || null,
+      grade: data.grade || null
     }
   })
   revalidatePath("/admin/ktdbcl/exams")
@@ -46,6 +48,7 @@ export async function updateExamAction(data: {
   teacherId?: string
   isPriority?: boolean
   academicYearId?: string
+  grade?: string
 }) {
   const { id, ...rest } = data
   const updateData: any = { ...rest }
