@@ -4946,7 +4946,7 @@ return {
           </div>
 
           {/* TOP SELECTORS BAR */}
-          <div className={`bg-white/80 backdrop-blur-md p-6 rounded-3xl shadow-sm border border-slate-200/60 grid grid-cols-1 ${reportsSubTab === "stats" ? "md:grid-cols-2" : "md:grid-cols-3"} gap-6`}>
+          <div className="bg-white/80 backdrop-blur-md p-6 rounded-3xl shadow-sm border border-slate-200/60 grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="group">
               <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-indigo-900/70 flex items-center gap-2 ml-1">
                 <Calendar className="w-3.5 h-3.5 text-indigo-500"/> Kỳ Khảo sát
@@ -5007,29 +5007,6 @@ return {
                 )}
               </div>
             </div>
-
-            {reportsSubTab === "results" && (
-              <div className="group">
-                <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-indigo-900/70 flex items-center gap-2 ml-1">
-                  <Users className="w-3.5 h-3.5 text-indigo-500"/> Chọn Học sinh ({filteredReportStudents.length})
-                </label>
-                <div className="relative">
-                  <select 
-                    value={reportStudentId} 
-                    onChange={e => setReportStudentId(e.target.value)}
-                    className="w-full bg-white border border-slate-200 rounded-2xl pl-5 pr-10 py-3.5 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
-                  >
-                    {filteredReportStudents.map(s => (
-                      <option key={s.id} value={s.id}>{s.studentCode} - {s.fullName} {s.className ? `(${s.className})` : ""} {s.admissionResult ? `[✓ Đã duyệt: ${s.admissionResult}]` : "[⏳ Chưa duyệt]"}</option>
-                    ))}
-                    {filteredReportStudents.length === 0 && <option value="">Không có học sinh nào</option>}
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-indigo-500 transition-colors">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* VIEW RENDERED CONDITIONALLY */}
@@ -5291,12 +5268,89 @@ return {
               <Loader2 className="w-10 h-10 text-indigo-500 animate-spin mx-auto mb-4 opacity-50"/>
               <p className="font-bold text-slate-400">Đang tải kết quả...</p>
             </div>
-          ) : !selectedReportStudent ? (
-            <div className="bg-white border border-slate-200 rounded-[2rem] p-12 text-center text-slate-400">
-              Chưa có dữ liệu học sinh trong kỳ/đợt khảo sát đã chọn.
-            </div>
           ) : (
             <>
+              {/* STUDENT EXCEL LIST TABLE */}
+              <div className="bg-white border border-slate-200 rounded-[2rem] p-6 shadow-sm overflow-hidden text-left mb-6">
+                <h3 className="font-black text-slate-800 text-sm mb-4 flex items-center gap-2">
+                  <Users className="w-4 h-4 text-[#00A19A]" />
+                  Danh sách học sinh khảo sát ({filteredReportStudents.length})
+                </h3>
+                <div className="overflow-x-auto border border-slate-300 rounded-xl">
+                  <table className="w-full text-left whitespace-nowrap table-auto border-collapse">
+                    <thead className="bg-[#00A19A]/5 border-b border-slate-300">
+                      <tr>
+                        <th className="p-2.5 text-[10px] font-black text-slate-500 uppercase tracking-widest border border-slate-300">Mã HS</th>
+                        <th className="p-2.5 text-[10px] font-black text-slate-500 uppercase tracking-widest border border-slate-300">Họ và tên</th>
+                        <th className="p-2.5 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Ngày sinh</th>
+                        <th className="p-2.5 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Giới tính</th>
+                        <th className="p-2.5 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Khối học</th>
+                        <th className="p-2.5 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Hệ Khảo sát</th>
+                        <th className="p-2.5 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Diện Khảo sát</th>
+                        <th className="p-2.5 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Trạng thái duyệt</th>
+                        <th className="p-2.5 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Duyệt</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200">
+                      {filteredReportStudents.map(s => {
+                        const isSelected = reportStudentId === s.id;
+                        return (
+                          <tr key={s.id} className={`hover:bg-slate-50/80 transition-colors ${isSelected ? 'bg-indigo-50/40' : ''}`}>
+                            <td className="p-2.5 border border-slate-300 font-mono text-xs font-bold text-slate-700">{s.studentCode}</td>
+                            <td className="p-2.5 border border-slate-300 text-xs font-black text-slate-800">{s.fullName}</td>
+                            <td className="p-2.5 border border-slate-300 text-xs text-center text-slate-650">
+                              {s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}
+                            </td>
+                            <td className="p-2.5 border border-slate-300 text-xs text-center text-slate-650">
+                              {s.gender === "M" || s.gender === "Nam" ? "Nam" : s.gender === "F" || s.gender === "Nữ" ? "Nữ" : s.gender || "—"}
+                            </td>
+                            <td className="p-2.5 border border-slate-300 text-xs text-center text-slate-650 font-bold">K{s.grade || "—"}</td>
+                            <td className="p-2.5 border border-slate-300 text-xs text-center font-bold text-amber-700">{s.surveyFormType || "—"}</td>
+                            <td className="p-2.5 border border-slate-300 text-xs text-slate-650 max-w-[200px] truncate" title={s.admissionCriteria}>{s.admissionCriteria || "—"}</td>
+                            <td className="p-2.5 border border-slate-300 text-xs text-center">
+                              {s.admissionResult ? (
+                                <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded text-[11px]">
+                                  {s.admissionResult}
+                                </span>
+                              ) : (
+                                <span className="text-slate-500 bg-slate-50 px-2 py-0.5 rounded text-[11px]">
+                                  Chưa duyệt
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-2.5 border border-slate-300 text-center">
+                              <button
+                                onClick={() => setReportStudentId(s.id)}
+                                className={`px-3 py-1 rounded-xl text-xs font-black transition-all ${
+                                  isSelected
+                                    ? 'bg-[#00A19A] text-white shadow-sm'
+                                    : 'bg-white text-[#00A19A] border border-[#00A19A] hover:bg-[#00A19A] hover:text-white'
+                                }`}
+                              >
+                                Duyệt
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {filteredReportStudents.length === 0 && (
+                        <tr>
+                          <td colSpan={9} className="p-8 text-center text-xs font-bold text-slate-400 uppercase">
+                            Không có học sinh nào trong đợt khảo sát này
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {!selectedReportStudent ? (
+                <div className="bg-white border border-slate-200 rounded-[2rem] p-12 text-center text-slate-400">
+                  Vui lòng chọn học sinh và nhấn nút "Duyệt" để hiển thị chi tiết: Kết quả khảo sát các môn và Xét duyệt Tuyển sinh.
+                </div>
+              ) : (
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
               {/* STUDENT HEADER BANNER (COMPACT & MODERN) */}
               <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm relative overflow-hidden mb-4 text-left">
                 <div className="absolute top-0 right-0 w-48 h-48 -mt-16 -mr-16 mix-blend-multiply filter blur-3xl opacity-70 text-xs font-semibold"></div>
@@ -6368,8 +6422,10 @@ return {
                 </div>
 
               </div>
-            </>
+            </div>
           )}
+        </>
+      )}
 
 
 
