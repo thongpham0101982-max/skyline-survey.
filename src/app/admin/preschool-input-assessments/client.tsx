@@ -2639,7 +2639,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
   const doDeleteSelected = async () => { await fetch(`/api/preschool-input-assessment-students?ids=${cSelected.join(",")}`, { method: "DELETE" }); setCSelected([]); fetchChildren(); notify(`Đã xóa ${cSelected.length} bé`); };
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]; if (!file || !cPeriodId) return;
+    const file = e.target.files?.[0]; if (!file) return;
+    const activePeriodId = cPeriodId && cPeriodId !== "all" ? cPeriodId : (periods[0]?.id || "");
+    if (!activePeriodId) return;
     setImporting(true);
     try {
       const d = await file.arrayBuffer();
@@ -2677,7 +2679,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           grade: grade || null,
           admissionCampus: admissionCampus || (cBatchId ? (periods.flatMap(p => p.batches || []).find(b => b.id === cBatchId) ? campuses.find(c => c.id === periods.flatMap(p => p.batches || []).find(b => b.id === cBatchId)?.campusId)?.campusName || null : null) : null),
           surveyFormType: surveyFormType || null,
-          periodId: cPeriodId,
+          periodId: activePeriodId,
           batchId: cBatchId || null
         };
       }).filter((r: any) => r.studentCode && r.fullName);
@@ -3416,7 +3418,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             <div className="flex items-center gap-2">
               <button onClick={downloadTemplate} className="flex items-center gap-1.5 text-xs font-black text-blue-600 hover:bg-blue-100 transition-all text-xs font-semibold"><Download className="w-4 h-4" /> Tải mẫu</button>
               <input type="file" ref={fileRef} onChange={handleImport} accept=".xlsx,.xls,.csv" className="hidden" />
-              <button onClick={() => fileRef.current?.click()} disabled={importing || !cPeriodId || cPeriodId === "all"} className="flex items-center gap-1.5 text-xs font-black text-emerald-700 hover:bg-emerald-100 transition-all disabled:opacity-50 text-xs font-semibold"><Upload className="w-4 h-4" /> {importing ? "Đang import..." : "Import Excel"}</button>
+              <button onClick={() => fileRef.current?.click()} disabled={importing || periods.length === 0} className="flex items-center gap-1.5 text-xs font-black text-emerald-700 hover:bg-emerald-100 transition-all disabled:opacity-50 text-xs font-semibold"><Upload className="w-4 h-4" /> {importing ? "Đang import..." : "Import Excel"}</button>
               <button onClick={openAddChild} disabled={periods.length === 0} className="flex items-center gap-1.5 px-4 py-2 text-xs font-black text-white bg-[#00A19A] hover:bg-[#00A19A]-700 rounded-none shadow-none shadow-teal-100 transition-all disabled:opacity-50"><Plus className="w-4 h-4" /> Thêm trẻ</button>
             </div>
           </div>
