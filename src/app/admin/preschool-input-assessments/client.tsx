@@ -2649,7 +2649,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
         const currentWs = wb.Sheets[sheetName];
         const rawData = XLSX.utils.sheet_to_json(currentWs, { header: 1 }) as any[][];
         for (let i = 0; i < rawData.length; i++) {
-          if (rawData[i].some((cell: any) => { const c = String(cell).toLowerCase(); return c.includes("mã") || c.includes("bé") || c.includes("tên") || c.includes("hs"); })) { headerRowIndex = i; ws = currentWs; break; }
+          if (rawData[i].some((cell: any) => { const c = String(cell).toLowerCase(); return c.includes("mã") || c.includes("bé") || c.includes("trẻ") || c.includes("tên") || c.includes("hs"); })) { headerRowIndex = i; ws = currentWs; break; }
         }
         if (ws) break;
       }
@@ -2657,7 +2657,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       const rows = XLSX.utils.sheet_to_json(ws, { range: headerRowIndex, defval: "" }) as any[];
       const findVal = (row: any, kws: string[]) => { for (const key of Object.keys(row)) { if (kws.some(kw => key.toLowerCase().includes(kw.toLowerCase()))) return row[key]; } return null; };
       const mapped = rows.map((row: any) => {
-        const studentCode = String(findVal(row, ["mã", "ma be", "studentcode"]) || "").trim();
+        const studentCode = String(findVal(row, ["mã", "ma be", "ma tre", "mã trẻ", "studentcode"]) || "").trim();
         const fullName = String(findVal(row, ["họ và tên", "họ tên", "fullname"]) || "").trim();
         const grade = String(findVal(row, ["lớp / nhóm tuổi", "nhóm tuổi", "lớp", "khối", "grade"]) || "").trim();
         const gender = String(findVal(row, ["giới tính", "gender"]) || "").trim();
@@ -2682,20 +2682,20 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
         };
       }).filter((r: any) => r.studentCode && r.fullName);
       const res = await fetch("/api/preschool-input-assessment-students", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "BULK_CREATE", data: mapped }) });
-      if (res.ok) { const dr = await res.json(); notify(`Import ${dr.created || 0} bé thành công`); fetchChildren(); }
+      if (res.ok) { const dr = await res.json(); notify(`Import ${dr.created || 0} trẻ thành công`); fetchChildren(); }
       else { const err = await res.json().catch(() => ({})); notify("Lỗi: " + (err.error || ""), "err"); }
     } finally { setImporting(false); if (fileRef.current) fileRef.current.value = ""; }
   };
 
   const downloadTemplate = () => {
     const ws = XLSX.utils.json_to_sheet([
-      { "Mã bé": "MN001", "Họ và tên": "Nguyễn Bé An", "Ngày sinh": "15/08/2022", "Giới tính": "Nữ", "Nhóm tuổi": "18 đến 24 tháng", "Cơ sở": "Skyline Hill", "Hệ KS": "Chất lượng cao" },
-      { "Mã bé": "MN002", "Họ và tên": "Trần Bé Minh", "Ngày sinh": "20/03/2021", "Giới tính": "Nam", "Nhóm tuổi": "24 đến 36 tháng", "Cơ sở": "Skyline Central", "Hệ KS": "Song ngữ" },
-    ], { header: ["Mã bé", "Họ và tên", "Ngày sinh", "Giới tính", "Nhóm tuổi", "Cơ sở", "Hệ KS"] });
+      { "Mã trẻ": "MN001", "Họ và tên": "Nguyễn Bé An", "Ngày sinh": "15/08/2022", "Giới tính": "Nữ", "Nhóm tuổi": "18 đến 24 tháng", "Cơ sở": "Skyline Hill", "Hệ KS": "Chất lượng cao" },
+      { "Mã trẻ": "MN002", "Họ và tên": "Trần Bé Minh", "Ngày sinh": "20/03/2021", "Giới tính": "Nam", "Nhóm tuổi": "24 đến 36 tháng", "Cơ sở": "Skyline Central", "Hệ KS": "Song ngữ" },
+    ], { header: ["Mã trẻ", "Họ và tên", "Ngày sinh", "Giới tính", "Nhóm tuổi", "Cơ sở", "Hệ KS"] });
     ws['!cols'] = [{ wch: 12 }, { wch: 25 }, { wch: 14 }, { wch: 12 }, { wch: 18 }, { wch: 15 }, { wch: 15 }];
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Danh_sach_be");
-    XLSX.writeFile(wb, "Form_Mau_Them_Be_Mam_Non.xlsx");
+    XLSX.utils.book_append_sheet(wb, ws, "Danh_sach_tre");
+    XLSX.writeFile(wb, "Form_Mau_Them_Tre_Mam_Non.xlsx");
   };
 
   // Config actions
