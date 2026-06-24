@@ -3,7 +3,7 @@ import { getDefaultAcademicYear } from "@/lib/academicYear"
 import { auth } from "@/lib/auth"
 import { StudentInfoClient } from "./client"
 
-export const metadata = { title: "Nhập TT HS, KQKS | Admin Portal" }
+export const metadata = { title: "Khảo sát đầu vào | Admin Portal" }
 export const dynamic = "force-dynamic";
 
 export default async function StudentInfoPage() {
@@ -242,7 +242,7 @@ export default async function StudentInfoPage() {
   return (
     <div className="space-y-6">
       <div className="mb-4">
-        <h1 className="text-2xl font-black text-slate-900 tracking-tight">Nhập TT HS, KQKS</h1>
+        <h1 className="text-2xl font-black text-slate-900 tracking-tight">Khảo sát đầu vào</h1>
         <p className="text-slate-500 mt-1 text-sm font-medium">
           Năm học đang hoạt động: <span className="text-[#00A6A9] font-bold">{activeYear ? activeYear.name : "Không xác định"}</span>. 
           Tra cứu thông tin, kết quả khảo sát đầu vào của học sinh Phổ thông và Mầm non.
