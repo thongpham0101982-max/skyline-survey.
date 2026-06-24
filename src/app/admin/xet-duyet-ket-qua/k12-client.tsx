@@ -4036,63 +4036,63 @@ return {
                 {/* Desktop Table View */}
                 <div className="hidden md:block overflow-x-auto custom-scrollbar flex-1">
                   <table className="w-full text-left whitespace-nowrap border-collapse">
-                    <thead className="bg-[#F0FDFA] sticky top-0 z-10 shadow-[0_1px_0_#CCFBF1]">
+                    <thead className="bg-[#00A19A]/5 border-b border-slate-300 sticky top-0 z-10">
                        <tr>
-                          <th className="p-2 p-2 text-[10px] font-black text-[#006662] uppercase tracking-widest border border-slate-200">Mã HS KS</th>
-                          <th className="p-2 p-2 text-[10px] font-black text-[#006662] uppercase tracking-widest border border-slate-200">Họ và Tên</th>
-                          <th className="p-2 p-2 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center border border-slate-200">Khối</th>
-                          <th className="p-2 p-2 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center border border-slate-200">Giới tính</th>
-                          <th className="p-2 p-2 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center border border-slate-200">Ngày sinh</th>
-                          <th className="p-2 p-2 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center border border-slate-200">Hệ Khảo sát</th>
-                           <th className="p-2 p-2 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center border border-slate-200">Kết quả Học tập</th>
-                           <th className="p-2 p-2 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center border border-slate-200">Kết quả Rèn luyện</th>
-                          <th className="p-2 p-2 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center border border-slate-200">Hồ sơ / Bảng điểm</th>
-                          <th className="p-2 p-2 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center border border-slate-200">Học kỳ / Năm TS</th>
-                          <th className="p-2 p-2 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center border border-slate-200">Đối tượng TS</th>
+                          <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest border border-slate-300">Mã HS KS</th>
+                          <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest border border-slate-300">Họ và Tên</th>
+                          <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Khối</th>
+                          <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Giới tính</th>
+                          <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Ngày sinh</th>
+                          <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Hệ Khảo sát</th>
+                           <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Kết quả Học tập</th>
+                           <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Kết quả Rèn luyện</th>
+                          <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Hồ sơ / Bảng điểm</th>
+                          <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Học kỳ / Năm TS</th>
+                          <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Đối tượng TS</th>
                            {selPeriod?.name?.toLowerCase().includes("open day") && (
                              <>
-                               <th className="p-2 p-2 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center border border-slate-200">Đăng ký CS</th>
-                               <th className="p-2 p-2 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center border border-slate-200">Ủy quyền xét duyệt</th>
+                               <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Đăng ký CS</th>
+                               <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Ủy quyền xét duyệt</th>
                              </>
                            )}
-                          <th className="p-2 p-2 text-[10px] font-black text-[#006662] uppercase tracking-widest text-center border border-slate-200">Thao tác</th>
+                          <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Thao tác</th>
                        </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {filtStu.map((s, idx) => (
                         <tr key={s.id} className={`group hover:bg-slate-50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
-                           <td className="p-2 p-2 border border-slate-200"><span className="font-mono text-xs font-black text-[#00A19A] bg-[#00A19A]/10 border border-[#00A19A]/20 px-2.5 py-1 rounded-md">{s.studentCode}</span></td>
-                           <td className="p-2 p-2 border border-slate-200">
+                           <td className="p-2 border border-slate-300 font-mono text-xs text-slate-700">{s.studentCode}</td>
+                           <td className="p-2 border border-slate-300">
                              <div className="flex flex-col">
                                <span className="text-sm font-bold text-slate-800">{s.fullName}</span>
                                <span className="text-[10px] font-semibold text-slate-400 mt-0.5">{s.surveySystem || "Chưa xếp hệ"}</span>
                              </div>
                            </td>
-                           <td className="p-2 p-2 text-center text-xs font-bold text-slate-500 group-hover:bg-transparent text-xs font-semibold">{s.grade}</td>
-                           <td className="p-2 p-2 text-center text-xs font-bold text-slate-500 border border-slate-200">{s.gender || "-"}</td>
-                           <td className="p-2 p-2 text-center border border-slate-200"><span className="text-xs font-semibold text-slate-600">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString('vi-VN') : "-"}</span></td>
-                           <td className="p-2 p-2 text-center border border-slate-200">
+                           <td className="p-2 text-center text-xs font-bold text-slate-500 border border-slate-300">{s.grade}</td>
+                           <td className="p-2 text-center text-xs font-bold text-slate-500 border border-slate-300">{s.gender || "-"}</td>
+                           <td className="p-2 text-center border border-slate-300"><span className="text-xs font-semibold text-slate-600">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString('vi-VN') : "-"}</span></td>
+                           <td className="p-2 text-center border border-slate-300">
                              <span className="inline-flex items-center text-[10px] font-bold uppercase tracking-wider text-indigo-600 text-xs font-semibold">
                                {s.surveyFormType || "-"}
                              </span>
                            </td>
-                           <td className="p-2 p-2 text-center text-xs text-slate-600 border border-slate-200">{s.kqHocTap || "-"}</td>
-                           <td className="p-2 p-2 text-center text-xs text-slate-600 border border-slate-200">{s.kqRenLuyen || "-"}</td>
-                           <td className="p-2 p-2 text-center text-xs text-slate-600 border border-slate-200">{s.hoSoCtQuocTe || "-"}</td>
-                           <td className="p-2 p-2 text-center text-xs text-slate-600 border border-slate-200">{s.hocKy || "-"}</td>
-                           <td className="p-2 p-2 text-center text-xs text-slate-600 border border-slate-200">{s.targetType || "-"}</td>
+                           <td className="p-2 text-center text-xs text-slate-600 border border-slate-300">{s.kqHocTap || "-"}</td>
+                           <td className="p-2 text-center text-xs text-slate-600 border border-slate-300">{s.kqRenLuyen || "-"}</td>
+                           <td className="p-2 text-center text-xs text-slate-600 border border-slate-300">{s.hoSoCtQuocTe || "-"}</td>
+                           <td className="p-2 text-center text-xs text-slate-600 border border-slate-300">{s.hocKy || "-"}</td>
+                           <td className="p-2 text-center text-xs text-slate-600 border border-slate-300">{s.targetType || "-"}</td>
                            {selPeriod?.name?.toLowerCase().includes("open day") && (
                              <>
-                               <td className="p-2 p-2 text-center text-xs text-slate-650 border border-slate-200">
+                               <td className="p-2 text-center text-xs text-slate-650 border border-slate-300">
                                  {campuses.find(c => c.id === s.registeredCampus)?.campusName || s.registeredCampus || "-"}
                                </td>
-                               <td className="p-2 p-2 text-center text-xs text-slate-650 font-bold border border-slate-200">
+                               <td className="p-2 text-center text-xs text-slate-650 font-bold border border-slate-300">
                                  {campuses.find(c => c.id === s.registeredCampus)?.manager?.fullName || "-"}
                                </td>
                              </>
                            )}
                            
-                           <td className="text-center sticky right-0 group-hover:bg-slate-50 transition-colors shadow-[-10px_0_15px_-10px_rgba(0,0,0,0.05)] text-xs font-semibold">
+                           <td className="p-2 text-center border border-slate-300 sticky right-0 group-hover:bg-slate-50 transition-colors shadow-[-10px_0_15px_-10px_rgba(0,0,0,0.05)] text-xs font-semibold">
                               <div className="flex items-center justify-center gap-1.5">
                                  <button onClick={()=>openEditStudent(s)} className={"p-1.5 text-slate-400 hover:text-[#00A19A] hover:bg-[#00A19A]/10 rounded-lg transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate} title="Sửa hồ sơ"><Edit2 className="w-4 h-4"/></button>
                                  <button onClick={()=>setConfirm({msg:`Xóa hồ sơ học sinh ${s.fullName}?`,fn:()=>doDeleteStudent(s.id)})} className={"p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete} title="Xóa hồ sơ"><Trash2 className="w-4 h-4"/></button>
