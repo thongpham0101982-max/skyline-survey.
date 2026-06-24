@@ -3557,14 +3557,14 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                             return (
                               <tr key={s.id} className="hover:bg-[#00A19A]/5/30 transition-colors">
                                 <td className="p-2 text-slate-400 text-sm border border-slate-200">{idx + 1}</td>
-                                <td className="p-2 border border-slate-200"><span className="font-mono text-xs font-black text-[#00A19A] bg-[#00A19A]/5 px-2 py-1 rounded-none">{s.studentCode}</span></td>
+                                <td className="p-2 border border-slate-200 font-mono text-xs text-slate-700">{s.studentCode}</td>
                                 <td className="p-2 font-bold text-slate-800 text-sm border border-slate-200">{s.fullName}</td>
                                 <td className="p-2 text-sm text-slate-500 border border-slate-200">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
                                 <td className="p-2 border border-slate-200">
                                   <div className="flex flex-col gap-0.5">
                                     <span className="text-xs font-bold text-slate-600">Lớp: {s.grade || "—"}</span>
                                     {s.resolvedAgeGroup && (
-                                      <span className="text-[10px] font-black text-[#00A19A] bg-[#00A19A]/5 border border-slate-300 px-2 py-0.5 rounded-none w-fit">
+                                      <span className="text-[10px] font-bold text-[#00A19A]">
                                         Form: {s.resolvedAgeGroup}
                                       </span>
                                     )}
@@ -3797,8 +3797,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                   <div className="flex flex-col gap-1.5 w-full">
                                     <div className="font-bold text-slate-800 text-[13px] leading-tight">{s.fullName}</div>
                                     <div className="flex items-center gap-1.5 flex-wrap">
-                                      <span className="font-mono text-[9px] font-black text-[#00A19A] bg-[#00A19A]/5 px-1.5 py-0.5 rounded border border-slate-300 leading-none">{s.studentCode}</span>
-                                      {s.grade && <span className="text-[9px] font-bold text-purple-700 bg-[#00A19A]/5 px-1.5 py-0.5 rounded border border-slate-300 leading-none">{s.grade}</span>}
+                                      <span className="font-mono text-[9px] font-semibold text-[#00A19A] leading-none">{s.studentCode}</span>
+                                      {s.grade && <span className="text-[9px] font-semibold text-purple-700 leading-none">{s.grade}</span>}
                                     </div>
                                     <div className="text-[10px] text-slate-400 font-medium leading-normal space-y-0.5">
                                       <div>NS: <span className="text-slate-600 font-semibold">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</span> • <span className="text-slate-600 font-medium">{s.gender || "—"}</span></div>
