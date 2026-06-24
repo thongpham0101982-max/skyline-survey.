@@ -87,7 +87,7 @@ function Field({ label, required, children }: { label:string; required?:boolean;
     </div>
   )
 }
-const inp = "w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition-all placeholder:text-slate-300 shadow-sm"
+const inp = "w-full bg-white border border-slate-200 rounded-none px-3.5 py-2.5 text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition-all placeholder:text-slate-300 shadow-sm"
 
 function Modal({ open, onClose, title, size="md", children, footer }: {
   open:boolean; onClose:()=>void; title:string; size?:"sm"|"md"|"lg"|"xl"|"2xl";
@@ -98,7 +98,7 @@ function Modal({ open, onClose, title, size="md", children, footer }: {
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"/>
-      <div className={`relative bg-white w-full ${w} rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200`} onClick={e=>e.stopPropagation()}>
+      <div className={`relative bg-white w-full ${w} rounded-none shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200`} onClick={e=>e.stopPropagation()}>
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
           <h3 className="text-base font-black text-slate-800">{title}</h3>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center hover:bg-slate-50 transition-colors text-slate-500 shadow-sm text-xs font-semibold"><X className="w-4 h-4"/></button>
@@ -6637,7 +6637,7 @@ return {
         </div>
       </Modal>
 
-      <Modal open={sModal} onClose={()=>setSModal(false)} title="Thông tin Học sinh" size="lg" footer={<><button onClick={()=>setSModal(false)} className="flex-1 text-xs font-black uppercase text-slate-400">Đóng</button> <button onClick={saveStudent} className="flex-1 text-white text-xs font-black uppercase tracking-widest shadow-xl shadow-indigo-50 text-xs font-semibold">Lưu dữ liệu</button></>}>
+      <Modal open={sModal} onClose={()=>setSModal(false)} title="Thông tin Học sinh" size="lg" footer={<><button onClick={()=>setSModal(false)} className="flex-1 text-xs font-black uppercase text-slate-500 border border-slate-200 py-3 rounded-none hover:bg-slate-50">Đóng</button> <button onClick={saveStudent} className="flex-1 text-white bg-indigo-600 hover:bg-indigo-700 text-xs font-black uppercase tracking-widest py-3 rounded-none text-xs font-semibold">Lưu dữ liệu</button></>}>
         <div className="space-y-4 pt-1">
            <div className="grid grid-cols-2 gap-4">
               <Field label="Mã HS KS" required><input value={sForm.studentCode} onChange={e=>setSForm(f=>({...f,studentCode:e.target.value}))} className={inp} disabled={!!editS}/></Field>
@@ -6707,7 +6707,7 @@ return {
                      const selectedTargets = sForm.targetType ? sForm.targetType.split(",").map(t => t.trim()).filter(Boolean) : [];
                      const isChecked = selectedTargets.includes(c.name);
                      return (
-                       <label key={c.id} className={"flex items-center gap-1.5 px-3 py-2 rounded-xl border cursor-pointer select-none transition-all " + (isChecked ? "bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-100 font-bold" : "bg-white hover:bg-slate-50 border-slate-200 text-slate-600")}>
+                       <label key={c.id} className={"flex items-center gap-1.5 px-3 py-2 rounded-none border cursor-pointer select-none transition-all " + (isChecked ? "bg-indigo-600 text-white border-indigo-600 shadow-none font-bold" : "bg-white hover:bg-slate-50 border-slate-200 text-slate-600")}>
                          <input 
                            type="checkbox" 
                            checked={isChecked}
