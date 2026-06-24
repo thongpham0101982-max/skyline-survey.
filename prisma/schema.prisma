@@ -74,6 +74,7 @@ model Teacher {
   observerRegistrations ObservationRegistration[] @relation("ObserverTeacher")
 
   academicYearTargets TeacherAcademicYearTarget[]
+  exams               Exam[]
 }
 
 model Campus {
@@ -684,6 +685,7 @@ model Department {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   teachers    Teacher[]
+  exams       Exam[]
 }
 
 model StudentAssessmentScore {
@@ -1063,6 +1065,11 @@ model Exam {
   round          ExamRound?    @relation(fields: [roundId], references: [id], onDelete: SetNull)
   academicYearId String?
   academicYear   AcademicYear? @relation(fields: [academicYearId], references: [id], onDelete: SetNull)
+  isPriority     Boolean       @default(false)
+  departmentId   String?
+  department     Department?   @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  teacherId      String?
+  teacher        Teacher?      @relation(fields: [teacherId], references: [id], onDelete: SetNull)
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 }

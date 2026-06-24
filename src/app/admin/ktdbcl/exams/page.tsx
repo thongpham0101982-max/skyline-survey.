@@ -1,5 +1,7 @@
+import { prisma } from "@/lib/db"
+import { ExamsClient } from "./client"
 import { ExamTabs } from "@/components/ExamTabs"
-import { ClipboardList } from "lucide-react"
+import { getAdminSession } from "@/lib/session"
 
 export const metadata = {
   title: "Danh sách Kỳ thi | Admin Portal",
@@ -7,23 +9,61 @@ export const metadata = {
 }
 
 export default async function ExamsPage() {
+  const session = await getAdminSession()
+
+  // Fetch exams including all related data
+  const exams = await prisma.exam.findMany({
+    include: {
+      category: true,
+      round: true,
+      department: true,
+      teacher: true
+    },
+    orderBy: { createdAt: "desc" }
+  })
+
+  // Fetch categories, rounds, departments, teachers for selection dropdowns
+  const categories = await prisma.examCategory.findMany({
+    orderBy: { name: "asc" }
+  })
+
+  const rounds = await prisma.examRound.findMany({
+    orderBy: { name: "asc" }
+  })
+
+  const departments = await prisma.department.findMany({
+    where: { status: "ACTIVE" },
+    orderBy: { name: "asc" }
+  })
+
+  const teachers = await prisma.teacher.findMany({
+    where: { status: "ACTIVE" },
+    orderBy: { teacherName: "asc" }
+  })
+
+  // Get active academic year ID if exists
+  const activeYear = await prisma.academicYear.findFirst({
+    where: { status: "ACTIVE" }
+  })
+  const academicYearId = activeYear ? activeYear.id : null
+
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       <ExamTabs activeTab="exams" />
       <div className="mb-8">
         <h1 className="text-2xl font-black text-[#0A3230] tracking-tight">Danh Sách Kỳ Thi</h1>
-        <p className="text-slate-500 mt-2 text-xs font-semibold uppercase tracking-wider">Xem và quản lý tất cả kỳ thi học sinh trong năm học.</p>
-      </div>
-
-      <div className="bg-white rounded-2xl p-10 border-2 border-slate-100 shadow-xs flex flex-col justify-center items-center text-center py-20">
-        <div className="p-4 bg-teal-50 rounded-full text-[#00A19A] mb-2">
-          <ClipboardList className="w-12 h-12" />
-        </div>
-        <h3 className="text-base font-bold text-slate-800">Tính năng đang được phát triển</h3>
-        <p className="text-slate-400 text-xs font-semibold max-w-md mt-1">
-          Chức năng lập lịch và quản lý kỳ thi chi tiết đang được đồng bộ dữ liệu. Phân hệ <strong>Quản lý danh mục</strong> đã sẵn sàng để hoạt động.
+        <p className="text-slate-500 mt-2 text-xs font-semibold uppercase tracking-wider">
+          Tạo và quản lý tất cả kỳ thi học sinh, cấu hình danh mục, vòng thi, tổ chuyên môn và GV phụ trách.
         </p>
       </div>
+      <ExamsClient
+        initialExams={exams}
+        categories={categories}
+        rounds={rounds}
+        departments={departments}
+        teachers={teachers}
+        academicYearId={academicYearId}
+      />
     </div>
   )
 }
