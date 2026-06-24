@@ -1902,7 +1902,7 @@ export function StudentInfoClient({
       {/* Dialog Form: Add / Edit Student */}
       {isFormOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-50 p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col animate-in scale-in duration-200">
+          <div className="bg-white rounded-none w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col animate-in scale-in duration-200">
             <div className="p-6 flex justify-between items-center text-xs font-semibold">
               <div>
                 <h3 className="text-lg font-black text-slate-800">
@@ -1935,13 +1935,13 @@ export function StudentInfoClient({
                           value={formState.studentCode}
                           onChange={(e) => setFormState({ ...formState, studentCode: e.target.value.toUpperCase().replace(/\s/g, "") })}
                           placeholder="VD: HS001"
-                          className="flex-1 px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none disabled:bg-slate-100 disabled:text-slate-500"
+                          className="flex-1 px-3 py-2 border border-slate-300 rounded-none text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none disabled:bg-slate-100 disabled:text-slate-500"
                         />
                         {formMode === "create" && (
                           <button
                             type="button"
                             onClick={handleAutoGenerateCode}
-                            className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold transition-all active:scale-95"
+                            className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-none text-xs font-bold transition-all active:scale-95"
                           >
                             Sinh mã
                           </button>
@@ -1954,7 +1954,7 @@ export function StudentInfoClient({
                         type="date"
                         value={formState.dateOfBirth}
                         onChange={(e) => setFormState({ ...formState, dateOfBirth: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-none text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
                       />
                     </div>
                   </div>
@@ -1967,7 +1967,7 @@ export function StudentInfoClient({
                       value={formState.fullName}
                       onChange={(e) => setFormState({ ...formState, fullName: e.target.value })}
                       placeholder="VD: Nguyễn Văn A"
-                      className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-none text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
                     />
                   </div>
 
@@ -1977,7 +1977,7 @@ export function StudentInfoClient({
                       <select
                         value={formState.gender}
                         onChange={(e) => setFormState({ ...formState, gender: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-none text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer"
                       >
                         <option value="">--</option>
                         <option value="Nam">Nam</option>
@@ -1989,7 +1989,7 @@ export function StudentInfoClient({
                       <select
                         value={formState.grade}
                         onChange={(e) => setFormState({ ...formState, grade: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-none text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
                       >
                         <option value="">--</option>
                         {grades.map(g => (
@@ -2005,7 +2005,7 @@ export function StudentInfoClient({
                       <select
                         value={formState.hocKy}
                         onChange={(e) => setFormState({ ...formState, hocKy: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-none text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
                       >
                         <option value="">--</option>
                         {configs.filter(c => c.categoryType === "HOC_KY").map(c => (
@@ -2018,7 +2018,7 @@ export function StudentInfoClient({
                       <select
                         value={formState.hoSoCtQuocTe}
                         onChange={(e) => setFormState({ ...formState, hoSoCtQuocTe: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-none text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
                       >
                         <option value="">--</option>
                         {configs.filter(c => c.categoryType === "HS_HT_HOC_SINH").map(c => (
@@ -2035,7 +2035,7 @@ export function StudentInfoClient({
                         required
                         value={formState.registeredCampus}
                         onChange={(e) => setFormState({ ...formState, registeredCampus: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-none text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer"
                       >
                         <option value="">-- Chọn cơ sở đăng ký --</option>
                         {campuses.map(c => (
@@ -2052,7 +2052,7 @@ export function StudentInfoClient({
                         required
                         value={formState.periodId}
                         onChange={(e) => setFormState({ ...formState, periodId: e.target.value, batchId: "" })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-none text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
                       >
                         <option value="">-- Chọn Kỳ khảo sát --</option>
                         {generalPeriods.map((p) => (
@@ -2065,7 +2065,7 @@ export function StudentInfoClient({
                       <select
                         value={formState.batchId}
                         onChange={(e) => setFormState({ ...formState, batchId: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-none text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer"
                       >
                         <option value="">-- Không có / Mặc định --</option>
                         {activeFormBatches.map((b: any) => (
@@ -2084,7 +2084,7 @@ export function StudentInfoClient({
                           const selectedTargets = formState.targetType ? formState.targetType.split(",").map((t: string) => t.trim()).filter(Boolean) : [];
                           const isChecked = selectedTargets.includes(c.name);
                           return (
-                            <label key={c.id} className={"flex items-center gap-1.5 px-3 py-1.5 rounded-xl border cursor-pointer select-none transition-all " + (isChecked ? "bg-[#00A6A9] text-white border-[#00A6A9] font-bold shadow-sm" : "bg-white hover:bg-slate-50 border-slate-300 text-slate-600")}>
+                            <label key={c.id} className={"flex items-center gap-1.5 px-3 py-1.5 rounded-none border cursor-pointer select-none transition-all " + (isChecked ? "bg-[#00A6A9] text-white border-[#00A6A9] font-bold shadow-none" : "bg-white hover:bg-slate-50 border-slate-300 text-slate-600")}>
                               <input 
                                 type="checkbox" 
                                 checked={isChecked}
@@ -2113,7 +2113,7 @@ export function StudentInfoClient({
                       <select
                         value={formState.admissionCriteria}
                         onChange={(e) => setFormState({ ...formState, admissionCriteria: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-none text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
                       >
                         <option value="">--</option>
                         {configs.filter(c => c.categoryType === "DIEN_KS").map(c => (
@@ -2126,7 +2126,7 @@ export function StudentInfoClient({
                       <select
                         value={formState.surveySystem}
                         onChange={(e) => setFormState({ ...formState, surveySystem: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-none text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
                       >
                         <option value="">--</option>
                         {configs.filter(c => c.categoryType === "HINH_THUC_KS").map(c => (
@@ -2142,7 +2142,7 @@ export function StudentInfoClient({
                       <select
                         value={formState.kqHocTap}
                         onChange={(e) => setFormState({ ...formState, kqHocTap: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-none text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
                       >
                         <option value="">--</option>
                         {configs.filter(c => c.categoryType === "KQ_HOC_TAP").map(c => (
@@ -2155,7 +2155,7 @@ export function StudentInfoClient({
                       <select
                         value={formState.kqRenLuyen}
                         onChange={(e) => setFormState({ ...formState, kqRenLuyen: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-none text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
                       >
                         <option value="">--</option>
                         {configs.filter(c => c.categoryType === "KQ_REN_LUYEN").map(c => (
@@ -2168,7 +2168,7 @@ export function StudentInfoClient({
                       <select
                         value={formState.surveyFormType}
                         onChange={(e) => setFormState({ ...formState, surveyFormType: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-none text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
                       >
                         <option value="">--</option>
                         {currentEduSystems.map(es => (
@@ -2191,7 +2191,7 @@ export function StudentInfoClient({
                         value={formState.studentCode}
                         onChange={(e) => setFormState({ ...formState, studentCode: e.target.value })}
                         placeholder="VD: MN001"
-                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none disabled:bg-slate-100 disabled:text-slate-500"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-none text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none disabled:bg-slate-100 disabled:text-slate-500"
                       />
                     </div>
                     <div>
@@ -2202,7 +2202,7 @@ export function StudentInfoClient({
                         value={formState.fullName}
                         onChange={(e) => setFormState({ ...formState, fullName: e.target.value })}
                         placeholder="VD: Nguyễn Bé An"
-                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-none text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
                       />
                     </div>
                   </div>
@@ -2224,7 +2224,7 @@ export function StudentInfoClient({
                             return nextState;
                           });
                         }}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-none text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
                       />
                       {ageInfo.months !== null && (
                         <div className="text-[11px] font-black text-[#00A6A9] mt-1.5 uppercase tracking-wider bg-[#00A6A9]/5 rounded px-3 py-1.5 border border-slate-300 flex items-center gap-1.5 animate-in fade-in duration-200">
@@ -2238,7 +2238,7 @@ export function StudentInfoClient({
                       <select
                         value={formState.gender}
                         onChange={(e) => setFormState({ ...formState, gender: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-none text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer"
                       >
                         <option value="">-- Chọn --</option>
                         <option value="Nam">Nam</option>
@@ -2253,7 +2253,7 @@ export function StudentInfoClient({
                       <select
                         value={formState.grade}
                         onChange={(e) => setFormState({ ...formState, grade: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-none text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
                       >
                         <option value="">-- Chọn nhóm tuổi --</option>
                         {preschoolGrades.map(g => (
@@ -2266,7 +2266,7 @@ export function StudentInfoClient({
                       <select
                         value={formState.admissionCampus}
                         onChange={(e) => setFormState({ ...formState, admissionCampus: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-none text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
                       >
                         <option value="">-- Chọn cơ sở --</option>
                         {campuses.map(c => (
@@ -2283,7 +2283,7 @@ export function StudentInfoClient({
                         required
                         value={formState.periodId}
                         onChange={(e) => setFormState({ ...formState, periodId: e.target.value, batchId: "" })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-none text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
                       >
                         <option value="">-- Chọn Kỳ khảo sát --</option>
                         {preschoolPeriods.map((p) => (
@@ -2314,7 +2314,7 @@ export function StudentInfoClient({
                             return nextState;
                           });
                         }}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-none text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer"
                       >
                         <option value="">-- Không gán --</option>
                         {activeFormBatches.map((b: any) => (
@@ -2330,7 +2330,7 @@ export function StudentInfoClient({
                       <select
                         value={formState.surveyFormType}
                         onChange={(e) => setFormState({ ...formState, surveyFormType: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-none text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white"
                       >
                         <option value="">-- Chọn Hệ KS --</option>
                         {preschoolConfigs.filter(c => c.categoryType === "system").map(c => (
@@ -2351,7 +2351,7 @@ export function StudentInfoClient({
                             value={formState.devProfessionalComment}
                             onChange={(e) => setFormState({ ...formState, devProfessionalComment: e.target.value })}
                             rows={2}
-                            className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none resize-none"
+                            className="w-full px-3 py-2 border border-slate-300 rounded-none text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none resize-none"
                           />
                         </div>
                         <div>
@@ -2360,7 +2360,7 @@ export function StudentInfoClient({
                             value={formState.devPsychologyComment}
                             onChange={(e) => setFormState({ ...formState, devPsychologyComment: e.target.value })}
                             rows={2}
-                            className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none resize-none"
+                            className="w-full px-3 py-2 border border-slate-300 rounded-none text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none resize-none"
                           />
                         </div>
                       </div>
@@ -2371,7 +2371,7 @@ export function StudentInfoClient({
                           value={formState.devImportantNote}
                           onChange={(e) => setFormState({ ...formState, devImportantNote: e.target.value })}
                           placeholder="VD: Bé còn rụt rè, khó hòa nhập"
-                          className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
+                          className="w-full px-3 py-2 border border-slate-300 rounded-none text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
                         />
                       </div>
                       <div>
@@ -2381,7 +2381,7 @@ export function StudentInfoClient({
                           value={formState.devAssessmentResult}
                           onChange={(e) => setFormState({ ...formState, devAssessmentResult: e.target.value })}
                           placeholder="VD: Đạt khảo sát"
-                          className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
+                          className="w-full px-3 py-2 border border-slate-300 rounded-none text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
                         />
                       </div>
                     </div>
@@ -2398,7 +2398,7 @@ export function StudentInfoClient({
                       <select
                         value={formState.admissionResult}
                         onChange={(e) => setFormState({ ...formState, admissionResult: e.target.value })}
-                        className="w-full px-3 py-2 border border-[#00A6A9]/30 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white font-bold text-slate-700"
+                        className="w-full px-3 py-2 border border-[#00A6A9]/30 rounded-none text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white font-bold text-slate-700"
                       >
                         {activeTab === "general" ? (
                           <Fragment>
@@ -2427,7 +2427,7 @@ export function StudentInfoClient({
                         value={formState.signatureName}
                         onChange={(e) => setFormState({ ...formState, signatureName: e.target.value })}
                         placeholder="Họ tên Giám đốc tuyển sinh"
-                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-none text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
                       />
                     </div>
                   </div>
@@ -2439,7 +2439,7 @@ export function StudentInfoClient({
                       onChange={(e) => setFormState({ ...formState, directorNote: e.target.value })}
                       rows={2}
                       placeholder="Ghi ý kiến chỉ đạo tuyển sinh..."
-                      className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-none text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none"
                     />
                   </div>
                 </div>
@@ -2449,13 +2449,13 @@ export function StudentInfoClient({
                 <button
                   type="button"
                   onClick={() => setIsFormOpen(false)}
-                  className="px-5 py-2.5 text-slate-600 font-bold hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
+                  className="px-5 py-2.5 text-slate-600 font-bold hover:bg-slate-100 rounded-none transition-all cursor-pointer"
                 >
                   Hủy bỏ
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 bg-[#00A6A9] hover:bg-[#008c85] text-white rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95 cursor-pointer"
+                  className="px-6 py-2.5 bg-[#00A6A9] hover:bg-[#008c85] text-white rounded-none text-sm font-bold shadow-none transition-all active:scale-95 cursor-pointer"
                 >
                   Lưu thông tin
                 </button>
@@ -2491,7 +2491,7 @@ export function StudentInfoClient({
                 <select
                   value={importPeriodId}
                   onChange={(e) => setImportPeriodId(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-none text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
                 >
                   {activePeriodsList.map((p) => (
                     <option key={p.id} value={p.id}>{p.name}</option>
@@ -2505,7 +2505,7 @@ export function StudentInfoClient({
                 <select
                   value={importBatchId}
                   onChange={(e) => setImportBatchId(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-none text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
                 >
                   <option value="">Không phân đợt</option>
                   {activeImportBatches.map((b: any) => (
@@ -2521,7 +2521,7 @@ export function StudentInfoClient({
                 </div>
                 <button
                   onClick={handleDownloadTemplate}
-                  className="flex items-center gap-1.5 hover:bg-slate-50 text-slate-700 text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap text-xs font-semibold"
+                  className="flex items-center gap-1.5 hover:bg-slate-50 text-slate-700 text-xs font-bold shadow-none transition-all active:scale-95 cursor-pointer whitespace-nowrap text-xs font-semibold"
                 >
                   <Download className="w-3.5 h-3.5" />
                   Mẫu file
@@ -2562,7 +2562,7 @@ export function StudentInfoClient({
                   type="button"
                   disabled={importing}
                   onClick={() => setIsImportOpen(false)}
-                  className="px-5 py-2.5 text-slate-600 font-bold hover:bg-slate-100 rounded-xl transition-all disabled:opacity-50 cursor-pointer"
+                  className="px-5 py-2.5 text-slate-600 font-bold hover:bg-slate-100 rounded-none transition-all disabled:opacity-50 cursor-pointer"
                 >
                   Đóng
                 </button>
@@ -2570,7 +2570,7 @@ export function StudentInfoClient({
                   type="button"
                   disabled={importing || !importPeriodId}
                   onClick={() => importInputRef.current?.click()}
-                  className="flex items-center gap-1.5 px-5 py-2.5 bg-[#00A6A9] hover:bg-[#008c85] text-white rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-5 py-2.5 bg-[#00A6A9] hover:bg-[#008c85] text-white rounded-none text-xs font-bold shadow-none transition-all active:scale-95 cursor-pointer disabled:opacity-50"
                 >
                   <Upload className="w-4 h-4" />
                   Chọn file tải lên
@@ -2967,7 +2967,7 @@ export function StudentInfoClient({
                             return <p className="text-xs text-slate-400 font-semibold italic">Chưa có nhật ký ghi nhận.</p>;
                           }
                           return (
-                            <div className="space-y-2 max-h-40 overflow-y-auto border border-slate-300 p-3 bg-white divide-y divide-slate-100 rounded-xl">
+                            <div className="space-y-2 max-h-40 overflow-y-auto border border-slate-300 p-3 bg-white divide-y divide-slate-100 rounded-none">
                               {logs.map((log, idx) => (
                                 <div key={idx} className="pt-2 first:pt-0 text-xs text-slate-650 leading-relaxed font-semibold">
                                   <div className="flex justify-between items-center text-slate-400">
@@ -3016,7 +3016,7 @@ export function StudentInfoClient({
                   </div>
                   <div>
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Ý kiến chỉ đạo / Ghi chú của Giám đốc</span>
-                    <p className="text-sm font-semibold text-slate-800 bg-white p-3 rounded-xl border border-slate-300 mt-1.5 min-h-[4rem]">
+                    <p className="text-sm font-semibold text-slate-800 bg-white p-3 rounded-none border border-slate-300 mt-1.5 min-h-[4rem]">
                       {selectedStudent.directorNote || "Chưa có ghi chú chỉ đạo."}
                     </p>
                   </div>
@@ -3028,7 +3028,7 @@ export function StudentInfoClient({
             <div className="p-4 flex justify-end text-xs font-semibold">
               <button
                 onClick={() => setIsDetailsOpen(false)}
-                className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-bold transition-all shadow-sm cursor-pointer"
+                className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-none text-sm font-bold transition-all shadow-none cursor-pointer"
               >
                 Đóng thông tin
               </button>
@@ -3072,7 +3072,7 @@ export function StudentInfoClient({
                     setRetestPeriodId(e.target.value);
                     setRetestBatchId("");
                   }}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-none text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
                 >
                   <option value="">-- Chọn Kỳ khảo sát mới --</option>
                   {generalPeriods.map((p) => (
@@ -3088,7 +3088,7 @@ export function StudentInfoClient({
                   <select
                     value={retestBatchId}
                     onChange={(e) => setRetestBatchId(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-none text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
                   >
                     <option value="">-- Chọn Đợt khảo sát mới (Tất cả / Lẻ) --</option>
                     {(generalPeriods.find(p => p.id === retestPeriodId)?.batches || [])
@@ -3106,7 +3106,7 @@ export function StudentInfoClient({
                 type="button"
                 disabled={retestRegisterLoading}
                 onClick={() => setRetestStudent(null)}
-                className="px-5 py-2.5 text-slate-600 font-bold hover:bg-slate-100 rounded-xl transition-all disabled:opacity-50 cursor-pointer"
+                className="px-5 py-2.5 text-slate-600 font-bold hover:bg-slate-100 rounded-none transition-all disabled:opacity-50 cursor-pointer"
               >
                 Hủy
               </button>
@@ -3114,7 +3114,7 @@ export function StudentInfoClient({
                 type="button"
                 disabled={retestRegisterLoading || !retestPeriodId}
                 onClick={handleRegisterRetest}
-                className="flex items-center gap-1.5 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-50 text-xs font-semibold"
+                className="flex items-center gap-1.5 hover:bg-indigo-700 text-white text-xs font-bold shadow-none transition-all active:scale-95 cursor-pointer disabled:opacity-50 text-xs font-semibold"
               >
                 {retestRegisterLoading ? <Loader2 className="w-4 h-4 animate-spin"/> : <RefreshCw className="w-4 h-4"/>}
                 Xác nhận
