@@ -99,7 +99,7 @@ function Modal({ open, onClose, title, size="md", children, footer }: {
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"/>
       <div className={`relative bg-white w-full ${w} rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200`} onClick={e=>e.stopPropagation()}>
-        <div className="flex items-center justify-between text-xs font-semibold">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
           <h3 className="text-base font-black text-slate-800">{title}</h3>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center hover:bg-slate-50 transition-colors text-slate-500 shadow-sm text-xs font-semibold"><X className="w-4 h-4"/></button>
         </div>
@@ -2232,11 +2232,7 @@ ${reportForm.directorNote}`;
       if (r.ok) {
         const data = await r.json();
         setReportStudents(data);
-        if (data.length > 0) {
-          setReportStudentId(data[0].id);
-        } else {
-          setReportStudentId("");
-        }
+        setReportStudentId("");
       }
     } catch(e) {}
     setReportLoading(false);
@@ -2824,8 +2820,8 @@ ${reportForm.directorNote}`;
 
   useEffect(() => {
     if (filteredReportStudents.length > 0) {
-      if (!filteredReportStudents.some(s => s.id === reportStudentId)) {
-        setReportStudentId(filteredReportStudents[0].id);
+      if (reportStudentId && !filteredReportStudents.some(s => s.id === reportStudentId)) {
+        setReportStudentId("");
       }
     } else {
       setReportStudentId("");
@@ -5349,11 +5345,20 @@ return {
                 <Modal
                   open={!!selectedReportStudent}
                   onClose={() => setReportStudentId("")}
-                  title={`Chi tiết kết quả & Xét duyệt - ${selectedReportStudent.fullName}`}
+                  title={`Chi tiết kết quả & Xét duyệt - ${selectedReportStudent.fullName} (${selectedReportStudent.studentCode})`}
                   size="2xl"
-                  footer={<button onClick={() => setReportStudentId("")} className="flex-1 py-3 text-xs font-black uppercase text-slate-500 hover:text-slate-800 transition-colors border-t border-slate-100">Đóng</button>}
+                  footer={
+                    <div className="w-full px-6 py-4 bg-slate-50 border-t border-slate-150 flex justify-end gap-3">
+                      <button 
+                        onClick={() => setReportStudentId("")} 
+                        className="px-6 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold rounded-xl transition-all shadow-sm text-xs cursor-pointer"
+                      >
+                        Đóng (Close)
+                      </button>
+                    </div>
+                  }
                 >
-                  <div className="space-y-4">
+                  <div className="space-y-5">
               {/* STUDENT HEADER BANNER (COMPACT & MODERN) */}
               <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm relative overflow-hidden mb-4 text-left">
                 <div className="absolute top-0 right-0 w-48 h-48 -mt-16 -mr-16 mix-blend-multiply filter blur-3xl opacity-70 text-xs font-semibold"></div>
