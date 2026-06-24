@@ -3417,20 +3417,20 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               <button onClick={downloadTemplate} className="flex items-center gap-1.5 text-xs font-black text-blue-600 hover:bg-blue-100 transition-all text-xs font-semibold"><Download className="w-4 h-4" /> Tải mẫu</button>
               <input type="file" ref={fileRef} onChange={handleImport} accept=".xlsx,.xls,.csv" className="hidden" />
               <button onClick={() => fileRef.current?.click()} disabled={importing || !cPeriodId || cPeriodId === "all"} className="flex items-center gap-1.5 text-xs font-black text-emerald-700 hover:bg-emerald-100 transition-all disabled:opacity-50 text-xs font-semibold"><Upload className="w-4 h-4" /> {importing ? "Đang import..." : "Import Excel"}</button>
-              <button onClick={openAddChild} disabled={!cPeriodId || cPeriodId === "all"} className="flex items-center gap-1.5 px-4 py-2 text-xs font-black text-white bg-[#00A19A] hover:bg-[#00A19A]-700 rounded-none shadow-none shadow-teal-100 transition-all disabled:opacity-50"><Plus className="w-4 h-4" /> Thêm bé</button>
+              <button onClick={openAddChild} disabled={!cPeriodId || cPeriodId === "all"} className="flex items-center gap-1.5 px-4 py-2 text-xs font-black text-white bg-[#00A19A] hover:bg-[#00A19A]-700 rounded-none shadow-none shadow-teal-100 transition-all disabled:opacity-50"><Plus className="w-4 h-4" /> Thêm trẻ</button>
             </div>
           </div>
 
           <div className="bg-white rounded-none border border-slate-300 shadow-none overflow-hidden">
             {cLoading ? <Spin /> : filtChildren.length === 0 ? (
-              <Empty text={cPeriodId ? "Chưa có bé nào" : "Vui lòng chọn Kỳ và bấm Tìm"} sub={cPeriodId ? "Bấm Thêm bé hoặc Import Excel" : ""} />
+              <Empty text={cPeriodId ? "Chưa có trẻ nào" : "Vui lòng chọn Kỳ và bấm Tìm"} sub={cPeriodId ? "Bấm Thêm trẻ hoặc Import Excel" : ""} />
             ) : (
               <div className="overflow-x-auto custom-scrollbar flex-1">
                 <table className="w-full text-left text-sm whitespace-nowrap border-collapse">
                   <thead className="bg-[#00A19A]/5 border-b border-slate-300">
                     <tr>
                       <th className="p-2 w-12 border border-slate-300"><input type="checkbox" className="w-4 h-4 rounded accent-[#00A19A]" checked={filtChildren.length > 0 && cSelected.length === filtChildren.length} onChange={e => setCSelected(e.target.checked ? filtChildren.map(c => c.id) : [])} /></th>
-                      {["STT", "Mã bé", "Họ và tên", "Ngày sinh", "Giới tính", "Nhóm tuổi", "Cơ sở", "Kết quả", "Thao tác"].map(h => <th key={h} className="p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest border border-slate-300">{h}</th>)}
+                      {["STT", "Mã bé", "Họ và tên", "Ngày sinh", "Giới tính", "Nhóm tuổi", "Cơ sở", "Thao tác"].map(h => <th key={h} className="p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest border border-slate-300">{h}</th>)}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200">
@@ -3444,7 +3444,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         <td className="p-2 border border-slate-300 text-sm">{child.gender === "M" || child.gender === "Nam" ? "Nam" : child.gender === "F" || child.gender === "Nữ" ? "Nữ" : child.gender || "—"}</td>
                         <td className="p-2 border border-slate-300 text-sm text-slate-700">{child.grade || "—"}</td>
                         <td className="p-2 text-xs font-semibold text-slate-600 border border-slate-300">{child.admissionCampus || "—"}</td>
-                        <td className="p-2 border border-slate-300 text-xs font-black">{child.admissionResult ? <span className={child.admissionResult === "Học thử" ? "text-[#00A19A]" : child.admissionResult.toUpperCase().includes("ĐẠT") && !child.admissionResult.toUpperCase().includes("KHÔNG") ? "text-emerald-700" : child.admissionResult.toUpperCase().includes("KHÔNG") ? "text-rose-700" : "text-amber-700"}>{child.admissionResult}</span> : <span className="text-slate-300">Chưa</span>}</td>
+                        
                         <td className="p-2 text-right border border-slate-300"><div className="flex justify-end gap-1"><button onClick={() => openEditChild(child)} className="p-2 text-slate-300 hover:text-[#00A19A] hover:bg-[#00A19A]/5 rounded-none transition-all"><Edit2 className="w-4 h-4" /></button><button onClick={() => setConfirm({ msg: `Xóa bé "${child.fullName}"?`, fn: () => doDeleteChild(child.id) })} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all text-xs font-semibold"><Trash2 className="w-4 h-4" /></button></div></td>
                       </tr>
                     ))}
@@ -3508,7 +3508,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
               <div className="bg-white rounded-none border border-slate-300 shadow-none overflow-hidden">
                 {sumLoading ? <Spin /> : studentSummaries.length === 0 ? (
-                  <Empty text={cPeriodId ? "Chưa có bé nào" : "Vui lòng chọn Kỳ và bấm Tìm"} sub={cPeriodId ? "Hãy thêm học sinh trước" : ""} />
+                  <Empty text={cPeriodId ? "Chưa có trẻ nào" : "Vui lòng chọn Kỳ và bấm Tìm"} sub={cPeriodId ? "Hãy thêm học sinh trước" : ""} />
                 ) : (
                   <div className="overflow-x-auto custom-scrollbar flex-1">
                     <table className="w-full text-left text-sm whitespace-nowrap border-collapse">
@@ -3626,7 +3626,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
               <div className="bg-white rounded-none border border-slate-300 shadow-none overflow-hidden">
                 {sumLoading ? <Spin /> : studentSummaries.length === 0 ? (
-                  <Empty text={cPeriodId ? "Chưa có bé nào" : "Vui lòng chọn Kỳ và bấm Tìm"} sub={cPeriodId ? "Hãy thêm học sinh trước" : ""} />
+                  <Empty text={cPeriodId ? "Chưa có trẻ nào" : "Vui lòng chọn Kỳ và bấm Tìm"} sub={cPeriodId ? "Hãy thêm học sinh trước" : ""} />
                 ) : (
                   <div className="overflow-x-auto relative rounded-none border border-slate-300/80">
                     <table className="w-full min-w-max text-left text-sm whitespace-nowrap border-collapse table-auto">
@@ -5005,7 +5005,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       </Modal>
 
       {/* Modal: Child */}
-      <Modal open={cModal} onClose={() => setCModal(false)} title={editC ? "Sửa thông tin Bé" : "Thêm Bé Mầm non"} size="lg" footer={<><button onClick={() => setCModal(false)} className="flex-1 text-xs font-black uppercase text-slate-400">Đóng</button><button onClick={saveChild} className="flex-1 py-3.5 bg-[#00A19A] text-white rounded-none text-xs font-black uppercase tracking-widest shadow-none shadow-teal-100">Lưu</button></>}>
+      <Modal open={cModal} onClose={() => setCModal(false)} title={editC ? "Sửa thông tin Trẻ" : "Thêm Trẻ Mầm non"} size="lg" footer={<><button onClick={() => setCModal(false)} className="flex-1 text-xs font-black uppercase text-slate-400">Đóng</button><button onClick={saveChild} className="flex-1 py-3.5 bg-[#00A19A] text-white rounded-none text-xs font-black uppercase tracking-widest shadow-none shadow-teal-100">Lưu</button></>}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field label="Mã bé" required><input value={cForm.studentCode} onChange={e => setCForm({...cForm, studentCode: e.target.value})} disabled={!!editC} className={inp + (editC ? " bg-[#00A19A]/5/50" : "")} placeholder="MN001" /></Field>
           <Field label="Họ và tên" required><input value={cForm.fullName} onChange={e => setCForm({...cForm, fullName: e.target.value})} className={inp} placeholder="Họ và tên đầy đủ" /></Field>

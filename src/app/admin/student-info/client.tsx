@@ -1247,7 +1247,7 @@ export function StudentInfoClient({
                 className="flex items-center gap-1.5 px-4 py-2 bg-[#00A6A9] hover:bg-[#008c85] text-white rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
-                {activeTab === "general" ? "Thêm mới" : "Thêm bé"}
+                {activeTab === "general" ? "Thêm mới" : "Thêm trẻ"}
               </button>
               <button
                 onClick={() => {
@@ -1899,7 +1899,7 @@ export function StudentInfoClient({
             <div className="p-6 flex justify-between items-center text-xs font-semibold">
               <div>
                 <h3 className="text-lg font-black text-slate-800">
-                  {formMode === "create" ? (activeTab === "general" ? "Thêm mới học sinh" : "Thêm bé") : "Chỉnh sửa thông tin học sinh"}
+                  {formMode === "create" ? (activeTab === "general" ? "Thêm mới học sinh" : "Thêm trẻ") : "Chỉnh sửa thông tin học sinh"}
                 </h3>
                 <p className="text-xs text-slate-400 font-semibold uppercase mt-0.5 tracking-wider">
                   {activeTab === "general" ? "Phân hệ Phổ thông" : "Phân hệ Mầm non"} - Năm học {activeYearName}
