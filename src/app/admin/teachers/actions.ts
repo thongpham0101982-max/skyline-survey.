@@ -66,12 +66,11 @@ async function assignHomeroomClass(teacherId: string, classId: string | null) {
 async function syncAdditionalCampuses(userId: string, additionalCampusIds: string[]) {
   // Delete all existing assignments for this user
   await prisma.userCampusAssignment.deleteMany({ where: { userId } });
-  // Re-create with the new list (skip empty values)
-  const validIds = additionalCampusIds.filter(Boolean);
-  if (validIds.length > 0) {
+  // Re-create with the new list (skip empty values and ensure uniqueness)
+  const uniqueIds = Array.from(new Set(additionalCampusIds.filter(Boolean)));
+  if (uniqueIds.length > 0) {
     await prisma.userCampusAssignment.createMany({
-      data: validIds.map(campusId => ({ userId, campusId })),
-      skipDuplicates: true
+      data: uniqueIds.map(campusId => ({ userId, campusId }))
     });
   }
 }

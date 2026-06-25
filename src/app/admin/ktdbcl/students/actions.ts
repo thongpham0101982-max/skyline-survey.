@@ -44,13 +44,25 @@ export async function getStudentsByClassAction(classId: string, examId: string) 
 export async function registerStudentsAction(examId: string, studentIds: string[]) {
   if (!examId || studentIds.length === 0) return
 
-  await prisma.examStudent.createMany({
-    data: studentIds.map(studentId => ({
+  // Query existing registrations to avoid duplicates
+  const existing = await prisma.examStudent.findMany({
+    where: {
       examId,
-      studentId
-    })),
-    skipDuplicates: true
+      studentId: { in: studentIds }
+    },
+    select: { studentId: true }
   })
+  const existingSet = new Set(existing.map(r => r.studentId))
+  const newStudentIds = studentIds.filter(id => !existingSet.has(id))
+
+  if (newStudentIds.length > 0) {
+    await prisma.examStudent.createMany({
+      data: newStudentIds.map(studentId => ({
+        examId,
+        studentId
+      }))
+    })
+  }
   
   revalidatePath("/admin/ktdbcl/students")
 }
