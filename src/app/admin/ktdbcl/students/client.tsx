@@ -211,6 +211,9 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
       s.studentCode.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
+  // Get active exam details
+  const activeExamObj = exams.find((e) => e.id === selectedExam)
+
   // Get allowed grades based on selected exam's target level
   const getAllowedGrades = () => {
     if (!activeExamObj || !activeExamObj.grade) {
@@ -238,8 +241,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
   const registeredCount = students.filter((s) => s.isRegistered).length
   const unregisteredCount = totalCount - registeredCount
 
-  // Get active exam details
-  const activeExamObj = exams.find((e) => e.id === selectedExam)
+
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 text-xs font-semibold">
