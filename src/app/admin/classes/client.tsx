@@ -226,7 +226,6 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
   }
   const handleOpenCreateModal = () => {
     setCreateModal({
-      classCode: "",
       className: "",
       campusId: selectedCampus || defaultCampusId || campuses[0]?.id || "",
       academicYearId: selectedYearId,
@@ -241,7 +240,6 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
 
   const handleSaveCreate = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!createModal.classCode.trim()) { alert("Vui lòng nhập Mã lớp!"); return; }
     if (!createModal.className.trim()) { alert("Vui lòng nhập Tên lớp!"); return; }
     if (!createModal.campusId) { alert("Vui lòng chọn Cơ sở!"); return; }
     if (!createModal.level) { alert("Vui lòng chọn Bậc học!"); return; }
@@ -255,7 +253,6 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
     }
 
     const res = await createClassAction({
-      classCode: createModal.classCode.trim(),
       className: createModal.className.trim(),
       level: createModal.level,
       grade: createModal.grade,
@@ -544,10 +541,6 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
                 <button onClick={() => setCreateModal(null)} className="p-1 rounded-full hover:bg-slate-200 text-slate-500"><X className="w-5 h-5" /></button>
              </div>
              <form onSubmit={handleSaveCreate} className="p-5 space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Mã lớp <span className="text-red-500">*</span></label>
-                  <input type="text" required value={createModal.classCode} onChange={e => setCreateModal({...createModal, classCode: e.target.value})} className="w-full border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="Nhập mã lớp học..."/>
-                </div>
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1">Tên lớp <span className="text-red-500">*</span></label>
                   <input type="text" required value={createModal.className} onChange={e => setCreateModal({...createModal, className: e.target.value})} className="w-full border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="Nhập tên lớp..."/>

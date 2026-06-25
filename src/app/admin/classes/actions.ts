@@ -70,15 +70,45 @@ export async function updateClass(id: string, data: any) {
 
 export async function createClassAction(data: any) {
   try {
-    const existing = await prisma.class.findUnique({
-      where: { classCode: data.classCode }
+    // Auto-generate classCode
+    const academicYear = await prisma.academicYear.findUnique({
+      where: { id: data.academicYearId }
     })
-    if (existing) {
-      return { success: false, error: "Mã lớp học đã tồn tại!" }
+    let yearSuffix = String(new Date().getFullYear()).slice(-2) // fallback
+    if (academicYear && academicYear.name) {
+      const parts = academicYear.name.split("-")
+      const yearStr = parts[1] || parts[0]
+      if (yearStr && yearStr.trim().length >= 4) {
+        yearSuffix = yearStr.trim().slice(-2)
+      }
     }
+
+    const isMN = data.level === "Mầm non"
+    const prefix = isMN ? `MN-${yearSuffix}-` : `C-${yearSuffix}-`
+
+    const existingClasses = await prisma.class.findMany({
+      where: {
+        academicYearId: data.academicYearId,
+        classCode: { startsWith: prefix }
+      },
+      select: { classCode: true }
+    })
+
+    let maxSeq = 0
+    for (const c of existingClasses) {
+      const parts = c.classCode.split("-")
+      const seqStr = parts[parts.length - 1]
+      const seq = parseInt(seqStr, 10)
+      if (!isNaN(seq) && seq > maxSeq) {
+        maxSeq = seq
+      }
+    }
+    const nextSeq = maxSeq + 1
+    const generatedClassCode = `${prefix}${nextSeq}`
+
     await prisma.class.create({
       data: {
-        classCode: data.classCode,
+        classCode: generatedClassCode,
         className: data.className,
         level: data.level || "",
         grade: data.grade || "",
