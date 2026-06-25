@@ -64,7 +64,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
   const [updating, setUpdating] = useState(false)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [searchTerm, setSearchTerm] = useState("")
-  const [showAllRegistered, setShowAllRegistered] = useState(false)
+  const [showAllRegistered, setShowAllRegistered] = useState(true)
 
   // Filter classes based on Campus, Grade and Academic Year
   const filteredClasses = classes.filter(

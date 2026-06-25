@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
@@ -26,10 +26,18 @@ export function AcademicYearSelector() {
             const active = data.find(y => y.status === "ACTIVE");
             const defaultId = active ? active.id : (data.length > 0 ? data[0].id : null);
             if (defaultId) {
-              setSelectedYear(defaultId);
-              if (!localStorage.getItem("selectedAcademicYear")) {
-                 localStorage.setItem("selectedAcademicYear", defaultId);
-                 window.dispatchEvent(new Event("academicYearChanged"));
+              const stored = localStorage.getItem("selectedAcademicYear");
+              if (stored) {
+                const exists = data.some(y => y.id === stored);
+                setSelectedYear(exists ? stored : defaultId);
+                if (!exists) {
+                  localStorage.setItem("selectedAcademicYear", defaultId);
+                  window.dispatchEvent(new Event("academicYearChanged"));
+                }
+              } else {
+                setSelectedYear(defaultId);
+                localStorage.setItem("selectedAcademicYear", defaultId);
+                window.dispatchEvent(new Event("academicYearChanged"));
               }
             }
           }
