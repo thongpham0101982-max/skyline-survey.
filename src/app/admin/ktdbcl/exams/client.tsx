@@ -1,4 +1,4 @@
-
+"use client"
 const LEVEL_LABELS: Record<string, string> = {
   TIEU_HOC: "Tiểu học",
   THCS: "THCS",
@@ -37,7 +37,6 @@ function matchesLevelFilter(examGrade: string, filterVal: string) {
   return examGradesList.some(g => allowedGrades.includes(g));
 }
 
-"use client"
 import { useState, useEffect } from "react"
 import { Plus, Trash2, Edit2, Check, X, Calendar, Star, Tag, User, Layers, Search, Filter } from "lucide-react"
 import { createExamAction, updateExamAction, deleteExamAction } from "./actions"
