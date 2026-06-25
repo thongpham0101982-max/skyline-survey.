@@ -16,13 +16,12 @@ export default async function ExamsPage() {
     include: {
       category: true,
       round: true,
-      department: true,
-      teacher: true
+      department: true
     },
     orderBy: { createdAt: "desc" }
   })
 
-  // Fetch categories, rounds, departments, teachers for selection dropdowns
+  // Fetch categories, rounds, departments for selection dropdowns
   const categories = await prisma.examCategory.findMany({
     orderBy: { name: "asc" }
   })
@@ -36,11 +35,6 @@ export default async function ExamsPage() {
     orderBy: { name: "asc" }
   })
 
-  const teachers = await prisma.teacher.findMany({
-    where: { status: "ACTIVE" },
-    orderBy: { teacherName: "asc" }
-  })
-
   // Fetch all academic years
   const academicYears = await prisma.academicYear.findMany({
     orderBy: { startDate: "desc" }
@@ -52,7 +46,7 @@ export default async function ExamsPage() {
       <div className="mb-8">
         <h1 className="text-2xl font-black text-[#0A3230] tracking-tight">Danh Sách Kỳ Thi</h1>
         <p className="text-slate-500 mt-2 text-xs font-semibold uppercase tracking-wider">
-          Tạo và quản lý tất cả kỳ thi học sinh, cấu hình danh mục, vòng thi, tổ chuyên môn và GV phụ trách.
+          Tạo và quản lý tất cả kỳ thi học sinh, cấu hình danh mục, vòng thi và tổ chuyên môn.
         </p>
       </div>
       <ExamsClient
@@ -60,7 +54,6 @@ export default async function ExamsPage() {
         categories={categories}
         rounds={rounds}
         departments={departments}
-        teachers={teachers}
         academicYears={academicYears}
       />
     </div>

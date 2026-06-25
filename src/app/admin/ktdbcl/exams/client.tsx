@@ -41,12 +41,44 @@ import { useState, useEffect } from "react"
 import { Plus, Trash2, Edit2, Check, X, Calendar, Star, Tag, User, Layers, Search, Filter } from "lucide-react"
 import { createExamAction, updateExamAction, deleteExamAction } from "./actions"
 
+const generateNextExamCode = (existingExams: any[]) => {
+  const currentYear = new Date().getFullYear() // e.g. 2026
+  const yearSuffix = String(currentYear).slice(-2) // e.g. "26"
+  const prefix = `CT-${yearSuffix}-`;
+  
+  // Find all existing exam codes matching CT-[yearSuffix]-XXXX
+  const codes = existingExams
+    .map(e => e.code || "")
+    .filter(code => code.startsWith(prefix))
+  
+  let maxSeq = -1
+  for (const code of codes) {
+    const seqStr = code.slice(prefix.length)
+    const seq = parseInt(seqStr, 10)
+    if (!isNaN(seq) && seq > maxSeq) {
+      maxSeq = seq
+    }
+  }
+  
+  const nextSeq = maxSeq + 1
+  const nextSeqStr = String(nextSeq).padStart(4, "0")
+  return `${prefix}${nextSeqStr}`
+}
+
+const PLAN_LABELS: Record<string, string> = {
+  HE_THONG: "Hệ thống",
+  TRUONG: "Trường",
+  PHUONG: "Phường",
+  SO: "Sở GD&ĐT",
+  BO: "Bộ GD&ĐT",
+  TU_DANG_KY: "Tự đăng ký"
+}
+
 interface ExamsClientProps {
   initialExams: any[]
   categories: any[]
   rounds: any[]
   departments: any[]
-  teachers: any[]
   academicYears: any[]
 }
 
@@ -55,7 +87,6 @@ export function ExamsClient({
   categories,
   rounds,
   departments,
-  teachers,
   academicYears
 }: ExamsClientProps) {
   const [yearId, setYearId] = useState<string>(() => {
@@ -95,7 +126,7 @@ export function ExamsClient({
     categoryId: "",
     roundId: "",
     departmentId: "",
-    teacherId: "",
+    plan: "HE_THONG",
     isPriority: false,
     grade: ""
   })
@@ -107,18 +138,20 @@ export function ExamsClient({
   const [filterDept, setFilterDept] = useState("")
   const [filterPriority, setFilterPriority] = useState("")
   const [filterGrade, setFilterGrade] = useState("")
+  const [filterPlan, setFilterPlan] = useState("")
 
   const openCreate = () => {
+    const autoCode = generateNextExamCode(exams)
     setForm({
       name: "",
-      code: "",
+      code: autoCode,
       description: "",
       startDate: "",
       endDate: "",
       categoryId: categories[0]?.id || "",
       roundId: "",
       departmentId: "",
-      teacherId: "",
+      plan: "HE_THONG",
       isPriority: false,
       grade: ""
     })
@@ -137,7 +170,7 @@ export function ExamsClient({
       categoryId: exam.categoryId,
       roundId: exam.roundId || "",
       departmentId: exam.departmentId || "",
-      teacherId: exam.teacherId || "",
+      plan: exam.plan || "HE_THONG",
       isPriority: exam.isPriority || false,
       grade: exam.grade || ""
     })
@@ -196,8 +229,9 @@ export function ExamsClient({
         ? exam.isPriority === false
         : true
     const matchesGrade = matchesLevelFilter(exam.grade || '', filterGrade)
+    const matchesPlan = filterPlan ? exam.plan === filterPlan : true
 
-    return matchesYear && matchesSearch && matchesCategory && matchesRound && matchesDept && matchesPriority && matchesGrade
+    return matchesYear && matchesSearch && matchesCategory && matchesRound && matchesDept && matchesPriority && matchesGrade && matchesPlan
   })
 
   return (
@@ -279,6 +313,20 @@ export function ExamsClient({
             <option value="THCS_THPT">Liên cấp THCS-THPT</option>
             <option value="ALL">Mọi cấp học</option>
           </select>
+
+          <select
+            value={filterPlan}
+            onChange={(e) => setFilterPlan(e.target.value)}
+            className="border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none text-slate-600 focus:border-[#00A19A]"
+          >
+            <option value="">Tất cả kế hoạch</option>
+            <option value="HE_THONG">Hệ thống</option>
+            <option value="TRUONG">Trường</option>
+            <option value="PHUONG">Phường</option>
+            <option value="SO">Sở GD&ĐT</option>
+            <option value="BO">Bộ GD&ĐT</option>
+            <option value="TU_DANG_KY">Tự đăng ký</option>
+          </select>
         </div>
 
         <button
@@ -326,10 +374,9 @@ export function ExamsClient({
               <input
                 type="text"
                 value={form.code}
-                onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase().replace(/\s+/g, '_') })}
-                placeholder="Ví dụ: TOAN_HK1_2026"
-                className="w-full border border-slate-200 rounded-lg px-4 py-2 text-xs focus:border-[#00A19A] outline-none font-mono font-semibold"
-                disabled={!!editingId}
+                className="w-full border border-slate-200 bg-slate-100 rounded-lg px-4 py-2 text-xs focus:border-[#00A19A] outline-none font-mono font-bold text-slate-500 cursor-not-allowed"
+                disabled={true}
+                placeholder="Tự động sinh mã..."
               />
             </div>
 
@@ -403,6 +450,25 @@ export function ExamsClient({
                     {d.name}
                   </option>
                 ))}
+              </select>
+            </div>
+
+            {/* Kế hoạch */}
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">
+                Kế hoạch <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={form.plan}
+                onChange={(e) => setForm({ ...form, plan: e.target.value })}
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-[#00A19A] outline-none font-semibold text-slate-700"
+              >
+                <option value="HE_THONG">Hệ thống</option>
+                <option value="TRUONG">Trường</option>
+                <option value="PHUONG">Phường</option>
+                <option value="SO">Sở GD&ĐT</option>
+                <option value="BO">Bộ GD&ĐT</option>
+                <option value="TU_DANG_KY">Tự đăng ký</option>
               </select>
             </div>
 
@@ -556,6 +622,13 @@ export function ExamsClient({
                           <span className="flex items-center gap-1">
                             <Layers className="w-3.5 h-3.5 text-slate-400" />
                             Tổ chuyên môn: <strong className="text-slate-600">{exam.department.name}</strong>
+                          </span>
+                        )}
+
+                        {exam.plan && (
+                          <span className="flex items-center gap-1">
+                            <Tag className="w-3.5 h-3.5 text-slate-400" />
+                            Kế hoạch: <strong className="text-slate-600">{PLAN_LABELS[exam.plan] || exam.plan}</strong>
                           </span>
                         )}
 

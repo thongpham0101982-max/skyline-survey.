@@ -11,7 +11,7 @@ export async function createExamAction(data: {
   categoryId: string
   roundId?: string
   departmentId?: string
-  teacherId?: string
+  plan?: string
   isPriority?: boolean
   academicYearId?: string
   grade?: string
@@ -26,7 +26,7 @@ export async function createExamAction(data: {
       categoryId: data.categoryId,
       roundId: data.roundId || null,
       departmentId: data.departmentId || null,
-      teacherId: data.teacherId || null,
+      plan: data.plan || null,
       isPriority: data.isPriority || false,
       academicYearId: data.academicYearId || null,
       grade: data.grade || null
@@ -45,7 +45,7 @@ export async function updateExamAction(data: {
   categoryId?: string
   roundId?: string
   departmentId?: string
-  teacherId?: string
+  plan?: string
   isPriority?: boolean
   academicYearId?: string
   grade?: string
