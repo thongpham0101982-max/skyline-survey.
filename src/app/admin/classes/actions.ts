@@ -67,3 +67,31 @@ export async function updateClass(id: string, data: any) {
     return { success: false, error: e.message }
   }
 }
+
+export async function createClassAction(data: any) {
+  try {
+    const existing = await prisma.class.findUnique({
+      where: { classCode: data.classCode }
+    })
+    if (existing) {
+      return { success: false, error: "Mã lớp học đã tồn tại!" }
+    }
+    await prisma.class.create({
+      data: {
+        classCode: data.classCode,
+        className: data.className,
+        level: data.level || "",
+        grade: data.grade || "",
+        campusId: data.campusId,
+        academicYearId: data.academicYearId,
+        educationSystem: data.educationSystem || "",
+        homeroomTeacherId: data.homeroomTeacherId || null,
+        status: "ACTIVE"
+      }
+    })
+    revalidatePath("/admin/classes")
+    return { success: true }
+  } catch(e: any) {
+    return { success: false, error: e.message }
+  }
+}

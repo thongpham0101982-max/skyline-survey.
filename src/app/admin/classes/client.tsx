@@ -1,11 +1,11 @@
 "use client"
 import { getDefaultAcademicYearClient } from "@/lib/academicYear"
 import { useState, useRef, useEffect } from "react"
-import { Upload, Users, BookOpen, Download, Calendar, Building2, GraduationCap, Layers, Trash2, Edit, X, Save, CheckSquare } from "lucide-react"
+import { Upload, Users, BookOpen, Download, Calendar, Building2, GraduationCap, Layers, Trash2, Edit, X, Save, CheckSquare, Plus } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import * as xlsx from "xlsx"
-import { importClassesAction, deleteClasses, updateClass } from "./actions"
+import { importClassesAction, deleteClasses, updateClass, createClassAction } from "./actions"
 
 const K12_LEVELS = [
   { value: "", label: "Tất cả" },
@@ -104,6 +104,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
   const [uploading, setUploading] = useState(false)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [editModal, setEditModal] = useState<any>(null)
+  const [createModal, setCreateModal] = useState<any>(null)
   const [deleting, setDeleting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -223,6 +224,54 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
     const res = await deleteClasses([id])
     if (res.success) { alert("Xóa thành công!"); router.refresh(); } else alert("Không thể xóa!")
   }
+  const handleOpenCreateModal = () => {
+    setCreateModal({
+      classCode: "",
+      className: "",
+      campusId: selectedCampus || defaultCampusId || campuses[0]?.id || "",
+      academicYearId: selectedYearId,
+      level: selectedLevel || (activeTab === "mam-non" ? "Mầm non" : ""),
+      grade: selectedGrade || "",
+      educationSystem: selectedEduSystem || "",
+      gvcn1: "",
+      gvcn2: "",
+      homeroomTeacherId: ""
+    });
+  };
+
+  const handleSaveCreate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!createModal.classCode.trim()) { alert("Vui lòng nhập Mã lớp!"); return; }
+    if (!createModal.className.trim()) { alert("Vui lòng nhập Tên lớp!"); return; }
+    if (!createModal.campusId) { alert("Vui lòng chọn Cơ sở!"); return; }
+    if (!createModal.level) { alert("Vui lòng chọn Bậc học!"); return; }
+    if (!createModal.grade) { alert("Vui lòng chọn Khối lớp!"); return; }
+
+    let finalTeacherId = createModal.homeroomTeacherId || null;
+    if (createModal.level === "Mầm non") {
+      const g1 = createModal.gvcn1 || "";
+      const g2 = createModal.gvcn2 || "";
+      finalTeacherId = [g1, g2].filter(Boolean).join(",") || null;
+    }
+
+    const res = await createClassAction({
+      classCode: createModal.classCode.trim(),
+      className: createModal.className.trim(),
+      level: createModal.level,
+      grade: createModal.grade,
+      campusId: createModal.campusId,
+      academicYearId: createModal.academicYearId,
+      educationSystem: createModal.educationSystem || "",
+      homeroomTeacherId: finalTeacherId
+    })
+    if (res.success) {
+      setCreateModal(null);
+      router.refresh();
+    } else {
+      alert(res.error || "Lỗi khi thêm mới lớp học!")
+    }
+  }
+
   const handleOpenEditModal = (c: any) => {
     let gvcn1 = "";
     let gvcn2 = "";
@@ -342,6 +391,9 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
             )}
           </div>
           <div className="flex gap-3 items-center">
+            <button onClick={() => handleOpenCreateModal()} className="flex items-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md shadow-sm text-sm">
+              <Plus className="w-4 h-4 mr-2" /> Thêm Mới Lớp Học
+            </button>
             <button onClick={handleDownloadTemplate} className="flex items-center text-blue-600 hover:text-blue-700 hover:bg-blue-100 font-semibold text-sm text-xs font-semibold">
               <Download className="w-4 h-4 mr-2" /> Tải File Mẫu
             </button>
@@ -478,6 +530,107 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
                 <div className="pt-4 flex items-center justify-end gap-3">
                    <button type="button" onClick={() => setEditModal(null)} className="px-4 py-2 font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl text-sm">Hủy</button>
                    <button type="submit" className="font-medium text-white hover:bg-blue-700 text-sm shadow-sm flex items-center text-xs font-semibold"><Save className="w-4 h-4 mr-2" /> Lưu thay đổi</button>
+                </div>
+             </form>
+           </div>
+        </div>
+      )}
+      {/* Create Modal */}
+      {createModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+             <div className="p-5 flex items-center justify-between text-xs font-semibold">
+                <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2"><Plus className="w-5 h-5 text-blue-500" /> Thêm mới lớp học</h3>
+                <button onClick={() => setCreateModal(null)} className="p-1 rounded-full hover:bg-slate-200 text-slate-500"><X className="w-5 h-5" /></button>
+             </div>
+             <form onSubmit={handleSaveCreate} className="p-5 space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">Mã lớp <span className="text-red-500">*</span></label>
+                  <input type="text" required value={createModal.classCode} onChange={e => setCreateModal({...createModal, classCode: e.target.value})} className="w-full border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="Nhập mã lớp học..."/>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">Tên lớp <span className="text-red-500">*</span></label>
+                  <input type="text" required value={createModal.className} onChange={e => setCreateModal({...createModal, className: e.target.value})} className="w-full border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="Nhập tên lớp..."/>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">Cơ sở <span className="text-red-500">*</span></label>
+                  <select required value={createModal.campusId} disabled={isCampusLocked} onChange={e => !isCampusLocked && setCreateModal({...createModal, campusId: e.target.value})} className={`w-full border rounded-xl p-2.5 outline-none text-sm ${isCampusLocked ? "bg-[#00A19A]/10 border-indigo-200 text-indigo-700 cursor-not-allowed" : "focus:ring-2 focus:ring-blue-500 border-slate-200"}`}>
+                    {campuses.map((cp: any) => <option key={cp.id} value={cp.id}>{cp.campusName}</option>)}
+                  </select>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">Bậc học <span className="text-red-500">*</span></label>
+                    <select required value={createModal.level} onChange={e => setCreateModal({...createModal, level: e.target.value, grade: ""})} className="w-full border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                      <option value="">Chọn bậc</option>
+                      {(activeTab === "mam-non" ? MN_LEVELS : K12_LEVELS).filter(l => l.value).map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">Khối lớp <span className="text-red-500">*</span></label>
+                    <select required value={createModal.grade} onChange={e => setCreateModal({...createModal, grade: e.target.value})} className="w-full border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                      <option value="">Chọn khối</option>
+                      {getGradesList(createModal.level, activeTab).map(g => <option key={g} value={g}>{g}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">Hệ học</label>
+                  <select value={createModal.educationSystem || ""} onChange={e => setCreateModal({...createModal, educationSystem: e.target.value})} className="w-full border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-purple-500 text-sm">
+                    <option value="">-- Chưa chọn --</option>
+                    {eduSystems.map((es: any) => <option key={es.id} value={es.code}>{es.code} - {es.name}</option>)}
+                  </select>
+                </div>
+                {createModal.level === "Mầm non" ? (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-1">GVCN 1</label>
+                      <SearchableSelect
+                        options={[
+                          { value: "", label: "-- Chưa phân công --" },
+                          ...(teachers?.filter((t: any) => (t.blockCM || "").toLowerCase().includes("mầm non")) || []).map((t: any) => ({
+                            value: t.id,
+                            label: t.teacherName
+                          }))
+                        ]}
+                        value={createModal.gvcn1 || ""}
+                        onChange={(val: string) => setCreateModal({ ...createModal, gvcn1: val })}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-1">GVCN 2</label>
+                      <SearchableSelect
+                        options={[
+                          { value: "", label: "-- Chưa phân công --" },
+                          ...(teachers?.filter((t: any) => (t.blockCM || "").toLowerCase().includes("mầm non")) || []).map((t: any) => ({
+                            value: t.id,
+                            label: t.teacherName
+                          }))
+                        ]}
+                        value={createModal.gvcn2 || ""}
+                        onChange={(val: string) => setCreateModal({ ...createModal, gvcn2: val })}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">Giáo viên chủ nhiệm (GVCN)</label>
+                    <SearchableSelect
+                      options={[
+                        { value: "", label: "-- Chưa phân công --" },
+                        ...(teachers || []).map((t: any) => ({
+                          value: t.id,
+                          label: t.teacherName
+                        }))
+                      ]}
+                      value={createModal.homeroomTeacherId || ""}
+                      onChange={(val: string) => setCreateModal({ ...createModal, homeroomTeacherId: val })}
+                    />
+                  </div>
+                )}
+                <div className="pt-4 flex items-center justify-end gap-3">
+                   <button type="button" onClick={() => setCreateModal(null)} className="px-4 py-2 font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl text-sm">Hủy</button>
+                   <button type="submit" className="font-medium text-white hover:bg-blue-700 text-sm shadow-sm flex items-center text-xs font-semibold bg-blue-600 px-4 py-2 rounded-xl"><Save className="w-4 h-4 mr-2" /> Thêm mới</button>
                 </div>
              </form>
            </div>
