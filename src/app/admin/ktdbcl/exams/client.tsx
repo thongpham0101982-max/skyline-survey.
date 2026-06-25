@@ -406,22 +406,7 @@ export function ExamsClient({
               </select>
             </div>
 
-            {/* Giáo viên phụ trách */}
-            <div>
-              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">GV Phụ trách</label>
-              <select
-                value={form.teacherId}
-                onChange={(e) => setForm({ ...form, teacherId: e.target.value })}
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-[#00A19A] outline-none font-semibold text-slate-700"
-              >
-                <option value="">-- Chọn GV phụ trách --</option>
-                {teachers.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.teacherName} ({t.teacherCode})
-                  </option>
-                ))}
-              </select>
-            </div>
+
 
             {/* Thời gian bắt đầu */}
             <div>
@@ -574,12 +559,7 @@ export function ExamsClient({
                           </span>
                         )}
 
-                        {exam.teacher && (
-                          <span className="flex items-center gap-1">
-                            <User className="w-3.5 h-3.5 text-slate-400" />
-                            GV Phụ trách: <strong className="text-slate-600">{exam.teacher.teacherName}</strong>
-                          </span>
-                        )}
+
                       </div>
 
                       {/* Time */}
