@@ -81,3 +81,35 @@ export async function deregisterStudentsAction(examId: string, studentIds: strin
 
   revalidatePath("/admin/ktdbcl/students")
 }
+
+export async function getAllRegisteredStudentsAction(examId: string) {
+  if (!examId) return []
+
+  const registrations = await prisma.examStudent.findMany({
+    where: { examId },
+    include: {
+      student: {
+        include: {
+          class: true,
+          campus: true
+        }
+      }
+    },
+    orderBy: {
+      student: {
+        studentName: "asc"
+      }
+    }
+  })
+
+  return registrations.map(r => ({
+    id: r.student.id,
+    studentCode: r.student.studentCode,
+    studentName: r.student.studentName,
+    gender: r.student.gender || "Chưa xác định",
+    dateOfBirth: r.student.dateOfBirth ? r.student.dateOfBirth.toISOString() : null,
+    isRegistered: true,
+    className: r.student.class?.className || "N/A",
+    campusName: r.student.campus?.campusName || "N/A"
+  }))
+}

@@ -18,7 +18,7 @@ function getLevelLabel(val: string) {
 
 import { useState, useEffect } from "react"
 import { Calendar, Layers, MapPin, UserCheck, Users, Check, X, Loader2, AlertCircle, Search } from "lucide-react"
-import { getStudentsByClassAction, registerStudentsAction, deregisterStudentsAction } from "./actions"
+import { getStudentsByClassAction, registerStudentsAction, deregisterStudentsAction, getAllRegisteredStudentsAction } from "./actions"
 
 interface StudentsClientProps {
   exams: any[]
@@ -64,6 +64,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
   const [updating, setUpdating] = useState(false)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [searchTerm, setSearchTerm] = useState("")
+  const [showAllRegistered, setShowAllRegistered] = useState(false)
 
   // Filter classes based on Campus, Grade and Academic Year
   const filteredClasses = classes.filter(
@@ -99,14 +100,24 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
 
   // Fetch students when class or exam changes
   const fetchStudents = async () => {
-    if (!selectedClass || !selectedExam) {
+    if (!selectedExam) {
       setStudents([])
       return
     }
     setLoading(true)
     try {
-      const data = await getStudentsByClassAction(selectedClass, selectedExam)
-      setStudents(data)
+      if (showAllRegistered) {
+        const data = await getAllRegisteredStudentsAction(selectedExam)
+        setStudents(data)
+      } else {
+        if (!selectedClass) {
+          setStudents([])
+          setLoading(false)
+          return
+        }
+        const data = await getStudentsByClassAction(selectedClass, selectedExam)
+        setStudents(data)
+      }
       setSelectedIds([])
     } catch (e) {
       console.error("Error loading students:", e)
@@ -117,7 +128,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
 
   useEffect(() => {
     fetchStudents()
-  }, [selectedClass, selectedExam])
+  }, [selectedClass, selectedExam, showAllRegistered])
 
   // Auto-set grade from selected exam target if available
   useEffect(() => {
@@ -253,6 +264,18 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
             Bộ Lọc Đăng Ký
           </h3>
 
+          {/* Toggle View Mode */}
+          <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+            <label className="font-bold text-slate-700 text-[10px] uppercase cursor-pointer" htmlFor="toggle-show-all-registered">Xem DS đã đăng ký</label>
+            <input
+              id="toggle-show-all-registered"
+              type="checkbox"
+              checked={showAllRegistered}
+              onChange={(e) => setShowAllRegistered(e.target.checked)}
+              className="w-4 h-4 rounded text-[#00A19A] focus:ring-[#00A19A] cursor-pointer"
+            />
+          </div>
+
           {/* 1. Chọn kỳ thi */}
           <div className="space-y-1.5">
             <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">
@@ -289,7 +312,8 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
             <select
               value={selectedCampus}
               onChange={(e) => setSelectedCampus(e.target.value)}
-              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-[#00A19A] transition-all bg-white"
+              disabled={showAllRegistered}
+              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-[#00A19A] transition-all bg-white disabled:bg-slate-50 disabled:text-slate-400"
             >
               {campuses.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -307,7 +331,8 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
             <select
               value={selectedGrade}
               onChange={(e) => setSelectedGrade(e.target.value)}
-              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-[#00A19A] transition-all bg-white"
+              disabled={showAllRegistered}
+              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-[#00A19A] transition-all bg-white disabled:bg-slate-50 disabled:text-slate-400"
             >
               {allowedGrades.map((g) => (
                 <option key={g} value={g}>
@@ -325,7 +350,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
             <select
               value={selectedClass}
               onChange={(e) => setSelectedClass(e.target.value)}
-              disabled={filteredClasses.length === 0}
+              disabled={showAllRegistered || filteredClasses.length === 0}
               className="w-full border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-[#00A19A] transition-all bg-white disabled:bg-slate-50 disabled:text-slate-400"
             >
               {filteredClasses.length === 0 ? (
@@ -342,7 +367,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
         </div>
 
         {/* Batch Operations Card */}
-        {selectedClass && students.length > 0 && (
+        {(showAllRegistered || (selectedClass && students.length > 0)) && (
           <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
             <h3 className="text-sm font-bold text-slate-800 pb-3 border-b border-slate-100">
               Thao Tác Hàng Loạt
@@ -351,14 +376,16 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
               Đã chọn <strong className="text-[#00A19A]">{selectedIds.length}</strong> học sinh trong danh sách hiển thị dưới đây.
             </div>
 
-            <button
-              onClick={handleRegister}
-              disabled={selectedIds.length === 0 || updating}
-              className="w-full flex items-center justify-center gap-2 bg-[#00A19A] hover:bg-[#008c85] text-white py-2.5 rounded-xl font-bold transition-all shadow-md shadow-[#00A19A]/10 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {updating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-              Đăng ký Dự thi ({selectedIds.length})
-            </button>
+            {!showAllRegistered && (
+              <button
+                onClick={handleRegister}
+                disabled={selectedIds.length === 0 || updating}
+                className="w-full flex items-center justify-center gap-2 bg-[#00A19A] hover:bg-[#008c85] text-white py-2.5 rounded-xl font-bold transition-all shadow-md shadow-[#00A19A]/10 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {updating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                Đăng ký Dự thi ({selectedIds.length})
+              </button>
+            )}
 
             <button
               onClick={handleDeregister}
@@ -375,37 +402,51 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
       {/* Main Student List Section */}
       <div className="lg:col-span-3 space-y-6">
         {/* Statistics Header */}
-        {selectedClass && (
+        {(selectedClass || showAllRegistered) && (
           <div className="grid grid-cols-3 gap-4">
-            <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-teal-50 text-[#00A19A] flex items-center justify-center">
-                <Users className="w-4 h-4" />
+            {showAllRegistered ? (
+              <div className="col-span-3 bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                  <UserCheck className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="text-[10px] text-slate-400 font-bold uppercase">Tổng số học sinh đã đăng ký</div>
+                  <div className="text-base font-black text-emerald-600">{totalCount}</div>
+                </div>
               </div>
-              <div>
-                <div className="text-[10px] text-slate-400 font-bold uppercase">Sĩ số lớp</div>
-                <div className="text-base font-black text-slate-700">{totalCount}</div>
-              </div>
-            </div>
+            ) : (
+              <>
+                <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-teal-50 text-[#00A19A] flex items-center justify-center">
+                    <Users className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-slate-400 font-bold uppercase">Sĩ số lớp</div>
+                    <div className="text-base font-black text-slate-700">{totalCount}</div>
+                  </div>
+                </div>
 
-            <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                <UserCheck className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="text-[10px] text-slate-400 font-bold uppercase">Đã đăng ký</div>
-                <div className="text-base font-black text-emerald-600">{registeredCount}</div>
-              </div>
-            </div>
+                <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                    <UserCheck className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-slate-400 font-bold uppercase">Đã đăng ký</div>
+                    <div className="text-base font-black text-emerald-600">{registeredCount}</div>
+                  </div>
+                </div>
 
-            <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center">
-                <X className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="text-[10px] text-slate-400 font-bold uppercase">Chưa đăng ký</div>
-                <div className="text-base font-black text-slate-500">{unregisteredCount}</div>
-              </div>
-            </div>
+                <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center">
+                    <X className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-slate-400 font-bold uppercase">Chưa đăng ký</div>
+                    <div className="text-base font-black text-slate-500">{unregisteredCount}</div>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         )}
 
@@ -416,12 +457,12 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
             <div className="flex items-center gap-2">
               <Users className="w-4.5 h-4.5 text-[#00A19A]" />
               <span className="font-bold text-slate-800 text-sm">
-                Danh Sách Học Sinh Lớp
+                {showAllRegistered ? "Danh Sách Học Sinh Đã Đăng Ký" : "Danh Sách Học Sinh Lớp"}
               </span>
             </div>
 
             {/* Quick Search */}
-            {selectedClass && students.length > 0 && (
+            {(showAllRegistered || selectedClass) && students.length > 0 && (
               <div className="relative w-full md:max-w-xs">
                 <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-slate-400" />
                 <input
@@ -436,7 +477,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
           </div>
 
           {/* Table content */}
-          {!selectedClass ? (
+          {!showAllRegistered && !selectedClass ? (
             <div className="flex flex-col items-center justify-center py-24 text-slate-400">
               <AlertCircle className="w-12 h-12 mb-3 opacity-20" />
               <p className="font-bold text-sm">Vui lòng chọn cơ sở và lớp học</p>
@@ -451,7 +492,11 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
             <div className="flex flex-col items-center justify-center py-24 text-slate-400">
               <AlertCircle className="w-12 h-12 mb-3 opacity-20" />
               <p className="font-bold text-sm">Không tìm thấy học sinh nào</p>
-              <p className="text-[11px] font-medium">Lớp chưa có học sinh hoặc không khớp từ khóa tìm kiếm.</p>
+              <p className="text-[11px] font-medium">
+                {showAllRegistered 
+                  ? "Chưa có học sinh nào đăng ký cho kỳ thi này hoặc không khớp từ khóa tìm kiếm."
+                  : "Lớp chưa có học sinh hoặc không khớp từ khóa tìm kiếm."}
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -471,6 +516,8 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
                     </th>
                     <th className="px-6 py-3">Mã Học Sinh</th>
                     <th className="px-6 py-3">Họ Và Tên</th>
+                    {showAllRegistered && <th className="px-6 py-3">Cơ sở</th>}
+                    {showAllRegistered && <th className="px-6 py-3">Lớp</th>}
                     <th className="px-6 py-3">Giới Tính</th>
                     <th className="px-6 py-3">Ngày Sinh</th>
                     <th className="px-6 py-3 text-right">Trạng Thái</th>
@@ -497,6 +544,8 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
                         </td>
                         <td className="px-6 py-3.5 font-mono text-slate-500 font-bold">{student.studentCode}</td>
                         <td className="px-6 py-3.5 font-bold text-slate-800 text-sm">{student.studentName}</td>
+                        {showAllRegistered && <td className="px-6 py-3.5 text-slate-600 font-semibold">{student.campusName}</td>}
+                        {showAllRegistered && <td className="px-6 py-3.5 text-slate-600 font-semibold">{student.className}</td>}
                         <td className="px-6 py-3.5">
                           <span className={`px-2 py-0.5 rounded-md font-bold text-[10px] ${
                             student.gender === "MALE" || student.gender === "Nam" 
