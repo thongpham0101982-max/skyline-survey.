@@ -116,6 +116,15 @@ export function ExamsClient({
   const [saving, setSaving] = useState(false)
   const [errorMsg, setErrorMsg] = useState("")
 
+  const standardPlans = ["HE_THONG", "TRUONG", "PHUONG", "SO", "BO", "TU_DANG_KY"]
+  const customPlansInDB = Array.from(
+    new Set(
+      exams
+        .map((e) => e.plan)
+        .filter((p) => p && !standardPlans.includes(p))
+    )
+  ) as string[]
+
   // Form states
   const [form, setForm] = useState({
     name: "",
@@ -139,9 +148,11 @@ export function ExamsClient({
   const [filterPriority, setFilterPriority] = useState("")
   const [filterGrade, setFilterGrade] = useState("")
   const [filterPlan, setFilterPlan] = useState("")
+  const [customPlan, setCustomPlan] = useState("")
 
   const openCreate = () => {
     const autoCode = generateNextExamCode(exams)
+    setEditingId(null)
     setForm({
       name: "",
       code: autoCode,
@@ -155,12 +166,14 @@ export function ExamsClient({
       isPriority: false,
       grade: ""
     })
+    setCustomPlan("")
     setCreating(true)
     setErrorMsg("")
   }
 
   const openEdit = (exam: any) => {
     setEditingId(exam.id)
+    const isStandard = exam.plan && standardPlans.includes(exam.plan)
     setForm({
       name: exam.name,
       code: exam.code,
@@ -170,10 +183,11 @@ export function ExamsClient({
       categoryId: exam.categoryId,
       roundId: exam.roundId || "",
       departmentId: exam.departmentId || "",
-      plan: exam.plan || "HE_THONG",
+      plan: isStandard ? exam.plan : (exam.plan ? "KHAC" : "HE_THONG"),
       isPriority: exam.isPriority || false,
       grade: exam.grade || ""
     })
+    setCustomPlan(isStandard ? "" : (exam.plan || ""))
     setErrorMsg("")
   }
 
@@ -182,14 +196,24 @@ export function ExamsClient({
       setErrorMsg("Vui lòng nhập Tên, Mã kỳ thi và chọn Danh mục!")
       return
     }
+    const finalPlan = form.plan === "KHAC" ? customPlan.trim() : form.plan
+    if (form.plan === "KHAC" && !finalPlan) {
+      setErrorMsg("Vui lòng nhập tên kế hoạch khác!")
+      return
+    }
     setSaving(true)
     try {
+      const payload = {
+        ...form,
+        plan: finalPlan,
+        academicYearId: yearId
+      }
       if (editingId) {
-        await updateExamAction({ id: editingId, ...form, academicYearId: yearId })
+        await updateExamAction({ id: editingId, ...payload })
         alert("Cập nhật kỳ thi thành công!")
         window.location.reload()
       } else {
-        await createExamAction({ ...form, academicYearId: yearId })
+        await createExamAction(payload)
         alert("Tạo kỳ thi thành công!")
         window.location.reload()
       }
@@ -326,6 +350,11 @@ export function ExamsClient({
             <option value="SO">Sở GD&ĐT</option>
             <option value="BO">Bộ GD&ĐT</option>
             <option value="TU_DANG_KY">Tự đăng ký</option>
+            {customPlansInDB.map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -469,8 +498,25 @@ export function ExamsClient({
                 <option value="SO">Sở GD&ĐT</option>
                 <option value="BO">Bộ GD&ĐT</option>
                 <option value="TU_DANG_KY">Tự đăng ký</option>
+                <option value="KHAC">Khác</option>
               </select>
             </div>
+
+            {/* Kế hoạch khác */}
+            {form.plan === "KHAC" && (
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">
+                  Nhập kế hoạch khác <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={customPlan}
+                  onChange={(e) => setCustomPlan(e.target.value)}
+                  placeholder="Ví dụ: Kế hoạch Cụm, Kế hoạch Tỉnh..."
+                  className="w-full border border-slate-200 rounded-lg px-4 py-2 text-xs focus:border-[#00A19A] outline-none font-semibold"
+                />
+              </div>
+            )}
 
 
 
