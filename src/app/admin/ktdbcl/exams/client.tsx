@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Plus, Trash2, Edit2, Check, X, Calendar, Star, Tag, User, Layers, Search, Filter } from "lucide-react"
 import { createExamAction, updateExamAction, deleteExamAction } from "./actions"
 
@@ -9,7 +9,7 @@ interface ExamsClientProps {
   rounds: any[]
   departments: any[]
   teachers: any[]
-  academicYearId: string | null
+  academicYears: any[]
 }
 
 export function ExamsClient({
@@ -18,8 +18,29 @@ export function ExamsClient({
   rounds,
   departments,
   teachers,
-  academicYearId
+  academicYears
 }: ExamsClientProps) {
+  const [yearId, setYearId] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("selectedAcademicYear")
+      if (stored) return stored
+    }
+    const active = academicYears.find((y: any) => y.status === "ACTIVE")
+    return active ? active.id : (academicYears[0]?.id || "")
+  })
+
+  // Listen to year change event
+  useEffect(() => {
+    const handleYearChange = () => {
+      const stored = localStorage.getItem("selectedAcademicYear")
+      if (stored && stored !== yearId) {
+        setYearId(stored)
+      }
+    }
+    window.addEventListener("academicYearChanged", handleYearChange)
+    return () => window.removeEventListener("academicYearChanged", handleYearChange)
+  }, [yearId])
+
   const [exams, setExams] = useState(initialExams)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
@@ -93,11 +114,11 @@ export function ExamsClient({
     setSaving(true)
     try {
       if (editingId) {
-        await updateExamAction({ id: editingId, ...form, academicYearId })
+        await updateExamAction({ id: editingId, ...form, academicYearId: yearId })
         alert("Cập nhật kỳ thi thành công!")
         window.location.reload()
       } else {
-        await createExamAction({ ...form, academicYearId })
+        await createExamAction({ ...form, academicYearId: yearId })
         alert("Tạo kỳ thi thành công!")
         window.location.reload()
       }
@@ -120,6 +141,7 @@ export function ExamsClient({
 
   // Filter logic
   const filteredExams = exams.filter((exam) => {
+    const matchesYear = exam.academicYearId === yearId
     const matchesSearch =
       exam.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       exam.code.toLowerCase().includes(searchTerm.toLowerCase())
@@ -134,7 +156,7 @@ export function ExamsClient({
         : true
     const matchesGrade = filterGrade ? (exam.grade ? exam.grade.split(',').includes(filterGrade) : false) : true
 
-    return matchesSearch && matchesCategory && matchesRound && matchesDept && matchesPriority && matchesGrade
+    return matchesYear && matchesSearch && matchesCategory && matchesRound && matchesDept && matchesPriority && matchesGrade
   })
 
   return (

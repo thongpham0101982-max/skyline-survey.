@@ -41,11 +41,10 @@ export default async function ExamsPage() {
     orderBy: { teacherName: "asc" }
   })
 
-  // Get active academic year ID if exists
-  const activeYear = await prisma.academicYear.findFirst({
-    where: { status: "ACTIVE" }
+  // Fetch all academic years
+  const academicYears = await prisma.academicYear.findMany({
+    orderBy: { startDate: "desc" }
   })
-  const academicYearId = activeYear ? activeYear.id : null
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -62,7 +61,7 @@ export default async function ExamsPage() {
         rounds={rounds}
         departments={departments}
         teachers={teachers}
-        academicYearId={academicYearId}
+        academicYears={academicYears}
       />
     </div>
   )
