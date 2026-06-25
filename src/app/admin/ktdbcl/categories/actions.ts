@@ -2,18 +2,19 @@
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 
-export async function createExamCategoryAction(data: { name: string; code: string; description?: string }) {
+export async function createExamCategoryAction(data: { name: string; code: string; description?: string; academicYearId?: string }) {
   await prisma.examCategory.create({
     data: {
       name: data.name,
       code: data.code,
-      description: data.description || null
+      description: data.description || null,
+      academicYearId: data.academicYearId || null
     }
   })
   revalidatePath("/admin/ktdbcl/categories")
 }
 
-export async function updateExamCategoryAction(data: { id: string; name?: string; code?: string; description?: string }) {
+export async function updateExamCategoryAction(data: { id: string; name?: string; code?: string; description?: string; academicYearId?: string }) {
   const { id, ...rest } = data
   await prisma.examCategory.update({
     where: { id },

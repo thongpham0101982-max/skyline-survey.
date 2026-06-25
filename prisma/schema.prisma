@@ -121,6 +121,8 @@ model AcademicYear {
   teacherTargets                  TeacherAcademicYearTarget[]
   observationSlots                ObservationSlot[]
   exams                           Exam[]
+  examCategories                  ExamCategory[]
+  examRounds                      ExamRound[]
 }
 
 model Class {
@@ -1044,13 +1046,17 @@ model TeacherAcademicYearTarget {
 }
 
 model ExamCategory {
-  id          String   @id @default(cuid())
-  name        String
-  code        String   @unique
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  exams       Exam[]
+  id             String        @id @default(cuid())
+  name           String
+  code           String
+  description    String?
+  academicYearId String?
+  academicYear   AcademicYear? @relation(fields: [academicYearId], references: [id], onDelete: SetNull)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  exams          Exam[]
+
+  @@unique([code, academicYearId])
 }
 
 model Exam {
@@ -1078,13 +1084,17 @@ model Exam {
 }
 
 model ExamRound {
-  id          String   @id @default(cuid())
-  name        String
-  code        String   @unique
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  exams       Exam[]
+  id             String        @id @default(cuid())
+  name           String
+  code           String
+  description    String?
+  academicYearId String?
+  academicYear   AcademicYear? @relation(fields: [academicYearId], references: [id], onDelete: SetNull)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  exams          Exam[]
+
+  @@unique([code, academicYearId])
 }
 
 

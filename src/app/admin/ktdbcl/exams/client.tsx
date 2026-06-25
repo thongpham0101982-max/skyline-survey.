@@ -1,3 +1,42 @@
+
+const LEVEL_LABELS: Record<string, string> = {
+  TIEU_HOC: "Tiểu học",
+  THCS: "THCS",
+  THPT: "THPT",
+  TH_THCS: "Liên cấp TH-THCS",
+  THCS_THPT: "Liên cấp THCS-THPT",
+  ALL: "Mọi cấp học"
+}
+
+function getLevelLabel(val: string) {
+  if (!val) return "";
+  if (val.includes(",") || /^\d+$/.test(val)) {
+    return val.split(",").map((g: any) => `Khối ${g}`).join(", ");
+  }
+  return LEVEL_LABELS[val] || val;
+}
+
+function matchesLevelFilter(examGrade: string, filterVal: string) {
+  if (!filterVal) return true;
+  if (!examGrade) return false;
+  if (examGrade === filterVal) return true;
+
+  const levelGradesMap: Record<string, string[]> = {
+    TIEU_HOC: ["1", "2", "3", "4", "5"],
+    THCS: ["6", "7", "8", "9"],
+    THPT: ["10", "11", "12"],
+    TH_THCS: ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+    THCS_THPT: ["6", "7", "8", "9", "10", "11", "12"],
+    ALL: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"]
+  };
+
+  const allowedGrades = levelGradesMap[filterVal];
+  if (!allowedGrades) return false;
+
+  const examGradesList = examGrade.split(",");
+  return examGradesList.some(g => allowedGrades.includes(g));
+}
+
 "use client"
 import { useState, useEffect } from "react"
 import { Plus, Trash2, Edit2, Check, X, Calendar, Star, Tag, User, Layers, Search, Filter } from "lucide-react"
@@ -140,6 +179,9 @@ export function ExamsClient({
   }
 
   // Filter logic
+  const filteredCategoriesForSelect = categories.filter(c => c.academicYearId === yearId || c.academicYearId === null)
+  const filteredRoundsForSelect = rounds.filter(r => r.academicYearId === yearId || r.academicYearId === null)
+
   const filteredExams = exams.filter((exam) => {
     const matchesYear = exam.academicYearId === yearId
     const matchesSearch =
@@ -154,7 +196,7 @@ export function ExamsClient({
         : filterPriority === "no"
         ? exam.isPriority === false
         : true
-    const matchesGrade = filterGrade ? (exam.grade ? exam.grade.split(',').includes(filterGrade) : false) : true
+    const matchesGrade = matchesLevelFilter(exam.grade || '', filterGrade)
 
     return matchesYear && matchesSearch && matchesCategory && matchesRound && matchesDept && matchesPriority && matchesGrade
   })
@@ -182,7 +224,7 @@ export function ExamsClient({
             className="border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none text-slate-600 focus:border-[#00A19A]"
           >
             <option value="">Tất cả danh mục</option>
-            {categories.map((c) => (
+            {filteredCategoriesForSelect.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
               </option>
@@ -195,9 +237,9 @@ export function ExamsClient({
             className="border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none text-slate-600 focus:border-[#00A19A]"
           >
             <option value="">Tất cả vòng thi</option>
-            {rounds.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name}
+            {filteredRoundsForSelect.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
               </option>
             ))}
           </select>
@@ -230,12 +272,13 @@ export function ExamsClient({
             onChange={(e) => setFilterGrade(e.target.value)}
             className="border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none text-slate-600 focus:border-[#00A19A]"
           >
-            <option value="">Tất cả khối lớp</option>
-            {Array.from({ length: 12 }, (_, i) => String(i + 1)).map((g) => (
-              <option key={g} value={g}>
-                Khối {g}
-              </option>
-            ))}
+            <option value="">Tất cả đối tượng</option>
+            <option value="TIEU_HOC">Tiểu học</option>
+            <option value="THCS">THCS</option>
+            <option value="THPT">THPT</option>
+            <option value="TH_THCS">Liên cấp TH-THCS</option>
+            <option value="THCS_THPT">Liên cấp THCS-THPT</option>
+            <option value="ALL">Mọi cấp học</option>
           </select>
         </div>
 
@@ -302,7 +345,7 @@ export function ExamsClient({
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-[#00A19A] outline-none font-semibold text-slate-700"
               >
                 <option value="">-- Chọn danh mục --</option>
-                {categories.map((c) => (
+                {filteredCategoriesForSelect.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
                   </option>
@@ -319,7 +362,7 @@ export function ExamsClient({
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-[#00A19A] outline-none font-semibold text-slate-700"
               >
                 <option value="">-- Chọn vòng thi --</option>
-                {rounds.map((r) => (
+                {filteredRoundsForSelect.map((r) => (
                   <option key={r.id} value={r.id}>
                     {r.name}
                   </option>
@@ -327,40 +370,24 @@ export function ExamsClient({
               </select>
             </div>
 
-            {/* Khối lớp */}
-            <div className="md:col-span-3">
-              <label className="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-wider">
-                Khối lớp (Chọn 1 hoặc nhiều khối)
+            {/* Đối tượng dự thi */}
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">
+                Đối tượng dự thi <span className="text-red-500">*</span>
               </label>
-              <div className="flex flex-wrap gap-2">
-                {Array.from({ length: 12 }, (_, i) => String(i + 1)).map((g) => {
-                  const selectedGrades = form.grade ? form.grade.split(",") : [];
-                  const isSelected = selectedGrades.includes(g);
-                  const toggleGrade = () => {
-                    let nextGrades;
-                    if (isSelected) {
-                      nextGrades = selectedGrades.filter((item) => item !== g);
-                    } else {
-                      nextGrades = [...selectedGrades, g].sort((a, b) => Number(a) - Number(b));
-                    }
-                    setForm({ ...form, grade: nextGrades.join(",") });
-                  };
-                  return (
-                    <button
-                      key={g}
-                      type="button"
-                      onClick={toggleGrade}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
-                        isSelected
-                          ? "bg-[#00A19A] text-white border-[#00A19A] shadow-sm shadow-[#00A19A]/20"
-                          : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
-                      }`}
-                    >
-                      Khối {g}
-                    </button>
-                  );
-                })}
-              </div>
+              <select
+                value={form.grade}
+                onChange={(e) => setForm({ ...form, grade: e.target.value })}
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-[#00A19A] outline-none font-semibold text-slate-700"
+              >
+                <option value="">-- Chọn đối tượng dự thi --</option>
+                <option value="TIEU_HOC">Tiểu học</option>
+                <option value="THCS">THCS</option>
+                <option value="THPT">THPT</option>
+                <option value="TH_THCS">Liên cấp TH-THCS</option>
+                <option value="THCS_THPT">Liên cấp THCS-THPT</option>
+                <option value="ALL">Mọi cấp học</option>
+              </select>
             </div>
 
             {/* Tổ chuyên môn */}
@@ -506,11 +533,11 @@ export function ExamsClient({
                         <span className="font-bold text-slate-800 text-sm flex items-center gap-1">
                           {exam.name}
                         </span>
-                        {exam.grade && exam.grade.split(",").map((g: any) => (
-                          <span key={g} className="text-[10px] bg-[#00A19A]/10 text-[#00A19A] px-2 py-0.5 rounded-md font-bold mr-1">
-                            Khối {g}
+                        {exam.grade && (
+                          <span className="text-[10px] bg-[#00A19A]/10 text-[#00A19A] px-2 py-0.5 rounded-md font-bold mr-1">
+                            {getLevelLabel(exam.grade)}
                           </span>
-                        ))}
+                        )}
                         <span className="text-[10px] font-mono bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md font-bold">
                           {exam.code}
                         </span>
@@ -537,7 +564,7 @@ export function ExamsClient({
                         {exam.grade && (
                           <span className="flex items-center gap-1">
                             <Layers className="w-3.5 h-3.5 text-slate-400" />
-                            Khối lớp: <strong className="text-slate-600">{exam.grade.split(",").map((g: any) => `Khối ${g}`).join(", ")}</strong>
+                            Đối tượng dự thi: <strong className="text-slate-600">{getLevelLabel(exam.grade)}</strong>
                           </span>
                         )}
 

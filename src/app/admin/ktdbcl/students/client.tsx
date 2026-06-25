@@ -1,6 +1,24 @@
+
+const LEVEL_LABELS: Record<string, string> = {
+  TIEU_HOC: "Tiểu học",
+  THCS: "THCS",
+  THPT: "THPT",
+  TH_THCS: "Liên cấp TH-THCS",
+  THCS_THPT: "Liên cấp THCS-THPT",
+  ALL: "Mọi cấp học"
+}
+
+function getLevelLabel(val: string) {
+  if (!val) return "";
+  if (val.includes(",") || /^\d+$/.test(val)) {
+    return val.split(",").map((g: any) => `Khối ${g}`).join(", ");
+  }
+  return LEVEL_LABELS[val] || val;
+}
+
 "use client"
 import { useState, useEffect } from "react"
-import { Calendar, Layers, MapPin, UserCheck, Users, Check, X, Loader2, AlertCircle } from "lucide-react"
+import { Calendar, Layers, MapPin, UserCheck, Users, Check, X, Loader2, AlertCircle, Search } from "lucide-react"
 import { getStudentsByClassAction, registerStudentsAction, deregisterStudentsAction } from "./actions"
 
 interface StudentsClientProps {
@@ -107,7 +125,21 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
     if (selectedExam) {
       const exam = exams.find((e) => e.id === selectedExam)
       if (exam && exam.grade) {
-        const examGrades = exam.grade.split(",")
+        let examGrades: string[] = []
+        const val = exam.grade
+        if (val.includes(",") || /^\d+$/.test(val)) {
+          examGrades = val.split(",")
+        } else {
+          const levelGradesMap: Record<string, string[]> = {
+            TIEU_HOC: ["1", "2", "3", "4", "5"],
+            THCS: ["6", "7", "8", "9"],
+            THPT: ["10", "11", "12"],
+            TH_THCS: ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+            THCS_THPT: ["6", "7", "8", "9", "10", "11", "12"],
+            ALL: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"]
+          }
+          examGrades = levelGradesMap[val] || []
+        }
         if (examGrades.length > 0 && !examGrades.includes(selectedGrade)) {
           setSelectedGrade(examGrades[0])
         }
@@ -180,6 +212,28 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
       s.studentCode.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
+  // Get allowed grades based on selected exam's target level
+  const getAllowedGrades = () => {
+    if (!activeExamObj || !activeExamObj.grade) {
+      return Array.from({ length: 12 }, (_, i) => String(i + 1))
+    }
+    const val = activeExamObj.grade;
+    if (val.includes(",") || /^\d+$/.test(val)) {
+      return val.split(",")
+    }
+    const levelGradesMap: Record<string, string[]> = {
+      TIEU_HOC: ["1", "2", "3", "4", "5"],
+      THCS: ["6", "7", "8", "9"],
+      THPT: ["10", "11", "12"],
+      TH_THCS: ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+      THCS_THPT: ["6", "7", "8", "9", "10", "11", "12"],
+      ALL: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"]
+    };
+    return levelGradesMap[val] || Array.from({ length: 12 }, (_, i) => String(i + 1))
+  }
+
+  const allowedGrades = getAllowedGrades()
+
   // Statistics
   const totalCount = students.length
   const registeredCount = students.filter((s) => s.isRegistered).length
@@ -221,7 +275,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
             </select>
             {activeExamObj && activeExamObj.grade && (
               <div className="bg-amber-50 border border-amber-100 rounded-lg p-2 mt-1 text-[10px] text-amber-800">
-                <span className="font-bold">Khối mục tiêu:</span> {activeExamObj.grade.split(",").map(g => `Khối ${g}`).join(", ")}
+                <span className="font-bold">Đối tượng mục tiêu:</span> {getLevelLabel(activeExamObj.grade)}
               </div>
             )}
           </div>
@@ -254,7 +308,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
               onChange={(e) => setSelectedGrade(e.target.value)}
               className="w-full border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-[#00A19A] transition-all bg-white"
             >
-              {Array.from({ length: 12 }, (_, i) => String(i + 1)).map((g) => (
+              {allowedGrades.map((g) => (
                 <option key={g} value={g}>
                   Khối {g}
                 </option>

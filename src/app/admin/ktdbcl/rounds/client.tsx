@@ -1,14 +1,36 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Plus, Trash2, Edit2, Check, X, Flag, Hash, FileText } from "lucide-react"
 import { createExamRoundAction, updateExamRoundAction, deleteExamRoundAction } from "./actions"
 
 interface ExamRoundClientProps {
   initialRounds: any[]
+  academicYears: any[]
 }
 
-export function RoundsClient({ initialRounds }: ExamRoundClientProps) {
+export function RoundsClient({ initialRounds, academicYears }: ExamRoundClientProps) {
   const [rounds, setRounds] = useState(initialRounds)
+  const [yearId, setYearId] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("selectedAcademicYear")
+      if (stored) return stored
+    }
+    const active = academicYears.find((y: any) => y.status === "ACTIVE")
+    return active ? active.id : (academicYears[0]?.id || "")
+  })
+
+  // Listen to year change event
+  useEffect(() => {
+    const handleYearChange = () => {
+      const stored = localStorage.getItem("selectedAcademicYear")
+      if (stored && stored !== yearId) {
+        setYearId(stored)
+      }
+    }
+    window.addEventListener("academicYearChanged", handleYearChange)
+    return () => window.removeEventListener("academicYearChanged", handleYearChange)
+  }, [yearId])
+
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editForm, setEditForm] = useState({ name: "", code: "", description: "" })
   const [creating, setCreating] = useState(false)
@@ -24,8 +46,8 @@ export function RoundsClient({ initialRounds }: ExamRoundClientProps) {
     setSaving(true)
     setErrorMsg("")
     try {
-      await createExamRoundAction(newForm)
-      setRounds([...rounds, { ...newForm, id: `temp_${Date.now()}`, _count: { exams: 0 } }])
+      await createExamRoundAction({ ...newForm, academicYearId: yearId })
+      setRounds([...rounds, { ...newForm, id: `temp_${Date.now()}`, academicYearId: yearId, _count: { exams: 0 } }])
       setNewForm({ name: "", code: "", description: "" })
       setCreating(false)
       // Reload page to get absolute db state
@@ -46,7 +68,7 @@ export function RoundsClient({ initialRounds }: ExamRoundClientProps) {
     if (!editForm.name.trim() || !editForm.code.trim()) return
     setSaving(true)
     try {
-      await updateExamRoundAction({ id, ...editForm })
+      await updateExamRoundAction({ id, ...editForm, academicYearId: yearId })
       setRounds(rounds.map((r) => r.id === id ? { ...r, ...editForm } : r))
       setEditingId(null)
     } catch (e) {
@@ -151,11 +173,11 @@ export function RoundsClient({ initialRounds }: ExamRoundClientProps) {
         <div className="bg-slate-50/70 border-b border-slate-100 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Flag className="w-5 h-5 text-[#00A19A]" />
-            <span className="font-bold text-slate-700 text-sm">Danh Sách Vòng Thi ({rounds.length})</span>
+            <span className="font-bold text-slate-700 text-sm">Danh Sách Vòng Thi ({rounds.filter(r => r.academicYearId === yearId || r.academicYearId === null).length})</span>
           </div>
         </div>
 
-        {rounds.length === 0 ? (
+        {rounds.filter(r => r.academicYearId === yearId || r.academicYearId === null).length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-slate-400">
             <Flag className="w-16 h-16 mb-4 opacity-20" />
             <p className="font-bold text-lg mb-1">Chưa có vòng thi nào</p>
@@ -163,7 +185,7 @@ export function RoundsClient({ initialRounds }: ExamRoundClientProps) {
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
-            {rounds.map((round: any) => {
+            {rounds.filter(r => r.academicYearId === yearId || r.academicYearId === null).map((round: any) => {
               const isEditing = editingId === round.id
               return (
                 <div key={round.id} className="flex flex-col p-6 hover:bg-slate-50/50 transition-colors group">

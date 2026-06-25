@@ -1,14 +1,36 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Plus, Trash2, Edit2, Check, X, Tag, Hash, FileText } from "lucide-react"
 import { createExamCategoryAction, updateExamCategoryAction, deleteExamCategoryAction } from "./actions"
 
 interface ExamCategoryClientProps {
   initialCategories: any[]
+  academicYears: any[]
 }
 
-export function CategoriesClient({ initialCategories }: ExamCategoryClientProps) {
+export function CategoriesClient({ initialCategories, academicYears }: ExamCategoryClientProps) {
   const [categories, setCategories] = useState(initialCategories)
+  const [yearId, setYearId] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("selectedAcademicYear")
+      if (stored) return stored
+    }
+    const active = academicYears.find((y: any) => y.status === "ACTIVE")
+    return active ? active.id : (academicYears[0]?.id || "")
+  })
+
+  // Listen to year change event
+  useEffect(() => {
+    const handleYearChange = () => {
+      const stored = localStorage.getItem("selectedAcademicYear")
+      if (stored && stored !== yearId) {
+        setYearId(stored)
+      }
+    }
+    window.addEventListener("academicYearChanged", handleYearChange)
+    return () => window.removeEventListener("academicYearChanged", handleYearChange)
+  }, [yearId])
+
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editForm, setEditForm] = useState({ name: "", code: "", description: "" })
   const [creating, setCreating] = useState(false)
@@ -24,8 +46,8 @@ export function CategoriesClient({ initialCategories }: ExamCategoryClientProps)
     setSaving(true)
     setErrorMsg("")
     try {
-      await createExamCategoryAction(newForm)
-      setCategories([...categories, { ...newForm, id: `temp_${Date.now()}`, _count: { exams: 0 } }])
+      await createExamCategoryAction({ ...newForm, academicYearId: yearId })
+      setCategories([...categories, { ...newForm, id: `temp_${Date.now()}`, academicYearId: yearId, _count: { exams: 0 } }])
       setNewForm({ name: "", code: "", description: "" })
       setCreating(false)
       // Reload page to get absolute db state
@@ -46,7 +68,7 @@ export function CategoriesClient({ initialCategories }: ExamCategoryClientProps)
     if (!editForm.name.trim() || !editForm.code.trim()) return
     setSaving(true)
     try {
-      await updateExamCategoryAction({ id, ...editForm })
+      await updateExamCategoryAction({ id, ...editForm, academicYearId: yearId })
       setCategories(categories.map((c) => c.id === id ? { ...c, ...editForm } : c))
       setEditingId(null)
     } catch (e) {
@@ -151,11 +173,11 @@ export function CategoriesClient({ initialCategories }: ExamCategoryClientProps)
         <div className="bg-slate-50/70 border-b border-slate-100 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Tag className="w-5 h-5 text-[#00A19A]" />
-            <span className="font-bold text-slate-700 text-sm">Danh Sách Danh Mục Kỳ Thi ({categories.length})</span>
+            <span className="font-bold text-slate-700 text-sm">Danh Sách Danh Mục Kỳ Thi ({categories.filter(c => c.academicYearId === yearId || c.academicYearId === null).length})</span>
           </div>
         </div>
 
-        {categories.length === 0 ? (
+        {categories.filter(c => c.academicYearId === yearId || c.academicYearId === null).length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-slate-400">
             <Tag className="w-16 h-16 mb-4 opacity-20" />
             <p className="font-bold text-lg mb-1">Chưa có danh mục nào</p>
@@ -163,7 +185,7 @@ export function CategoriesClient({ initialCategories }: ExamCategoryClientProps)
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
-            {categories.map((cat: any) => {
+            {categories.filter(c => c.academicYearId === yearId || c.academicYearId === null).map((cat: any) => {
               const isEditing = editingId === cat.id
               return (
                 <div key={cat.id} className="flex flex-col p-6 hover:bg-slate-50/50 transition-colors group">
