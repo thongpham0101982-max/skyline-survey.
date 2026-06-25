@@ -7,11 +7,36 @@ interface StudentsClientProps {
   exams: any[]
   campuses: any[]
   classes: any[]
+  academicYears: any[]
 }
 
-export function StudentsClient({ exams, campuses, classes }: StudentsClientProps) {
+export function StudentsClient({ exams, campuses, classes, academicYears }: StudentsClientProps) {
+  const [yearId, setYearId] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("selectedAcademicYear")
+      if (stored) return stored
+    }
+    const active = academicYears.find((y: any) => y.status === "ACTIVE")
+    return active ? active.id : (academicYears[0]?.id || "")
+  })
+
+  // Listen to year change event
+  useEffect(() => {
+    const handleYearChange = () => {
+      const stored = localStorage.getItem("selectedAcademicYear")
+      if (stored && stored !== yearId) {
+        setYearId(stored)
+      }
+    }
+    window.addEventListener("academicYearChanged", handleYearChange)
+    return () => window.removeEventListener("academicYearChanged", handleYearChange)
+  }, [yearId])
+
+  // Filter exams based on academic year
+  const filteredExams = exams.filter((e) => e.academicYearId === yearId)
+
   // Selection states
-  const [selectedExam, setSelectedExam] = useState(exams[0]?.id || "")
+  const [selectedExam, setSelectedExam] = useState("")
   const [selectedCampus, setSelectedCampus] = useState(campuses[0]?.id || "")
   const [selectedGrade, setSelectedGrade] = useState("10") // Default to grade 10
   const [selectedClass, setSelectedClass] = useState("")
@@ -23,12 +48,25 @@ export function StudentsClient({ exams, campuses, classes }: StudentsClientProps
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [searchTerm, setSearchTerm] = useState("")
 
-  // Filter classes based on Campus and Grade
+  // Filter classes based on Campus, Grade and Academic Year
   const filteredClasses = classes.filter(
-    (c) => c.campusId === selectedCampus && c.grade === selectedGrade
+    (c) => c.campusId === selectedCampus && c.grade === selectedGrade && c.academicYearId === yearId
   )
 
-  // Reset selected class when campus or grade changes
+  // Sync selected exam with filtered exams
+  useEffect(() => {
+    if (filteredExams.length > 0) {
+      const exists = filteredExams.some((e) => e.id === selectedExam)
+      if (!exists) {
+        setSelectedExam(filteredExams[0].id)
+      }
+    } else {
+      setSelectedExam("")
+      setStudents([])
+    }
+  }, [filteredExams, selectedExam])
+
+  // Reset selected class when campus, grade or yearId changes
   useEffect(() => {
     if (filteredClasses.length > 0) {
       // Find if current selected class is in the filtered list
@@ -40,7 +78,7 @@ export function StudentsClient({ exams, campuses, classes }: StudentsClientProps
       setSelectedClass("")
       setStudents([])
     }
-  }, [selectedCampus, selectedGrade])
+  }, [selectedCampus, selectedGrade, yearId])
 
   // Fetch students when class or exam changes
   const fetchStudents = async () => {
@@ -168,13 +206,18 @@ export function StudentsClient({ exams, campuses, classes }: StudentsClientProps
             <select
               value={selectedExam}
               onChange={(e) => setSelectedExam(e.target.value)}
-              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-[#00A19A] transition-all bg-white"
+              disabled={filteredExams.length === 0}
+              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-[#00A19A] transition-all bg-white disabled:bg-slate-50 disabled:text-slate-400"
             >
-              {exams.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.name}
-                </option>
-              ))}
+              {filteredExams.length === 0 ? (
+                <option value="">-- Không có kỳ thi --</option>
+              ) : (
+                filteredExams.map((e) => (
+                  <option key={e.id} value={e.id}>
+                    {e.name}
+                  </option>
+                ))
+              )}
             </select>
             {activeExamObj && activeExamObj.grade && (
               <div className="bg-amber-50 border border-amber-100 rounded-lg p-2 mt-1 text-[10px] text-amber-800">

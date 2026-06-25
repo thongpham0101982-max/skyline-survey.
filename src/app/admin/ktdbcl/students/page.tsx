@@ -17,7 +17,8 @@ export default async function StudentsPage() {
     select: {
       id: true,
       name: true,
-      grade: true
+      grade: true,
+      academicYearId: true
     }
   })
 
@@ -39,8 +40,13 @@ export default async function StudentsPage() {
       id: true,
       className: true,
       grade: true,
-      campusId: true
+      campusId: true,
+      academicYearId: true
     }
+  })
+
+  const academicYears = await prisma.academicYear.findMany({
+    orderBy: { startDate: "desc" }
   })
 
   return (
@@ -53,7 +59,7 @@ export default async function StudentsPage() {
         </p>
       </div>
 
-      <StudentsClient exams={exams} campuses={campuses} classes={classes} />
+      <StudentsClient exams={exams} campuses={campuses} classes={classes} academicYears={academicYears} />
     </div>
   )
 }
