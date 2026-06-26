@@ -44,13 +44,21 @@ export const APP_CATEGORIES = [
     icon: Shield,
     modules: [
       {
+        code: "KTDBCL_EXAM_CONFIG",
+        name: "Cấu hình kỳ thi",
+        icon: Settings,
+        href: "/admin/ktdbcl/categories",
+        subModules: [
+          { code: "KTDBCL_EXAM_CATEGORIES", name: "Quản lý danh mục", href: "/admin/ktdbcl/categories" },
+          { code: "KTDBCL_EXAM_ROUNDS", name: "Vòng thi", href: "/admin/ktdbcl/rounds" },
+        ]
+      },
+      {
         code: "KTDBCL_EXAMS",
         name: "Quản lý Kỳ thi Học sinh",
         icon: ClipboardList,
         href: "/admin/ktdbcl/exams",
         subModules: [
-          { code: "KTDBCL_EXAM_CATEGORIES", name: "Quản lý danh mục", href: "/admin/ktdbcl/categories" },
-          { code: "KTDBCL_EXAM_ROUNDS", name: "Vòng thi", href: "/admin/ktdbcl/rounds" },
           { code: "KTDBCL_EXAM_LIST", name: "Danh sách Kỳ thi", href: "/admin/ktdbcl/exams" },
           { code: "KTDBCL_EXAM_STUDENTS", name: "Đăng ký Dự thi", href: "/admin/ktdbcl/students" },
           { code: "KTDBCL_EXAM_RESULTS", name: "Nhập điểm & Kết quả", href: "/admin/ktdbcl/results" },

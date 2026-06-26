@@ -219,12 +219,12 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
               {checkPermission("INPUT_ASSESSMENTS") && (
                 <div className="pt-4">
                   <div className="px-3 py-2">
-                    {!isCollapsed ? <span className="text-[10px] font-bold text-white/60 uppercase tracking-[0.1em]">Khảo thí</span> : <span className="w-full text-center text-white/50 block text-xs">•••</span>}
+                    {!isCollapsed ? <span className="text-[10px] font-bold text-white/60 uppercase tracking-[0.1em]">Khảo sát đầu vào</span> : <span className="w-full text-center text-white/50 block text-xs">•••</span>}
                   </div>
                   {loadingAssignments ? (
                     <Link href="/teacher/input-assessments?type=general" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool' ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"}`}>
                       <ClipboardCheck className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool' ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
-                      {!isCollapsed && <span>Đang tải khảo thí...</span>}
+                      {!isCollapsed && <span>Đang tải khảo sát...</span>}
                     </Link>
                   ) : (
                     <>

@@ -2,7 +2,7 @@
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 
-export async function createExamCategoryAction(data: { name: string; code: string; description?: string; academicYearId?: string }) {
+export async function createExamCategoryAction(data: { name: string; code: string; description?: string; academicYearId?: string | null | null }) {
   await prisma.examCategory.create({
     data: {
       name: data.name,

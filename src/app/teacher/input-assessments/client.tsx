@@ -380,19 +380,27 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     return (
         <div className="p-3 md:p-6 max-w-[1400px] mx-auto space-y-4 md:space-y-6">
             
-<div className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-[#00A99D]/10 text-[#00A99D] flex items-center justify-center">
-                        <BookOpen className="w-4 h-4" />
+<div className="bg-gradient-to-r from-[#00A99D]/10 via-teal-50/30 to-white border border-[#00A99D]/20 rounded-2xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all duration-300 hover:shadow-md">
+                <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-white border border-[#00A99D]/20 text-[#00A99D] flex items-center justify-center shadow-sm">
+                        <BookOpen className="w-6 h-6" />
                     </div>
                     <div>
-                        <h1 className="text-base font-black text-slate-800">Nhập kết quả Khảo sát</h1>
-                        <p className="text-[11px] text-slate-500 font-medium mt-0.5">Giáo viên: <span className="font-bold text-slate-700">{user?.fullName || user?.name || "ẩn danh"}</span></p>
+                        <h1 className="text-lg font-black text-slate-800 tracking-tight">Nhập kết quả Khảo sát đầu vào</h1>
+                        <p className="text-xs text-slate-500 font-medium mt-1">Giáo viên: <span className="font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">{user?.fullName || user?.name || "ẩn danh"}</span></p>
                     </div>
                 </div>
             </div>
 
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-4">
+            {currentAssignment && (
+                <div className="bg-gradient-to-r from-teal-500/10 via-[#00A99D]/5 to-transparent border-l-4 border-[#00A99D] p-4 rounded-r-2xl shadow-xs animate-in fade-in slide-in-from-top-3">
+                    <p className="text-xs text-slate-700 leading-relaxed font-semibold">
+                        Thân chào thầy/cô <strong className="text-[#00A99D]">{user?.fullName || user?.name || "Giáo viên"}</strong>. Bạn được phân công <strong className="text-slate-800">{currentAssignment?.batch?.name || "các đợt khảo sát"}</strong> trong kỳ khảo sát <strong className="text-slate-800">{currentAssignment?.period?.name}</strong>. Vui lòng thực hiện khảo sát theo phân công. Trân trọng!
+                    </p>
+                </div>
+            )}
+
+            <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 grid grid-cols-1 md:grid-cols-3 gap-5">
                 <div className="group">
                     <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-slate-500 flex items-center gap-2 ml-1">
                         <CalendarDays className="w-3.5 h-3.5 text-[#00A99D]"/> Kỳ Khảo sát
@@ -463,34 +471,34 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
 
             {/* Bo loc Khoi - chi hien khi giao vien duoc phan cong nhieu khoi khac nhau */}
             {availableGradeOptions.length > 0 && (
-                <div className="bg-gradient-to-r from-[#00A99D]/5 to-teal-50 border border-[#00A99D]/20 rounded-xl p-4 shadow-sm">
-                    <div className="flex flex-col md:flex-row md:items-center gap-3">
-                        <div className="flex items-center gap-2 min-w-fit">
-                            <div className="w-7 h-7 rounded-lg bg-[#00A99D] text-white flex items-center justify-center shadow-sm">
-                                <Layers className="w-3.5 h-3.5" />
+                <div className="bg-gradient-to-r from-teal-50/30 via-slate-50/50 to-teal-50/10 border border-[#00A99D]/15 rounded-2xl p-5 shadow-xs">
+                    <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+                        <div className="flex items-center gap-2.5 min-w-fit">
+                            <div className="w-8 h-8 rounded-xl bg-[#00A99D] text-white flex items-center justify-center shadow-md shadow-[#00A99D]/10">
+                                <Layers className="w-4 h-4" />
                             </div>
-                            <span className="text-xs font-black text-[#00A99D] uppercase tracking-wider">Lọc theo Khối / Hệ học</span>
+                            <span className="text-xs font-black text-slate-700 uppercase tracking-wider">Hệ thống lọc theo lớp</span>
                         </div>
                         <div className="flex flex-wrap gap-2 flex-1">
                             <button
                                 onClick={() => { setSelectedGrade("all"); setSelectedSystemCode("all"); }}
-                                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm border ${selectedGrade === "all" ? "bg-[#00A99D] text-white border-[#00A99D]" : "bg-white text-slate-600 border-slate-200 hover:border-[#00A99D] hover:text-[#00A99D]"}`}
+                                className={`px-4 py-2 rounded-xl text-xs font-black transition-all border ${selectedGrade === "all" ? "bg-[#00A99D] text-white border-[#00A99D] shadow-md shadow-[#00A99D]/10" : "bg-white text-slate-600 border-slate-200 hover:border-[#00A99D] hover:text-[#00A99D] hover:bg-[#00A99D]/5"}`}
                             >
-                                Tất cả Khối
+                                Tất cả lớp học
                             </button>
                             {availableGradeOptions.map(opt => (
                                 <button
                                     key={`${opt.grade}__${opt.educationSystem}`}
                                     onClick={() => { setSelectedGrade(opt.grade); setSelectedSystemCode(opt.educationSystem || "all"); }}
-                                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm border ${(selectedGrade === opt.grade && selectedSystemCode === (opt.educationSystem || "all")) ? "bg-[#00A99D] text-white border-[#00A99D]" : "bg-white text-slate-600 border-slate-200 hover:border-[#00A99D] hover:text-[#00A99D]"}`}
+                                    className={`px-4 py-2 rounded-xl text-xs font-black transition-all border ${(selectedGrade === opt.grade && selectedSystemCode === (opt.educationSystem || "all")) ? "bg-[#00A99D] text-white border-[#00A99D] shadow-md shadow-[#00A99D]/10" : "bg-white text-slate-600 border-slate-200 hover:border-[#00A99D] hover:text-[#00A99D] hover:bg-[#00A99D]/5"}`}
                                 >
-                                    {`Khối ${opt.grade}`}{opt.educationSystem ? ` - ${opt.educationSystem}` : ""}
+                                    {`Khối ${opt.grade}`}{opt.educationSystem ? ` - Hệ ${opt.educationSystem}` : ""}
                                 </button>
                             ))}
                         </div>
                         {selectedGrade !== "all" && (
-                            <div className="text-[11px] text-[#00A99D] font-semibold bg-[#00A99D]/10 px-3 py-1 rounded-full border border-[#00A99D]/20 whitespace-nowrap">
-                                Đang lọc: Khối {selectedGrade}{selectedSystemCode !== "all" ? ` - Hệ ${selectedSystemCode}` : ""}
+                            <div className="text-xs text-[#00A99D] font-black bg-[#00A99D]/15 px-4 py-1.5 rounded-xl border border-[#00A99D]/20 whitespace-nowrap animate-pulse">
+                                Khối {selectedGrade}{selectedSystemCode !== "all" ? ` - Hệ ${selectedSystemCode}` : ""}
                             </div>
                         )}
                     </div>
@@ -515,56 +523,58 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     </div>
 )}
 {currentAssignment && (
-                <div className="bg-white rounded-xl shadow-md border-2 border-[#00A99D] overflow-hidden mt-6">
-                    <div className="px-6 py-4 border-b bg-[#00A99D]/10 flex justify-between items-center">
+                <div className="bg-white rounded-2xl shadow-lg border border-slate-200/80 overflow-hidden mt-6 transition-all duration-300">
+                    <div className="px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-teal-50/20 via-white to-teal-50/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div>
-                            <h3 className="font-bold text-slate-800 flex items-center gap-2 text-lg">
+                            <h3 className="font-black text-slate-800 flex items-center gap-2.5 text-base tracking-tight">
                                 <Users className="w-5 h-5 text-[#00A99D]"/>
-                                Form nhập kết quả: {currentAssignment.subject.name}
+                                Form nhập kết quả: <span className="text-[#00A99D]">{currentAssignment.subject.name}</span>
                             </h3>
-                            <p className="text-xs text-slate-500 mt-1 flex items-center gap-2">
-                                <Layers className="w-3.5 h-3.5"/> Khối: <span className="font-semibold text-slate-700">{selectedGrade !== "all" ? `Khối ${selectedGrade}` : availableGradeOptions.length === 1 ? `Khối ${availableGradeOptions[0]?.grade}` : (availableGradeOptions.length > 1 ? availableGradeOptions.map(o => `${o.grade}`).join(", ") : "Tất cả")}</span><span className="text-[10px] text-amber-600 font-bold ml-1 uppercase text-xs font-semibold">{selectedSystemCode !== "all" ? selectedSystemCode : availableGradeOptions.length === 1 ? availableGradeOptions[0]?.educationSystem : ""}</span> | 
-                                Thuộc kỳ khảo sát: <span className="font-semibold text-slate-700">{currentAssignment.period.name} {currentAssignment.batch?.name ? ` - ${currentAssignment.batch.name}` : ""}</span>
+                            <p className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                                <span className="flex items-center gap-1"><Layers className="w-3.5 h-3.5 text-slate-400"/> Khối: <strong className="text-slate-700">{selectedGrade !== "all" ? `Khối ${selectedGrade}` : availableGradeOptions.length === 1 ? `Khối ${availableGradeOptions[0]?.grade}` : (availableGradeOptions.length > 1 ? availableGradeOptions.map(o => `${o.grade}`).join(", ") : "Tất cả")}</strong></span>
+                                {selectedSystemCode !== "all" && <span className="text-[10px] text-teal-600 bg-teal-50 px-2 py-0.5 rounded-md font-bold uppercase">{selectedSystemCode}</span>}
+                                <span className="text-slate-300">|</span>
+                                <span className="text-slate-400">Kỳ khảo sát: <strong className="text-slate-600">{currentAssignment.period.name} {currentAssignment.batch?.name ? ` - ${currentAssignment.batch.name}` : ""}</strong></span>
                             </p>
                         </div>
-                        {isLocked && <span className="text-xs font-bold bg-red-100 text-red-700 border border-red-200 px-4 py-1.5 rounded-full shadow-sm mr-2 flex items-center gap-1.5"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg> KHẢO SÁT ĐÃ KHÓA</span>}
-                        <span className={"text-xs font-medium border px-4 py-1.5 rounded-full shadow-sm " + (isLocked ? "bg-slate-100 text-slate-500 border-slate-200" : "bg-[#00A99D]/10 text-[#00A99D] border-[#00A99D]/30")}>
-                            {isPsychSubject ? (gradeVal ? `Mẫu chuyên biệt Tâm lý Khối ${gradeVal}` : `Đánh giá Tâm lý`) : isChildDevSubject ? "Cấu hình: 1 cột điểm, 1 cột nhận xét" : `Cấu hình: ${currentAssignment.subject.scoreColumns} cột điểm, ${currentAssignment.subject.commentColumns} cột nhận xét`}
-                        </span>
+                        <div className="flex flex-wrap items-center gap-2 shrink-0">
+                            {isLocked && <span className="text-xs font-black bg-rose-50 text-rose-600 border border-rose-100 px-4 py-2 rounded-xl shadow-xs flex items-center gap-1.5"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg> ĐÃ KHÓA</span>}
+                            <span className={"text-xs font-black border px-4 py-2 rounded-xl shadow-xs " + (isLocked ? "bg-slate-50 text-slate-400 border-slate-100" : "bg-[#00A99D]/5 text-[#00A99D] border-[#00A99D]/15")}>
+                                {isPsychSubject ? (gradeVal ? `Mẫu chuyên biệt Tâm lý Khối ${gradeVal}` : `Đánh giá Tâm lý`) : isChildDevSubject ? "Cấu hình: 1 cột điểm, 1 cột nhận xét" : `Cấu hình: ${currentAssignment.subject.scoreColumns} cột điểm, ${currentAssignment.subject.commentColumns} cột nhận xét`}
+                            </span>
+                        </div>
                     </div>
 
-                    {isLocked && (
-                        <div className="flex items-start gap-3 text-xs font-semibold">
-                            <div className="pt-0.5">
-                                <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    {isLocked ? (
+                        <div className="p-8 flex flex-col items-center justify-center text-center gap-4 border-t border-slate-100 bg-slate-50/30">
+                            <div className="w-16 h-16 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center shadow-inner">
+                                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
                             </div>
-                            <div>
-                                <h3 className="text-xs font-bold text-red-800 mb-1">Hạng mục Khảo sát (Kỳ/Đợt) đã bị khóa điểm</h3>
-                                <p className="text-xs text-red-700 leading-relaxed">
-                                    Hạng mục khảo sát (Kỳ hoặc Đợt) này đã được thiết lập sang trạng thái <strong>KHÓA / KẾT THÚC</strong> nên mọi thao tác nhập liệu đều bị cấm. <br/>
-                                    Trường hợp các thầy cô cần điều chỉnh điểm số, xin vui lòng liên hệ Người phụ trách đợt khảo sát: <strong>{currentAssignment.period.assignedUser?.fullName || "Admin"}</strong>.
+                            <div className="max-w-md">
+                                <h3 className="text-sm font-black text-rose-800 mb-2 uppercase tracking-wide">Đợt khảo sát đã bị khóa điểm</h3>
+                                <p className="text-xs text-slate-500 leading-relaxed font-semibold">
+                                    Đợt hoặc kỳ khảo sát này đã được thiết lập sang trạng thái <strong>KHÓA / KẾT THÚC</strong> nên form nhập liệu đã được ẩn đi. <br/>
+                                    Để điều chỉnh thông tin, vui lòng liên hệ Người phụ trách: <strong>{currentAssignment.period.assignedUser?.fullName || "Ban Khảo thí"}</strong>.
                                 </p>
-                                {currentAssignment.unlockRequestStatus === "REJECTED" && (
-                                    <div className="mt-3 bg-red-100 text-red-700 text-xs px-3 py-1 rounded-lg font-bold inline-block shadow-sm">
-                                        ❌ Hệ thống không chấp nhận yêu cầu của bạn.
-                                    </div>
-                                )}
-                                {currentAssignment.unlockRequestStatus === "PENDING" ? (
-                                    <div className="mt-4 flex items-center gap-2">
-                                        <div className="text-amber-700 text-xs font-bold shadow-sm inline-flex items-center gap-2 text-xs font-semibold">
-                                            <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357-2H15"></path></svg>
-                                            Yêu cầu Mở khóa đang chờ Admin duyệt...
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="mt-4">
-                                        <button onClick={() => setIsUnlockRequestOpen(true)} className="bg-red-600 hover:bg-red-700 text-white shadow-md text-xs font-bold px-4 py-1.5 rounded-xl transition-all">Gửi Yêu cầu Cấp quyền Nhập Điểm</button>
-                                    </div>
-                                )}
                             </div>
+                            {currentAssignment.unlockRequestStatus === "REJECTED" && (
+                                <div className="bg-red-50 text-red-600 text-xs px-4 py-2 rounded-xl font-bold border border-red-100 shadow-xs">
+                                    ❌ Yêu cầu mở khóa của thầy/cô đã bị từ chối.
+                                </div>
+                            )}
+                            {currentAssignment.unlockRequestStatus === "PENDING" ? (
+                                <div className="text-amber-600 text-xs font-black shadow-xs inline-flex items-center gap-2">
+                                    <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357-2H15"></path></svg>
+                                    Yêu cầu mở khóa đang chờ duyệt...
+                                </div>
+                            ) : (
+                                <button onClick={() => setIsUnlockRequestOpen(true)} className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-6 py-2.5 rounded-xl transition-all shadow-md shadow-rose-600/20 active:scale-95 text-xs">
+                                    Gửi yêu cầu cấp quyền nhập điểm
+                                </button>
+                            )}
                         </div>
-                    )}
-                    <div className="overflow-x-auto p-4 custom-scrollbar" style={{maxWidth: "100%", width: "100%"}}>
+                    ) : (
+                        <div className="overflow-x-auto p-4 custom-scrollbar" style={{maxWidth: "100%", width: "100%"}}>
                         <table className="w-full text-xs text-left border-collapse min-w-max">
                             <thead className="text-xs font-semibold">
     <tr>
@@ -590,9 +600,9 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
         <th className="px-2 py-2 md:px-4 md:py-4 text-center font-bold text-[#00A99D] bg-[#00A99D]/5 border-[#00A99D]/20 uppercase tracking-wider text-xs w-32 md:sticky md:right-0 z-20">Xác nhận</th>
     </tr>
 </thead>
-                            <tbody className="divide-y divide-[#00A99D]/20 border-b-2 border-[#00A99D]">
+                            <tbody className="divide-y divide-slate-100 border-b border-slate-100">
                                 {students.map((st, i) => (
-                                    <tr key={st.id} className="hover:bg-slate-100/30 group border-b border-[#00A99D]/20 last:border-none transition-colors">
+                                    <tr key={st.id} className="hover:bg-[#00A99D]/5 transition-colors border-b border-slate-100 last:border-none">
                                         <td className="p-2 p-2 md:p-2 md:p-2 text-center text-slate-500 bg-transparent md:sticky md:left-0 z-10 font-medium text-xs border border-slate-200">{i+1}</td>
                                         <td className="p-2 p-2 bg-transparent text-center border border-slate-200">
                                               <span className="font-mono font-bold text-slate-700 bg-slate-100 px-3 py-1.5 rounded-full text-xs">{st.studentCode}</span>
@@ -818,12 +828,18 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                 ))}
                                 {students.length === 0 && !loading && (
                                     <tr>
-                                        <td colSpan={8} className="px-4 py-12 text-center text-[#00A99D] bg-[#00A99D]/5 border-[#00A99D]/20">Chưa có dữ liệu học sinh nào thỏa mãn Khối/Hệ môn học này trong kỳ Khảo sát.</td>
+                                        <td colSpan={10} className="px-4 py-16 text-center text-slate-400 bg-slate-50/50">
+                                            <div className="flex flex-col items-center justify-center gap-2">
+                                                <Users className="w-10 h-10 text-slate-300 animate-pulse" />
+                                                <span className="text-xs font-bold text-slate-500">Chưa có dữ liệu học sinh nào thỏa mãn Khối/Hệ môn học này trong kỳ Khảo sát.</span>
+                                            </div>
+                                        </td>
                                     </tr>
                                 )}
                             </tbody>
                         </table>
                     </div>
+                    )}
                 </div>
             )}
         

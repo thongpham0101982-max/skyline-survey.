@@ -7,13 +7,17 @@ interface ExamTabsProps {
 }
 
 export function ExamTabs({ activeTab }: ExamTabsProps) {
-  const tabs = [
-    { id: 'categories', label: 'Quản lý danh mục', href: '/admin/ktdbcl/categories', icon: Layers },
-    { id: 'rounds', label: 'Vòng thi', href: '/admin/ktdbcl/rounds', icon: GitCommit },
-    { id: 'exams', label: 'Danh sách Kỳ thi', href: '/admin/ktdbcl/exams', icon: ClipboardList },
-    { id: 'students', label: 'Đăng ký Dự thi', href: '/admin/ktdbcl/students', icon: UserCheck },
-    { id: 'results', label: 'Nhập điểm & Kết quả', href: '/admin/ktdbcl/results', icon: Award }
-  ]
+  const isConfigTab = activeTab === 'categories' || activeTab === 'rounds'
+  const tabs = isConfigTab
+    ? [
+        { id: 'categories', label: 'Quản lý danh mục', href: '/admin/ktdbcl/categories', icon: Layers },
+        { id: 'rounds', label: 'Vòng thi', href: '/admin/ktdbcl/rounds', icon: GitCommit }
+      ]
+    : [
+        { id: 'exams', label: 'Danh sách Kỳ thi', href: '/admin/ktdbcl/exams', icon: ClipboardList },
+        { id: 'students', label: 'Đăng ký Dự thi', href: '/admin/ktdbcl/students', icon: UserCheck },
+        { id: 'results', label: 'Nhập điểm & Kết quả', href: '/admin/ktdbcl/results', icon: Award }
+      ]
 
   return (
     <div className="bg-white border border-[#00A99D]/20 shadow-xs rounded-xl px-1.5 py-1.5 mb-6 no-print">

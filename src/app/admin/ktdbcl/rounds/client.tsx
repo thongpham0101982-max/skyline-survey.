@@ -46,8 +46,8 @@ export function RoundsClient({ initialRounds, academicYears }: ExamRoundClientPr
     setSaving(true)
     setErrorMsg("")
     try {
-      await createExamRoundAction({ ...newForm, academicYearId: yearId })
-      setRounds([...rounds, { ...newForm, id: `temp_${Date.now()}`, academicYearId: yearId, _count: { exams: 0 } }])
+      await createExamRoundAction({ ...newForm, academicYearId: null })
+      setRounds([...rounds, { ...newForm, id: `temp_${Date.now()}`, academicYearId: null, _count: { exams: 0 } }])
       setNewForm({ name: "", code: "", description: "" })
       setCreating(false)
       // Reload page to get absolute db state
@@ -68,7 +68,7 @@ export function RoundsClient({ initialRounds, academicYears }: ExamRoundClientPr
     if (!editForm.name.trim() || !editForm.code.trim()) return
     setSaving(true)
     try {
-      await updateExamRoundAction({ id, ...editForm, academicYearId: yearId })
+      await updateExamRoundAction({ id, ...editForm, academicYearId: null })
       setRounds(rounds.map((r) => r.id === id ? { ...r, ...editForm } : r))
       setEditingId(null)
     } catch (e) {
@@ -173,11 +173,11 @@ export function RoundsClient({ initialRounds, academicYears }: ExamRoundClientPr
         <div className="bg-slate-50/70 border-b border-slate-100 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Flag className="w-5 h-5 text-[#00A99D]" />
-            <span className="font-bold text-slate-700 text-sm">Danh Sách Vòng Thi ({rounds.filter(r => r.academicYearId === yearId || r.academicYearId === null).length})</span>
+            <span className="font-bold text-slate-700 text-sm">Danh Sách Vòng Thi ({rounds.length})</span>
           </div>
         </div>
 
-        {rounds.filter(r => r.academicYearId === yearId || r.academicYearId === null).length === 0 ? (
+        {rounds.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-slate-400">
             <Flag className="w-16 h-16 mb-4 opacity-20" />
             <p className="font-bold text-lg mb-1">Chưa có vòng thi nào</p>
@@ -185,7 +185,7 @@ export function RoundsClient({ initialRounds, academicYears }: ExamRoundClientPr
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
-            {rounds.filter(r => r.academicYearId === yearId || r.academicYearId === null).map((round: any) => {
+            {rounds.map((round: any) => {
               const isEditing = editingId === round.id
               return (
                 <div key={round.id} className="flex flex-col p-6 hover:bg-slate-50/50 transition-colors group">

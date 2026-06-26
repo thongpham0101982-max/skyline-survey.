@@ -46,8 +46,8 @@ export function CategoriesClient({ initialCategories, academicYears }: ExamCateg
     setSaving(true)
     setErrorMsg("")
     try {
-      await createExamCategoryAction({ ...newForm, academicYearId: yearId })
-      setCategories([...categories, { ...newForm, id: `temp_${Date.now()}`, academicYearId: yearId, _count: { exams: 0 } }])
+      await createExamCategoryAction({ ...newForm, academicYearId: null })
+      setCategories([...categories, { ...newForm, id: `temp_${Date.now()}`, academicYearId: null, _count: { exams: 0 } }])
       setNewForm({ name: "", code: "", description: "" })
       setCreating(false)
       // Reload page to get absolute db state
@@ -68,7 +68,7 @@ export function CategoriesClient({ initialCategories, academicYears }: ExamCateg
     if (!editForm.name.trim() || !editForm.code.trim()) return
     setSaving(true)
     try {
-      await updateExamCategoryAction({ id, ...editForm, academicYearId: yearId })
+      await updateExamCategoryAction({ id, ...editForm, academicYearId: null })
       setCategories(categories.map((c) => c.id === id ? { ...c, ...editForm } : c))
       setEditingId(null)
     } catch (e) {
@@ -173,11 +173,11 @@ export function CategoriesClient({ initialCategories, academicYears }: ExamCateg
         <div className="bg-slate-50/70 border-b border-slate-100 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Tag className="w-5 h-5 text-[#00A99D]" />
-            <span className="font-bold text-slate-700 text-sm">Danh Sách Danh Mục Kỳ Thi ({categories.filter(c => c.academicYearId === yearId || c.academicYearId === null).length})</span>
+            <span className="font-bold text-slate-700 text-sm">Danh Sách Danh Mục Kỳ Thi ({categories.length})</span>
           </div>
         </div>
 
-        {categories.filter(c => c.academicYearId === yearId || c.academicYearId === null).length === 0 ? (
+        {categories.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-slate-400">
             <Tag className="w-16 h-16 mb-4 opacity-20" />
             <p className="font-bold text-lg mb-1">Chưa có danh mục nào</p>
@@ -185,7 +185,7 @@ export function CategoriesClient({ initialCategories, academicYears }: ExamCateg
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
-            {categories.filter(c => c.academicYearId === yearId || c.academicYearId === null).map((cat: any) => {
+            {categories.map((cat: any) => {
               const isEditing = editingId === cat.id
               return (
                 <div key={cat.id} className="flex flex-col p-6 hover:bg-slate-50/50 transition-colors group">
