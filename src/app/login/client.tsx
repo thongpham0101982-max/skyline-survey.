@@ -274,7 +274,7 @@ export function LoginClient() {
 
         {/* Bottom Footer */}
         <div className="w-full py-5 text-center text-[10px] font-black text-teal-200/50 uppercase tracking-widest relative z-10 border-t border-white/5 backdrop-blur-md">
-          © 2026 SQMS • Hệ thống Giáo dục Sky-Line
+          © 2026 SQMS - BAN KHẢO THÍ VÀ ĐẢM BẢO CHẤT LƯỢNG
         </div>
       </div>
     </>
