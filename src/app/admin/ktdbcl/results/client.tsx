@@ -272,8 +272,7 @@ export function ResultsClient({
 
   const getAutoName = (cat: string, lvl: string) => {
     if (!cat || !lvl) return ""
-    const lvlLabel = LEVEL_LABELS[lvl] || ""
-    return `${lvlLabel} - ${currentExam?.name || "Kỳ thi"}`
+    return LEVEL_LABELS[lvl] || ""
   }
 
   // Save grid
