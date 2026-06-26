@@ -58,6 +58,36 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
   const [selectedGrade, setSelectedGrade] = useState("10")
   const [selectedClass, setSelectedClass] = useState("")
 
+  // Active exam and allowed grades definitions
+  const activeExamObj = exams.find((e) => e.id === selectedExam)
+  const getAllowedGrades = () => {
+    if (!activeExamObj || !activeExamObj.grade) {
+      return Array.from({ length: 12 }, (_, i) => String(i + 1))
+    }
+    const val = activeExamObj.grade;
+    if (val.includes(",") || /^\d+$/.test(val)) {
+      return val.split(",")
+    }
+    const levelGradesMap: Record<string, string[]> = {
+      TIEU_HOC: ["1", "2", "3", "4", "5"],
+      THCS: ["6", "7", "8", "9"],
+      THPT: ["10", "11", "12"],
+      TH_THCS: ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+      THCS_THPT: ["6", "7", "8", "9", "10", "11", "12"],
+      ALL: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"]
+    };
+    return levelGradesMap[val] || Array.from({ length: 12 }, (_, i) => String(i + 1))
+  }
+  const allowedGrades = getAllowedGrades()
+
+  // Ensure selectedGrade is set when switching showAllRegistered to false
+  useEffect(() => {
+    if (!showAllRegistered && !selectedGrade) {
+      const grades = getAllowedGrades()
+      setSelectedGrade(grades[0] || "10")
+    }
+  }, [showAllRegistered, selectedGrade, activeExamObj])
+
   // Data states
   const [students, setStudents] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
@@ -249,30 +279,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
 
   const filteredStudents = getFilteredStudents()
 
-  // Get active exam details
-  const activeExamObj = exams.find((e) => e.id === selectedExam)
 
-  // Get allowed grades based on selected exam's target level
-  const getAllowedGrades = () => {
-    if (!activeExamObj || !activeExamObj.grade) {
-      return Array.from({ length: 12 }, (_, i) => String(i + 1))
-    }
-    const val = activeExamObj.grade;
-    if (val.includes(",") || /^\d+$/.test(val)) {
-      return val.split(",")
-    }
-    const levelGradesMap: Record<string, string[]> = {
-      TIEU_HOC: ["1", "2", "3", "4", "5"],
-      THCS: ["6", "7", "8", "9"],
-      THPT: ["10", "11", "12"],
-      TH_THCS: ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-      THCS_THPT: ["6", "7", "8", "9", "10", "11", "12"],
-      ALL: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"]
-    };
-    return levelGradesMap[val] || Array.from({ length: 12 }, (_, i) => String(i + 1))
-  }
-
-  const allowedGrades = getAllowedGrades()
 
   // Statistics
   const totalCount = students.length
@@ -307,6 +314,9 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
           onClick={() => {
             setShowAllRegistered(true);
             setSearchTerm("");
+            setSelectedCampus("");
+            setSelectedGrade("");
+            setSelectedClass("");
           }}
           className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all duration-200 ${
             showAllRegistered
@@ -350,7 +360,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
               ) : (
                 filteredExams.map((e) => (
                   <option key={e.id} value={e.id}>
-                    {e.name}
+                    {e.name} ({e._count?.students || 0} HS đã đăng ký)
                   </option>
                 ))
               )}
@@ -413,7 +423,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
                     .filter((c) => (!selectedCampus || c.campusId === selectedCampus) && (!selectedGrade || c.grade === selectedGrade) && c.academicYearId === yearId)
                     .map((c) => (
                       <option key={c.id} value={c.id}>
-                        {c.className} ({c.campus?.campusCode || "N/A"})
+                        {c.className} ({c.campus?.campusCode || "N/A"}) - {c._count?.students || 0} HS
                       </option>
                     ))}
                 </>
@@ -422,7 +432,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
               ) : (
                 filteredClasses.map((c) => (
                   <option key={c.id} value={c.id}>
-                    Lớp {c.className}
+                    Lớp {c.className} ({c._count?.students || 0} học sinh)
                   </option>
                 ))
               )}

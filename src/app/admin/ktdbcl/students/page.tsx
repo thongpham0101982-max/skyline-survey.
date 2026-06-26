@@ -18,7 +18,10 @@ export default async function StudentsPage() {
       id: true,
       name: true,
       grade: true,
-      academicYearId: true
+      academicYearId: true,
+      _count: {
+        select: { students: true }
+      }
     }
   })
 
@@ -41,7 +44,13 @@ export default async function StudentsPage() {
       className: true,
       grade: true,
       campusId: true,
-      academicYearId: true
+      academicYearId: true,
+      campus: {
+        select: { campusCode: true }
+      },
+      _count: {
+        select: { students: true }
+      }
     }
   })
 
