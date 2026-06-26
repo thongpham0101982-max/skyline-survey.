@@ -11,12 +11,18 @@ export const metadata = {
 export default async function ExamsPage() {
   const session = await getAdminSession()
 
-  // Fetch exams including all related data
+  // Fetch exams including all related data and counts
   const exams = await prisma.exam.findMany({
     include: {
       category: true,
       round: true,
-      department: true
+      department: true,
+      _count: {
+        select: {
+          students: true,
+          achievements: true
+        }
+      }
     },
     orderBy: { createdAt: "desc" }
   })

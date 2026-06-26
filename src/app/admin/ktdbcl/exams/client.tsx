@@ -38,7 +38,8 @@ function matchesLevelFilter(examGrade: string, filterVal: string) {
 }
 
 import { useState, useEffect } from "react"
-import { Plus, Trash2, Edit2, Check, X, Calendar, Star, Tag, User, Layers, Search, Filter } from "lucide-react"
+import { Plus, Trash2, Edit2, Check, X, Calendar, Star, Tag, User, Layers, Search, Filter, Users, Award, UserCheck } from "lucide-react"
+import Link from "next/link"
 import { createExamAction, updateExamAction, deleteExamAction } from "./actions"
 
 const generateNextExamCode = (existingExams: any[]) => {
@@ -80,6 +81,22 @@ interface ExamsClientProps {
   rounds: any[]
   departments: any[]
   academicYears: any[]
+}
+
+
+function getExamStatus(startDate: any, endDate: any) {
+  if (!startDate && !endDate) return { label: "Chưa lịch", className: "bg-slate-100 text-slate-600 border border-slate-200" };
+  const now = new Date();
+  const start = startDate ? new Date(startDate) : null;
+  const end = endDate ? new Date(endDate) : null;
+
+  if (start && now < start) {
+    return { label: "Sắp diễn ra", className: "bg-blue-50 text-blue-700 border border-blue-100" };
+  }
+  if (end && now > end) {
+    return { label: "Đã kết thúc", className: "bg-slate-100 text-slate-600 border border-slate-200" };
+  }
+  return { label: "Đang diễn ra", className: "bg-emerald-50 text-emerald-700 border border-emerald-100 font-bold" };
 }
 
 export function ExamsClient({
@@ -610,123 +627,162 @@ export function ExamsClient({
             </div>
           ) : (
             <div className="divide-y divide-slate-100">
-              {filteredExams.map((exam) => (
-                <div key={exam.id} className="flex flex-col md:flex-row md:items-center justify-between p-6 hover:bg-slate-50/50 transition-all group gap-4 text-xs font-semibold">
-                  <div className="flex items-start gap-4 flex-1 min-w-0">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                      exam.isPriority ? "bg-amber-50 text-amber-500" : "bg-teal-50 text-[#00A19A]"
-                    }`}>
-                      <Calendar className="w-5 h-5" />
-                    </div>
+              {filteredExams.map((exam) => {
+                const status = getExamStatus(exam.startDate, exam.endDate);
+                const regCount = exam._count?.students || 0;
+                const achCount = exam._count?.achievements || 0;
 
-                    <div className="space-y-1.5 flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                        {exam.isPriority && (
-                          <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-md flex items-center gap-1 font-bold animate-pulse">
-                            <Star className="w-3 h-3 fill-amber-500 text-amber-500" /> Ưu tiên
-                          </span>
-                        )}
-                        <span className="font-bold text-slate-800 text-sm flex items-center gap-1">
-                          {exam.name}
-                        </span>
-                        {exam.grade && (
-                          <span className="text-[10px] bg-[#00A19A]/10 text-[#00A19A] px-2 py-0.5 rounded-md font-bold mr-1">
-                            {getLevelLabel(exam.grade)}
-                          </span>
-                        )}
-                        <span className="text-[10px] font-mono bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md font-bold">
-                          {exam.code}
-                        </span>
+                return (
+                  <div key={exam.id} className="flex flex-col md:flex-row md:items-center justify-between p-6 hover:bg-slate-50/50 transition-all group gap-4 text-xs font-semibold">
+                    <div className="flex items-start gap-4 flex-1 min-w-0">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                        exam.isPriority ? "bg-amber-50 text-amber-500" : "bg-teal-50 text-[#00A19A]"
+                      }`}>
+                        <Calendar className="w-5 h-5" />
                       </div>
 
-                      {exam.description && (
-                        <p className="text-slate-500 text-xs font-semibold max-w-2xl line-clamp-2">{exam.description}</p>
-                      )}
-
-                      {/* Details Meta */}
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] text-slate-400">
-                        <span className="flex items-center gap-1">
-                          <Tag className="w-3.5 h-3.5 text-slate-400" />
-                          Danh mục: <strong className="text-slate-600">{exam.category.name}</strong>
-                        </span>
-
-                        {exam.round && (
-                          <span className="flex items-center gap-1">
-                            <Layers className="w-3.5 h-3.5 text-slate-400" />
-                            Vòng thi: <strong className="text-slate-600">{exam.round.name}</strong>
+                      <div className="space-y-1.5 flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                          {exam.isPriority && (
+                            <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-md flex items-center gap-1 font-bold animate-pulse">
+                              <Star className="w-3 h-3 fill-amber-500 text-amber-500" /> Ưu tiên
+                            </span>
+                          )}
+                          <span className="font-bold text-slate-800 text-sm flex items-center gap-1">
+                            {exam.name}
                           </span>
-                        )}
-
-                        {exam.grade && (
-                          <span className="flex items-center gap-1">
-                            <Layers className="w-3.5 h-3.5 text-slate-400" />
-                            Đối tượng dự thi: <strong className="text-slate-600">{getLevelLabel(exam.grade)}</strong>
+                          {exam.grade && (
+                            <span className="text-[10px] bg-[#00A19A]/10 text-[#00A19A] px-2 py-0.5 rounded-md font-bold mr-1">
+                              {getLevelLabel(exam.grade)}
+                            </span>
+                          )}
+                          <span className="text-[10px] font-mono bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md font-bold">
+                            {exam.code}
                           </span>
-                        )}
-
-                        {exam.department && (
-                          <span className="flex items-center gap-1">
-                            <Layers className="w-3.5 h-3.5 text-slate-400" />
-                            Tổ chuyên môn: <strong className="text-slate-600">{exam.department.name}</strong>
-                          </span>
-                        )}
-
-                        {exam.plan && (
-                          <span className="flex items-center gap-1">
-                            <Tag className="w-3.5 h-3.5 text-slate-400" />
-                            Kế hoạch: <strong className="text-slate-600">{PLAN_LABELS[exam.plan] || exam.plan}</strong>
-                          </span>
-                        )}
-
-
-                      </div>
-
-                      {/* Time */}
-                      {(exam.startDate || exam.endDate) && (
-                        <div className="text-[10px] text-slate-400 flex items-center gap-1">
-                          <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                          Thời gian:{" "}
-                          <span className="text-[#00A19A] font-bold">
-                            {exam.startDate ? new Date(exam.startDate).toLocaleDateString("vi-VN", {
-                              day: "numeric",
-                              month: "numeric",
-                              year: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit"
-                            }) : "---"}{" "}
-                            đến{" "}
-                            {exam.endDate ? new Date(exam.endDate).toLocaleDateString("vi-VN", {
-                              day: "numeric",
-                              month: "numeric",
-                              year: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit"
-                            }) : "---"}
+                          <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold ${status.className}`}>
+                            {status.label}
                           </span>
                         </div>
-                      )}
+
+                        {exam.description && (
+                          <p className="text-slate-500 text-xs font-semibold max-w-2xl line-clamp-2">{exam.description}</p>
+                        )}
+
+                        {/* Details Meta */}
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] text-slate-400">
+                          <span className="flex items-center gap-1">
+                            <Tag className="w-3.5 h-3.5 text-slate-400" />
+                            Danh mục: <strong className="text-slate-600">{exam.category.name}</strong>
+                          </span>
+
+                          {exam.round && (
+                            <span className="flex items-center gap-1">
+                              <Layers className="w-3.5 h-3.5 text-slate-400" />
+                              Vòng thi: <strong className="text-slate-600">{exam.round.name}</strong>
+                            </span>
+                          )}
+
+                          {exam.grade && (
+                            <span className="flex items-center gap-1">
+                              <Layers className="w-3.5 h-3.5 text-slate-400" />
+                              Đối tượng dự thi: <strong className="text-slate-600">{getLevelLabel(exam.grade)}</strong>
+                            </span>
+                          )}
+
+                          {exam.department && (
+                            <span className="flex items-center gap-1">
+                              <Layers className="w-3.5 h-3.5 text-slate-400" />
+                              Tổ chuyên môn: <strong className="text-slate-600">{exam.department.name}</strong>
+                            </span>
+                          )}
+
+                          {exam.plan && (
+                            <span className="flex items-center gap-1">
+                              <Tag className="w-3.5 h-3.5 text-slate-400" />
+                              Kế hoạch: <strong className="text-slate-600">{PLAN_LABELS[exam.plan] || exam.plan}</strong>
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Stats and Time */}
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-1">
+                          {(exam.startDate || exam.endDate) && (
+                            <div className="text-[10px] text-slate-400 flex items-center gap-1">
+                              <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                              Thời gian:{" "}
+                              <span className="text-[#00A19A] font-bold">
+                                {exam.startDate ? new Date(exam.startDate).toLocaleDateString("vi-VN", {
+                                  day: "numeric",
+                                  month: "numeric",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit"
+                                }) : "---"}{" "}
+                                đến{" "}
+                                {exam.endDate ? new Date(exam.endDate).toLocaleDateString("vi-VN", {
+                                  day: "numeric",
+                                  month: "numeric",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit"
+                                }) : "---"}
+                              </span>
+                            </div>
+                          )}
+
+                          <div className="flex gap-3 text-[10px] font-bold">
+                            <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded flex items-center gap-1">
+                              <Users className="w-3 h-3 text-slate-500" />
+                              Đăng ký: <strong className="text-slate-800">{regCount}</strong>
+                            </span>
+                            <span className="bg-amber-50 text-amber-800 px-2 py-0.5 rounded flex items-center gap-1 border border-amber-100/50">
+                              <Award className="w-3 h-3 text-amber-600 fill-amber-400" />
+                              Thành tích: <strong className="text-amber-900">{achCount}</strong>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons & Quick navigation */}
+                    <div className="flex items-center gap-2.5 self-start md:self-center">
+                      <div className="flex items-center gap-1.5 border-r border-slate-200 pr-2.5">
+                        <Link
+                          href={`/admin/ktdbcl/students?examId=${exam.id}`}
+                          className="flex items-center gap-1 bg-slate-50 hover:bg-teal-50/50 text-[#00A19A] border border-slate-200/80 hover:border-teal-200/50 px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all"
+                        >
+                          <UserCheck className="w-3.5 h-3.5" />
+                          Đăng ký
+                        </Link>
+                        <Link
+                          href={`/admin/ktdbcl/results?examId=${exam.id}`}
+                          className="flex items-center gap-1 bg-slate-50 hover:bg-amber-50/50 text-amber-700 border border-slate-200/80 hover:border-amber-200/50 px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all"
+                        >
+                          <Award className="w-3.5 h-3.5" />
+                          Nhập điểm
+                        </Link>
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => openEdit(exam)}
+                          className="p-2 hover:bg-teal-50 text-[#00A19A] rounded-xl transition-all"
+                          title="Chỉnh sửa"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(exam.id, exam.name)}
+                          className="p-2 hover:bg-rose-50 text-rose-600 rounded-xl transition-all"
+                          title="Xóa"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex items-center gap-2 self-start md:self-center">
-                    <button
-                      onClick={() => openEdit(exam)}
-                      className="p-2 hover:bg-teal-50 text-[#00A19A] rounded-xl transition-all"
-                      title="Chỉnh sửa"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(exam.id, exam.name)}
-                      className="p-2 hover:bg-rose-50 text-rose-600 rounded-xl transition-all"
-                      title="Xóa"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

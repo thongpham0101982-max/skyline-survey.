@@ -74,6 +74,7 @@ model Teacher {
   observerRegistrations ObservationRegistration[] @relation("ObserverTeacher")
 
   academicYearTargets TeacherAcademicYearTarget[]
+  achievements       Achievement[]
 }
 
 model Campus {
@@ -122,6 +123,7 @@ model AcademicYear {
   exams                           Exam[]
   examCategories                  ExamCategory[]
   examRounds                      ExamRound[]
+  achievements                    Achievement[]
 }
 
 model Class {
@@ -177,6 +179,7 @@ model Student {
   studentTransfers StudentTransfer[]
   //  user           User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
   exams            ExamStudent[]
+  achievements     StudentAchievement[]
 }
 
 model ParentStudentLink {
@@ -1079,6 +1082,7 @@ model Exam {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
   students       ExamStudent[]
+  achievements   Achievement[]
 }
 
 model ExamRound {
@@ -1102,8 +1106,45 @@ model ExamStudent {
   exam        Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
   studentId   String
   student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  score       Float?
+  notes       String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@unique([examId, studentId])
+}
+
+model Achievement {
+  id             String               @id @default(cuid())
+  name           String
+  type           String               // "CA_NHAN" | "DONG_DOI"
+  category       String               // "GIAI_THUONG" | "HUY_CHUONG" | "CHUNG_NHAN" | "KHAC"
+  level          String               // "NHAT" | "NHI" | "BA" | "KHUYEN_KHICH" | "VANG" | "BAC" | "DONG" | "KHAC"
+  academicYearId String
+  academicYear   AcademicYear         @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  teacherId      String?
+  teacher        Teacher?             @relation(fields: [teacherId], references: [id], onDelete: SetNull)
+  teacherName    String?
+  examId         String?
+  exam           Exam?                @relation(fields: [examId], references: [id], onDelete: Cascade)
+  students       StudentAchievement[]
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  @@index([academicYearId])
+  @@index([teacherId])
+  @@index([examId])
+}
+
+model StudentAchievement {
+  id            String      @id @default(cuid())
+  studentId     String
+  student       Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  achievementId String
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+
+  @@unique([studentId, achievementId])
+  @@index([studentId])
+  @@index([achievementId])
 }
