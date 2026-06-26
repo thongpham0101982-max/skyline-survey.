@@ -2,7 +2,7 @@
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 
-export async function createExamCategoryAction(data: { name: string; code: string; description?: string; academicYearId?: string | null | null }) {
+export async function createExamCategoryAction(data: { name: string; code: string; description?: string; academicYearId?: string | null | null | null | null }) {
   await prisma.examCategory.create({
     data: {
       name: data.name,
@@ -14,7 +14,7 @@ export async function createExamCategoryAction(data: { name: string; code: strin
   revalidatePath("/admin/ktdbcl/categories")
 }
 
-export async function updateExamCategoryAction(data: { id: string; name?: string; code?: string; description?: string; academicYearId?: string }) {
+export async function updateExamCategoryAction(data: { id: string; name?: string; code?: string; description?: string; academicYearId?: string | null }) {
   const { id, ...rest } = data
   await prisma.examCategory.update({
     where: { id },

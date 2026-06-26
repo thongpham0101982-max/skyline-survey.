@@ -2,7 +2,7 @@
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 
-export async function createExamRoundAction(data: { name: string; code: string; description?: string; academicYearId?: string | null | null }) {
+export async function createExamRoundAction(data: { name: string; code: string; description?: string; academicYearId?: string | null | null | null | null }) {
   await prisma.examRound.create({
     data: {
       name: data.name,
@@ -14,7 +14,7 @@ export async function createExamRoundAction(data: { name: string; code: string; 
   revalidatePath("/admin/ktdbcl/rounds")
 }
 
-export async function updateExamRoundAction(data: { id: string; name?: string; code?: string; description?: string; academicYearId?: string }) {
+export async function updateExamRoundAction(data: { id: string; name?: string; code?: string; description?: string; academicYearId?: string | null }) {
   const { id, ...rest } = data
   await prisma.examRound.update({
     where: { id },
