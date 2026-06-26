@@ -329,3 +329,27 @@ export async function searchStudentsByNameOrCodeAction(query: string) {
     campusName: s.campus?.campusName || "N/A"
   }))
 }
+
+// 6. Get students in a class
+export async function getStudentsByClassAction(classId: string) {
+  if (!classId) return []
+
+  const students = await prisma.student.findMany({
+    where: { classId },
+    include: {
+      class: true,
+      campus: true
+    },
+    orderBy: {
+      studentName: "asc"
+    }
+  })
+
+  return students.map(s => ({
+    id: s.id,
+    studentCode: s.studentCode,
+    studentName: s.studentName,
+    className: s.class?.className || "N/A",
+    campusName: s.campus?.campusName || "N/A"
+  }))
+}
