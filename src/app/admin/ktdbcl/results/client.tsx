@@ -516,7 +516,7 @@ export function ResultsClient({
                   Bảng Thành Tích Kỳ Thi: {currentExam?.name}
                 </h3>
                 <p className="text-[11px] text-slate-500 font-semibold mt-0.5">
-                  Tổng số học sinh đăng ký dự thi: <strong className="text-slate-700">{gridRows.length}</strong> em. Nhập thông tin trực tiếp vào ô tương ứng.
+                  Tổng số học sinh đăng ký dự thi: <strong className="text-slate-700">{new Set(gridRows.map(r => r.studentId)).size}</strong> em. Nhập thông tin trực tiếp vào ô tương ứng.
                 </p>
               </div>
 
