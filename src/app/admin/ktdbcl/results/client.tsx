@@ -1047,7 +1047,7 @@ export function ResultsClient({
                     {ach.examCategoryName || "Chung"}
                   </span>
                 </div>
-                <h4 className="text-sm font-black text-slate-800 leading-snug group-hover:text-[#00A99D] transition-colors">{ach.name}</h4>
+                <h4 className="text-sm font-black text-slate-800 leading-snug group-hover:text-[#00A99D] transition-colors">Giải thưởng: {ach.name.includes(" - ") ? ach.name.split(" - ")[0] : (ach.name || style.badgeName)}</h4>
                 
                 {/* Secondary group metadata if grouped by Category */}
                 {viewGroup === 'category' && (
