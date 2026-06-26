@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react"
 import { 
   Award, Search, Calendar, MapPin, Users, Edit3, Check, X, 
-  Trash2, Plus, FileSpreadsheet, Printer, Download, Eye, BookOpen, AlertCircle
+  Trash2, Plus, FileSpreadsheet, Printer, Download, Eye, BookOpen, AlertCircle, UserCheck
 } from "lucide-react"
 import * as XLSX from "xlsx"
 import { 
@@ -72,7 +72,7 @@ export function ResultsClient({
   // --- Sub-Tab 1: Excel Grid State ---
   const [selectedExamId, setSelectedExamId] = useState("")
   const [loadingStudents, setLoadingStudents] = useState(false)
-  const [gridRows, setGridRows] = useState<any[]>([]) // Excel-like state
+  const [gridRows, setGridRows] = useState<any[]>([])
   const [hasChanges, setHasChanges] = useState(false)
   const [savingGrid, setSavingGrid] = useState(false)
 
@@ -97,7 +97,7 @@ export function ResultsClient({
   const filteredExams = exams.filter(e => e.academicYearId === yearId)
   const currentExam = exams.find(e => e.id === selectedExamId)
 
-  // Auto-select exam on load or year change
+  // Auto-select exam
   useEffect(() => {
     if (typeof window !== "undefined") {
       const urlParams = new URLSearchParams(window.location.search)
@@ -120,14 +120,13 @@ export function ResultsClient({
     }
   }, [filteredExams, yearId])
 
-  // Fetch students and map to Excel-like grid rows
+  // Fetch students
   const loadExamStudents = async () => {
     if (!selectedExamId) return
     setLoadingStudents(true)
     try {
       const data = await getStudentsWithResultsAction(selectedExamId)
       
-      // Map to editable grid fields
       const rows = data.map(s => ({
         studentId: s.id,
         studentCode: s.studentCode,
@@ -135,7 +134,6 @@ export function ResultsClient({
         gender: s.gender,
         className: s.className,
         campusName: s.campusName,
-        // Achievement fields
         achievementId: s.achievementId,
         name: s.achievementName || "",
         type: s.type || "CA_NHAN",
@@ -166,12 +164,10 @@ export function ResultsClient({
 
       const updatedRow = { ...row, [field]: value }
 
-      // Auto-populate achievement name if level and category are selected and name is empty/default
       if (field === "level" || field === "category") {
         const cat = field === "category" ? value : row.category
         const lvl = field === "level" ? value : row.level
 
-        // If either becomes empty, we clear the name, otherwise we auto-fill
         if (cat === "" || lvl === "") {
           updatedRow.name = ""
         } else if (row.name === "" || row.name === getAutoName(row.category, row.level) || row.name === getAutoName(cat, lvl)) {
@@ -186,16 +182,14 @@ export function ResultsClient({
   const getAutoName = (cat: string, lvl: string) => {
     if (!cat || !lvl) return ""
     const lvlLabel = LEVEL_LABELS[lvl] || ""
-    const catLabel = CATEGORY_LABELS[cat] || ""
     return `${lvlLabel} - ${currentExam?.name || "Kỳ thi"}`
   }
 
-  // Save entire grid
+  // Save grid
   const handleSaveGrid = async () => {
     if (!selectedExamId) return
     setSavingGrid(true)
 
-    // Check if team achievements have names filled
     const invalidRow = gridRows.find(r => r.category !== "" && r.level !== "" && r.name.trim() === "")
     if (invalidRow) {
       alert(`Vui lòng nhập Tên thành tích cho học sinh ${invalidRow.studentName}!`)
@@ -204,7 +198,6 @@ export function ResultsClient({
     }
 
     try {
-      // Map gridRows to match server action payload
       const rowsPayload = gridRows.map(r => ({
         studentId: r.studentId,
         name: r.name,
@@ -360,229 +353,228 @@ export function ResultsClient({
 
       {/* --- SUB TAB 1: EXCEL INPUT --- */}
       {subTab === 'input' && (
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 no-print">
-          {/* Left panel: Exam selection */}
-          <div className="lg:col-span-1 bg-white border border-slate-200 rounded-2xl p-5 shadow-xs h-fit space-y-4">
-            <h3 className="text-slate-800 font-bold text-sm flex items-center gap-1.5 border-b border-slate-100 pb-3">
-              <Calendar className="w-4.5 h-4.5 text-[#00A19A]" />
-              Chọn Kỳ Thi
-            </h3>
-            <div className="space-y-1.5">
-              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Danh sách kỳ thi ({filteredExams.length})</label>
-              {filteredExams.length === 0 ? (
-                <p className="text-xs font-semibold text-slate-400">Không có kỳ thi nào trong năm học này.</p>
-              ) : (
-                <select
-                  value={selectedExamId}
-                  onChange={e => {
-                    if (hasChanges && !confirm("Bạn có thay đổi chưa lưu! Rời đi sẽ làm mất dữ liệu. Tiếp tục?")) {
-                      return
-                    }
-                    setSelectedExamId(e.target.value)
-                  }}
-                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-[#00A19A] outline-none font-semibold text-slate-700 bg-slate-50/50"
-                >
-                  {filteredExams.map(e => (
-                    <option key={e.id} value={e.id}>
-                      [{e.code}] {e.name}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-
-            {selectedExamId && (
-              <div className="pt-3 border-t border-slate-100 space-y-2 text-xs font-semibold text-slate-600 bg-slate-50/40 p-3.5 rounded-xl">
-                <div className="text-[10px] uppercase text-slate-400 font-bold tracking-wider mb-1">Chi tiết kỳ thi</div>
-                <div>Cấp học: <strong className="text-slate-800">{currentExam?.grade || "Tất cả"}</strong></div>
-                <div>Danh mục: <strong className="text-slate-800">{currentExam?.category?.name}</strong></div>
-              </div>
-            )}
-          </div>
-
-          {/* Right panel: Excel Grid */}
-          <div className="lg:col-span-3 space-y-4">
-            {!selectedExamId ? (
-              <div className="bg-white border border-slate-200 rounded-2xl p-16 text-center text-slate-400">
-                <Award className="w-16 h-16 mx-auto opacity-10 mb-3" />
-                <h4 className="font-bold text-slate-700">Chưa chọn Kỳ thi</h4>
-                <p className="text-xs mt-1">Vui lòng chọn kỳ thi bên trái để mở bảng Excel nhập kết quả.</p>
-              </div>
-            ) : (
-              <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
-                {/* Header */}
-                <div className="bg-slate-50/70 border-b border-slate-100 px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div>
-                    <h3 className="font-bold text-slate-800 text-sm">
-                      Bảng Thành Tích Kỳ Thi: {currentExam?.name}
-                    </h3>
-                    <p className="text-[11px] text-slate-500 font-semibold mt-0.5">
-                      Tổng số học sinh đăng ký dự thi: <strong className="text-slate-700">{gridRows.length}</strong> em. Nhập thông tin trực tiếp vào ô tương ứng.
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {hasChanges && (
-                      <span className="text-[11px] text-amber-600 bg-amber-50 border border-amber-200/50 px-2.5 py-1 rounded-lg font-bold animate-pulse">
-                        Có thay đổi chưa lưu
-                      </span>
-                    )}
-                    <button
-                      onClick={handleSaveGrid}
-                      disabled={savingGrid || gridRows.length === 0 || !hasChanges}
-                      className="flex items-center gap-1.5 bg-[#00A19A] hover:bg-[#008c85] disabled:opacity-50 text-white px-5 py-2.5 rounded-xl font-bold shadow-md shadow-[#00A19A]/15 transition-all text-xs"
+        <div className="space-y-4 no-print">
+          {/* Top Horizontal Filter Bar */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-4 min-w-0">
+                <div className="w-full sm:w-80 flex flex-col gap-1.5 flex-shrink-0">
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Chọn Kỳ Thi để nhập thành tích</label>
+                  {filteredExams.length === 0 ? (
+                    <p className="text-xs font-semibold text-slate-400">Không có kỳ thi nào trong năm học này.</p>
+                  ) : (
+                    <select
+                      value={selectedExamId}
+                      onChange={e => {
+                        if (hasChanges && !confirm("Bạn có thay đổi chưa lưu! Rời đi sẽ làm mất dữ liệu. Tiếp tục?")) {
+                          return
+                        }
+                        setSelectedExamId(e.target.value)
+                      }}
+                      className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-xs focus:border-[#00A19A] outline-none font-black text-slate-700 bg-slate-50/50"
                     >
-                      <Check className="w-4 h-4" />
-                      {savingGrid ? "Đang lưu..." : "Lưu Thay Đổi"}
-                    </button>
-                  </div>
+                      {filteredExams.map(e => (
+                        <option key={e.id} value={e.id}>
+                          [{e.code}] {e.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
 
-                {/* Table Grid */}
-                {loadingStudents ? (
-                  <div className="py-20 text-center text-slate-400">
-                    <div className="animate-spin rounded-full h-8 w-8 border-2 border-teal-500 border-t-transparent mx-auto mb-3"></div>
-                    <p className="text-xs font-bold">Đang tải bảng thành tích học sinh...</p>
-                  </div>
-                ) : gridRows.length === 0 ? (
-                  <div className="py-20 text-center text-slate-400 space-y-1">
-                    <Users className="w-12 h-12 mx-auto opacity-15 mb-2" />
-                    <h5 className="font-bold text-slate-600 text-sm">Chưa có học sinh đăng ký dự thi</h5>
-                    <p className="text-xs max-w-xs mx-auto">Vui lòng đi qua tab "Đăng ký Dự thi" để xếp học sinh vào danh sách dự thi cho kỳ thi này.</p>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse min-w-[900px]">
-                      <thead>
-                        <tr className="bg-slate-50 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                          <th className="py-2.5 px-4 w-10 text-center">STT</th>
-                          <th className="py-2.5 px-4 w-28">Mã HS</th>
-                          <th className="py-2.5 px-4 w-44">Họ & Tên</th>
-                          <th className="py-2.5 px-4 w-24">Lớp</th>
-                          <th className="py-2.5 px-4 w-28">Hình thức</th>
-                          <th className="py-2.5 px-4 w-32">Loại giải</th>
-                          <th className="py-2.5 px-4 w-32">Mức giải</th>
-                          <th className="py-2.5 px-4">Tên giải thưởng / Huy chương</th>
-                          <th className="py-2.5 px-4 w-48">GV Bồi dưỡng</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 text-xs font-semibold text-slate-700">
-                        {gridRows.map((row, idx) => {
-                          const hasAward = row.category !== "" && row.level !== ""
-
-                          return (
-                            <tr key={row.studentId} className={`hover:bg-slate-50/50 transition-all ${
-                              hasAward ? 'bg-amber-50/20' : ''
-                            }`}>
-                              {/* STT */}
-                              <td className="py-2 px-4 text-center text-slate-400 font-mono">{idx + 1}</td>
-                              
-                              {/* Mã HS */}
-                              <td className="py-2 px-4 font-mono text-slate-500">{row.studentCode}</td>
-                              
-                              {/* Tên */}
-                              <td className="py-2 px-4">
-                                <div className="font-bold text-slate-800">{row.studentName}</div>
-                                <div className="text-[9px] text-slate-400 font-bold">{row.campusName}</div>
-                              </td>
-                              
-                              {/* Lớp */}
-                              <td className="py-2 px-4 text-slate-600 font-bold">{row.className}</td>
-                              
-                              {/* Hình thức */}
-                              <td className="py-2 px-4">
-                                <select
-                                  value={row.type}
-                                  onChange={e => handleCellChange(row.studentId, "type", e.target.value)}
-                                  className="w-full border border-slate-200 rounded px-1.5 py-1 text-xs outline-none bg-white focus:border-[#00A19A]"
-                                >
-                                  <option value="CA_NHAN">Cá nhân</option>
-                                  <option value="DONG_DOI">Đồng đội</option>
-                                </select>
-                              </td>
-                              
-                              {/* Loại giải */}
-                              <td className="py-2 px-4">
-                                <select
-                                  value={row.category}
-                                  onChange={e => handleCellChange(row.studentId, "category", e.target.value)}
-                                  className="w-full border border-slate-200 rounded px-1.5 py-1 text-xs outline-none bg-white focus:border-[#00A19A]"
-                                >
-                                  <option value="">-- Không giải --</option>
-                                  {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
-                                    <option key={k} value={k}>{v}</option>
-                                  ))}
-                                </select>
-                              </td>
-                              
-                              {/* Mức giải */}
-                              <td className="py-2 px-4">
-                                <select
-                                  value={row.level}
-                                  onChange={e => handleCellChange(row.studentId, "level", e.target.value)}
-                                  className="w-full border border-slate-200 rounded px-1.5 py-1 text-xs outline-none bg-white focus:border-[#00A19A]"
-                                >
-                                  <option value="">-- Không --</option>
-                                  {Object.entries(LEVEL_LABELS).map(([k, v]) => (
-                                    <option key={k} value={k}>{v}</option>
-                                  ))}
-                                </select>
-                              </td>
-                              
-                              {/* Tên thành tích */}
-                              <td className="py-2 px-4">
-                                <input
-                                  type="text"
-                                  value={row.name}
-                                  onChange={e => handleCellChange(row.studentId, "name", e.target.value)}
-                                  disabled={row.category === "" || row.level === ""}
-                                  placeholder="Tự sinh nếu để trống..."
-                                  className="w-full border border-slate-200 disabled:bg-slate-50 rounded px-2 py-1 text-xs outline-none focus:border-[#00A19A] font-semibold text-slate-800"
-                                />
-                              </td>
-                              
-                              {/* GV Bồi dưỡng */}
-                              <td className="py-2 px-4">
-                                <div className="space-y-1">
-                                  <select
-                                    value={row.teacherId}
-                                    onChange={e => {
-                                      handleCellChange(row.studentId, "teacherId", e.target.value)
-                                      if (e.target.value !== "") {
-                                        handleCellChange(row.studentId, "teacherName", "")
-                                      }
-                                    }}
-                                    disabled={row.category === "" || row.level === ""}
-                                    className="w-full border border-slate-200 disabled:bg-slate-50 rounded px-1.5 py-1 text-xs outline-none bg-white focus:border-[#00A19A]"
-                                  >
-                                    <option value="">-- Chọn GV hệ thống --</option>
-                                    {teachers.map(t => (
-                                      <option key={t.id} value={t.id}>{t.teacherName}</option>
-                                    ))}
-                                    <option value="KHAC">Khác (Nhập tay...)</option>
-                                  </select>
-
-                                  {(row.teacherId === "KHAC" || (!row.teacherId && row.teacherName)) && (
-                                    <input
-                                      type="text"
-                                      value={row.teacherName}
-                                      onChange={e => handleCellChange(row.studentId, "teacherName", e.target.value)}
-                                      disabled={row.category === "" || row.level === ""}
-                                      placeholder="Nhập tên GV..."
-                                      className="w-full border border-slate-200 disabled:bg-slate-50 rounded px-2 py-1 text-xs outline-none focus:border-[#00A19A] font-semibold text-slate-800"
-                                    />
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          )
-                        })}
-                      </tbody>
-                    </table>
+                {selectedExamId && (
+                  <div className="flex flex-wrap gap-2 items-center pt-2 sm:pt-4">
+                    <span className="text-[10px] font-bold bg-[#00A19A]/10 text-[#00A19A] px-2.5 py-1 rounded-md border border-[#00A19A]/20">
+                      Cấp học: <strong className="font-extrabold">{currentExam?.grade || "Tất cả"}</strong>
+                    </span>
+                    <span className="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-md border border-indigo-100">
+                      Danh mục: <strong className="font-extrabold">{currentExam?.category?.name || "N/A"}</strong>
+                    </span>
+                    {currentExam?.startDate && (
+                      <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md border border-slate-200">
+                        Bắt đầu: {new Date(currentExam.startDate).toLocaleDateString("vi-VN")}
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
-            )}
+
+              {/* Action buttons */}
+              <div className="flex items-center gap-3 self-end sm:self-center">
+                {hasChanges && (
+                  <span className="text-[10px] text-amber-600 bg-amber-50 border border-amber-200/50 px-2.5 py-1.5 rounded-lg font-bold animate-pulse">
+                    Có thay đổi chưa lưu
+                  </span>
+                )}
+                <button
+                  onClick={handleSaveGrid}
+                  disabled={savingGrid || gridRows.length === 0 || !hasChanges}
+                  className="flex items-center gap-1.5 bg-[#00A19A] hover:bg-[#008c85] disabled:opacity-50 text-white px-5 py-2.5 rounded-xl font-bold shadow-md shadow-[#00A19A]/15 transition-all text-xs"
+                >
+                  <Check className="w-4 h-4" />
+                  {savingGrid ? "Đang lưu..." : "Lưu Thay Đổi"}
+                </button>
+              </div>
+            </div>
           </div>
+
+          {/* Bottom Card: Excel Grid Table */}
+          {selectedExamId && (
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
+              <div className="bg-slate-50/70 border-b border-slate-100 px-6 py-4">
+                <h3 className="font-bold text-slate-800 text-sm">
+                  Bảng Thành Tích Kỳ Thi: {currentExam?.name}
+                </h3>
+                <p className="text-[11px] text-slate-500 font-semibold mt-0.5">
+                  Tổng số học sinh đăng ký dự thi: <strong className="text-slate-700">{gridRows.length}</strong> em. Nhập thông tin trực tiếp vào ô tương ứng.
+                </p>
+              </div>
+
+              {/* Table Grid Wrapper with custom scrollbar */}
+              {loadingStudents ? (
+                <div className="py-20 text-center text-slate-400">
+                  <div className="animate-spin rounded-full h-8 w-8 border-2 border-teal-500 border-t-transparent mx-auto mb-3"></div>
+                  <p className="text-xs font-bold">Đang tải bảng thành tích học sinh...</p>
+                </div>
+              ) : gridRows.length === 0 ? (
+                <div className="py-20 text-center text-slate-400 space-y-1">
+                  <Users className="w-12 h-12 mx-auto opacity-15 mb-2" />
+                  <h5 className="font-bold text-slate-600 text-sm">Chưa có học sinh đăng ký dự thi</h5>
+                  <p className="text-xs max-w-xs mx-auto">Vui lòng đi qua tab "Đăng ký Dự thi" để xếp học sinh vào danh sách dự thi cho kỳ thi này.</p>
+                </div>
+              ) : (
+                <div className="w-full overflow-x-auto custom-scrollbar">
+                  <table className="w-full text-left border-collapse min-w-[1200px]">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        <th className="py-3 px-4 w-12 text-center">STT</th>
+                        <th className="py-3 px-4 w-32 min-w-[110px]">Mã HS</th>
+                        <th className="py-3 px-4 w-56 min-w-[180px]">Họ & Tên</th>
+                        <th className="py-3 px-4 w-24 min-w-[80px]">Lớp</th>
+                        <th className="py-3 px-4 w-32 min-w-[115px]">Hình thức</th>
+                        <th className="py-3 px-4 w-36 min-w-[130px]">Loại giải</th>
+                        <th className="py-3 px-4 w-36 min-w-[130px]">Mức giải</th>
+                        <th className="py-3 px-4 min-w-[280px]">Tên giải thưởng / Huy chương</th>
+                        <th className="py-3 px-4 w-64 min-w-[220px]">GV Bồi dưỡng</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-xs font-semibold text-slate-700">
+                      {gridRows.map((row, idx) => {
+                        const hasAward = row.category !== "" && row.level !== ""
+
+                        return (
+                          <tr key={row.studentId} className={`hover:bg-slate-50/50 transition-all ${
+                            hasAward ? 'bg-amber-50/20' : ''
+                          }`}>
+                            {/* STT */}
+                            <td className="py-2.5 px-4 text-center text-slate-400 font-mono">{idx + 1}</td>
+                            
+                            {/* Mã HS */}
+                            <td className="py-2.5 px-4 font-mono text-slate-500">{row.studentCode}</td>
+                            
+                            {/* Tên */}
+                            <td className="py-2.5 px-4">
+                              <div className="font-bold text-slate-800">{row.studentName}</div>
+                              <div className="text-[9px] text-slate-400 font-bold">{row.campusName}</div>
+                            </td>
+                            
+                            {/* Lớp */}
+                            <td className="py-2.5 px-4 text-slate-600 font-bold">{row.className}</td>
+                            
+                            {/* Hình thức */}
+                            <td className="py-2.5 px-4">
+                              <select
+                                value={row.type}
+                                onChange={e => handleCellChange(row.studentId, "type", e.target.value)}
+                                className="w-full border border-slate-200 rounded px-1.5 py-1 text-xs outline-none bg-white focus:border-[#00A19A] transition-colors"
+                              >
+                                <option value="CA_NHAN">Cá nhân</option>
+                                <option value="DONG_DOI">Đồng đội</option>
+                              </select>
+                            </td>
+                            
+                            {/* Loại giải */}
+                            <td className="py-2.5 px-4">
+                              <select
+                                value={row.category}
+                                onChange={e => handleCellChange(row.studentId, "category", e.target.value)}
+                                className="w-full border border-slate-200 rounded px-1.5 py-1 text-xs outline-none bg-white focus:border-[#00A19A] transition-colors"
+                              >
+                                <option value="">-- Không giải --</option>
+                                {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
+                                  <option key={k} value={k}>{v}</option>
+                                ))}
+                              </select>
+                            </td>
+                            
+                            {/* Mức giải */}
+                            <td className="py-2.5 px-4">
+                              <select
+                                value={row.level}
+                                onChange={e => handleCellChange(row.studentId, "level", e.target.value)}
+                                className="w-full border border-slate-200 rounded px-1.5 py-1 text-xs outline-none bg-white focus:border-[#00A19A] transition-colors"
+                              >
+                                <option value="">-- Không --</option>
+                                {Object.entries(LEVEL_LABELS).map(([k, v]) => (
+                                  <option key={k} value={k}>{v}</option>
+                                ))}
+                              </select>
+                            </td>
+                            
+                            {/* Tên thành tích */}
+                            <td className="py-2.5 px-4">
+                              <input
+                                type="text"
+                                value={row.name}
+                                onChange={e => handleCellChange(row.studentId, "name", e.target.value)}
+                                disabled={row.category === "" || row.level === ""}
+                                placeholder="Tự sinh nếu để trống..."
+                                className="w-full border border-slate-200 disabled:bg-slate-50/50 rounded px-2.5 py-1 text-xs outline-none focus:border-[#00A19A] font-semibold text-slate-800 transition-all"
+                              />
+                            </td>
+                            
+                            {/* GV Bồi dưỡng */}
+                            <td className="py-2.5 px-4">
+                              <div className="space-y-1">
+                                <select
+                                  value={row.teacherId}
+                                  onChange={e => {
+                                    handleCellChange(row.studentId, "teacherId", e.target.value)
+                                    if (e.target.value !== "") {
+                                      handleCellChange(row.studentId, "teacherName", "")
+                                    }
+                                  }}
+                                  disabled={row.category === "" || row.level === ""}
+                                  className="w-full border border-slate-200 disabled:bg-slate-50/50 rounded px-1.5 py-1 text-xs outline-none bg-white focus:border-[#00A19A] transition-colors"
+                                >
+                                  <option value="">-- Chọn GV hệ thống --</option>
+                                  {teachers.map(t => (
+                                    <option key={t.id} value={t.id}>{t.teacherName}</option>
+                                  ))}
+                                  <option value="KHAC">Khác (Nhập tay...)</option>
+                                </select>
+
+                                {(row.teacherId === "KHAC" || (!row.teacherId && row.teacherName)) && (
+                                  <input
+                                    type="text"
+                                    value={row.teacherName}
+                                    onChange={e => handleCellChange(row.studentId, "teacherName", e.target.value)}
+                                    disabled={row.category === "" || row.level === ""}
+                                    placeholder="Nhập tên GV..."
+                                    className="w-full border border-slate-200 disabled:bg-slate-50/50 rounded px-2.5 py-1 text-xs outline-none focus:border-[#00A19A] font-semibold text-slate-800 transition-all"
+                                  />
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -590,7 +582,7 @@ export function ResultsClient({
       {subTab === 'reports' && (
         <div className="space-y-6">
           {/* Report Filters Card */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4 no-print">
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4 no-print animate-fade-in">
             <h3 className="text-slate-800 font-bold text-sm flex items-center gap-1.5 border-b border-slate-100 pb-3">
               <Search className="w-4.5 h-4.5 text-[#00A19A]" />
               Bộ lọc Báo cáo thành tích ({academicYears.find(y => y.id === yearId)?.name || 'Tất cả'})
@@ -672,7 +664,7 @@ export function ResultsClient({
           </div>
 
           {/* Stats Summaries */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 no-print">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 no-print animate-fade-in">
             <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
               <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tổng thành tích</div>
               <div className="text-2xl font-black text-slate-800 mt-1">{reportData.length}</div>
@@ -696,7 +688,7 @@ export function ResultsClient({
           </div>
 
           {/* Report Data Table */}
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden print-area">
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden print-area animate-fade-in">
             {/* Header print preview only */}
             <div className="hidden print-only py-8 text-center space-y-2 border-b border-slate-200 mb-6">
               <h2 className="text-xl font-bold text-slate-900 uppercase">HỆ THỐNG GIÁO DỤC SKY-LINE</h2>
@@ -781,7 +773,7 @@ export function ResultsClient({
 
       {/* --- SUB TAB 3: PROFILES --- */}
       {subTab === 'profiles' && (
-        <div className="space-y-6 max-w-4xl mx-auto no-print">
+        <div className="space-y-6 max-w-4xl mx-auto no-print animate-fade-in">
           {/* Profile lookup search bar */}
           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
             <h3 className="text-slate-800 font-bold text-sm flex items-center gap-1.5">
@@ -945,6 +937,25 @@ export function ResultsClient({
         }
         .print-only {
           display: none;
+        }
+
+        /* Custom scrollbar for grid */
+        .custom-scrollbar::-webkit-scrollbar {
+          height: 10px;
+          width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #f8fafc;
+          border-bottom-left-radius: 12px;
+          border-bottom-right-radius: 12px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 6px;
+          border: 2px solid #f8fafc;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #94a3b8;
         }
       `}</style>
     </div>
