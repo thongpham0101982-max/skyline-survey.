@@ -1,4 +1,8 @@
 "use client"
+import { useState, useEffect } from "react"
+import { Calendar, Layers, MapPin, UserCheck, Users, Check, X, Loader2, AlertCircle, Search, Filter, Sparkles } from "lucide-react"
+import { getStudentsByClassAction, registerStudentsAction, deregisterStudentsAction, getAllRegisteredStudentsAction } from "./actions"
+
 const LEVEL_LABELS: Record<string, string> = {
   TIEU_HOC: "Tiểu học",
   THCS: "THCS",
@@ -15,10 +19,6 @@ function getLevelLabel(val: string) {
   }
   return LEVEL_LABELS[val] || val;
 }
-
-import { useState, useEffect } from "react"
-import { Calendar, Layers, MapPin, UserCheck, Users, Check, X, Loader2, AlertCircle, Search, Filter, Sparkles } from "lucide-react"
-import { getStudentsByClassAction, registerStudentsAction, deregisterStudentsAction, getAllRegisteredStudentsAction } from "./actions"
 
 interface StudentsClientProps {
   exams: any[]
