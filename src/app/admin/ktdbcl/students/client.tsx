@@ -58,6 +58,14 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
   const [selectedGrade, setSelectedGrade] = useState("10")
   const [selectedClass, setSelectedClass] = useState("")
 
+  // Data states
+  const [students, setStudents] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+  const [updating, setUpdating] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [searchTerm, setSearchTerm] = useState("")
+  const [showAllRegistered, setShowAllRegistered] = useState(false)
+
   // Active exam and allowed grades definitions
   const activeExamObj = exams.find((e) => e.id === selectedExam)
   const getAllowedGrades = () => {
@@ -88,13 +96,6 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
     }
   }, [showAllRegistered, selectedGrade, activeExamObj])
 
-  // Data states
-  const [students, setStudents] = useState<any[]>([])
-  const [loading, setLoading] = useState(false)
-  const [updating, setUpdating] = useState(false)
-  const [selectedIds, setSelectedIds] = useState<string[]>([])
-  const [searchTerm, setSearchTerm] = useState("")
-  const [showAllRegistered, setShowAllRegistered] = useState(false)
 
   // Filter classes based on Campus, Grade and Academic Year
   const filteredClasses = classes.filter(
