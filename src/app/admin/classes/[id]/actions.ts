@@ -12,49 +12,58 @@ export async function importStudentsAction(classId: string, data: any[]) {
   let skipped = 0
   let errorMsg = ""
 
-  for (const item of data) {
-    try {
-      if (!item.studentCode || !item.studentName) {
-        skipped++
-        continue
-      }
+  // 1. Pre-fetch existing students to avoid N+1 lookups inside loop
+  const studentCodes = data.map(item => item.studentCode).filter(Boolean)
+  const existingStudents = await prisma.student.findMany({
+    where: { studentCode: { in: studentCodes } }
+  })
+  const existingStudentsMap = new Map(existingStudents.map(s => [s.studentCode, s]))
 
-      const existing = await prisma.student.findFirst({
-        where: { studentCode: item.studentCode }
-      })
+  // 2. Use a transaction block to batch inserts/updates together
+  await prisma.$transaction(async (tx) => {
+    for (const item of data) {
+      try {
+        if (!item.studentCode || !item.studentName) {
+          skipped++
+          continue
+        }
 
-      if (existing) {
-        await prisma.student.update({
-          where: { id: existing.id },
-          data: {
-            studentName: item.studentName,
-            gender: item.gender,
-            dateOfBirth: item.dateOfBirth,
-            classId: cls.id,
-            campusId: cls.campusId,
-            academicYearId: cls.academicYearId
-          }
-        })
-      } else {
-        await prisma.student.create({
-          data: {
-            studentCode: item.studentCode,
-            studentName: item.studentName,
-            gender: item.gender,
-            dateOfBirth: item.dateOfBirth,
-            classId: cls.id,
-            campusId: cls.campusId,
-            academicYearId: cls.academicYearId,
-            status: "ACTIVE"
-          }
-        })
+        const existing = existingStudentsMap.get(item.studentCode)
+
+        if (existing) {
+          await tx.student.update({
+            where: { id: existing.id },
+            data: {
+              studentName: item.studentName,
+              gender: item.gender,
+              dateOfBirth: item.dateOfBirth ? new Date(item.dateOfBirth) : null,
+              classId: cls.id,
+              campusId: cls.campusId,
+              academicYearId: cls.academicYearId
+            }
+          })
+        } else {
+          await tx.student.create({
+            data: {
+              studentCode: item.studentCode,
+              studentName: item.studentName,
+              gender: item.gender,
+              dateOfBirth: item.dateOfBirth ? new Date(item.dateOfBirth) : null,
+              classId: cls.id,
+              campusId: cls.campusId,
+              academicYearId: cls.academicYearId,
+              status: "ACTIVE"
+            }
+          })
+        }
+        count++
+      } catch(e: any) {
+        console.error("Error importing student: ", item, e)
+        errorMsg = e.message
+        throw e // rollback transaction on individual row failure to ensure consistency
       }
-      count++
-    } catch(e: any) {
-      console.error("Error importing student: ", item, e)
-      errorMsg = e.message
     }
-  }
+  })
   revalidatePath(`/admin/classes/${classId}`)
   if (count === 0 && data.length > 0) {
     return { success: false, error: "Lỗi lưu dữ liệu: " + (errorMsg || "Không rõ nguyên nhân") + ". Skpped: " + skipped }
@@ -150,5 +159,23 @@ export async function assignSurveyToStudentAction(studentId: string, surveyPerio
     return { success: true }
   } catch (e: any) {
     return { success: false, error: e.message }
+  }
+}
+
+
+export async function getPaginatedStudentsInClassAction(classId: string, page: number = 1, pageSize: number = 20) {
+  try {
+    const students = await prisma.student.findMany({
+      where: { classId, status: "ACTIVE" },
+      orderBy: { studentName: "asc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize
+    })
+    const total = await prisma.student.count({
+      where: { classId, status: "ACTIVE" }
+    })
+    return { success: true, students, total }
+  } catch (e: any) {
+    return { success: false, students: [], total: 0, error: e.message }
   }
 }

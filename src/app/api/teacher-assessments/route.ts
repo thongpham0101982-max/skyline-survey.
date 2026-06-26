@@ -168,6 +168,95 @@ export async function GET(req: any) {
         return NextResponse.json([...assignments, ...mappedPreschool]);
     }
     
+    if (action === "getStats") {
+        const academicYearId = searchParams.get("academicYearId");
+        if (!academicYearId) {
+            return NextResponse.json({ total: 0, grades: {} });
+        }
+
+        const currentTeacher = await prisma.teacher.findUnique({
+            where: { userId: session.user.id }
+        });
+
+        if (!currentTeacher) {
+            return NextResponse.json({ total: 0, grades: {} });
+        }
+
+        const teacherAssignments = await prisma.inputAssessmentTeacherAssignment.findMany({
+            where: {
+                userId: session.user.id,
+                period: { academicYearId: academicYearId }
+            }
+        });
+
+        const preschoolAssignmentsRaw = await (prisma as any).preschoolInputAssessmentTeacherAssignment.findMany({
+            where: { userId: session.user.id },
+            include: { period: true }
+        });
+        const preschoolAssignments = preschoolAssignmentsRaw.filter((a: any) => a.period?.academicYearId === academicYearId);
+
+        const generalPeriods = Array.from(new Set(teacherAssignments.map(ta => ta.periodId)));
+        const generalGrades = Array.from(new Set(teacherAssignments.map(ta => ta.grade).filter(Boolean)));
+
+        let generalStudents = [];
+        if (generalPeriods.length > 0) {
+            generalStudents = await prisma.inputAssessmentStudent.findMany({
+                where: {
+                    periodId: { in: generalPeriods },
+                    ...(generalGrades.length > 0 && !generalGrades.includes("tất cả") && !generalGrades.includes("Tất cả") ? {
+                        grade: { in: generalGrades }
+                    } : {})
+                },
+                select: { id: true, grade: true }
+            });
+        }
+
+        const preschoolPeriods = Array.from(new Set(preschoolAssignments.map(pa => pa.periodId)));
+        const preschoolGrades = Array.from(new Set(preschoolAssignments.map(pa => pa.grade).filter(Boolean)));
+
+        let preschoolStudents = [];
+        if (preschoolPeriods.length > 0) {
+            preschoolStudents = await (prisma as any).preschoolInputAssessmentStudent.findMany({
+                where: {
+                    periodId: { in: preschoolPeriods },
+                    ...(preschoolGrades.length > 0 && !preschoolGrades.includes("tất cả") && !preschoolGrades.includes("Tất cả") ? {
+                        grade: { in: preschoolGrades }
+                    } : {})
+                },
+                select: { id: true, grade: true }
+            });
+        }
+
+        const uniqueGeneral = new Map();
+        generalStudents.forEach(st => {
+            uniqueGeneral.set(st.id, st.grade);
+        });
+
+        const uniquePreschool = new Map();
+        preschoolStudents.forEach(st => {
+            uniquePreschool.set(st.id, st.grade);
+        });
+
+        const gradeCounts = {};
+        let total = 0;
+
+        uniqueGeneral.forEach((grade) => {
+            const rawGrade = (grade || "").trim();
+            const displayGrade = rawGrade.startsWith("Khối") ? rawGrade : `Khối ${rawGrade}`;
+            gradeCounts[displayGrade] = (gradeCounts[displayGrade] || 0) + 1;
+            total++;
+        });
+
+        uniquePreschool.forEach((grade) => {
+            const rawGrade = (grade || "").trim();
+            const displayGrade = rawGrade.toLowerCase().includes("mầm non") || rawGrade.toLowerCase().includes("nhà trẻ") || rawGrade.toLowerCase().includes("mẫu giáo") ? rawGrade : (rawGrade.startsWith("Khối") ? rawGrade : `Khối ${rawGrade}`);
+            gradeCounts[displayGrade] = (gradeCounts[displayGrade] || 0) + 1;
+            total++;
+        });
+
+        return NextResponse.json({ total, grades: gradeCounts });
+    }
+
     if (action === "getCampuses") {
         const campuses = await prisma.campus.findMany({
             select: {
@@ -475,11 +564,14 @@ export async function GET(req: any) {
             eduSystemsMap[code].add(s.name.toLowerCase());
         });
 
+        const assignedGrades = Array.from(new Set(teacherAssignments.map(ta => ta.grade).filter(Boolean)));
         const students = await prisma.inputAssessmentStudent.findMany({
             where: {
                 periodId: periodId || undefined,
-                
-                ...(batchId ? { OR: [{ batchId: batchId }, { batchId: null }] } : {})
+                ...(batchId ? { OR: [{ batchId: batchId }, { batchId: null }] } : {}),
+                ...(assignedGrades.length > 0 && !assignedGrades.includes("tất cả") && !assignedGrades.includes("Tất cả") ? {
+                    grade: { in: assignedGrades }
+                } : {})
             },            include: {
                 scores: {
                     where: { subjectId: subjectId || undefined },
@@ -636,7 +728,8 @@ export async function GET(req: any) {
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
 
   } catch (error: any) {
-    return NextResponse.json({ error: error?.message || "Internal Server Error" }, { status: 500 });
+    console.error("Teacher Assessments API error:", error);
+    return NextResponse.json({ error: "Đã xảy ra lỗi hệ thống khi lưu/truy xuất dữ liệu." }, { status: 500 });
   }
 }
 

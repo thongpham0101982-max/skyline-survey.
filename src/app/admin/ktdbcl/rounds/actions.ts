@@ -1,8 +1,13 @@
 "use server"
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
+import { getAdminSession } from "@/lib/session"
 
-export async function createExamRoundAction(data: { name: string; code: string; description?: string; academicYearId?: string | null | null | null | null }) {
+export async function createExamRoundAction(data: { name: string; code: string; description?: string; academicYearId?: string | null }) {
+  const session = await getAdminSession();
+  if (!session.userId || !session.isFullAccess) {
+    throw new Error("Forbidden: Quyền truy cập bị từ chối.");
+  }
   await prisma.examRound.create({
     data: {
       name: data.name,
@@ -15,6 +20,10 @@ export async function createExamRoundAction(data: { name: string; code: string; 
 }
 
 export async function updateExamRoundAction(data: { id: string; name?: string; code?: string; description?: string; academicYearId?: string | null }) {
+  const session = await getAdminSession();
+  if (!session.userId || !session.isFullAccess) {
+    throw new Error("Forbidden: Quyền truy cập bị từ chối.");
+  }
   const { id, ...rest } = data
   await prisma.examRound.update({
     where: { id },
@@ -24,6 +33,10 @@ export async function updateExamRoundAction(data: { id: string; name?: string; c
 }
 
 export async function deleteExamRoundAction(id: string) {
+  const session = await getAdminSession();
+  if (!session.userId || !session.isFullAccess) {
+    throw new Error("Forbidden: Quyền truy cập bị từ chối.");
+  }
   await prisma.examRound.delete({ where: { id } })
   revalidatePath("/admin/ktdbcl/rounds")
 }

@@ -312,28 +312,10 @@ export async function createObservationSlot(data: {
       return { success: false, error: "Teacher profile not found" }
     }
 
-    // 1. Verify monthly limit
+    // 1. Verify monthly limit and create slot inside transaction
     const slotDate = new Date(data.date)
     const startOfMonth = new Date(slotDate.getFullYear(), slotDate.getMonth(), 1)
     const endOfMonth = new Date(slotDate.getFullYear(), slotDate.getMonth() + 1, 1)
-
-    const count = await prisma.observationSlot.count({
-      where: {
-        teacherId: currentTeacher.id,
-        date: {
-          gte: startOfMonth,
-          lt: endOfMonth
-        },
-        status: "ACTIVE"
-      }
-    })
-
-    if (count >= 2) {
-      return {
-        success: false,
-        error: `Thầy/Cô đã đạt giới hạn tạo tối đa 2 tiết dạy trong tháng ${slotDate.getMonth() + 1}/${slotDate.getFullYear()}.`
-      }
-    }
 
     const activeYear = await prisma.academicYear.findFirst({
       where: { status: "ACTIVE" }
@@ -348,33 +330,49 @@ export async function createObservationSlot(data: {
 
     const yearId = matchingYear?.id || activeYear?.id || null
 
-    // 2. Create slot
-    const newSlot = await prisma.observationSlot.create({
-      data: {
-        teacherId: currentTeacher.id,
-        subjectId: data.subjectId || null,
-        subjectName: data.subjectName,
-        level: data.level,
-        grade: data.grade,
-        topic: data.topic,
-        date: slotDate,
-        startTime: data.startTime,
-        endTime: data.endTime,
-        isDoublePeriod: data.isDoublePeriod,
-        room: data.room || null,
-        description: data.description || null,
-        visibilityType: data.visibilityType,
-        targetDeptId: data.targetDeptId || null,
-        maxSeats: 4,
-        status: "ACTIVE",
-        campusId: data.campusId || null,
-        campusName: data.campusName || null,
-        classId: data.classId || null,
-        className: data.className || null,
-        lessonPlanName: data.lessonPlanName || null,
-        lessonPlanData: data.lessonPlanData || null,
-        academicYearId: yearId
+    const newSlot = await prisma.$transaction(async (tx) => {
+      const count = await tx.observationSlot.count({
+        where: {
+          teacherId: currentTeacher.id,
+          date: {
+            gte: startOfMonth,
+            lt: endOfMonth
+          },
+          status: "ACTIVE"
+        }
+      })
+
+      if (count >= 2) {
+        throw new Error(`Thầy/Cô đã đạt giới hạn tạo tối đa 2 tiết dạy trong tháng ${slotDate.getMonth() + 1}/${slotDate.getFullYear()}.`)
       }
+
+      return await tx.observationSlot.create({
+        data: {
+          teacherId: currentTeacher.id,
+          subjectId: data.subjectId || null,
+          subjectName: data.subjectName,
+          level: data.level,
+          grade: data.grade,
+          topic: data.topic,
+          date: slotDate,
+          startTime: data.startTime,
+          endTime: data.endTime,
+          isDoublePeriod: data.isDoublePeriod,
+          room: data.room || null,
+          description: data.description || null,
+          visibilityType: data.visibilityType,
+          targetDeptId: data.targetDeptId || null,
+          maxSeats: 4,
+          status: "ACTIVE",
+          campusId: data.campusId || null,
+          campusName: data.campusName || null,
+          classId: data.classId || null,
+          className: data.className || null,
+          lessonPlanName: data.lessonPlanName || null,
+          lessonPlanData: data.lessonPlanData || null,
+          academicYearId: yearId
+        }
+      })
     })
 
     revalidatePath("/teacher/du-gio")
@@ -406,6 +404,11 @@ export async function registerObservation(slotId: string) {
 
     if (!slot) {
       return { success: false, error: "Observation slot not found" }
+    }
+
+    // Chặn đăng ký dự giờ tiết dạy đã diễn ra trong quá khứ
+    if (new Date(slot.date) < new Date()) {
+      return { success: false, error: "Không thể đăng ký dự giờ tiết dạy đã diễn ra." }
     }
 
     if (slot.status !== "ACTIVE") {
@@ -451,6 +454,20 @@ export async function cancelObservation(slotId: string) {
 
     if (!currentTeacher) {
       return { success: false, error: "Teacher profile not found" }
+    }
+
+    // Kiểm tra xem đã nộp phiếu đánh giá hoặc tiết học đã diễn ra hay chưa
+    const registration = await prisma.observationRegistration.findFirst({
+      where: { slotId, teacherId: currentTeacher.id },
+      include: { evaluation: true, slot: true }
+    });
+    if (registration) {
+      if (registration.evaluation) {
+        return { success: false, error: "Thầy/Cô đã nộp phiếu đánh giá. Không thể hủy đăng ký dự giờ." }
+      }
+      if (new Date(registration.slot.date) <= new Date()) {
+        return { success: false, error: "Tiết dạy đã diễn ra. Không thể hủy đăng ký dự giờ." }
+      }
     }
 
     await prisma.observationRegistration.deleteMany({
@@ -591,8 +608,16 @@ export async function submitEvaluation(data: {
     if (!session || !session.user) return { success: false, error: "Unauthorized" }
     const currentTeacher = await prisma.teacher.findUnique({ where: { userId: session.user.id } })
     if (!currentTeacher) return { success: false, error: "Teacher profile not found" }
-    const registration = await prisma.observationRegistration.findUnique({ where: { id: data.registrationId }, include: { evaluation: true } })
+    const registration = await prisma.observationRegistration.findUnique({ 
+      where: { id: data.registrationId }, 
+      include: { evaluation: true, slot: true } 
+    })
     if (!registration) return { success: false, error: "Không tìm thấy đăng ký dự giờ" }
+    
+    // Chặn nộp chấm điểm sớm khi tiết học chưa diễn ra
+    if (new Date(registration.slot.date) > new Date()) {
+      return { success: false, error: "Tiết học chưa diễn ra. Không thể nộp phiếu đánh giá trước thời gian học." }
+    }
     if (registration.teacherId !== currentTeacher.id) return { success: false, error: "Không có quyền nộp phiếu này" }
     if (!registration.isApproved) return { success: false, error: "Cần được xác nhận dự giờ trước khi nộp phiếu đánh giá" }
     const evalData = {

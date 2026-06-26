@@ -349,6 +349,19 @@ export async function getCriteriaExtremeFrequencies() {
     const evals = await prisma.observationEvaluation.findMany({
       where: {
         totalScore: { not: null }
+      },
+      select: {
+        score1: true,
+        score2: true,
+        score3: true,
+        score4: true,
+        score5: true,
+        score6: true,
+        score7: true,
+        score8: true,
+        score9: true,
+        score10: true,
+        score11: true,
       }
     });
 

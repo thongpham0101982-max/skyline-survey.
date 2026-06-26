@@ -75,6 +75,9 @@ model Teacher {
 
   academicYearTargets TeacherAcademicYearTarget[]
   achievements       Achievement[]
+
+  @@index([campusId])
+  @@index([departmentId])
 }
 
 model Campus {
@@ -146,6 +149,9 @@ model Class {
   teachingAssignments TeachingAssignment[]
   generalEnrollments  InputAssessmentStudent[] @relation("GeneralEnrollmentClass")
   preschoolEnrollments PreschoolInputAssessmentStudent[] @relation("PreschoolEnrollmentClass")
+
+  @@index([campusId])
+  @@index([academicYearId])
 }
 
 model TeacherClassAssignment {
@@ -180,6 +186,10 @@ model Student {
   //  user           User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
   exams            ExamStudent[]
   achievements     StudentAchievement[]
+
+  @@index([classId])
+  @@index([campusId])
+  @@index([academicYearId])
 }
 
 model ParentStudentLink {
@@ -212,6 +222,9 @@ model SurveyPeriod {
   campusId        String?
   campus          Campus?           @relation(fields: [campusId], references: [id])
   questions       SurveyQuestion[]
+
+  @@index([academicYearId])
+  @@index([campusId])
 }
 
 model SurveySection {
@@ -240,6 +253,9 @@ model SurveyQuestion {
   surveyPeriod   SurveyPeriod?    @relation(fields: [surveyPeriodId], references: [id])
   section        SurveySection?   @relation(fields: [sectionId], references: [id])
   responses      SurveyResponse[]
+
+  @@index([sectionId])
+  @@index([surveyPeriodId])
 }
 
 model SurveyForm {
@@ -266,6 +282,10 @@ model SurveyForm {
   // Note: For students, we might need another check or just rely on this if student surveys have parentId=null
 
   @@unique([parentId, studentId, surveyPeriodId]) // For parents
+  @@index([studentId])
+  @@index([classId])
+  @@index([campusId])
+  @@index([academicYearId])
 }
 
 model SurveyResponse {
@@ -279,6 +299,9 @@ model SurveyResponse {
   createdAt               DateTime       @default(now())
   question                SurveyQuestion @relation(fields: [questionId], references: [id])
   form                    SurveyForm     @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@index([formId])
+  @@index([questionId])
 }
 
 model SummaryByClass {
@@ -346,6 +369,8 @@ model Notification {
   link      String?
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Subject {
@@ -1015,6 +1040,9 @@ model ObservationEvaluation {
   submittedAt      DateTime @default(now())
 
   registration     ObservationRegistration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+
+  @@index([slotId])
+  @@index([evaluatorId])
 }
 
 model ChatbotConfig {
@@ -1083,6 +1111,11 @@ model Exam {
   updatedAt      DateTime      @updatedAt
   students       ExamStudent[]
   achievements   Achievement[]
+
+  @@index([categoryId])
+  @@index([roundId])
+  @@index([academicYearId])
+  @@index([departmentId])
 }
 
 model ExamRound {
@@ -1112,6 +1145,7 @@ model ExamStudent {
   updatedAt   DateTime @updatedAt
 
   @@unique([examId, studentId])
+  @@index([studentId])
 }
 
 model Achievement {
@@ -1147,4 +1181,21 @@ model StudentAchievement {
   @@unique([studentId, achievementId])
   @@index([studentId])
   @@index([achievementId])
+}
+
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String
+  userEmail   String
+  action      String   // e.g. "STUDENT_TRANSFER", "SCORE_UPDATE"
+  targetTable String   // e.g. "Student", "PreschoolDevScore"
+  targetId    String
+  oldValues   String?  // JSON string format
+  newValues   String?  // JSON string format
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([targetTable, targetId])
 }

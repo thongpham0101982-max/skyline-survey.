@@ -18,15 +18,16 @@ export default async function NpsDashboardPage() {
     }
   })
 
-  const submittedCounts = await Promise.all(
-    periods.map(async (p) => {
-      const count = await prisma.surveyForm.count({
-        where: { surveyPeriodId: p.id, status: { in: ["SUBMITTED", "submitted"] } }
-      })
-      return { id: p.id, submitted: count }
-    })
-  )
-  const submittedMap = Object.fromEntries(submittedCounts.map(x => [x.id, x.submitted]))
+  const submittedCounts = await prisma.surveyForm.groupBy({
+    by: ['surveyPeriodId'],
+    where: {
+      status: { in: ["SUBMITTED", "submitted"] }
+    },
+    _count: {
+      _all: true
+    }
+  })
+  const submittedMap = Object.fromEntries(submittedCounts.map(x => [x.surveyPeriodId, x._count._all]))
 
   return (
     <div className="space-y-8 pb-20 animate-in fade-in duration-700">

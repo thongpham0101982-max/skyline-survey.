@@ -208,13 +208,52 @@ export async function importTeachersAction(rows: any[], academicYearId?: string)
   let created = 0, skipped = 0
   const errors: string[] = []
 
+  // 1. Pre-fetch lookups to avoid O(N) database queries inside the loop
+  const [campuses, departments, subjects] = await Promise.all([
+    prisma.campus.findMany(),
+    prisma.department.findMany({ where: { status: "ACTIVE" } }),
+    prisma.subject.findMany({ where: { status: "ACTIVE" } })
+  ])
+
+  // Helper Maps for O(1) in-memory lookups
+  const campusMap = new Map()
+  campuses.forEach(c => {
+    campusMap.set(c.id, c.id)
+    campusMap.set(c.campusName, c.id)
+    campusMap.set(c.campusCode, c.id)
+  })
+
+  const deptMap = new Map()
+  departments.forEach(d => {
+    deptMap.set(d.id, d.id)
+    deptMap.set(d.name, d.id)
+  })
+
+  const subMap = new Map()
+  subjects.forEach(s => {
+    subMap.set(s.id, s.id)
+    subMap.set(s.subjectName, s.id)
+  })
+
+  // 2. Pre-hash all teacherCodes in parallel to yield the single-threaded CPU loop periodically
+  const hashedPasswordsMap = new Map()
+  await Promise.all(
+    rows.map(async (row) => {
+      if (row.teacherCode) {
+        const hash = await bcrypt.hash(row.teacherCode, 10)
+        hashedPasswordsMap.set(row.teacherCode, hash)
+      }
+    })
+  )
+
+  // 3. Process database updates sequentially
   for (const row of rows) {
     if (!row.teacherCode || !row.teacherName) { skipped++; continue }
     try {
       const existing = await prisma.teacher.findUnique({ where: { teacherCode: row.teacherCode } })
       if (existing) { skipped++; continue }
 
-      const hashedPassword = await bcrypt.hash(row.teacherCode, 10)
+      const hashedPassword = hashedPasswordsMap.get(row.teacherCode) || await bcrypt.hash(row.teacherCode, 10)
       const existingUser = await prisma.user.findUnique({ where: { email: row.teacherCode } })
       let userId: string
       if (existingUser) {
@@ -226,8 +265,8 @@ export async function importTeachersAction(rows: any[], academicYearId?: string)
         userId = user.id
       }
 
-      const departmentId = await resolveDepartmentId(row.department)
-      const mainSubjectId = await resolveSubjectId(row.mainSubject)
+      const departmentId = row.department ? (deptMap.get(row.department) || null) : null
+      const mainSubjectId = row.mainSubject ? (subMap.get(row.mainSubject) || null) : null
       
       let campusId = defaultCampusId;
       let additionalCampusIds = [];
@@ -237,11 +276,11 @@ export async function importTeachersAction(rows: any[], academicYearId?: string)
           ? row.campus.split(/[,;|]/).map(s => s.trim())
           : [row.campus];
         
-        const primaryResolved = await resolveCampusId(campusParts[0]);
+        const primaryResolved = campusMap.get(campusParts[0]);
         if (primaryResolved) campusId = primaryResolved;
 
         for (let i = 1; i < campusParts.length; i++) {
-          const cid = await resolveCampusId(campusParts[i]);
+          const cid = campusMap.get(campusParts[i]);
           if (cid) additionalCampusIds.push(cid);
         }
       }

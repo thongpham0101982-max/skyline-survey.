@@ -1,6 +1,8 @@
 ﻿import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import TeacherAssessmentsClient from "./client"
+import { prisma } from "@/lib/db"
+import { isRedirectError } from "next/dist/client/components/redirect"
 
 export default async function TeacherAssessmentsPage() {
   const session = await auth()
@@ -14,12 +16,12 @@ export default async function TeacherAssessmentsPage() {
   
   if (!isAuthorizedRole) {
     try {
-      const { prisma } = require("@/lib/db");
       const teacher = await prisma.teacher.findUnique({ where: { userId: session.user.id } });
       if (!teacher) {
         redirect("/");
       }
     } catch (e) {
+      if (isRedirectError(e)) throw e;
       redirect("/");
     }
   }

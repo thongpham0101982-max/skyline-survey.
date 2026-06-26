@@ -16,8 +16,11 @@ export interface AdminSession {
 
 export async function getAdminSession(): Promise<AdminSession> {
   const session = await auth()
+  if (!session) {
+    return { userId: "", role: "", allowedCampusIds: [], isFullAccess: false }
+  }
   const userId = (session?.user as any)?.id || ""
-  const role = (session?.user as any)?.role || "ADMIN"
+  const role = (session?.user as any)?.role || ""
   const isFullAccess = FULL_ACCESS_ROLES.includes(role)
   if (isFullAccess) return { userId, role, allowedCampusIds: [], isFullAccess: true }
 

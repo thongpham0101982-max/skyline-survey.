@@ -1,6 +1,7 @@
 "use server"
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
+import { getAdminSession } from "@/lib/session"
 
 // 1. Batch Save Exam Results in an Excel-like grid
 export async function saveExamResultsGridAction(
@@ -16,6 +17,10 @@ export async function saveExamResultsGridAction(
     teacherName: string | null
   }[]
 ) {
+  const session = await getAdminSession();
+  if (!session.userId || !session.isFullAccess) {
+    throw new Error("Forbidden: Quyền truy cập bị từ chối.");
+  }
   if (!examId || !academicYearId) return
 
   await prisma.$transaction(async (tx) => {
@@ -90,6 +95,8 @@ export async function saveExamResultsGridAction(
 
 // 2. Fetch students with results for an exam
 export async function getStudentsWithResultsAction(examId: string) {
+  const session = await getAdminSession();
+  if (!session.userId) return [];
   if (!examId) return []
 
   const examStudents = await prisma.examStudent.findMany({
@@ -129,6 +136,7 @@ export async function getStudentsWithResultsAction(examId: string) {
   const resultRows: any[] = []
 
   for (const es of examStudents) {
+    if (!es.student) continue;
     const studentAchs = achievements.filter(a => 
       a.students.some(s => s.studentId === es.studentId)
     )
@@ -182,6 +190,8 @@ export async function getAchievementsReportAction(filters: {
   category?: string
   level?: string
 }) {
+  const session = await getAdminSession();
+  if (!session.userId) return [];
   const where: any = {}
 
   if (filters.academicYearId) {

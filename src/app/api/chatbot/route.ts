@@ -11,8 +11,33 @@ import {
   getCriteriaExtremeFrequencies
 } from "@/lib/chatbot/tools";
 
+// Simple in-memory rate limiting map to prevent abuse/spam of Gemini API
+const rateLimitMap = new Map();
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
+const MAX_REQUESTS_PER_MINUTE = 10;
+
 export async function POST(req: Request) {
   try {
+    // Rate Limiting Check
+    const ip = req.headers.get("x-forwarded-for") || "global-client";
+    const now = Date.now();
+    const clientLimit = rateLimitMap.get(ip) || { count: 0, lastReset: now };
+
+    if (now - clientLimit.lastReset > RATE_LIMIT_WINDOW) {
+      clientLimit.count = 1;
+      clientLimit.lastReset = now;
+      rateLimitMap.set(ip, clientLimit);
+    } else {
+      clientLimit.count++;
+      rateLimitMap.set(ip, clientLimit);
+      if (clientLimit.count > MAX_REQUESTS_PER_MINUTE) {
+        return Response.json(
+          { error: "Thầy/Cô đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau 1 phút." },
+          { status: 429 }
+        );
+      }
+    }
+
     const { message, history, chatbotCode } = await req.json();
 
     const apiKey = process.env.GEMINI_API_KEY;
@@ -177,25 +202,29 @@ export async function POST(req: Request) {
         } else if (call.name === "getObservationCriteriaGuidelines") {
           toolResult = await getObservationCriteriaGuidelines();
         } else if (call.name === "getTeacherActivityInMonth") {
-          if (currentUser?.role !== "ADMIN") {
+          const isAdmin = ["ADMIN", "ADMINISTRATOR", "KT_DBCL"].includes(currentUser?.role || "");
+          if (!isAdmin) {
             toolResult = { error: "Bạn không có quyền xem thông tin thống kê hoạt động của giáo viên khác." };
           } else {
             toolResult = await getTeacherActivityInMonth(call.args.teacherNameOrCode as string);
           }
         } else if (call.name === "getLowestAverageScoreTaughtPeriod") {
-          if (currentUser?.role !== "ADMIN") {
+          const isAdmin = ["ADMIN", "ADMINISTRATOR", "KT_DBCL"].includes(currentUser?.role || "");
+          if (!isAdmin) {
             toolResult = { error: "Bạn không có quyền truy cập thông tin tiết dạy có điểm thấp nhất." };
           } else {
             toolResult = await getLowestAverageScoreTaughtPeriod();
           }
         } else if (call.name === "getDepartmentObservationStatsSummary") {
-          if (currentUser?.role !== "ADMIN") {
+          const isAdmin = ["ADMIN", "ADMINISTRATOR", "KT_DBCL"].includes(currentUser?.role || "");
+          if (!isAdmin) {
             toolResult = { error: "Bạn không có quyền xem thống kê tổ chuyên môn." };
           } else {
             toolResult = await getDepartmentObservationStatsSummary(call.args.deptName as string);
           }
         } else if (call.name === "getCriteriaExtremeFrequencies") {
-          if (currentUser?.role !== "ADMIN") {
+          const isAdmin = ["ADMIN", "ADMINISTRATOR", "KT_DBCL"].includes(currentUser?.role || "");
+          if (!isAdmin) {
             toolResult = { error: "Bạn không có quyền truy cập phân tích tần số tiêu chí đánh giá." };
           } else {
             toolResult = await getCriteriaExtremeFrequencies();
@@ -227,7 +256,7 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error("ChatBot API error:", error);
     return Response.json(
-      { error: "Đã xảy ra lỗi hệ thống: " + error.message },
+      { error: "Đã xảy ra lỗi hệ thống. Vui lòng liên hệ quản trị viên." },
       { status: 500 }
     );
   }

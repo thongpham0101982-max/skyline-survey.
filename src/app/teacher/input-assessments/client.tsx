@@ -31,6 +31,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     const [students, setStudents] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [saveStatus, setSaveStatus] = useState<Record<string, string>>({});
+    const [stats, setStats] = useState<any>(null);
 
 
     const [academicYear, setAcademicYear] = useState<string | null>(null);
@@ -43,6 +44,20 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
         handleYearChange();
         return () => window.removeEventListener("academicYearChanged", handleYearChange);
     }, []);
+
+    useEffect(() => {
+        if (academicYear === null) return;
+        fetch(`/api/teacher-assessments?action=getStats&academicYearId=${academicYear}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data && typeof data.total === 'number') {
+                    setStats(data);
+                } else {
+                    setStats(null);
+                }
+            })
+            .catch(() => setStats(null));
+    }, [academicYear]);
 
     useEffect(() => {
         if (academicYear === null) return;
@@ -397,6 +412,30 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                     <p className="text-xs text-slate-700 leading-relaxed font-semibold">
                         Thân chào thầy/cô <strong className="text-[#00A99D]">{user?.fullName || user?.name || "Giáo viên"}</strong>. Bạn được phân công <strong className="text-slate-800">{currentAssignment?.batch?.name || "các đợt khảo sát"}</strong> trong kỳ khảo sát <strong className="text-slate-800">{currentAssignment?.period?.name}</strong>. Vui lòng thực hiện khảo sát theo phân công. Trân trọng!
                     </p>
+                </div>
+            )}
+
+            {/* Thống kê số học sinh khảo sát theo khối trong năm */}
+            {stats && stats.total > 0 && (
+                <div className="bg-white border-2 border-teal-100 rounded-2xl p-5 shadow-xs flex flex-col gap-4 animate-in fade-in slide-in-from-top-3">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-teal-50 text-[#00A99D] flex items-center justify-center">
+                            <Users className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-slate-800 text-sm">Thống kê Học sinh Khảo sát trong năm</h3>
+                            <p className="text-xs text-slate-500 mt-0.5">Tổng số học sinh khảo sát trong năm: <span className="font-black text-[#00A99D] text-sm">{stats.total}</span> học sinh</p>
+                        </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100">
+                        {Object.entries(stats.grades)
+                            .sort((a, b) => a[0].localeCompare(b[0], undefined, { numeric: true }))
+                            .map(([grade, count]) => (
+                                <span key={grade} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black bg-teal-50 text-[#00A99D] border border-teal-100 hover:bg-[#00A99D]/5 transition-colors">
+                                    {grade}: <span className="text-slate-800 font-extrabold">{count} HS</span>
+                                </span>
+                            ))}
+                    </div>
                 </div>
             )}
 

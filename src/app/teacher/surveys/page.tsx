@@ -45,6 +45,36 @@ export default async function TeacherSurveysPage() {
     orderBy: { startDate: 'desc' }
   })
 
+  // Thống kê học sinh khảo sát theo khối trong năm học active
+  const studentForms = await prisma.surveyForm.findMany({
+    where: {
+      classId: { in: classIds },
+      academicYearId: activeYearId
+    },
+    select: {
+      studentId: true,
+      class: {
+        select: {
+          grade: true
+        }
+      }
+    }
+  })
+
+  const uniqueStudentsMap = new Map();
+  studentForms.forEach(f => {
+    uniqueStudentsMap.set(f.studentId, f.class.grade || "Khác");
+  });
+
+  const gradeCounts = {};
+  uniqueStudentsMap.forEach((grade) => {
+    const displayGrade = grade ? `Khối ${grade}` : "Khác";
+    gradeCounts[displayGrade] = (gradeCounts[displayGrade] || 0) + 1;
+  });
+
+  const totalStudents = uniqueStudentsMap.size;
+  const sortedGrades = Object.entries(gradeCounts).sort((a, b) => a[0].localeCompare(b[0], undefined, { numeric: true }));
+
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-12">
       <div>
@@ -53,6 +83,33 @@ export default async function TeacherSurveysPage() {
       </div>
       
       <SurveyTabs activeTab="surveys" role="TEACHER" />
+
+      {/* Thống kê số học sinh khảo sát theo khối */}
+      <div className="bg-white border-2 border-teal-100 rounded-2xl p-5 shadow-xs flex flex-col gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-teal-50 text-[#00A99D] flex items-center justify-center">
+            <Users className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="font-bold text-slate-800 text-sm">Thống kê Học sinh Khảo sát trong năm</h3>
+            <p className="text-xs text-slate-500 mt-0.5">Tổng số học sinh được phân công khảo sát: <span className="font-black text-[#00A99D] text-sm">${totalStudents}</span> học sinh</p>
+          </div>
+        </div>
+        
+        {sortedGrades.length > 0 ? (
+          <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100">
+            {sortedGrades.map(([grade, count]) => (
+              <span key={grade} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black bg-teal-50 text-[#00A99D] border border-teal-100 hover:bg-[#00A99D]/5 transition-colors">
+                ${grade}: <span className="text-slate-800 font-extrabold">${count} HS</span>
+              </span>
+            ))}
+          </div>
+        ) : (
+          <div className="text-xs text-slate-400 font-medium italic pt-2 border-t border-slate-100">
+            Chưa có thông tin phân khối học sinh khảo sát.
+          </div>
+        )}
+      </div>
       
       <div className="grid gap-4 mt-8">
         {surveys.length === 0 ? (

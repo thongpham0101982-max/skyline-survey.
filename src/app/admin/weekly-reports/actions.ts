@@ -82,23 +82,26 @@ export async function saveWeeklyReport(data: {
     })
 
     if (report) {
-      // Delete old items and recreate
-      await prisma.weeklyReportItem.deleteMany({ where: { reportId: report.id } })
-      report = await prisma.weeklyReport.update({
-        where: { id: report.id },
-        data: {
-          status: "SUBMITTED",
-          academicYearId: data.academicYearId || null,
-          items: {
-            create: data.items.map(item => ({
-              mainTask: item.mainTask,
-              workContent: item.workContent,
-              progress: item.progress,
-              proposedSolution: item.proposedSolution || ""
-            }))
-          }
-        },
-        include: { items: true }
+      // Wrap in a transaction to prevent data loss if the update fails after deleting items
+      const reportId = report.id
+      report = await prisma.$transaction(async (tx) => {
+        await tx.weeklyReportItem.deleteMany({ where: { reportId } })
+        return tx.weeklyReport.update({
+          where: { id: reportId },
+          data: {
+            status: "SUBMITTED",
+            academicYearId: data.academicYearId || null,
+            items: {
+              create: data.items.map(item => ({
+                mainTask: item.mainTask,
+                workContent: item.workContent,
+                progress: item.progress,
+                proposedSolution: item.proposedSolution || ""
+              }))
+            }
+          },
+          include: { items: true }
+        })
       })
     } else {
       report = await prisma.weeklyReport.create({

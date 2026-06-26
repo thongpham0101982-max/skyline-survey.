@@ -1,6 +1,7 @@
 "use server"
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
+import { getAdminSession } from "@/lib/session"
 
 export async function createExamAction(data: {
   name: string
@@ -16,6 +17,10 @@ export async function createExamAction(data: {
   academicYearId?: string
   grade?: string
 }) {
+  const session = await getAdminSession();
+  if (!session.userId || !session.isFullAccess) {
+    throw new Error("Forbidden: Quyền truy cập bị từ chối.");
+  }
   await prisma.exam.create({
     data: {
       name: data.name,
@@ -50,6 +55,10 @@ export async function updateExamAction(data: {
   academicYearId?: string
   grade?: string
 }) {
+  const session = await getAdminSession();
+  if (!session.userId || !session.isFullAccess) {
+    throw new Error("Forbidden: Quyền truy cập bị từ chối.");
+  }
   const { id, ...rest } = data
   const updateData: any = { ...rest }
 
@@ -68,6 +77,10 @@ export async function updateExamAction(data: {
 }
 
 export async function deleteExamAction(id: string) {
+  const session = await getAdminSession();
+  if (!session.userId || !session.isFullAccess) {
+    throw new Error("Forbidden: Quyền truy cập bị từ chối.");
+  }
   await prisma.exam.delete({ where: { id } })
   revalidatePath("/admin/ktdbcl/exams")
 }

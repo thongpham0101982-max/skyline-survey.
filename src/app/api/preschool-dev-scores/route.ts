@@ -25,6 +25,8 @@ function isPreschoolAssignmentMatch(aGrade: string, formAgeGroup: string, isStag
 }
 
 export async function GET(req: NextRequest) {
+  const session = await auth()
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   try {
     const { searchParams } = new URL(req.url)
     const studentId = searchParams.get("studentId")
@@ -234,7 +236,8 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ error: "Need studentId or periodId" }, { status: 400 })
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 })
+    console.error("Preschool Dev Scores API error:", e);
+    return NextResponse.json({ error: "Đã xảy ra lỗi hệ thống khi lưu trữ/truy xuất dữ liệu." }, { status: 500 })
   }
 }
 
@@ -252,37 +255,46 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Cần studentId và mảng scores" }, { status: 400 })
     }
 
-    // Upsert each score
-    const results = []
-    for (const s of scores) {
-      if (!s.criteriaId || !s.result) continue
-      const upserted = await (prisma as any).preschoolDevScore.upsert({
-        where: {
-          studentId_criteriaId: { studentId, criteriaId: s.criteriaId }
-        },
-        create: {
-          studentId,
-          criteriaId: s.criteriaId,
-          result: s.result,
-          note: s.note || null,
-          assessorId: s.assessorId || null
-        },
-        update: {
-          result: s.result,
-          note: s.note || null,
-          assessorId: s.assessorId || null
-        }
-      })
-      results.push(upserted)
-    }
-
     // Fetch student's current record to verify and safeguard permissions
     const student = await (prisma as any).preschoolInputAssessmentStudent.findUnique({
-      where: { id: studentId }
+      where: { id: studentId },
+      include: { period: true, batch: true }
     })
     if (!student) {
       return NextResponse.json({ error: "Không tìm thấy học sinh" }, { status: 404 })
     }
+
+    // Kiểm tra khóa kỳ/đợt khảo sát mầm non
+    const isPeriodLocked = student.period?.status !== "ACTIVE";
+    const isBatchLocked = student.batch?.status === "LOCKED" || student.batch?.status === "CLOSED";
+    if (isPeriodLocked || isBatchLocked) {
+      return NextResponse.json({ error: "Hạng mục khảo sát mầm non (Kỳ/Đợt) đã bị Khóa. Không thể sửa điểm!" }, { status: 403 })
+    }
+
+    // Upsert each score in transaction
+    const results = await prisma.$transaction(
+      scores
+        .filter((s) => s.criteriaId && s.result)
+        .map((s) =>
+          (prisma as any).preschoolDevScore.upsert({
+            where: {
+              studentId_criteriaId: { studentId, criteriaId: s.criteriaId }
+            },
+            create: {
+              studentId,
+              criteriaId: s.criteriaId,
+              result: s.result,
+              note: s.note || null,
+              assessorId: s.assessorId || null
+            },
+            update: {
+              result: s.result,
+              note: s.note || null,
+              assessorId: s.assessorId || null
+            }
+          })
+        )
+    )
 
     // Fetch user campus assignments to check for campus-bound rules
     const userAssignments = await prisma.userCampusAssignment.findMany({
@@ -398,6 +410,14 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const session = await auth()
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  const currentUser = session?.user as any
+  const userRole = (currentUser?.role || "").toUpperCase()
+  const isGlobalAdmin = userRole === "ADMIN" || userRole === "KT_DBCL" || userRole === "BGH MN" || userRole === "BGH_MN"
+  if (!isGlobalAdmin) {
+    return NextResponse.json({ error: "Forbidden: Chỉ quản trị viên mới được phép xóa điểm." }, { status: 403 })
+  }
   try {
     const { searchParams } = new URL(req.url)
     const studentId = searchParams.get("studentId")

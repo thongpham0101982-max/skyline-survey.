@@ -1,8 +1,11 @@
 "use server"
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
+import { getAdminSession } from "@/lib/session"
 
 export async function getStudentsByClassAction(classId: string, examId: string) {
+  const session = await getAdminSession();
+  if (!session.userId) return [];
   if (!classId || !examId) return []
 
   // Fetch all students in the class
@@ -42,6 +45,10 @@ export async function getStudentsByClassAction(classId: string, examId: string) 
 }
 
 export async function registerStudentsAction(examId: string, studentIds: string[]) {
+  const session = await getAdminSession();
+  if (!session.userId || !session.isFullAccess) {
+    throw new Error("Forbidden: Quyền truy cập bị từ chối.");
+  }
   if (!examId || studentIds.length === 0) return
 
   // Query existing registrations to avoid duplicates
@@ -68,6 +75,10 @@ export async function registerStudentsAction(examId: string, studentIds: string[
 }
 
 export async function deregisterStudentsAction(examId: string, studentIds: string[]) {
+  const session = await getAdminSession();
+  if (!session.userId || !session.isFullAccess) {
+    throw new Error("Forbidden: Quyền truy cập bị từ chối.");
+  }
   if (!examId || studentIds.length === 0) return
 
   await prisma.examStudent.deleteMany({
@@ -83,6 +94,8 @@ export async function deregisterStudentsAction(examId: string, studentIds: strin
 }
 
 export async function getAllRegisteredStudentsAction(examId: string) {
+  const session = await getAdminSession();
+  if (!session.userId) return [];
   if (!examId) return []
 
   const registrations = await prisma.examStudent.findMany({
@@ -102,7 +115,7 @@ export async function getAllRegisteredStudentsAction(examId: string) {
     }
   })
 
-  return registrations.map(r => ({
+  return registrations.filter(r => r.student !== null).map(r => ({
     id: r.student.id,
     studentCode: r.student.studentCode,
     studentName: r.student.studentName,

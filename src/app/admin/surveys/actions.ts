@@ -15,7 +15,12 @@ export async function createSurveyPeriodAction(data: {
     return { error: "Thiếu thông tin bắt buộc" }
   }
 
-  const code = "KS-" + Date.now()
+  if (new Date(startDate) >= new Date(endDate)) {
+    return { error: "Ngày bắt đầu đợt khảo sát phải trước ngày kết thúc." }
+  }
+
+  // Sinh mã code có kết hợp số ngẫu nhiên tránh xung đột trùng lặp khi bấm đồng thời
+  const code = "KS-" + Date.now() + "-" + Math.floor(1000 + Math.random() * 9000)
 
   try {
     await prisma.surveyPeriod.create({
@@ -41,6 +46,17 @@ export async function createSurveyPeriodAction(data: {
 
 export async function updateSurveyPeriodAction(data: any) {
   if (!data.id) return { error: "Thiếu ID" }
+
+  if (data.startDate || data.endDate) {
+    const existing = await prisma.surveyPeriod.findUnique({ where: { id: data.id } })
+    if (existing) {
+      const newStart = data.startDate ? new Date(data.startDate) : new Date(existing.startDate)
+      const newEnd = data.endDate ? new Date(data.endDate) : new Date(existing.endDate)
+      if (newStart >= newEnd) {
+        return { error: "Ngày bắt đầu đợt khảo sát phải trước ngày kết thúc." }
+      }
+    }
+  }
 
   const payload: any = {}
   if (data.name) payload.name = data.name
