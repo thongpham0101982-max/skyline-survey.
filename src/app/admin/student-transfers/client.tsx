@@ -84,7 +84,7 @@ export function StudentTransfersClient() {
           onClick={() => setActiveSubTab("general")}
           className={`flex items-center gap-2 px-6 py-3.5 font-bold text-sm transition-all border-b-2 -mb-px rounded-t-xl ${
             activeSubTab === "general"
-              ? "border-[#00A6A9] text-[#00A6A9] bg-slate-50/50"
+              ? "border-[#00A99D] text-[#00A99D] bg-slate-50/50"
               : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50/20"
           }`}
         >
@@ -95,7 +95,7 @@ export function StudentTransfersClient() {
           onClick={() => setActiveSubTab("preschool")}
           className={`flex items-center gap-2 px-6 py-3.5 font-bold text-sm transition-all border-b-2 -mb-px rounded-t-xl ${
             activeSubTab === "preschool"
-              ? "border-[#00A6A9] text-[#00A6A9] bg-slate-50/50"
+              ? "border-[#00A99D] text-[#00A99D] bg-slate-50/50"
               : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50/20"
           }`}
         >
@@ -132,7 +132,7 @@ export function StudentTransfersClient() {
             onClick={() => setActiveTab("CHANGE_CLASS")}
             className={`flex items-center px-6 py-4 text-sm font-bold rounded-2xl transition-all whitespace-nowrap ${
               activeTab === "CHANGE_CLASS"
-                ? "bg-[#00A19A]/10 text-[#00A19A] border-b-4 border-indigo-500 shadow-sm"
+                ? "bg-[#00A99D]/10 text-[#00A99D] border-b-4 border-indigo-500 shadow-sm"
                 : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
             }`}
           >
@@ -149,13 +149,13 @@ export function StudentTransfersClient() {
            </div>
            
            {activeTab === "OUT" && (
-             <button onClick={() => setShowOutModal(true)} className="px-6 py-3 bg-[#00A19A] text-white font-bold rounded-2xl hover:bg-[#008c85] transition-all flex items-center shadow-lg shadow-[#00A19A]/20">
+             <button onClick={() => setShowOutModal(true)} className="px-6 py-3 bg-[#00A99D] text-white font-bold rounded-2xl hover:bg-[#009085] transition-all flex items-center shadow-lg shadow-[#00A99D]/20">
                <Plus className="w-5 h-5 mr-2" /> Tạo phiếu Chuyển đi
              </button>
            )}
 
            {activeTab === "CHANGE_CLASS" && (
-             <button onClick={() => setShowChangeModal(true)} className="px-6 py-3 bg-[#00A19A] text-white font-bold rounded-2xl hover:bg-[#008c85] transition-all flex items-center shadow-lg shadow-[#00A19A]/20">
+             <button onClick={() => setShowChangeModal(true)} className="px-6 py-3 bg-[#00A99D] text-white font-bold rounded-2xl hover:bg-[#009085] transition-all flex items-center shadow-lg shadow-[#00A99D]/20">
                <Plus className="w-5 h-5 mr-2" /> Tạo phiếu Chuyển lớp
              </button>
            )}
@@ -225,7 +225,7 @@ export function StudentTransfersClient() {
                     <tr key={t.id} className="hover:bg-slate-50 text-xs font-semibold">
                       <td className="p-2 font-medium text-slate-700 border border-slate-200">{new Date(t.transferDate).toLocaleDateString('vi-VN')} <br/><span className="text-xs text-slate-400">{t.semester === 'HK1' ? 'Học kỳ 1' : t.semester === 'HK2' ? 'Học kỳ 2' : t.semester === 'SUMMER' ? 'Trong hè' : ''}</span></td>
                       <td className="p-2 font-bold text-slate-900 border border-slate-200">{t.student?.studentName} <br/><span className="text-xs font-medium text-slate-400">{t.student?.studentCode}</span></td>
-                      <td className="p-2 font-medium text-[#00A19A] border border-slate-200">{t.destinationSchool}</td>
+                      <td className="p-2 font-medium text-[#00A99D] border border-slate-200">{t.destinationSchool}</td>
                       <td className="p-2 text-slate-600 border border-slate-200">{t.reason}</td>
                     </tr>
                   ))}
@@ -343,7 +343,7 @@ export function StudentTransfersClient() {
                                   setEditingTransfer(t);
                                   setShowInModal(true);
                                 }}
-                                className="text-[#00A19A] font-bold hover:text-indigo-800 transition-colors"
+                                className="text-[#00A99D] font-bold hover:text-indigo-800 transition-colors"
                               >
                                 Sửa
                               </button>
@@ -559,7 +559,7 @@ function TransferOutModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
             </div>
 
             {form.transferCategory === "DOMESTIC" && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-[#00A19A]/10/50 p-4 rounded-2xl border border-[#00A19A]/20">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-[#00A99D]/10/50 p-4 rounded-2xl border border-[#00A99D]/20">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Trường chuyển đến</label>
                   <input type="text" placeholder="Tên trường" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 transition-colors" value={form.destinationSchool} onChange={e => setForm({...form, destinationSchool: e.target.value})} />
@@ -616,7 +616,7 @@ function TransferOutModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
               <button type="button" onClick={onClose} className="px-6 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-colors">
                 Hủy
               </button>
-              <button disabled={saving} type="submit" className="px-6 py-3 bg-[#00A19A] text-white font-bold rounded-xl hover:bg-[#008c85] transition-colors shadow-lg shadow-[#00A19A]/20 flex items-center">
+              <button disabled={saving} type="submit" className="px-6 py-3 bg-[#00A99D] text-white font-bold rounded-xl hover:bg-[#009085] transition-colors shadow-lg shadow-[#00A99D]/20 flex items-center">
                 {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Xác nhận chuyển
               </button>
@@ -774,8 +774,8 @@ function ChangeClassModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
 
             {/* Destination Info */}
             <div>
-              <h3 className="text-sm font-bold text-indigo-800 uppercase tracking-wider mb-4 pb-2 border-b border-[#00A19A]/20">Thông tin chuyển đến</h3>
-              <div className="grid grid-cols-2 gap-4 bg-[#00A19A]/10/50 p-4 rounded-2xl border border-[#00A19A]/20">
+              <h3 className="text-sm font-bold text-indigo-800 uppercase tracking-wider mb-4 pb-2 border-b border-[#00A99D]/20">Thông tin chuyển đến</h3>
+              <div className="grid grid-cols-2 gap-4 bg-[#00A99D]/10/50 p-4 rounded-2xl border border-[#00A99D]/20">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Cơ sở chuyển đến</label>
                   <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 transition-colors" value={form.destCampusId} onChange={e => setForm({...form, destCampusId: e.target.value})}>
@@ -818,7 +818,7 @@ function ChangeClassModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
               <button type="button" onClick={onClose} className="px-6 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-colors">
                 Hủy
               </button>
-              <button disabled={saving} type="submit" className="px-6 py-3 bg-[#00A19A] text-white font-bold rounded-xl hover:bg-[#008c85] transition-colors shadow-lg shadow-[#00A19A]/20 flex items-center">
+              <button disabled={saving} type="submit" className="px-6 py-3 bg-[#00A99D] text-white font-bold rounded-xl hover:bg-[#009085] transition-colors shadow-lg shadow-[#00A99D]/20 flex items-center">
                 {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Xác nhận chuyển lớp
               </button>

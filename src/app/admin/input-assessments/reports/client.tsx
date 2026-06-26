@@ -1426,9 +1426,9 @@ export function ReportsClient({
     const customFooterHtml = config.footer ? getImgTag(config.footer, "footer-img", "width: 100%; max-height: 100px; object-fit: contain;", "Footer") :
       '<div style="width: 100%; font-family: Arial, sans-serif; box-sizing: border-box; text-align: left;">' +
         '<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; width: 100%;">' +
-          '<span style="font-weight: bold; color: #00A6A9; white-space: nowrap; text-transform: uppercase; font-size: 11.5px; letter-spacing: 0.5px;">HỆ THỐNG GIÁO DỤC SKY-LINE</span>' +
+          '<span style="font-weight: bold; color: #00A99D; white-space: nowrap; text-transform: uppercase; font-size: 11.5px; letter-spacing: 0.5px;">HỆ THỐNG GIÁO DỤC SKY-LINE</span>' +
           '<div style="flex-grow: 1; border-top: 1px solid rgba(0, 166, 169, 0.7); height: 0; margin-top: 2px;"></div>' +
-          '<span style="font-weight: 600; color: #00A6A9; white-space: nowrap; text-transform: lowercase; font-size: 11px;">www.skylineschool.edu.vn</span>' +
+          '<span style="font-weight: 600; color: #00A99D; white-space: nowrap; text-transform: lowercase; font-size: 11px;">www.skylineschool.edu.vn</span>' +
         '</div>' +
       '</div>';
 
@@ -2033,12 +2033,12 @@ export function ReportsClient({
             )}
             <div className="relative z-10 flex flex-col justify-start h-full">
               <div>
-                <div className="header-container" style={{ display: "flex", flexDirection: "column", borderBottom: "1.5px solid #00A6A9", paddingBottom: "8px", marginBottom: "16px" }}>
+                <div className="header-container" style={{ display: "flex", flexDirection: "column", borderBottom: "1.5px solid #00A99D", paddingBottom: "8px", marginBottom: "16px" }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     {studentCampusConfig?.logo ? (
                       <img src={studentCampusConfig?.logo} alt="Logo" style={{ maxHeight: "48px", objectFit: "contain" }} />
                     ) : (
-                      <svg style={{ height: "48px", fill: "#00A6A9" }} viewBox="0 0 260 50"><text x="0" y="38" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="34" letterSpacing="-1">SKY-LINE</text><circle cx="178" cy="26" r="6" /></svg>
+                      <svg style={{ height: "48px", fill: "#00A99D" }} viewBox="0 0 260 50"><text x="0" y="38" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="34" letterSpacing="-1">SKY-LINE</text><circle cx="178" cy="26" r="6" /></svg>
                     )}
                   </div>
                   <div style={{ textAlign: "left", marginTop: "4px" }}>
@@ -2061,9 +2061,9 @@ export function ReportsClient({
               ) : (
                 <div style={{ width: "100%", fontFamily: '"Open Sans", sans-serif', boxSizing: "border-box", textAlign: "left" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", width: "100%" }}>
-                    <span style={{ fontWeight: "bold", color: "#00A6A9", whiteSpace: "nowrap", textTransform: "uppercase", fontSize: "9.5pt", letterSpacing: "0.5px" }}>HỆ THỐNG GIÁO DỤC SKY-LINE</span>
+                    <span style={{ fontWeight: "bold", color: "#00A99D", whiteSpace: "nowrap", textTransform: "uppercase", fontSize: "9.5pt", letterSpacing: "0.5px" }}>HỆ THỐNG GIÁO DỤC SKY-LINE</span>
                     <div style={{ flexGrow: 1, borderTop: "1px solid rgba(0, 166, 169, 0.7)", height: 0, marginTop: "2px" }}></div>
-                    <span style={{ fontWeight: "600", color: "#00A6A9", whiteSpace: "nowrap", textTransform: "lowercase", fontSize: "9pt" }}>www.skylineschool.edu.vn</span>
+                    <span style={{ fontWeight: "600", color: "#00A99D", whiteSpace: "nowrap", textTransform: "lowercase", fontSize: "9pt" }}>www.skylineschool.edu.vn</span>
                   </div>
                 </div>
               )}
@@ -2076,12 +2076,12 @@ export function ReportsClient({
               <img crossOrigin={(studentCampusConfig?.background || "").startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig?.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "110mm", height: "auto", opacity: 0.08, zIndex: 0, pointerEvents: "none" }} />
             )}
             <div className="relative z-10">
-              <div className="header-container" style={{ display: "flex", flexDirection: "column", borderBottom: "1.5px solid #00A6A9", paddingBottom: "8px", marginBottom: "16px" }}>
+              <div className="header-container" style={{ display: "flex", flexDirection: "column", borderBottom: "1.5px solid #00A99D", paddingBottom: "8px", marginBottom: "16px" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   {studentCampusConfig?.logo ? (
                     <img src={studentCampusConfig?.logo} alt="Logo" style={{ maxHeight: "48px", objectFit: "contain" }} />
                   ) : (
-                    <svg style={{ height: "48px", fill: "#00A6A9" }} viewBox="0 0 260 50"><text x="0" y="38" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="34" letterSpacing="-1">SKY-LINE</text><circle cx="178" cy="26" r="6" /></svg>
+                    <svg style={{ height: "48px", fill: "#00A99D" }} viewBox="0 0 260 50"><text x="0" y="38" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="34" letterSpacing="-1">SKY-LINE</text><circle cx="178" cy="26" r="6" /></svg>
                   )}
                 </div>
                 <div style={{ textAlign: "left", marginTop: "4px" }}>
@@ -2122,9 +2122,9 @@ export function ReportsClient({
               ) : (
                 <div style={{ width: "100%", fontFamily: '"Open Sans", sans-serif', boxSizing: "border-box", textAlign: "left" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", width: "100%" }}>
-                    <span style={{ fontWeight: "bold", color: "#00A6A9", whiteSpace: "nowrap", textTransform: "uppercase", fontSize: "9.5pt", letterSpacing: "0.5px" }}>HỆ THỐNG GIÁO DỤC SKY-LINE</span>
+                    <span style={{ fontWeight: "bold", color: "#00A99D", whiteSpace: "nowrap", textTransform: "uppercase", fontSize: "9.5pt", letterSpacing: "0.5px" }}>HỆ THỐNG GIÁO DỤC SKY-LINE</span>
                     <div style={{ flexGrow: 1, borderTop: "1px solid rgba(0, 166, 169, 0.7)", height: 0, marginTop: "2px" }}></div>
-                    <span style={{ fontWeight: "600", color: "#00A6A9", whiteSpace: "nowrap", textTransform: "lowercase", fontSize: "9pt" }}>www.skylineschool.edu.vn</span>
+                    <span style={{ fontWeight: "600", color: "#00A99D", whiteSpace: "nowrap", textTransform: "lowercase", fontSize: "9pt" }}>www.skylineschool.edu.vn</span>
                   </div>
                 </div>
               )}
@@ -2144,12 +2144,12 @@ export function ReportsClient({
 
           <div className={`relative z-10 flex flex-col justify-start ${isCommitment || studentCampusConfig?.title?.toUpperCase().includes("CAM KẾT") ? 'h-auto' : 'h-full'}`}>
             <div>
-              <div className="header-container" style={{ display: "flex", flexDirection: "column", borderBottom: "1.5px solid #00A6A9", paddingBottom: "8px", marginBottom: "16px" }}>
+              <div className="header-container" style={{ display: "flex", flexDirection: "column", borderBottom: "1.5px solid #00A99D", paddingBottom: "8px", marginBottom: "16px" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   {studentCampusConfig?.logo ? (
                     <img src={studentCampusConfig?.logo} alt="Logo" style={{ maxHeight: "48px", objectFit: "contain" }} />
                   ) : (
-                    <svg style={{ height: "48px", fill: "#00A6A9" }} viewBox="0 0 260 50"><text x="0" y="38" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="34" letterSpacing="-1">SKY-LINE</text><circle cx="178" cy="26" r="6" /></svg>
+                    <svg style={{ height: "48px", fill: "#00A99D" }} viewBox="0 0 260 50"><text x="0" y="38" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="34" letterSpacing="-1">SKY-LINE</text><circle cx="178" cy="26" r="6" /></svg>
                   )}
                 </div>
                 <div style={{ textAlign: "left", marginTop: "4px" }}>
@@ -2224,9 +2224,9 @@ export function ReportsClient({
             ) : (
               <div style={{ width: "100%", fontFamily: '"Open Sans", sans-serif', boxSizing: "border-box", textAlign: "left" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", width: "100%" }}>
-                  <span style={{ fontWeight: "bold", color: "#00A6A9", whiteSpace: "nowrap", textTransform: "uppercase", fontSize: "9.5pt", letterSpacing: "0.5px" }}>HỆ THỐNG GIÁO DỤC SKY-LINE</span>
+                  <span style={{ fontWeight: "bold", color: "#00A99D", whiteSpace: "nowrap", textTransform: "uppercase", fontSize: "9.5pt", letterSpacing: "0.5px" }}>HỆ THỐNG GIÁO DỤC SKY-LINE</span>
                   <div style={{ flexGrow: 1, borderTop: "1px solid rgba(0, 166, 169, 0.7)", height: 0, marginTop: "2px" }}></div>
-                  <span style={{ fontWeight: "600", color: "#00A6A9", whiteSpace: "nowrap", textTransform: "lowercase", fontSize: "9pt" }}>www.skylineschool.edu.vn</span>
+                  <span style={{ fontWeight: "600", color: "#00A99D", whiteSpace: "nowrap", textTransform: "lowercase", fontSize: "9pt" }}>www.skylineschool.edu.vn</span>
                 </div>
               </div>
             )}
@@ -2242,12 +2242,12 @@ export function ReportsClient({
 
             <div className="relative z-10 flex flex-col h-full justify-start">
               <div>
-                <div className="header-container" style={{ display: "flex", flexDirection: "column", borderBottom: "1.5px solid #00A6A9", paddingBottom: "8px", marginBottom: "16px" }}>
+                <div className="header-container" style={{ display: "flex", flexDirection: "column", borderBottom: "1.5px solid #00A99D", paddingBottom: "8px", marginBottom: "16px" }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     {studentCampusConfig?.logo ? (
                       <img src={studentCampusConfig?.logo} alt="Logo" style={{ maxHeight: "48px", objectFit: "contain" }} />
                     ) : (
-                      <svg style={{ height: "48px", fill: "#00A6A9" }} viewBox="0 0 260 50"><text x="0" y="38" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="34" letterSpacing="-1">SKY-LINE</text><circle cx="178" cy="26" r="6" /></svg>
+                      <svg style={{ height: "48px", fill: "#00A99D" }} viewBox="0 0 260 50"><text x="0" y="38" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="34" letterSpacing="-1">SKY-LINE</text><circle cx="178" cy="26" r="6" /></svg>
                     )}
                   </div>
                   <div style={{ textAlign: "left", marginTop: "4px" }}>
@@ -2294,9 +2294,9 @@ export function ReportsClient({
               ) : (
                 <div style={{ width: "100%", fontFamily: '"Open Sans", sans-serif', boxSizing: "border-box", textAlign: "left" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", width: "100%" }}>
-                    <span style={{ fontWeight: "bold", color: "#00A6A9", whiteSpace: "nowrap", textTransform: "uppercase", fontSize: "9.5pt", letterSpacing: "0.5px" }}>HỆ THỐNG GIÁO DỤC SKY-LINE</span>
+                    <span style={{ fontWeight: "bold", color: "#00A99D", whiteSpace: "nowrap", textTransform: "uppercase", fontSize: "9.5pt", letterSpacing: "0.5px" }}>HỆ THỐNG GIÁO DỤC SKY-LINE</span>
                     <div style={{ flexGrow: 1, borderTop: "1px solid rgba(0, 166, 169, 0.7)", height: 0, marginTop: "2px" }}></div>
-                    <span style={{ fontWeight: "600", color: "#00A6A9", whiteSpace: "nowrap", textTransform: "lowercase", fontSize: "9pt" }}>www.skylineschool.edu.vn</span>
+                    <span style={{ fontWeight: "600", color: "#00A99D", whiteSpace: "nowrap", textTransform: "lowercase", fontSize: "9pt" }}>www.skylineschool.edu.vn</span>
                   </div>
                 </div>
               )}
@@ -3570,7 +3570,7 @@ export function ReportsClient({
                       <img src={rcFooter} alt="Footer" className="w-full h-auto" />
                     </div>
                   ) : (
-                    <div className="border-t border-[#00A6A9]/50 pt-2 text-[5px] text-slate-400 text-center">
+                    <div className="border-t border-[#00A99D]/50 pt-2 text-[5px] text-slate-400 text-center">
                       <p className="font-bold">www.skylineschool.edu.vn • Hotline: (+84.236) 378 7777</p>
                     </div>
                   )}

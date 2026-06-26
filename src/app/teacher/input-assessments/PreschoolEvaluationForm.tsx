@@ -739,7 +739,7 @@ export default function PreschoolEvaluationForm({
                               <h4 className="font-bold text-slate-800 text-xs">{histRec.period?.name || "Kỳ khảo sát"}</h4>
                               <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${
                                 histRec.devAssessmentResult === "DAT" ? "bg-emerald-50 text-emerald-700 border border-emerald-250" :
-                                histRec.devAssessmentResult === "KHONG_DAT" ? "bg-rose-50 text-rose-700" : "bg-teal-50 text-[#00A19A]"
+                                histRec.devAssessmentResult === "KHONG_DAT" ? "bg-rose-50 text-rose-700" : "bg-teal-50 text-[#00A99D]"
                               }`}>
                                 {histRec.devAssessmentResult === "DAT" ? "Đạt" : histRec.devAssessmentResult === "KHONG_DAT" ? "Không Đạt" : histRec.devAssessmentResult === "HOC_THU" ? "Học thử" : "Chưa đánh giá"}
                               </span>

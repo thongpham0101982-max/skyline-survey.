@@ -46,8 +46,8 @@ const EMPTY_NEW = {
 const EMPTY_EDIT = { teacherName: "", dateOfBirth: "", department: "", mainSubject: "", campusId: "", status: "ACTIVE", email: "", additionalCampusIds: [], position: "GV" }
 
 const DEPT_COLORS = {
-  "KT&DBCL": "bg-[#00A19A]/5 text-[#00A19A]",
-  "KT-DBCL": "bg-[#00A19A]/5 text-[#00A19A]",
+  "KT&DBCL": "bg-[#00A99D]/5 text-[#00A99D]",
+  "KT-DBCL": "bg-[#00A99D]/5 text-[#00A99D]",
   "default": "bg-slate-50 text-slate-600"
 }
 function getDeptColor(dept) { return DEPT_COLORS[dept] || DEPT_COLORS["default"] }
@@ -263,9 +263,9 @@ export function TeacherManagerClient({
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white border border-slate-100 rounded-2xl p-6 flex items-center gap-4 hover:border-[#00A19A]/30 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 shadow-sm border-l-4 border-l-[#00A19A]">
-          <div className="w-12 h-12 rounded-xl bg-[#00A19A]/10 flex items-center justify-center flex-shrink-0">
-            <Users className="w-6 h-6 text-[#00A19A]" />
+        <div className="bg-white border border-slate-100 rounded-2xl p-6 flex items-center gap-4 hover:border-[#00A99D]/30 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 shadow-sm border-l-4 border-l-[#00A99D]">
+          <div className="w-12 h-12 rounded-xl bg-[#00A99D]/10 flex items-center justify-center flex-shrink-0">
+            <Users className="w-6 h-6 text-[#00A99D]" />
           </div>
           <div>
             <p className="text-2xl font-black text-slate-800 leading-none">{teachers.length}</p>
@@ -323,7 +323,7 @@ export function TeacherManagerClient({
           <div className="bg-white border border-slate-100 rounded-2xl p-2 shadow-sm flex flex-wrap gap-1.5">
             <button
               onClick={() => { setActiveBlockTab(""); setCurrentPage(1); setSelectedIds([]); }}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 ${!activeBlockTab ? "bg-[#00A19A] text-white shadow-md" : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"}`}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 ${!activeBlockTab ? "bg-[#00A99D] text-white shadow-md" : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"}`}
             >
               <Layers className="w-3.5 h-3.5" />
               <span>Tất cả</span>
@@ -347,25 +347,25 @@ export function TeacherManagerClient({
         );
       })()}
       {/* Toolbar */}
-      <div className="bg-white border border-slate-100 shadow-md shadow-slate-100/40 rounded-3xl p-6 space-y-4 border-t-4 border-t-[#00A19A]">
+      <div className="bg-white border border-slate-100 shadow-md shadow-slate-100/40 rounded-3xl p-6 space-y-4 border-t-4 border-t-[#00A99D]">
         <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center">
           <div className="relative flex-1 min-w-0">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input type="text" placeholder="Tìm tên, mã GV, cơ sở..."
               value={search} onChange={e => setSearch(e.target.value)}
-              className="w-full pl-10 pr-9 py-2.5 border border-slate-200 rounded-xl text-sm hover:border-[#00A19A]/50 focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/15 outline-none transition-all bg-white font-semibold" />
+              className="w-full pl-10 pr-9 py-2.5 border border-slate-200 rounded-xl text-sm hover:border-[#00A99D]/50 focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/15 outline-none transition-all bg-white font-semibold" />
             {search && <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"><X className="w-4 h-4" /></button>}
           </div>
           <div className="flex flex-wrap items-center gap-2 justify-start lg:justify-end">
             <button onClick={downloadTemplate} className="flex items-center gap-1.5 text-slate-700 hover:bg-slate-50 hover:border-slate-350 text-sm font-bold transition-all cursor-pointer text-xs font-semibold">
               <Download className="w-4 h-4" /><span>Tải mẫu</span>
             </button>
-            <label className="flex items-center gap-1.5 px-4 py-2.5 border border-[#00A19A]/20 bg-[#00A19A]/5 rounded-xl text-[#00A19A] hover:bg-[#00A19A]/15 text-sm font-black cursor-pointer transition-all">
+            <label className="flex items-center gap-1.5 px-4 py-2.5 border border-[#00A99D]/20 bg-[#00A99D]/5 rounded-xl text-[#00A99D] hover:bg-[#00A99D]/15 text-sm font-black cursor-pointer transition-all">
               <Upload className="w-4 h-4" />{importing ? "Đang xử lý..." : "Import Excel"}
               <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleFileImport} className="hidden" disabled={importing} />
             </label>
             <button onClick={() => { setShowAddForm(true); setErrorMsg("") }}
-              className="flex items-center gap-1.5 px-5 py-2.5 bg-gradient-to-r from-[#0A3230] to-[#00A19A] hover:brightness-110 text-white rounded-xl text-sm font-black transition-all active:scale-95 whitespace-nowrap cursor-pointer shadow-md shadow-[#00A19A]/15">
+              className="flex items-center gap-1.5 px-5 py-2.5 bg-gradient-to-r from-[#003B3A] to-[#00A99D] hover:brightness-110 text-white rounded-xl text-sm font-black transition-all active:scale-95 whitespace-nowrap cursor-pointer shadow-md shadow-[#00A99D]/15">
               <Plus className="w-4 h-4" />Thêm GV Mới
             </button>
           </div>
@@ -373,17 +373,17 @@ export function TeacherManagerClient({
         <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100">
           <span className="text-xs font-black text-slate-450 uppercase tracking-widest flex items-center gap-1.5 mr-2"><Filter className="w-3.5 h-3.5" />Bộ lọc:</span>
           <select value={filterDepartment} onChange={e => setFilterDepartment(e.target.value)}
-            className={`border rounded-xl px-3.5 py-2 text-xs font-bold outline-none bg-white transition-all cursor-pointer ${filterDepartment ? "border-[#00A19A] text-[#00A19A] bg-[#00A19A]/5" : "border-slate-200 text-slate-600 hover:border-[#00A19A]/40 focus:border-[#00A19A]"}`}>
+            className={`border rounded-xl px-3.5 py-2 text-xs font-bold outline-none bg-white transition-all cursor-pointer ${filterDepartment ? "border-[#00A99D] text-[#00A99D] bg-[#00A99D]/5" : "border-slate-200 text-slate-600 hover:border-[#00A99D]/40 focus:border-[#00A99D]"}`}>
             <option value="">Tất cả Tổ CM</option>
             {(departments || []).map((d) => <option key={d.id} value={d.name}>{d.name}</option>)}
           </select>
           <select value={filterSubject} onChange={e => setFilterSubject(e.target.value)}
-            className={`border rounded-xl px-3.5 py-2 text-xs font-bold outline-none bg-white transition-all cursor-pointer ${filterSubject ? "border-[#00A19A] text-[#00A19A] bg-[#00A19A]/5" : "border-slate-200 text-slate-600 hover:border-[#00A19A]/40 focus:border-[#00A19A]"}`}>
+            className={`border rounded-xl px-3.5 py-2 text-xs font-bold outline-none bg-white transition-all cursor-pointer ${filterSubject ? "border-[#00A99D] text-[#00A99D] bg-[#00A99D]/5" : "border-slate-200 text-slate-600 hover:border-[#00A99D]/40 focus:border-[#00A99D]"}`}>
             <option value="">Tất cả Môn dạy</option>
             {(subjects || []).map((s) => <option key={s.id} value={s.subjectName}>{s.subjectName}</option>)}
           </select>
           <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
-            className={`border rounded-xl px-3.5 py-2 text-xs font-bold outline-none bg-white transition-all cursor-pointer ${filterStatus ? "border-[#00A19A] text-[#00A19A] bg-[#00A19A]/5" : "border-slate-200 text-slate-600 hover:border-[#00A19A]/40 focus:border-[#00A19A]"}`}>
+            className={`border rounded-xl px-3.5 py-2 text-xs font-bold outline-none bg-white transition-all cursor-pointer ${filterStatus ? "border-[#00A99D] text-[#00A99D] bg-[#00A99D]/5" : "border-slate-200 text-slate-600 hover:border-[#00A99D]/40 focus:border-[#00A99D]"}`}>
             <option value="">Tất cả Trạng thái</option>
             <option value="ACTIVE">On</option>
             <option value="INACTIVE">Off</option>
@@ -403,8 +403,8 @@ export function TeacherManagerClient({
         <div className="bg-gradient-to-br from-white to-slate-50/20 border border-teal-500/20 rounded-2xl p-6 shadow-md animate-in fade-in duration-200">
           <div className="flex items-center justify-between mb-5 pb-3 border-b border-slate-100">
             <h3 className="font-black text-slate-800 text-base flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-[#00A19A]/15 flex items-center justify-center">
-                <GraduationCap className="w-4 h-4 text-[#00A19A]" />
+              <div className="w-8 h-8 rounded-lg bg-[#00A99D]/15 flex items-center justify-center">
+                <GraduationCap className="w-4 h-4 text-[#00A99D]" />
               </div>Thêm Giáo Viên Mới
             </h3>
             <button onClick={() => { setShowAddForm(false); setErrorMsg("") }} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-all cursor-pointer"><X className="w-5 h-5" /></button>
@@ -415,26 +415,26 @@ export function TeacherManagerClient({
               <input type="text" value={newForm.teacherCode}
                 onChange={e => setNewForm({ ...newForm, teacherCode: e.target.value.trim().toUpperCase() })}
                 placeholder="GV001"
-                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/10 outline-none font-mono font-black transition-all bg-white" />
+                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/10 outline-none font-mono font-black transition-all bg-white" />
             </div>
             <div>
               <label className="block text-xs font-black text-slate-500 mb-1.5 uppercase tracking-wider">Họ và tên *</label>
               <input type="text" value={newForm.teacherName}
                 onChange={e => setNewForm({ ...newForm, teacherName: e.target.value })}
                 placeholder="Nguyễn Văn A"
-                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/10 outline-none font-bold transition-all bg-white" />
+                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/10 outline-none font-bold transition-all bg-white" />
             </div>
             <div>
               <label className="block text-xs font-black text-slate-500 mb-1.5 uppercase tracking-wider">Email nhận thông báo</label>
               <input type="email" value={newForm.email}
                 onChange={e => setNewForm({ ...newForm, email: e.target.value.trim() })}
                 placeholder="gv@skylineschool.edu.vn"
-                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/10 outline-none transition-all bg-white font-semibold" />
+                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/10 outline-none transition-all bg-white font-semibold" />
             </div>
             <div>
               <label className="block text-xs font-black text-slate-500 mb-1.5 uppercase tracking-wider">Cơ sở</label>
               <select value={newForm.campus} onChange={e => setNewForm({ ...newForm, campus: e.target.value })}
-                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/10 outline-none bg-white transition-all font-bold cursor-pointer">
+                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/10 outline-none bg-white transition-all font-bold cursor-pointer">
                 <option value="">-- Chọn Cơ sở --</option>
                 {(campuses || []).map((c) => <option key={c.id} value={c.campusName}>{c.campusName}</option>)}
               </select>
@@ -442,7 +442,7 @@ export function TeacherManagerClient({
             <div>
               <label className="block text-xs font-black text-slate-500 mb-1.5 uppercase tracking-wider">Tổ chuyên môn</label>
               <select value={newForm.department} onChange={e => setNewForm({ ...newForm, department: e.target.value })}
-                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/10 outline-none bg-white transition-all font-bold cursor-pointer">
+                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/10 outline-none bg-white transition-all font-bold cursor-pointer">
                 <option value="">-- Chọn Tổ --</option>
                 {(departments || []).map((d) => <option key={d.id} value={d.name}>{d.name}</option>)}
               </select>
@@ -450,7 +450,7 @@ export function TeacherManagerClient({
             <div>
               <label className="block text-xs font-black text-slate-500 mb-1.5 uppercase tracking-wider">Chức vụ</label>
               <select value={newForm.position} onChange={e => setNewForm({ ...newForm, position: e.target.value })}
-                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/10 outline-none bg-white transition-all font-bold cursor-pointer">
+                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/10 outline-none bg-white transition-all font-bold cursor-pointer">
                 <option value="GV">GV (Giáo viên)</option>
                 <option value="TTCM">TTCM (Tổ trưởng CM)</option>
                 <option value="QLCM">QLCM (Quản lý CM)</option>
@@ -469,11 +469,11 @@ export function TeacherManagerClient({
                 }).map((c) => {
                   const isChecked = newForm.additionalCampusIds?.includes(c.id)
                   return (
-                    <label key={c.id} className={`flex items-center gap-2 cursor-pointer px-3.5 py-2 rounded-xl border text-xs font-bold transition-all select-none ${isChecked ? "bg-[#00A19A]/10 border-[#00A19A] text-[#00A19A]" : "bg-white border-slate-200 text-slate-700 hover:bg-[#00A19A]/5 hover:border-slate-350"}`}>
+                    <label key={c.id} className={`flex items-center gap-2 cursor-pointer px-3.5 py-2 rounded-xl border text-xs font-bold transition-all select-none ${isChecked ? "bg-[#00A99D]/10 border-[#00A99D] text-[#00A99D]" : "bg-white border-slate-200 text-slate-700 hover:bg-[#00A99D]/5 hover:border-slate-350"}`}>
                       <input type="checkbox" checked={isChecked} onChange={() => {
                         const cur = newForm.additionalCampusIds || []
                         setNewForm({ ...newForm, additionalCampusIds: cur.includes(c.id) ? cur.filter((x) => x !== c.id) : [...cur, c.id] })
-                      }} className="w-4 h-4 rounded-md accent-[#00A19A] cursor-pointer" />
+                      }} className="w-4 h-4 rounded-md accent-[#00A99D] cursor-pointer" />
                       {c.campusName}
                     </label>
                   )
@@ -483,7 +483,7 @@ export function TeacherManagerClient({
           )}
           <div className="flex gap-3 mt-5 pt-4 border-t border-slate-100">
             <button onClick={handleCreate} disabled={saving}
-              className="px-6 py-2.5 bg-[#00A19A] hover:bg-[#135E5B] disabled:opacity-60 text-white rounded-xl font-black text-sm shadow-md shadow-teal-500/5 transition-all active:scale-95 flex items-center gap-2 cursor-pointer">
+              className="px-6 py-2.5 bg-[#00A99D] hover:bg-[#135E5B] disabled:opacity-60 text-white rounded-xl font-black text-sm shadow-md shadow-teal-500/5 transition-all active:scale-95 flex items-center gap-2 cursor-pointer">
               {saving ? <><RefreshCw className="w-4 h-4 animate-spin" />Đang lưu...</> : <><Check className="w-4 h-4" />Lưu Giáo Viên</>}
             </button>
             <button onClick={() => { setShowAddForm(false); setErrorMsg("") }}
@@ -493,15 +493,15 @@ export function TeacherManagerClient({
       )}
 
       {/* Table */}
-      <div className="bg-white border border-slate-150 rounded-3xl overflow-hidden shadow-md shadow-slate-100/40 border-t-4 border-t-[#0A3230]">
+      <div className="bg-white border border-slate-150 rounded-3xl overflow-hidden shadow-md shadow-slate-100/40 border-t-4 border-t-[#003B3A]">
         <div className="flex flex-wrap items-center justify-between gap-4 text-xs font-semibold">
           <div className="flex items-center gap-4 flex-wrap">
             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              Danh sách giáo viên{hasFilters && <span className="ml-1.5 text-[#00A19A] font-black">| Đang lọc: {displayed.length} kết quả</span>}
+              Danh sách giáo viên{hasFilters && <span className="ml-1.5 text-[#00A99D] font-black">| Đang lọc: {displayed.length} kết quả</span>}
             </p>
             {selectedDisplayedIds.length > 0 && (
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-bold text-slate-600">Đã chọn: <span className="text-[#00A19A] font-extrabold">{selectedDisplayedIds.length}</span></span>
+                <span className="text-xs font-bold text-slate-600">Đã chọn: <span className="text-[#00A99D] font-extrabold">{selectedDisplayedIds.length}</span></span>
                 <select
                   onChange={async (e) => {
                     const roleCode = e.target.value;
@@ -522,7 +522,7 @@ export function TeacherManagerClient({
                     e.target.value = "";
                   }}
                   disabled={assigning}
-                  className="p-1.5 rounded-xl border text-xs bg-white border-slate-300 font-bold text-slate-700 cursor-pointer outline-none focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/15 transition-all"
+                  className="p-1.5 rounded-xl border text-xs bg-white border-slate-300 font-bold text-slate-700 cursor-pointer outline-none focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/15 transition-all"
                 >
                   <option value="">-- Cấp Quyền Nhóm --</option>
                   {(roles || []).map((r) => (
@@ -540,9 +540,9 @@ export function TeacherManagerClient({
         <div className="overflow-x-auto">
           <table className="w-full text-sm border-collapse">
             <thead>
-              <tr className="border-b border-slate-200 bg-[#0A3230] text-white">
+              <tr className="border-b border-slate-200 bg-[#003B3A] text-white">
                 <th className="p-2 p-2 text-center text-[11px] font-black uppercase tracking-wider w-12 border border-slate-200">
-                  <input type="checkbox" className="w-4 h-4 rounded text-[#00A19A] cursor-pointer"
+                  <input type="checkbox" className="w-4 h-4 rounded text-[#00A99D] cursor-pointer"
                     checked={displayed.length > 0 && selectedDisplayedIds.length === displayed.length}
                     onChange={(e) => {
                       if (e.target.checked) setSelectedIds(displayed.map(t => t.id));
@@ -581,10 +581,10 @@ export function TeacherManagerClient({
                     const idx = startIndex + index;
                     const isEditing = editingId === t.id;
                     return (
-                      <tr key={t.id} className={`group transition-all ${isEditing ? "bg-[#00A19A]/5 border-l-4 border-l-[#00A19A]" : "hover:bg-slate-50/20"} ${selectedDisplayedIds.includes(t.id) ? "bg-[#00A19A]/5" : ""}`}>
+                      <tr key={t.id} className={`group transition-all ${isEditing ? "bg-[#00A99D]/5 border-l-4 border-l-[#00A99D]" : "hover:bg-slate-50/20"} ${selectedDisplayedIds.includes(t.id) ? "bg-[#00A99D]/5" : ""}`}>
 
                       <td className="p-2 p-2 text-center border border-slate-200">
-                        <input type="checkbox" className="w-4 h-4 rounded text-[#00A19A] cursor-pointer"
+                        <input type="checkbox" className="w-4 h-4 rounded text-[#00A99D] cursor-pointer"
                           checked={selectedDisplayedIds.includes(t.id)}
                           onChange={(e) => {
                             if (e.target.checked) setSelectedIds([...selectedIds, t.id]);
@@ -595,7 +595,7 @@ export function TeacherManagerClient({
                       <td className="p-2 p-2 text-slate-400 text-xs font-mono font-bold tabular-nums border border-slate-200">{idx + 1}</td>
 
                       <td className="p-2 p-2 border border-slate-200">
-                        <span className="inline-block font-mono font-bold text-[#00A19A] bg-[#00A19A]/5 px-2.5 py-1 rounded-xl text-xs tracking-wide">
+                        <span className="inline-block font-mono font-bold text-[#00A99D] bg-[#00A99D]/5 px-2.5 py-1 rounded-xl text-xs tracking-wide">
                           {t.teacherCode}
                         </span>
                       </td>
@@ -604,7 +604,7 @@ export function TeacherManagerClient({
                         {isEditing ? (
                           <input type="text" value={editForm.teacherName}
                             onChange={e => setEditForm({ ...editForm, teacherName: e.target.value })}
-                            className="border border-[#00A19A] rounded-xl px-2.5 py-1.5 text-sm w-full outline-none font-bold bg-white"
+                            className="border border-[#00A99D] rounded-xl px-2.5 py-1.5 text-sm w-full outline-none font-bold bg-white"
                             placeholder="Tên giáo viên" />
                         ) : (
                           <span className="font-bold text-slate-800 text-sm leading-tight">{t.teacherName}</span>
@@ -615,7 +615,7 @@ export function TeacherManagerClient({
                         {isEditing ? (
                           <input type="email" value={editForm.email || ""}
                             onChange={e => setEditForm({ ...editForm, email: e.target.value })}
-                            className="border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs w-full outline-none text-slate-600 bg-white font-medium focus:border-[#00A19A]"
+                            className="border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs w-full outline-none text-slate-600 bg-white font-medium focus:border-[#00A99D]"
                             placeholder="Email thông báo" />
                         ) : (
                           t.email ? (
@@ -636,7 +636,7 @@ export function TeacherManagerClient({
                             <select value={editForm.campusId} onChange={e => {
                               const nid = e.target.value
                               setEditForm({ ...editForm, campusId: nid, additionalCampusIds: (editForm.additionalCampusIds || []).filter((x) => x !== nid) })
-                            }} className="border border-[#00A19A] rounded-xl px-2.5 py-1.5 text-xs outline-none bg-white font-bold w-full cursor-pointer">
+                            }} className="border border-[#00A99D] rounded-xl px-2.5 py-1.5 text-xs outline-none bg-white font-bold w-full cursor-pointer">
                               <option value="">-- Cơ sở chính --</option>
                               {(campuses || []).map((c) => <option key={c.id} value={c.id}>{c.campusName}</option>)}
                             </select>
@@ -649,7 +649,7 @@ export function TeacherManagerClient({
                                     <input type="checkbox" checked={isChk} onChange={() => {
                                       const cur = editForm.additionalCampusIds || []
                                       setEditForm({ ...editForm, additionalCampusIds: cur.includes(c.id) ? cur.filter((x) => x !== c.id) : [...cur, c.id] })
-                                    }} className="w-3.5 h-3.5 rounded-md accent-[#00A19A] cursor-pointer" />
+                                    }} className="w-3.5 h-3.5 rounded-md accent-[#00A99D] cursor-pointer" />
                                     {c.campusName}
                                   </label>
                                 )
@@ -677,7 +677,7 @@ export function TeacherManagerClient({
                         {isEditing ? (
                           <div className="flex flex-col gap-1.5 max-w-xs">
                             <select value={editForm.department} onChange={e => setEditForm({ ...editForm, department: e.target.value })}
-                              className="border border-[#00A19A] rounded-xl px-2.5 py-1.5 text-xs outline-none bg-white font-bold focus:border-[#00A19A] w-full cursor-pointer">
+                              className="border border-[#00A99D] rounded-xl px-2.5 py-1.5 text-xs outline-none bg-white font-bold focus:border-[#00A99D] w-full cursor-pointer">
                               <option value="">-- Tổ --</option>
                               {(departments || []).map((d) => <option key={d.id} value={d.name}>{d.name}</option>)}
                             </select>
@@ -698,7 +698,7 @@ export function TeacherManagerClient({
                       <td className="p-2 p-2 border border-slate-200">
                         {isEditing ? (
                           <select value={editForm.position} onChange={e => setEditForm({ ...editForm, position: e.target.value })}
-                            className="border border-[#00A19A] rounded-xl px-2.5 py-1.5 text-xs outline-none bg-white font-bold focus:border-[#00A19A] w-full cursor-pointer">
+                            className="border border-[#00A99D] rounded-xl px-2.5 py-1.5 text-xs outline-none bg-white font-bold focus:border-[#00A99D] w-full cursor-pointer">
                             <option value="GV">GV</option>
                             <option value="TTCM">TTCM</option>
                             <option value="QLCM">QLCM</option>
@@ -723,7 +723,7 @@ export function TeacherManagerClient({
                       <td className="p-2 p-2 text-center border border-slate-200">
                         {isEditing ? (
                           <select value={editForm.status} onChange={e => setEditForm({ ...editForm, status: e.target.value })}
-                            className="border border-[#00A19A]/60 rounded-xl px-2 py-1.5 text-xs outline-none bg-white font-bold w-28 focus:border-[#00A19A] cursor-pointer">
+                            className="border border-[#00A99D]/60 rounded-xl px-2 py-1.5 text-xs outline-none bg-white font-bold w-28 focus:border-[#00A99D] cursor-pointer">
                             <option value="ACTIVE">On</option>
                             <option value="INACTIVE">Off</option>
                           </select>
@@ -756,7 +756,7 @@ export function TeacherManagerClient({
                           ) : (
                             <>
                               <button onClick={() => handleEdit(t)}
-                                className="p-2 text-[#00A19A] hover:bg-[#00A19A]/10 rounded-xl transition-all opacity-0 group-hover:opacity-100 cursor-pointer" title="Chỉnh sửa">
+                                className="p-2 text-[#00A99D] hover:bg-[#00A99D]/10 rounded-xl transition-all opacity-0 group-hover:opacity-100 cursor-pointer" title="Chỉnh sửa">
                                 <Edit2 className="w-4 h-4" />
                               </button>
                               <button onClick={() => handleDelete(t.id, t.teacherName)}
@@ -803,7 +803,7 @@ export function TeacherManagerClient({
                     <button
                       key={pageNum}
                       onClick={() => setCurrentPage(pageNum)}
-                      className={`w-8 h-8 flex items-center justify-center text-xs font-extrabold rounded-lg border transition-all cursor-pointer ${isCurrent ? 'bg-[#00A19A] border-[#00A19A] text-white' : 'bg-white border-slate-200 text-slate-600 hover:bg-[#00A19A]/5'}`}
+                      className={`w-8 h-8 flex items-center justify-center text-xs font-extrabold rounded-lg border transition-all cursor-pointer ${isCurrent ? 'bg-[#00A99D] border-[#00A99D] text-white' : 'bg-white border-slate-200 text-slate-600 hover:bg-[#00A99D]/5'}`}
                     >
                       {pageNum}
                     </button>

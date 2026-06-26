@@ -41,7 +41,7 @@ export default async function StudentSurveyFormPage({ params }: { params: { id: 
 
       <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl overflow-hidden">
          {/* Form Header */}
-         <div className="bg-[#00A19A] p-10 text-white relative">
+         <div className="bg-[#00A99D] p-10 text-white relative">
             <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -mr-16 -mt-16" />
             <div className="relative z-10 flex items-start justify-between">
                <div className="space-y-2">

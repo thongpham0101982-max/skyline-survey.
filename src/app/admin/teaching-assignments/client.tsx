@@ -116,7 +116,7 @@ export function TeachingClient({ teachers, classes, subjects, years, departments
                 <tr 
                   key={row.teacher.id} 
                   onClick={() => setSelectedTeacherId(row.teacher.id)}
-                  className={`cursor-pointer transition-colors ${selectedTeacherId === row.teacher.id ? 'bg-[#00A19A]/10 hover:bg-indigo-100' : 'hover:bg-slate-50'}`}
+                  className={`cursor-pointer transition-colors ${selectedTeacherId === row.teacher.id ? 'bg-[#00A99D]/10 hover:bg-indigo-100' : 'hover:bg-slate-50'}`}
                 >
                   <td className="p-2 p-2 font-semibold text-slate-800 border border-slate-200">{row.teacher.teacherName}</td>
                   <td className="p-2 p-2 text-slate-600 border border-slate-200">{row.hk1 || <span className="text-slate-300 italic">Chưa PC</span>}</td>
@@ -130,7 +130,7 @@ export function TeachingClient({ teachers, classes, subjects, years, departments
 
       {/* RIGHT: CONFIG PANEL */}
       <div className="bg-white rounded-2xl shadow-sm border-2 border-blue-100 w-full lg:w-[400px] flex-shrink-0 flex flex-col h-[70vh]">
-        <div className="p-4 border-b border-slate-200 bg-[#00A19A] text-white rounded-t-2xl">
+        <div className="p-4 border-b border-slate-200 bg-[#00A99D] text-white rounded-t-2xl">
           <h3 className="font-bold flex items-center"><User className="w-5 h-5 mr-2"/> Cài đặt phân công</h3>
           <p className="text-indigo-100 text-sm mt-1">{selectedTeacher ? selectedTeacher.teacherName : 'Chọn giáo viên bên trái'}</p>
         </div>
@@ -152,10 +152,10 @@ export function TeachingClient({ teachers, classes, subjects, years, departments
                 </select>
                 <div className="flex gap-4">
                   <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 cursor-pointer">
-                    <input type="checkbox" checked={hk1} onChange={e=>setHk1(e.target.checked)} className="w-4 h-4 rounded text-[#00A19A]"/> Học kỳ 1
+                    <input type="checkbox" checked={hk1} onChange={e=>setHk1(e.target.checked)} className="w-4 h-4 rounded text-[#00A99D]"/> Học kỳ 1
                   </label>
                   <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 cursor-pointer">
-                    <input type="checkbox" checked={hk2} onChange={e=>setHk2(e.target.checked)} className="w-4 h-4 rounded text-[#00A19A]"/> Học kỳ 2
+                    <input type="checkbox" checked={hk2} onChange={e=>setHk2(e.target.checked)} className="w-4 h-4 rounded text-[#00A99D]"/> Học kỳ 2
                   </label>
                 </div>
                 <button onClick={handleAdd} disabled={loading} className="w-full py-2 bg-slate-800 text-white rounded-lg font-bold text-sm tracking-wide mt-2 hover:bg-slate-900 transition flex items-center justify-center">

@@ -137,7 +137,7 @@
   a[class*="bg-indigo-"],
   a[class*="bg-violet-"],
   a[class*="bg-purple-"],
-  a[class*="bg-[#00A19A]"],
+  a[class*="bg-[#00A99D]"],
   a[class*="bg-teal-"] {
     /* Gradients */
     &.bg-gradient-to-r,
@@ -281,7 +281,7 @@ textarea:focus {
 button,
 .btn,
 a[class*="bg-indigo-"],
-a[class*="bg-[#00A19A]"],
+a[class*="bg-[#00A99D]"],
 a[class*="bg-teal-"] {
   border-radius: 14px !important;
 }

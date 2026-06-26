@@ -117,9 +117,9 @@ export default async function TeacherClassDetailPage({ params }: any) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <div className="mb-2"><Link href="/teacher/classes" className="text-xs font-bold text-[#00A19A] hover:underline">&larr; Quay lại danh sách lớp</Link></div>
+          <div className="mb-2"><Link href="/teacher/classes" className="text-xs font-bold text-[#00A99D] hover:underline">&larr; Quay lại danh sách lớp</Link></div>
           <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">{classInfo.className}</h1>
-          <p className="text-slate-500 mt-1">Mã lớp: <span className="font-bold text-[#00A19A]">{classInfo.classCode}</span> • Cơ sở: <span className="font-bold text-slate-700">{classInfo.campus?.campusName}</span> • Năm học: <span className="font-bold text-slate-700">{classInfo.academicYear?.name}</span></p>
+          <p className="text-slate-500 mt-1">Mã lớp: <span className="font-bold text-[#00A99D]">{classInfo.classCode}</span> • Cơ sở: <span className="font-bold text-slate-700">{classInfo.campus?.campusName}</span> • Năm học: <span className="font-bold text-slate-700">{classInfo.academicYear?.name}</span></p>
         </div>
       </div>
 
@@ -169,7 +169,7 @@ export default async function TeacherClassDetailPage({ params }: any) {
                       <td className="p-2 p-2 border border-slate-200">{student.parents.length}</td>
                       <td className="p-2 p-2 border border-slate-200">
                         {hasSubmitted ? (
-                          <a href={`/teacher/classes/${classId}/${studentForms.find(f => f.status === "SUBMITTED" || f.status === "ĐÃ HOÀN THÀNH")?.id}`} className="inline-block text-[#00A19A] hover:bg-teal-100 hover:text-[#008c85] text-xs font-bold tracking-wide transition-colors cursor-pointer text-xs font-semibold">ĐÃ HOÀN THÀNH (XEM)</a>
+                          <a href={`/teacher/classes/${classId}/${studentForms.find(f => f.status === "SUBMITTED" || f.status === "ĐÃ HOÀN THÀNH")?.id}`} className="inline-block text-[#00A99D] hover:bg-teal-100 hover:text-[#009085] text-xs font-bold tracking-wide transition-colors cursor-pointer text-xs font-semibold">ĐÃ HOÀN THÀNH (XEM)</a>
                         ) : (
                           <span className="bg-slate-100 text-slate-500 border border-slate-200 px-3 py-1.5 rounded-full text-xs font-bold tracking-wide">CHƯA KHẢO SÁT</span>
                         )}

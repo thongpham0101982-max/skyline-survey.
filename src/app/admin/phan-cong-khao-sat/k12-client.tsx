@@ -592,7 +592,7 @@ export function PhanCongK12Client({
           <div className="bg-white border border-slate-200 rounded-[2rem] shadow-sm overflow-hidden">
             {!asFilterBatchId ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
-                <div className="w-16 h-16 flex items-center justify-center mb-4 text-xs font-semibold"><Filter className="w-8 h-8 text-[#00A19A]" /></div>
+                <div className="w-16 h-16 flex items-center justify-center mb-4 text-xs font-semibold"><Filter className="w-8 h-8 text-[#00A99D]" /></div>
                 <p className="font-black text-slate-500 text-sm">Vui lòng chọn Đợt lọc</p>
                 <p className="text-xs text-slate-400 mt-1 font-medium">Chọn một Đợt ở bộ lọc phía trên để hiển thị danh sách giáo viên đã được phân công</p>
               </div>

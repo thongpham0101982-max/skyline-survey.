@@ -95,7 +95,7 @@ export function CategoriesClient({ initialCategories, academicYears }: ExamCateg
         <p className="text-slate-500 text-sm font-medium">Tạo và quản lý các danh mục phân loại kỳ thi học sinh.</p>
         <button
           onClick={() => { setCreating(true); setErrorMsg("") }}
-          className="flex items-center gap-2 bg-[#00A19A] hover:bg-[#008c85] text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-[#00A19A]/20 transition-all text-xs"
+          className="flex items-center gap-2 bg-[#00A99D] hover:bg-[#009085] text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-[#00A99D]/20 transition-all text-xs"
         >
           <Plus className="w-4 h-4" />
           Tạo Danh Mục Mới
@@ -106,7 +106,7 @@ export function CategoriesClient({ initialCategories, academicYears }: ExamCateg
       {creating && (
         <div className="bg-white border-2 border-indigo-200 rounded-2xl p-6 shadow-md shadow-indigo-50 animate-fade-in">
           <h3 className="font-bold text-slate-800 text-base mb-4 flex items-center gap-2">
-            <Tag className="w-5 h-5 text-[#00A19A]" />
+            <Tag className="w-5 h-5 text-[#00A99D]" />
             Tạo Danh Mục Mới
           </h3>
           {errorMsg && (
@@ -124,7 +124,7 @@ export function CategoriesClient({ initialCategories, academicYears }: ExamCateg
                 value={newForm.name}
                 onChange={e => setNewForm({ ...newForm, name: e.target.value })}
                 placeholder="Ví dụ: Kỳ thi Giữa học kỳ, Học sinh giỏi..."
-                className="w-full border border-slate-200 rounded-lg px-4 py-2 text-xs focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/10 outline-none transition-all font-semibold"
+                className="w-full border border-slate-200 rounded-lg px-4 py-2 text-xs focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/10 outline-none transition-all font-semibold"
               />
             </div>
             <div>
@@ -136,7 +136,7 @@ export function CategoriesClient({ initialCategories, academicYears }: ExamCateg
                 value={newForm.code}
                 onChange={e => setNewForm({ ...newForm, code: e.target.value.toUpperCase().replace(/\s+/g, '_') })}
                 placeholder="Ví dụ: KY_THI_GIUA_KY"
-                className="w-full border border-slate-200 rounded-lg px-4 py-2 text-xs focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/10 outline-none font-mono transition-all font-semibold"
+                className="w-full border border-slate-200 rounded-lg px-4 py-2 text-xs focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/10 outline-none font-mono transition-all font-semibold"
               />
             </div>
           </div>
@@ -146,7 +146,7 @@ export function CategoriesClient({ initialCategories, academicYears }: ExamCateg
               value={newForm.description}
               onChange={e => setNewForm({ ...newForm, description: e.target.value })}
               placeholder="Nhập mô tả chi tiết cho loại danh mục kỳ thi này..."
-              className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-xs focus:border-[#00A19A] outline-none font-semibold"
+              className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-xs focus:border-[#00A99D] outline-none font-semibold"
               rows={3}
             />
           </div>
@@ -154,7 +154,7 @@ export function CategoriesClient({ initialCategories, academicYears }: ExamCateg
             <button
               onClick={handleCreate}
               disabled={saving}
-              className="px-6 py-2.5 bg-[#00A19A] hover:bg-[#008c85] text-white rounded-lg font-bold text-xs shadow-md shadow-[#00A19A]/20 transition-all disabled:opacity-60"
+              className="px-6 py-2.5 bg-[#00A99D] hover:bg-[#009085] text-white rounded-lg font-bold text-xs shadow-md shadow-[#00A99D]/20 transition-all disabled:opacity-60"
             >
               {saving ? "Đang lưu..." : "Lưu Danh Mục"}
             </button>
@@ -172,7 +172,7 @@ export function CategoriesClient({ initialCategories, academicYears }: ExamCateg
       <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200/80 border-2 border-slate-100 overflow-hidden">
         <div className="bg-slate-50/70 border-b border-slate-100 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Tag className="w-5 h-5 text-[#00A19A]" />
+            <Tag className="w-5 h-5 text-[#00A99D]" />
             <span className="font-bold text-slate-700 text-sm">Danh Sách Danh Mục Kỳ Thi ({categories.filter(c => c.academicYearId === yearId || c.academicYearId === null).length})</span>
           </div>
         </div>
@@ -190,7 +190,7 @@ export function CategoriesClient({ initialCategories, academicYears }: ExamCateg
               return (
                 <div key={cat.id} className="flex flex-col p-6 hover:bg-slate-50/50 transition-colors group">
                   <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 bg-teal-50 text-[#00A19A] rounded-xl flex items-center justify-center flex-shrink-0">
+                    <div className="w-10 h-10 bg-teal-50 text-[#00A99D] rounded-xl flex items-center justify-center flex-shrink-0">
                       <Tag className="w-5 h-5" />
                     </div>
 
@@ -203,7 +203,7 @@ export function CategoriesClient({ initialCategories, academicYears }: ExamCateg
                               type="text"
                               value={editForm.name}
                               onChange={e => setEditForm({ ...editForm, name: e.target.value })}
-                              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-[#00A19A]/10 outline-none"
+                              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-[#00A99D]/10 outline-none"
                             />
                           </div>
                           <div>
@@ -212,7 +212,7 @@ export function CategoriesClient({ initialCategories, academicYears }: ExamCateg
                               type="text"
                               value={editForm.code}
                               onChange={e => setEditForm({ ...editForm, code: e.target.value.toUpperCase().replace(/\s+/g, '_') })}
-                              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono focus:border-[#00A19A] outline-none"
+                              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono focus:border-[#00A99D] outline-none"
                             />
                           </div>
                           <div className="md:col-span-2">
@@ -272,7 +272,7 @@ export function CategoriesClient({ initialCategories, academicYears }: ExamCateg
                         <>
                           <button
                             onClick={() => handleEdit(cat)}
-                            className="p-2 hover:bg-teal-50 text-[#00A19A] rounded-xl transition-all"
+                            className="p-2 hover:bg-teal-50 text-[#00A99D] rounded-xl transition-all"
                             title="Chỉnh sửa"
                           >
                             <Edit2 className="w-4 h-4" />

@@ -53,8 +53,8 @@ export default async function StudentSurveyPage() {
           
           <div className="flex gap-4">
              <div className="p-4 text-center min-w-[100px] text-xs font-semibold">
-                <p className="text-[10px] font-black text-[#00A19A] uppercase tracking-widest mb-1">Cần làm</p>
-                <p className="text-2xl font-black text-[#00A19A]">{surveys.length - submittedIds.size}</p>
+                <p className="text-[10px] font-black text-[#00A99D] uppercase tracking-widest mb-1">Cần làm</p>
+                <p className="text-2xl font-black text-[#00A99D]">{surveys.length - submittedIds.size}</p>
              </div>
              <div className="p-4 text-center min-w-[100px] text-xs font-semibold">
                 <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">Hoàn thành</p>
@@ -67,7 +67,7 @@ export default async function StudentSurveyPage() {
       {/* Survey List Section */}
       <div className="space-y-4">
         <h3 className="text-xl font-black text-slate-800 ml-4 flex items-center gap-2">
-           <ClipboardList className="w-5 h-5 text-[#00A19A]" />
+           <ClipboardList className="w-5 h-5 text-[#00A99D]" />
            Danh sách khảo sát dành cho học sinh
         </h3>
 
@@ -83,10 +83,10 @@ export default async function StudentSurveyPage() {
             surveys.map((s) => {
               const isDone = submittedIds.has(s.id)
               return (
-                <div key={s.id} className={`group relative bg-white rounded-[2rem] p-6 border transition-all ${isDone ? 'opacity-80 border-slate-100 shadow-none' : 'border-slate-200 shadow-sm hover:shadow-xl hover:border-[#00A19A]/20'}`}>
+                <div key={s.id} className={`group relative bg-white rounded-[2rem] p-6 border transition-all ${isDone ? 'opacity-80 border-slate-100 shadow-none' : 'border-slate-200 shadow-sm hover:shadow-xl hover:border-[#00A99D]/20'}`}>
                    <div className="flex flex-col sm:flex-row justify-between items-center gap-6">
                       <div className="flex items-center gap-5 w-full">
-                         <div className={`w-14 h-14 rounded-[1.2rem] flex items-center justify-center transition-colors ${isDone ? 'bg-emerald-50 text-emerald-500' : 'bg-slate-50 text-slate-400 group-hover:bg-[#00A19A]/10 group-hover:text-[#00A19A]'}`}>
+                         <div className={`w-14 h-14 rounded-[1.2rem] flex items-center justify-center transition-colors ${isDone ? 'bg-emerald-50 text-emerald-500' : 'bg-slate-50 text-slate-400 group-hover:bg-[#00A99D]/10 group-hover:text-[#00A99D]'}`}>
                             {isDone ? <CheckCircle2 className="w-7 h-7" /> : <ClipboardList className="w-7 h-7" />}
                          </div>
                          <div className="flex-1">
@@ -105,7 +105,7 @@ export default async function StudentSurveyPage() {
                         ) : (
                            <Link 
                               href={`/Hocsinh/khaosat/${s.id}`}
-                              className="flex items-center justify-center gap-2 px-8 py-3 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-[#00A19A] transition-all hover:scale-105 active:scale-95"
+                              className="flex items-center justify-center gap-2 px-8 py-3 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-[#00A99D] transition-all hover:scale-105 active:scale-95"
                            >
                               Thực hiện ngay <ArrowRight className="w-4 h-4" />
                            </Link>

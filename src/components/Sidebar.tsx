@@ -77,7 +77,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
       {/* Mobile Floating Toggle Button */}
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="md:hidden fixed top-4 left-4 z-50 p-3 bg-[#0A3230] text-white rounded-2xl shadow-lg border border-slate-800 hover:bg-white/10 transition-all duration-300 focus:outline-none active:scale-95"
+        className="md:hidden fixed top-4 left-4 z-50 p-3 bg-[#003B3A] text-white rounded-2xl shadow-lg border border-slate-800 hover:bg-white/10 transition-all duration-300 focus:outline-none active:scale-95"
       >
         {isOpen ? <X className="w-5 h-5 text-[#1E8B87]" /> : <Menu className="w-5 h-5 text-[#1E8B87]" />}
       </button>
@@ -91,7 +91,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
       )}
 
       {/* Sidebar Content */}
-      <aside className={`${isCollapsed ? 'w-20' : 'w-64'} bg-[#0A3230] text-white p-6 flex flex-col shadow-xl fixed md:sticky inset-y-0 left-0 z-40 h-screen transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
+      <aside className={`${isCollapsed ? 'w-20' : 'w-64'} bg-[#003B3A] text-white p-6 flex flex-col shadow-xl fixed md:sticky inset-y-0 left-0 z-40 h-screen transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 px-2'} mb-8`}>
           <img src="/logo.png" alt="Sky-Line Logo" className={`h-8 w-auto object-contain brightness-0 invert opacity-90 transition-all ${isCollapsed ? 'scale-75' : ''}`} />
           {!isCollapsed && <div className="font-bold text-lg tracking-tight leading-none whitespace-nowrap overflow-hidden">{title}</div>}
@@ -323,7 +323,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
 
 export function Sidebar(props: SidebarProps) {
   return (
-    <Suspense fallback={<aside className="w-64 bg-[#0A3230] h-screen shrink-0" />}>
+    <Suspense fallback={<aside className="w-64 bg-[#003B3A] h-screen shrink-0" />}>
       <SidebarContent {...props} />
     </Suspense>
   );

@@ -100,7 +100,7 @@ export function ChatbotConfigsClient({ initialConfigs = [] }: any) {
             className="w-full pl-9 pr-4 py-3 border border-slate-200 rounded-2xl text-sm focus:ring-4 focus:ring-indigo-50 outline-none transition-all" />
         </div>
         <button onClick={() => { setShowAddForm(true); setEditingId(null); setForm({ name: "", code: "", systemInstruction: "", allowedRoles: ["TEACHER"], isActive: true }) }}
-          className="flex items-center gap-2 bg-[#00A19A] text-white px-6 py-3 rounded-2xl hover:bg-[#008c85] font-bold shadow-lg shadow-indigo-200 transition-all active:scale-95">
+          className="flex items-center gap-2 bg-[#00A99D] text-white px-6 py-3 rounded-2xl hover:bg-[#009085] font-bold shadow-lg shadow-indigo-200 transition-all active:scale-95">
           <Plus className="w-5 h-5" /> Thêm Chatbot
         </button>
       </div>
@@ -109,7 +109,7 @@ export function ChatbotConfigsClient({ initialConfigs = [] }: any) {
         <div className="bg-white border border-slate-200 rounded-3xl p-8 shadow-2xl shadow-slate-200/50 animate-in fade-in slide-in-from-top-4">
           <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-3">
             <div className="p-2 text-xs font-semibold">
-              <Settings className="w-6 h-6 text-[#00A19A]" />
+              <Settings className="w-6 h-6 text-[#00A99D]" />
             </div>
             {editingId ? "Cập nhật Cấu hình Chatbot" : "Thêm Cấu hình Chatbot Mới"}
           </h3>
@@ -149,7 +149,7 @@ export function ChatbotConfigsClient({ initialConfigs = [] }: any) {
                 {AVAILABLE_ROLES.map(role => (
                   <label key={role} className="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer">
                     <input type="checkbox" checked={form.allowedRoles.includes(role)} onChange={() => handleRoleToggle(role)}
-                      className="w-4 h-4 rounded text-[#00A19A] focus:ring-[#00A19A]" />
+                      className="w-4 h-4 rounded text-[#00A99D] focus:ring-[#00A99D]" />
                     {role}
                   </label>
                 ))}
@@ -162,7 +162,7 @@ export function ChatbotConfigsClient({ initialConfigs = [] }: any) {
                 <div className="flex items-center gap-4 p-4 border border-slate-200 rounded-xl h-[54px]">
                   <label className="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer">
                     <input type="checkbox" checked={form.isActive} onChange={e => setForm({...form, isActive: e.target.checked})}
-                      className="w-4 h-4 rounded text-[#00A19A] focus:ring-[#00A19A]" />
+                      className="w-4 h-4 rounded text-[#00A99D] focus:ring-[#00A99D]" />
                     Kích hoạt hoạt động
                   </label>
                 </div>
@@ -171,7 +171,7 @@ export function ChatbotConfigsClient({ initialConfigs = [] }: any) {
           </div>
 
           <div className="flex gap-4 mt-8">
-            <button onClick={handleSave} disabled={saving} className="bg-[#00A19A] text-white px-8 py-3 rounded-2xl font-black text-sm shadow-xl shadow-indigo-200 hover:bg-[#008c85] disabled:opacity-50 transition-all active:scale-95">
+            <button onClick={handleSave} disabled={saving} className="bg-[#00A99D] text-white px-8 py-3 rounded-2xl font-black text-sm shadow-xl shadow-indigo-200 hover:bg-[#009085] disabled:opacity-50 transition-all active:scale-95">
               {saving ? "Đang lưu cấu hình..." : "Lưu Cấu Hình"}
             </button>
             <button onClick={() => { setShowAddForm(false); setEditingId(null) }} className="bg-slate-100 text-slate-600 px-8 py-3 rounded-2xl font-black text-sm hover:bg-slate-200 transition-all">Hủy bỏ</button>
@@ -193,10 +193,10 @@ export function ChatbotConfigsClient({ initialConfigs = [] }: any) {
             </thead>
             <tbody className="divide-y divide-slate-50">
               {filtered.map((c: any) => (
-                <tr key={c.id} className="hover:bg-[#00A19A]/10/30 transition-colors group">
+                <tr key={c.id} className="hover:bg-[#00A99D]/10/30 transition-colors group">
                   <td className="p-2 p-2 border border-slate-200">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 text-[#00A19A] flex items-center justify-center font-bold text-xs font-semibold">
+                      <div className="w-9 h-9 text-[#00A99D] flex items-center justify-center font-bold text-xs font-semibold">
                         <MessageSquareText className="w-5 h-5" />
                       </div>
                       <div>
@@ -236,7 +236,7 @@ export function ChatbotConfigsClient({ initialConfigs = [] }: any) {
                   </td>
                   <td className="p-2 p-2 text-right border border-slate-200">
                     <div className="flex items-center justify-end gap-2 opacity-70 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => startEdit(c)} className="p-2 text-slate-400 hover:text-[#00A19A] hover:bg-slate-50 transition-all text-xs font-semibold">
+                      <button onClick={() => startEdit(c)} className="p-2 text-slate-400 hover:text-[#00A99D] hover:bg-slate-50 transition-all text-xs font-semibold">
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button onClick={() => handleDelete(c.id, c.name)} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all text-xs font-semibold">

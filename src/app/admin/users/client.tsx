@@ -122,7 +122,7 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
         {/* Tìm kiếm */}
         <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
           <div className="flex items-center gap-2 text-indigo-900 font-bold text-sm">
-            <Filter className="w-4 h-4 text-[#00A19A]" />
+            <Filter className="w-4 h-4 text-[#00A99D]" />
             Bộ lọc & Tìm kiếm nhanh
           </div>
           <div className="relative w-full md:w-80">
@@ -132,7 +132,7 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Tìm kiếm Họ tên, Mã NV..."
-              className="w-full pl-9 pr-8 py-2 rounded-xl text-sm border border-slate-200 focus:ring-2 focus:ring-[#00A19A]/20 focus:border-[#00A19A] outline-none transition-all"
+              className="w-full pl-9 pr-8 py-2 rounded-xl text-sm border border-slate-200 focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] outline-none transition-all"
             />
             {search && (
               <button
@@ -151,11 +151,11 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
             <span className="text-sm font-bold text-slate-700">Lọc theo Nhóm:</span>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <button onClick={() => setFilterRole("ALL")} className={`px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all ${filterRole === "ALL" ? "bg-[#00A19A] text-white border-[#00A19A] shadow-sm" : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"}`}>
+            <button onClick={() => setFilterRole("ALL")} className={`px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all ${filterRole === "ALL" ? "bg-[#00A99D] text-white border-[#00A99D] shadow-sm" : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"}`}>
               Gộp Tất cả
             </button>
             {roles.map((r: any) => (
-              <button key={r.code} onClick={() => setFilterRole(r.code)} className={`px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all ${filterRole === r.code ? "bg-[#00A19A] text-white border-[#00A19A] shadow-sm" : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"}`}>
+              <button key={r.code} onClick={() => setFilterRole(r.code)} className={`px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all ${filterRole === r.code ? "bg-[#00A99D] text-white border-[#00A99D] shadow-sm" : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"}`}>
                 {r.name}
               </button>
             ))}
@@ -206,7 +206,7 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
                      e.target.value = "";
                    }}
                    disabled={deleting || moving}
-                   className="p-1.5 rounded-md border text-xs bg-white border-slate-300 font-bold text-slate-700 cursor-pointer outline-none focus:border-[#00A19A]"
+                   className="p-1.5 rounded-md border text-xs bg-white border-slate-300 font-bold text-slate-700 cursor-pointer outline-none focus:border-[#00A99D]"
                  >
                    <option value="">-- Chuyển sang Nhóm --</option>
                    {roles.map((r) => (
@@ -217,7 +217,7 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
                    <button
                      onClick={() => handleMoveGroup(filterRole)}
                      disabled={moving}
-                     className="flex items-center bg-[#00A19A] text-white hover:bg-[#008c85] font-semibold py-1.5 px-3 rounded-md text-sm cursor-pointer transition-all shadow-sm"
+                     className="flex items-center bg-[#00A99D] text-white hover:bg-[#009085] font-semibold py-1.5 px-3 rounded-md text-sm cursor-pointer transition-all shadow-sm"
                    >
                      <CheckCircle2 className="w-4 h-4 mr-1.5" /> Chuyển {selectedIds.length} tài khoản sang nhóm {roles.find((r) => r.code === filterRole)?.name}
                    </button>
@@ -233,7 +233,7 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
             <thead className="text-slate-600 text-sm font-semibold text-xs font-semibold">
               <tr>
                 <th className="p-2 p-2 w-12 text-center border border-slate-200">
-                  <input type="checkbox" className="w-4 h-4 rounded text-[#00A19A]"
+                  <input type="checkbox" className="w-4 h-4 rounded text-[#00A99D]"
                     checked={displayedUsers.length > 0 && selectedIds.length === displayedUsers.length}
                     onChange={(e) => {
                       if (e.target.checked) setSelectedIds(displayedUsers.map((u: any) => u.id));
@@ -251,7 +251,7 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
             <tbody className="divide-y divide-slate-100">
 
               {displayedUsers.map((u:any) => editingId === u.id ? (
-                <tr key={u.id} className="bg-[#00A19A]/10/30">
+                <tr key={u.id} className="bg-[#00A99D]/10/30">
                   <td className="p-2 p-2 border border-slate-200"></td>
                   <td className="p-2 p-2 border border-slate-200"><input value={formData.employeeCode} onChange={e=>setFormData({...formData, employeeCode: e.target.value})} className="w-32 p-1.5 rounded border text-sm font-semibold border-slate-300" /></td>
                   <td className="p-2 p-2 border border-slate-200"><input value={formData.fullName} onChange={e=>setFormData({...formData, fullName: e.target.value})} className="w-full p-1.5 rounded border text-sm border-slate-300" /></td>
@@ -280,9 +280,9 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
                   </td>
                 </tr>
               ) : (
-                <tr key={u.id} className={"hover:bg-slate-50/50 transition-colors " + (selectedIds.includes(u.id) ? "bg-[#00A19A]/10/30" : "")}>
+                <tr key={u.id} className={"hover:bg-slate-50/50 transition-colors " + (selectedIds.includes(u.id) ? "bg-[#00A99D]/10/30" : "")}>
                   <td className="p-2 p-2 text-center border border-slate-200">
-                    <input type="checkbox" className="w-4 h-4 rounded text-[#00A19A]"
+                    <input type="checkbox" className="w-4 h-4 rounded text-[#00A99D]"
                       checked={selectedIds.includes(u.id)}
                       onChange={e => {
                          if (e.target.checked) setSelectedIds([...selectedIds, u.id]);
@@ -295,7 +295,7 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
                   
                   <td className="p-2 p-2 border border-slate-200">
                     <div className="flex flex-col gap-1">
-                      <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-[#00A19A]/10 text-indigo-700 border border-[#00A19A]/20 w-fit">
+                      <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-[#00A99D]/10 text-indigo-700 border border-[#00A99D]/20 w-fit">
                         {roles.find((r:any) => r.code === u.role)?.name || u.role}
                       </span>
                       {u.campusIds && u.campusIds.length > 0 && (
@@ -311,7 +311,7 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
 
                   <td className="px-6 py-3 border-l border-slate-200 text-xs text-slate-400 italic">*** (Đã mã hóa)</td>
                   <td className="p-2 p-2 text-right border border-slate-200">
-                    <button onClick={() => startEdit(u)} className="p-2 text-slate-400 hover:text-[#00A19A] rounded-lg"><Edit2 className="w-4 h-4"/></button>
+                    <button onClick={() => startEdit(u)} className="p-2 text-slate-400 hover:text-[#00A99D] rounded-lg"><Edit2 className="w-4 h-4"/></button>
                     <button onClick={() => handleDelete(u.id, u.fullName)} className="p-2 text-slate-400 hover:text-red-500 rounded-lg"><Trash2 className="w-4 h-4"/></button>
                   </td>
                 </tr>

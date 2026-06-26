@@ -256,7 +256,7 @@ async function notifyBatchAssignment(batch: any, appUrl?: string) {
 
     const emailHtml = `
       <div style="font-family: Arial, sans-serif; font-size: 14px; color: #1E1B4B; line-height: 1.6; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
-        <div style="background-color: #00A6A9; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; color: #ffffff;">
+        <div style="background-color: #00A99D; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; color: #ffffff;">
           <h2 style="margin: 0; font-size: 18px; text-transform: uppercase;">Thông báo phân công khảo sát</h2>
         </div>
         <div style="padding: 20px 10px;">
@@ -293,7 +293,7 @@ async function notifyBatchAssignment(batch: any, appUrl?: string) {
             </p>
           </div>
           <div style="text-align: center; margin: 25px 0;">
-            <a href="${loginUrl}" target="_blank" style="background-color: #00A6A9; color: #ffffff; padding: 12px 30px; text-decoration: none; font-weight: bold; border-radius: 8px; display: inline-block; font-size: 14px; box-shadow: 0 4px 6px -1px rgba(0, 166, 169, 0.2);">Đăng nhập Hệ thống</a>
+            <a href="${loginUrl}" target="_blank" style="background-color: #00A99D; color: #ffffff; padding: 12px 30px; text-decoration: none; font-weight: bold; border-radius: 8px; display: inline-block; font-size: 14px; box-shadow: 0 4px 6px -1px rgba(0, 166, 169, 0.2);">Đăng nhập Hệ thống</a>
           </div>
         </div>
         <div style="background-color: #f8fafc; padding: 15px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; border-radius: 0 0 8px 8px;">

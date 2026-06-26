@@ -335,7 +335,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
           </select>
         </div>
         <div className="flex items-center gap-2">
-          <Building2 className="w-5 h-5 text-[#00A19A]" />
+          <Building2 className="w-5 h-5 text-[#00A99D]" />
           <label className="font-semibold text-slate-700 text-sm">Cơ sở:</label>
           <select value={selectedCampus} onChange={e => setSelectedCampus(e.target.value)}
             className="border rounded-lg p-2 text-sm min-w-[160px] outline-none focus:ring-2 focus:ring-indigo-300">
@@ -465,7 +465,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
              </div>
              <form onSubmit={handleSaveEdit} className="p-5 space-y-4">
                 <div><label className="block text-sm font-semibold text-slate-700 mb-1">Tên lớp</label><input type="text" required value={editModal.className} onChange={e => setEditModal({...editModal, className: e.target.value})} className="w-full border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-sm"/></div>
-                <div><label className="block text-sm font-semibold text-slate-700 mb-1">Cơ sở</label><select required value={editModal.campusId} disabled={isCampusLocked} onChange={e => !isCampusLocked && setEditModal({...editModal, campusId: e.target.value})} className={`w-full border rounded-xl p-2.5 outline-none text-sm ${isCampusLocked ? "bg-[#00A19A]/10 border-indigo-200 text-indigo-700 cursor-not-allowed" : "focus:ring-2 focus:ring-blue-500 border-slate-200"}`}>{campuses.map((cp: any) => <option key={cp.id} value={cp.id}>{cp.campusName}</option>)}</select></div>
+                <div><label className="block text-sm font-semibold text-slate-700 mb-1">Cơ sở</label><select required value={editModal.campusId} disabled={isCampusLocked} onChange={e => !isCampusLocked && setEditModal({...editModal, campusId: e.target.value})} className={`w-full border rounded-xl p-2.5 outline-none text-sm ${isCampusLocked ? "bg-[#00A99D]/10 border-indigo-200 text-indigo-700 cursor-not-allowed" : "focus:ring-2 focus:ring-blue-500 border-slate-200"}`}>{campuses.map((cp: any) => <option key={cp.id} value={cp.id}>{cp.campusName}</option>)}</select></div>
                 <div className="grid grid-cols-2 gap-4">
                   <div><label className="block text-sm font-semibold text-slate-700 mb-1">Bậc học</label><select required value={editModal.level} onChange={e => setEditModal({...editModal, level: e.target.value, grade: ""})} className="w-full border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-sm"><option value="">Chọn bậc</option>{(activeTab === "mam-non" ? MN_LEVELS : K12_LEVELS).filter(l => l.value).map(l => <option key={l.value} value={l.value}>{l.label}</option>)}</select></div>
                   <div><label className="block text-sm font-semibold text-slate-700 mb-1">Khối lớp</label><select required value={editModal.grade} onChange={e => setEditModal({...editModal, grade: e.target.value})} className="w-full border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-sm"><option value="">Chọn khối</option>{getGradesList(editModal.level, activeTab).map(g => <option key={g} value={g}>{g}</option>)}</select></div>
@@ -547,7 +547,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1">Cơ sở <span className="text-red-500">*</span></label>
-                  <select required value={createModal.campusId} disabled={isCampusLocked} onChange={e => !isCampusLocked && setCreateModal({...createModal, campusId: e.target.value})} className={`w-full border rounded-xl p-2.5 outline-none text-sm ${isCampusLocked ? "bg-[#00A19A]/10 border-indigo-200 text-indigo-700 cursor-not-allowed" : "focus:ring-2 focus:ring-blue-500 border-slate-200"}`}>
+                  <select required value={createModal.campusId} disabled={isCampusLocked} onChange={e => !isCampusLocked && setCreateModal({...createModal, campusId: e.target.value})} className={`w-full border rounded-xl p-2.5 outline-none text-sm ${isCampusLocked ? "bg-[#00A99D]/10 border-indigo-200 text-indigo-700 cursor-not-allowed" : "focus:ring-2 focus:ring-blue-500 border-slate-200"}`}>
                     {campuses.map((cp: any) => <option key={cp.id} value={cp.id}>{cp.campusName}</option>)}
                   </select>
                 </div>

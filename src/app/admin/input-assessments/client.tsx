@@ -1468,36 +1468,36 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     const customFooterHtml = config.footer ? getImgTag(config.footer, "footer-img", "width: 100%; max-height: 100px; object-fit: contain;", "Footer") :
       '<div style="width: 100%; font-family: Arial, sans-serif; box-sizing: border-box; text-align: left;">' +
         '<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; width: 100%;">' +
-          '<span style="font-weight: bold; color: #00A6A9; white-space: nowrap; text-transform: uppercase; font-size: 11.5px; letter-spacing: 0.5px;">HỆ THỐNG GIÁO DỤC SKY-LINE</span>' +
+          '<span style="font-weight: bold; color: #00A99D; white-space: nowrap; text-transform: uppercase; font-size: 11.5px; letter-spacing: 0.5px;">HỆ THỐNG GIÁO DỤC SKY-LINE</span>' +
           '<div style="flex-grow: 1; border-top: 1px solid rgba(0, 166, 169, 0.7); height: 0; margin-top: 2px;"></div>' +
-          '<span style="font-weight: 600; color: #00A6A9; white-space: nowrap; text-transform: lowercase; font-size: 11px;">www.skylineschool.edu.vn</span>' +
+          '<span style="font-weight: 600; color: #00A99D; white-space: nowrap; text-transform: lowercase; font-size: 11px;">www.skylineschool.edu.vn</span>' +
         '</div>' +
         '<div style="display: flex; justify-content: space-between; font-size: 9px; position: relative; width: 100%;">' +
           '<div style="width: 32%; display: flex; flex-direction: column; gap: 4px;">' +
             '<div>' +
-              '<p style="font-weight: bold; color: #00A6A9; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Riverside</p>' +
+              '<p style="font-weight: bold; color: #00A99D; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Riverside</p>' +
               '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Lô A2.4 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>' +
             '</div>' +
             '<div>' +
-              '<p style="font-weight: bold; color: #00A6A9; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Central</p>' +
+              '<p style="font-weight: bold; color: #00A99D; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Central</p>' +
               '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>' +
             '</div>' +
             '<div>' +
-              '<p style="font-weight: bold; color: #00A6A9; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Global</p>' +
+              '<p style="font-weight: bold; color: #00A99D; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Global</p>' +
               '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Lô A2 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>' +
             '</div>' +
           '</div>' +
           '<div style="width: 32%; display: flex; flex-direction: column; gap: 4px;">' +
             '<div>' +
-              '<p style="font-weight: bold; color: #00A6A9; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Beach</p>' +
+              '<p style="font-weight: bold; color: #00A99D; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Beach</p>' +
               '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Số 199 Trần Anh Tông, P. Thanh Khê, TP. Đà Nẵng</p>' +
             '</div>' +
             '<div>' +
-              '<p style="font-weight: bold; color: #00A6A9; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Hill</p>' +
+              '<p style="font-weight: bold; color: #00A99D; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Hill</p>' +
               '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Khối Hà My Đông A, P. Điện Bàn Đông, TP. Đà Nẵng</p>' +
             '</div>' +
             '<div>' +
-              '<p style="font-weight: bold; color: #00A6A9; margin: 0; font-size: 9.5px; line-height: 1.2;">Trung tâm sống thành công - SLS</p>' +
+              '<p style="font-weight: bold; color: #00A99D; margin: 0; font-size: 9.5px; line-height: 1.2;">Trung tâm sống thành công - SLS</p>' +
               '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>' +
             '</div>' +
           '</div>' +
@@ -1509,7 +1509,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
               '<p style="margin: 0;">(+84.235) 375 1777</p>' +
             '</div>' +
           '</div>' +
-          '<div style="position: absolute; right: -5px; top: 2px; width: 64px; height: 48px; pointer-events: none; display: flex; align-items: center; justify-content: center; color: #00A6A9;">' +
+          '<div style="position: absolute; right: -5px; top: 2px; width: 64px; height: 48px; pointer-events: none; display: flex; align-items: center; justify-content: center; color: #00A99D;">' +
             '<svg viewBox="0 0 120 60" style="width: 100%; height: 100%; fill: currentColor;">' +
               '<path d="M 8 26 C 24 32, 50 52, 62 60 C 78 36, 102 16, 118 3 C 95 16, 76 44, 62 62 C 48 46, 25 32, 8 26 Z" />' +
             '</svg>' +
@@ -3570,7 +3570,7 @@ return {
                 {!asFilterBatchId ? (
                   <div className="flex flex-col items-center justify-center py-16 text-center">
                     <div className="w-16 h-16 flex items-center justify-center mb-4 text-xs font-semibold">
-                      <Filter className="w-8 h-8 text-[#00A19A]" />
+                      <Filter className="w-8 h-8 text-[#00A99D]" />
                     </div>
                     <p className="font-black text-slate-500 text-sm">Vui lòng chọn Đợt lọc</p>
                     <p className="text-xs text-slate-400 mt-1 font-medium">Chọn một Đợt ở bộ lọc phía trên để hiển thị danh sách giáo viên đã được phân công</p>
@@ -3884,7 +3884,7 @@ return {
             
             <div className="flex items-center gap-3">
               <span className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 text-xs font-bold border border-slate-200">
-                Tổng cộng: <span className="text-[#00A19A] ml-1">{filtStu.length}</span> HS
+                Tổng cộng: <span className="text-[#00A99D] ml-1">{filtStu.length}</span> HS
               </span>
               <button onClick={handleDownloadTemplate} disabled={!sPeriodId || sPeriodId === "all"} className="h-10 text-slate-600 flex items-center justify-center hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 shadow-sm transition-all disabled:opacity-50 text-sm font-semibold group text-xs font-semibold" title={sPeriodId === "all" ? "Vui lòng chọn một kỳ cụ thể" : ""}>
                  <Download className="w-4 h-4 sm:mr-2 group-hover:-translate-y-0.5 transition-transform"/>
@@ -3894,7 +3894,7 @@ return {
                  <Upload className="w-4 h-4 sm:mr-2 group-hover:-translate-y-0.5 transition-transform"/>
                  <span className="hidden sm:inline">Nhập Excel</span>
               </button>
-              <button onClick={openAddStudent} disabled={!sPeriodId || sPeriodId === "all" || cannotCreate} className={"h-10 px-5 bg-[#00A19A] text-white text-sm font-bold rounded-xl hover:bg-[#008c85] disabled:opacity-50 transition-all shadow-md shadow-[#00A19A]/20 flex items-center justify-center " + (cannotCreate ? "pointer-events-none opacity-40" : "")} title={sPeriodId === "all" ? "Vui lòng chọn một kỳ cụ thể" : ""}>
+              <button onClick={openAddStudent} disabled={!sPeriodId || sPeriodId === "all" || cannotCreate} className={"h-10 px-5 bg-[#00A99D] text-white text-sm font-bold rounded-xl hover:bg-[#009085] disabled:opacity-50 transition-all shadow-md shadow-[#00A99D]/20 flex items-center justify-center " + (cannotCreate ? "pointer-events-none opacity-40" : "")} title={sPeriodId === "all" ? "Vui lòng chọn một kỳ cụ thể" : ""}>
                 <Plus className="w-4 h-4 mr-2"/> Thêm mới
               </button>
               <input type="file" ref={fileRef} accept=".xlsx" className="hidden" onChange={handleImport}/>
@@ -3951,7 +3951,7 @@ return {
                 {/* Desktop Table View */}
                 <div className="hidden md:block overflow-x-auto custom-scrollbar flex-1">
                   <table className="w-full text-left whitespace-nowrap border-collapse">
-                    <thead className="bg-[#00A19A]/5 border-b border-slate-300 sticky top-0 z-10">
+                    <thead className="bg-[#00A99D]/5 border-b border-slate-300 sticky top-0 z-10">
                        <tr>
                           <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest border border-slate-300">Mã HS KS</th>
                           <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest border border-slate-300">Họ và Tên</th>
@@ -4009,7 +4009,7 @@ return {
                            
                            <td className="p-2 text-center border border-slate-300 sticky right-0 group-hover:bg-slate-50 transition-colors shadow-[-10px_0_15px_-10px_rgba(0,0,0,0.05)] text-xs font-semibold">
                               <div className="flex items-center justify-center gap-1.5">
-                                 <button onClick={()=>openEditStudent(s)} className={"p-1.5 text-slate-400 hover:text-[#00A19A] hover:bg-[#00A19A]/10 rounded-xl transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate} title="Sửa hồ sơ"><Edit2 className="w-4 h-4"/></button>
+                                 <button onClick={()=>openEditStudent(s)} className={"p-1.5 text-slate-400 hover:text-[#00A99D] hover:bg-[#00A99D]/10 rounded-xl transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate} title="Sửa hồ sơ"><Edit2 className="w-4 h-4"/></button>
                                  <button onClick={()=>setConfirm({msg:`Xóa hồ sơ học sinh ${s.fullName}?`,fn:()=>doDeleteStudent(s.id)})} className={"p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete} title="Xóa hồ sơ"><Trash2 className="w-4 h-4"/></button>
                               </div>
                            </td>
@@ -4025,11 +4025,11 @@ return {
                     <div key={s.id} className="bg-white p-4 rounded-2xl border-2 border-blue-100 shadow-sm relative">
                       <div className="flex justify-between items-start mb-3">
                         <div className="flex flex-col">
-                          <span className="font-mono text-xs font-black text-[#00A19A] mb-1">{s.studentCode}</span>
+                          <span className="font-mono text-xs font-black text-[#00A99D] mb-1">{s.studentCode}</span>
                           <span className="text-sm font-bold text-slate-800">{s.fullName}</span>
                         </div>
                         <div className="flex items-center gap-1">
-                           <button onClick={()=>openEditStudent(s)} className={"p-2 text-slate-400 hover:text-[#00A19A] bg-slate-50 rounded-xl " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate}><Edit2 className="w-4 h-4"/></button>
+                           <button onClick={()=>openEditStudent(s)} className={"p-2 text-slate-400 hover:text-[#00A99D] bg-slate-50 rounded-xl " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate}><Edit2 className="w-4 h-4"/></button>
                            <button onClick={()=>setConfirm({msg:`Xóa hồ sơ học sinh ${s.fullName}?`,fn:()=>doDeleteStudent(s.id)})} className={"p-2 text-slate-400 hover:text-rose-600 bg-slate-50 rounded-xl " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete}><Trash2 className="w-4 h-4"/></button>
                         </div>
                       </div>
@@ -4049,7 +4049,7 @@ return {
                         </div>
                         <div>
                            <span className="text-slate-400 block mb-0.5 text-[10px] uppercase font-bold">Hệ KS</span>
-                           <span className="font-semibold text-[#00A19A]">{s.surveyFormType || "-"}</span>
+                           <span className="font-semibold text-[#00A99D]">{s.surveyFormType || "-"}</span>
                          </div>
                          {selPeriod?.name?.toLowerCase().includes("open day") && (
                            <>
@@ -4131,7 +4131,7 @@ return {
             <h2 className="text-sm font-black text-slate-600 uppercase tracking-widest flex items-center gap-2"><BookOpen className="w-4 h-4"/> Danh sách Môn Khảo sát</h2>
             <button
               onClick={() => { setEditingSubjectId(null); setSubjectForm({ code:"", name:"", subjectType:"", scoreColumns:1, commentColumns:1, status:"ACTIVE", exemptCriteria:[] as string[] }); setIsSubjectOpen(true) }}
-              className={"flex items-center gap-2 px-5 py-2.5 bg-[#00A19A] text-white text-[13px] font-bold rounded-xl hover:bg-[#008c85] transition-all shadow-md shadow-[#00A19A]/20 " + (cannotCreate ? "pointer-events-none opacity-40" : "")} disabled={cannotCreate}
+              className={"flex items-center gap-2 px-5 py-2.5 bg-[#00A99D] text-white text-[13px] font-bold rounded-xl hover:bg-[#009085] transition-all shadow-md shadow-[#00A99D]/20 " + (cannotCreate ? "pointer-events-none opacity-40" : "")} disabled={cannotCreate}
             >
               <Plus className="w-4 h-4"/> Thêm Môn mới
             </button>
@@ -4199,7 +4199,7 @@ return {
           {!isReadOnly && (
             <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
             <div className="flex items-center gap-3 mb-5 border-b border-slate-200 pb-4">
-              <div className="bg-[#00A19A]/10 p-2 rounded-xl text-[#00A19A]"><Settings className="w-5 h-5"/></div>
+              <div className="bg-[#00A99D]/10 p-2 rounded-xl text-[#00A99D]"><Settings className="w-5 h-5"/></div>
               <div>
                 <h3 className="font-black text-slate-800 text-lg">{editingMappingSubjectId ? "Chỉnh sửa Cấu hình Môn" : "Gán Môn Khảo Sát"}</h3>
                 <p className="text-xs font-semibold text-slate-500 mt-0.5">{editingMappingSubjectId ? "Đang chỉnh sửa - thay đổi Khối/Hệ rồi bấm Cập Nhật" : "Chọn Khối, Hệ học và các Môn để cấu hình đồng loạt"}</p>
@@ -4213,11 +4213,11 @@ return {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="block font-black text-slate-850 text-xs uppercase tracking-wider">Khối:</span>
-                    <button onClick={() => setSelGrades(selGrades.length === activeGrades.length ? [] : [...activeGrades])} className={"text-[10px] font-black uppercase tracking-wider text-[#00A19A] bg-[#00A19A]/10 hover:bg-[#00A19A]/20 px-2.5 py-1 rounded-md transition-colors border border-[#00A19A]/20 " + (isReadOnly ? "pointer-events-none opacity-40" : "")} disabled={isReadOnly}>Chọn tất cả</button>
+                    <button onClick={() => setSelGrades(selGrades.length === activeGrades.length ? [] : [...activeGrades])} className={"text-[10px] font-black uppercase tracking-wider text-[#00A99D] bg-[#00A99D]/10 hover:bg-[#00A99D]/20 px-2.5 py-1 rounded-md transition-colors border border-[#00A99D]/20 " + (isReadOnly ? "pointer-events-none opacity-40" : "")} disabled={isReadOnly}>Chọn tất cả</button>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {activeGrades.map((g: string) => (
-                      <button key={g} onClick={() => toggleGrade(g)} className={`text-xs px-3 py-1.5 rounded-xl font-bold transition-all border ${selGrades.includes(g) ? 'bg-[#00A19A] text-white border-[#00A19A] shadow-sm' : 'bg-white text-slate-800 border-slate-300 hover:border-[#00A19A] hover:bg-slate-100/50'} ${isReadOnly ? "pointer-events-none opacity-40" : ""}`} disabled={isReadOnly}>
+                      <button key={g} onClick={() => toggleGrade(g)} className={`text-xs px-3 py-1.5 rounded-xl font-bold transition-all border ${selGrades.includes(g) ? 'bg-[#00A99D] text-white border-[#00A99D] shadow-sm' : 'bg-white text-slate-800 border-slate-300 hover:border-[#00A99D] hover:bg-slate-100/50'} ${isReadOnly ? "pointer-events-none opacity-40" : ""}`} disabled={isReadOnly}>
                         {selGrades.includes(g) && <Check className="w-3 h-3 inline mr-1"/>} {g}
                       </button>
                     ))}
@@ -4227,11 +4227,11 @@ return {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="block font-black text-slate-850 text-xs uppercase tracking-wider">Hệ học:</span>
-                    <button onClick={() => setSelEdus(selEdus.length === currentEduSystems.length ? [] : currentEduSystems.map((e: any) => e.code))} className={"text-[10px] font-black uppercase tracking-wider text-[#00A19A] bg-[#00A19A]/10 hover:bg-[#00A19A]/20 px-2.5 py-1 rounded-md transition-colors border border-[#00A19A]/20 " + (isReadOnly ? "pointer-events-none opacity-40" : "")} disabled={isReadOnly}>Chọn tất cả</button>
+                    <button onClick={() => setSelEdus(selEdus.length === currentEduSystems.length ? [] : currentEduSystems.map((e: any) => e.code))} className={"text-[10px] font-black uppercase tracking-wider text-[#00A99D] bg-[#00A99D]/10 hover:bg-[#00A99D]/20 px-2.5 py-1 rounded-md transition-colors border border-[#00A99D]/20 " + (isReadOnly ? "pointer-events-none opacity-40" : "")} disabled={isReadOnly}>Chọn tất cả</button>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {currentEduSystems.map((es: any) => (
-                      <button key={es.code} onClick={() => toggleEdu(es.code)} className={`text-xs px-3 py-1.5 rounded-xl font-bold transition-all border ${selEdus.includes(es.code) ? 'bg-[#00A19A] text-white border-[#00A19A] shadow-sm' : 'bg-white text-slate-800 border-slate-300 hover:border-[#00A19A] hover:bg-slate-100/50'} ${isReadOnly ? "pointer-events-none opacity-40" : ""}`} disabled={isReadOnly}>
+                      <button key={es.code} onClick={() => toggleEdu(es.code)} className={`text-xs px-3 py-1.5 rounded-xl font-bold transition-all border ${selEdus.includes(es.code) ? 'bg-[#00A99D] text-white border-[#00A99D] shadow-sm' : 'bg-white text-slate-800 border-slate-300 hover:border-[#00A99D] hover:bg-slate-100/50'} ${isReadOnly ? "pointer-events-none opacity-40" : ""}`} disabled={isReadOnly}>
                         {selEdus.includes(es.code) && <Check className="w-3 h-3 inline mr-1"/>} {es.code}
                       </button>
                     ))}
@@ -4243,11 +4243,11 @@ return {
               <div className="lg:col-span-7 p-5 flex flex-col text-xs font-semibold">
                 <div className="flex items-center justify-between mb-3">
                   <span className="block font-black text-slate-855 text-xs uppercase tracking-wider">Chọn Môn Khảo Sát:</span>
-                  <button onClick={() => setAssignSelSubjects(assignSelSubjects.length === subjectsList.length ? [] : subjectsList.map((s:any)=>s.id))} className={"text-[10px] font-black uppercase tracking-wider text-[#00A19A] bg-[#00A19A]/10 hover:bg-[#00A19A]/20 px-2.5 py-1 rounded-md transition-colors border border-[#00A19A]/20 " + (isReadOnly ? "pointer-events-none opacity-40" : "")} disabled={isReadOnly}>Chọn tất cả</button>
+                  <button onClick={() => setAssignSelSubjects(assignSelSubjects.length === subjectsList.length ? [] : subjectsList.map((s:any)=>s.id))} className={"text-[10px] font-black uppercase tracking-wider text-[#00A99D] bg-[#00A99D]/10 hover:bg-[#00A99D]/20 px-2.5 py-1 rounded-md transition-colors border border-[#00A99D]/20 " + (isReadOnly ? "pointer-events-none opacity-40" : "")} disabled={isReadOnly}>Chọn tất cả</button>
                 </div>
                 <div className="flex flex-wrap gap-2 mb-4 max-h-[150px] overflow-y-auto pr-1">
                   {subjectsList.map((s:any) => (
-                    <button key={s.id} onClick={() => setAssignSelSubjects(p => p.includes(s.id) ? p.filter(x => x !== s.id) : [...p, s.id])} className={`text-xs px-3 py-2 rounded-xl font-bold transition-all border ${assignSelSubjects.includes(s.id) ? 'bg-[#00A19A] text-white border-[#00A19A] shadow-sm' : 'bg-white text-slate-800 border-slate-300 hover:border-[#00A19A] hover:bg-slate-100/50'} ${isReadOnly ? "pointer-events-none opacity-40" : ""}`} disabled={isReadOnly}>
+                    <button key={s.id} onClick={() => setAssignSelSubjects(p => p.includes(s.id) ? p.filter(x => x !== s.id) : [...p, s.id])} className={`text-xs px-3 py-2 rounded-xl font-bold transition-all border ${assignSelSubjects.includes(s.id) ? 'bg-[#00A99D] text-white border-[#00A99D] shadow-sm' : 'bg-white text-slate-800 border-slate-300 hover:border-[#00A99D] hover:bg-slate-100/50'} ${isReadOnly ? "pointer-events-none opacity-40" : ""}`} disabled={isReadOnly}>
                       {s.name}
                     </button>
                   ))}
@@ -4283,7 +4283,7 @@ return {
                       notify(wasEditing ? "Cập nhật cấu hình thành công!" : "Lưu cấu hình thành công!");
                     }}
                     disabled={mappingLoading || (!selGrades.length || !selEdus.length || !assignSelSubjects.length) || cannotCreate || cannotUpdate}
-                    className={"w-full py-3.5 bg-[#00A19A] text-white rounded-xl font-black text-sm uppercase tracking-widest hover:bg-[#1E8B87] transition-colors disabled:opacity-50 disabled:shadow-none flex justify-center items-center gap-2 " + ((cannotCreate || cannotUpdate) ? "pointer-events-none opacity-40" : "")}
+                    className={"w-full py-3.5 bg-[#00A99D] text-white rounded-xl font-black text-sm uppercase tracking-widest hover:bg-[#1E8B87] transition-colors disabled:opacity-50 disabled:shadow-none flex justify-center items-center gap-2 " + ((cannotCreate || cannotUpdate) ? "pointer-events-none opacity-40" : "")}
                   >
                     {mappingLoading ? <FileSpreadsheet className="w-4 h-4 animate-spin"/> : <Check className="w-4 h-4"/>}
                     {editingMappingSubjectId ? "Cập Nhật Cấu Hình" : "Lưu Cấu Hình"}
@@ -4297,8 +4297,8 @@ return {
           {/* BOTTOM PANEL: Table of existing configurations */}
           <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
             <div className="flex justify-between items-center text-xs font-semibold">
-              <h4 className="font-black text-slate-800 flex items-center gap-2"><Layers className="w-4 h-4 text-[#00A19A]"/> Danh sách Cấu hình đã lưu</h4>
-              <button onClick={fetchAllMappings} className="text-xs text-[#00A19A] hover:underline font-bold">Làm mới</button>
+              <h4 className="font-black text-slate-800 flex items-center gap-2"><Layers className="w-4 h-4 text-[#00A99D]"/> Danh sách Cấu hình đã lưu</h4>
+              <button onClick={fetchAllMappings} className="text-xs text-[#00A99D] hover:underline font-bold">Làm mới</button>
             </div>
             
             {allMappingsLoading ? (
@@ -4344,7 +4344,7 @@ return {
                                 <span className="font-bold text-slate-800 text-base">{g.subject?.name}</span>
                                 {g.subject?.code && <span className="text-xs font-mono text-slate-400">{g.subject.code}</span>}
                                 {g.subject?.subjectType && g.subject.subjectType === "VIET_NAM" && (
-                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#00A19A]/10 text-[#00A19A] border border-[#00A19A]/20 font-bold uppercase">
+                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#00A99D]/10 text-[#00A99D] border border-[#00A99D]/20 font-bold uppercase">
                                     GV VN
                                   </span>
                                 )}
@@ -4352,7 +4352,7 @@ return {
                             </td>
                             <td className="p-2 p-2 border border-slate-200">
                               {allGrades ? (
-                                <span className="font-bold text-[#00A19A] bg-[#00A19A]/5 border border-[#00A19A]/20 px-2.5 py-1 rounded-md text-xs">Tất cả Khối</span>
+                                <span className="font-bold text-[#00A99D] bg-[#00A99D]/5 border border-[#00A99D]/20 px-2.5 py-1 rounded-md text-xs">Tất cả Khối</span>
                               ) : (
                                 <div className="flex flex-wrap gap-1.5">
                                   {Array.from(g.grades).sort((a:any, b:any) => parseInt(a) - parseInt(b)).map((grade:any) => (
@@ -4380,7 +4380,7 @@ return {
                                   setAssignSelSubjects([g.subject?.id]);
                                   setEditingMappingSubjectId(g.subject?.id);
                                   window.scrollTo({ top: 0, behavior: 'smooth' });
-                                }} className={"p-2 text-slate-400 hover:text-[#00A19A] hover:bg-[#00A19A]/5 rounded-xl transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate} title="Chỉnh sửa (Sẽ nạp lên form phía trên)">
+                                }} className={"p-2 text-slate-400 hover:text-[#00A99D] hover:bg-[#00A99D]/5 rounded-xl transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate} title="Chỉnh sửa (Sẽ nạp lên form phía trên)">
                                   <Pencil className="w-4 h-4"/>
                                 </button>
                                 <button onClick={async () => {
@@ -5691,20 +5691,20 @@ return {
                                   : (badgeStyle.replace("bg-indigo-50", "bg-violet-100/50").replace("text-indigo-700", "text-violet-700").replace("border-indigo-200", "border-violet-200"));
                               } else if (isToan || isTiengVietNguVan) {
                                 activeClasses = isActive 
-                                  ? "border-[#00A19A] bg-[#00A19A] text-white shadow-[0_4px_12px_rgba(0,161,154,0.2)] -translate-y-0.5" 
-                                  : "border-[#00A19A]/20 bg-[#00A19A]/5 text-[#008c85] hover:bg-[#00A19A]/10 hover:border-[#00A19A]/40 hover:-translate-y-0.5";
-                                textLabelClass = isActive ? "text-teal-100" : "text-[#00A19A] font-bold";
-                                textValClass = isActive ? "text-white" : "text-[#008c85]";
+                                  ? "border-[#00A99D] bg-[#00A99D] text-white shadow-[0_4px_12px_rgba(0,161,154,0.2)] -translate-y-0.5" 
+                                  : "border-[#00A99D]/20 bg-[#00A99D]/5 text-[#009085] hover:bg-[#00A99D]/10 hover:border-[#00A99D]/40 hover:-translate-y-0.5";
+                                textLabelClass = isActive ? "text-teal-100" : "text-[#00A99D] font-bold";
+                                textValClass = isActive ? "text-white" : "text-[#009085]";
                                 badgeClass = isActive 
                                   ? "bg-white/20 text-white border-white/20" 
-                                  : "bg-[#00A19A]/10 text-[#008c85] border-[#00A19A]/20";
+                                  : "bg-[#00A99D]/10 text-[#009085] border-[#00A99D]/20";
                               } else {
                                 activeClasses = isActive 
-                                  ? "border-[#00A19A] bg-[#00A19A]/5 shadow-[0_2px_8px_rgba(0,161,154,0.08)] -translate-y-0.5" 
-                                  : "border-slate-200 bg-white hover:border-[#00A19A]/40 hover:-translate-y-0.5";
-                                textLabelClass = isActive ? "text-[#00A19A]" : "text-slate-400";
-                                textValClass = isActive ? "text-[#00A19A]" : "text-slate-800";
-                                badgeClass = isActive ? "bg-[#00A19A] text-white border-[#00A19A]" : badgeStyle;
+                                  ? "border-[#00A99D] bg-[#00A99D]/5 shadow-[0_2px_8px_rgba(0,161,154,0.08)] -translate-y-0.5" 
+                                  : "border-slate-200 bg-white hover:border-[#00A99D]/40 hover:-translate-y-0.5";
+                                textLabelClass = isActive ? "text-[#00A99D]" : "text-slate-400";
+                                textValClass = isActive ? "text-[#00A99D]" : "text-slate-800";
+                                badgeClass = isActive ? "bg-[#00A99D] text-white border-[#00A99D]" : badgeStyle;
                               }
 
                               return (
@@ -5720,7 +5720,7 @@ return {
                                       {sName}
                                     </span>
                                     {subject.subjectType === "VIET_NAM" && sc.id !== "tong_diem_tieng_anh" && (
-                                      <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border shrink-0 ${isActive ? "bg-white/20 text-white border-white/20" : "bg-[#00A19A]/5 text-[#00A19A] border-[#00A19A]/20"}`}>
+                                      <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border shrink-0 ${isActive ? "bg-white/20 text-white border-white/20" : "bg-[#00A99D]/5 text-[#00A99D] border-[#00A99D]/20"}`}>
                                         GV Việt Nam
                                       </span>
                                     )}
@@ -5806,7 +5806,7 @@ return {
                                 const isTiengVietNguVan = subName.includes("tiếng việt") || subName.includes("ngữ văn") || subCode.includes("lit") || subCode.includes("vie") || subCode.includes("van");
 
                                 let detailCardClass = "bg-white border border-slate-200";
-                                let accentBarClass = "bg-[#00A19A]";
+                                let accentBarClass = "bg-[#00A99D]";
                                 let headerTextClass = "text-slate-800";
 
                                 if (isEnglish || isThinkingSkills) {
@@ -5814,9 +5814,9 @@ return {
                                   accentBarClass = "bg-violet-600";
                                   headerTextClass = "text-violet-900";
                                 } else if (isToan || isTiengVietNguVan) {
-                                  detailCardClass = "bg-[#00A19A]/5 border-[#00A19A]/20";
-                                  accentBarClass = "bg-[#00A19A]";
-                                  headerTextClass = "text-[#008c85]";
+                                  detailCardClass = "bg-[#00A99D]/5 border-[#00A99D]/20";
+                                  accentBarClass = "bg-[#00A99D]";
+                                  headerTextClass = "text-[#009085]";
                                 }
 
                                 let scoreVals = [];
@@ -5840,7 +5840,7 @@ return {
                                           <h4 className="font-black text-slate-800 text-lg leading-none">{subject.name}</h4>
                                           {subject.code && <span className="font-mono text-[10px] font-black text-slate-400 select-none text-xs font-semibold">{subject.code}</span>}
                                           {subject.subjectType === "VIET_NAM" && (
-                                            <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full border shadow-sm bg-[#00A19A]/5 text-[#00A19A] border-[#00A19A]/20`}>
+                                            <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full border shadow-sm bg-[#00A99D]/5 text-[#00A99D] border-[#00A99D]/20`}>
                                               Giáo viên Việt Nam
                                             </span>
                                           )}
@@ -7175,9 +7175,9 @@ return {
                   <div className="w-full pt-1 mt-4 z-10 print-footer" style={{ marginTop: "40px", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}>
                     {/* High-fidelity Header Title & Line */}
                     <div className="flex items-center gap-2 mb-2.5 w-full">
-                      <span className="font-bold text-[#00A6A9] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
-                      <div className="flex-grow border-t border-[#00A6A9]/70 h-0 mt-0.5"></div>
-                      <span className="font-semibold text-[#00A6A9] whitespace-nowrap lowercase text-[11px]">www.skylineschool.edu.vn</span>
+                      <span className="font-bold text-[#00A99D] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
+                      <div className="flex-grow border-t border-[#00A99D]/70 h-0 mt-0.5"></div>
+                      <span className="font-semibold text-[#00A99D] whitespace-nowrap lowercase text-[11px]">www.skylineschool.edu.vn</span>
                     </div>
                     
                     {/* Information Grid */}
@@ -7185,15 +7185,15 @@ return {
                       {/* Left Column (3 branches) */}
                       <div className="w-[30%] flex flex-col gap-1.5 text-left">
                         <div>
-                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">SKY-LINE Riverside</p>
+                          <p className="font-bold text-[#00A99D] text-[9.5px] leading-tight">SKY-LINE Riverside</p>
                           <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Lô A2.4 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>
                         </div>
                         <div>
-                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">SKY-LINE Central</p>
+                          <p className="font-bold text-[#00A99D] text-[9.5px] leading-tight">SKY-LINE Central</p>
                           <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
                         </div>
                         <div>
-                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">SKY-LINE Global</p>
+                          <p className="font-bold text-[#00A99D] text-[9.5px] leading-tight">SKY-LINE Global</p>
                           <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Lô A2 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>
                         </div>
                       </div>
@@ -7201,15 +7201,15 @@ return {
                       {/* Middle Column (3 branches) */}
                       <div className="w-[30%] flex flex-col gap-1.5 text-left">
                         <div>
-                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">SKY-LINE Beach</p>
+                          <p className="font-bold text-[#00A99D] text-[9.5px] leading-tight">SKY-LINE Beach</p>
                           <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 199 Trần Anh Tông, P. Thanh Khê, TP. Đà Nẵng</p>
                         </div>
                         <div>
-                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">SKY-LINE Hill</p>
+                          <p className="font-bold text-[#00A99D] text-[9.5px] leading-tight">SKY-LINE Hill</p>
                           <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Khối Hà My Đông A, P. Điện Bàn Đông, TP. Đà Nẵng</p>
                         </div>
                         <div>
-                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">Trung tâm sống thành công - SLS</p>
+                          <p className="font-bold text-[#00A99D] text-[9.5px] leading-tight">Trung tâm sống thành công - SLS</p>
                           <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
                         </div>
                       </div>
@@ -7229,7 +7229,7 @@ return {
                     </div>
 
                     {/* The Large Elegant Teal Checkmark Vector positioned absolute over the right corner */}
-                    <div className="absolute right-[-5px] top-[2px] w-16 h-12 opacity-100 pointer-events-none flex items-center justify-center text-[#00A6A9]">
+                    <div className="absolute right-[-5px] top-[2px] w-16 h-12 opacity-100 pointer-events-none flex items-center justify-center text-[#00A99D]">
                       <svg viewBox="0 0 120 60" className="w-full h-full fill-current" style={{ filter: "drop-shadow(0px 1px 1px rgba(0,166,169,0.1))" }}>
                         <path d="M 8 26 C 24 32, 50 52, 62 60 C 78 36, 102 16, 118 3 C 95 16, 76 44, 62 62 C 48 46, 25 32, 8 26 Z" />
                       </svg>
@@ -7311,9 +7311,9 @@ return {
                       <div className="w-full pt-1 mt-4 z-10 print-footer" style={{ marginTop: "40px", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}>
                     {/* High-fidelity Header Title & Line */}
                     <div className="flex items-center gap-2 mb-2.5 w-full">
-                      <span className="font-bold text-[#00A6A9] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
-                      <div className="flex-grow border-t border-[#00A6A9]/70 h-0 mt-0.5"></div>
-                      <span className="font-semibold text-[#00A6A9] whitespace-nowrap lowercase text-[11px]">www.skylineschool.edu.vn</span>
+                      <span className="font-bold text-[#00A99D] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
+                      <div className="flex-grow border-t border-[#00A99D]/70 h-0 mt-0.5"></div>
+                      <span className="font-semibold text-[#00A99D] whitespace-nowrap lowercase text-[11px]">www.skylineschool.edu.vn</span>
                     </div>
                     
                     {/* Information Grid */}
@@ -7321,15 +7321,15 @@ return {
                       {/* Left Column (3 branches) */}
                       <div className="w-[30%] flex flex-col gap-1.5 text-left">
                         <div>
-                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">SKY-LINE Riverside</p>
+                          <p className="font-bold text-[#00A99D] text-[9.5px] leading-tight">SKY-LINE Riverside</p>
                           <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Lô A2.4 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>
                         </div>
                         <div>
-                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">SKY-LINE Central</p>
+                          <p className="font-bold text-[#00A99D] text-[9.5px] leading-tight">SKY-LINE Central</p>
                           <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
                         </div>
                         <div>
-                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">SKY-LINE Global</p>
+                          <p className="font-bold text-[#00A99D] text-[9.5px] leading-tight">SKY-LINE Global</p>
                           <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Lô A2 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>
                         </div>
                       </div>
@@ -7337,15 +7337,15 @@ return {
                       {/* Middle Column (3 branches) */}
                       <div className="w-[30%] flex flex-col gap-1.5 text-left">
                         <div>
-                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">SKY-LINE Beach</p>
+                          <p className="font-bold text-[#00A99D] text-[9.5px] leading-tight">SKY-LINE Beach</p>
                           <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 199 Trần Anh Tông, P. Thanh Khê, TP. Đà Nẵng</p>
                         </div>
                         <div>
-                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">SKY-LINE Hill</p>
+                          <p className="font-bold text-[#00A99D] text-[9.5px] leading-tight">SKY-LINE Hill</p>
                           <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Khối Hà My Đông A, P. Điện Bàn Đông, TP. Đà Nẵng</p>
                         </div>
                         <div>
-                          <p className="font-bold text-[#00A6A9] text-[9.5px] leading-tight">Trung tâm sống thành công - SLS</p>
+                          <p className="font-bold text-[#00A99D] text-[9.5px] leading-tight">Trung tâm sống thành công - SLS</p>
                           <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
                         </div>
                       </div>
@@ -7365,7 +7365,7 @@ return {
                     </div>
 
                     {/* The Large Elegant Teal Checkmark Vector positioned absolute over the right corner */}
-                    <div className="absolute right-[-5px] top-[2px] w-16 h-12 opacity-100 pointer-events-none flex items-center justify-center text-[#00A6A9]">
+                    <div className="absolute right-[-5px] top-[2px] w-16 h-12 opacity-100 pointer-events-none flex items-center justify-center text-[#00A99D]">
                       <svg viewBox="0 0 120 60" className="w-full h-full fill-current" style={{ filter: "drop-shadow(0px 1px 1px rgba(0,166,169,0.1))" }}>
                         <path d="M 8 26 C 24 32, 50 52, 62 60 C 78 36, 102 16, 118 3 C 95 16, 76 44, 62 62 C 48 46, 25 32, 8 26 Z" />
                       </svg>
@@ -7495,8 +7495,8 @@ return {
                       ) : (
                         <div className="w-full pt-1 mt-4 z-10 print-footer" style={{ marginTop: "40px", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}>
                           <div className="flex items-center gap-2 mb-2.5 w-full">
-                            <span className="font-bold text-[#00A6A9] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
-                            <div className="flex-grow border-t border-[#00A6A9]/70 h-0 mt-0.5"></div>
+                            <span className="font-bold text-[#00A99D] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
+                            <div className="flex-grow border-t border-[#00A99D]/70 h-0 mt-0.5"></div>
                           </div>
                           <div className="flex flex-row justify-between w-full relative text-[9px]">
                             <div className="w-full text-center">

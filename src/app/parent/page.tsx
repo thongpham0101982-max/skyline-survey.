@@ -52,12 +52,12 @@ export default async function ParentDashboard() {
       <nav className="bg-white border-b border-slate-200 sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-6 h-20 flex justify-between items-center">
             <div className="flex items-center gap-3">
-               <div className="bg-[#00A19A] p-2.5 rounded-2xl">
+               <div className="bg-[#00A99D] p-2.5 rounded-2xl">
                   <Users className="w-6 h-6 text-white" />
                </div>
                <div>
                   <h1 className="text-xl font-black text-slate-900 tracking-tight">Cổng Phụ Huynh</h1>
-                  <p className="text-[10px] font-black text-[#00A19A] uppercase tracking-widest leading-none">Skyline Academy</p>
+                  <p className="text-[10px] font-black text-[#00A99D] uppercase tracking-widest leading-none">Skyline Academy</p>
                </div>
             </div>
             <div className="flex items-center gap-6">
@@ -65,7 +65,7 @@ export default async function ParentDashboard() {
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tài khoản</p>
                   <p className="text-sm font-bold text-slate-800">{session?.user?.name}</p>
                </div>
-               <Link href="/api/auth/signout" className="p-3 text-slate-400 hover:text-[#00A19A] hover:bg-teal-50 transition-all text-xs font-semibold">
+               <Link href="/api/auth/signout" className="p-3 text-slate-400 hover:text-[#00A99D] hover:bg-teal-50 transition-all text-xs font-semibold">
                   <LogOut className="w-5 h-5" />
                </Link>
             </div>
@@ -76,7 +76,7 @@ export default async function ParentDashboard() {
         {/* Welcome Section */}
         <div className="space-y-2">
            <h2 className="text-4xl font-black text-slate-900 tracking-tight">Chào {session?.user?.name?.split(' ').pop()}, 👋</h2>
-           <p className="text-slate-500 font-medium text-lg">Cổng thông tin khảo sát năm học: <span className="font-bold text-[#00A19A]">{defaultYear?.name || 'N/A'}</span></p>
+           <p className="text-slate-500 font-medium text-lg">Cổng thông tin khảo sát năm học: <span className="font-bold text-[#00A99D]">{defaultYear?.name || 'N/A'}</span></p>
         </div>
 
         {/* Children Selection Logic - Premium Cards */}
@@ -86,7 +86,7 @@ export default async function ParentDashboard() {
                 <div className="absolute top-0 right-0 w-32 h-32 -mr-12 -mt-12 opacity-50 transition-transform group-hover:scale-110 text-xs font-semibold" />
                 <div className="relative z-10">
                    <div className="flex justify-between items-start mb-6">
-                      <div className="w-16 h-16 flex items-center justify-center text-[#00A19A] transition-colors group-hover:bg-[#00A19A] group-hover:text-white text-xs font-semibold">
+                      <div className="w-16 h-16 flex items-center justify-center text-[#00A99D] transition-colors group-hover:bg-[#00A99D] group-hover:text-white text-xs font-semibold">
                          <GraduationCap className="w-8 h-8" />
                       </div>
                       <div className="flex flex-col items-end">
@@ -95,7 +95,7 @@ export default async function ParentDashboard() {
                       </div>
                    </div>
 
-                   <h3 className="text-2xl font-black text-slate-900 mb-1 group-hover:text-[#00A19A] transition-colors">{child.studentName}</h3>
+                   <h3 className="text-2xl font-black text-slate-900 mb-1 group-hover:text-[#00A99D] transition-colors">{child.studentName}</h3>
                    <div className="flex items-center gap-2 mb-8">
                       <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{child.class?.className}</span>
                       <span className="w-1 h-1 bg-slate-300 rounded-full" />
@@ -114,10 +114,10 @@ export default async function ParentDashboard() {
                             <Link 
                               key={s.id}
                               href={isDone ? "#" : `/parent/surveys/${s.id}?studentId=${child.id}`}
-                              className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${isDone ? 'bg-slate-50 border-slate-100 opacity-60' : 'bg-white border-teal-50 hover:border-[#00A19A] hover:shadow-md'}`}
+                              className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${isDone ? 'bg-slate-50 border-slate-100 opacity-60' : 'bg-white border-teal-50 hover:border-[#00A99D] hover:shadow-md'}`}
                             >
                                <div className="flex items-center gap-3">
-                                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isDone ? 'bg-emerald-50 text-emerald-500' : 'bg-teal-50 text-[#00A19A]'}`}>
+                                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isDone ? 'bg-emerald-50 text-emerald-500' : 'bg-teal-50 text-[#00A99D]'}`}>
                                      {isDone ? <CheckCircle2 className="w-5 h-5" /> : <ClipboardList className="w-5 h-5" />}
                                   </div>
                                   <div>
@@ -125,7 +125,7 @@ export default async function ParentDashboard() {
                                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">{isDone ? "Đã hoàn thành" : "Chưa hoàn thành"}</p>
                                   </div>
                                </div>
-                               {!isDone && <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-[#00A19A] transition-colors" />}
+                               {!isDone && <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-[#00A99D] transition-colors" />}
                             </Link>
                           )
                         })

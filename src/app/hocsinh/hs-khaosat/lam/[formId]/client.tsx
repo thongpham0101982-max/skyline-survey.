@@ -91,7 +91,7 @@ export default function HsFormClient({ formId, periodName, studentName, classNam
 
   return (
     <div className="min-h-screen font-outfit" style={{ background: '#f8fafc' }}>
-      <div className="text-white sticky top-0 z-50 shadow-xl" style={{ background: 'linear-gradient(135deg,#00A19A,#8b0000)' }}>
+      <div className="text-white sticky top-0 z-50 shadow-xl" style={{ background: 'linear-gradient(135deg,#00A99D,#8b0000)' }}>
         <div className="max-w-2xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between mb-4">
             <Link href="/hocsinh/hs-khaosat/danh-sach" className="flex items-center gap-2 text-white/80 hover:text-white text-xs font-black uppercase tracking-widest transition-all">
@@ -116,7 +116,7 @@ export default function HsFormClient({ formId, periodName, studentName, classNam
 
       <div className="max-w-2xl mx-auto px-6 py-10 pb-40">
         {err && (
-          <div className="mb-8 p-5 flex items-start gap-4 text-[#00A19A] animate-in slide-in-from-top-4 shadow-sm text-xs font-semibold">
+          <div className="mb-8 p-5 flex items-start gap-4 text-[#00A99D] animate-in slide-in-from-top-4 shadow-sm text-xs font-semibold">
             <AlertCircle className="w-5 h-5 shrink-0" />
             <p className="text-sm font-black">{err}</p>
           </div>
@@ -137,7 +137,7 @@ export default function HsFormClient({ formId, periodName, studentName, classNam
                     {answered ? <CheckCircle2 className="w-5 h-5" /> : n}
                   </div>
                   <p className="font-black text-slate-800 text-base leading-relaxed pt-1">
-                    {q.questionText} {q.isRequired && <span className="text-[#00A19A] ml-1">*</span>}
+                    {q.questionText} {q.isRequired && <span className="text-[#00A99D] ml-1">*</span>}
                     <span className="block text-[8px] text-slate-300 font-mono mt-1 uppercase">Type: {type}</span>
                   </p>
                 </div>
@@ -150,9 +150,9 @@ export default function HsFormClient({ formId, periodName, studentName, classNam
                           <button key={v} onClick={() => ans(q.id, v)}
                             className="w-12 h-12 rounded-2xl font-black text-base border-2 transition-all hover:scale-110 active:scale-90 flex items-center justify-center shadow-sm"
                             style={{
-                              background: value === v ? '#00A19A' : '#f8fafc',
+                              background: value === v ? '#00A99D' : '#f8fafc',
                               color: value === v ? 'white' : '#475569',
-                              borderColor: value === v ? '#00A19A' : '#e2e8f0',
+                              borderColor: value === v ? '#00A99D' : '#e2e8f0',
                               boxShadow: value === v ? '0 8px 20px rgba(190,30,46,0.3)' : ''
                             }}>
                             {v}
@@ -172,7 +172,7 @@ export default function HsFormClient({ formId, periodName, studentName, classNam
                       onChange={e => ans(q.id, e.target.value)} 
                       rows={4}
                       placeholder="Chia sẻ ý kiến của bạn tại đây..."
-                      className="w-full rounded-3xl px-6 py-5 text-sm font-bold text-slate-700 outline-none resize-none transition-all border-2 border-slate-50 focus:border-[#00A19A]/30 focus:bg-white shadow-inner"
+                      className="w-full rounded-3xl px-6 py-5 text-sm font-bold text-slate-700 outline-none resize-none transition-all border-2 border-slate-50 focus:border-[#00A99D]/30 focus:bg-white shadow-inner"
                       style={{ background: '#f8fafc' }} 
                     />
                   )}
@@ -205,12 +205,12 @@ export default function HsFormClient({ formId, periodName, studentName, classNam
                             className="w-full px-6 py-4.5 rounded-2xl border-2 text-left text-sm font-black transition-all flex items-center justify-between group"
                             style={{
                               background: value === opt ? 'rgba(190,30,46,0.03)' : '#f8fafc',
-                              borderColor: value === opt ? '#00A19A' : '#f1f5f9',
-                              color: value === opt ? '#00A19A' : '#475569',
+                              borderColor: value === opt ? '#00A99D' : '#f1f5f9',
+                              color: value === opt ? '#00A99D' : '#475569',
                               boxShadow: value === opt ? '0 4px 15px rgba(190,30,46,0.05)' : ''
                             }}>
                             {opt}
-                            <div className={`w-5 h-5 rounded-full border-2 transition-all flex items-center justify-center ${value === opt ? 'border-[#00A19A] bg-[#00A19A]' : 'border-slate-200 bg-white group-hover:border-[#00A19A]/40'}`}>
+                            <div className={`w-5 h-5 rounded-full border-2 transition-all flex items-center justify-center ${value === opt ? 'border-[#00A99D] bg-[#00A99D]' : 'border-slate-200 bg-white group-hover:border-[#00A99D]/40'}`}>
                               {value === opt && <div className="w-2 h-2 bg-white rounded-full" />}
                             </div>
                           </button>
@@ -253,11 +253,11 @@ export default function HsFormClient({ formId, periodName, studentName, classNam
                             className="w-full px-6 py-4.5 rounded-2xl border-2 text-left text-sm font-black transition-all flex items-center justify-between group"
                             style={{
                               background: currentVals.includes(opt) ? 'rgba(190,30,46,0.03)' : '#f8fafc',
-                              borderColor: currentVals.includes(opt) ? '#00A19A' : '#f1f5f9',
-                              color: currentVals.includes(opt) ? '#00A19A' : '#475569'
+                              borderColor: currentVals.includes(opt) ? '#00A99D' : '#f1f5f9',
+                              color: currentVals.includes(opt) ? '#00A99D' : '#475569'
                             }}>
                             {opt}
-                            <div className={`w-6 h-6 rounded-lg border-2 transition-all flex items-center justify-center ${currentVals.includes(opt) ? 'border-[#00A19A] bg-[#00A19A]' : 'border-slate-200 bg-white group-hover:border-[#00A19A]/40'}`}>
+                            <div className={`w-6 h-6 rounded-lg border-2 transition-all flex items-center justify-center ${currentVals.includes(opt) ? 'border-[#00A99D] bg-[#00A99D]' : 'border-slate-200 bg-white group-hover:border-[#00A99D]/40'}`}>
                               {currentVals.includes(opt) && <div className="w-2.5 h-2.5 bg-white rounded-[3px]" />}
                             </div>
                           </button>
@@ -322,7 +322,7 @@ export default function HsFormClient({ formId, periodName, studentName, classNam
                                           }
                                           ans(q.id, nextGrid)
                                         }}
-                                        className={`w-8 h-8 mx-auto flex items-center justify-center border-2 transition-all hover:scale-110 active:scale-90 ${isSelected ? 'border-[#00A19A] bg-[#00A19A] shadow-lg shadow-teal-100' : 'border-slate-200 bg-white group-hover/row:border-red-200'} ${isCheckGrid ? 'rounded-xl' : 'rounded-full'}`}
+                                        className={`w-8 h-8 mx-auto flex items-center justify-center border-2 transition-all hover:scale-110 active:scale-90 ${isSelected ? 'border-[#00A99D] bg-[#00A99D] shadow-lg shadow-teal-100' : 'border-slate-200 bg-white group-hover/row:border-red-200'} ${isCheckGrid ? 'rounded-xl' : 'rounded-full'}`}
                                       >
                                         {isSelected && <div className={`bg-white ${isCheckGrid ? 'w-2.5 h-2.5 rounded-[3px]' : 'w-2.5 h-2.5 rounded-full'}`} />}
                                       </button>
@@ -362,7 +362,7 @@ export default function HsFormClient({ formId, periodName, studentName, classNam
             </button>
           ) : (
             <button onClick={submit} disabled={submitting} className="flex-1 flex items-center justify-center gap-3 py-4 rounded-[1.75rem] font-black text-sm text-white transition-all active:scale-95 disabled:opacity-50 shadow-2xl shadow-red-200"
-              style={{ background: 'linear-gradient(135deg,#00A19A,#a01927)' }}>
+              style={{ background: 'linear-gradient(135deg,#00A99D,#a01927)' }}>
               {submitting
                 ? <><div className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin" /> Đang gửi bài...</>
                 : <><Send className="w-5 h-5" /> Nộp bài khảo sát</>}

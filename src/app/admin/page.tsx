@@ -68,8 +68,8 @@ export default function AdminDashboard() {
       
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5">
         <div>
-          <h1 className="text-2xl font-black text-[#0A3230] tracking-tight">Tổng quan Hệ thống</h1>
-          <p className="text-slate-500 text-sm font-medium mt-0.5">Năm học đang hoạt động: <span className="font-bold text-[#00A19A]">{finalMetrics.academicYearName || "---"}</span> | Số liệu thống kê chi tiết theo phạm vi Cơ sở của bạn.</p>
+          <h1 className="text-2xl font-black text-[#003B3A] tracking-tight">Tổng quan Hệ thống</h1>
+          <p className="text-slate-500 text-sm font-medium mt-0.5">Năm học đang hoạt động: <span className="font-bold text-[#00A99D]">{finalMetrics.academicYearName || "---"}</span> | Số liệu thống kê chi tiết theo phạm vi Cơ sở của bạn.</p>
         </div>
         {campusIds.length > 0 && (
           <span className="text-[10px] font-black text-indigo-700 uppercase tracking-wider shadow-sm flex items-center gap-1.5 self-start md:self-auto text-xs font-semibold">

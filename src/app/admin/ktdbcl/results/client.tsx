@@ -320,7 +320,7 @@ export function ResultsClient({
           onClick={() => setSubTab('input')}
           className={`pb-3 text-xs font-black transition-all border-b-2 px-4 flex items-center gap-1.5 ${
             subTab === 'input' 
-              ? 'border-[#00A19A] text-[#00A19A]' 
+              ? 'border-[#00A99D] text-[#00A99D]' 
               : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
@@ -331,7 +331,7 @@ export function ResultsClient({
           onClick={() => setSubTab('reports')}
           className={`pb-3 text-xs font-black transition-all border-b-2 px-4 flex items-center gap-1.5 ${
             subTab === 'reports' 
-              ? 'border-[#00A19A] text-[#00A19A]' 
+              ? 'border-[#00A99D] text-[#00A99D]' 
               : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
@@ -342,7 +342,7 @@ export function ResultsClient({
           onClick={() => setSubTab('profiles')}
           className={`pb-3 text-xs font-black transition-all border-b-2 px-4 flex items-center gap-1.5 ${
             subTab === 'profiles' 
-              ? 'border-[#00A19A] text-[#00A19A]' 
+              ? 'border-[#00A99D] text-[#00A99D]' 
               : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
@@ -371,7 +371,7 @@ export function ResultsClient({
                         }
                         setSelectedExamId(e.target.value)
                       }}
-                      className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-xs focus:border-[#00A19A] outline-none font-black text-slate-700 bg-slate-50/50"
+                      className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-xs focus:border-[#00A99D] outline-none font-black text-slate-700 bg-slate-50/50"
                     >
                       {filteredExams.map(e => (
                         <option key={e.id} value={e.id}>
@@ -384,7 +384,7 @@ export function ResultsClient({
 
                 {selectedExamId && (
                   <div className="flex flex-wrap gap-2 items-center pt-2 sm:pt-4">
-                    <span className="text-[10px] font-bold bg-[#00A19A]/10 text-[#00A19A] px-2.5 py-1 rounded-md border border-[#00A19A]/20">
+                    <span className="text-[10px] font-bold bg-[#00A99D]/10 text-[#00A99D] px-2.5 py-1 rounded-md border border-[#00A99D]/20">
                       Cấp học: <strong className="font-extrabold">{currentExam?.grade || "Tất cả"}</strong>
                     </span>
                     <span className="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-md border border-indigo-100">
@@ -409,7 +409,7 @@ export function ResultsClient({
                 <button
                   onClick={handleSaveGrid}
                   disabled={savingGrid || gridRows.length === 0 || !hasChanges}
-                  className="flex items-center gap-1.5 bg-[#00A19A] hover:bg-[#008c85] disabled:opacity-50 text-white px-5 py-2.5 rounded-xl font-bold shadow-md shadow-[#00A19A]/15 transition-all text-xs"
+                  className="flex items-center gap-1.5 bg-[#00A99D] hover:bg-[#009085] disabled:opacity-50 text-white px-5 py-2.5 rounded-xl font-bold shadow-md shadow-[#00A99D]/15 transition-all text-xs"
                 >
                   <Check className="w-4 h-4" />
                   {savingGrid ? "Đang lưu..." : "Lưu Thay Đổi"}
@@ -486,7 +486,7 @@ export function ResultsClient({
                               <select
                                 value={row.type}
                                 onChange={e => handleCellChange(row.studentId, "type", e.target.value)}
-                                className="w-full border border-slate-200 rounded px-1.5 py-1 text-xs outline-none bg-white focus:border-[#00A19A] transition-colors"
+                                className="w-full border border-slate-200 rounded px-1.5 py-1 text-xs outline-none bg-white focus:border-[#00A99D] transition-colors"
                               >
                                 <option value="CA_NHAN">Cá nhân</option>
                                 <option value="DONG_DOI">Đồng đội</option>
@@ -498,7 +498,7 @@ export function ResultsClient({
                               <select
                                 value={row.category}
                                 onChange={e => handleCellChange(row.studentId, "category", e.target.value)}
-                                className="w-full border border-slate-200 rounded px-1.5 py-1 text-xs outline-none bg-white focus:border-[#00A19A] transition-colors"
+                                className="w-full border border-slate-200 rounded px-1.5 py-1 text-xs outline-none bg-white focus:border-[#00A99D] transition-colors"
                               >
                                 <option value="">-- Không giải --</option>
                                 {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
@@ -512,7 +512,7 @@ export function ResultsClient({
                               <select
                                 value={row.level}
                                 onChange={e => handleCellChange(row.studentId, "level", e.target.value)}
-                                className="w-full border border-slate-200 rounded px-1.5 py-1 text-xs outline-none bg-white focus:border-[#00A19A] transition-colors"
+                                className="w-full border border-slate-200 rounded px-1.5 py-1 text-xs outline-none bg-white focus:border-[#00A99D] transition-colors"
                               >
                                 <option value="">-- Không --</option>
                                 {Object.entries(LEVEL_LABELS).map(([k, v]) => (
@@ -529,7 +529,7 @@ export function ResultsClient({
                                 onChange={e => handleCellChange(row.studentId, "name", e.target.value)}
                                 disabled={row.category === "" || row.level === ""}
                                 placeholder="Tự sinh nếu để trống..."
-                                className="w-full border border-slate-200 disabled:bg-slate-50/50 rounded px-2.5 py-1 text-xs outline-none focus:border-[#00A19A] font-semibold text-slate-800 transition-all"
+                                className="w-full border border-slate-200 disabled:bg-slate-50/50 rounded px-2.5 py-1 text-xs outline-none focus:border-[#00A99D] font-semibold text-slate-800 transition-all"
                               />
                             </td>
                             
@@ -545,7 +545,7 @@ export function ResultsClient({
                                     }
                                   }}
                                   disabled={row.category === "" || row.level === ""}
-                                  className="w-full border border-slate-200 disabled:bg-slate-50/50 rounded px-1.5 py-1 text-xs outline-none bg-white focus:border-[#00A19A] transition-colors"
+                                  className="w-full border border-slate-200 disabled:bg-slate-50/50 rounded px-1.5 py-1 text-xs outline-none bg-white focus:border-[#00A99D] transition-colors"
                                 >
                                   <option value="">-- Chọn GV hệ thống --</option>
                                   {teachers.map(t => (
@@ -561,7 +561,7 @@ export function ResultsClient({
                                     onChange={e => handleCellChange(row.studentId, "teacherName", e.target.value)}
                                     disabled={row.category === "" || row.level === ""}
                                     placeholder="Nhập tên GV..."
-                                    className="w-full border border-slate-200 disabled:bg-slate-50/50 rounded px-2.5 py-1 text-xs outline-none focus:border-[#00A19A] font-semibold text-slate-800 transition-all"
+                                    className="w-full border border-slate-200 disabled:bg-slate-50/50 rounded px-2.5 py-1 text-xs outline-none focus:border-[#00A99D] font-semibold text-slate-800 transition-all"
                                   />
                                 )}
                               </div>
@@ -584,7 +584,7 @@ export function ResultsClient({
           {/* Report Filters Card */}
           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4 no-print animate-fade-in">
             <h3 className="text-slate-800 font-bold text-sm flex items-center gap-1.5 border-b border-slate-100 pb-3">
-              <Search className="w-4.5 h-4.5 text-[#00A19A]" />
+              <Search className="w-4.5 h-4.5 text-[#00A99D]" />
               Bộ lọc Báo cáo thành tích ({academicYears.find(y => y.id === yearId)?.name || 'Tất cả'})
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
@@ -593,7 +593,7 @@ export function ResultsClient({
                 <select
                   value={reportFilter.campusId}
                   onChange={e => setReportFilter({ ...reportFilter, campusId: e.target.value })}
-                  className="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:border-[#00A19A] outline-none font-semibold text-slate-700 bg-slate-50/50"
+                  className="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:border-[#00A99D] outline-none font-semibold text-slate-700 bg-slate-50/50"
                 >
                   <option value="">-- Tất cả --</option>
                   {campuses.map(c => (
@@ -607,7 +607,7 @@ export function ResultsClient({
                 <select
                   value={reportFilter.grade}
                   onChange={e => setReportFilter({ ...reportFilter, grade: e.target.value, classId: "" })}
-                  className="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:border-[#00A19A] outline-none font-semibold text-slate-700 bg-slate-50/50"
+                  className="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:border-[#00A99D] outline-none font-semibold text-slate-700 bg-slate-50/50"
                 >
                   <option value="">-- Tất cả --</option>
                   {Array.from({ length: 12 }, (_, i) => String(i + 1)).map(g => (
@@ -622,7 +622,7 @@ export function ResultsClient({
                   value={reportFilter.classId}
                   onChange={e => setReportFilter({ ...reportFilter, classId: e.target.value })}
                   disabled={!reportFilter.grade || !reportFilter.campusId}
-                  className="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:border-[#00A19A] outline-none font-semibold text-slate-700 bg-slate-50/50 disabled:opacity-50"
+                  className="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:border-[#00A99D] outline-none font-semibold text-slate-700 bg-slate-50/50 disabled:opacity-50"
                 >
                   <option value="">-- Tất cả --</option>
                   {classes
@@ -638,7 +638,7 @@ export function ResultsClient({
                 <select
                   value={reportFilter.category}
                   onChange={e => setReportFilter({ ...reportFilter, category: e.target.value })}
-                  className="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:border-[#00A19A] outline-none font-semibold text-slate-700 bg-slate-50/50"
+                  className="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:border-[#00A99D] outline-none font-semibold text-slate-700 bg-slate-50/50"
                 >
                   <option value="">-- Tất cả --</option>
                   {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
@@ -652,7 +652,7 @@ export function ResultsClient({
                 <select
                   value={reportFilter.level}
                   onChange={e => setReportFilter({ ...reportFilter, level: e.target.value })}
-                  className="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:border-[#00A19A] outline-none font-semibold text-slate-700 bg-slate-50/50"
+                  className="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:border-[#00A99D] outline-none font-semibold text-slate-700 bg-slate-50/50"
                 >
                   <option value="">-- Tất cả --</option>
                   {Object.entries(LEVEL_LABELS).map(([k, v]) => (
@@ -682,8 +682,8 @@ export function ResultsClient({
               <div className="text-2xl font-black text-orange-700 mt-1">{bronzeCount}</div>
             </div>
             <div className="bg-teal-50/30 border border-teal-200/30 rounded-2xl p-4 shadow-xs">
-              <div className="text-[10px] font-bold text-[#00A19A]/80 uppercase tracking-wider">Giải Khuyến khích</div>
-              <div className="text-2xl font-black text-[#008c85] mt-1">{consolCount}</div>
+              <div className="text-[10px] font-bold text-[#00A99D]/80 uppercase tracking-wider">Giải Khuyến khích</div>
+              <div className="text-2xl font-black text-[#009085] mt-1">{consolCount}</div>
             </div>
           </div>
 
@@ -710,7 +710,7 @@ export function ResultsClient({
                 </button>
                 <button
                   onClick={() => window.print()}
-                  className="flex items-center gap-1 bg-[#0A3230] hover:bg-[#061e1d] text-white px-3.5 py-2 rounded-xl font-bold text-xs shadow-md shadow-slate-800/10 transition-all"
+                  className="flex items-center gap-1 bg-[#003B3A] hover:bg-[#061e1d] text-white px-3.5 py-2 rounded-xl font-bold text-xs shadow-md shadow-slate-800/10 transition-all"
                 >
                   <Printer className="w-4 h-4" />
                   In / Xuất PDF
@@ -755,7 +755,7 @@ export function ResultsClient({
                           <div className="text-[10px] text-slate-400 font-bold">{row.campusName}</div>
                         </td>
                         <td className="py-3 px-6 text-slate-600">{row.examName}</td>
-                        <td className="py-3 px-6 text-[#00A19A] font-bold">{row.achievementName}</td>
+                        <td className="py-3 px-6 text-[#00A99D] font-bold">{row.achievementName}</td>
                         <td className="py-3 px-6">
                           <div className="font-black text-amber-700">{LEVEL_LABELS[row.level] || row.level}</div>
                           <div className="text-[10px] text-slate-400 font-bold uppercase">{CATEGORY_LABELS[row.category] || row.category} ({row.type === "CA_NHAN" ? "Cá nhân" : "Đồng đội"})</div>
@@ -777,7 +777,7 @@ export function ResultsClient({
           {/* Profile lookup search bar */}
           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
             <h3 className="text-slate-800 font-bold text-sm flex items-center gap-1.5">
-              <Search className="w-4.5 h-4.5 text-[#00A19A]" />
+              <Search className="w-4.5 h-4.5 text-[#00A99D]" />
               Tra cứu hồ sơ thành tích cá nhân Học sinh
             </h3>
             <div className="relative">
@@ -786,7 +786,7 @@ export function ResultsClient({
                 value={searchQuery}
                 onChange={e => handleSearchStudents(e.target.value)}
                 placeholder="Nhập Mã học sinh hoặc Tên học sinh cần tra cứu..."
-                className="w-full border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-xs focus:border-[#00A19A] outline-none font-semibold text-slate-700 shadow-sm"
+                className="w-full border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-xs focus:border-[#00A99D] outline-none font-semibold text-slate-700 shadow-sm"
               />
               <Search className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
             </div>
@@ -831,7 +831,7 @@ export function ResultsClient({
               {/* Candidate Bio Card */}
               <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-14 h-14 bg-teal-50 rounded-2xl flex items-center justify-center text-[#00A19A] flex-shrink-0">
+                  <div className="w-14 h-14 bg-teal-50 rounded-2xl flex items-center justify-center text-[#00A99D] flex-shrink-0">
                     <Users className="w-7 h-7" />
                   </div>
                   <div className="space-y-1">
@@ -849,7 +849,7 @@ export function ResultsClient({
                 </div>
 
                 <div className="text-right self-start md:self-center bg-slate-50/60 p-4 rounded-xl border border-slate-100">
-                  <div className="text-xs font-bold text-slate-700">Lớp hiện tại: <strong className="text-[#00A19A] font-black">{selectedStudentProfile.className}</strong></div>
+                  <div className="text-xs font-bold text-slate-700">Lớp hiện tại: <strong className="text-[#00A99D] font-black">{selectedStudentProfile.className}</strong></div>
                   <div className="text-[10px] text-slate-400 font-bold mt-0.5">{selectedStudentProfile.campusName}</div>
                   <div className="text-[9px] text-slate-400 font-mono mt-0.5">Năm học: {selectedStudentProfile.academicYearName}</div>
                 </div>
@@ -887,7 +887,7 @@ export function ResultsClient({
                             </div>
                           </div>
                           <div className="sm:text-right space-y-0.5">
-                            <div className="text-slate-500">GV bồi dưỡng: <strong className="text-[#00A19A] font-bold">{ach.teacherName}</strong></div>
+                            <div className="text-slate-500">GV bồi dưỡng: <strong className="text-[#00A99D] font-bold">{ach.teacherName}</strong></div>
                             <div className="text-[10px] text-slate-400 font-mono">Năm học: {ach.yearName}</div>
                           </div>
                         </div>

@@ -75,7 +75,7 @@ export default async function ParentSurveysPage() {
       
       {(surveyTasks ?? []).length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm p-10 text-center border border-slate-100 flex items-center justify-center flex-col">
-          <ClipboardList className="h-10 w-10 text-[#00A19A] mb-4" />
+          <ClipboardList className="h-10 w-10 text-[#00A99D] mb-4" />
           <p className="text-slate-500 text-lg">Hiện không có đợt khảo sát nào cần bạn thực hiện.</p>
         </div>
       ) : (
@@ -88,11 +88,11 @@ export default async function ParentSurveysPage() {
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <h3 className="font-extrabold text-xl text-slate-800 mb-1">{task.period.name}</h3>
-                      <p className="text-sm font-medium text-slate-600">Học sinh: <span className="font-bold text-[#00A19A]">{task.student.studentName}</span></p>
+                      <p className="text-sm font-medium text-slate-600">Học sinh: <span className="font-bold text-[#00A99D]">{task.student.studentName}</span></p>
                       <p className="text-sm text-slate-500">Lớp: {task.student.class?.className || 'N/A'}</p>
                     </div>
                     {isCompleted ? (
-                      <span className="flex items-center text-[#00A19A] text-xs font-bold text-xs font-semibold">
+                      <span className="flex items-center text-[#00A99D] text-xs font-bold text-xs font-semibold">
                         <CheckCircle2 className="w-3 h-3 mr-1" /> Đã hoàn thành
                       </span>
                     ) : (
@@ -115,7 +115,7 @@ export default async function ParentSurveysPage() {
                   ) : (
                     <Link 
                       href={`/parent/surveys/${task.period.id}?studentId=${task.student.id}`} 
-                      className="text-sm font-bold text-white bg-[#00A19A] hover:bg-[#008c85] px-5 py-2.5 rounded-xl transition-all shadow-md shadow-teal-100"
+                      className="text-sm font-bold text-white bg-[#00A99D] hover:bg-[#009085] px-5 py-2.5 rounded-xl transition-all shadow-md shadow-teal-100"
                     >
                       Bắt đầu Khảo sát
                     </Link>

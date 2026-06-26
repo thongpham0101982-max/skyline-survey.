@@ -37,7 +37,7 @@ export default function TeacherDashboard() {
   if (status === "loading" || loading) {
     return (
       <div className="flex flex-col items-center justify-center py-32 space-y-4">
-        <Loader2 className="w-12 h-12 text-[#00A19A] animate-spin opacity-60" />
+        <Loader2 className="w-12 h-12 text-[#00A99D] animate-spin opacity-60" />
         <p className="text-slate-400 font-bold tracking-wide uppercase text-xs">Đang tải thống kê...</p>
       </div>
     )
@@ -56,9 +56,9 @@ export default function TeacherDashboard() {
       
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5">
         <div>
-          <h1 className="text-2xl font-black text-[#0A3230] tracking-tight">Tổng quan Công việc</h1>
+          <h1 className="text-2xl font-black text-[#003B3A] tracking-tight">Tổng quan Công việc</h1>
           <p className="text-slate-500 text-sm font-medium mt-0.5">
-            Năm học đang hoạt động: <span className="font-bold text-[#00A19A]">{finalMetrics.academicYearName || "---"}</span> | Thống kê lớp học và nhiệm vụ phân công của bạn.
+            Năm học đang hoạt động: <span className="font-bold text-[#00A99D]">{finalMetrics.academicYearName || "---"}</span> | Thống kê lớp học và nhiệm vụ phân công của bạn.
           </p>
         </div>
       </div>
@@ -125,17 +125,17 @@ export default function TeacherDashboard() {
         <div className="bg-white rounded-2xl border-2 border-[#CCFBF1] p-6 shadow-sm">
           <div className="flex items-center justify-between mb-6 border-b border-slate-100 pb-4">
             <h3 className="font-black text-slate-800 text-lg flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-[#00A19A]" />
+              <BookOpen className="w-5 h-5 text-[#00A99D]" />
               Lối tắt Công việc
             </h3>
           </div>
           <div className="space-y-3">
             <Link href="/teacher/input-assessments?type=general" className="flex items-center justify-between p-4 hover:bg-[#F0FDFA] hover:border-[#99F6E4] transition-colors group text-xs font-semibold">
               <div>
-                <h4 className="font-bold text-slate-700 group-hover:text-[#00A19A]">Nhập kết quả Khảo sát</h4>
+                <h4 className="font-bold text-slate-700 group-hover:text-[#00A99D]">Nhập kết quả Khảo sát</h4>
                 <p className="text-xs text-slate-500 mt-1">Cập nhật điểm số và nhận xét học sinh</p>
               </div>
-              <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform text-slate-400 group-hover:text-[#00A19A]">
+              <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform text-slate-400 group-hover:text-[#00A99D]">
                 <ArrowRight className="w-4 h-4" />
               </div>
             </Link>

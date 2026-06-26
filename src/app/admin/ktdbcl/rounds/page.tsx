@@ -23,7 +23,7 @@ export default async function RoundsPage() {
     <div className="max-w-4xl mx-auto">
       <ExamTabs activeTab="rounds" />
       <div className="mb-8">
-        <h1 className="text-2xl font-black text-[#0A3230] tracking-tight">Danh Mục Vòng Thi</h1>
+        <h1 className="text-2xl font-black text-[#003B3A] tracking-tight">Danh Mục Vòng Thi</h1>
         <p className="text-slate-500 mt-2 text-xs font-semibold uppercase tracking-wider">Phân loại các vòng thi học sinh theo nhóm để quản lý và theo dõi hiệu quả.</p>
       </div>
       <RoundsClient initialRounds={rounds} academicYears={academicYears} />

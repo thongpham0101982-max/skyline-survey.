@@ -98,11 +98,11 @@ export function RolesClient({ initialRoles }: any) {
       <div className="lg:col-span-1 bg-white rounded-3xl shadow-lg border border-slate-100/90 overflow-hidden flex flex-col h-fit backdrop-blur-md">
         <div className="p-5 flex justify-between items-center text-xs font-semibold">
           <h3 className="font-black text-slate-800 text-sm tracking-wide flex items-center gap-2">
-            <Shield className="w-5 h-5 text-[#00A19A] animate-pulse"/> NHÓM QUYỀN
+            <Shield className="w-5 h-5 text-[#00A99D] animate-pulse"/> NHÓM QUYỀN
           </h3>
           <button 
              onClick={() => { setModalMode('ADD'); setFormData({ code: '', name: '', description: '' }); setModalOpen(true); }}
-             className="text-white bg-[#00A19A] hover:bg-[#008c85] p-2 rounded-xl transition-all shadow-md shadow-teal-100 active:scale-90">
+             className="text-white bg-[#00A99D] hover:bg-[#009085] p-2 rounded-xl transition-all shadow-md shadow-teal-100 active:scale-90">
             <Plus className="w-4 h-4"/>
           </button>
         </div>
@@ -117,7 +117,7 @@ export function RolesClient({ initialRoles }: any) {
                 <div className="flex items-center justify-between">
                   <div className={`font-bold text-sm ${activeRole === r.code ? "text-slate-800" : "text-slate-700"}`}>{r.name}</div>
                   {r.isSystem && (
-                    <span className="text-[9px] font-black tracking-widest text-[#00A19A] uppercase leading-none select-none text-xs font-semibold">Hệ thống</span>
+                    <span className="text-[9px] font-black tracking-widest text-[#00A99D] uppercase leading-none select-none text-xs font-semibold">Hệ thống</span>
                   )}
                 </div>
                 <div className="text-xs font-semibold text-slate-400 mt-1 line-clamp-1 leading-snug">{r.description || r.code}</div>
@@ -125,7 +125,7 @@ export function RolesClient({ initialRoles }: any) {
               
               {!r.isSystem && (
                 <div className="opacity-0 group-hover:opacity-100 flex flex-col justify-center gap-1.5 px-3 border-l border-slate-100 transition-all duration-200">
-                  <button onClick={() => { setModalMode('EDIT'); setFormData({ code: r.code, name: r.name, description: r.description || '' }); setModalOpen(true); }} className="p-2 text-slate-400 hover:text-[#00A19A] hover:bg-slate-100 rounded-lg transition-all"><Edit className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => { setModalMode('EDIT'); setFormData({ code: r.code, name: r.name, description: r.description || '' }); setModalOpen(true); }} className="p-2 text-slate-400 hover:text-[#00A99D] hover:bg-slate-100 rounded-lg transition-all"><Edit className="w-3.5 h-3.5" /></button>
                   <button onClick={async () => { 
                       if(confirm('Bạn có chắc muốn xóa nhóm quyền này?')) {
                          const res = await deleteRole(r.code);
@@ -147,13 +147,13 @@ export function RolesClient({ initialRoles }: any) {
             <h3 className="font-bold text-slate-800 text-lg tracking-tight">Ma Trận Phân Quyền</h3>
             <p className="text-sm text-slate-500 mt-0.5">
               Phân quyền chi tiết cho nhóm:{" "}
-              <span className="font-semibold text-[#00A19A]">
+              <span className="font-semibold text-[#00A99D]">
                 {roles.find((r: any) => r.code === activeRole)?.name}
               </span>
             </p>
           </div>
           <button onClick={handleSavePerms} disabled={savingMatrix}
-            className="px-5 py-2.5 bg-[#00A19A] text-white rounded-xl text-sm font-semibold flex items-center hover:bg-[#008c85] active:scale-95 shadow-md shadow-indigo-200 transition-all disabled:opacity-60">
+            className="px-5 py-2.5 bg-[#00A99D] text-white rounded-xl text-sm font-semibold flex items-center hover:bg-[#009085] active:scale-95 shadow-md shadow-indigo-200 transition-all disabled:opacity-60">
             <Save className="w-4 h-4 mr-2"/> Lưu Cấu Hình
           </button>
         </div>
@@ -194,16 +194,16 @@ export function RolesClient({ initialRoles }: any) {
                             <div className="flex items-center gap-3">
                                {hasSub ? (
                                  <button onClick={() => toggleExpand(m.code)} className="p-1.5 hover:bg-slate-100/85 rounded-lg transition-all duration-200 text-slate-400 hover:text-slate-800 mr-0.5 active:scale-90">
-                                   {isExpanded ? <ChevronDown className="w-4 h-4 text-[#00A19A]" /> : <ChevronRight className="w-4 h-4" />}
+                                   {isExpanded ? <ChevronDown className="w-4 h-4 text-[#00A99D]" /> : <ChevronRight className="w-4 h-4" />}
                                  </button>
                                ) : (
                                  <div className="w-7 h-7 mr-0.5" />
                                )}
                                <div className="p-2 group-hover:bg-white transition-all duration-200 group-hover:border-indigo-100 group-hover:shadow-md group-hover:shadow-indigo-50/50 text-xs font-semibold">
-                                 <m.icon className="w-4.5 h-4.5 text-slate-400 group-hover:text-[#00A19A] transition-colors" />
+                                 <m.icon className="w-4.5 h-4.5 text-slate-400 group-hover:text-[#00A99D] transition-colors" />
                                 </div>
                                 <div>
-                                  <div className={hasSub ? "font-bold text-slate-850 text-sm cursor-pointer select-none hover:text-[#00A19A] transition-colors" : "font-semibold text-slate-700 text-sm"} onClick={hasSub ? () => toggleExpand(m.code) : undefined}>
+                                  <div className={hasSub ? "font-bold text-slate-850 text-sm cursor-pointer select-none hover:text-[#00A99D] transition-colors" : "font-semibold text-slate-700 text-sm"} onClick={hasSub ? () => toggleExpand(m.code) : undefined}>
                                     {m.name}
                                   </div>
                                   <div className="text-[10px] text-slate-400 font-mono mt-0.5 opacity-0 group-hover:opacity-100 transition-all duration-200 leading-none">{m.code}</div>
@@ -221,7 +221,7 @@ export function RolesClient({ initialRoles }: any) {
                                   p[field] 
                                     ? field === "canDelete" 
                                       ? "bg-rose-500 border-rose-500 text-white scale-105"
-                                      : "bg-[#00A19A] border-[#00A19A] text-white scale-105" 
+                                      : "bg-[#00A99D] border-[#00A99D] text-white scale-105" 
                                     : "bg-white border-slate-200 hover:border-slate-350 hover:shadow-md"
                                 }`}>
                                   {p[field] && (
@@ -262,7 +262,7 @@ export function RolesClient({ initialRoles }: any) {
                                       subP[field] 
                                         ? field === "canDelete" 
                                           ? "bg-rose-500 border-rose-500 text-white scale-105"
-                                          : "bg-[#00A19A] border-[#00A19A] text-white scale-105" 
+                                          : "bg-[#00A99D] border-[#00A99D] text-white scale-105" 
                                         : "bg-white border-slate-200 hover:border-slate-350 hover:shadow-sm"
                                     }`}>
                                       {subP[field] && (
@@ -317,7 +317,7 @@ export function RolesClient({ initialRoles }: any) {
                  if (res.success) { setModalOpen(false); window.location.reload(); }
                  else { alert("Lỗi: " + res.error); }
                  setLoading(false);
-              }} className="px-4 py-2 text-sm font-semibold text-white bg-[#00A19A] hover:bg-[#008c85] disabled:opacity-50 rounded-xl transition-colors flex items-center">
+              }} className="px-4 py-2 text-sm font-semibold text-white bg-[#00A99D] hover:bg-[#009085] disabled:opacity-50 rounded-xl transition-colors flex items-center">
                 {loading ? 'Đang xử lý...' : 'Xác nhận'}
               </button>
             </div>

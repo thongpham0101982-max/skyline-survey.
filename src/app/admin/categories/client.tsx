@@ -69,7 +69,7 @@ export function CategoriesClient({ initialCategories }) {
         <p className="text-slate-500 text-sm">Tao va quan ly cac nhom de phan loai cau hoi khao sat theo chu de.</p>
         <button
           onClick={() => { setCreating(true); setErrorMsg("") }}
-          className="flex items-center gap-2 bg-[#00A19A] hover:bg-[#008c85] text-white px-5 py-2.5 rounded-xl font-semibold shadow-lg shadow-indigo-500/30 transition-all text-sm"
+          className="flex items-center gap-2 bg-[#00A99D] hover:bg-[#009085] text-white px-5 py-2.5 rounded-xl font-semibold shadow-lg shadow-indigo-500/30 transition-all text-sm"
         >
           <Plus className="w-4 h-4" />
           Tao Danh Muc Moi
@@ -80,7 +80,7 @@ export function CategoriesClient({ initialCategories }) {
       {creating && (
         <div className="bg-white border-2 border-indigo-200 rounded-2xl p-6 shadow-lg shadow-indigo-50">
           <h3 className="font-bold text-slate-800 text-lg mb-4 flex items-center gap-2">
-            <Tag className="w-5 h-5 text-[#00A19A]" />
+            <Tag className="w-5 h-5 text-[#00A99D]" />
             Tao Danh Muc Moi
           </h3>
           {errorMsg && (
@@ -128,7 +128,7 @@ export function CategoriesClient({ initialCategories }) {
             <button
               onClick={handleCreate}
               disabled={saving}
-              className="px-6 py-2.5 bg-[#00A19A] hover:bg-[#008c85] text-white rounded-lg font-bold text-sm shadow-md shadow-indigo-500/20 transition-all disabled:opacity-60"
+              className="px-6 py-2.5 bg-[#00A99D] hover:bg-[#009085] text-white rounded-lg font-bold text-sm shadow-md shadow-indigo-500/20 transition-all disabled:opacity-60"
             >
               {saving ? "Dang luu..." : "Luu Danh Muc"}
             </button>
@@ -163,7 +163,7 @@ export function CategoriesClient({ initialCategories }) {
                 <div key={cat.id} className="flex items-center gap-4 hover:bg-slate-50/70 transition-colors group text-xs font-semibold">
                   <GripVertical className="w-5 h-5 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                   <div className="w-10 h-10 flex items-center justify-center flex-shrink-0 text-xs font-semibold">
-                    <Tag className="w-5 h-5 text-[#00A19A]" />
+                    <Tag className="w-5 h-5 text-[#00A99D]" />
                   </div>
                   <div className="flex-1 min-w-0">
                     {isEditing ? (

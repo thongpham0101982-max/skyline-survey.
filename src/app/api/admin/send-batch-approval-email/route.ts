@@ -160,7 +160,7 @@ body{margin:0;padding:0;background:#f1f5f9;font-family:'Be Vietnam Pro', 'Segoe 
   <div style="max-width:860px;margin:0 auto;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 10px 30px rgba(0,122,135,.1);border:1px solid #e2e8f0;">
 
     <!-- HEADER -->
-    <div style="background-color: #00A6A9; background: linear-gradient(135deg, #00A6A9 0%, #007A87 100%); padding: 35px 30px; text-align: center; border-bottom: 3px solid #007A87;">
+    <div style="background-color: #00A99D; background: linear-gradient(135deg, #00A99D 0%, #007A87 100%); padding: 35px 30px; text-align: center; border-bottom: 3px solid #007A87;">
       <div style="display:inline-block;background:rgba(255,255,255,0.15);padding:5px 16px;border-radius:50px;margin-bottom:14px;border:1px solid rgba(255,255,255,0.2);">
         <span style="color:#ffffff !important; color:#ffffff;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:2px;">Sky-Line Education System</span>
       </div>
@@ -238,11 +238,11 @@ body{margin:0;padding:0;background:#f1f5f9;font-family:'Be Vietnam Pro', 'Segoe 
 
     <!-- STUDENT TABLE -->
     <div style="padding:10px 32px 30px 32px;">
-      <h2 style="font-size:15px;font-weight:800;color:#1E1B4B;border-left:4px solid #00A6A9;padding-left:12px;margin:0 0 16px;text-transform:uppercase;letter-spacing:0.5px;">Danh sách kết quả học sinh</h2>
+      <h2 style="font-size:15px;font-weight:800;color:#1E1B4B;border-left:4px solid #00A99D;padding-left:12px;margin:0 0 16px;text-transform:uppercase;letter-spacing:0.5px;">Danh sách kết quả học sinh</h2>
       <div style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
         <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;" className="border border-slate-200 border-collapse">
           <thead>
-            <tr style="background:#00A6A9;">
+            <tr style="background:#00A99D;">
               <th style="padding:12px 10px;text-align:center;font-size:11px;font-weight:800;color:#fff;text-transform:uppercase;width:7%;" className="p-2 border border-slate-200">STT</th>
               <th style="padding:12px 10px;text-align:left;font-size:11px;font-weight:800;color:#fff;text-transform:uppercase;" className="p-2 border border-slate-200">Họ và Tên</th>
               <th style="padding:12px 10px;text-align:center;font-size:11px;font-weight:800;color:#fff;text-transform:uppercase;width:15%;" className="p-2 border border-slate-200">Mã HS</th>
@@ -264,7 +264,7 @@ body{margin:0;padding:0;background:#f1f5f9;font-family:'Be Vietnam Pro', 'Segoe 
       <p style="margin: 0 0 15px 0; font-size: 13px; color: #64748b; font-style: italic;">
         Vui lòng truy cập cổng thông tin quản lý để thực hiện phê duyệt chính thức kết quả khảo sát cho đợt tuyển sinh này.
       </p>
-      <a href="${baseUrl}/admin/xet-duyet-ket-qua" style="display: inline-block; padding: 12px 28px; border-radius: 12px; font-size: 14px; font-weight: bold; color: #ffffff; background-color: #00A6A9; text-decoration: none; border: 1px solid #007A87; box-shadow: 0 4px 6px -1px rgba(0, 166, 169, 0.2); margin-bottom: 25px;">
+      <a href="${baseUrl}/admin/xet-duyet-ket-qua" style="display: inline-block; padding: 12px 28px; border-radius: 12px; font-size: 14px; font-weight: bold; color: #ffffff; background-color: #00A99D; text-decoration: none; border: 1px solid #007A87; box-shadow: 0 4px 6px -1px rgba(0, 166, 169, 0.2); margin-bottom: 25px;">
         Phê Duyệt Kết Quả Khảo Sát
       </a>
 

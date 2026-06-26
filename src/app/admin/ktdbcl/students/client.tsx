@@ -260,7 +260,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
       <div className="lg:col-span-1 space-y-6">
         <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
           <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2 pb-3 border-b border-slate-100">
-            <Layers className="w-4 h-4 text-[#00A19A]" />
+            <Layers className="w-4 h-4 text-[#00A99D]" />
             Bộ Lọc Đăng Ký
           </h3>
 
@@ -272,7 +272,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
               type="checkbox"
               checked={showAllRegistered}
               onChange={(e) => setShowAllRegistered(e.target.checked)}
-              className="w-4 h-4 rounded text-[#00A19A] focus:ring-[#00A19A] cursor-pointer"
+              className="w-4 h-4 rounded text-[#00A99D] focus:ring-[#00A99D] cursor-pointer"
             />
           </div>
 
@@ -285,7 +285,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
               value={selectedExam}
               onChange={(e) => setSelectedExam(e.target.value)}
               disabled={filteredExams.length === 0}
-              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-[#00A19A] transition-all bg-white disabled:bg-slate-50 disabled:text-slate-400"
+              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-[#00A99D] transition-all bg-white disabled:bg-slate-50 disabled:text-slate-400"
             >
               {filteredExams.length === 0 ? (
                 <option value="">-- Không có kỳ thi --</option>
@@ -313,7 +313,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
               value={selectedCampus}
               onChange={(e) => setSelectedCampus(e.target.value)}
               disabled={showAllRegistered}
-              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-[#00A19A] transition-all bg-white disabled:bg-slate-50 disabled:text-slate-400"
+              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-[#00A99D] transition-all bg-white disabled:bg-slate-50 disabled:text-slate-400"
             >
               {campuses.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -332,7 +332,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
               value={selectedGrade}
               onChange={(e) => setSelectedGrade(e.target.value)}
               disabled={showAllRegistered}
-              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-[#00A19A] transition-all bg-white disabled:bg-slate-50 disabled:text-slate-400"
+              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-[#00A99D] transition-all bg-white disabled:bg-slate-50 disabled:text-slate-400"
             >
               {allowedGrades.map((g) => (
                 <option key={g} value={g}>
@@ -351,7 +351,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
               value={selectedClass}
               onChange={(e) => setSelectedClass(e.target.value)}
               disabled={showAllRegistered || filteredClasses.length === 0}
-              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-[#00A19A] transition-all bg-white disabled:bg-slate-50 disabled:text-slate-400"
+              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-[#00A99D] transition-all bg-white disabled:bg-slate-50 disabled:text-slate-400"
             >
               {filteredClasses.length === 0 ? (
                 <option value="">-- Không có lớp --</option>
@@ -373,14 +373,14 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
               Thao Tác Hàng Loạt
             </h3>
             <div className="text-[11px] text-slate-500">
-              Đã chọn <strong className="text-[#00A19A]">{selectedIds.length}</strong> học sinh trong danh sách hiển thị dưới đây.
+              Đã chọn <strong className="text-[#00A99D]">{selectedIds.length}</strong> học sinh trong danh sách hiển thị dưới đây.
             </div>
 
             {!showAllRegistered && (
               <button
                 onClick={handleRegister}
                 disabled={selectedIds.length === 0 || updating}
-                className="w-full flex items-center justify-center gap-2 bg-[#00A19A] hover:bg-[#008c85] text-white py-2.5 rounded-xl font-bold transition-all shadow-md shadow-[#00A19A]/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center gap-2 bg-[#00A99D] hover:bg-[#009085] text-white py-2.5 rounded-xl font-bold transition-all shadow-md shadow-[#00A99D]/10 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {updating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                 Đăng ký Dự thi ({selectedIds.length})
@@ -417,7 +417,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
             ) : (
               <>
                 <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-teal-50 text-[#00A19A] flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-xl bg-teal-50 text-[#00A99D] flex items-center justify-center">
                     <Users className="w-4 h-4" />
                   </div>
                   <div>
@@ -455,7 +455,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
           {/* Header bar */}
           <div className="bg-slate-50/70 border-b border-slate-100 px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <Users className="w-4.5 h-4.5 text-[#00A19A]" />
+              <Users className="w-4.5 h-4.5 text-[#00A99D]" />
               <span className="font-bold text-slate-800 text-sm">
                 {showAllRegistered ? "Danh Sách Học Sinh Đã Đăng Ký" : "Danh Sách Học Sinh Lớp"}
               </span>
@@ -470,7 +470,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
                   placeholder="Tìm học sinh theo tên, mã..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-4 py-1.5 border border-slate-200 rounded-lg outline-none focus:border-[#00A19A] transition-all"
+                  className="w-full pl-9 pr-4 py-1.5 border border-slate-200 rounded-lg outline-none focus:border-[#00A99D] transition-all"
                 />
               </div>
             )}
@@ -485,7 +485,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
             </div>
           ) : loading ? (
             <div className="flex flex-col items-center justify-center py-24 text-slate-400">
-              <Loader2 className="w-8 h-8 animate-spin text-[#00A19A] mb-3" />
+              <Loader2 className="w-8 h-8 animate-spin text-[#00A99D] mb-3" />
               <p className="font-bold text-sm">Đang tải danh sách học sinh...</p>
             </div>
           ) : filteredStudents.length === 0 ? (
@@ -511,7 +511,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
                           filteredStudents.every((s) => selectedIds.includes(s.id))
                         }
                         onChange={handleToggleSelectAll}
-                        className="w-3.5 h-3.5 rounded text-[#00A19A] focus:ring-[#00A19A] cursor-pointer"
+                        className="w-3.5 h-3.5 rounded text-[#00A99D] focus:ring-[#00A99D] cursor-pointer"
                       />
                     </th>
                     <th className="px-6 py-3">Mã Học Sinh</th>
@@ -531,7 +531,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
                         key={student.id}
                         onClick={() => handleToggleSelect(student.id)}
                         className={`hover:bg-slate-50/40 transition-colors cursor-pointer ${
-                          isChecked ? "bg-[#00A19A]/5 hover:bg-[#00A19A]/5" : ""
+                          isChecked ? "bg-[#00A99D]/5 hover:bg-[#00A99D]/5" : ""
                         }`}
                       >
                         <td className="px-6 py-3.5 text-center" onClick={(e) => e.stopPropagation()}>
@@ -539,7 +539,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
                             type="checkbox"
                             checked={isChecked}
                             onChange={() => handleToggleSelect(student.id)}
-                            className="w-3.5 h-3.5 rounded text-[#00A19A] focus:ring-[#00A19A] cursor-pointer"
+                            className="w-3.5 h-3.5 rounded text-[#00A99D] focus:ring-[#00A99D] cursor-pointer"
                           />
                         </td>
                         <td className="px-6 py-3.5 font-mono text-slate-500 font-bold">{student.studentCode}</td>

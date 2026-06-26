@@ -287,7 +287,7 @@ export function ExamsClient({
               placeholder="Tìm kiếm kỳ thi theo tên, mã..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-xs outline-none focus:border-[#00A19A] transition-all font-semibold"
+              className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-xs outline-none focus:border-[#00A99D] transition-all font-semibold"
             />
           </div>
 
@@ -295,7 +295,7 @@ export function ExamsClient({
           <select
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
-            className="border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none text-slate-600 focus:border-[#00A19A]"
+            className="border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none text-slate-600 focus:border-[#00A99D]"
           >
             <option value="">Tất cả danh mục</option>
             {filteredCategoriesForSelect.map((c) => (
@@ -308,7 +308,7 @@ export function ExamsClient({
           <select
             value={filterRound}
             onChange={(e) => setFilterRound(e.target.value)}
-            className="border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none text-slate-600 focus:border-[#00A19A]"
+            className="border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none text-slate-600 focus:border-[#00A99D]"
           >
             <option value="">Tất cả vòng thi</option>
             {filteredRoundsForSelect.map((c) => (
@@ -321,7 +321,7 @@ export function ExamsClient({
           <select
             value={filterDept}
             onChange={(e) => setFilterDept(e.target.value)}
-            className="border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none text-slate-600 focus:border-[#00A19A]"
+            className="border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none text-slate-600 focus:border-[#00A99D]"
           >
             <option value="">Tất cả tổ chuyên môn</option>
             {departments.map((d) => (
@@ -334,7 +334,7 @@ export function ExamsClient({
           <select
             value={filterPriority}
             onChange={(e) => setFilterPriority(e.target.value)}
-            className="border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none text-slate-600 focus:border-[#00A19A]"
+            className="border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none text-slate-600 focus:border-[#00A99D]"
           >
             <option value="">Mức độ ưu tiên</option>
             <option value="yes">Kỳ thi ưu tiên (*)</option>
@@ -344,7 +344,7 @@ export function ExamsClient({
           <select
             value={filterGrade}
             onChange={(e) => setFilterGrade(e.target.value)}
-            className="border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none text-slate-600 focus:border-[#00A19A]"
+            className="border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none text-slate-600 focus:border-[#00A99D]"
           >
             <option value="">Tất cả đối tượng</option>
             <option value="TIEU_HOC">Tiểu học</option>
@@ -358,7 +358,7 @@ export function ExamsClient({
           <select
             value={filterPlan}
             onChange={(e) => setFilterPlan(e.target.value)}
-            className="border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none text-slate-600 focus:border-[#00A19A]"
+            className="border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none text-slate-600 focus:border-[#00A99D]"
           >
             <option value="">Tất cả kế hoạch</option>
             <option value="HE_THONG">Hệ thống</option>
@@ -377,7 +377,7 @@ export function ExamsClient({
 
         <button
           onClick={openCreate}
-          className="flex items-center gap-2 bg-[#00A19A] hover:bg-[#008c85] text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-[#00A19A]/20 transition-all text-xs self-start md:self-auto"
+          className="flex items-center gap-2 bg-[#00A99D] hover:bg-[#009085] text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-[#00A99D]/20 transition-all text-xs self-start md:self-auto"
         >
           <Plus className="w-4 h-4" />
           Tạo Kỳ Thi Mới
@@ -388,7 +388,7 @@ export function ExamsClient({
       {(creating || editingId) && (
         <div className="bg-white border-2 border-indigo-200 rounded-2xl p-6 shadow-md shadow-indigo-50 animate-fade-in space-y-4">
           <h3 className="font-bold text-slate-800 text-base flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-[#00A19A]" />
+            <Calendar className="w-5 h-5 text-[#00A99D]" />
             {editingId ? "Cập Nhật Kỳ Thi" : "Tạo Kỳ Thi Mới"}
           </h3>
           {errorMsg && (
@@ -408,7 +408,7 @@ export function ExamsClient({
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 placeholder="Ví dụ: Kiểm tra học kỳ 1 Toán, Thi Olympic..."
-                className="w-full border border-slate-200 rounded-lg px-4 py-2 text-xs focus:border-[#00A19A] outline-none font-semibold"
+                className="w-full border border-slate-200 rounded-lg px-4 py-2 text-xs focus:border-[#00A99D] outline-none font-semibold"
               />
             </div>
 
@@ -420,7 +420,7 @@ export function ExamsClient({
               <input
                 type="text"
                 value={form.code}
-                className="w-full border border-slate-200 bg-slate-100 rounded-lg px-4 py-2 text-xs focus:border-[#00A19A] outline-none font-mono font-bold text-slate-500 cursor-not-allowed"
+                className="w-full border border-slate-200 bg-slate-100 rounded-lg px-4 py-2 text-xs focus:border-[#00A99D] outline-none font-mono font-bold text-slate-500 cursor-not-allowed"
                 disabled={true}
                 placeholder="Tự động sinh mã..."
               />
@@ -434,7 +434,7 @@ export function ExamsClient({
               <select
                 value={form.categoryId}
                 onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-[#00A19A] outline-none font-semibold text-slate-700"
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-[#00A99D] outline-none font-semibold text-slate-700"
               >
                 <option value="">-- Chọn danh mục --</option>
                 {filteredCategoriesForSelect.map((c) => (
@@ -451,7 +451,7 @@ export function ExamsClient({
               <select
                 value={form.roundId}
                 onChange={(e) => setForm({ ...form, roundId: e.target.value })}
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-[#00A19A] outline-none font-semibold text-slate-700"
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-[#00A99D] outline-none font-semibold text-slate-700"
               >
                 <option value="">-- Chọn vòng thi --</option>
                 {filteredRoundsForSelect.map((r) => (
@@ -470,7 +470,7 @@ export function ExamsClient({
               <select
                 value={form.grade}
                 onChange={(e) => setForm({ ...form, grade: e.target.value })}
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-[#00A19A] outline-none font-semibold text-slate-700"
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-[#00A99D] outline-none font-semibold text-slate-700"
               >
                 <option value="">-- Chọn đối tượng dự thi --</option>
                 <option value="TIEU_HOC">Tiểu học</option>
@@ -488,7 +488,7 @@ export function ExamsClient({
               <select
                 value={form.departmentId}
                 onChange={(e) => setForm({ ...form, departmentId: e.target.value })}
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-[#00A19A] outline-none font-semibold text-slate-700"
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-[#00A99D] outline-none font-semibold text-slate-700"
               >
                 <option value="">-- Chọn tổ chuyên môn --</option>
                 {departments.map((d) => (
@@ -507,7 +507,7 @@ export function ExamsClient({
               <select
                 value={form.plan}
                 onChange={(e) => setForm({ ...form, plan: e.target.value })}
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-[#00A19A] outline-none font-semibold text-slate-700"
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-[#00A99D] outline-none font-semibold text-slate-700"
               >
                 <option value="HE_THONG">Hệ thống</option>
                 <option value="TRUONG">Trường</option>
@@ -530,7 +530,7 @@ export function ExamsClient({
                   value={customPlan}
                   onChange={(e) => setCustomPlan(e.target.value)}
                   placeholder="Ví dụ: Kế hoạch Cụm, Kế hoạch Tỉnh..."
-                  className="w-full border border-slate-200 rounded-lg px-4 py-2 text-xs focus:border-[#00A19A] outline-none font-semibold"
+                  className="w-full border border-slate-200 rounded-lg px-4 py-2 text-xs focus:border-[#00A99D] outline-none font-semibold"
                 />
               </div>
             )}
@@ -544,7 +544,7 @@ export function ExamsClient({
                 type="datetime-local"
                 value={form.startDate}
                 onChange={(e) => setForm({ ...form, startDate: e.target.value })}
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-[#00A19A] outline-none font-semibold text-slate-700"
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-[#00A99D] outline-none font-semibold text-slate-700"
               />
             </div>
 
@@ -555,7 +555,7 @@ export function ExamsClient({
                 type="datetime-local"
                 value={form.endDate}
                 onChange={(e) => setForm({ ...form, endDate: e.target.value })}
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-[#00A19A] outline-none font-semibold text-slate-700"
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:border-[#00A99D] outline-none font-semibold text-slate-700"
               />
             </div>
           </div>
@@ -567,7 +567,7 @@ export function ExamsClient({
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               placeholder="Chi tiết nội dung kiểm tra, phòng thi, hình thức tổ chức..."
-              className="w-full border border-slate-200 rounded-lg px-4 py-2 text-xs focus:border-[#00A19A] outline-none font-semibold"
+              className="w-full border border-slate-200 rounded-lg px-4 py-2 text-xs focus:border-[#00A99D] outline-none font-semibold"
               rows={3}
             />
           </div>
@@ -579,7 +579,7 @@ export function ExamsClient({
               id="isPriority"
               checked={form.isPriority}
               onChange={(e) => setForm({ ...form, isPriority: e.target.checked })}
-              className="w-4 h-4 rounded text-[#00A19A] focus:ring-[#00A19A]"
+              className="w-4 h-4 rounded text-[#00A99D] focus:ring-[#00A99D]"
             />
             <label htmlFor="isPriority" className="text-xs font-bold text-slate-700 cursor-pointer flex items-center gap-1 select-none">
               <Star className={`w-4 h-4 ${form.isPriority ? "text-amber-500 fill-amber-500" : "text-slate-400"}`} />
@@ -592,7 +592,7 @@ export function ExamsClient({
             <button
               onClick={handleSave}
               disabled={saving}
-              className="px-6 py-2.5 bg-[#00A19A] hover:bg-[#008c85] text-white rounded-lg font-bold text-xs shadow-md shadow-[#00A19A]/20 transition-all disabled:opacity-60"
+              className="px-6 py-2.5 bg-[#00A99D] hover:bg-[#009085] text-white rounded-lg font-bold text-xs shadow-md shadow-[#00A99D]/20 transition-all disabled:opacity-60"
             >
               {saving ? "Đang lưu..." : "Lưu Kỳ Thi"}
             </button>
@@ -614,7 +614,7 @@ export function ExamsClient({
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
           <div className="bg-slate-50/70 border-b border-slate-100 px-6 py-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Calendar className="w-5 h-5 text-[#00A19A]" />
+              <Calendar className="w-5 h-5 text-[#00A99D]" />
               <span className="font-bold text-slate-700 text-sm">Danh Sách Kỳ Thi ({filteredExams.length})</span>
             </div>
           </div>
@@ -636,7 +636,7 @@ export function ExamsClient({
                   <div key={exam.id} className="flex flex-col md:flex-row md:items-center justify-between p-6 hover:bg-slate-50/50 transition-all group gap-4 text-xs font-semibold">
                     <div className="flex items-start gap-4 flex-1 min-w-0">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                        exam.isPriority ? "bg-amber-50 text-amber-500" : "bg-teal-50 text-[#00A19A]"
+                        exam.isPriority ? "bg-amber-50 text-amber-500" : "bg-teal-50 text-[#00A99D]"
                       }`}>
                         <Calendar className="w-5 h-5" />
                       </div>
@@ -652,7 +652,7 @@ export function ExamsClient({
                             {exam.name}
                           </span>
                           {exam.grade && (
-                            <span className="text-[10px] bg-[#00A19A]/10 text-[#00A19A] px-2 py-0.5 rounded-md font-bold mr-1">
+                            <span className="text-[10px] bg-[#00A99D]/10 text-[#00A99D] px-2 py-0.5 rounded-md font-bold mr-1">
                               {getLevelLabel(exam.grade)}
                             </span>
                           )}
@@ -710,7 +710,7 @@ export function ExamsClient({
                             <div className="text-[10px] text-slate-400 flex items-center gap-1">
                               <Calendar className="w-3.5 h-3.5 text-slate-400" />
                               Thời gian:{" "}
-                              <span className="text-[#00A19A] font-bold">
+                              <span className="text-[#00A99D] font-bold">
                                 {exam.startDate ? new Date(exam.startDate).toLocaleDateString("vi-VN", {
                                   day: "numeric",
                                   month: "numeric",
@@ -749,7 +749,7 @@ export function ExamsClient({
                       <div className="flex items-center gap-1.5 border-r border-slate-200 pr-2.5">
                         <Link
                           href={`/admin/ktdbcl/students?examId=${exam.id}`}
-                          className="flex items-center gap-1 bg-slate-50 hover:bg-teal-50/50 text-[#00A19A] border border-slate-200/80 hover:border-teal-200/50 px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all"
+                          className="flex items-center gap-1 bg-slate-50 hover:bg-teal-50/50 text-[#00A99D] border border-slate-200/80 hover:border-teal-200/50 px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all"
                         >
                           <UserCheck className="w-3.5 h-3.5" />
                           Đăng ký
@@ -766,7 +766,7 @@ export function ExamsClient({
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => openEdit(exam)}
-                          className="p-2 hover:bg-teal-50 text-[#00A19A] rounded-xl transition-all"
+                          className="p-2 hover:bg-teal-50 text-[#00A99D] rounded-xl transition-all"
                           title="Chỉnh sửa"
                         >
                           <Edit2 className="w-4 h-4" />

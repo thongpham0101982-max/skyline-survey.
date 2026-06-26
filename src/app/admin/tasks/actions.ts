@@ -140,7 +140,7 @@ export async function createTask(data: any) {
           const emailHtml = `
             <div style="font-family: 'Open Sans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; padding: 40px 20px; color: #334155; line-height: 1.6;">
               <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); border: 1px solid #e2e8f0;">
-                <div style="background-color: ${task.isImportant ? '#ef4444' : '#00A19A'}; padding: 32px 24px; text-align: center;">
+                <div style="background-color: ${task.isImportant ? '#ef4444' : '#00A99D'}; padding: 32px 24px; text-align: center;">
                   <h2 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.025em;">${task.isImportant ? 'CÔNG VIỆC QUAN TRỌNG MỚI' : 'CÔNG VIỆC MỚI ĐƯỢC GIAO'}</h2>
                   <p style="color: #ffffff; margin: 8px 0 0 0; font-size: 14px; opacity: 0.9;">Hệ thống Điều hành Công việc Skyline</p>
                 </div>
@@ -156,11 +156,11 @@ export async function createTask(data: any) {
                   <p style="margin-top: 0; font-size: 16px;">Xin chào <strong>${u.fullName}</strong>,</p>
                   <p style="font-size: 15px; color: #475569;">Bạn nhận được một công việc mới được phân công từ quản trị viên:</p>
                   
-                  <div style="background-color: #f1f5f9; border-left: 4px solid ${task.isImportant ? '#ef4444' : '#00A19A'}; border-radius: 8px; padding: 20px; margin: 24px 0;">
+                  <div style="background-color: #f1f5f9; border-left: 4px solid ${task.isImportant ? '#ef4444' : '#00A99D'}; border-radius: 8px; padding: 20px; margin: 24px 0;">
                     <table style="width: 100%; border-collapse: collapse;" className="border border-slate-200 border-collapse">
                       <tr>
                         <td style="padding: 4px 0; font-size: 13px; font-weight: 600; color: #64748b; width: 120px; text-transform: uppercase;" className="p-2 border border-slate-200">Danh mục:</td>
-                        <td style="padding: 4px 0; font-size: 14px; font-weight: 600; color: ${task.isImportant ? '#ef4444' : '#00A19A'};" className="p-2 border border-slate-200">${task.category || "Công việc"}</td>
+                        <td style="padding: 4px 0; font-size: 14px; font-weight: 600; color: ${task.isImportant ? '#ef4444' : '#00A99D'};" className="p-2 border border-slate-200">${task.category || "Công việc"}</td>
                       </tr>
                       <tr>
                         <td style="padding: 4px 0; font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase; vertical-align: top;" className="p-2 border border-slate-200">Nội dung:</td>
@@ -180,7 +180,7 @@ export async function createTask(data: any) {
                   <p style="font-size: 15px; color: #475569; margin-bottom: 24px;">Vui lòng truy cập hệ thống để xem chi tiết và thực hiện công việc.</p>
                   
                   <div style="text-align: center; margin: 32px 0 16px 0;">
-                    <a href="${appUrl}/admin/tasks?taskId=${task.id}" style="background-color: ${task.isImportant ? '#ef4444' : '#00A19A'}; color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-size: 15px; font-weight: 700; display: inline-block;">Xem công việc</a>
+                    <a href="${appUrl}/admin/tasks?taskId=${task.id}" style="background-color: ${task.isImportant ? '#ef4444' : '#00A99D'}; color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-size: 15px; font-weight: 700; display: inline-block;">Xem công việc</a>
                   </div>
                 </div>
                 
@@ -353,7 +353,7 @@ export async function remindTask(id: string) {
           const emailHtml = `
             <div style="font-family: 'Open Sans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; padding: 40px 20px; color: #334155; line-height: 1.6;">
               <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); border: 1px solid #e2e8f0;">
-                <div style="background-color: ${task.isImportant ? '#ef4444' : '#00A19A'}; padding: 32px 24px; text-align: center;">
+                <div style="background-color: ${task.isImportant ? '#ef4444' : '#00A99D'}; padding: 32px 24px; text-align: center;">
                   <h2 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.025em;">${task.isImportant ? 'CÔNG VIỆC QUAN TRỌNG / NHẮC VIỆC' : 'NHẮC NHỞ CÔNG VIỆC'}</h2>
                   <p style="color: #ffffff; margin: 8px 0 0 0; font-size: 14px; opacity: 0.9;">Hệ thống Điều hành Công việc Skyline</p>
                 </div>
@@ -369,11 +369,11 @@ export async function remindTask(id: string) {
                   <p style="margin-top: 0; font-size: 16px;">Xin chào <strong>${u.fullName}</strong>,</p>
                   <p style="font-size: 15px; color: #475569;">Bạn có thông báo nhắc nhở thực hiện công việc từ người điều hành:</p>
                   
-                  <div style="background-color: #f1f5f9; border-left: 4px solid ${task.isImportant ? '#ef4444' : '#00A19A'}; border-radius: 8px; padding: 20px; margin: 24px 0;">
+                  <div style="background-color: #f1f5f9; border-left: 4px solid ${task.isImportant ? '#ef4444' : '#00A99D'}; border-radius: 8px; padding: 20px; margin: 24px 0;">
                     <table style="width: 100%; border-collapse: collapse;" className="border border-slate-200 border-collapse">
                       <tr>
                         <td style="padding: 4px 0; font-size: 13px; font-weight: 600; color: #64748b; width: 120px; text-transform: uppercase;" className="p-2 border border-slate-200">Danh mục:</td>
-                        <td style="padding: 4px 0; font-size: 14px; font-weight: 600; color: ${task.isImportant ? '#ef4444' : '#00A19A'};" className="p-2 border border-slate-200">${task.category || "Công việc"}</td>
+                        <td style="padding: 4px 0; font-size: 14px; font-weight: 600; color: ${task.isImportant ? '#ef4444' : '#00A99D'};" className="p-2 border border-slate-200">${task.category || "Công việc"}</td>
                       </tr>
                       <tr>
                         <td style="padding: 4px 0; font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase; vertical-align: top;" className="p-2 border border-slate-200">Nội dung:</td>
@@ -393,7 +393,7 @@ export async function remindTask(id: string) {
                   <p style="font-size: 15px; color: #475569; margin-bottom: 24px;">Vui lòng truy cập hệ thống để cập nhật tiến độ công việc trước hạn chót.</p>
                   
                   <div style="text-align: center; margin: 32px 0 16px 0;">
-                    <a href="${appUrl}/admin/tasks?taskId=${task.id}" style="background-color: ${task.isImportant ? '#ef4444' : '#00A19A'}; color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-size: 15px; font-weight: 700; display: inline-block;">Cập nhật tiến độ</a>
+                    <a href="${appUrl}/admin/tasks?taskId=${task.id}" style="background-color: ${task.isImportant ? '#ef4444' : '#00A99D'}; color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-size: 15px; font-weight: 700; display: inline-block;">Cập nhật tiến độ</a>
                   </div>
                 </div>
                 
@@ -517,7 +517,7 @@ export async function checkAndNotifyUpcomingTasks() {
                 const emailHtml = `
                   <div style="font-family: 'Open Sans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; padding: 40px 20px; color: #334155; line-height: 1.6;">
                     <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); border: 1px solid #e2e8f0;">
-                      <div style="background-color: ${task.isImportant ? '#ef4444' : '#00A19A'}; padding: 32px 24px; text-align: center;">
+                      <div style="background-color: ${task.isImportant ? '#ef4444' : '#00A99D'}; padding: 32px 24px; text-align: center;">
                         <h2 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.025em;">TỰ ĐỘNG NHẮC HẠN CHÓT</h2>
                         <p style="color: #ffffff; margin: 8px 0 0 0; font-size: 14px; opacity: 0.9;">Hệ thống Điều hành Công việc Skyline</p>
                       </div>
@@ -531,11 +531,11 @@ export async function checkAndNotifyUpcomingTasks() {
                         <p style="margin-top: 0; font-size: 16px;">Xin chào <strong>${u.fullName}</strong>,</p>
                         <p style="font-size: 15px; color: #475569;">Vui lòng hoàn thành công việc sau trước hạn chót:</p>
                         
-                        <div style="background-color: #f1f5f9; border-left: 4px solid ${task.isImportant ? '#ef4444' : '#00A19A'}; border-radius: 8px; padding: 20px; margin: 24px 0;">
+                        <div style="background-color: #f1f5f9; border-left: 4px solid ${task.isImportant ? '#ef4444' : '#00A99D'}; border-radius: 8px; padding: 20px; margin: 24px 0;">
                           <table style="width: 100%; border-collapse: collapse;" className="border border-slate-200 border-collapse">
                             <tr>
                               <td style="padding: 4px 0; font-size: 13px; font-weight: 600; color: #64748b; width: 120px; text-transform: uppercase;" className="p-2 border border-slate-200">Danh mục:</td>
-                              <td style="padding: 4px 0; font-size: 14px; font-weight: 600; color: ${task.isImportant ? '#ef4444' : '#00A19A'};" className="p-2 border border-slate-200">${task.category || "Công việc"}</td>
+                              <td style="padding: 4px 0; font-size: 14px; font-weight: 600; color: ${task.isImportant ? '#ef4444' : '#00A99D'};" className="p-2 border border-slate-200">${task.category || "Công việc"}</td>
                             </tr>
                             <tr>
                               <td style="padding: 4px 0; font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase; vertical-align: top;" className="p-2 border border-slate-200">Nội dung:</td>
@@ -555,7 +555,7 @@ export async function checkAndNotifyUpcomingTasks() {
                         <p style="font-size: 15px; color: #475569; margin-bottom: 24px;">Vui lòng truy cập hệ thống để xem chi tiết và báo cáo kết quả thực hiện.</p>
                         
                         <div style="text-align: center; margin: 32px 0 16px 0;">
-                          <a href="${appUrl}/admin/tasks?taskId=${task.id}" style="background-color: ${task.isImportant ? '#ef4444' : '#00A19A'}; color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-size: 15px; font-weight: 700; display: inline-block;">Xem công việc</a>
+                          <a href="${appUrl}/admin/tasks?taskId=${task.id}" style="background-color: ${task.isImportant ? '#ef4444' : '#00A99D'}; color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-size: 15px; font-weight: 700; display: inline-block;">Xem công việc</a>
                         </div>
                       </div>
                       

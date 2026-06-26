@@ -164,10 +164,10 @@ export function ChatBotWidget({ role = "TEACHER", chatbotCode }: ChatBotWidgetPr
       {isOpen && (
         <div className="w-[360px] md:w-[410px] h-[550px] bg-white/95 backdrop-blur-md rounded-3xl border border-slate-200 shadow-2xl flex flex-col overflow-hidden mb-4 transition-all duration-300 animate-in slide-in-from-bottom-5">
           {/* Header */}
-          <div className="bg-[#0A3230] text-white p-4 flex items-center justify-between shadow-md shrink-0">
+          <div className="bg-[#003B3A] text-white p-4 flex items-center justify-between shadow-md shrink-0">
             <div className="flex items-center gap-2.5">
               <div className="p-2 bg-white/10 rounded-2xl">
-                <Bot className="w-5 h-5 text-[#00A19A]" />
+                <Bot className="w-5 h-5 text-[#00A99D]" />
               </div>
               <div>
                 <h4 className="text-sm font-black tracking-wide">Trợ Lý Chuyên Môn ({role === "ADMIN" ? "Admin" : "Giáo viên"})</h4>
@@ -203,15 +203,15 @@ export function ChatBotWidget({ role = "TEACHER", chatbotCode }: ChatBotWidgetPr
                   className={`flex gap-2.5 max-w-[85%] ${isBot ? "self-start" : "ml-auto flex-row-reverse"}`}
                 >
                   {isBot && (
-                    <div className="w-7 h-7 bg-[#0A3230] text-white rounded-xl flex items-center justify-center shrink-0 shadow-sm mt-0.5">
-                      <Bot className="w-4 h-4 text-[#00A19A]" />
+                    <div className="w-7 h-7 bg-[#003B3A] text-white rounded-xl flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+                      <Bot className="w-4 h-4 text-[#00A99D]" />
                     </div>
                   )}
                   <div 
                     className={`p-3 rounded-2xl shadow-xs ${
                       isBot 
                         ? "bg-white text-slate-800 rounded-tl-none border border-slate-100" 
-                        : "bg-[#00A19A] text-white rounded-tr-none"
+                        : "bg-[#00A99D] text-white rounded-tr-none"
                     }`}
                   >
                     {renderMessageContent(msg.parts[0].text)}
@@ -223,8 +223,8 @@ export function ChatBotWidget({ role = "TEACHER", chatbotCode }: ChatBotWidgetPr
             {/* Đang gõ indicator */}
             {isLoading && (
               <div className="flex gap-2.5 max-w-[80%] self-start items-center">
-                <div className="w-7 h-7 bg-[#0A3230] text-white rounded-xl flex items-center justify-center shrink-0 shadow-sm">
-                  <Bot className="w-4 h-4 text-[#00A19A]" />
+                <div className="w-7 h-7 bg-[#003B3A] text-white rounded-xl flex items-center justify-center shrink-0 shadow-sm">
+                  <Bot className="w-4 h-4 text-[#00A99D]" />
                 </div>
                 <div className="bg-white border border-slate-100 p-3 rounded-2xl rounded-tl-none flex items-center gap-1">
                   <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></span>
@@ -254,7 +254,7 @@ export function ChatBotWidget({ role = "TEACHER", chatbotCode }: ChatBotWidgetPr
                   <button
                     key={idx}
                     onClick={() => handleSend(q.text)}
-                    className="px-2.5 py-1 bg-white hover:bg-[#00A19A]/10 border border-slate-200 hover:border-[#00A19A]/20 text-[10px] md:text-xs font-semibold text-slate-600 hover:text-[#00A19A] rounded-xl transition duration-200 text-left"
+                    className="px-2.5 py-1 bg-white hover:bg-[#00A99D]/10 border border-slate-200 hover:border-[#00A99D]/20 text-[10px] md:text-xs font-semibold text-slate-600 hover:text-[#00A99D] rounded-xl transition duration-200 text-left"
                   >
                     {q.label}
                   </button>
@@ -273,12 +273,12 @@ export function ChatBotWidget({ role = "TEACHER", chatbotCode }: ChatBotWidgetPr
               placeholder="Nhập nội dung cần tra cứu..."
               value={input}
               onChange={e => setInput(e.target.value)}
-              className="flex-1 text-xs md:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#00A19A] focus:ring-1 focus:ring-[#00A19A] transition text-xs font-semibold"
+              className="flex-1 text-xs md:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#00A99D] focus:ring-1 focus:ring-[#00A99D] transition text-xs font-semibold"
             />
             <button 
               type="submit"
               disabled={!input.trim() || isLoading}
-              className="p-2.5 bg-[#00A19A] hover:bg-[#008B84] text-white rounded-2xl shadow-md disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none transition shrink-0 active:scale-95"
+              className="p-2.5 bg-[#00A99D] hover:bg-[#008B84] text-white rounded-2xl shadow-md disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none transition shrink-0 active:scale-95"
             >
               <Send className="w-4 h-4" />
             </button>
@@ -289,13 +289,13 @@ export function ChatBotWidget({ role = "TEACHER", chatbotCode }: ChatBotWidgetPr
       {/* Floating Toggle Bubble Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-14 h-14 bg-[#0A3230] text-white rounded-full flex items-center justify-center shadow-xl border border-slate-700/50 hover:bg-[#0C403E] transition-all duration-300 hover:scale-105 active:scale-95 relative group"
+        className="w-14 h-14 bg-[#003B3A] text-white rounded-full flex items-center justify-center shadow-xl border border-slate-700/50 hover:bg-[#0C403E] transition-all duration-300 hover:scale-105 active:scale-95 relative group"
       >
-        <span className="absolute -inset-1 rounded-full bg-[#00A19A]/20 animate-ping opacity-75 group-hover:animate-none"></span>
+        <span className="absolute -inset-1 rounded-full bg-[#00A99D]/20 animate-ping opacity-75 group-hover:animate-none"></span>
         {isOpen ? (
-          <ChevronDown className="w-6 h-6 text-[#00A19A]" />
+          <ChevronDown className="w-6 h-6 text-[#00A99D]" />
         ) : (
-          <MessageSquare className="w-6 h-6 text-[#00A19A]" />
+          <MessageSquare className="w-6 h-6 text-[#00A99D]" />
         )}
       </button>
     </div>

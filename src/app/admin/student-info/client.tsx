@@ -292,7 +292,7 @@ export function StudentInfoClient({
     if (preschoolInputLoading) {
       return (
         <div className="flex items-center gap-1.5 py-1 text-slate-400">
-          <Loader2 className="w-3.5 h-3.5 animate-spin text-[#00A6A9]" />
+          <Loader2 className="w-3.5 h-3.5 animate-spin text-[#00A99D]" />
           <span className="text-xs text-slate-500 font-medium">Đang tải dữ liệu tiêu chí...</span>
         </div>
       );
@@ -316,7 +316,7 @@ export function StudentInfoClient({
       <div className="space-y-3 max-h-60 overflow-y-auto custom-scrollbar pr-1 mt-1 text-xs">
         {Object.entries(scoresByArea).map(([areaId, areaData]) => (
           <div key={areaId} className="p-2.5 space-y-1.5 text-xs font-semibold">
-            <div className="font-bold text-[#00A6A9] text-[10px] uppercase tracking-wider">{areaData.areaName}</div>
+            <div className="font-bold text-[#00A99D] text-[10px] uppercase tracking-wider">{areaData.areaName}</div>
             <div className="space-y-1">
               {areaData.scores.map((sc) => {
                 const resText = sc.result === "DAT" ? "Đạt" : 
@@ -1216,7 +1216,7 @@ export function StudentInfoClient({
             onClick={() => handleTabChange("general")}
             className={`flex items-center gap-2 px-6 py-3.5 font-bold text-sm transition-all border-b-2 -mb-px rounded-t-xl ${
               activeTab === "general"
-                ? "border-[#00A6A9] text-[#00A6A9] bg-slate-50/50"
+                ? "border-[#00A99D] text-[#00A99D] bg-slate-50/50"
                 : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50/20"
             }`}
           >
@@ -1227,7 +1227,7 @@ export function StudentInfoClient({
             onClick={() => handleTabChange("preschool")}
             className={`flex items-center gap-2 px-6 py-3.5 font-bold text-sm transition-all border-b-2 -mb-px rounded-t-xl ${
               activeTab === "preschool"
-                ? "border-[#00A6A9] text-[#00A6A9] bg-slate-50/50"
+                ? "border-[#00A99D] text-[#00A99D] bg-slate-50/50"
                 : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50/20"
             }`}
           >
@@ -1251,7 +1251,7 @@ export function StudentInfoClient({
             <>
               <button
                 onClick={openCreateModal}
-                className="flex items-center gap-1.5 px-4 py-2 bg-[#00A6A9] hover:bg-[#008c85] text-white rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer"
+                className="flex items-center gap-1.5 px-4 py-2 bg-[#00A99D] hover:bg-[#009085] text-white rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 {activeTab === "general" ? "Thêm mới" : "Thêm trẻ"}
@@ -1295,7 +1295,7 @@ export function StudentInfoClient({
           }}
           className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${
             subTab === "input"
-              ? "bg-[#00A6A9] text-white shadow-sm"
+              ? "bg-[#00A99D] text-white shadow-sm"
               : "text-slate-650 hover:bg-slate-200/60 hover:text-slate-800"
           }`}
         >
@@ -1308,7 +1308,7 @@ export function StudentInfoClient({
           }}
           className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${
             subTab === "info"
-              ? "bg-[#00A6A9] text-white shadow-sm"
+              ? "bg-[#00A99D] text-white shadow-sm"
               : "text-slate-650 hover:bg-slate-200/60 hover:text-slate-800"
           }`}
         >
@@ -1321,7 +1321,7 @@ export function StudentInfoClient({
           }}
           className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${
             subTab === "result"
-              ? "bg-[#00A6A9] text-white shadow-sm"
+              ? "bg-[#00A99D] text-white shadow-sm"
               : "text-slate-650 hover:bg-slate-200/60 hover:text-slate-800"
           }`}
         >
@@ -1411,7 +1411,7 @@ export function StudentInfoClient({
           {/* Filters & Search Control Panel */}
           <div className="bg-white rounded-2xl p-5 border border-slate-300 shadow-sm space-y-4">
         <div className="flex items-center gap-2 text-[#1E1B4B] font-bold text-sm">
-          <Filter className="w-4 h-4 text-[#00A6A9]" />
+          <Filter className="w-4 h-4 text-[#00A99D]" />
           Bộ lọc & Tìm kiếm nhanh
         </div>
         <div className={`grid grid-cols-1 sm:grid-cols-2 ${subTab === "result" ? "md:grid-cols-5" : "md:grid-cols-4"} gap-3`}>
@@ -1426,7 +1426,7 @@ export function StudentInfoClient({
                 setCurrentPage(1);
               }}
               placeholder="Tên hoặc mã HS..."
-              className="w-full pl-9 pr-8 py-2 rounded-xl text-sm border border-slate-300 focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none transition-all"
+              className="w-full pl-9 pr-8 py-2 rounded-xl text-sm border border-slate-300 focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] outline-none transition-all"
             />
             {searchQuery && (
               <button
@@ -1446,7 +1446,7 @@ export function StudentInfoClient({
               setSelectedBatch(""); // Reset batch when period changes
               setCurrentPage(1);
             }}
-            className="px-3 py-2 rounded-xl text-sm border border-slate-300 focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer text-slate-700 font-medium"
+            className="px-3 py-2 rounded-xl text-sm border border-slate-300 focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] outline-none bg-white cursor-pointer text-slate-700 font-medium"
           >
             <option value="">Tất cả Kỳ khảo sát</option>
             {uniquePeriodNames.map((name) => (
@@ -1461,7 +1461,7 @@ export function StudentInfoClient({
               setSelectedBatch(e.target.value);
               setCurrentPage(1);
             }}
-            className="px-3 py-2 rounded-xl text-sm border border-slate-300 focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer text-slate-700 font-medium"
+            className="px-3 py-2 rounded-xl text-sm border border-slate-300 focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] outline-none bg-white cursor-pointer text-slate-700 font-medium"
           >
             <option value="">Tất cả Đợt</option>
             <option value="UNASSIGNED">Khác / Chưa phân đợt</option>
@@ -1477,7 +1477,7 @@ export function StudentInfoClient({
               setSelectedGrade(e.target.value);
               setCurrentPage(1);
             }}
-            className="px-3 py-2 rounded-xl text-sm border border-slate-300 focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer text-slate-700 font-medium"
+            className="px-3 py-2 rounded-xl text-sm border border-slate-300 focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] outline-none bg-white cursor-pointer text-slate-700 font-medium"
           >
             <option value="">Tất cả Khối</option>
             {filterOptions.grades.map((g) => (
@@ -1493,7 +1493,7 @@ export function StudentInfoClient({
                 setSelectedResult(e.target.value);
                 setCurrentPage(1);
               }}
-              className="px-3 py-2 rounded-xl text-sm border border-slate-300 focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer text-slate-700 font-medium"
+              className="px-3 py-2 rounded-xl text-sm border border-slate-300 focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] outline-none bg-white cursor-pointer text-slate-700 font-medium"
             >
               <option value="">Tất cả Kết quả</option>
               {filterOptions.results.map((r) => (
@@ -1516,7 +1516,7 @@ export function StudentInfoClient({
                     <th className="p-2 border border-slate-300 w-12 text-center">
                       <input
                         type="checkbox"
-                        className="w-4 h-4 rounded text-[#00A6A9] accent-[#00A6A9]"
+                        className="w-4 h-4 rounded text-[#00A99D] accent-[#00A99D]"
                         checked={filteredStudents.length > 0 && selectedIds.length === filteredStudents.length}
                         onChange={(e) => setSelectedIds(e.target.checked ? filteredStudents.map(s => s.id) : [])}
                       />
@@ -1571,7 +1571,7 @@ export function StudentInfoClient({
                         <td className="p-2 border border-slate-300 text-center" onClick={(e) => e.stopPropagation()}>
                           <input
                             type="checkbox"
-                            className="w-4 h-4 rounded text-[#00A6A9] accent-[#00A6A9]"
+                            className="w-4 h-4 rounded text-[#00A99D] accent-[#00A99D]"
                             checked={selectedIds.includes(s.id)}
                             onChange={(e) => setSelectedIds(prev => e.target.checked ? [...prev, s.id] : prev.filter(id => id !== s.id))}
                           />
@@ -1670,7 +1670,7 @@ export function StudentInfoClient({
                               setSelectedStudent(s);
                               setIsDetailsOpen(true);
                             }}
-                            className="p-1.5 text-slate-400 hover:text-[#00A6A9] hover:bg-slate-100 rounded-xl transition-all"
+                            className="p-1.5 text-slate-400 hover:text-[#00A99D] hover:bg-slate-100 rounded-xl transition-all"
                             title="Xem chi tiết"
                           >
                             <Eye className="w-4 h-4" />
@@ -1680,7 +1680,7 @@ export function StudentInfoClient({
 
                               <button
                                 onClick={() => openEditModal(s)}
-                                className="p-1.5 text-slate-400 hover:text-[#00A6A9] hover:bg-slate-100 rounded-xl transition-all"
+                                className="p-1.5 text-slate-400 hover:text-[#00A99D] hover:bg-slate-100 rounded-xl transition-all"
                                 title="Chỉnh sửa"
                               >
                                 <Edit2 className="w-4 h-4" />
@@ -1710,7 +1710,7 @@ export function StudentInfoClient({
                     <th className="p-2 border border-slate-300 w-12 text-center">
                       <input
                         type="checkbox"
-                        className="w-4 h-4 rounded accent-[#00A19A]"
+                        className="w-4 h-4 rounded accent-[#00A99D]"
                         checked={filteredStudents.length > 0 && selectedIds.length === filteredStudents.length}
                         onChange={(e) => setSelectedIds(e.target.checked ? filteredStudents.map(c => c.id) : [])}
                       />
@@ -1740,7 +1740,7 @@ export function StudentInfoClient({
                   paginatedStudents.map((child, i) => (
                     <tr 
                       key={child.id} 
-                      className={`hover:bg-[#00A19A]/5/30 transition-colors cursor-pointer ${selectedIds.includes(child.id) ? "bg-[#00A19A]/5/50" : ""}`}
+                      className={`hover:bg-[#00A99D]/5/30 transition-colors cursor-pointer ${selectedIds.includes(child.id) ? "bg-[#00A99D]/5/50" : ""}`}
                       onClick={() => {
                         setSelectedStudent(child);
                         setIsDetailsOpen(true);
@@ -1750,7 +1750,7 @@ export function StudentInfoClient({
                         <td className="p-2 border border-slate-300 text-center" onClick={(e) => e.stopPropagation()}>
                           <input
                             type="checkbox"
-                            className="w-4 h-4 rounded accent-[#00A19A]"
+                            className="w-4 h-4 rounded accent-[#00A99D]"
                             checked={selectedIds.includes(child.id)}
                             onChange={(e) => setSelectedIds(prev => e.target.checked ? [...prev, child.id] : prev.filter(id => id !== child.id))}
                           />
@@ -1817,7 +1817,7 @@ export function StudentInfoClient({
                               setSelectedStudent(child);
                               setIsDetailsOpen(true);
                             }}
-                            className="p-1.5 text-slate-400 hover:text-[#00A6A9] hover:bg-slate-100 rounded-xl transition-all"
+                            className="p-1.5 text-slate-400 hover:text-[#00A99D] hover:bg-slate-100 rounded-xl transition-all"
                             title="Xem chi tiết"
                           >
                             <Eye className="w-4 h-4" />
@@ -1826,7 +1826,7 @@ export function StudentInfoClient({
                             <>
                               <button
                                 onClick={() => openEditModal(child)}
-                                className="p-2 text-slate-300 hover:text-[#00A19A] hover:bg-[#00A19A]/5 rounded-xl transition-all"
+                                className="p-2 text-slate-300 hover:text-[#00A99D] hover:bg-[#00A99D]/5 rounded-xl transition-all"
                               >
                                 <Edit2 className="w-4 h-4" />
                               </button>
@@ -1878,7 +1878,7 @@ export function StudentInfoClient({
                     onClick={() => setCurrentPage(pageNum)}
                     className={`px-3 py-1 text-xs font-semibold rounded-xl border transition-all cursor-pointer ${
                       currentPage === pageNum
-                        ? "bg-[#00A6A9] text-white border-[#00A6A9]"
+                        ? "bg-[#00A99D] text-white border-[#00A99D]"
                         : "bg-white text-slate-600 border-slate-300 hover:bg-slate-50"
                     }`}
                   >
@@ -2462,7 +2462,7 @@ export function StudentInfoClient({
                 <select
                   value={importPeriodId}
                   onChange={(e) => setImportPeriodId(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] outline-none bg-white cursor-pointer font-semibold"
                 >
                   {activePeriodsList.map((p) => (
                     <option key={p.id} value={p.id}>{p.name}</option>
@@ -2476,7 +2476,7 @@ export function StudentInfoClient({
                 <select
                   value={importBatchId}
                   onChange={(e) => setImportBatchId(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] outline-none bg-white cursor-pointer font-semibold"
                 >
                   <option value="">Không phân đợt</option>
                   {activeImportBatches.map((b: any) => (
@@ -2541,7 +2541,7 @@ export function StudentInfoClient({
                   type="button"
                   disabled={importing || !importPeriodId}
                   onClick={() => importInputRef.current?.click()}
-                  className="flex items-center gap-1.5 px-5 py-2.5 bg-[#00A6A9] hover:bg-[#008c85] text-white rounded-xl text-xs font-bold shadow-none transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-5 py-2.5 bg-[#00A99D] hover:bg-[#009085] text-white rounded-xl text-xs font-bold shadow-none transition-all active:scale-95 cursor-pointer disabled:opacity-50"
                 >
                   <Upload className="w-4 h-4" />
                   Chọn file tải lên
@@ -2583,7 +2583,7 @@ export function StudentInfoClient({
               {/* Section: Basic info */}
               <div>
                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5 text-[#00A6A9]" />
+                  <Calendar className="w-3.5 h-3.5 text-[#00A99D]" />
                   Thông tin hành chính
                 </h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 text-xs font-semibold">
@@ -2609,7 +2609,7 @@ export function StudentInfoClient({
                   )}
                   <div>
                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kỳ khảo sát</label>
-                    <span className="text-sm font-semibold text-[#00A6A9] mt-0.5 block">{selectedStudent.period?.name || "-"}</span>
+                    <span className="text-sm font-semibold text-[#00A99D] mt-0.5 block">{selectedStudent.period?.name || "-"}</span>
                   </div>
                   <div>
                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Đợt khảo sát</label>
@@ -2630,7 +2630,7 @@ export function StudentInfoClient({
               {activeTab === "general" ? (
                 <div>
                   <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                    <BookOpen className="w-3.5 h-3.5 text-[#00A6A9]" />
+                    <BookOpen className="w-3.5 h-3.5 text-[#00A99D]" />
                     Kết quả điểm khảo sát năng lực
                   </h4>
                   {(() => {
@@ -2803,7 +2803,7 @@ export function StudentInfoClient({
                   {/* Section: Đánh giá phát triển mầm non */}
                   <div className="space-y-4">
                     <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-                      <BookOpen className="w-3.5 h-3.5 text-[#00A6A9]" />
+                      <BookOpen className="w-3.5 h-3.5 text-[#00A99D]" />
                       Đánh giá phát triển mầm non
                     </h4>
                     
@@ -2967,7 +2967,7 @@ export function StudentInfoClient({
               {/* Section: Final Approval Result */}
               <div>
                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                  <FileText className="w-3.5 h-3.5 text-[#00A6A9]" />
+                  <FileText className="w-3.5 h-3.5 text-[#00A99D]" />
                   Quyết định Ban Giám Hiệu sau khi Học thử
                 </h4>
                 <div className="p-5 space-y-4 text-xs font-semibold">
@@ -3043,7 +3043,7 @@ export function StudentInfoClient({
                     setRetestPeriodId(e.target.value);
                     setRetestBatchId("");
                   }}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] outline-none bg-white cursor-pointer font-semibold"
                 >
                   <option value="">-- Chọn Kỳ khảo sát mới --</option>
                   {generalPeriods.map((p) => (
@@ -3059,7 +3059,7 @@ export function StudentInfoClient({
                   <select
                     value={retestBatchId}
                     onChange={(e) => setRetestBatchId(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A6A9]/20 focus:border-[#00A6A9] outline-none bg-white cursor-pointer font-semibold"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] outline-none bg-white cursor-pointer font-semibold"
                   >
                     <option value="">-- Chọn Đợt khảo sát mới (Tất cả / Lẻ) --</option>
                     {(generalPeriods.find(p => p.id === retestPeriodId)?.batches || [])
