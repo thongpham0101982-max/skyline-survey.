@@ -109,7 +109,10 @@ export async function getAllRegisteredStudentsAction(examId: string) {
     gender: r.student.gender || "Chưa xác định",
     dateOfBirth: r.student.dateOfBirth ? r.student.dateOfBirth.toISOString() : null,
     isRegistered: true,
+    classId: r.student.classId,
     className: r.student.class?.className || "N/A",
-    campusName: r.student.campus?.campusName || "N/A"
+    campusId: r.student.campusId,
+    campusName: r.student.campus?.campusName || "N/A",
+    grade: r.student.class?.grade || "N/A"
   }))
 }

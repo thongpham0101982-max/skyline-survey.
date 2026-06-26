@@ -17,7 +17,7 @@ function getLevelLabel(val: string) {
 }
 
 import { useState, useEffect } from "react"
-import { Calendar, Layers, MapPin, UserCheck, Users, Check, X, Loader2, AlertCircle, Search } from "lucide-react"
+import { Calendar, Layers, MapPin, UserCheck, Users, Check, X, Loader2, AlertCircle, Search, Filter, Sparkles } from "lucide-react"
 import { getStudentsByClassAction, registerStudentsAction, deregisterStudentsAction, getAllRegisteredStudentsAction } from "./actions"
 
 interface StudentsClientProps {
@@ -55,7 +55,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
   // Selection states
   const [selectedExam, setSelectedExam] = useState("")
   const [selectedCampus, setSelectedCampus] = useState(campuses[0]?.id || "")
-  const [selectedGrade, setSelectedGrade] = useState("10") // Default to grade 10
+  const [selectedGrade, setSelectedGrade] = useState("10")
   const [selectedClass, setSelectedClass] = useState("")
 
   // Data states
@@ -84,19 +84,27 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
     }
   }, [filteredExams, selectedExam])
 
-  // Reset selected class when campus, grade or yearId changes
+  // Reset selected class when campus, grade or yearId changes (only in non-all-registered mode)
   useEffect(() => {
-    if (filteredClasses.length > 0) {
-      // Find if current selected class is in the filtered list
-      const exists = filteredClasses.some((c) => c.id === selectedClass)
-      if (!exists) {
-        setSelectedClass(filteredClasses[0].id)
+    if (!showAllRegistered) {
+      if (filteredClasses.length > 0) {
+        const exists = filteredClasses.some((c) => c.id === selectedClass)
+        if (!exists) {
+          setSelectedClass(filteredClasses[0].id)
+        }
+      } else {
+        setSelectedClass("")
+        setStudents([])
       }
-    } else {
-      setSelectedClass("")
-      setStudents([])
     }
-  }, [selectedCampus, selectedGrade, yearId])
+  }, [selectedCampus, selectedGrade, yearId, showAllRegistered, filteredClasses, selectedClass])
+
+  // Ensure selectedCampus is set when switching showAllRegistered to false
+  useEffect(() => {
+    if (!showAllRegistered && !selectedCampus) {
+      setSelectedCampus(campuses[0]?.id || "")
+    }
+  }, [showAllRegistered, selectedCampus, campuses])
 
   // Fetch students when class or exam changes
   const fetchStudents = async () => {
@@ -163,10 +171,8 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
     const allSelected = visibleIds.every((id) => selectedIds.includes(id))
 
     if (allSelected) {
-      // Unselect all visible
       setSelectedIds(selectedIds.filter((id) => !visibleIds.includes(id)))
     } else {
-      // Select all visible
       const newSelections = [...selectedIds]
       visibleIds.forEach((id) => {
         if (!newSelections.includes(id)) {
@@ -215,12 +221,33 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
     }
   }
 
-  // Filter students based on search term
-  const filteredStudents = students.filter(
-    (s) =>
-      s.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      s.studentCode.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  // Filter students based on search term and selected filters
+  const getFilteredStudents = () => {
+    let list = students
+    if (showAllRegistered) {
+      if (selectedCampus) {
+        list = list.filter((s) => s.campusId === selectedCampus)
+      }
+      if (selectedGrade) {
+        list = list.filter((s) => s.grade === selectedGrade)
+      }
+      if (selectedClass) {
+        list = list.filter((s) => s.classId === selectedClass)
+      }
+    }
+    // Search term
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase()
+      list = list.filter(
+        (s) =>
+          s.studentName.toLowerCase().includes(term) ||
+          s.studentCode.toLowerCase().includes(term)
+      )
+    }
+    return list
+  }
+
+  const filteredStudents = getFilteredStudents()
 
   // Get active exam details
   const activeExamObj = exams.find((e) => e.id === selectedExam)
@@ -252,40 +279,67 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
   const registeredCount = students.filter((s) => s.isRegistered).length
   const unregisteredCount = totalCount - registeredCount
 
-
+  // Statistics for currently filtered view
+  const currentFilteredCount = filteredStudents.length
+  const currentRegisteredCount = filteredStudents.filter((s) => s.isRegistered).length
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 text-xs font-semibold">
       {/* Sidebar Control Panel */}
       <div className="lg:col-span-1 space-y-6">
-        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs space-y-5 animate-fade-in">
           <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2 pb-3 border-b border-slate-100">
             <Layers className="w-4 h-4 text-[#00A99D]" />
             Bộ Lọc Đăng Ký
           </h3>
 
-          {/* Toggle View Mode */}
-          <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100">
-            <label className="font-bold text-slate-700 text-[10px] uppercase cursor-pointer" htmlFor="toggle-show-all-registered">Xem DS đã đăng ký</label>
-            <input
-              id="toggle-show-all-registered"
-              type="checkbox"
-              checked={showAllRegistered}
-              onChange={(e) => setShowAllRegistered(e.target.checked)}
-              className="w-4 h-4 rounded text-[#00A99D] focus:ring-[#00A99D] cursor-pointer"
-            />
+          {/* Segmented Controller for View Mode */}
+          <div className="space-y-1.5">
+            <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+              Chế độ xem
+            </label>
+            <div className="grid grid-cols-2 bg-slate-100 p-0.5 rounded-xl border border-slate-200/50">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAllRegistered(false)
+                  setSearchTerm("")
+                }}
+                className={`py-2 rounded-lg text-[10px] font-bold transition-all ${
+                  !showAllRegistered 
+                    ? "bg-white text-[#00A99D] shadow-xs" 
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                Đăng ký theo Lớp
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAllRegistered(true)
+                  setSearchTerm("")
+                }}
+                className={`py-2 rounded-lg text-[10px] font-bold transition-all ${
+                  showAllRegistered 
+                    ? "bg-white text-[#00A99D] shadow-xs" 
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                Theo dõi Đã đăng ký
+              </button>
+            </div>
           </div>
 
           {/* 1. Chọn kỳ thi */}
           <div className="space-y-1.5">
-            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+            <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider">
               Chọn Kỳ Thi
             </label>
             <select
               value={selectedExam}
               onChange={(e) => setSelectedExam(e.target.value)}
               disabled={filteredExams.length === 0}
-              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-[#00A99D] transition-all bg-white disabled:bg-slate-50 disabled:text-slate-400"
+              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-[#00A99D] focus:ring-1 focus:ring-[#00A99D] transition-all bg-white disabled:bg-slate-50 disabled:text-slate-400"
             >
               {filteredExams.length === 0 ? (
                 <option value="">-- Không có kỳ thi --</option>
@@ -298,23 +352,30 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
               )}
             </select>
             {activeExamObj && activeExamObj.grade && (
-              <div className="bg-amber-50 border border-amber-100 rounded-lg p-2 mt-1 text-[10px] text-amber-800">
-                <span className="font-bold">Đối tượng mục tiêu:</span> {getLevelLabel(activeExamObj.grade)}
+              <div className="bg-[#E6F6F5]/50 border border-[#00A99D]/10 rounded-xl p-2.5 mt-1 text-[10px] text-[#009085] flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-[#00A99D] flex-shrink-0" />
+                <span><strong>Mục tiêu:</strong> {getLevelLabel(activeExamObj.grade)}</span>
               </div>
             )}
           </div>
 
+          {/* Separator */}
+          <div className="border-t border-slate-100 my-2" />
+
           {/* 2. Chọn cơ sở */}
           <div className="space-y-1.5">
-            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+            <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider">
               Cơ sở trường
             </label>
             <select
               value={selectedCampus}
-              onChange={(e) => setSelectedCampus(e.target.value)}
-              disabled={showAllRegistered}
-              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-[#00A99D] transition-all bg-white disabled:bg-slate-50 disabled:text-slate-400"
+              onChange={(e) => {
+                setSelectedCampus(e.target.value)
+                setSelectedClass("")
+              }}
+              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-[#00A99D] focus:ring-1 focus:ring-[#00A99D] transition-all bg-white"
             >
+              {showAllRegistered && <option value="">-- Tất cả cơ sở --</option>}
               {campuses.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.campusName}
@@ -325,15 +386,18 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
 
           {/* 3. Chọn khối */}
           <div className="space-y-1.5">
-            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+            <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider">
               Khối lớp
             </label>
             <select
               value={selectedGrade}
-              onChange={(e) => setSelectedGrade(e.target.value)}
-              disabled={showAllRegistered}
-              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-[#00A99D] transition-all bg-white disabled:bg-slate-50 disabled:text-slate-400"
+              onChange={(e) => {
+                setSelectedGrade(e.target.value)
+                setSelectedClass("")
+              }}
+              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-[#00A99D] focus:ring-1 focus:ring-[#00A99D] transition-all bg-white"
             >
+              {showAllRegistered && <option value="">-- Tất cả khối --</option>}
               {allowedGrades.map((g) => (
                 <option key={g} value={g}>
                   Khối {g}
@@ -344,16 +408,27 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
 
           {/* 4. Chọn lớp */}
           <div className="space-y-1.5">
-            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+            <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider">
               Lớp học
             </label>
             <select
               value={selectedClass}
               onChange={(e) => setSelectedClass(e.target.value)}
-              disabled={showAllRegistered || filteredClasses.length === 0}
-              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-[#00A99D] transition-all bg-white disabled:bg-slate-50 disabled:text-slate-400"
+              disabled={!showAllRegistered && filteredClasses.length === 0}
+              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-[#00A99D] focus:ring-1 focus:ring-[#00A99D] transition-all bg-white disabled:bg-slate-50 disabled:text-slate-400"
             >
-              {filteredClasses.length === 0 ? (
+              {showAllRegistered ? (
+                <>
+                  <option value="">-- Tất cả lớp --</option>
+                  {classes
+                    .filter((c) => (!selectedCampus || c.campusId === selectedCampus) && (!selectedGrade || c.grade === selectedGrade) && c.academicYearId === yearId)
+                    .map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.className} ({c.campus?.campusCode || "N/A"})
+                      </option>
+                    ))}
+                </>
+              ) : filteredClasses.length === 0 ? (
                 <option value="">-- Không có lớp --</option>
               ) : (
                 filteredClasses.map((c) => (
@@ -367,34 +442,39 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
         </div>
 
         {/* Batch Operations Card */}
-        {(showAllRegistered || (selectedClass && students.length > 0)) && (
-          <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
-            <h3 className="text-sm font-bold text-slate-800 pb-3 border-b border-slate-100">
+        {((!showAllRegistered && selectedClass && students.length > 0) || (showAllRegistered && students.length > 0)) && (
+          <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs space-y-4 animate-fade-in">
+            <h3 className="text-sm font-bold text-slate-800 pb-3 border-b border-slate-100 flex items-center gap-1.5">
+              <Filter className="w-4 h-4 text-[#00A99D]" />
               Thao Tác Hàng Loạt
             </h3>
-            <div className="text-[11px] text-slate-500">
-              Đã chọn <strong className="text-[#00A99D]">{selectedIds.length}</strong> học sinh trong danh sách hiển thị dưới đây.
+            <div className="text-[11px] text-slate-500 font-semibold bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+              Đã chọn <strong className="text-[#00A99D] text-xs">{selectedIds.length}</strong> học sinh trong danh sách hiển thị dưới đây.
             </div>
 
-            {!showAllRegistered && (
-              <button
-                onClick={handleRegister}
-                disabled={selectedIds.length === 0 || updating}
-                className="w-full flex items-center justify-center gap-2 bg-[#00A99D] hover:bg-[#009085] text-white py-2.5 rounded-xl font-bold transition-all shadow-md shadow-[#00A99D]/10 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {updating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                Đăng ký Dự thi ({selectedIds.length})
-              </button>
-            )}
+            <div className="space-y-2 pt-1">
+              {!showAllRegistered && (
+                <button
+                  type="button"
+                  onClick={handleRegister}
+                  disabled={selectedIds.length === 0 || updating}
+                  className="w-full flex items-center justify-center gap-2 bg-[#00A99D] hover:bg-[#009085] text-white py-2.5 rounded-xl font-bold transition-all shadow-md shadow-[#00A99D]/15 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {updating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                  Đăng ký Dự thi ({selectedIds.length})
+                </button>
+              )}
 
-            <button
-              onClick={handleDeregister}
-              disabled={selectedIds.length === 0 || updating}
-              className="w-full flex items-center justify-center gap-2 bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 py-2.5 rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {updating ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
-              Hủy đăng ký ({selectedIds.length})
-            </button>
+              <button
+                type="button"
+                onClick={handleDeregister}
+                disabled={selectedIds.length === 0 || updating}
+                className="w-full flex items-center justify-center gap-2 bg-white hover:bg-rose-50 text-rose-600 border border-rose-200/80 py-2.5 rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {updating ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
+                Hủy đăng ký ({selectedIds.length})
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -403,46 +483,70 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
       <div className="lg:col-span-3 space-y-6">
         {/* Statistics Header */}
         {(selectedClass || showAllRegistered) && (
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {showAllRegistered ? (
-              <div className="col-span-3 bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center gap-3">
-                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                  <UserCheck className="w-4 h-4" />
+              <>
+                <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center gap-3 animate-fade-in">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100/50">
+                    <UserCheck className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Tổng Đăng Ký Toàn Kỳ Thi</div>
+                    <div className="text-base font-black text-emerald-600 mt-0.5">{totalCount}</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-[10px] text-slate-400 font-bold uppercase">Tổng số học sinh đã đăng ký</div>
-                  <div className="text-base font-black text-emerald-600">{totalCount}</div>
+
+                <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center gap-3 animate-fade-in">
+                  <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100/50">
+                    <Users className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">HS Đăng Ký theo Bộ lọc</div>
+                    <div className="text-base font-black text-indigo-600 mt-0.5">{currentFilteredCount}</div>
+                  </div>
                 </div>
-              </div>
+
+                <div className="bg-[#E6F6F5]/50 border border-[#00A99D]/15 rounded-2xl p-4 shadow-xs flex items-center gap-3 animate-fade-in">
+                  <div className="w-9 h-9 rounded-xl bg-white text-[#00A99D] flex items-center justify-center border border-[#00A99D]/20 shadow-xs">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-[#009085] font-bold uppercase tracking-wider">Trạng thái bộ lọc</div>
+                    <div className="text-[11px] font-bold text-slate-600 mt-1">
+                      {selectedCampus ? campuses.find(c => c.id === selectedCampus)?.campusName : "Tất cả cơ sở"}
+                    </div>
+                  </div>
+                </div>
+              </>
             ) : (
               <>
-                <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-teal-50 text-[#00A99D] flex items-center justify-center">
-                    <Users className="w-4 h-4" />
+                <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center gap-3 animate-fade-in">
+                  <div className="w-9 h-9 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-200/50">
+                    <Users className="w-5 h-5" />
                   </div>
                   <div>
-                    <div className="text-[10px] text-slate-400 font-bold uppercase">Sĩ số lớp</div>
-                    <div className="text-base font-black text-slate-700">{totalCount}</div>
+                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Sĩ số lớp</div>
+                    <div className="text-base font-black text-slate-700 mt-0.5">{totalCount}</div>
                   </div>
                 </div>
 
-                <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                    <UserCheck className="w-4 h-4" />
+                <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center gap-3 animate-fade-in">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100/50">
+                    <UserCheck className="w-5 h-5" />
                   </div>
                   <div>
-                    <div className="text-[10px] text-slate-400 font-bold uppercase">Đã đăng ký</div>
-                    <div className="text-base font-black text-emerald-600">{registeredCount}</div>
+                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Đã đăng ký</div>
+                    <div className="text-base font-black text-emerald-600 mt-0.5">{registeredCount}</div>
                   </div>
                 </div>
 
-                <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center">
-                    <X className="w-4 h-4" />
+                <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center gap-3 animate-fade-in">
+                  <div className="w-9 h-9 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-200/50">
+                    <X className="w-5 h-5" />
                   </div>
                   <div>
-                    <div className="text-[10px] text-slate-400 font-bold uppercase">Chưa đăng ký</div>
-                    <div className="text-base font-black text-slate-500">{unregisteredCount}</div>
+                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Chưa đăng ký</div>
+                    <div className="text-base font-black text-slate-400 mt-0.5">{unregisteredCount}</div>
                   </div>
                 </div>
               </>
@@ -451,26 +555,31 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
         )}
 
         {/* Search and Table Card */}
-        <div className="bg-white rounded-2xl border border-slate-200/85 overflow-hidden shadow-xs">
+        <div className="bg-white rounded-2xl border border-slate-200/85 overflow-hidden shadow-xs animate-fade-in">
           {/* Header bar */}
-          <div className="bg-slate-50/70 border-b border-slate-100 px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="bg-slate-50/70 border-b border-slate-100 px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <Users className="w-4.5 h-4.5 text-[#00A99D]" />
               <span className="font-bold text-slate-800 text-sm">
                 {showAllRegistered ? "Danh Sách Học Sinh Đã Đăng Ký" : "Danh Sách Học Sinh Lớp"}
               </span>
+              {showAllRegistered && (
+                <span className="text-[9.5px] font-black bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-md border border-emerald-200/50 uppercase tracking-wider">
+                  {filteredStudents.length} học sinh
+                </span>
+              )}
             </div>
 
             {/* Quick Search */}
             {(showAllRegistered || selectedClass) && students.length > 0 && (
-              <div className="relative w-full md:max-w-xs">
+              <div className="relative w-full sm:max-w-xs">
                 <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-slate-400" />
                 <input
                   type="text"
                   placeholder="Tìm học sinh theo tên, mã..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-4 py-1.5 border border-slate-200 rounded-lg outline-none focus:border-[#00A99D] transition-all"
+                  className="w-full pl-9 pr-4 py-1.5 text-[11px] font-semibold border border-slate-200 rounded-lg outline-none focus:border-[#00A99D] transition-all bg-white"
                 />
               </div>
             )}
@@ -492,9 +601,9 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
             <div className="flex flex-col items-center justify-center py-24 text-slate-400">
               <AlertCircle className="w-12 h-12 mb-3 opacity-20" />
               <p className="font-bold text-sm">Không tìm thấy học sinh nào</p>
-              <p className="text-[11px] font-medium">
+              <p className="text-[11px] font-medium text-center max-w-xs">
                 {showAllRegistered 
-                  ? "Chưa có học sinh nào đăng ký cho kỳ thi này hoặc không khớp từ khóa tìm kiếm."
+                  ? "Chưa có học sinh nào đăng ký khớp với bộ lọc hoặc từ khóa tìm kiếm."
                   : "Lớp chưa có học sinh hoặc không khớp từ khóa tìm kiếm."}
               </p>
             </div>
@@ -543,32 +652,41 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
                           />
                         </td>
                         <td className="px-6 py-3.5 font-mono text-slate-500 font-bold">{student.studentCode}</td>
-                        <td className="px-6 py-3.5 font-bold text-slate-800 text-sm">{student.studentName}</td>
-                        {showAllRegistered && <td className="px-6 py-3.5 text-slate-600 font-semibold">{student.campusName}</td>}
-                        {showAllRegistered && <td className="px-6 py-3.5 text-slate-600 font-semibold">{student.className}</td>}
+                        <td className="px-6 py-3.5 font-bold text-slate-800 text-xs sm:text-sm">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-6.5 h-6.5 rounded-lg flex items-center justify-center font-bold text-[9px] uppercase ${
+                              isChecked ? "bg-[#00A99D] text-white" : "bg-slate-100 text-slate-500"
+                            }`}>
+                              {student.studentName.split(" ").pop()?.charAt(0) || "HS"}
+                            </div>
+                            <span className="truncate max-w-[180px]">{student.studentName}</span>
+                          </div>
+                        </td>
+                        {showAllRegistered && <td className="px-6 py-3.5 text-slate-600 font-bold">{student.campusName}</td>}
+                        {showAllRegistered && <td className="px-6 py-3.5 text-slate-600 font-bold">{student.className}</td>}
                         <td className="px-6 py-3.5">
-                          <span className={`px-2 py-0.5 rounded-md font-bold text-[10px] ${
+                          <span className={`px-2 py-0.5 rounded-md font-bold text-[9.5px] ${
                             student.gender === "MALE" || student.gender === "Nam" 
-                              ? "bg-blue-50 text-blue-700" 
+                              ? "bg-blue-50 text-blue-700 border border-blue-100" 
                               : student.gender === "FEMALE" || student.gender === "Nữ"
-                              ? "bg-pink-50 text-pink-700"
+                              ? "bg-pink-50 text-pink-700 border border-pink-100"
                               : "bg-slate-100 text-slate-500"
                           }`}>
                             {student.gender === "MALE" || student.gender === "Nam" ? "Nam" : student.gender === "FEMALE" || student.gender === "Nữ" ? "Nữ" : student.gender}
                           </span>
                         </td>
-                        <td className="px-6 py-3.5 text-slate-500">
+                        <td className="px-6 py-3.5 text-slate-500 font-medium">
                           {student.dateOfBirth
                             ? new Date(student.dateOfBirth).toLocaleDateString("vi-VN")
                             : "---"}
                         </td>
                         <td className="px-6 py-3.5 text-right">
                           {student.isRegistered ? (
-                            <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-full font-bold text-[10px]">
+                            <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-100 px-2.5 py-0.5 rounded-full font-bold text-[10px]">
                               <Check className="w-3 h-3" /> Đã đăng ký
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-500 px-2.5 py-0.5 rounded-full font-bold text-[10px]">
+                            <span className="inline-flex items-center gap-1 bg-slate-50 text-slate-400 border border-slate-100 px-2.5 py-0.5 rounded-full font-bold text-[10px]">
                               <X className="w-3 h-3" /> Chưa đăng ký
                             </span>
                           )}
