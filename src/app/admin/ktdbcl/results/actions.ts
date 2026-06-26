@@ -2,102 +2,93 @@
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 
-// 1. Update score & notes for a student in an exam
-export async function updateExamStudentScoreAction(data: {
-  examId: string
-  studentId: string
-  score: number | null
-  notes: string | null
-}) {
-  await prisma.examStudent.update({
-    where: {
-      examId_studentId: {
-        examId: data.examId,
-        studentId: data.studentId
+// 1. Batch Save Exam Results in an Excel-like grid
+export async function saveExamResultsGridAction(
+  examId: string,
+  academicYearId: string,
+  rows: {
+    studentId: string
+    name: string
+    type: string // "CA_NHAN" | "DONG_DOI"
+    category: string // "GIAI_THUONG" | "HUY_CHUONG" | "CHUNG_NHAN" | "KHAC" | ""
+    level: string // "NHAT" | "NHI" | "BA" | "KHUYEN_KHICH" | "VANG" | "BAC" | "DONG" | "KHAC" | ""
+    teacherId: string | null
+    teacherName: string | null
+  }[]
+) {
+  if (!examId || !academicYearId) return
+
+  await prisma.$transaction(async (tx) => {
+    // 1. Delete all existing achievements for this exam (cascades to StudentAchievement)
+    await tx.achievement.deleteMany({
+      where: { examId }
+    })
+
+    // 2. Filter rows that have valid achievements (both category and level set, and name is not empty)
+    const validRows = rows.filter(
+      r => r.category !== "" && r.level !== "" && r.name.trim() !== ""
+    )
+
+    const individualRows = validRows.filter(r => r.type === "CA_NHAN")
+    const teamRows = validRows.filter(r => r.type === "DONG_DOI")
+
+    // 3. Save individual achievements
+    for (const row of individualRows) {
+      await tx.achievement.create({
+        data: {
+          name: row.name.trim(),
+          type: "CA_NHAN",
+          category: row.category,
+          level: row.level,
+          academicYearId,
+          teacherId: row.teacherId || null,
+          teacherName: row.teacherName || null,
+          examId,
+          students: {
+            create: {
+              studentId: row.studentId
+            }
+          }
+        }
+      })
+    }
+
+    // 4. Save team achievements (grouped by name, level, category, teacherId, teacherName)
+    const teamGroups: Record<string, typeof teamRows> = {}
+    for (const row of teamRows) {
+      const key = `${row.name.trim()}|${row.category}|${row.level}|${row.teacherId || ''}|${row.teacherName || ''}`
+      if (!teamGroups[key]) {
+        teamGroups[key] = []
       }
-    },
-    data: {
-      score: data.score,
-      notes: data.notes
+      teamGroups[key].push(row)
+    }
+
+    for (const [key, groupedRows] of Object.entries(teamGroups)) {
+      const first = groupedRows[0]
+      await tx.achievement.create({
+        data: {
+          name: first.name.trim(),
+          type: "DONG_DOI",
+          category: first.category,
+          level: first.level,
+          academicYearId,
+          teacherId: first.teacherId || null,
+          teacherName: first.teacherName || null,
+          examId,
+          students: {
+            create: groupedRows.map(r => ({
+              studentId: r.studentId
+            }))
+          }
+        }
+      })
     }
   })
-  revalidatePath("/admin/ktdbcl/results")
-}
-
-// 2. Create achievement
-export async function createAchievementAction(data: {
-  name: string
-  type: string // "CA_NHAN" | "DONG_DOI"
-  category: string // "GIAI_THUONG" | "HUY_CHUONG" | "CHUNG_NHAN" | "KHAC"
-  level: string // "NHAT" | "NHI" | "BA" | "KHUYEN_KHICH" | "VANG" | "BAC" | "DONG" | "KHAC"
-  academicYearId: string
-  teacherId?: string | null
-  teacherName?: string | null
-  examId?: string | null
-  studentIds: string[]
-}) {
-  const { studentIds, ...achievementData } = data
-
-  const achievement = await prisma.achievement.create({
-    data: {
-      ...achievementData,
-      students: {
-        create: studentIds.map(studentId => ({
-          studentId
-        }))
-      }
-    }
-  })
-
-  revalidatePath("/admin/ktdbcl/results")
-  return achievement
-}
-
-// 3. Update achievement
-export async function updateAchievementAction(data: {
-  id: string
-  name: string
-  type: string
-  category: string
-  level: string
-  teacherId?: string | null
-  teacherName?: string | null
-  studentIds: string[]
-}) {
-  const { id, studentIds, ...achievementData } = data
-
-  // Update core achievement info
-  await prisma.achievement.update({
-    where: { id },
-    data: achievementData
-  })
-
-  // Re-sync students
-  // 1. Delete old links
-  await prisma.studentAchievement.deleteMany({
-    where: { achievementId: id }
-  })
-
-  // 2. Create new links
-  await prisma.studentAchievement.createMany({
-    data: studentIds.map(studentId => ({
-      achievementId: id,
-      studentId
-    }))
-  })
 
   revalidatePath("/admin/ktdbcl/results")
 }
 
-// 4. Delete achievement
-export async function deleteAchievementAction(id: string) {
-  await prisma.achievement.delete({
-    where: { id }
-  })
-  revalidatePath("/admin/ktdbcl/results")
-}
-
-// 5. Fetch students with scores & achievements for a specific exam
+// 2. Fetch students with results for an exam
 export async function getStudentsWithResultsAction(examId: string) {
   if (!examId) return []
 
@@ -118,7 +109,6 @@ export async function getStudentsWithResultsAction(examId: string) {
     }
   })
 
-  // Also fetch all achievements associated with this exam to map them
   const achievements = await prisma.achievement.findMany({
     where: { examId },
     include: {
@@ -137,7 +127,8 @@ export async function getStudentsWithResultsAction(examId: string) {
   })
 
   return examStudents.map(es => {
-    const studentAchievements = achievements.filter(a => 
+    // A student can have at most one achievement for this exam in our simple grid
+    const studentAch = achievements.find(a => 
       a.students.some(s => s.studentId === es.studentId)
     )
 
@@ -148,23 +139,19 @@ export async function getStudentsWithResultsAction(examId: string) {
       gender: es.student.gender || "Chưa xác định",
       className: es.student.class?.className || "N/A",
       campusName: es.student.campus?.campusName || "N/A",
-      score: es.score,
-      notes: es.notes,
-      achievements: studentAchievements.map(a => ({
-        id: a.id,
-        name: a.name,
-        type: a.type,
-        category: a.category,
-        level: a.level,
-        teacherId: a.teacherId,
-        teacherName: a.teacherName || a.teacher?.teacherName || "Chưa xác định",
-        studentIds: a.students.map(s => s.studentId)
-      }))
+      // Grid achievement fields
+      achievementId: studentAch?.id || null,
+      achievementName: studentAch?.name || "",
+      type: studentAch?.type || "CA_NHAN",
+      category: studentAch?.category || "",
+      level: studentAch?.level || "",
+      teacherId: studentAch?.teacherId || "",
+      teacherName: studentAch?.teacherName || studentAch?.teacher?.teacherName || ""
     }
   })
 }
 
-// 6. Fetch achievements report based on filters
+// 3. Fetch achievements report based on filters
 export async function getAchievementsReportAction(filters: {
   academicYearId?: string
   campusId?: string
@@ -185,7 +172,6 @@ export async function getAchievementsReportAction(filters: {
     where.level = filters.level
   }
 
-  // Fetch all achievements matching core filters
   const achievements = await prisma.achievement.findMany({
     where,
     include: {
@@ -208,7 +194,6 @@ export async function getAchievementsReportAction(filters: {
     }
   })
 
-  // Filter students post-query to match campus/grade/class
   const reportRows: any[] = []
 
   for (const ach of achievements) {
@@ -216,15 +201,12 @@ export async function getAchievementsReportAction(filters: {
       const student = sa.student
       if (!student) continue
 
-      // Apply campus filter
       if (filters.campusId && student.campusId !== filters.campusId) {
         continue
       }
-      // Apply class filter
       if (filters.classId && student.classId !== filters.classId) {
         continue
       }
-      // Apply grade filter
       if (filters.grade && student.class?.grade !== filters.grade) {
         continue
       }
@@ -251,7 +233,7 @@ export async function getAchievementsReportAction(filters: {
   return reportRows
 }
 
-// 7. Get student achievement profile
+// 4. Get student achievement profile
 export async function getStudentProfileWithAchievementsAction(studentId: string) {
   if (!studentId) return null
 
@@ -261,11 +243,6 @@ export async function getStudentProfileWithAchievementsAction(studentId: string)
       class: true,
       campus: true,
       academicYear: true,
-      exams: {
-        include: {
-          exam: true
-        }
-      },
       achievements: {
         include: {
           achievement: {
@@ -291,12 +268,6 @@ export async function getStudentProfileWithAchievementsAction(studentId: string)
     campusName: student.campus?.campusName || "N/A",
     academicYearName: student.academicYear?.name || "N/A",
     dateOfBirth: student.dateOfBirth ? student.dateOfBirth.toISOString() : null,
-    exams: student.exams.map(e => ({
-      examId: e.exam.id,
-      examName: e.exam.name,
-      score: e.score,
-      notes: e.notes
-    })),
     achievements: student.achievements.map(sa => ({
       id: sa.achievement.id,
       name: sa.achievement.name,
@@ -310,7 +281,7 @@ export async function getStudentProfileWithAchievementsAction(studentId: string)
   }
 }
 
-// 8. Search students for profile lookup
+// 5. Search students for profile lookup
 export async function searchStudentsByNameOrCodeAction(query: string) {
   if (!query || query.trim().length < 2) return []
 
