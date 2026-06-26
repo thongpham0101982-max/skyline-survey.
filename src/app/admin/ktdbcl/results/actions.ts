@@ -126,29 +126,51 @@ export async function getStudentsWithResultsAction(examId: string) {
     }
   })
 
-  return examStudents.map(es => {
-    // A student can have at most one achievement for this exam in our simple grid
-    const studentAch = achievements.find(a => 
+  const resultRows: any[] = []
+
+  for (const es of examStudents) {
+    const studentAchs = achievements.filter(a => 
       a.students.some(s => s.studentId === es.studentId)
     )
 
-    return {
-      id: es.student.id,
-      studentCode: es.student.studentCode,
-      studentName: es.student.studentName,
-      gender: es.student.gender || "Chưa xác định",
-      className: es.student.class?.className || "N/A",
-      campusName: es.student.campus?.campusName || "N/A",
-      // Grid achievement fields
-      achievementId: studentAch?.id || null,
-      achievementName: studentAch?.name || "",
-      type: studentAch?.type || "CA_NHAN",
-      category: studentAch?.category || "",
-      level: studentAch?.level || "",
-      teacherId: studentAch?.teacherId || "",
-      teacherName: studentAch?.teacherName || studentAch?.teacher?.teacherName || ""
+    if (studentAchs.length === 0) {
+      resultRows.push({
+        id: es.student.id,
+        studentCode: es.student.studentCode,
+        studentName: es.student.studentName,
+        gender: es.student.gender || "Chưa xác định",
+        className: es.student.class?.className || "N/A",
+        campusName: es.student.campus?.campusName || "N/A",
+        achievementId: null,
+        achievementName: "",
+        type: "CA_NHAN",
+        category: "",
+        level: "",
+        teacherId: "",
+        teacherName: ""
+      })
+    } else {
+      for (const ach of studentAchs) {
+        resultRows.push({
+          id: es.student.id,
+          studentCode: es.student.studentCode,
+          studentName: es.student.studentName,
+          gender: es.student.gender || "Chưa xác định",
+          className: es.student.class?.className || "N/A",
+          campusName: es.student.campus?.campusName || "N/A",
+          achievementId: ach.id,
+          achievementName: ach.name,
+          type: ach.type,
+          category: ach.category,
+          level: ach.level,
+          teacherId: ach.teacherId || "",
+          teacherName: ach.teacherName || ach.teacher?.teacherName || ""
+        })
+      }
     }
-  })
+  }
+
+  return resultRows
 }
 
 // 3. Fetch achievements report based on filters

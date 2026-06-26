@@ -127,7 +127,8 @@ export function ResultsClient({
     try {
       const data = await getStudentsWithResultsAction(selectedExamId)
       
-      const rows = data.map(s => ({
+      const rows = data.map((s, idx) => ({
+        gridRowId: s.achievementId || `temp-${s.id}-${idx}-${Math.random()}`,
         studentId: s.id,
         studentCode: s.studentCode,
         studentName: s.studentName,
@@ -157,10 +158,10 @@ export function ResultsClient({
   }, [selectedExamId])
 
   // Cell change handler
-  const handleCellChange = (studentId: string, field: string, value: any) => {
+  const handleCellChange = (gridRowId: string, field: string, value: any) => {
     setHasChanges(true)
     setGridRows(prev => prev.map(row => {
-      if (row.studentId !== studentId) return row
+      if (row.gridRowId !== gridRowId) return row
 
       const updatedRow = { ...row, [field]: value }
 
@@ -177,6 +178,66 @@ export function ResultsClient({
 
       return updatedRow
     }))
+  }
+
+  const handleAddRow = (studentId: string, index: number) => {
+    setHasChanges(true)
+    setGridRows(prev => {
+      const newRows = [...prev]
+      const parentRow = prev.find(r => r.studentId === studentId)
+      if (!parentRow) return prev
+
+      const newRow = {
+        gridRowId: `temp-${studentId}-${Date.now()}-${Math.random()}`,
+        studentId: parentRow.studentId,
+        studentCode: parentRow.studentCode,
+        studentName: parentRow.studentName,
+        gender: parentRow.gender,
+        className: parentRow.className,
+        campusName: parentRow.campusName,
+        achievementId: null,
+        name: "",
+        type: "CA_NHAN",
+        category: "",
+        level: "",
+        teacherId: "",
+        teacherName: ""
+      }
+
+      let lastIndex = index
+      for (let i = index + 1; i < newRows.length; i++) {
+        if (newRows[i].studentId === studentId) {
+          lastIndex = i
+        } else {
+          break
+        }
+      }
+      newRows.splice(lastIndex + 1, 0, newRow)
+      return newRows
+    })
+  }
+
+  const handleRemoveRow = (gridRowId: string, studentId: string) => {
+    setHasChanges(true)
+    setGridRows(prev => {
+      const studentRowsCount = prev.filter(r => r.studentId === studentId).length
+      if (studentRowsCount <= 1) {
+        return prev.map(r => {
+          if (r.gridRowId !== gridRowId) return r
+          return {
+            ...r,
+            achievementId: null,
+            name: "",
+            type: "CA_NHAN",
+            category: "",
+            level: "",
+            teacherId: "",
+            teacherName: ""
+          }
+        })
+      }
+      return prev.filter(r => r.gridRowId !== gridRowId)
+    })
   }
 
   const getAutoName = (cat: string, lvl: string) => {
@@ -456,6 +517,7 @@ export function ResultsClient({
                         <th className="py-3 px-4 w-36 min-w-[130px]">Mức giải</th>
                         <th className="py-3 px-4 min-w-[280px]">Tên giải thưởng / Huy chương</th>
                         <th className="py-3 px-4 w-64 min-w-[220px]">GV Bồi dưỡng</th>
+                        <th className="py-3 px-4 w-28 min-w-[100px] text-center">Thao tác</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-xs font-semibold text-slate-700">
@@ -463,7 +525,7 @@ export function ResultsClient({
                         const hasAward = row.category !== "" && row.level !== ""
 
                         return (
-                          <tr key={row.studentId} className={`hover:bg-slate-50/50 transition-all ${
+                          <tr key={row.gridRowId} className={`hover:bg-slate-50/50 transition-all ${
                             hasAward ? 'bg-amber-50/20' : ''
                           }`}>
                             {/* STT */}
@@ -485,7 +547,7 @@ export function ResultsClient({
                             <td className="py-2.5 px-4">
                               <select
                                 value={row.type}
-                                onChange={e => handleCellChange(row.studentId, "type", e.target.value)}
+                                onChange={e => handleCellChange(row.gridRowId, "type", e.target.value)}
                                 className="w-full border border-slate-200 rounded px-1.5 py-1 text-xs outline-none bg-white focus:border-[#00A99D] transition-colors"
                               >
                                 <option value="CA_NHAN">Cá nhân</option>
@@ -497,7 +559,7 @@ export function ResultsClient({
                             <td className="py-2.5 px-4">
                               <select
                                 value={row.category}
-                                onChange={e => handleCellChange(row.studentId, "category", e.target.value)}
+                                onChange={e => handleCellChange(row.gridRowId, "category", e.target.value)}
                                 className="w-full border border-slate-200 rounded px-1.5 py-1 text-xs outline-none bg-white focus:border-[#00A99D] transition-colors"
                               >
                                 <option value="">-- Không giải --</option>
@@ -511,7 +573,7 @@ export function ResultsClient({
                             <td className="py-2.5 px-4">
                               <select
                                 value={row.level}
-                                onChange={e => handleCellChange(row.studentId, "level", e.target.value)}
+                                onChange={e => handleCellChange(row.gridRowId, "level", e.target.value)}
                                 className="w-full border border-slate-200 rounded px-1.5 py-1 text-xs outline-none bg-white focus:border-[#00A99D] transition-colors"
                               >
                                 <option value="">-- Không --</option>
@@ -526,7 +588,7 @@ export function ResultsClient({
                               <input
                                 type="text"
                                 value={row.name}
-                                onChange={e => handleCellChange(row.studentId, "name", e.target.value)}
+                                onChange={e => handleCellChange(row.gridRowId, "name", e.target.value)}
                                 disabled={row.category === "" || row.level === ""}
                                 placeholder="Tự sinh nếu để trống..."
                                 className="w-full border border-slate-200 disabled:bg-slate-50/50 rounded px-2.5 py-1 text-xs outline-none focus:border-[#00A99D] font-semibold text-slate-800 transition-all"
@@ -539,9 +601,9 @@ export function ResultsClient({
                                 <select
                                   value={row.teacherId}
                                   onChange={e => {
-                                    handleCellChange(row.studentId, "teacherId", e.target.value)
+                                    handleCellChange(row.gridRowId, "teacherId", e.target.value)
                                     if (e.target.value !== "") {
-                                      handleCellChange(row.studentId, "teacherName", "")
+                                      handleCellChange(row.gridRowId, "teacherName", "")
                                     }
                                   }}
                                   disabled={row.category === "" || row.level === ""}
@@ -558,11 +620,35 @@ export function ResultsClient({
                                   <input
                                     type="text"
                                     value={row.teacherName}
-                                    onChange={e => handleCellChange(row.studentId, "teacherName", e.target.value)}
+                                    onChange={e => handleCellChange(row.gridRowId, "teacherName", e.target.value)}
                                     disabled={row.category === "" || row.level === ""}
                                     placeholder="Nhập tên GV..."
                                     className="w-full border border-slate-200 disabled:bg-slate-50/50 rounded px-2.5 py-1 text-xs outline-none focus:border-[#00A99D] font-semibold text-slate-800 transition-all"
                                   />
+                                )}
+                              </div>
+                            </td>
+                            {/* Thao tác */}
+                            <td className="py-2.5 px-4 text-center">
+                              <div className="flex items-center justify-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleAddRow(row.studentId, idx)}
+                                  title="Thêm thành tích/môn thi khác cho học sinh này"
+                                  className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg border border-transparent hover:border-emerald-200 transition-all cursor-pointer"
+                                >
+                                  <Plus className="w-4 h-4" />
+                                </button>
+                                
+                                {(gridRows.filter(r => r.studentId === row.studentId).length > 1 || row.category !== "" || row.level !== "") && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveRow(row.gridRowId, row.studentId)}
+                                    title="Xóa giải này"
+                                    className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg border border-transparent hover:border-rose-200 transition-all cursor-pointer"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
                                 )}
                               </div>
                             </td>
