@@ -64,7 +64,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
   const [updating, setUpdating] = useState(false)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [searchTerm, setSearchTerm] = useState("")
-  const [showAllRegistered, setShowAllRegistered] = useState(true)
+  const [showAllRegistered, setShowAllRegistered] = useState(false)
 
   // Filter classes based on Campus, Grade and Academic Year
   const filteredClasses = classes.filter(
@@ -285,6 +285,40 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
 
   return (
     <div className="space-y-6 text-xs font-semibold">
+      {/* Sub-tabs */}
+      <div className="bg-white border border-slate-200 shadow-sm rounded-2xl p-1.5 flex gap-2 w-fit no-print animate-fade-in">
+        <button
+          type="button"
+          onClick={() => {
+            setShowAllRegistered(false);
+            setSearchTerm("");
+          }}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all duration-200 ${
+            !showAllRegistered
+              ? "bg-[#00A99D] text-white shadow-md shadow-[#00A99D]/10"
+              : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
+          }`}
+        >
+          <UserCheck className="w-4 h-4" />
+          <span>Đăng ký HS dự thi</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setShowAllRegistered(true);
+            setSearchTerm("");
+          }}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all duration-200 ${
+            showAllRegistered
+              ? "bg-[#00A99D] text-white shadow-md shadow-[#00A99D]/10"
+              : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
+          }`}
+        >
+          <Users className="w-4 h-4" />
+          <span>DS học sinh dự thi</span>
+        </button>
+      </div>
+
       {/* Top Filter Card */}
       <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs space-y-4 animate-fade-in">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
@@ -300,41 +334,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
           )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
-          {/* Chế độ xem */}
-          <div className="space-y-1.5">
-            <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider">Chế độ xem</label>
-            <div className="grid grid-cols-2 bg-slate-100 p-0.5 rounded-xl border border-slate-200/50">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowAllRegistered(false)
-                  setSearchTerm("")
-                }}
-                className={`py-2 rounded-lg text-[9.5px] font-bold transition-all ${
-                  !showAllRegistered 
-                    ? "bg-white text-[#00A99D] shadow-xs" 
-                    : "text-slate-500 hover:text-slate-800"
-                }`}
-              >
-                Đăng ký lớp
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowAllRegistered(true)
-                  setSearchTerm("")
-                }}
-                className={`py-2 rounded-lg text-[9.5px] font-bold transition-all ${
-                  showAllRegistered 
-                    ? "bg-white text-[#00A99D] shadow-xs" 
-                    : "text-slate-500 hover:text-slate-800"
-                }`}
-              >
-                Theo dõi
-              </button>
-            </div>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
 
           {/* Chọn kỳ thi */}
           <div className="space-y-1.5">
