@@ -7097,7 +7097,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   const gdcs = gdcsApprovalStatus || "";
                   const isApproved = (s: string) => s === "DAT" || s === "DAT_MIEN_HOC_THU" || s === "DAT_HOC_THU";
 
-                  if (bgh || gdcs) {
+                  if (bgh && gdcs) {
                     if (isApproved(bgh) && isApproved(gdcs)) {
                       if (bgh === "DAT_MIEN_HOC_THU" || gdcs === "DAT_MIEN_HOC_THU" || bgh === "DAT" || gdcs === "DAT") {
                         return "Đạt - Miễn Học Thử";
@@ -7107,19 +7107,13 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         return "Đạt";
                       }
                     }
-                    if (bgh === "KHONG_DAT" || gdcs === "KHONG_DAT") {
-                      return "Không đạt";
-                    }
-                    if (bgh === "Y_KIEN_KHAC" || gdcs === "Y_KIEN_KHAC") {
-                      return "Ý kiến khác";
-                    }
-                    return "Chưa duyệt";
                   }
-                  
-                  // Fallback
-                  if (devResult === "DAT") return "Đạt";
-                  if (devResult === "KHONG_DAT") return "Chưa duyệt";
-                  if (devResult === "HOC_THU") return "Học thử";
+                  if (bgh === "KHONG_DAT" || gdcs === "KHONG_DAT") {
+                    return "Không đạt";
+                  }
+                  if (bgh === "Y_KIEN_KHAC" || gdcs === "Y_KIEN_KHAC") {
+                    return "Ý kiến khác";
+                  }
                   return "Chưa duyệt";
                 };
 

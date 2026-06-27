@@ -180,14 +180,30 @@ export async function GET(req: NextRequest) {
         ].filter(Boolean).join(". ")
 
         let generalResult = "";
-        const hasApproval = !!(s.bghApprovalStatus || s.gdcsApprovalStatus);
-        if (hasApproval) {
-          generalResult = s.admissionResult || "Chưa duyệt";
-        } else {
-          if (s.devAssessmentResult === "DAT") generalResult = "Đạt"
-          else if (s.devAssessmentResult === "KHONG_DAT") generalResult = "Chưa duyệt"
-          else if (s.devAssessmentResult === "HOC_THU") generalResult = "Học thử"
-          else generalResult = s.admissionResult || "Chưa duyệt";
+        const bgh = s.bghApprovalStatus || "";
+        const gdcs = s.gdcsApprovalStatus || "";
+        const isApproved = (val: string) => val === "DAT" || val === "DAT_MIEN_HOC_THU" || val === "DAT_HOC_THU";
+
+        if (bgh && gdcs) {
+          if (isApproved(bgh) && isApproved(gdcs)) {
+            if (bgh === "DAT_MIEN_HOC_THU" || gdcs === "DAT_MIEN_HOC_THU" || bgh === "DAT" || gdcs === "DAT") {
+              generalResult = "Đạt - Miễn Học Thử";
+            } else if (bgh === "DAT_HOC_THU" || gdcs === "DAT_HOC_THU") {
+              generalResult = "Đạt - Học Thử";
+            } else {
+              generalResult = "Đạt";
+            }
+          }
+        }
+        
+        if (!generalResult) {
+          if (bgh === "KHONG_DAT" || gdcs === "KHONG_DAT") {
+            generalResult = "Không đạt";
+          } else if (bgh === "Y_KIEN_KHAC" || gdcs === "Y_KIEN_KHAC") {
+            generalResult = "Ý kiến khác";
+          } else {
+            generalResult = "Chưa duyệt";
+          }
         }
 
         const firstScore = studentScoresList[0];
