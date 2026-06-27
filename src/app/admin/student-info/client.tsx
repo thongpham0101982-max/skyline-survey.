@@ -158,7 +158,8 @@ export function StudentInfoClient({
     devPsychologyComment: "",
     devImportantNote: "",
     devAssessmentResult: "",
-    registeredCampus: ""
+    registeredCampus: "",
+    isAbsent: false
   });
 
   // Import excel modal states
@@ -728,7 +729,8 @@ export function StudentInfoClient({
       devPsychologyComment: "",
       devImportantNote: "",
       devAssessmentResult: "",
-      registeredCampus: ""
+      registeredCampus: "",
+      isAbsent: false
     });
     setIsFormOpen(true);
   };
@@ -773,7 +775,8 @@ export function StudentInfoClient({
       devPsychologyComment: student.devPsychologyComment || "",
       devImportantNote: student.devImportantNote || "",
       devAssessmentResult: student.devAssessmentResult || "",
-      registeredCampus: student.registeredCampus || ""
+      registeredCampus: student.registeredCampus || "",
+      isAbsent: student.isAbsent || false
     });
     setIsFormOpen(true);
   };
@@ -807,6 +810,37 @@ export function StudentInfoClient({
       } else {
         const err = await res.json();
         showNotification("Lỗi: " + (err.error || "Gửi yêu cầu thất bại"), "err");
+      }
+    } catch (e) {
+      showNotification("Lỗi kết nối máy chủ", "err");
+    }
+  };
+
+  // Handle Update Absent Status
+  const handleUpdateAbsent = async (student: any, isAbsent: boolean) => {
+    const endpoint = activeTab === "general" 
+      ? "/api/input-assessment-students" 
+      : "/api/preschool-input-assessment-students";
+      
+    try {
+      const res = await fetch(endpoint, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: student.id,
+          data: {
+            ...student,
+            isAbsent
+          }
+        })
+      });
+      
+      if (res.ok) {
+        showNotification("Đã cập nhật trạng thái vắng thành công!");
+        setTimeout(() => window.location.reload(), 1000);
+      } else {
+        const err = await res.json();
+        showNotification("Lỗi: " + (err.error || "Không thể cập nhật"), "err");
       }
     } catch (e) {
       showNotification("Lỗi kết nối máy chủ", "err");
@@ -1528,6 +1562,7 @@ export function StudentInfoClient({
                   <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600 w-16 text-center">Giới tính</th>
                   <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600 w-24 text-center">Ngày sinh</th>
                   <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600 w-20 text-center">Hệ KS</th>
+                  <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600 w-16 text-center">Vắng</th>
                   {subTab === "info" && (
                     <>
                       <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600 w-24 text-center">Học lực</th>
@@ -1553,7 +1588,7 @@ export function StudentInfoClient({
               <tbody className="divide-y divide-slate-300 text-slate-700">
                 {paginatedStudents.length === 0 ? (
                   <tr>
-                    <td colSpan={selectedPeriod?.toLowerCase().includes("open day") ? (subTab === "info" ? 16 : 11) : (subTab === "info" ? 14 : 9)} className="p-2 p-2 text-center text-slate-400 font-medium border border-slate-300">
+                    <td colSpan={selectedPeriod?.toLowerCase().includes("open day") ? (subTab === "info" ? 17 : 12) : (subTab === "info" ? 15 : 10)} className="p-2 p-2 text-center text-slate-400 font-medium border border-slate-300">
                       Không tìm thấy dữ liệu học sinh phù hợp.
                     </td>
                   </tr>
@@ -1602,6 +1637,17 @@ export function StudentInfoClient({
                       </td>
                       <td className="p-2 border border-slate-300 text-center text-xs text-slate-650">
                         {s.surveyFormType || "-"}
+                      </td>
+                      <td className="p-2 border border-slate-300 text-center" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          className="w-4 h-4 rounded text-rose-600 accent-rose-600 cursor-pointer"
+                          checked={s.isAbsent || false}
+                          onChange={async (e) => {
+                            const val = e.target.checked;
+                            await handleUpdateAbsent(s, val);
+                          }}
+                        />
                       </td>
                       {subTab === "info" && (
                         <>
@@ -1723,6 +1769,7 @@ export function StudentInfoClient({
                   <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600 w-24">Giới tính</th>
                   <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600 w-28">Nhóm tuổi</th>
                   <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600 w-36">Cơ sở</th>
+                  <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600 w-16 text-center">Vắng</th>
                   {subTab === "result" && (
                     <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600 w-36">Kết quả</th>
                   )}
@@ -1732,7 +1779,7 @@ export function StudentInfoClient({
               <tbody className="divide-y divide-slate-300">
                 {paginatedStudents.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="p-2 text-center text-slate-400 font-medium border border-slate-300">
+                    <td colSpan={11} className="p-2 text-center text-slate-400 font-medium border border-slate-300">
                       Không tìm thấy dữ liệu học sinh phù hợp.
                     </td>
                   </tr>
@@ -1779,6 +1826,17 @@ export function StudentInfoClient({
                       <td className="p-2 border border-slate-300 text-xs font-semibold text-slate-650">{child.grade || "—"}</td>
                       <td className="p-2 border border-slate-300 text-xs font-semibold text-slate-650">
                         {child.admissionCampus || "—"}
+                      </td>
+                      <td className="p-2 border border-slate-300 text-center" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          className="w-4 h-4 rounded text-rose-600 accent-rose-600 cursor-pointer"
+                          checked={child.isAbsent || false}
+                          onChange={async (e) => {
+                            const val = e.target.checked;
+                            await handleUpdateAbsent(child, val);
+                          }}
+                        />
                       </td>
                       {subTab === "result" && (
                         <td className="p-2 border border-slate-300">

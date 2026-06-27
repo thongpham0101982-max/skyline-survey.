@@ -93,6 +93,7 @@ export async function POST(req) {
            periodId: data.periodId || null,
          batchId: data.batchId || null,
            registeredCampus: data.registeredCampus || null,
+           isAbsent: data.isAbsent || false,
         }
       });
       return NextResponse.json(result);
@@ -155,6 +156,7 @@ export async function POST(req) {
             literatureScore: d.literatureScore ? parseFloat(d.literatureScore) : null,
             batchId: d.batchId || null,
             registeredCampus: d.registeredCampus || null,
+            isAbsent: d.isAbsent || false,
           };
 
           let result;
@@ -481,6 +483,7 @@ export async function PUT(req) {
          ...(data.directorNote !== undefined && { directorNote: data.directorNote }),
          ...(data.admissionCampus !== undefined && { admissionCampus: data.admissionCampus }),
          ...(data.signatureName !== undefined && { signatureName: data.signatureName }),
+         ...(data.isAbsent !== undefined && { isAbsent: data.isAbsent }),
       }
     });
     return NextResponse.json(result);

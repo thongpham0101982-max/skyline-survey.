@@ -55,7 +55,10 @@ export async function GET(req: NextRequest) {
       }
 
             const students = await (prisma as any).preschoolInputAssessmentStudent.findMany({
-        where,
+        where: {
+          ...where,
+          isAbsent: { not: true }
+        },
         select: { 
           id: true, 
           studentCode: true, 

@@ -2375,6 +2375,7 @@ ${reportForm.directorNote}`;
     const isGDCS = ["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole);
     
     return reportStudents.filter(s => {
+      if (s.isAbsent) return false;
       const matchesBatch = reportBatchId === "all" || s.batchId === reportBatchId || s.batchId === null || s.batchId === "";
       if (!matchesBatch) return false;
       

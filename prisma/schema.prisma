@@ -594,6 +594,7 @@ model InputAssessmentStudent {
   directorNote        String?
   admissionCampus     String?
   registeredCampus    String?
+  isAbsent            Boolean                  @default(false)
   batch               InputAssessmentBatch?    @relation(fields: [batchId], references: [id], onDelete: SetNull)
   period              InputAssessmentPeriod    @relation(fields: [periodId], references: [id], onDelete: Cascade)
   scores              StudentAssessmentScore[]
@@ -836,6 +837,7 @@ model PreschoolInputAssessmentStudent {
   admissionResult        String?
   directorNote           String?
   admissionCampus        String?
+  isAbsent               Boolean                        @default(false)
   devProfessionalComment String?
   devPsychologyComment   String?
   devImportantNote       String?

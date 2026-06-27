@@ -1673,6 +1673,7 @@ export async function POST(req) {
            periodId: data.periodId,
            batchId: data.batchId || null,
            admissionResult: data.admissionResult || null,
+           isAbsent: data.isAbsent || false,
         }
       });
       return NextResponse.json(result);
@@ -1700,6 +1701,7 @@ export async function POST(req) {
             surveyFormType: d.surveyFormType || null,
             signatureName: d.signatureName || null,
             batchId: d.batchId || null,
+            isAbsent: d.isAbsent || false,
           };
 
           let result;
@@ -1763,6 +1765,7 @@ export async function PUT(req) {
          batchId: data.batchId || null,
          ...(data.admissionResult !== undefined && { admissionResult: data.admissionResult }),
          ...(data.directorNote !== undefined && { directorNote: data.directorNote }),
+         ...(data.isAbsent !== undefined && { isAbsent: data.isAbsent }),
       }
     });
     return NextResponse.json(result);

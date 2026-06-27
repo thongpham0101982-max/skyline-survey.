@@ -666,7 +666,10 @@ export async function GET(req: any) {
         if (!periodId) return NextResponse.json({error: "Missing periodId"}, {status:400});
         
         const students = await prisma.inputAssessmentStudent.findMany({
-            where: { periodId: periodId },
+            where: { 
+                periodId: periodId,
+                isAbsent: { not: true }
+            },
             orderBy: [{ grade: 'asc' }, { fullName: 'asc' }],
             include: {
                 batch: true,
