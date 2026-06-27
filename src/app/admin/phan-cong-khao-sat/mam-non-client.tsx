@@ -137,6 +137,54 @@ export function PhanCongMamNonClient({
   const [aSaving, setASaving] = useState(false)
   const [aNotifyingId, setANotifyingId] = useState<string | null>(null)
   const [aNotifyingAll, setANotifyingAll] = useState(false)
+  const [uiStage, setUiStage] = useState<"STAGE_1" | "STAGE_2">("STAGE_1")
+  const [uiForm, setUiForm] = useState<string>("18 đến 24 tháng")
+
+  // Auto-detect stage based on batch start date
+  useEffect(() => {
+    if (aActiveBatch) {
+      const dateObj = new Date(aActiveBatch.startDate)
+      const isStage2 = !isNaN(dateObj.getTime()) && dateObj.getMonth() >= 0 && dateObj.getMonth() <= 4
+      setUiStage(isStage2 ? "STAGE_2" : "STAGE_1")
+    } else {
+      const now = new Date()
+      const isStage2 = now.getMonth() >= 0 && now.getMonth() <= 4
+      setUiStage(isStage2 ? "STAGE_2" : "STAGE_1")
+    }
+  }, [aActiveBatch])
+
+  const formOptions = [
+    "12 đến 18 tháng",
+    "18 đến 24 tháng",
+    "24 đến 36 tháng",
+    "3 đến 4 tuổi",
+    "4 đến 5 tuổi",
+    "5 đến 6 tuổi"
+  ]
+
+  const availableGrades = useMemo(() => {
+    if (uiStage === "STAGE_2") {
+      if (uiForm === "12 đến 18 tháng") return ["12 đến 18 tháng"]
+      if (uiForm === "18 đến 24 tháng") return ["18 đến 24 tháng"]
+      if (uiForm === "24 đến 36 tháng") return ["24 đến 36 tháng"]
+      if (uiForm === "3 đến 4 tuổi") return ["Mẫu giáo bé"]
+      if (uiForm === "4 đến 5 tuổi") return ["Mẫu giáo nhỡ"]
+      if (uiForm === "5 đến 6 tuổi") return ["Mẫu giáo lớn"]
+    } else {
+      if (uiForm === "12 đến 18 tháng") return ["12 đến 18 tháng"]
+      if (uiForm === "18 đến 24 tháng") return ["18 đến 24 tháng", "24 đến 36 tháng"]
+      if (uiForm === "24 đến 36 tháng") return ["Mẫu giáo bé"]
+      if (uiForm === "3 đến 4 tuổi") return ["Mẫu giáo nhỡ"]
+      if (uiForm === "4 đến 5 tuổi") return ["Mẫu giáo lớn"]
+    }
+    return []
+  }, [uiStage, uiForm])
+
+  useEffect(() => {
+    if (availableGrades.length > 0 && !availableGrades.includes(aGrades[0])) {
+      setAGrades([availableGrades[0]])
+    }
+  }, [availableGrades, aGrades])
 
   // ─── Student stats state ───
   const [studentStats, setStudentStats] = useState<Record<string, number>>({})
