@@ -137,6 +137,12 @@ export function PhanCongMamNonClient({
   const [aSaving, setASaving] = useState(false)
   const [aNotifyingId, setANotifyingId] = useState<string | null>(null)
   const [aNotifyingAll, setANotifyingAll] = useState(false)
+  // ─── Computed ───
+  const aActiveBatch = useMemo(() => {
+    if (!aPeriodId || !aBatchId || aBatchId === "all") return null
+    return periods.find(p => p.id === aPeriodId)?.batches?.find((b: any) => b.id === aBatchId)
+  }, [periods, aPeriodId, aBatchId])
+
   const [uiStage, setUiStage] = useState<"STAGE_1" | "STAGE_2">("STAGE_1")
   const [uiForm, setUiForm] = useState<string>("18 đến 24 tháng")
 
@@ -230,11 +236,7 @@ export function PhanCongMamNonClient({
     }
   }, [periods, aPeriodId])
 
-  // ─── Computed ───
-  const aActiveBatch = useMemo(() => {
-    if (!aPeriodId || !aBatchId || aBatchId === "all") return null
-    return periods.find(p => p.id === aPeriodId)?.batches?.find((b: any) => b.id === aBatchId)
-  }, [periods, aPeriodId, aBatchId])
+
 
   const aGradesStr = aGrades.join(",")
 
