@@ -168,29 +168,29 @@ export function PhanCongMamNonClient({
     "5 đến 6 tuổi"
   ]
 
-  const availableGrades = useMemo(() => {
-    if (uiStage === "STAGE_2") {
-      if (uiForm === "12 đến 18 tháng") return ["12 đến 18 tháng"]
-      if (uiForm === "18 đến 24 tháng") return ["18 đến 24 tháng"]
-      if (uiForm === "24 đến 36 tháng") return ["24 đến 36 tháng"]
-      if (uiForm === "3 đến 4 tuổi") return ["Mẫu giáo bé"]
-      if (uiForm === "4 đến 5 tuổi") return ["Mẫu giáo nhỡ"]
-      if (uiForm === "5 đến 6 tuổi") return ["Mẫu giáo lớn"]
-    } else {
-      if (uiForm === "12 đến 18 tháng") return ["12 đến 18 tháng"]
-      if (uiForm === "18 đến 24 tháng") return ["18 đến 24 tháng", "24 đến 36 tháng"]
-      if (uiForm === "24 đến 36 tháng") return ["Mẫu giáo bé"]
-      if (uiForm === "3 đến 4 tuổi") return ["Mẫu giáo nhỡ"]
-      if (uiForm === "4 đến 5 tuổi") return ["Mẫu giáo lớn"]
-    }
-    return []
-  }, [uiStage, uiForm])
-
   useEffect(() => {
-    if (availableGrades.length > 0 && !availableGrades.includes(aGrades[0])) {
-      setAGrades([availableGrades[0]])
+    const grade = aGrades[0]
+    if (grade) {
+      let targetForm = ""
+      if (uiStage === "STAGE_2") {
+        if (grade === "12 đến 18 tháng") targetForm = "12 đến 18 tháng"
+        else if (grade === "18 đến 24 tháng") targetForm = "18 đến 24 tháng"
+        else if (grade === "24 đến 36 tháng") targetForm = "24 đến 36 tháng"
+        else if (grade === "Mẫu giáo bé") targetForm = "3 đến 4 tuổi"
+        else if (grade === "Mẫu giáo nhỡ") targetForm = "4 đến 5 tuổi"
+        else if (grade === "Mẫu giáo lớn") targetForm = "5 đến 6 tuổi"
+      } else {
+        if (grade === "12 đến 18 tháng") targetForm = "12 đến 18 tháng"
+        else if (grade === "18 đến 24 tháng" || grade === "24 đến 36 tháng") targetForm = "18 đến 24 tháng"
+        else if (grade === "Mẫu giáo bé") targetForm = "24 đến 36 tháng"
+        else if (grade === "Mẫu giáo nhỡ") targetForm = "3 đến 4 tuổi"
+        else if (grade === "Mẫu giáo lớn") targetForm = "4 đến 5 tuổi"
+      }
+      if (targetForm && targetForm !== uiForm) {
+        setUiForm(targetForm)
+      }
     }
-  }, [availableGrades, aGrades])
+  }, [aGrades, uiStage, uiForm])
 
   const selectGradeFromStats = (grade: string) => {
     const normalized = (grade || "").trim()
@@ -200,28 +200,8 @@ export function PhanCongMamNonClient({
     const standardGrades = ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"]
     if (!standardGrades.includes(normalized)) return
 
-    // Map to form based on current uiStage
-    let targetForm = ""
-    if (uiStage === "STAGE_2") {
-      if (normalized === "12 đến 18 tháng") targetForm = "12 đến 18 tháng"
-      else if (normalized === "18 đến 24 tháng") targetForm = "18 đến 24 tháng"
-      else if (normalized === "24 đến 36 tháng") targetForm = "24 đến 36 tháng"
-      else if (normalized === "Mẫu giáo bé") targetForm = "3 đến 4 tuổi"
-      else if (normalized === "Mẫu giáo nhỡ") targetForm = "4 đến 5 tuổi"
-      else if (normalized === "Mẫu giáo lớn") targetForm = "5 đến 6 tuổi"
-    } else {
-      if (normalized === "12 đến 18 tháng") targetForm = "12 đến 18 tháng"
-      else if (normalized === "18 đến 24 tháng" || normalized === "24 đến 36 tháng") targetForm = "18 đến 24 tháng"
-      else if (normalized === "Mẫu giáo bé") targetForm = "24 đến 36 tháng"
-      else if (normalized === "Mẫu giáo nhỡ") targetForm = "3 đến 4 tuổi"
-      else if (normalized === "Mẫu giáo lớn") targetForm = "4 đến 5 tuổi"
-    }
-
-    if (targetForm) {
-      setUiForm(targetForm)
-      setAGrades([normalized])
-      notify(`Đã chọn Phạm vi: Form ${targetForm} - Khối ${normalized}`)
-    }
+    setAGrades([normalized])
+    notify(`Đã chọn Nhóm tuổi: ${normalized}`)
   }
 
   // ─── Student stats state ───
@@ -528,9 +508,9 @@ export function PhanCongMamNonClient({
                 </Field>
 
                 {/* Form khảo sát */}
-                <Field label="Form khảo sát">
-                  <select value={uiForm} onChange={e => setUiForm(e.target.value)} className={inp}>
-                    {formOptions.filter(f => uiStage === "STAGE_2" || f !== "5 đến 6 tuổi").map(f => (
+                <Field label="Form khảo sát (Tự động ánh xạ)">
+                  <select value={uiForm} disabled className={`${inp} opacity-80 bg-slate-50 cursor-not-allowed`}>
+                    {formOptions.map(f => (
                       <option key={f} value={f}>Form {f}</option>
                     ))}
                   </select>
@@ -539,7 +519,7 @@ export function PhanCongMamNonClient({
                 {/* Nhóm tuổi (Khối) */}
                 <Field label="Nhóm tuổi (Khối)" required>
                   <div className="grid grid-cols-2 gap-2 mt-1">
-                    {availableGrades.map(g => {
+                    {grades.map(g => {
                       const isChecked = aGrades.includes(g)
                       return (
                         <label key={g} className={`flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-all text-xs ${isChecked ? "font-extrabold shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}
