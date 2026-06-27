@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Calendar, Layers, MapPin, UserCheck, Users, Check, X, Loader2, AlertCircle, Search, Filter, Sparkles } from "lucide-react"
 import { getStudentsByClassAction, registerStudentsAction, deregisterStudentsAction, getAllRegisteredStudentsAction } from "./actions"
 
@@ -50,7 +50,9 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
   }, [yearId])
 
   // Filter exams based on academic year
-  const filteredExams = exams.filter((e) => e.academicYearId === yearId)
+  const filteredExams = useMemo(() => {
+    return exams.filter((e) => e.academicYearId === yearId)
+  }, [exams, yearId])
 
   // Selection states
   const [selectedExam, setSelectedExam] = useState("")
@@ -98,9 +100,11 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
 
 
   // Filter classes based on Campus, Grade and Academic Year
-  const filteredClasses = classes.filter(
-    (c) => c.campusId === selectedCampus && c.grade === selectedGrade && c.academicYearId === yearId
-  )
+  const filteredClasses = useMemo(() => {
+    return classes.filter(
+      (c) => c.campusId === selectedCampus && c.grade === selectedGrade && c.academicYearId === yearId
+    )
+  }, [classes, selectedCampus, selectedGrade, yearId])
 
   // Sync selected exam with filtered exams
   useEffect(() => {
@@ -110,10 +114,14 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
         setSelectedExam(filteredExams[0].id)
       }
     } else {
-      setSelectedExam("")
-      setStudents([])
+      if (selectedExam !== "") {
+        setSelectedExam("")
+      }
+      if (students.length > 0) {
+        setStudents([])
+      }
     }
-  }, [filteredExams, selectedExam])
+  }, [filteredExams, selectedExam, students.length])
 
   // Reset selected class when campus, grade or yearId changes (only in non-all-registered mode)
   useEffect(() => {
@@ -124,11 +132,15 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
           setSelectedClass(filteredClasses[0].id)
         }
       } else {
-        setSelectedClass("")
-        setStudents([])
+        if (selectedClass !== "") {
+          setSelectedClass("")
+        }
+        if (students.length > 0) {
+          setStudents([])
+        }
       }
     }
-  }, [selectedCampus, selectedGrade, yearId, showAllRegistered, filteredClasses, selectedClass])
+  }, [selectedCampus, selectedGrade, yearId, showAllRegistered, filteredClasses, selectedClass, students.length])
 
   // Ensure selectedCampus is set when switching showAllRegistered to false
   useEffect(() => {

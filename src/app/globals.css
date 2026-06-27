@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -214,7 +215,7 @@
 /* ==========================================
    GLOBAL TYPOGRAPHY OVERRIDES (BE VIETNAM PRO / INTER)
    ========================================== */
-@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap');
+
 
 html {
   font-size: 14px !important;

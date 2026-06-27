@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { 
   Award, Search, Calendar, MapPin, Users, Edit3, Check, X, 
   Trash2, Plus, FileSpreadsheet, Printer, Download, Eye, BookOpen, AlertCircle, UserCheck,
@@ -124,7 +124,9 @@ export function ResultsClient({
     fetchClassStudents()
   }, [profileClassId])
 
-  const filteredExams = exams.filter(e => e.academicYearId === yearId)
+  const filteredExams = useMemo(() => {
+    return exams.filter(e => e.academicYearId === yearId)
+  }, [exams, yearId])
   const currentExam = exams.find(e => e.id === selectedExamId)
 
   // Auto-select exam
@@ -144,11 +146,17 @@ export function ResultsClient({
         setSelectedExamId(filteredExams[0].id)
       }
     } else {
-      setSelectedExamId("")
-      setGridRows([])
-      setHasChanges(false)
+      if (selectedExamId !== "") {
+        setSelectedExamId("")
+      }
+      if (gridRows.length > 0) {
+        setGridRows([])
+      }
+      if (hasChanges) {
+        setHasChanges(false)
+      }
     }
-  }, [filteredExams, yearId])
+  }, [filteredExams, yearId, selectedExamId, gridRows.length, hasChanges, exams])
 
   // Fetch students
   const loadExamStudents = async () => {
