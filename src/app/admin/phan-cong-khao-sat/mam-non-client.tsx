@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react"
 import {
   UserCheck, Baby, Settings, Search, Trash2,
-  Mail, Loader2, Filter, Calendar, CheckCircle2,
+  Mail, Loader2, Filter, Calendar, CheckCircle2, Layers,
   AlertCircle, X, RefreshCw, Users, Info
 } from "lucide-react"
 
@@ -341,9 +341,9 @@ export function PhanCongMamNonClient({
       <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
 
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left: Config + Teacher Selector */}
-          <div className="lg:col-span-5 space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left: Config + Scope */}
+          <div className="space-y-4">
             {/* Config Card */}
             <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-5 space-y-4">
               <h3 className="text-[12px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-1.5 pb-2 border-b border-slate-100">
@@ -400,41 +400,48 @@ export function PhanCongMamNonClient({
                     )}
                   </div>
                 )}
+              </div>
+            </div>
 
-                {/* Stage mapping display */}
-                {stageMappings && (
-                  <div className="rounded-xl p-4 space-y-3 border-l-4 border-y border-r border-slate-100 animate-in fade-in duration-300" style={{ borderLeftColor: TEAL, background: `${TEAL}08` }}>
-                    <div className="flex items-center gap-2 border-b pb-2" style={{ borderColor: `${TEAL}20` }}>
-                      <Calendar className="w-4 h-4" style={{ color: TEAL }} />
-                      <span className="text-[11px] font-black text-slate-800 uppercase tracking-widest">Ánh xạ Nhóm tuổi ({stageMappings.stageTitle})</span>
-                    </div>
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-2 px-3 text-[9px] font-black text-slate-400 uppercase tracking-wider">
-                        <span className="w-36">Form Khảo sát</span>
-                        <span className="w-4"></span>
-                        <span>Khối Áp dụng</span>
-                      </div>
-                      {stageMappings.mappings.map((m, i) => (
-                        <div key={i} className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-slate-100 text-xs">
-                          <span className="font-bold text-slate-700 w-36">{m.form}</span>
-                          <span className="text-slate-300">→</span>
-                          <span className="font-black" style={{ color: TEAL }}>{m.actual}</span>
-                        </div>
-                      ))}
-                    </div>
+            {/* Phạm vi Phân công Card */}
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-5 space-y-4">
+              <h3 className="text-[12px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-1.5 pb-2 border-b border-slate-100">
+                <Layers className="w-4 h-4" style={{ color: TEAL }} /> Phạm vi Phân công
+              </h3>
+
+              <div className="space-y-4">
+                {/* Giai đoạn */}
+                <Field label="Giai đoạn">
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    {[
+                      { id: "STAGE_1", name: "Giai đoạn 1 (01/06 - 31/12)" },
+                      { id: "STAGE_2", name: "Giai đoạn 2 (01/01 - 31/05)" }
+                    ].map(s => {
+                      const isSel = uiStage === s.id;
+                      return (
+                        <label key={s.id} className={`flex items-center gap-2 p-3 rounded-xl border cursor-pointer transition-all text-xs ${isSel ? "font-extrabold shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+                          style={isSel ? { background: `${TEAL}10`, borderColor: TEAL, color: TEAL } : {}}>
+                          <input type="radio" checked={isSel} name="ui-stage" onChange={() => setUiStage(s.id as any)} className="w-4 h-4 cursor-pointer" />
+                          <span>{s.name}</span>
+                        </label>
+                      )
+                    })}
                   </div>
-                )}
+                </Field>
 
-                {!aActiveBatch && (
-                  <div className="p-3 text-xs text-slate-500 font-medium flex items-start gap-2 text-xs font-semibold">
-                    <Info className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
-                    <p>Chọn một Đợt Khảo sát cụ thể để hiển thị bảng ánh xạ nhóm tuổi tương ứng.</p>
-                  </div>
-                )}
+                {/* Form khảo sát */}
+                <Field label="Form khảo sát">
+                  <select value={uiForm} onChange={e => setUiForm(e.target.value)} className={inp}>
+                    {formOptions.filter(f => uiStage === "STAGE_2" || f !== "5 đến 6 tuổi").map(f => (
+                      <option key={f} value={f}>Form {f}</option>
+                    ))}
+                  </select>
+                </Field>
 
+                {/* Nhóm tuổi (Khối) */}
                 <Field label="Nhóm tuổi (Khối)" required>
                   <div className="grid grid-cols-2 gap-2 mt-1">
-                    {grades.map(g => {
+                    {availableGrades.map(g => {
                       const isChecked = aGrades.includes(g)
                       return (
                         <label key={g} className={`flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-all text-xs ${isChecked ? "font-extrabold shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}
@@ -451,8 +458,10 @@ export function PhanCongMamNonClient({
                 </Field>
               </div>
             </div>
+          </div>
 
-            {/* Teacher Selector */}
+          {/* Right: Teacher Selector */}
+          <div className="space-y-4">
             <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-5 space-y-4">
               <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                 <h3 className="text-[12px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-1.5">
@@ -483,7 +492,7 @@ export function PhanCongMamNonClient({
                 )}
               </div>
 
-              <div className="max-h-[300px] overflow-y-auto pr-1 space-y-1.5">
+              <div className="max-h-[500px] overflow-y-auto pr-1 space-y-1.5">
                 {teachers
                   .filter(t => t.user)
                   .filter(t => !aDeptId || t.departmentId === aDeptId)
@@ -536,83 +545,80 @@ export function PhanCongMamNonClient({
               </button>
             </div>
           </div>
+        </div>
 
-          {/* Right: Assigned Teachers List */}
-          <div className="lg:col-span-7">
-            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-5 space-y-4 h-full min-h-[500px]">
-              <h3 className="text-[12px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-1.5 pb-2 border-b border-slate-100">
-                <UserCheck className="w-4 h-4" style={{ color: TEAL }} /> Giáo viên đang được phân công ({assignments.length})
-              </h3>
+        {/* Bottom: Assigned Teachers List (Full-Width) */}
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-5 space-y-4">
+          <h3 className="text-[12px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-1.5 pb-2 border-b border-slate-100">
+            <UserCheck className="w-4 h-4" style={{ color: TEAL }} /> Giáo viên đang được phân công ({assignments.length})
+          </h3>
 
-              {assignLoading ? <Spin /> : assignments.length === 0 ? (
-                <Empty text="Chưa có giáo viên nào được phân công" sub="Chọn giáo viên bên trái và bấm Lưu Phân công để bắt đầu" />
-              ) : (
-                <div className="space-y-3">
-                  {assignments.map((assign: any) => {
-                    const t = teachers.find(teach => teach.user?.id === assign.userId)
-                    const tName = t?.teacherName || assign.user?.fullName || "Chưa có tên"
-                    const tCode = t?.teacherCode || "GV000"
-                    const tEmail = t?.email || assign.user?.email || "—"
-                    const isNotifying = aNotifyingId === assign.id
+          {assignLoading ? <Spin /> : assignments.length === 0 ? (
+            <Empty text="Chưa có giáo viên nào được phân công" sub="Chọn giáo viên bên trái và bấm Lưu Phân công để bắt đầu" />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {assignments.map((assign: any) => {
+                const t = teachers.find(teach => teach.user?.id === assign.userId)
+                const tName = t?.teacherName || assign.user?.fullName || "Chưa có tên"
+                const tCode = t?.teacherCode || "GV000"
+                const tEmail = t?.email || assign.user?.email || "—"
+                const isNotifying = aNotifyingId === assign.id
 
-                    return (
-                      <div key={assign.id} className="flex items-center justify-between p-4 hover:bg-white hover:shadow-sm transition-all group text-xs font-semibold">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm text-white" style={{ background: TEAL }}>
-                            {tName.split(" ").slice(-1)[0].charAt(0)}
-                          </div>
-                          <div>
-                            <div className="text-sm font-black text-slate-800 flex items-center gap-2">
-                              <span>{tName}</span>
-                              {t?.departmentRel?.name && (
-                                <span className="text-[9px] font-black uppercase text-emerald-600 tracking-wider text-xs font-semibold">{t.departmentRel.name}</span>
-                              )}
-                            </div>
-                            <div className="text-[11px] text-slate-400 font-semibold">{tCode} • {tEmail}</div>
-                            <div className="flex gap-1.5 mt-1 items-center">
-                              <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full tracking-wider" style={{ background: `${TEAL}10`, color: TEAL }}>
-                                {assign.grade}
-                              </span>
-                              {assign.batch && (
-                                <span className="text-[9px] font-black uppercase text-fuchsia-600 tracking-wider max-w-[150px] truncate text-xs font-semibold">
-                                  {assign.batch.name?.split(" | ")[0]}
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-[10px] text-slate-400 mt-1 flex items-center gap-1.5">
-                              <span>Ngày phân công:</span>
-                              <span className="font-semibold text-slate-600">
-                                {assign.createdAt ? new Date(assign.createdAt).toLocaleDateString("vi-VN", {
-                                  year: "numeric",
-                                  month: "2-digit",
-                                  day: "2-digit",
-                                  hour: "2-digit",
-                                  minute: "2-digit"
-                                }) : "—"}
-                              </span>
-                            </div>
-                          </div>
+                return (
+                  <div key={assign.id} className="bg-white rounded-2xl border border-slate-200 p-4.5 flex flex-col justify-between hover:shadow-md transition-all group relative">
+                    <div className="flex gap-3">
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm text-white shrink-0" style={{ background: TEAL }}>
+                        {tName.split(" ").slice(-1)[0].charAt(0)}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-black text-slate-800 truncate pr-16" title={tName}>
+                          {tName}
                         </div>
-
-                        <div className="flex gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => sendTeacherNotification(assign.id, tName)} disabled={isNotifying || !canUpdate}
-                            title="Gửi email thông báo"
-                            className="w-9 h-9 flex items-center justify-center text-slate-500 hover:text-fuchsia-600 hover:bg-fuchsia-50 hover:border-fuchsia-200 transition-all disabled:opacity-30 text-xs font-semibold">
-                            {isNotifying ? <Loader2 className="w-4 h-4 animate-spin text-fuchsia-500" /> : <Mail className="w-4 h-4" />}
-                          </button>
-                          <button onClick={() => setConfirm({ msg: `Hủy phân công khảo sát cho giáo viên ${tName}?`, fn: () => deleteAssignment(assign.id, tName) })}
-                            disabled={!canDelete} title="Hủy phân công"
-                            className="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-200 transition-all disabled:opacity-30 text-xs font-semibold">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                        <div className="text-[10px] text-slate-400 font-semibold uppercase truncate">{tCode} • {tEmail}</div>
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full tracking-wider" style={{ background: `${TEAL}10`, color: TEAL }}>
+                            {assign.grade}
+                          </span>
+                          {assign.batch && (
+                            <span className="text-[9px] font-black uppercase text-fuchsia-600 bg-fuchsia-50 px-2 py-0.5 rounded-full tracking-wider max-w-[150px] truncate">
+                              {assign.batch.name?.split(" | ")[0]}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[10px] text-slate-400 mt-2 flex items-center gap-1.5 border-t border-slate-100 pt-2">
+                          <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                          <span>Ngày phân công:</span>
+                          <span className="font-semibold text-slate-600">
+                            {assign.createdAt ? new Date(assign.createdAt).toLocaleDateString("vi-VN", {
+                              year: "numeric",
+                              month: "2-digit",
+                              day: "2-digit",
+                              hour: "2-digit",
+                              minute: "2-digit"
+                            }) : "—"}
+                          </span>
                         </div>
                       </div>
-                    )
-                  })}
-                </div>
-              )}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="absolute top-4 right-4 flex gap-1 bg-slate-50/80 p-0.5 rounded-xl border border-slate-100">
+                      <button onClick={() => sendTeacherNotification(assign.id, tName)} disabled={isNotifying || !canUpdate}
+                        title="Gửi email thông báo"
+                        className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:text-fuchsia-600 hover:bg-white hover:shadow-xs transition-all disabled:opacity-30">
+                        {isNotifying ? <Loader2 className="w-3.5 h-3.5 animate-spin text-fuchsia-500" /> : <Mail className="w-3.5 h-3.5" />}
+                      </button>
+                      <button onClick={() => setConfirm({ msg: `Hủy phân công khảo sát cho giáo viên ${tName}?`, fn: () => deleteAssignment(assign.id, tName) })}
+                        disabled={!canDelete} title="Hủy phân công"
+                        className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-rose-600 hover:bg-white hover:shadow-xs transition-all disabled:opacity-30">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
