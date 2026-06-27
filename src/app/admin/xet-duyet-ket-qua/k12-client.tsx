@@ -1038,6 +1038,7 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
   const [reportBatchId, setReportBatchId] = useState("all");
   const [reportStudentId, setReportStudentId] = useState("");
   const [reportsSubTab, setReportsSubTab] = useState("stats"); // stats or results
+  const [chartCampusId, setChartCampusId] = useState("all");
   const [reportStudents, setReportStudents] = useState<any[]>([]);
   const [retestHistory, setRetestHistory] = useState<any[]>([]);
   const [retestHistoryLoading, setRetestHistoryLoading] = useState(false);
@@ -2888,11 +2889,16 @@ ${reportForm.directorNote}`;
       return {
         ...item,
         "Chung": rate,
-        "CS1": cs1Rate,
-        "CS2": cs2Rate,
-        "CS3": cs3Rate,
-        "CS4": cs4Rate,
-        "CS5": cs5Rate
+        "CS1_rate": cs1Rate,
+        "CS2_rate": cs2Rate,
+        "CS3_rate": cs3Rate,
+        "CS4_rate": cs4Rate,
+        "CS5_rate": cs5Rate,
+        "CS1": item.CS1,
+        "CS2": item.CS2,
+        "CS3": item.CS3,
+        "CS4": item.CS4,
+        "CS5": item.CS5
       };
     });
   }, [filteredReportStudents, reportBatches]);
@@ -5247,7 +5253,7 @@ return {
 
               {/* Chart Card */}
               <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 overflow-hidden transition-all duration-300 hover:shadow-md">
-                <div className="flex items-center justify-between mb-6 border-b border-slate-100 pb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 border-b border-slate-100 pb-4 gap-3">
                   <h4 className="font-black text-slate-800 text-sm tracking-tight uppercase flex items-center gap-2.5">
                     <span className="flex h-2 w-2 relative">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
@@ -5255,12 +5261,34 @@ return {
                     </span>
                     Biểu đồ phân tích Tiến độ Khảo sát theo Khối lớp & Cơ sở
                   </h4>
-                  <span className="text-[10px] font-black text-indigo-650 uppercase tracking-widest bg-indigo-50/50 px-2.5 py-1 rounded-lg">Tỷ lệ hoàn thành (%)</span>
+                  <div className="flex items-center gap-2 self-end sm:self-auto">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest hidden sm:inline-block">Hiển thị:</span>
+                    <select
+                      value={chartCampusId}
+                      onChange={e => setChartCampusId(e.target.value)}
+                      className="bg-slate-50 border border-slate-250 rounded-xl text-[10px] font-black text-slate-700 py-1.5 px-3 outline-none cursor-pointer hover:border-indigo-400 transition-colors shadow-sm"
+                    >
+                      <option value="all">Tất cả các cơ sở</option>
+                      <option value="CS1">Cơ sở 1</option>
+                      <option value="CS2">Cơ sở 2</option>
+                      <option value="CS3">Cơ sở 3</option>
+                      <option value="CS4">Cơ sở 4</option>
+                      <option value="CS5">Cơ sở 5</option>
+                    </select>
+                  </div>
                 </div>
                 <div className="h-80 w-full text-xs">
                   <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart data={gradeStats} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                       <defs>
+                        <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#94a3b8" stopOpacity={0.2}/>
+                          <stop offset="95%" stopColor="#94a3b8" stopOpacity={0.02}/>
+                        </linearGradient>
+                        <linearGradient id="colorSurveyed" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#00A99D" stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor="#00A99D" stopOpacity={0.2}/>
+                        </linearGradient>
                         <linearGradient id="colorChung" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
                           <stop offset="95%" stopColor="#6366f1" stopOpacity={0.01}/>
@@ -5268,7 +5296,13 @@ return {
                       </defs>
                       <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#f1f5f9" />
                       <XAxis dataKey="grade" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} dy={8} className="font-semibold" />
-                      <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} domain={[0, 100]} tickFormatter={v => `${v}%`} className="font-semibold" />
+                      
+                      {/* Left Y-axis: counts */}
+                      <YAxis yAxisId="left" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} allowDecimals={false} className="font-semibold" />
+                      
+                      {/* Right Y-axis: percentages */}
+                      <YAxis yAxisId="right" orientation="right" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} domain={[0, 100]} tickFormatter={v => `${v}%`} className="font-semibold" />
+                      
                       <Tooltip
                         contentStyle={{ 
                           backgroundColor: "rgba(255, 255, 255, 0.96)", 
@@ -5277,15 +5311,25 @@ return {
                           border: "1px solid rgba(226, 232, 240, 0.8)", 
                           boxShadow: "0 10px 25px -5px rgba(0,0,0,0.06), 0 8px 10px -6px rgba(0,0,0,0.06)" 
                         }}
-                        formatter={(value, name) => [`${value}%`, name]}
                       />
                       <Legend verticalAlign="top" height={36} iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "10px", fontWeight: "bold", paddingBottom: "10px" }} />
-                      <Bar dataKey="Chung" fill="url(#colorChung)" stroke="#6366f1" strokeWidth={1} radius={[4, 4, 0, 0]} barSize={26} name="Tỷ lệ Chung" />
-                      <Line type="monotone" dataKey="CS1" stroke="#00A99D" strokeWidth={3} dot={{ r: 3, strokeWidth: 1.5, fill: "#ffffff" }} activeDot={{ r: 6 }} name="Cơ sở 1" />
-                      <Line type="monotone" dataKey="CS2" stroke="#ec4899" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 2" />
-                      <Line type="monotone" dataKey="CS3" stroke="#eab308" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 3" />
-                      <Line type="monotone" dataKey="CS4" stroke="#a855f7" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 4" />
-                      <Line type="monotone" dataKey="CS5" stroke="#f97316" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 5" />
+                      
+                      {chartCampusId === "all" ? (
+                        <>
+                          <Bar yAxisId="right" dataKey="Chung" fill="url(#colorChung)" stroke="#6366f1" strokeWidth={1} radius={[4, 4, 0, 0]} barSize={26} name="Tỷ lệ Chung" />
+                          <Line yAxisId="right" type="monotone" dataKey="CS1_rate" stroke="#00A99D" strokeWidth={3} dot={{ r: 3, strokeWidth: 1.5, fill: "#ffffff" }} activeDot={{ r: 6 }} name="Cơ sở 1" />
+                          <Line yAxisId="right" type="monotone" dataKey="CS2_rate" stroke="#ec4899" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 2" />
+                          <Line yAxisId="right" type="monotone" dataKey="CS3_rate" stroke="#eab308" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 3" />
+                          <Line yAxisId="right" type="monotone" dataKey="CS4_rate" stroke="#a855f7" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 4" />
+                          <Line yAxisId="right" type="monotone" dataKey="CS5_rate" stroke="#f97316" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 5" />
+                        </>
+                      ) : (
+                        <>
+                          <Bar yAxisId="left" dataKey={`${chartCampusId}_total`} fill="url(#colorTotal)" radius={[4, 4, 0, 0]} barSize={20} name="Tổng Học sinh" />
+                          <Bar yAxisId="left" dataKey={chartCampusId} fill="url(#colorSurveyed)" radius={[4, 4, 0, 0]} barSize={20} name="Đã Khảo sát" />
+                          <Line yAxisId="right" type="monotone" dataKey={`${chartCampusId}_rate`} stroke="#6366f1" strokeWidth={3} dot={{ r: 3, strokeWidth: 1.5, fill: "#ffffff" }} activeDot={{ r: 6 }} name="Tỷ lệ hoàn thành" />
+                        </>
+                      )}
                     </ComposedChart>
                   </ResponsiveContainer>
                 </div>
