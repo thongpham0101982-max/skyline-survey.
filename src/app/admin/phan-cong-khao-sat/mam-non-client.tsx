@@ -192,6 +192,38 @@ export function PhanCongMamNonClient({
     }
   }, [availableGrades, aGrades])
 
+  const selectGradeFromStats = (grade: string) => {
+    const normalized = (grade || "").trim()
+    if (!normalized) return
+
+    // Find if the grade is one of the 6 standard grades
+    const standardGrades = ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"]
+    if (!standardGrades.includes(normalized)) return
+
+    // Map to form based on current uiStage
+    let targetForm = ""
+    if (uiStage === "STAGE_2") {
+      if (normalized === "12 đến 18 tháng") targetForm = "12 đến 18 tháng"
+      else if (normalized === "18 đến 24 tháng") targetForm = "18 đến 24 tháng"
+      else if (normalized === "24 đến 36 tháng") targetForm = "24 đến 36 tháng"
+      else if (normalized === "Mẫu giáo bé") targetForm = "3 đến 4 tuổi"
+      else if (normalized === "Mẫu giáo nhỡ") targetForm = "4 đến 5 tuổi"
+      else if (normalized === "Mẫu giáo lớn") targetForm = "5 đến 6 tuổi"
+    } else {
+      if (normalized === "12 đến 18 tháng") targetForm = "12 đến 18 tháng"
+      else if (normalized === "18 đến 24 tháng" || normalized === "24 đến 36 tháng") targetForm = "18 đến 24 tháng"
+      else if (normalized === "Mẫu giáo bé") targetForm = "24 đến 36 tháng"
+      else if (normalized === "Mẫu giáo nhỡ") targetForm = "3 đến 4 tuổi"
+      else if (normalized === "Mẫu giáo lớn") targetForm = "4 đến 5 tuổi"
+    }
+
+    if (targetForm) {
+      setUiForm(targetForm)
+      setAGrades([normalized])
+      notify(`Đã chọn Phạm vi: Form ${targetForm} - Khối ${normalized}`)
+    }
+  }
+
   // ─── Student stats state ───
   const [studentStats, setStudentStats] = useState<Record<string, number>>({})
   const [statsLoading, setStatsLoading] = useState(false)
@@ -438,14 +470,30 @@ export function PhanCongMamNonClient({
                       </div>
                     ) : (
                       <div className="grid grid-cols-2 gap-2">
-                        {Object.entries(studentStats).map(([grade, count]) => (
-                          <div key={grade} className="flex items-center justify-between bg-white border border-slate-100 px-3 py-2.5 rounded-xl text-xs shadow-sm">
-                            <span className="font-bold text-slate-600 truncate mr-2" title={grade}>{grade}</span>
-                            <span className="text-[10px] font-black px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: `${TEAL}12`, color: TEAL }}>
-                              {count} bé
-                            </span>
-                          </div>
-                        ))}
+                        {Object.entries(studentStats).map(([grade, count]) => {
+                          const isStandard = ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"].includes(grade)
+                          const isSelected = aGrades.includes(grade)
+                          return (
+                            <button key={grade}
+                              onClick={() => isStandard && selectGradeFromStats(grade)}
+                              disabled={!isStandard}
+                              type="button"
+                              className={`flex items-center justify-between border px-3 py-2.5 rounded-xl text-xs shadow-sm transition-all text-left ${
+                                isStandard 
+                                  ? isSelected
+                                    ? "bg-teal-50/50 font-extrabold"
+                                    : "bg-white border-slate-200 hover:border-slate-350 hover:bg-slate-50/50 cursor-pointer"
+                                  : "bg-slate-50 border-slate-100 text-slate-400 cursor-not-allowed"
+                              }`}
+                              style={isSelected ? { borderColor: TEAL, color: TEAL } : {}}
+                            >
+                              <span className="font-bold truncate mr-2" title={grade}>{grade}</span>
+                              <span className="text-[10px] font-black px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: `${TEAL}12`, color: TEAL }}>
+                                {count} bé
+                              </span>
+                            </button>
+                          )
+                        })}
                       </div>
                     )}
                   </div>
