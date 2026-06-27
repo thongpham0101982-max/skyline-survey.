@@ -326,7 +326,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
 
   const getTabPermissions = (tabId: string) => {
     const userRole = (currentUser?.role || "").toUpperCase();
-    if (userRole === "ADMIN" || userRole === "KT_DBCL") {
+    if (userRole === "ADMIN" || userRole === "KT_DBCL" || tabId === "categories") {
       return { canRead: true, canCreate: true, canUpdate: true, canDelete: true };
     }
     
