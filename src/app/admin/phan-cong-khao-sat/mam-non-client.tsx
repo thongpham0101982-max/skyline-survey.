@@ -579,6 +579,18 @@ export function PhanCongMamNonClient({
                                 </span>
                               )}
                             </div>
+                            <div className="text-[10px] text-slate-400 mt-1 flex items-center gap-1.5">
+                              <span>Ngày phân công:</span>
+                              <span className="font-semibold text-slate-600">
+                                {assign.createdAt ? new Date(assign.createdAt).toLocaleDateString("vi-VN", {
+                                  year: "numeric",
+                                  month: "2-digit",
+                                  day: "2-digit",
+                                  hour: "2-digit",
+                                  minute: "2-digit"
+                                }) : "—"}
+                              </span>
+                            </div>
                           </div>
                         </div>
 
