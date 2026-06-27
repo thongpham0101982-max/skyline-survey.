@@ -2840,6 +2840,31 @@ ${reportForm.directorNote}`;
     } finally { setSLoading(false) }
   }, [sPeriodId, sBatchId])
 
+  const handleUpdateAbsent = async (student: any, isAbsent: boolean) => {
+    try {
+      const res = await fetch("/api/input-assessment-students", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: student.id,
+          data: {
+            ...student,
+            isAbsent
+          }
+        })
+      });
+      
+      if (res.ok) {
+        fetchStudents();
+      } else {
+        const err = await res.json();
+        alert("Lỗi: " + (err.error || "Không thể cập nhật"));
+      }
+    } catch (e) {
+      alert("Lỗi kết nối máy chủ");
+    }
+  };
+
   const fetchConfigs = useCallback(async () => {
     setCLoading(true)
     try { const r = await fetch("/api/assessment-configs"); if (r.ok) setConfigs(await r.json()) }
@@ -3959,6 +3984,7 @@ return {
                           <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Giới tính</th>
                           <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Ngày sinh</th>
                           <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Hệ Khảo sát</th>
+                          <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Vắng</th>
                            <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Kết quả Học tập</th>
                            <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Kết quả Rèn luyện</th>
                           <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Hồ sơ / Bảng điểm</th>
@@ -3990,6 +4016,17 @@ return {
                              <span className="inline-flex items-center text-[10px] font-bold uppercase tracking-wider text-indigo-600 text-xs font-semibold">
                                {s.surveyFormType || "-"}
                              </span>
+                           </td>
+                           <td className="p-2 text-center border border-slate-300" onClick={(e) => e.stopPropagation()}>
+                             <input
+                               type="checkbox"
+                               className="w-4 h-4 rounded text-rose-600 accent-rose-600 cursor-pointer"
+                               checked={s.isAbsent || false}
+                               onChange={async (e) => {
+                                 const val = e.target.checked;
+                                 await handleUpdateAbsent(s, val);
+                               }}
+                             />
                            </td>
                            <td className="p-2 text-center text-xs text-slate-600 border border-slate-300">{s.kqHocTap || "-"}</td>
                            <td className="p-2 text-center text-xs text-slate-600 border border-slate-300">{s.kqRenLuyen || "-"}</td>

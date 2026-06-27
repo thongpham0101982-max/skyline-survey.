@@ -1518,6 +1518,31 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     } finally { setCLoading(false); }
   }, [cPeriodId, cBatchId]);
 
+  const handleUpdateAbsent = async (student: any, isAbsent: boolean) => {
+    try {
+      const res = await fetch("/api/preschool-input-assessment-students", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: student.id,
+          data: {
+            ...student,
+            isAbsent
+          }
+        })
+      });
+      
+      if (res.ok) {
+        fetchChildren();
+      } else {
+        const err = await res.json();
+        alert("Lỗi: " + (err.error || "Không thể cập nhật"));
+      }
+    } catch (e) {
+      alert("Lỗi kết nối máy chủ");
+    }
+  };
+
   useEffect(() => { if (tab === "children") fetchChildren(); }, [tab, fetchChildren]);
 
   const fetchConfigs = useCallback(async () => {
@@ -3432,7 +3457,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   <thead className="bg-[#00A99D]/5 border-b border-slate-300">
                     <tr>
                       <th className="p-2 w-12 border border-slate-300"><input type="checkbox" className="w-4 h-4 rounded accent-[#00A99D]" checked={filtChildren.length > 0 && cSelected.length === filtChildren.length} onChange={e => setCSelected(e.target.checked ? filtChildren.map(c => c.id) : [])} /></th>
-                      {["STT", "Mã bé", "Họ và tên", "Ngày sinh", "Giới tính", "Nhóm tuổi", "Cơ sở", "Thao tác"].map(h => <th key={h} className="p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest border border-slate-300">{h}</th>)}
+                      {["STT", "Mã bé", "Họ và tên", "Ngày sinh", "Giới tính", "Nhóm tuổi", "Cơ sở", "Vắng", "Thao tác"].map(h => <th key={h} className="p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest border border-slate-300 text-center">{h}</th>)}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200">
@@ -3446,7 +3471,17 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         <td className="p-2 border border-slate-300 text-sm">{child.gender === "M" || child.gender === "Nam" ? "Nam" : child.gender === "F" || child.gender === "Nữ" ? "Nữ" : child.gender || "—"}</td>
                         <td className="p-2 border border-slate-300 text-sm text-slate-700">{child.grade || "—"}</td>
                         <td className="p-2 text-xs font-semibold text-slate-600 border border-slate-300">{child.admissionCampus || "—"}</td>
-                        
+                        <td className="p-2 text-center border border-slate-300" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 rounded text-rose-600 accent-rose-600 cursor-pointer"
+                            checked={child.isAbsent || false}
+                            onChange={async (e) => {
+                              const val = e.target.checked;
+                              await handleUpdateAbsent(child, val);
+                            }}
+                          />
+                        </td>
                         <td className="p-2 text-right border border-slate-300"><div className="flex justify-end gap-1"><button onClick={() => openEditChild(child)} className="p-2 text-slate-300 hover:text-[#00A99D] hover:bg-[#00A99D]/5 rounded-none transition-all"><Edit2 className="w-4 h-4" /></button><button onClick={() => setConfirm({ msg: `Xóa bé "${child.fullName}"?`, fn: () => doDeleteChild(child.id) })} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all text-xs font-semibold"><Trash2 className="w-4 h-4" /></button></div></td>
                       </tr>
                     ))}
