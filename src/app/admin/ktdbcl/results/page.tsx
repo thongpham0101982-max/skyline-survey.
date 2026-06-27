@@ -56,6 +56,14 @@ export default async function ResultsPage() {
     }
   })
 
+  // Fetch achievement categories and levels
+  const achievementCategories = await prisma.achievementCategory.findMany({
+    orderBy: { name: "asc" }
+  })
+  const achievementLevels = await prisma.achievementLevel.findMany({
+    orderBy: { name: "asc" }
+  })
+
   // Fetch classes
   const classes = await prisma.class.findMany({
     where: { status: "ACTIVE" },
@@ -85,6 +93,8 @@ export default async function ResultsPage() {
         teachers={teachers}
         campuses={campuses}
         classes={classes}
+        achievementCategories={achievementCategories}
+        achievementLevels={achievementLevels}
       />
     </div>
   )

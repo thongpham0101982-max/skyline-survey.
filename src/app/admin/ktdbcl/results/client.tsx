@@ -21,33 +21,36 @@ interface ResultsClientProps {
   teachers: any[]
   campuses: any[]
   classes: any[]
+  achievementCategories: any[]
+  achievementLevels: any[]
 }
 
-const CATEGORY_LABELS: Record<string, string> = {
-  GIAI_THUONG: "Giải thưởng",
-  HUY_CHUONG: "Huy chương",
-  CHUNG_NHAN: "Chứng nhận",
-  KHAC: "Khác"
-}
 
-const LEVEL_LABELS: Record<string, string> = {
-  NHAT: "Giải Nhất",
-  NHI: "Giải Nhì",
-  BA: "Giải Ba",
-  KHUYEN_KHICH: "Giải Khuyến khích",
-  VANG: "Huy chương Vàng",
-  BAC: "Huy chương Bạc",
-  DONG: "Huy chương Đồng",
-  KHAC: "Khác / Chứng nhận"
-}
 
 export function ResultsClient({ 
   exams, 
   academicYears, 
   teachers, 
   campuses, 
-  classes 
+  classes,
+  achievementCategories,
+  achievementLevels
 }: ResultsClientProps) {
+  const CATEGORY_LABELS = useMemo(() => {
+    const labels: Record<string, string> = {}
+    achievementCategories.forEach((c) => {
+      labels[c.code] = c.name
+    })
+    return labels
+  }, [achievementCategories])
+
+  const LEVEL_LABELS = useMemo(() => {
+    const labels: Record<string, string> = {}
+    achievementLevels.forEach((l) => {
+      labels[l.code] = l.name
+    })
+    return labels
+  }, [achievementLevels])
   // Academic Year State
   const [yearId, setYearId] = useState<string>(() => {
     if (typeof window !== "undefined") {

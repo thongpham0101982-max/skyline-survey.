@@ -51,6 +51,7 @@ export const APP_CATEGORIES = [
         subModules: [
           { code: "KTDBCL_EXAM_CATEGORIES", name: "Quản lý danh mục", href: "/admin/ktdbcl/categories" },
           { code: "KTDBCL_EXAM_ROUNDS", name: "Vòng thi", href: "/admin/ktdbcl/rounds" },
+          { code: "KTDBCL_EXAM_ACHIEVEMENTS", name: "Thành tích", href: "/admin/ktdbcl/achievements" },
         ]
       },
       {
@@ -162,7 +163,7 @@ export const APP_CATEGORIES = [
 ];
 
 export const ALL_APP_MODULES = APP_CATEGORIES.flatMap(c => {
-  return c.modules.flatMap(m => {
+  return c.modules.flatMap((m: any) => {
     if (m.subModules) {
       return [m, ...m.subModules];
     }

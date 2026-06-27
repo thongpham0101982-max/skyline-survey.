@@ -127,6 +127,8 @@ model AcademicYear {
   examCategories                  ExamCategory[]
   examRounds                      ExamRound[]
   achievements                    Achievement[]
+  achievementCategories           AchievementCategory[]
+  achievementLevels               AchievementLevel[]
 }
 
 model Class {
@@ -1185,6 +1187,32 @@ model StudentAchievement {
   @@index([achievementId])
 }
 
+
+model AchievementCategory {
+  id             String        @id @default(cuid())
+  name           String
+  code           String
+  description    String?
+  academicYearId String?
+  academicYear   AcademicYear? @relation(fields: [academicYearId], references: [id], onDelete: SetNull)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@unique([code, academicYearId])
+}
+
+model AchievementLevel {
+  id             String        @id @default(cuid())
+  name           String
+  code           String
+  description    String?
+  academicYearId String?
+  academicYear   AcademicYear? @relation(fields: [academicYearId], references: [id], onDelete: SetNull)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@unique([code, academicYearId])
+}
 
 model AuditLog {
   id          String   @id @default(cuid())

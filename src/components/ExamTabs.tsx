@@ -1,17 +1,18 @@
 "use client"
 import Link from 'next/link'
-import { Layers, ClipboardList, UserCheck, Award, GitCommit } from 'lucide-react'
+import { Layers, ClipboardList, UserCheck, Award, GitCommit, Trophy } from 'lucide-react'
 
 interface ExamTabsProps {
-  activeTab: 'categories' | 'rounds' | 'exams' | 'students' | 'results'
+  activeTab: 'categories' | 'rounds' | 'achievements' | 'exams' | 'students' | 'results'
 }
 
 export function ExamTabs({ activeTab }: ExamTabsProps) {
-  const isConfigTab = activeTab === 'categories' || activeTab === 'rounds'
+  const isConfigTab = activeTab === 'categories' || activeTab === 'rounds' || activeTab === 'achievements'
   const tabs = isConfigTab
     ? [
         { id: 'categories', label: 'Quản lý danh mục', href: '/admin/ktdbcl/categories', icon: Layers },
-        { id: 'rounds', label: 'Vòng thi', href: '/admin/ktdbcl/rounds', icon: GitCommit }
+        { id: 'rounds', label: 'Vòng thi', href: '/admin/ktdbcl/rounds', icon: GitCommit },
+        { id: 'achievements', label: 'Thành tích', href: '/admin/ktdbcl/achievements', icon: Trophy }
       ]
     : [
         { id: 'exams', label: 'Danh sách Kỳ thi', href: '/admin/ktdbcl/exams', icon: ClipboardList },
