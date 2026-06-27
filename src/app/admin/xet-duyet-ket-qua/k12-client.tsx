@@ -5164,123 +5164,135 @@ return {
           {reportsSubTab === "stats" ? (
             <div className="space-y-6 animate-in fade-in duration-300">
               {/* KPI Cards Row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 {/* Card 1: Tổng Học sinh */}
-                <div className="relative overflow-hidden bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between group hover:border-indigo-300 hover:shadow-md transition-all duration-300">
+                <div className="relative overflow-hidden bg-gradient-to-br from-indigo-50/30 via-white to-white p-6 rounded-2xl border border-indigo-100 shadow-[0_8px_30px_rgb(0,0,0,0.02)] flex flex-col justify-between group hover:border-indigo-300 hover:-translate-y-1 hover:shadow-md transition-all duration-300">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Tổng Học sinh</span>
-                    <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tổng Học sinh</span>
+                    <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl transition-transform duration-300 group-hover:scale-110">
                       <Users className="w-4 h-4" />
                     </div>
                   </div>
-                  <div className="flex items-baseline gap-1 mt-3">
-                    <span className="text-2xl font-black text-slate-800">{overallKPIs.total}</span>
-                    <span className="text-[10px] text-slate-450 font-bold">học sinh</span>
+                  <div className="flex items-baseline gap-1 mt-4">
+                    <span className="text-3xl font-black text-slate-800 tracking-tight">{overallKPIs.total}</span>
+                    <span className="text-xs text-slate-400 font-bold">học sinh</span>
                   </div>
                 </div>
 
                 {/* Card 2: Tiến độ Khảo sát */}
-                <div className="relative overflow-hidden bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between group hover:border-sky-300 hover:shadow-md transition-all duration-300">
+                <div className="relative overflow-hidden bg-gradient-to-br from-sky-50/30 via-white to-white p-6 rounded-2xl border border-sky-100 shadow-[0_8px_30px_rgb(0,0,0,0.02)] flex flex-col justify-between group hover:border-sky-350 hover:-translate-y-1 hover:shadow-md transition-all duration-300">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Tiến độ Khảo sát</span>
-                    <div className="p-2 bg-sky-50 text-sky-600 rounded-xl">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tiến độ Khảo sát</span>
+                    <div className="p-2.5 bg-sky-50 text-sky-600 rounded-xl transition-transform duration-300 group-hover:scale-110">
                       <BarChart3 className="w-4 h-4" />
                     </div>
                   </div>
-                  <div className="space-y-2 mt-3">
+                  <div className="space-y-2 mt-4">
                     <div className="flex items-baseline justify-between">
                       <div className="flex items-baseline gap-1">
-                        <span className="text-2xl font-black text-slate-800">{overallKPIs.surveyed}</span>
-                        <span className="text-[10px] text-slate-450 font-bold">/ {overallKPIs.total} HS đã khảo sát</span>
+                        <span className="text-3xl font-black text-slate-800 tracking-tight">{overallKPIs.surveyed}</span>
+                        <span className="text-[10px] text-slate-400 font-bold">/ {overallKPIs.total} HS</span>
                       </div>
-                      <span className="text-xs font-black text-sky-600">{overallKPIs.surveyRate}%</span>
+                      <span className="text-xs font-black text-sky-600 bg-sky-50 px-2 py-0.5 rounded-md">{overallKPIs.surveyRate}%</span>
                     </div>
-                    <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-sky-400 to-sky-500 rounded-full" style={{ width: `${overallKPIs.surveyRate}%` }}></div>
+                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden shadow-inner">
+                      <div className="h-full bg-gradient-to-r from-sky-400 to-sky-600 rounded-full transition-all duration-500" style={{ width: `${overallKPIs.surveyRate}%` }}></div>
                     </div>
                   </div>
                 </div>
 
                 {/* Card 3: Tiến độ Xét duyệt */}
-                <div className="relative overflow-hidden bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between group hover:border-violet-300 hover:shadow-md transition-all duration-300">
+                <div className="relative overflow-hidden bg-gradient-to-br from-violet-50/20 via-white to-white p-6 rounded-2xl border border-violet-100 shadow-[0_8px_30px_rgb(0,0,0,0.02)] flex flex-col justify-between group hover:border-violet-300 hover:-translate-y-1 hover:shadow-md transition-all duration-300">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Tiến độ Xét duyệt</span>
-                    <div className="p-2 bg-violet-50 text-violet-600 rounded-xl">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tiến độ Xét duyệt</span>
+                    <div className="p-2.5 bg-violet-50 text-violet-600 rounded-xl transition-transform duration-300 group-hover:scale-110">
                       <CheckCircle2 className="w-4 h-4" />
                     </div>
                   </div>
-                  <div className="space-y-2 mt-3">
+                  <div className="space-y-2 mt-4">
                     <div className="flex items-baseline justify-between">
                       <div className="flex items-baseline gap-1">
-                        <span className="text-2xl font-black text-slate-800">{overallKPIs.total - overallKPIs.pending}</span>
-                        <span className="text-[10px] text-slate-450 font-bold">/ {overallKPIs.total} HS đã duyệt</span>
+                        <span className="text-3xl font-black text-slate-800 tracking-tight">{overallKPIs.total - overallKPIs.pending}</span>
+                        <span className="text-[10px] text-slate-400 font-bold">/ {overallKPIs.total} HS</span>
                       </div>
-                      <span className="text-xs font-black text-violet-600">{overallKPIs.approvedRate}%</span>
+                      <span className="text-xs font-black text-violet-600 bg-violet-50 px-2 py-0.5 rounded-md">{overallKPIs.approvedRate}%</span>
                     </div>
-                    <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-violet-500 to-indigo-600 rounded-full" style={{ width: `${overallKPIs.approvedRate}%` }}></div>
+                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden shadow-inner">
+                      <div className="h-full bg-gradient-to-r from-violet-500 to-indigo-600 rounded-full transition-all duration-500" style={{ width: `${overallKPIs.approvedRate}%` }}></div>
                     </div>
                   </div>
                 </div>
 
-                {/* Card 4: Kết quả Đạt / Cam kết */}
-                <div className="relative overflow-hidden bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between group hover:border-emerald-300 hover:shadow-md transition-all duration-300">
+                {/* Card 4: Kết quả Khảo sát */}
+                <div className="relative overflow-hidden bg-gradient-to-br from-emerald-50/20 via-white to-white p-6 rounded-2xl border border-emerald-100 shadow-[0_8px_30px_rgb(0,0,0,0.02)] flex flex-col justify-between group hover:border-emerald-300 hover:-translate-y-1 hover:shadow-md transition-all duration-300">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Kết quả Đạt / Cam kết</span>
-                    <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Kết quả Khảo sát</span>
+                    <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl transition-transform duration-300 group-hover:scale-110">
                       <GraduationCap className="w-4 h-4" />
                     </div>
                   </div>
-                  <div className="flex items-baseline gap-3 mt-3">
-                    <div className="flex items-baseline gap-1">
+                  <div className="flex items-center justify-between mt-4">
+                    <div className="flex flex-col">
                       <span className="text-2xl font-black text-emerald-600">{overallKPIs.passed}</span>
-                      <span className="text-[10px] text-emerald-500 font-bold">Đạt</span>
+                      <span className="text-[9px] text-emerald-500 font-bold uppercase tracking-wider">Đạt KS</span>
                     </div>
-                    <div className="w-px h-5 bg-slate-200"></div>
-                    <div className="flex items-baseline gap-1">
+                    <div className="w-px h-8 bg-slate-100"></div>
+                    <div className="flex flex-col items-end">
                       <span className="text-2xl font-black text-amber-600">{overallKPIs.committed}</span>
-                      <span className="text-[10px] text-amber-500 font-bold">Cam kết</span>
+                      <span className="text-[9px] text-amber-500 font-bold uppercase tracking-wider">Cam kết</span>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Chart Card */}
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 overflow-hidden transition-all duration-300">
-                <div className="flex items-center justify-between mb-5 border-b border-slate-100 pb-4">
+              <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 overflow-hidden transition-all duration-300 hover:shadow-md">
+                <div className="flex items-center justify-between mb-6 border-b border-slate-100 pb-4">
                   <h4 className="font-black text-slate-800 text-sm tracking-tight uppercase flex items-center gap-2.5">
                     <span className="flex h-2 w-2 relative">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-600"></span>
                     </span>
-                    Biểu đồ Tiến độ Khảo sát theo Khối lớp & Cơ sở
+                    Biểu đồ phân tích Tiến độ Khảo sát theo Khối lớp & Cơ sở
                   </h4>
-                  <span className="text-[9px] font-black text-indigo-650 uppercase tracking-wider text-xs font-semibold">Tỷ lệ hoàn thành (%)</span>
+                  <span className="text-[10px] font-black text-indigo-650 uppercase tracking-widest bg-indigo-50/50 px-2.5 py-1 rounded-lg">Tỷ lệ hoàn thành (%)</span>
                 </div>
                 <div className="h-80 w-full text-xs">
                   <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart data={gradeStats} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                      <XAxis dataKey="grade" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} />
-                      <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} domain={[0, 100]} tickFormatter={v => `${v}%`} />
+                      <defs>
+                        <linearGradient id="colorChung" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#6366f1" stopOpacity={0.01}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#f1f5f9" />
+                      <XAxis dataKey="grade" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} dy={8} className="font-semibold" />
+                      <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} domain={[0, 100]} tickFormatter={v => `${v}%`} className="font-semibold" />
                       <Tooltip
-                        contentStyle={{ backgroundColor: "#ffffff", borderRadius: "12px", border: "1px solid #e2e8f0", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05)" }}
+                        contentStyle={{ 
+                          backgroundColor: "rgba(255, 255, 255, 0.96)", 
+                          backdropFilter: "blur(8px)", 
+                          borderRadius: "16px", 
+                          border: "1px solid rgba(226, 232, 240, 0.8)", 
+                          boxShadow: "0 10px 25px -5px rgba(0,0,0,0.06), 0 8px 10px -6px rgba(0,0,0,0.06)" 
+                        }}
                         formatter={(value, name) => [`${value}%`, name]}
                       />
-                      <Legend verticalAlign="top" height={36} iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "10px", fontWeight: "bold" }} />
-                      <Bar dataKey="Chung" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={24} opacity={0.15} name="Tỷ lệ Chung" />
-                      <Line type="monotone" dataKey="CS1" stroke="#00A99D" strokeWidth={2.5} dot={{ r: 3 }} activeDot={{ r: 5 }} name="Cơ sở 1" />
-                      <Line type="monotone" dataKey="CS2" stroke="#ec4899" strokeWidth={2} dot={{ r: 2 }} name="Cơ sở 2" />
-                      <Line type="monotone" dataKey="CS3" stroke="#eab308" strokeWidth={2} dot={{ r: 2 }} name="Cơ sở 3" />
-                      <Line type="monotone" dataKey="CS4" stroke="#a855f7" strokeWidth={2} dot={{ r: 2 }} name="Cơ sở 4" />
-                      <Line type="monotone" dataKey="CS5" stroke="#f97316" strokeWidth={2} dot={{ r: 2 }} name="Cơ sở 5" />
+                      <Legend verticalAlign="top" height={36} iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "10px", fontWeight: "bold", paddingBottom: "10px" }} />
+                      <Bar dataKey="Chung" fill="url(#colorChung)" stroke="#6366f1" strokeWidth={1} radius={[4, 4, 0, 0]} barSize={26} name="Tỷ lệ Chung" />
+                      <Line type="monotone" dataKey="CS1" stroke="#00A99D" strokeWidth={3} dot={{ r: 3, strokeWidth: 1.5, fill: "#ffffff" }} activeDot={{ r: 6 }} name="Cơ sở 1" />
+                      <Line type="monotone" dataKey="CS2" stroke="#ec4899" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 2" />
+                      <Line type="monotone" dataKey="CS3" stroke="#eab308" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 3" />
+                      <Line type="monotone" dataKey="CS4" stroke="#a855f7" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 4" />
+                      <Line type="monotone" dataKey="CS5" stroke="#f97316" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 5" />
                     </ComposedChart>
                   </ResponsiveContainer>
                 </div>
               </div>
 
               {/* Campus Breakdown Table Card */}
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 overflow-hidden flex flex-col justify-between group hover:shadow-md transition-all duration-300">
+              <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 overflow-hidden flex flex-col justify-between group hover:shadow-md transition-all duration-300">
                 <div className="flex items-center justify-between mb-5 border-b border-slate-100 pb-4">
                   <h4 className="font-black text-slate-800 text-sm tracking-tight uppercase flex items-center gap-2.5">
                     <span className="flex h-2 w-2 relative">
@@ -5289,85 +5301,92 @@ return {
                     </span>
                     Số liệu phân theo Cơ sở tuyển sinh
                   </h4>
-                  <span className="text-[9px] font-black text-[#00A99D] uppercase tracking-wider text-xs font-semibold">Chi tiết các cơ sở</span>
+                  <span className="text-[10px] font-black text-[#00A99D] uppercase tracking-widest bg-teal-50 px-2.5 py-1 rounded-lg">Chi tiết các cơ sở</span>
                 </div>
                 
                 <div className="overflow-x-auto">
                   <table className="w-full text-left whitespace-nowrap table-auto border-collapse">
                     <thead>
-                      <tr className="border-b border-slate-100">
-                        <th className="pb-3.5 text-[9px] font-black text-slate-400 uppercase tracking-widest pl-2 p-2 border border-slate-200">Cơ sở</th>
-                        <th className="pb-3.5 text-center text-[9px] font-black text-slate-400 uppercase tracking-widest p-2 border border-slate-200">Tổng HS</th>
-                        <th className="pb-3.5 text-center text-[9px] font-black text-sky-600 uppercase tracking-widest p-2 border border-slate-200">Đã KS</th>
-                        <th className="pb-3.5 text-center text-[9px] font-black text-emerald-600 uppercase tracking-widest p-2 border border-slate-200">Đạt</th>
-                        <th className="pb-3.5 text-center text-[9px] font-black text-amber-600 uppercase tracking-widest p-2 border border-slate-200">Cam kết</th>
-                        <th className="pb-3.5 text-center text-[9px] font-black text-rose-500 uppercase tracking-widest p-2 border border-slate-200">Không Đạt</th>
-                        <th className="pb-3.5 text-center text-[9px] font-black text-slate-400 uppercase tracking-widest p-2 border border-slate-200">Chưa Duyệt</th>
-                        <th className="pb-3.5 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest pr-2 p-2 border border-slate-200">Tiến độ KS</th>
-                        <th className="pb-3.5 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest pr-2 p-2 border border-slate-200">Tỷ lệ duyệt</th>
+                      <tr className="border-b border-slate-100/80 bg-slate-50/50">
+                        <th className="py-3 px-4 text-[9px] font-extrabold text-slate-500 uppercase tracking-wider rounded-l-xl">Cơ sở</th>
+                        <th className="py-3 px-4 text-center text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">Tổng HS</th>
+                        <th className="py-3 px-4 text-center text-[9px] font-extrabold text-sky-600 uppercase tracking-wider">Đã KS</th>
+                        <th className="py-3 px-4 text-center text-[9px] font-extrabold text-emerald-600 uppercase tracking-wider">Đạt</th>
+                        <th className="py-3 px-4 text-center text-[9px] font-extrabold text-amber-600 uppercase tracking-wider">Cam kết</th>
+                        <th className="py-3 px-4 text-center text-[9px] font-extrabold text-rose-500 uppercase tracking-wider">Không Đạt</th>
+                        <th className="py-3 px-4 text-center text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">Chưa Duyệt</th>
+                        <th className="py-3 px-4 text-right text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">Tiến độ KS</th>
+                        <th className="py-3 px-4 text-right text-[9px] font-extrabold text-slate-500 uppercase tracking-wider rounded-r-xl">Tỷ lệ duyệt</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-50">
+                    <tbody className="divide-y divide-slate-100">
                       {campusStats.map(stat => {
                         const campusApprovedRate = stat.total > 0 ? Math.round(((stat.total - stat.pending) / stat.total) * 100) : 0;
                         const campusSurveyRate = stat.total > 0 ? Math.round((stat.surveyed / stat.total) * 100) : 0;
+                        
+                        let badgeColor = "bg-slate-50 text-slate-600";
+                        const shortCode = stat.campusName?.replace("Cơ sở ", "CS");
+                        if (shortCode === "CS1") badgeColor = "bg-teal-50 text-teal-700 border border-teal-100";
+                        else if (shortCode === "CS2") badgeColor = "bg-pink-50 text-pink-700 border border-pink-100";
+                        else if (shortCode === "CS3") badgeColor = "bg-amber-50 text-amber-700 border border-amber-100";
+                        else if (shortCode === "CS4") badgeColor = "bg-purple-50 text-purple-700 border border-purple-100";
+                        else if (shortCode === "CS5") badgeColor = "bg-orange-50 text-orange-700 border border-orange-100";
+
                         return (
-                          <tr key={stat.id} className="hover:bg-teal-50/10 transition-all duration-200 group/row text-xs font-semibold">
-                            <td className="p-2 pl-2 border border-slate-200">
-                              <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 flex items-center justify-center group-hover/row:bg-white group-hover/row:border-teal-100 transition-all duration-200 text-xs font-semibold">
-                                  <span className="text-[10px] font-black text-slate-500 group-hover/row:text-[#00A99D]">{stat.campusName?.replace("Cơ sở ", "CS")}</span>
-                                </div>
-                                <span className="text-sm font-black text-slate-700 group-hover/row:text-[#00A99D] transition-colors">{stat.campusName}</span>
+                          <tr key={stat.id} className="hover:bg-slate-50/50 transition-colors duration-150 group/row text-xs font-semibold">
+                            <td className="py-3.5 px-4">
+                              <div className="flex items-center gap-2.5">
+                                <span className={`px-2 py-1 rounded-md text-[10px] font-black tracking-wider ${badgeColor}`}>{shortCode}</span>
+                                <span className="text-sm font-bold text-slate-700 group-hover/row:text-teal-650 transition-colors">{stat.campusName}</span>
                               </div>
                             </td>
-                            <td className="p-2 text-center border border-slate-200">
-                              <span className="font-bold text-slate-600 text-sm">{stat.total}</span>
+                            <td className="py-3.5 px-4 text-center">
+                              <span className="font-extrabold text-slate-650 text-sm">{stat.total}</span>
                             </td>
-                            <td className="p-2 text-center border border-slate-200">
-                              <span className="font-bold text-sky-650 text-sm">{stat.surveyed}</span>
+                            <td className="py-3.5 px-4 text-center">
+                              <span className="font-extrabold text-sky-650 text-sm">{stat.surveyed}</span>
                             </td>
-                            <td className="p-2 text-center border border-slate-200">
+                            <td className="py-3.5 px-4 text-center">
                               {stat.passed > 0 ? (
-                                <span className="font-black text-emerald-700 text-xs inline-block min-w-[32px] text-xs font-semibold">{stat.passed}</span>
+                                <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold">{stat.passed}</span>
                               ) : (
                                 <span className="text-slate-300 font-bold text-xs">—</span>
                               )}
                             </td>
-                            <td className="p-2 text-center border border-slate-200">
+                            <td className="py-3.5 px-4 text-center">
                               {stat.committed > 0 ? (
-                                <span className="font-black text-amber-700 text-xs inline-block min-w-[32px] text-xs font-semibold">{stat.committed}</span>
+                                <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-xs font-bold">{stat.committed}</span>
                               ) : (
                                 <span className="text-slate-300 font-bold text-xs">—</span>
                               )}
                             </td>
-                            <td className="p-2 text-center border border-slate-200">
+                            <td className="py-3.5 px-4 text-center">
                               {stat.failed > 0 ? (
-                                <span className="font-black text-rose-700 text-xs inline-block min-w-[32px] text-xs font-semibold">{stat.failed}</span>
+                                <span className="px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 text-xs font-bold">{stat.failed}</span>
                               ) : (
                                 <span className="text-slate-300 font-bold text-xs">—</span>
                               )}
                             </td>
-                            <td className="p-2 text-center border border-slate-200">
+                            <td className="py-3.5 px-4 text-center">
                               {stat.pending > 0 ? (
-                                <span className="font-black text-slate-500 text-xs inline-block min-w-[32px] text-xs font-semibold">{stat.pending}</span>
+                                <span className="px-2 py-0.5 rounded-full bg-slate-50 text-slate-500 text-xs font-bold">{stat.pending}</span>
                               ) : (
                                 <span className="text-slate-300 font-bold text-xs">—</span>
                               )}
                             </td>
-                            <td className="p-2 text-right pr-2 border border-slate-200">
-                              <div className="flex items-center justify-end gap-2">
-                                <span className="text-xs font-black text-slate-700">{campusSurveyRate}%</span>
-                                <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                  <div className="h-full bg-gradient-to-r from-sky-400 to-sky-500 rounded-full" style={{ width: `${campusSurveyRate}%` }}></div>
+                            <td className="py-3.5 px-4 text-right">
+                              <div className="flex items-center justify-end gap-2.5">
+                                <span className="text-xs font-extrabold text-slate-700 w-9">{campusSurveyRate}%</span>
+                                <div className="w-16 h-2 bg-slate-100 rounded-full overflow-hidden shadow-inner">
+                                  <div className="h-full bg-gradient-to-r from-sky-400 to-sky-500 rounded-full transition-all duration-300" style={{ width: `${campusSurveyRate}%` }}></div>
                                 </div>
                               </div>
                             </td>
-                            <td className="p-2 text-right pr-2 border border-slate-200">
-                              <div className="flex items-center justify-end gap-2">
-                                <span className="text-xs font-black text-slate-700">{campusApprovedRate}%</span>
-                                <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                  <div className="h-full bg-gradient-to-r from-[#00A99D]/60 to-[#00A99D] rounded-full" style={{ width: `${campusApprovedRate}%` }}></div>
+                            <td className="py-3.5 px-4 text-right">
+                              <div className="flex items-center justify-end gap-2.5">
+                                <span className="text-xs font-extrabold text-slate-700 w-9">{campusApprovedRate}%</span>
+                                <div className="w-16 h-2 bg-slate-100 rounded-full overflow-hidden shadow-inner">
+                                  <div className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full transition-all duration-300" style={{ width: `${campusApprovedRate}%` }}></div>
                                 </div>
                               </div>
                             </td>
@@ -5376,7 +5395,7 @@ return {
                       })}
                       {campusStats.length === 0 && (
                         <tr>
-                          <td colSpan={9} className="p-2 text-center text-xs font-bold text-slate-400 uppercase border border-slate-200">Không có dữ liệu cơ sở</td>
+                          <td colSpan={9} className="p-4 text-center text-xs font-bold text-slate-450 uppercase">Không có dữ liệu cơ sở</td>
                         </tr>
                       )}
                     </tbody>
@@ -5385,7 +5404,7 @@ return {
               </div>
               
               {/* Batch Breakdown Table Card */}
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 overflow-hidden flex flex-col justify-between group hover:shadow-md transition-all duration-300">
+              <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 overflow-hidden flex flex-col justify-between group hover:shadow-md transition-all duration-300">
                 <div className="flex items-center justify-between mb-5 border-b border-slate-100 pb-4">
                   <h4 className="font-black text-slate-800 text-sm tracking-tight uppercase flex items-center gap-2.5">
                     <span className="flex h-2 w-2 relative">
@@ -5394,85 +5413,85 @@ return {
                     </span>
                     Số liệu phân theo Đợt khảo sát
                   </h4>
-                  <span className="text-[9px] font-black text-violet-600 uppercase tracking-wider text-xs font-semibold">Chi tiết các đợt</span>
+                  <span className="text-[10px] font-black text-violet-600 uppercase tracking-widest bg-violet-50 px-2.5 py-1 rounded-lg">Chi tiết các đợt</span>
                 </div>
                 
                 <div className="overflow-x-auto">
                   <table className="w-full text-left whitespace-nowrap table-auto border-collapse">
                     <thead>
-                      <tr className="border-b border-slate-100">
-                        <th className="pb-3.5 text-[9px] font-black text-slate-400 uppercase tracking-widest pl-2 p-2 border border-slate-200">Đợt khảo sát</th>
-                        <th className="pb-3.5 text-center text-[9px] font-black text-slate-400 uppercase tracking-widest p-2 border border-slate-200">Tổng HS</th>
-                        <th className="pb-3.5 text-center text-[9px] font-black text-sky-600 uppercase tracking-widest p-2 border border-slate-200">Đã KS</th>
-                        <th className="pb-3.5 text-center text-[9px] font-black text-emerald-600 uppercase tracking-widest p-2 border border-slate-200">Đạt</th>
-                        <th className="pb-3.5 text-center text-[9px] font-black text-amber-600 uppercase tracking-widest p-2 border border-slate-200">Cam kết</th>
-                        <th className="pb-3.5 text-center text-[9px] font-black text-rose-500 uppercase tracking-widest p-2 border border-slate-200">Không Đạt</th>
-                        <th className="pb-3.5 text-center text-[9px] font-black text-slate-400 uppercase tracking-widest p-2 border border-slate-200">Chưa Duyệt</th>
-                        <th className="pb-3.5 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest pr-2 p-2 border border-slate-200">Tiến độ KS</th>
-                        <th className="pb-3.5 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest pr-2 p-2 border border-slate-200">Tỷ lệ duyệt</th>
+                      <tr className="border-b border-slate-100/80 bg-slate-50/50">
+                        <th className="py-3 px-4 text-[9px] font-extrabold text-slate-500 uppercase tracking-wider rounded-l-xl">Đợt khảo sát</th>
+                        <th className="py-3 px-4 text-center text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">Tổng HS</th>
+                        <th className="py-3 px-4 text-center text-[9px] font-extrabold text-sky-600 uppercase tracking-wider">Đã KS</th>
+                        <th className="py-3 px-4 text-center text-[9px] font-extrabold text-emerald-600 uppercase tracking-wider">Đạt</th>
+                        <th className="py-3 px-4 text-center text-[9px] font-extrabold text-amber-600 uppercase tracking-wider">Cam kết</th>
+                        <th className="py-3 px-4 text-center text-[9px] font-extrabold text-rose-500 uppercase tracking-wider">Không Đạt</th>
+                        <th className="py-3 px-4 text-center text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">Chưa Duyệt</th>
+                        <th className="py-3 px-4 text-right text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">Tiến độ KS</th>
+                        <th className="py-3 px-4 text-right text-[9px] font-extrabold text-slate-500 uppercase tracking-wider rounded-r-xl">Tỷ lệ duyệt</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-50">
+                    <tbody className="divide-y divide-slate-100">
                       {batchStats.map(stat => {
                         const batchApprovedRate = stat.total > 0 ? Math.round(((stat.total - stat.pending) / stat.total) * 100) : 0;
                         const batchSurveyRate = stat.total > 0 ? Math.round((stat.surveyed / stat.total) * 100) : 0;
                         return (
-                          <tr key={stat.id} className="hover:bg-indigo-50/15 transition-all duration-200 group/row text-xs font-semibold">
-                            <td className="p-2 pl-2 border border-slate-200">
-                              <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 flex items-center justify-center group-hover/row:bg-white group-hover/row:border-violet-100 transition-all duration-200 text-xs font-semibold">
-                                  <Layers className="w-4 h-4 text-slate-400 group-hover/row:text-violet-600" />
+                          <tr key={stat.id} className="hover:bg-slate-50/50 transition-colors duration-150 group/row text-xs font-semibold">
+                            <td className="py-3.5 px-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-650 flex items-center justify-center transition-all duration-300 group-hover/row:bg-white group-hover/row:border-indigo-150 border border-transparent shadow-sm">
+                                  <Layers className="w-3.5 h-3.5" />
                                 </div>
-                                <span className="text-sm font-black text-slate-700 group-hover/row:text-violet-600 transition-colors">{stat.batchName}</span>
+                                <span className="text-sm font-bold text-slate-700 group-hover/row:text-indigo-650 transition-colors">{stat.batchName}</span>
                               </div>
                             </td>
-                            <td className="p-2 text-center border border-slate-200">
-                              <span className="font-bold text-slate-600 text-sm">{stat.total}</span>
+                            <td className="py-3.5 px-4 text-center">
+                              <span className="font-extrabold text-slate-650 text-sm">{stat.total}</span>
                             </td>
-                            <td className="p-2 text-center border border-slate-200">
-                              <span className="font-bold text-sky-655 text-sm">{stat.surveyed}</span>
+                            <td className="py-3.5 px-4 text-center">
+                              <span className="font-extrabold text-sky-655 text-sm">{stat.surveyed}</span>
                             </td>
-                            <td className="p-2 text-center border border-slate-200">
+                            <td className="py-3.5 px-4 text-center">
                               {stat.passed > 0 ? (
-                                <span className="font-black text-emerald-700 text-xs inline-block min-w-[32px] text-xs font-semibold">{stat.passed}</span>
+                                <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold">{stat.passed}</span>
                               ) : (
                                 <span className="text-slate-300 font-bold text-xs">—</span>
                               )}
                             </td>
-                            <td className="p-2 text-center border border-slate-200">
+                            <td className="py-3.5 px-4 text-center">
                               {stat.committed > 0 ? (
-                                <span className="font-black text-amber-700 text-xs inline-block min-w-[32px] text-xs font-semibold">{stat.committed}</span>
+                                <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-xs font-bold">{stat.committed}</span>
                               ) : (
                                 <span className="text-slate-300 font-bold text-xs">—</span>
                               )}
                             </td>
-                            <td className="p-2 text-center border border-slate-200">
+                            <td className="py-3.5 px-4 text-center">
                               {stat.failed > 0 ? (
-                                <span className="font-black text-rose-700 text-xs inline-block min-w-[32px] text-xs font-semibold">{stat.failed}</span>
+                                <span className="px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 text-xs font-bold">{stat.failed}</span>
                               ) : (
                                 <span className="text-slate-300 font-bold text-xs">—</span>
                               )}
                             </td>
-                            <td className="p-2 text-center border border-slate-200">
+                            <td className="py-3.5 px-4 text-center">
                               {stat.pending > 0 ? (
-                                <span className="font-black text-slate-500 text-xs inline-block min-w-[32px] text-xs font-semibold">{stat.pending}</span>
+                                <span className="px-2 py-0.5 rounded-full bg-slate-50 text-slate-500 text-xs font-bold">{stat.pending}</span>
                               ) : (
                                 <span className="text-slate-300 font-bold text-xs">—</span>
                               )}
                             </td>
-                            <td className="p-2 text-right pr-2 border border-slate-200">
-                              <div className="flex items-center justify-end gap-2">
-                                <span className="text-xs font-black text-slate-700">{batchSurveyRate}%</span>
-                                <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                  <div className="h-full bg-gradient-to-r from-sky-400 to-sky-500 rounded-full" style={{ width: `${batchSurveyRate}%` }}></div>
+                            <td className="py-3.5 px-4 text-right">
+                              <div className="flex items-center justify-end gap-2.5">
+                                <span className="text-xs font-extrabold text-slate-700 w-9">{batchSurveyRate}%</span>
+                                <div className="w-16 h-2 bg-slate-100 rounded-full overflow-hidden shadow-inner">
+                                  <div className="h-full bg-gradient-to-r from-sky-400 to-sky-500 rounded-full transition-all duration-300" style={{ width: `${batchSurveyRate}%` }}></div>
                                 </div>
                               </div>
                             </td>
-                            <td className="p-2 text-right pr-2 border border-slate-200">
-                              <div className="flex items-center justify-end gap-2">
-                                <span className="text-xs font-black text-slate-700">{batchApprovedRate}%</span>
-                                <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                  <div className="h-full bg-gradient-to-r from-violet-500 to-indigo-600 rounded-full" style={{ width: `${batchApprovedRate}%` }}></div>
+                            <td className="py-3.5 px-4 text-right">
+                              <div className="flex items-center justify-end gap-2.5">
+                                <span className="text-xs font-extrabold text-slate-700 w-9">{batchApprovedRate}%</span>
+                                <div className="w-16 h-2 bg-slate-100 rounded-full overflow-hidden shadow-inner">
+                                  <div className="h-full bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full transition-all duration-300" style={{ width: `${batchApprovedRate}%` }}></div>
                                 </div>
                               </div>
                             </td>
@@ -5481,7 +5500,7 @@ return {
                       })}
                       {batchStats.length === 0 && (
                         <tr>
-                          <td colSpan={9} className="p-2 text-center text-xs font-bold text-slate-400 uppercase border border-slate-200">Không có dữ liệu đợt khảo sát</td>
+                          <td colSpan={9} className="p-4 text-center text-xs font-bold text-slate-450 uppercase">Không có dữ liệu đợt khảo sát</td>
                         </tr>
                       )}
                     </tbody>
