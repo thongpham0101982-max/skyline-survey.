@@ -2927,6 +2927,41 @@ ${reportForm.directorNote}`;
     return { total, passed, failed, committed, pending, surveyed, surveyRate, approvedRate };
   }, [filteredReportStudents]);
 
+  const methodStats = useMemo(() => {
+    const stats = {
+      le: { total: 0, surveyed: 0, rate: 0, share: 0 },
+      openday: { total: 0, surveyed: 0, rate: 0, share: 0 },
+      chuyenhe: { total: 0, surveyed: 0, rate: 0, share: 0 }
+    };
+
+    filteredReportStudents.forEach(s => {
+      const m = String(s.surveySystem || "").toLowerCase().trim();
+      const isTested = s.mathScore !== null || s.literatureScore !== null || s.writtenEnglishScore !== null || s.oralEnglishScore !== null || s.psychologyScore !== null || (s.scores && s.scores.length > 0);
+      
+      let key = "le";
+      if (m.includes("open") || m.includes("day")) {
+        key = "openday";
+      } else if (m.includes("chuyển") || m.includes("chuyen") || m.includes("hệ") || m.includes("he")) {
+        key = "chuyenhe";
+      }
+      
+      stats[key].total++;
+      if (isTested) {
+        stats[key].surveyed++;
+      }
+    });
+
+    const totalSurveyed = stats.le.surveyed + stats.openday.surveyed + stats.chuyenhe.surveyed;
+    
+    ["le", "openday", "chuyenhe"].forEach(k => {
+      const item = stats[k];
+      item.rate = item.total > 0 ? Math.round((item.surveyed / item.total) * 100) : 0;
+      item.share = totalSurveyed > 0 ? Math.round((item.surveyed / totalSurveyed) * 100) : 0;
+    });
+
+    return stats;
+  }, [filteredReportStudents]);
+
   const canApprove = useMemo(() => {
     if (!currentUser) return false;
     const userRole = (currentUser.role || "").toUpperCase();
@@ -5247,6 +5282,66 @@ return {
                       <span className="text-3xl font-black text-amber-700 drop-shadow-[0_2px_4px_rgba(180,83,9,0.05)]">{overallKPIs.committed}</span>
                       <span className="text-[9px] text-amber-700/60 font-bold uppercase tracking-wider">Cam kết</span>
                     </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Survey Methods Breakdown Row */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                {/* Method 1: Khảo sát lẻ */}
+                <div className="bg-white/75 backdrop-blur-md p-5 rounded-2xl border border-amber-200/40 shadow-sm flex flex-col justify-between group hover:border-amber-400/65 hover:-translate-y-0.5 transition-all duration-300">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-amber-900/60">Khảo sát lẻ</span>
+                    <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[9px] font-black uppercase tracking-wider">Tiến độ</span>
+                  </div>
+                  <div className="flex items-baseline justify-between mb-2">
+                    <span className="text-2xl font-black text-amber-950 tracking-tight">{methodStats.le.rate}%</span>
+                    <span className="text-[10px] text-amber-900/55 font-bold">{methodStats.le.surveyed}/{methodStats.le.total} HS</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-amber-900/10 rounded-full overflow-hidden mb-2">
+                    <div className="h-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-full transition-all duration-500" style={{ width: `${methodStats.le.rate}%` }}></div>
+                  </div>
+                  <div className="text-[9px] text-amber-900/45 font-bold uppercase tracking-wider flex justify-between">
+                    <span>Tỷ lệ tham gia:</span>
+                    <span className="text-amber-800 font-extrabold">{methodStats.le.share}%</span>
+                  </div>
+                </div>
+
+                {/* Method 2: Open Day */}
+                <div className="bg-white/75 backdrop-blur-md p-5 rounded-2xl border border-amber-200/40 shadow-sm flex flex-col justify-between group hover:border-amber-400/65 hover:-translate-y-0.5 transition-all duration-300">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-amber-900/60">Khảo sát Open Day</span>
+                    <span className="px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200 text-[9px] font-black uppercase tracking-wider">Tiến độ</span>
+                  </div>
+                  <div className="flex items-baseline justify-between mb-2">
+                    <span className="text-2xl font-black text-teal-800 tracking-tight">{methodStats.openday.rate}%</span>
+                    <span className="text-[10px] text-amber-900/55 font-bold">{methodStats.openday.surveyed}/{methodStats.openday.total} HS</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-amber-900/10 rounded-full overflow-hidden mb-2">
+                    <div className="h-full bg-gradient-to-r from-teal-400 to-teal-650 rounded-full transition-all duration-500" style={{ width: `${methodStats.openday.rate}%` }}></div>
+                  </div>
+                  <div className="text-[9px] text-amber-900/45 font-bold uppercase tracking-wider flex justify-between">
+                    <span>Tỷ lệ tham gia:</span>
+                    <span className="text-teal-700 font-extrabold">{methodStats.openday.share}%</span>
+                  </div>
+                </div>
+
+                {/* Method 3: Khảo sát chuyển hệ */}
+                <div className="bg-white/75 backdrop-blur-md p-5 rounded-2xl border border-amber-200/40 shadow-sm flex flex-col justify-between group hover:border-amber-400/65 hover:-translate-y-0.5 transition-all duration-300">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-amber-900/60">Khảo sát Chuyển hệ</span>
+                    <span className="px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200 text-[9px] font-black uppercase tracking-wider">Tiến độ</span>
+                  </div>
+                  <div className="flex items-baseline justify-between mb-2">
+                    <span className="text-2xl font-black text-purple-800 tracking-tight">{methodStats.chuyenhe.rate}%</span>
+                    <span className="text-[10px] text-amber-900/55 font-bold">{methodStats.chuyenhe.surveyed}/{methodStats.chuyenhe.total} HS</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-amber-900/10 rounded-full overflow-hidden mb-2">
+                    <div className="h-full bg-gradient-to-r from-purple-500 to-purple-650 rounded-full transition-all duration-500" style={{ width: `${methodStats.chuyenhe.rate}%` }}></div>
+                  </div>
+                  <div className="text-[9px] text-amber-900/45 font-bold uppercase tracking-wider flex justify-between">
+                    <span>Tỷ lệ tham gia:</span>
+                    <span className="text-purple-700 font-extrabold">{methodStats.chuyenhe.share}%</span>
                   </div>
                 </div>
               </div>
