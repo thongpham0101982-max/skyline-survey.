@@ -37,6 +37,14 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
   const [hasPreschool, setHasPreschool] = useState(false)
   const [hasGeneral, setHasGeneral] = useState(false)
   const [loadingAssignments, setLoadingAssignments] = useState(true)
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({})
+
+  const toggleCategory = (catId: string) => {
+    setExpandedCategories(prev => ({
+      ...prev,
+      [catId]: !(prev[catId] ?? false)
+    }))
+  }
 
   useEffect(() => {
     if (role === "TEACHER") {
@@ -71,6 +79,21 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
     }
     return true
   }
+
+  // Keep active category expanded on load or pathname change
+  useEffect(() => {
+    APP_CATEGORIES.forEach((cat) => {
+      const visibleModules = cat.modules.filter((m) => checkPermission(m.code, m.requiresAdmin, m.subModules))
+      const hasActiveChild = visibleModules.some((m) => {
+        if (pathname === m.href) return true;
+        if (m.subModules && m.subModules.some((sub) => pathname === sub.href || (sub.href && pathname.startsWith(sub.href + "/")))) return true;
+        return false;
+      })
+      if (hasActiveChild) {
+        setExpandedCategories(prev => ({ ...prev, [cat.id]: true }))
+      }
+    })
+  }, [pathname, permissionModules, actualRole])
 
   return (
     <>
@@ -144,7 +167,10 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                 className="pt-2 group/cat border-b border-white/10 pb-2 transition-all duration-300"
               >
                 {/* Category Header */}
-                <div className="px-3 py-2.5 cursor-pointer select-none flex items-center justify-between text-white/60 hover:text-white/90 transition-colors group">
+                <div 
+                  onClick={() => toggleCategory(cat.id)}
+                  className="px-3 py-2.5 cursor-pointer select-none flex items-center justify-between text-white/60 hover:text-white/90 transition-colors group"
+                >
                   {!isCollapsed ? (
                     <div className="flex items-center gap-3">
                       <cat.icon className="w-4 h-4 text-white/60 group-hover:text-white transition-colors" />
@@ -166,10 +192,10 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                   )}
                 </div>
 
-                {/* Sub-items Container (Expanded on Hover, or if it has an Active Child) */}
+                {/* Sub-items Container (Expanded on click, hover or if it has an Active Child) */}
                 <div 
                   className={`overflow-hidden transition-all duration-350 ease-in-out space-y-0.5 pl-1.5 ${
-                    hasActiveChild 
+                    (expandedCategories[cat.id] ?? hasActiveChild)
                       ? "max-h-[500px] opacity-100 visible" 
                       : "max-h-0 opacity-0 invisible group-hover/cat:max-h-[500px] group-hover/cat:opacity-100 group-hover/cat:visible"
                   }`}
