@@ -3003,24 +3003,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       {toast && <Toast msg={toast.msg} type={toast.type} />}
       {confirm && <ConfirmDialog open={true} onClose={() => setConfirm(null)} onConfirm={confirm.fn} message={confirm.msg} />}
 
-      {/* Header */}
-      <div className="bg-white rounded-xl shadow-sm px-4 py-3.5 flex items-center justify-between gap-3 border border-slate-100">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-teal-600 to-fuchsia-500 rounded-none flex items-center justify-center shadow-none shadow-violet-200">
-            <Baby className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h1 className="text-base font-black text-slate-800 tracking-tight">Xét duyệt Mầm non</h1>
-            <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest hidden sm:block">Xét duyệt & đánh giá phát triển học sinh bậc Mầm non</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#00A99D]/5 rounded-md">
-          <Calendar className="w-3.5 h-3.5 text-teal-400" />
-          <select value={yearId} onChange={e => { setYearId(e.target.value); setCPeriodId(""); setChildren([]); }} className="bg-transparent text-xs font-bold text-slate-700 outline-none cursor-pointer">
-            {academicYears.filter(ay => !ay.isOff).map(ay => <option key={ay.id} value={ay.id}>Năm học {ay.name}</option>)}
-          </select>
-        </div>
-      </div>
+      {/* Header card removed */}
 
       {/* Tab: Periods */}
       {tab === "periods" && (

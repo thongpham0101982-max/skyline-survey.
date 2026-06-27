@@ -898,7 +898,28 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
     setIsPrintModalOpen(true);
   };
 
-  const [yearId, setYearId] = useState(() => getDefaultAcademicYearClient(academicYears)?.id || "")
+  const [yearId, setYearId] = useState(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("selectedAcademicYear");
+      if (stored) return stored;
+    }
+    return getDefaultAcademicYearClient(academicYears)?.id || "";
+  });
+
+  useEffect(() => {
+    const handleYearChange = () => {
+      const stored = localStorage.getItem("selectedAcademicYear");
+      if (stored && stored !== yearId) {
+        setYearId(stored);
+        setSPeriodId("");
+        setAsPeriodId("");
+        setStudents([]);
+        setAssignments([]);
+      }
+    };
+    window.addEventListener("academicYearChanged", handleYearChange);
+    return () => window.removeEventListener("academicYearChanged", handleYearChange);
+  }, [yearId]);
   
   const [activeGrades, setActiveGrades] = useState<string[]>(grades)
   
@@ -3507,24 +3528,7 @@ return {
       {confirm && <ConfirmDialog open={true} onClose={()=>setConfirm(null)} onConfirm={confirm.fn} message={confirm.msg}/>}
 
       <div className="no-print flex flex-col gap-3 w-full">
-      {/* HEADER BAR */}
-      <div className="bg-white border border-slate-200 shadow-sm rounded-xl px-4 py-3 flex items-center justify-between gap-3 min-h-[56px]">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 text-xs font-semibold">
-            <ClipboardCheck className="w-4 h-4 text-white"/>
-          </div>
-          <div className="min-w-0">
-            <h1 className="text-base font-black text-slate-800 tracking-tight leading-tight truncate">Xét duyệt K-12</h1>
-            <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest hidden sm:block">Tổng hợp kết quả khảo sát & xét duyệt học sinh phổ thông</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-1.5 flex-shrink-0 text-xs font-semibold">
-          <Calendar className="w-3.5 h-3.5 text-slate-400"/>
-          <select value={yearId} onChange={e=>{setYearId(e.target.value); setSPeriodId(""); setAsPeriodId(""); setStudents([]); setAssignments([])}} className="bg-transparent text-xs font-bold text-slate-700 outline-none cursor-pointer max-w-[140px] sm:max-w-none">
-            {academicYears.filter(ay=>!ay.isOff).map(ay=><option key={ay.id} value={ay.id}>Năm học {ay.name}</option>)}
-          </select>
-        </div>
-      </div>
+      {/* HEADER BAR REMOVED */}
 
       {/* ===== TAB: ASSIGNMENTS (PHÂN CÔNG) ===== */}
       {tab==="assignments" && (

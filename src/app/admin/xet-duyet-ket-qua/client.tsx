@@ -68,33 +68,47 @@ export function XetDuyetKetQuaClient({
 
   return (
     <div className="space-y-6 max-w-[1440px] mx-auto">
-      {/* Tab Selector */}
-      {hasK12 && hasPreschool && (
-        <div className="bg-white border border-slate-200 shadow-sm rounded-2xl p-1.5 flex gap-2 w-fit no-print">
-          <button
-            onClick={() => setActiveTab("k12")}
-            className={`flex items-center gap-2 px-6 py-3.5 rounded-xl text-sm font-black transition-all duration-300 ${
-              activeTab === "k12"
-                ? "bg-indigo-600 text-white shadow-lg shadow-indigo-100 scale-[1.02]"
-                : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-            }`}
-          >
-            <GraduationCap className="w-4 h-4" />
-            Xét duyệt K-12
-          </button>
-          <button
-            onClick={() => setActiveTab("preschool")}
-            className={`flex items-center gap-2 px-6 py-3.5 rounded-xl text-sm font-black transition-all duration-300 ${
-              activeTab === "preschool"
-                ? "bg-teal-600 text-white shadow-lg shadow-teal-100 scale-[1.02]"
-                : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-            }`}
-          >
-            <Baby className="w-4 h-4" />
-            Xét duyệt Mầm non
-          </button>
+      {/* UNIFIED PAGE HEADER */}
+      <div className="bg-white border border-slate-200 shadow-sm rounded-2xl px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 no-print">
+        <div className="space-y-0.5">
+          <h1 className="text-base font-black text-slate-800 tracking-tight">
+            {activeTab === "k12" ? "Xét duyệt K-12" : "Xét duyệt Mầm non"}
+          </h1>
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest hidden sm:block">
+            {activeTab === "k12"
+              ? "Tổng hợp kết quả khảo sát & xét duyệt học sinh phổ thông"
+              : "Xét duyệt & đánh giá phát triển học sinh bậc Mầm non"}
+          </p>
         </div>
-      )}
+
+        {/* Tab Selector */}
+        {hasK12 && hasPreschool && (
+          <div className="flex p-1 bg-slate-100 rounded-xl gap-1 shrink-0">
+            <button
+              onClick={() => setActiveTab("k12")}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold transition-all duration-200 ${
+                activeTab === "k12"
+                  ? "bg-[#00A99D] text-white shadow-md shadow-teal-500/10"
+                  : "text-slate-600 hover:text-slate-800 hover:bg-slate-200/40"
+              }`}
+            >
+              <GraduationCap className="w-4 h-4" />
+              Xét duyệt K-12
+            </button>
+            <button
+              onClick={() => setActiveTab("preschool")}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold transition-all duration-200 ${
+                activeTab === "preschool"
+                  ? "bg-[#00A99D] text-white shadow-md shadow-teal-500/10"
+                  : "text-slate-600 hover:text-slate-800 hover:bg-slate-200/40"
+              }`}
+            >
+              <Baby className="w-4 h-4" />
+              Xét duyệt Mầm non
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* Tab Contents */}
       <div className="transition-all duration-350 ease-in-out">
