@@ -439,9 +439,10 @@ export function PhanCongMamNonClient({
                       return (
                         <label key={g} className={`flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-all text-xs ${isChecked ? "font-extrabold shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}
                           style={isChecked ? { background: `${TEAL}10`, borderColor: TEAL, color: TEAL } : {}}>
-                          <input type="checkbox" checked={isChecked}
-                            onChange={() => setAGrades(prev => isChecked ? prev.filter(x => x !== g) : [...prev, g])}
-                            className="w-4 h-4 rounded cursor-pointer" />
+                          <input type="radio" checked={isChecked}
+                            name="preschool-grade"
+                            onChange={() => setAGrades([g])}
+                            className="w-4 h-4 cursor-pointer" />
                           <span>{g}</span>
                         </label>
                       )
@@ -496,7 +497,7 @@ export function PhanCongMamNonClient({
                         style={isChecked ? { background: `${TEAL}05` } : {}}>
                         <div className="flex items-center gap-3">
                           <input type="checkbox" checked={isChecked}
-                            onChange={() => setASelectedTeachers(prev => isChecked ? prev.filter(id => id !== userId) : [...prev, userId])}
+                            onChange={() => setASelectedTeachers(isChecked ? [] : [userId])}
                             className="w-4 h-4 rounded cursor-pointer" />
                           <div>
                             <div className="text-sm font-bold text-slate-800 flex items-center gap-2">

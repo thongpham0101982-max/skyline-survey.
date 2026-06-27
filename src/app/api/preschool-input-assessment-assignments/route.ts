@@ -77,6 +77,9 @@ export async function POST(req: NextRequest) {
       let totalCreated = 0;
       let totalDeleted = 0;
 
+      // Restrict assignment to at most 1 teacher per class/grade
+      const finalUserIds = userIds.slice(0, 1);
+
       for (const g of grades) {
         // Find existing assignments for this period, batch, and grade
         const existing = await (prisma as any).preschoolInputAssessmentTeacherAssignment.findMany({
@@ -84,8 +87,8 @@ export async function POST(req: NextRequest) {
         });
         const existingUserIds = existing.map((a: any) => a.userId);
 
-        const toDelete = existing.filter((a: any) => !userIds.includes(a.userId));
-        const toCreate = userIds.filter((id: string) => !existingUserIds.includes(id));
+        const toDelete = existing.filter((a: any) => !finalUserIds.includes(a.userId));
+        const toCreate = finalUserIds.filter((id: string) => !existingUserIds.includes(id));
 
         totalCreated += toCreate.length;
         totalDeleted += toDelete.length;
