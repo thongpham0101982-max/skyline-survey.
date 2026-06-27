@@ -11,14 +11,14 @@ const categories = [
 ];
 
 const levels = [
-  { id: "ac_lvl_1", code: "NHAT", name: "Giải Nhất", description: "Giải Nhất học sinh giỏi, giải Nhất các cuộc thi" },
-  { id: "ac_lvl_2", code: "NHI", name: "Giải Nhì", description: "Giải Nhì học sinh giỏi, giải Nhì các cuộc thi" },
-  { id: "ac_lvl_3", code: "BA", name: "Giải Ba", description: "Giải Ba học sinh giỏi, giải Ba các cuộc thi" },
-  { id: "ac_lvl_4", code: "KHUYEN_KHICH", name: "Giải Khuyến khích", description: "Giải Khuyến khích học sinh giỏi, giải Khuyến khích các cuộc thi" },
-  { id: "ac_lvl_5", code: "VANG", name: "Huy chương Vàng", description: "Huy chương Vàng các giải đấu thể thao, trí tuệ" },
-  { id: "ac_lvl_6", code: "BAC", name: "Huy chương Bạc", description: "Huy chương Bạc các giải đấu thể thao, trí tuệ" },
-  { id: "ac_lvl_7", code: "DONG", name: "Huy chương Đồng", description: "Huy chương Đồng các giải đấu thể thao, trí tuệ" },
-  { id: "ac_lvl_8", code: "KHAC", name: "Khác / Chứng nhận", description: "Các mức giải khác hoặc chứng nhận tham gia" }
+  { id: "ac_lvl_1", code: "NHAT", name: "Giải Nhất", description: "Giải Nhất học sinh giỏi, giải Nhất các cuộc thi", categoryCode: "GIAI_THUONG" },
+  { id: "ac_lvl_2", code: "NHI", name: "Giải Nhì", description: "Giải Nhì học sinh giỏi, giải Nhì các cuộc thi", categoryCode: "GIAI_THUONG" },
+  { id: "ac_lvl_3", code: "BA", name: "Giải Ba", description: "Giải Ba học sinh giỏi, giải Ba các cuộc thi", categoryCode: "GIAI_THUONG" },
+  { id: "ac_lvl_4", code: "KHUYEN_KHICH", name: "Giải Khuyến khích", description: "Giải Khuyến khích học sinh giỏi, giải Khuyến khích các cuộc thi", categoryCode: "GIAI_THUONG" },
+  { id: "ac_lvl_5", code: "VANG", name: "Huy chương Vàng", description: "Huy chương Vàng các giải đấu thể thao, trí tuệ", categoryCode: "HUY_CHUONG" },
+  { id: "ac_lvl_6", code: "BAC", name: "Huy chương Bạc", description: "Huy chương Bạc các giải đấu thể thao, trí tuệ", categoryCode: "HUY_CHUONG" },
+  { id: "ac_lvl_7", code: "DONG", name: "Huy chương Đồng", description: "Huy chương Đồng các giải đấu thể thao, trí tuệ", categoryCode: "HUY_CHUONG" },
+  { id: "ac_lvl_8", code: "KHAC", name: "Khác / Chứng nhận", description: "Các mức giải khác hoặc chứng nhận tham gia", categoryCode: "KHAC" }
 ];
 
 async function seedDb(client, dbName) {
@@ -27,7 +27,6 @@ async function seedDb(client, dbName) {
   // Seed categories
   for (const cat of categories) {
     try {
-      // Check if code exists
       const existing = await client.execute({
         sql: "SELECT id FROM AchievementCategory WHERE code = ?",
         args: [cat.code]
@@ -46,22 +45,34 @@ async function seedDb(client, dbName) {
     }
   }
 
+  // Fetch categories to map IDs
+  const catRows = await client.execute("SELECT id, code FROM AchievementCategory");
+  const catMap = {};
+  catRows.rows.forEach(r => {
+    catMap[r.code] = r.id;
+  });
+
   // Seed levels
   for (const lvl of levels) {
+    const categoryId = catMap[lvl.categoryCode] || null;
     try {
-      // Check if code exists
       const existing = await client.execute({
         sql: "SELECT id FROM AchievementLevel WHERE code = ?",
         args: [lvl.code]
       });
       if (existing.rows.length === 0) {
         await client.execute({
-          sql: "INSERT INTO AchievementLevel (id, code, name, description, createdAt, updatedAt) VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))",
-          args: [lvl.id, lvl.code, lvl.name, lvl.description]
+          sql: "INSERT INTO AchievementLevel (id, code, name, description, categoryId, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))",
+          args: [lvl.id, lvl.code, lvl.name, lvl.description, categoryId]
         });
         console.log(`- Inserted level: ${lvl.name}`);
       } else {
-        console.log(`- Level already exists: ${lvl.name}`);
+        // Update categoryId for existing level
+        await client.execute({
+          sql: "UPDATE AchievementLevel SET categoryId = ?, updatedAt = datetime('now') WHERE code = ?",
+          args: [categoryId, lvl.code]
+        });
+        console.log(`- Updated level ${lvl.name} with categoryId: ${categoryId}`);
       }
     } catch (e) {
       console.error(`Error seeding level ${lvl.name}:`, e.message);

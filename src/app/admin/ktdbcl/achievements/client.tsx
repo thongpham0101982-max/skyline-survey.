@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect } from "react"
-import { Plus, Trash2, Edit2, Check, X, Trophy, Medal, Hash, FileText } from "lucide-react"
+import { Plus, Trash2, Edit2, Check, X, Trophy, Medal, Hash, FileText, Tag } from "lucide-react"
 import { 
   createAchievementCategoryAction, 
   updateAchievementCategoryAction, 
@@ -54,9 +54,9 @@ export function AchievementsClient({
 
   // Level State
   const [editingLvlId, setEditingLvlId] = useState<string | null>(null)
-  const [editLvlForm, setEditLvlForm] = useState({ name: "", code: "", description: "" })
+  const [editLvlForm, setEditLvlForm] = useState({ name: "", code: "", description: "", categoryId: "" })
   const [creatingLvl, setCreatingLvl] = useState(false)
-  const [newLvlForm, setNewLvlForm] = useState({ name: "", code: "", description: "" })
+  const [newLvlForm, setNewLvlForm] = useState({ name: "", code: "", description: "", categoryId: "" })
 
   const [saving, setSaving] = useState(false)
   const [errorMsg, setErrorMsg] = useState("")
@@ -122,9 +122,13 @@ export function AchievementsClient({
     setSaving(true)
     setErrorMsg("")
     try {
-      await createAchievementLevelAction({ ...newLvlForm, academicYearId: null })
+      await createAchievementLevelAction({ 
+        ...newLvlForm, 
+        categoryId: newLvlForm.categoryId || null, 
+        academicYearId: null 
+      })
       setLevels([...levels, { ...newLvlForm, id: `temp_${Date.now()}`, academicYearId: null }])
-      setNewLvlForm({ name: "", code: "", description: "" })
+      setNewLvlForm({ name: "", code: "", description: "", categoryId: "" })
       setCreatingLvl(false)
       window.location.reload()
     } catch (e) {
@@ -136,16 +140,30 @@ export function AchievementsClient({
 
   const handleEditLevel = (lvl: any) => {
     setEditingLvlId(lvl.id)
-    setEditLvlForm({ name: lvl.name, code: lvl.code, description: lvl.description || "" })
+    setEditLvlForm({ 
+      name: lvl.name, 
+      code: lvl.code, 
+      description: lvl.description || "", 
+      categoryId: lvl.categoryId || "" 
+    })
   }
 
   const handleSaveEditLevel = async (id: string) => {
     if (!editLvlForm.name.trim() || !editLvlForm.code.trim()) return
     setSaving(true)
     try {
-      await updateAchievementLevelAction({ id, ...editLvlForm, academicYearId: null })
+      const payload = {
+        id,
+        name: editLvlForm.name,
+        code: editLvlForm.code,
+        description: editLvlForm.description,
+        categoryId: editLvlForm.categoryId || null,
+        academicYearId: null
+      }
+      await updateAchievementLevelAction(payload)
       setLevels(levels.map((l) => l.id === id ? { ...l, ...editLvlForm } : l))
       setEditingLvlId(null)
+      window.location.reload()
     } catch (e) {
       alert("Mã mức giải đã tồn tại hoặc xảy ra lỗi.")
     } finally {
@@ -411,7 +429,7 @@ export function AchievementsClient({
                 </div>
               )}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="md:col-span-2">
+                <div>
                   <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">
                     Tên Mức giải <span className="text-red-500">*</span>
                   </label>
@@ -434,6 +452,21 @@ export function AchievementsClient({
                     placeholder="Ví dụ: NHAT, VANG"
                     className="w-full border border-slate-200 rounded-lg px-4 py-2 text-xs focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/10 outline-none font-mono transition-all font-semibold"
                   />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">
+                    Thuộc Loại thành tích <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={newLvlForm.categoryId}
+                    onChange={e => setNewLvlForm({ ...newLvlForm, categoryId: e.target.value })}
+                    className="w-full border border-slate-200 rounded-lg px-4 py-2 text-xs focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/10 outline-none bg-white transition-all font-semibold"
+                  >
+                    <option value="">-- Chọn Loại thành tích --</option>
+                    {categories.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
               <div className="mt-4">
@@ -478,6 +511,7 @@ export function AchievementsClient({
               <div className="divide-y divide-slate-100">
                 {levels.map((lvl: any) => {
                   const isEditing = editingLvlId === lvl.id
+                  const associatedCategory = categories.find(c => c.id === lvl.categoryId)
                   return (
                     <div key={lvl.id} className="flex flex-col p-6 hover:bg-slate-50/50 transition-colors group">
                       <div className="flex items-start gap-4">
@@ -486,7 +520,7 @@ export function AchievementsClient({
                         </div>
                         <div className="flex-1 min-w-0">
                           {isEditing ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fade-in">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-fade-in">
                               <div>
                                 <label className="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Tên Mức giải</label>
                                 <input
@@ -505,7 +539,20 @@ export function AchievementsClient({
                                   className="w-full border border-slate-200 rounded px-2.5 py-1 text-xs outline-none focus:border-[#00A99D] font-mono font-semibold"
                                 />
                               </div>
-                              <div className="md:col-span-2">
+                              <div>
+                                <label className="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Thuộc Loại thành tích</label>
+                                <select
+                                  value={editLvlForm.categoryId}
+                                  onChange={e => setEditLvlForm({ ...editLvlForm, categoryId: e.target.value })}
+                                  className="w-full border border-slate-200 rounded px-2.5 py-1 text-xs outline-none focus:border-[#00A99D] bg-white font-semibold"
+                                >
+                                  <option value="">-- Chọn Loại thành tích --</option>
+                                  {categories.map(c => (
+                                    <option key={c.id} value={c.id}>{c.name}</option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div className="md:col-span-3">
                                 <label className="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Mô tả</label>
                                 <textarea
                                   value={editLvlForm.description}
@@ -517,12 +564,23 @@ export function AchievementsClient({
                             </div>
                           ) : (
                             <div>
-                              <div className="flex items-center gap-2">
+                              <div className="flex flex-wrap items-center gap-2">
                                 <h4 className="font-extrabold text-slate-800 text-sm">{lvl.name}</h4>
                                 <span className="flex items-center gap-1 text-[10px] bg-slate-100 text-slate-500 font-mono font-black px-2 py-0.5 rounded-full border border-slate-200">
                                   <Hash className="w-3 h-3 text-slate-400" />
                                   {lvl.code}
                                 </span>
+                                {associatedCategory ? (
+                                  <span className="flex items-center gap-1 text-[10px] bg-[#00A99D]/10 text-[#00A99D] font-black px-2 py-0.5 rounded-full border border-[#00A99D]/20">
+                                    <Tag className="w-3 h-3" />
+                                    {associatedCategory.name}
+                                  </span>
+                                ) : (
+                                  <span className="flex items-center gap-1 text-[10px] bg-red-50 text-red-500 font-black px-2 py-0.5 rounded-full border border-red-200/50">
+                                    <Tag className="w-3 h-3" />
+                                    Chưa phân loại
+                                  </span>
+                                )}
                               </div>
                               <p className="text-slate-500 text-xs mt-1.5 flex items-start gap-1 font-semibold">
                                 <FileText className="w-3.5 h-3.5 mt-0.5 text-slate-400 flex-shrink-0" />

@@ -45,7 +45,7 @@ export async function deleteAchievementCategoryAction(id: string) {
 
 // --- Level Actions ---
 
-export async function createAchievementLevelAction(data: { name: string; code: string; description?: string; academicYearId?: string | null }) {
+export async function createAchievementLevelAction(data: { name: string; code: string; description?: string; categoryId?: string | null; academicYearId?: string | null }) {
   const session = await getAdminSession();
   if (!session.userId || !session.isFullAccess) {
     throw new Error("Forbidden: Quyền truy cập bị từ chối.");
@@ -55,13 +55,14 @@ export async function createAchievementLevelAction(data: { name: string; code: s
       name: data.name,
       code: data.code,
       description: data.description || null,
+      categoryId: data.categoryId || null,
       academicYearId: data.academicYearId || null
     }
   })
   revalidatePath("/admin/ktdbcl/achievements")
 }
 
-export async function updateAchievementLevelAction(data: { id: string; name?: string; code?: string; description?: string; academicYearId?: string | null }) {
+export async function updateAchievementLevelAction(data: { id: string; name?: string; code?: string; description?: string; categoryId?: string | null; academicYearId?: string | null }) {
   const session = await getAdminSession();
   if (!session.userId || !session.isFullAccess) {
     throw new Error("Forbidden: Quyền truy cập bị từ chối.");

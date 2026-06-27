@@ -206,9 +206,12 @@ export function ResultsClient({
 
       const updatedRow = { ...row, [field]: value }
 
-      if (field === "level" || field === "category") {
-        const cat = field === "category" ? value : row.category
-        const lvl = field === "level" ? value : row.level
+      if (field === "category") {
+        updatedRow.level = ""
+        updatedRow.name = ""
+      } else if (field === "level") {
+        const cat = row.category
+        const lvl = value
 
         if (cat === "" || lvl === "") {
           updatedRow.name = ""
@@ -614,12 +617,17 @@ export function ResultsClient({
                               <select
                                 value={row.level}
                                 onChange={e => handleCellChange(row.gridRowId, "level", e.target.value)}
-                                className="w-full border border-slate-200 rounded px-1.5 py-1 text-xs outline-none bg-white focus:border-[#00A99D] transition-colors"
+                                disabled={row.category === ""}
+                                className="w-full border border-slate-200 disabled:opacity-50 disabled:bg-slate-50/50 rounded px-1.5 py-1 text-xs outline-none bg-white focus:border-[#00A99D] transition-colors"
                               >
                                 <option value="">-- Không --</option>
-                                {Object.entries(LEVEL_LABELS).map(([k, v]) => (
-                                  <option key={k} value={k}>{v}</option>
-                                ))}
+                                {(() => {
+                                  const catObj = achievementCategories.find((c) => c.code === row.category)
+                                  const filtered = catObj ? achievementLevels.filter((l) => l.categoryId === catObj.id) : []
+                                  return filtered.map((lvl) => (
+                                    <option key={lvl.code} value={lvl.code}>{lvl.name}</option>
+                                  ))
+                                })()}
                               </select>
                             </td>
                             
@@ -781,9 +789,13 @@ export function ResultsClient({
                   className="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:border-[#00A99D] outline-none font-semibold text-slate-700 bg-slate-50/50"
                 >
                   <option value="">-- Tất cả --</option>
-                  {Object.entries(LEVEL_LABELS).map(([k, v]) => (
-                    <option key={k} value={k}>{v}</option>
-                  ))}
+                  {(() => {
+                    const catObj = achievementCategories.find((c) => c.code === reportFilter.category)
+                    const filtered = catObj ? achievementLevels.filter((l) => l.categoryId === catObj.id) : achievementLevels
+                    return filtered.map((lvl) => (
+                      <option key={lvl.code} value={lvl.code}>{lvl.name}</option>
+                    ))
+                  })()}
                 </select>
               </div>
             </div>
