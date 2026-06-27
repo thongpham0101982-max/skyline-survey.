@@ -13,6 +13,7 @@ import {
   Phone, Printer, Lock
 } from "lucide-react"
 import * as XLSX from "xlsx"
+import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts"
 
 // ========= TYPES =========
 interface AcademicYear { id: string; name: string; status: string }
@@ -1056,7 +1057,12 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
   });
 
   const reportSelPeriod = useMemo(() => visiblePeriods.find(p => p.id === reportPeriodId), [periods, reportPeriodId]);
-  const reportBatches = useMemo(() => reportSelPeriod?.batches || [], [reportSelPeriod]);
+  const reportBatches = useMemo(() => {
+    if (reportPeriodId === "all") {
+      return periods.flatMap(p => p.batches || []);
+    }
+    return reportSelPeriod?.batches || [];
+  }, [reportSelPeriod, periods, reportPeriodId]);
 
   const selectedReportStudent = useMemo(() => {
     if (mockPreviewStudent) return mockPreviewStudent;
@@ -2317,7 +2323,10 @@ ${reportForm.directorNote}`;
     if (!pId) return;
     setReportLoading(true);
     try {
-      const r = await fetch(`/api/teacher-assessments?action=getReport&periodId=${pId}`);
+      const url = pId === "all"
+        ? `/api/teacher-assessments?action=getReport&periodId=all&academicYearId=${yearId}`
+        : `/api/teacher-assessments?action=getReport&periodId=${pId}`;
+      const r = await fetch(url);
       if (r.ok) {
         const data = await r.json();
         setReportStudents(data);
@@ -2325,7 +2334,7 @@ ${reportForm.directorNote}`;
       }
     } catch(e) {}
     setReportLoading(false);
-  }, []);
+  }, [yearId]);
 
   useEffect(() => {
     if (tab === "reports" && reportPeriodId) {
@@ -2833,6 +2842,59 @@ ${reportForm.directorNote}`;
     return Array.from(map.entries())
       .map(([id, val]) => ({ id, ...val }))
       .filter(item => item.id !== fallbackId || item.total > 0);
+  }, [filteredReportStudents, reportBatches]);
+
+  const gradeStats = useMemo(() => {
+    const gradesList = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"];
+    const map = new Map();
+    gradesList.forEach(g => {
+      map.set(g, {
+        grade: `Khối ${g}`,
+        total: 0,
+        surveyed: 0,
+        CS1: 0, CS2: 0, CS3: 0, CS4: 0, CS5: 0,
+        CS1_total: 0, CS2_total: 0, CS3_total: 0, CS4_total: 0, CS5_total: 0
+      });
+    });
+    filteredReportStudents.forEach(s => {
+      let g = String(s.grade || "").trim();
+      const match = g.match(/\d+/);
+      if (match) {
+        g = match[0];
+      }
+      if (!map.has(g)) return;
+      const stat = map.get(g);
+      stat.total++;
+      const isTested = s.mathScore !== null || s.literatureScore !== null || s.writtenEnglishScore !== null || s.oralEnglishScore !== null || s.psychologyScore !== null || (s.scores && s.scores.length > 0);
+      if (isTested) stat.surveyed++;
+
+      const batchObj = reportBatches.find(b => b.id === s.batchId);
+      const campusCode = batchObj?.campus?.campusCode || "";
+      const csKey = campusCode.toUpperCase();
+      if (csKey === "CS1") { stat.CS1_total++; if (isTested) stat.CS1++; }
+      else if (csKey === "CS2") { stat.CS2_total++; if (isTested) stat.CS2++; }
+      else if (csKey === "CS3") { stat.CS3_total++; if (isTested) stat.CS3++; }
+      else if (csKey === "CS4") { stat.CS4_total++; if (isTested) stat.CS4++; }
+      else if (csKey === "CS5") { stat.CS5_total++; if (isTested) stat.CS5++; }
+    });
+
+    return Array.from(map.values()).map(item => {
+      const rate = item.total > 0 ? Math.round((item.surveyed / item.total) * 100) : 0;
+      const cs1Rate = item.CS1_total > 0 ? Math.round((item.CS1 / item.CS1_total) * 100) : 0;
+      const cs2Rate = item.CS2_total > 0 ? Math.round((item.CS2 / item.CS2_total) * 100) : 0;
+      const cs3Rate = item.CS3_total > 0 ? Math.round((item.CS3 / item.CS3_total) * 100) : 0;
+      const cs4Rate = item.CS4_total > 0 ? Math.round((item.CS4 / item.CS4_total) * 100) : 0;
+      const cs5Rate = item.CS5_total > 0 ? Math.round((item.CS5 / item.CS5_total) * 100) : 0;
+      return {
+        ...item,
+        "Chung": rate,
+        "CS1": cs1Rate,
+        "CS2": cs2Rate,
+        "CS3": cs3Rate,
+        "CS4": cs4Rate,
+        "CS5": cs5Rate
+      };
+    });
   }, [filteredReportStudents, reportBatches]);
 
   const overallKPIs = useMemo(() => {
@@ -5049,6 +5111,7 @@ return {
                   }}
                   className="w-full bg-white border border-slate-200 rounded-2xl pl-5 pr-10 py-3.5 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
                 >
+                  {periods.length > 0 && <option value="all">Tất cả các kỳ khảo sát</option>}
                   {visiblePeriods.map(p => (
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
@@ -5179,6 +5242,40 @@ return {
                       <span className="text-[10px] text-amber-500 font-bold">Cam kết</span>
                     </div>
                   </div>
+                </div>
+              </div>
+
+              {/* Chart Card */}
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 overflow-hidden transition-all duration-300">
+                <div className="flex items-center justify-between mb-5 border-b border-slate-100 pb-4">
+                  <h4 className="font-black text-slate-800 text-sm tracking-tight uppercase flex items-center gap-2.5">
+                    <span className="flex h-2 w-2 relative">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-600"></span>
+                    </span>
+                    Biểu đồ Tiến độ Khảo sát theo Khối lớp & Cơ sở
+                  </h4>
+                  <span className="text-[9px] font-black text-indigo-650 uppercase tracking-wider text-xs font-semibold">Tỷ lệ hoàn thành (%)</span>
+                </div>
+                <div className="h-80 w-full text-xs">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={gradeStats} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                      <XAxis dataKey="grade" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} />
+                      <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} domain={[0, 100]} tickFormatter={v => `${v}%`} />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: "#ffffff", borderRadius: "12px", border: "1px solid #e2e8f0", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05)" }}
+                        formatter={(value, name) => [`${value}%`, name]}
+                      />
+                      <Legend verticalAlign="top" height={36} iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "10px", fontWeight: "bold" }} />
+                      <Bar dataKey="Chung" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={24} opacity={0.15} name="Tỷ lệ Chung" />
+                      <Line type="monotone" dataKey="CS1" stroke="#00A99D" strokeWidth={2.5} dot={{ r: 3 }} activeDot={{ r: 5 }} name="Cơ sở 1" />
+                      <Line type="monotone" dataKey="CS2" stroke="#ec4899" strokeWidth={2} dot={{ r: 2 }} name="Cơ sở 2" />
+                      <Line type="monotone" dataKey="CS3" stroke="#eab308" strokeWidth={2} dot={{ r: 2 }} name="Cơ sở 3" />
+                      <Line type="monotone" dataKey="CS4" stroke="#a855f7" strokeWidth={2} dot={{ r: 2 }} name="Cơ sở 4" />
+                      <Line type="monotone" dataKey="CS5" stroke="#f97316" strokeWidth={2} dot={{ r: 2 }} name="Cơ sở 5" />
+                    </ComposedChart>
+                  </ResponsiveContainer>
                 </div>
               </div>
 

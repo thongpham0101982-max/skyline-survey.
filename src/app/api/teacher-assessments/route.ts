@@ -665,11 +665,21 @@ export async function GET(req: any) {
         const periodId = searchParams.get("periodId");
         if (!periodId) return NextResponse.json({error: "Missing periodId"}, {status:400});
         
+        let whereClause: any = { isAbsent: { not: true } };
+        if (periodId === "all") {
+            const academicYearId = searchParams.get("academicYearId");
+            if (!academicYearId) return NextResponse.json({error: "Missing academicYearId for all periods selection"}, {status:400});
+            const periods = await prisma.inputAssessmentPeriod.findMany({
+                where: { academicYearId }
+            });
+            const periodIds = periods.map(p => p.id);
+            whereClause.periodId = { in: periodIds };
+        } else {
+            whereClause.periodId = periodId;
+        }
+
         const students = await prisma.inputAssessmentStudent.findMany({
-            where: { 
-                periodId: periodId,
-                isAbsent: { not: true }
-            },
+            where: whereClause,
             orderBy: [{ grade: 'asc' }, { fullName: 'asc' }],
             include: {
                 batch: true,
