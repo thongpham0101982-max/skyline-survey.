@@ -3792,10 +3792,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 <td className="w-24 min-w-[96px] p-2 p-2 align-middle text-xs text-slate-500 bg-inherit border border-slate-200">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
                                 <td className="w-28 min-w-[112px] p-2 p-2 align-middle bg-inherit border border-slate-200">
                                   <div className="flex flex-col gap-0.5">
-                                    <span className="text-xs font-semibold text-slate-600">Lớp: {s.grade || "—"}</span>
+                                    <span className="text-xs font-bold text-slate-700">Khối: {getStandardGrade(s.grade)}</span>
+                                    <span className="text-[10px] font-semibold text-slate-500">Nhóm tuổi: {s.grade || "—"}</span>
                                     {s.resolvedAgeGroup && (
-                                      <span className="text-[9px] font-medium text-[#00A99D] w-fit text-xs font-semibold">
-                                        Form: {s.resolvedAgeGroup}
+                                      <span className="text-[10px] font-bold text-[#00A99D]">
+                                        Phiếu KS: {s.resolvedAgeGroup}
                                       </span>
                                     )}
                                   </div>
@@ -4333,10 +4334,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 <td className="w-24 min-w-[96px] p-2 p-2 align-middle text-xs text-slate-500 bg-inherit border border-slate-200">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
                                 <td className="w-28 min-w-[112px] p-2 p-2 align-middle bg-inherit border border-slate-200">
                                   <div className="flex flex-col gap-0.5">
-                                    <span className="text-xs font-semibold text-slate-600">Lớp: {s.grade || "—"}</span>
+                                    <span className="text-xs font-bold text-slate-700">Khối: {getStandardGrade(s.grade)}</span>
+                                    <span className="text-[10px] font-semibold text-slate-500">Nhóm tuổi: {s.grade || "—"}</span>
                                     {s.resolvedAgeGroup && (
-                                      <span className="text-[9px] font-medium text-[#00A99D] w-fit text-xs font-semibold">
-                                        Form: {s.resolvedAgeGroup}
+                                      <span className="text-[10px] font-bold text-[#00A99D]">
+                                        Phiếu KS: {s.resolvedAgeGroup}
                                       </span>
                                     )}
                                   </div>
@@ -4452,10 +4454,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 <td className="w-24 min-w-[96px] p-2 p-2 align-middle text-xs text-slate-500 bg-inherit border border-slate-200">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
                                 <td className="w-28 min-w-[112px] p-2 p-2 align-middle bg-inherit border border-slate-200">
                                   <div className="flex flex-col gap-0.5">
-                                    <span className="text-xs font-semibold text-slate-600">Lớp: {s.grade || "—"}</span>
+                                    <span className="text-xs font-bold text-slate-700">Khối: {getStandardGrade(s.grade)}</span>
+                                    <span className="text-[10px] font-semibold text-slate-500">Nhóm tuổi: {s.grade || "—"}</span>
                                     {s.resolvedAgeGroup && (
-                                      <span className="text-[9px] font-medium text-[#00A99D] w-fit text-xs font-semibold">
-                                        Form: {s.resolvedAgeGroup}
+                                      <span className="text-[10px] font-bold text-[#00A99D]">
+                                        Phiếu KS: {s.resolvedAgeGroup}
                                       </span>
                                     )}
                                   </div>
