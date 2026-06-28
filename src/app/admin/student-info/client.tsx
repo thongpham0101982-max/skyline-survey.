@@ -265,7 +265,13 @@ export function StudentInfoClient({
       const ag = (a.grade || "").trim();
       const form = (ageGroup || "").trim();
       let isMatch = ag === form;
-      if (ag === "Nhà trẻ" && ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng"].includes(form)) {
+      if (ag === "Nhà trẻ 12-18 tháng" && form === "12 đến 18 tháng") isMatch = true;
+      else if (ag === "Nhà trẻ 18-24 tháng" && form === "18 đến 24 tháng") isMatch = true;
+      else if (ag === "Nhà trẻ 24-36 tháng") {
+        if (isStage2 && form === "24 đến 36 tháng") isMatch = true;
+        if (!isStage2 && form === "18 đến 24 tháng") isMatch = true;
+      }
+      else if (ag === "Nhà trẻ" && ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng"].includes(form)) {
         isMatch = true;
       }
       if (isStage2) {

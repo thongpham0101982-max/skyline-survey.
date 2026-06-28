@@ -173,12 +173,16 @@ export function PhanCongMamNonClient({
     if (grade) {
       let targetForm = ""
       if (uiStage === "STAGE_2") {
-        if (grade === "Nhà trẻ") targetForm = "24 đến 36 tháng"
+        if (grade === "Nhà trẻ 12-18 tháng") targetForm = "12 đến 18 tháng"
+        else if (grade === "Nhà trẻ 18-24 tháng") targetForm = "18 đến 24 tháng"
+        else if (grade === "Nhà trẻ 24-36 tháng") targetForm = "24 đến 36 tháng"
         else if (grade === "Mẫu giáo bé") targetForm = "3 đến 4 tuổi"
         else if (grade === "Mẫu giáo nhỡ") targetForm = "4 đến 5 tuổi"
         else if (grade === "Mẫu giáo lớn") targetForm = "5 đến 6 tuổi"
       } else {
-        if (grade === "Nhà trẻ") targetForm = "18 đến 24 tháng"
+        if (grade === "Nhà trẻ 12-18 tháng") targetForm = "12 đến 18 tháng"
+        else if (grade === "Nhà trẻ 18-24 tháng") targetForm = "18 đến 24 tháng"
+        else if (grade === "Nhà trẻ 24-36 tháng") targetForm = "18 đến 24 tháng"
         else if (grade === "Mẫu giáo bé") targetForm = "24 đến 36 tháng"
         else if (grade === "Mẫu giáo nhỡ") targetForm = "3 đến 4 tuổi"
         else if (grade === "Mẫu giáo lớn") targetForm = "4 đến 5 tuổi"
@@ -196,25 +200,24 @@ export function PhanCongMamNonClient({
     let targetGrade = "";
     let targetForm = "";
 
-    if (["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng"].includes(normalized)) {
-      targetGrade = "Nhà trẻ";
-      if (uiStage === "STAGE_2") {
-        targetForm = normalized;
-      } else {
-        if (normalized === "12 đến 18 tháng") targetForm = "12 đến 18 tháng";
-        else targetForm = "18 đến 24 tháng";
-      }
-    } else {
-      if (normalized === "3 đến 4 tuổi" || normalized === "Mẫu giáo bé") {
-        targetGrade = "Mẫu giáo bé";
-        targetForm = uiStage === "STAGE_2" ? "3 đến 4 tuổi" : "24 đến 36 tháng";
-      } else if (normalized === "4 đến 5 tuổi" || normalized === "Mẫu giáo nhỡ") {
-        targetGrade = "Mẫu giáo nhỡ";
-        targetForm = uiStage === "STAGE_2" ? "4 đến 5 tuổi" : "3 đến 4 tuổi";
-      } else if (normalized === "5 đến 6 tuổi" || normalized === "Mẫu giáo lớn") {
-        targetGrade = "Mẫu giáo lớn";
-        targetForm = uiStage === "STAGE_2" ? "5 đến 6 tuổi" : "4 đến 5 tuổi";
-      }
+    if (normalized === "12 đến 18 tháng") {
+      targetGrade = "Nhà trẻ 12-18 tháng";
+      targetForm = "12 đến 18 tháng";
+    } else if (normalized === "18 đến 24 tháng") {
+      targetGrade = "Nhà trẻ 18-24 tháng";
+      targetForm = "18 đến 24 tháng";
+    } else if (normalized === "24 đến 36 tháng") {
+      targetGrade = "Nhà trẻ 24-36 tháng";
+      targetForm = uiStage === "STAGE_2" ? "24 đến 36 tháng" : "18 đến 24 tháng";
+    } else if (normalized === "3 đến 4 tuổi" || normalized === "Mẫu giáo bé") {
+      targetGrade = "Mẫu giáo bé";
+      targetForm = uiStage === "STAGE_2" ? "3 đến 4 tuổi" : "24 đến 36 tháng";
+    } else if (normalized === "4 đến 5 tuổi" || normalized === "Mẫu giáo nhỡ") {
+      targetGrade = "Mẫu giáo nhỡ";
+      targetForm = uiStage === "STAGE_2" ? "4 đến 5 tuổi" : "3 đến 4 tuổi";
+    } else if (normalized === "5 đến 6 tuổi" || normalized === "Mẫu giáo lớn") {
+      targetGrade = "Mẫu giáo lớn";
+      targetForm = uiStage === "STAGE_2" ? "5 đến 6 tuổi" : "4 đến 5 tuổi";
     }
 
     if (targetGrade) {
@@ -227,13 +230,13 @@ export function PhanCongMamNonClient({
   const isStatsGroupSelected = (g: string) => {
     const norm = (g || "").trim();
     if (norm === "12 đến 18 tháng") {
-      return aGrades.includes("Nhà trẻ") && uiForm === "12 đến 18 tháng";
+      return aGrades.includes("Nhà trẻ 12-18 tháng") && uiForm === "12 đến 18 tháng";
     }
     if (norm === "18 đến 24 tháng") {
-      return aGrades.includes("Nhà trẻ") && uiForm === "18 đến 24 tháng";
+      return aGrades.includes("Nhà trẻ 18-24 tháng") && uiForm === "18 đến 24 tháng";
     }
     if (norm === "24 đến 36 tháng") {
-      return (aGrades.includes("Nhà trẻ") && uiForm === "24 đến 36 tháng") || (aGrades.includes("Mẫu giáo bé") && uiStage === "STAGE_1");
+      return (aGrades.includes("Nhà trẻ 24-36 tháng") && ((uiStage === "STAGE_1" && uiForm === "18 đến 24 tháng") || (uiStage === "STAGE_2" && uiForm === "24 đến 36 tháng"))) || (aGrades.includes("Mẫu giáo bé") && uiStage === "STAGE_1");
     }
     if (norm === "3 đến 4 tuổi") {
       return (aGrades.includes("Mẫu giáo bé") && uiStage === "STAGE_2") || (aGrades.includes("Mẫu giáo nhỡ") && uiStage === "STAGE_1");

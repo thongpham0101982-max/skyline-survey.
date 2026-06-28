@@ -7,6 +7,13 @@ function isPreschoolAssignmentMatch(aGrade: string, formAgeGroup: string, isStag
   const ag = (aGrade || "").trim();
   const form = (formAgeGroup || "").trim();
 
+  if (ag === "Nhà trẻ 12-18 tháng" && form === "12 đến 18 tháng") return true;
+  if (ag === "Nhà trẻ 18-24 tháng" && form === "18 đến 24 tháng") return true;
+  if (ag === "Nhà trẻ 24-36 tháng") {
+    if (isStage2 && form === "24 đến 36 tháng") return true;
+    if (!isStage2 && form === "18 đến 24 tháng") return true;
+  }
+
   if (ag === "Nhà trẻ" && ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng"].includes(form)) {
     return true;
   }
