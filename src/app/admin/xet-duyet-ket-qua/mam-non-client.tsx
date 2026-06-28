@@ -4222,7 +4222,7 @@ return (
                                  {/* 7. Lớp học thử */}
                                  <td className="w-[160px] min-w-[160px] p-2 align-top bg-inherit border border-slate-200">
                                    {(() => {
-                                     const isHocThu = s.generalResult === "DAT_HOC_THU" || s.generalResult === "Đạt - Học thử" || s.generalResult === "Học thử" || s.generalResult === "HOC_THU";
+                                     const isHocThu = s.generalResult === "DAT_HOC_THU" || s.generalResult === "Đạt - Học Thử" || s.generalResult === "Đạt - Học thử" || s.generalResult === "Học thử" || s.generalResult === "HOC_THU" || s.generalResult === "Học Thử";
                                      if (!isHocThu) return <span className="text-slate-300 text-xs">—</span>;
 
                                      return (
