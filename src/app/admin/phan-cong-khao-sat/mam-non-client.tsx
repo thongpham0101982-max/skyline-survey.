@@ -485,9 +485,37 @@ export function PhanCongMamNonClient({
                   </select>
                 </Field>
 
+                {/* Giai đoạn */}
+                <Field label="Giai đoạn">
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    {[
+                      { id: "STAGE_1", name: "Giai đoạn 1 (01/06 - 31/12)" },
+                      { id: "STAGE_2", name: "Giai đoạn 2 (01/01 - 31/05)" }
+                    ].map(s => {
+                      const isSel = uiStage === s.id;
+                      return (
+                        <label key={s.id} className={`flex items-center gap-2 p-3 rounded-xl border cursor-pointer transition-all text-xs ${isSel ? "font-extrabold shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+                          style={isSel ? { background: `${TEAL}10`, borderColor: TEAL, color: TEAL } : {}}>
+                          <input type="radio" checked={isSel} name="ui-stage" onChange={() => setUiStage(s.id as any)} className="w-4 h-4 cursor-pointer" />
+                          <span>{s.name}</span>
+                        </label>
+                      )
+                    })}
+                  </div>
+                </Field>
+              </div>
+            </div>
+
+            {/* Phạm vi & Ánh xạ khảo sát */}
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-5 space-y-4">
+              <h3 className="text-[12px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-1.5 pb-2 border-b border-slate-100">
+                <Layers className="w-4 h-4" style={{ color: TEAL }} /> Phạm vi & Ánh xạ khảo sát
+              </h3>
+
+              <div className="space-y-4">
                 {/* Thống kê Nhóm tuổi */}
                 {aPeriodId && (
-                  <div className="p-4.5 space-y-3 animate-in fade-in duration-350 text-xs font-semibold">
+                  <div className="p-1 space-y-3 animate-in fade-in duration-350 text-xs font-semibold">
                     <div className="flex items-center justify-between border-b border-slate-200/50 pb-2">
                       <div className="flex items-center gap-2">
                         <Users className="w-4 h-4" style={{ color: TEAL }} />
@@ -539,62 +567,39 @@ export function PhanCongMamNonClient({
                     )}
                   </div>
                 )}
-              </div>
-            </div>
 
-            {/* Phạm vi Phân công Card */}
-            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-5 space-y-4">
-              <h3 className="text-[12px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-1.5 pb-2 border-b border-slate-100">
-                <Layers className="w-4 h-4" style={{ color: TEAL }} /> Phạm vi Phân công
-              </h3>
+                <div className="border-t border-slate-100 my-2 pt-2">
+                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Kết quả ánh xạ tự động</div>
+                  <div className="space-y-4">
+                    {/* Khối */}
+                    <Field label="Khối" required>
+                      <div className="grid grid-cols-2 gap-2 mt-1">
+                        {grades.map(g => {
+                          const isChecked = aGrades.includes(g)
+                          return (
+                            <label key={g} className={`flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-all text-xs ${isChecked ? "font-extrabold shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+                              style={isChecked ? { background: `${TEAL}10`, borderColor: TEAL, color: TEAL } : {}}>
+                              <input type="radio" checked={isChecked}
+                                name="preschool-grade"
+                                onChange={() => setAGrades([g])}
+                                className="w-4 h-4 cursor-pointer" />
+                              <span>{g}</span>
+                            </label>
+                          )
+                        })}
+                      </div>
+                    </Field>
 
-              <div className="space-y-4">
-                {/* Giai đoạn */}
-                <Field label="Giai đoạn">
-                  <div className="grid grid-cols-2 gap-2 mt-1">
-                    {[
-                      { id: "STAGE_1", name: "Giai đoạn 1 (01/06 - 31/12)" },
-                      { id: "STAGE_2", name: "Giai đoạn 2 (01/01 - 31/05)" }
-                    ].map(s => {
-                      const isSel = uiStage === s.id;
-                      return (
-                        <label key={s.id} className={`flex items-center gap-2 p-3 rounded-xl border cursor-pointer transition-all text-xs ${isSel ? "font-extrabold shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}
-                          style={isSel ? { background: `${TEAL}10`, borderColor: TEAL, color: TEAL } : {}}>
-                          <input type="radio" checked={isSel} name="ui-stage" onChange={() => setUiStage(s.id as any)} className="w-4 h-4 cursor-pointer" />
-                          <span>{s.name}</span>
-                        </label>
-                      )
-                    })}
+                    {/* Phiếu KS */}
+                    <Field label="Phiếu KS (Tự động ánh xạ)">
+                      <select value={uiForm} disabled className={`${inp} opacity-80 bg-slate-50 cursor-not-allowed`}>
+                        {formOptions.map(f => (
+                          <option key={f} value={f}>Phiếu KS {f}</option>
+                        ))}
+                      </select>
+                    </Field>
                   </div>
-                </Field>
-
-                {/* Form khảo sát */}
-                <Field label="Phiếu KS (Tự động ánh xạ)">
-                  <select value={uiForm} disabled className={`${inp} opacity-80 bg-slate-50 cursor-not-allowed`}>
-                    {formOptions.map(f => (
-                      <option key={f} value={f}>Phiếu KS {f}</option>
-                    ))}
-                  </select>
-                </Field>
-
-                {/* Nhóm tuổi (Khối) */}
-                <Field label="Khối" required>
-                  <div className="grid grid-cols-2 gap-2 mt-1">
-                    {grades.map(g => {
-                      const isChecked = aGrades.includes(g)
-                      return (
-                        <label key={g} className={`flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-all text-xs ${isChecked ? "font-extrabold shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}
-                          style={isChecked ? { background: `${TEAL}10`, borderColor: TEAL, color: TEAL } : {}}>
-                          <input type="radio" checked={isChecked}
-                            name="preschool-grade"
-                            onChange={() => setAGrades([g])}
-                            className="w-4 h-4 cursor-pointer" />
-                          <span>{g}</span>
-                        </label>
-                      )
-                    })}
-                  </div>
-                </Field>
+                </div>
               </div>
             </div>
           </div>
