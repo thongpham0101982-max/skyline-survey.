@@ -173,15 +173,12 @@ export function PhanCongMamNonClient({
     if (grade) {
       let targetForm = ""
       if (uiStage === "STAGE_2") {
-        if (grade === "12 đến 18 tháng") targetForm = "12 đến 18 tháng"
-        else if (grade === "18 đến 24 tháng") targetForm = "18 đến 24 tháng"
-        else if (grade === "24 đến 36 tháng") targetForm = "24 đến 36 tháng"
+        if (grade === "Nhà trẻ") targetForm = "24 đến 36 tháng"
         else if (grade === "Mẫu giáo bé") targetForm = "3 đến 4 tuổi"
         else if (grade === "Mẫu giáo nhỡ") targetForm = "4 đến 5 tuổi"
         else if (grade === "Mẫu giáo lớn") targetForm = "5 đến 6 tuổi"
       } else {
-        if (grade === "12 đến 18 tháng") targetForm = "12 đến 18 tháng"
-        else if (grade === "18 đến 24 tháng" || grade === "24 đến 36 tháng") targetForm = "18 đến 24 tháng"
+        if (grade === "Nhà trẻ") targetForm = "18 đến 24 tháng"
         else if (grade === "Mẫu giáo bé") targetForm = "24 đến 36 tháng"
         else if (grade === "Mẫu giáo nhỡ") targetForm = "3 đến 4 tuổi"
         else if (grade === "Mẫu giáo lớn") targetForm = "4 đến 5 tuổi"
@@ -196,12 +193,35 @@ export function PhanCongMamNonClient({
     const normalized = (grade || "").trim()
     if (!normalized) return
 
-    // Find if the grade is one of the 6 standard grades
-    const standardGrades = ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"]
-    if (!standardGrades.includes(normalized)) return
+    let targetGrade = "";
+    let targetForm = "";
 
-    setAGrades([normalized])
-    notify(`Đã chọn Nhóm tuổi: ${normalized}`)
+    if (["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng"].includes(normalized)) {
+      targetGrade = "Nhà trẻ";
+      if (uiStage === "STAGE_2") {
+        targetForm = normalized;
+      } else {
+        if (normalized === "12 đến 18 tháng") targetForm = "12 đến 18 tháng";
+        else targetForm = "18 đến 24 tháng";
+      }
+    } else {
+      if (normalized === "3 đến 4 tuổi" || normalized === "Mẫu giáo bé") {
+        targetGrade = "Mẫu giáo bé";
+        targetForm = uiStage === "STAGE_2" ? "3 đến 4 tuổi" : "24 đến 36 tháng";
+      } else if (normalized === "4 đến 5 tuổi" || normalized === "Mẫu giáo nhỡ") {
+        targetGrade = "Mẫu giáo nhỡ";
+        targetForm = uiStage === "STAGE_2" ? "4 đến 5 tuổi" : "3 đến 4 tuổi";
+      } else if (normalized === "5 đến 6 tuổi" || normalized === "Mẫu giáo lớn") {
+        targetGrade = "Mẫu giáo lớn";
+        targetForm = uiStage === "STAGE_2" ? "5 đến 6 tuổi" : "4 đến 5 tuổi";
+      }
+    }
+
+    if (targetGrade) {
+      setAGrades([targetGrade]);
+      if (targetForm) setUiForm(targetForm);
+      notify(`Đã chọn Khối: ${targetGrade}`);
+    }
   }
 
   // ─── Student stats state ───
