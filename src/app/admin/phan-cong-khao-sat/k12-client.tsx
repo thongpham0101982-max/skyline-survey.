@@ -366,14 +366,7 @@ export function PhanCongK12Client({
           <button onClick={fetchPeriods} className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all">
             <RefreshCw className="w-4 h-4" />
           </button>
-          <div className="flex items-center gap-1.5 text-xs font-semibold">
-            <Calendar className="w-3.5 h-3.5 text-slate-400" />
-            <select value={yearId} onChange={e => { setYearId(e.target.value); setAsPeriodId(""); setAssignments([]) }} className="bg-transparent text-xs font-bold text-slate-700 outline-none cursor-pointer max-w-[160px]">
-              {academicYears.filter(ay => !ay.isOff).map(ay => (
-                <option key={ay.id} value={ay.id}>Năm học {ay.name}</option>
-              ))}
-            </select>
-          </div>
+
         </div>
       </div>
 

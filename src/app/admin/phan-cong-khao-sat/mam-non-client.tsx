@@ -433,15 +433,7 @@ export function PhanCongMamNonClient({
             {aNotifyingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
             Gửi thông báo tất cả
           </button>
-          <div className="flex items-center gap-1.5 text-xs font-semibold">
-            <Calendar className="w-3.5 h-3.5 text-slate-400" />
-            <select value={yearId} onChange={e => { setYearId(e.target.value); setAPeriodId(""); setAssignments([]) }}
-              className="bg-transparent text-xs font-bold text-slate-700 outline-none cursor-pointer max-w-[160px]">
-              {academicYears.filter(ay => !ay.isOff).map(ay => (
-                <option key={ay.id} value={ay.id}>Năm học {ay.name}</option>
-              ))}
-            </select>
-          </div>
+
         </div>
       </div>
 
