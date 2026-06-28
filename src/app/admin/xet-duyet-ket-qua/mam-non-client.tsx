@@ -4368,7 +4368,26 @@ return (
                                   </div>
                                 </td>
                                 <td className="w-28 min-w-[112px] p-2 p-2 align-middle text-slate-600 text-xs bg-inherit border border-slate-200">{s.probationaryClass || "—"}</td>
-                                <td className="w-36 min-w-[144px] p-2 p-2 align-middle text-slate-600 text-xs bg-inherit whitespace-normal break-words border border-slate-200">{s.probationaryTeacher || "—"}</td>
+                                <td className="w-36 min-w-[144px] p-2 align-middle text-slate-650 text-xs bg-inherit whitespace-normal break-words border border-slate-200">
+                                  {s.probationaryTeacher ? (
+                                    <div className="flex flex-col gap-1">
+                                      <span className="font-semibold text-slate-700">{s.probationaryTeacher}</span>
+                                      <button
+                                        onClick={() => openAssignModal(s)}
+                                        className="inline-flex items-center justify-center gap-1 px-2 py-0.5 text-[9px] font-bold text-[#00A99D] hover:bg-[#00A99D]/10 rounded border border-[#00A99D]/20 transition-all w-fit"
+                                      >
+                                        Phân công lại
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      onClick={() => openAssignModal(s)}
+                                      className="inline-flex items-center justify-center gap-1 px-2.5 py-1 text-[10px] font-black text-white bg-[#00A99D] hover:bg-[#008F89] rounded-lg transition-all shadow-xs w-full"
+                                    >
+                                      Phân công
+                                    </button>
+                                  )}
+                                </td>
                                 <td className="w-32 min-w-[128px] p-2 p-2 align-middle bg-inherit border border-slate-200">{resultBadge()}</td>
                                 <td className="w-56 min-w-[224px] p-2 p-2 align-middle bg-inherit border border-slate-200">
                                   <div className="flex gap-1.5">
