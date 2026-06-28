@@ -487,7 +487,12 @@ export function PhanCongMamNonClient({
                               }`}
                               style={isSelected ? { borderColor: TEAL, color: TEAL } : {}}
                             >
-                              <span className="font-bold truncate mr-2" title={grade}>{grade}</span>
+                              <span className="flex items-center gap-2 truncate mr-2">
+                                {isStandard && (
+                                  <input type="checkbox" readOnly checked={isSelected} className="w-3.5 h-3.5 rounded text-teal-600 focus:ring-teal-500 cursor-pointer" />
+                                )}
+                                <span className="font-bold truncate" title={grade}>{grade}</span>
+                              </span>
                               <span className="text-[10px] font-black px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: `${TEAL}12`, color: TEAL }}>
                                 {count} bé
                               </span>
@@ -528,10 +533,10 @@ export function PhanCongMamNonClient({
                 </Field>
 
                 {/* Form khảo sát */}
-                <Field label="Form khảo sát (Tự động ánh xạ)">
+                <Field label="Phiếu KS (Tự động ánh xạ)">
                   <select value={uiForm} disabled className={`${inp} opacity-80 bg-slate-50 cursor-not-allowed`}>
                     {formOptions.map(f => (
-                      <option key={f} value={f}>Form {f}</option>
+                      <option key={f} value={f}>Phiếu KS {f}</option>
                     ))}
                   </select>
                 </Field>
