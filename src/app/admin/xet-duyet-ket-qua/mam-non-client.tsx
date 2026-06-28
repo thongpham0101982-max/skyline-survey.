@@ -131,12 +131,13 @@ function Field({ label, required, children }: any) {
 
 const xetDuyetCols = [
   { id: "stt", label: "#", width: "w-10 min-w-[40px] max-w-[40px] sticky left-0 z-20 text-center" },
-  { id: "name", label: "Thông tin bé", width: "w-[200px] min-w-[200px] max-w-[200px] sticky left-10 z-20 whitespace-normal" },
+  { id: "fullName", label: "Họ và tên", width: "w-[160px] min-w-[160px] max-w-[160px] sticky left-10 z-20 whitespace-normal" },
+  { id: "grade", label: "Khối", width: "w-28 min-w-[112px]" },
+  { id: "admissionCampus", label: "Cơ sở", width: "w-24 min-w-[96px]" },
   { id: "bghApproval", label: "BGH MN duyệt", width: "w-[148px] min-w-[148px] whitespace-normal" },
   { id: "gdcsApproval", label: "GĐCS duyệt", width: "w-[148px] min-w-[148px] whitespace-normal" },
   { id: "result", label: "Kết quả", width: "w-[110px] min-w-[110px]" },
-  { id: "pcgv", label: "GV học thử", width: "w-[160px] min-w-[160px] whitespace-normal" },
-  { id: "actions", label: "Thao tác", width: "w-[180px] min-w-[180px]" }
+  { id: "pcgv", label: "Lớp học thử", width: "w-[160px] min-w-[160px] whitespace-normal" }
 ];
 
 const assessCols = [
@@ -3790,316 +3791,35 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               return <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-md bg-slate-100 text-slate-400">⚪ Chưa đánh giá</span>;
                             };
 
-                            return (
-                              <tr key={s.id} className="hover:bg-[#F0FAF9] even:bg-slate-50/60 transition-colors duration-100 text-xs font-semibold">
-                                <td className="w-10 min-w-[40px] max-w-[40px] sticky left-0 z-10 p-2 p-2 align-middle text-center text-[10px] text-slate-400 bg-inherit border border-slate-200">{idx + 1}</td>
-                                <td className="w-20 min-w-[80px] p-2 p-2 align-middle bg-inherit border border-slate-200"><span className="font-mono text-[10px] font-semibold text-[#00A99D] text-xs font-semibold">{s.studentCode}</span></td>
-                                <td className="w-[200px] min-w-[200px] max-w-[200px] sticky left-10 z-10 shadow-[1px_0_0_0_#e2e8f0] whitespace-normal p-2 p-2 align-middle bg-inherit font-semibold text-slate-800 text-xs border border-slate-200">{s.fullName}</td>
-                                <td className="w-24 min-w-[96px] p-2 p-2 align-middle text-xs text-slate-500 bg-inherit border border-slate-200">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
-                                <td className="w-28 min-w-[112px] p-2 align-middle bg-inherit border border-slate-200 text-slate-700 text-xs font-bold">{getStandardGrade(s.grade)}</td>
-                                <td className="w-28 min-w-[112px] p-2 align-middle bg-inherit border border-slate-200 text-slate-500 text-xs font-semibold">{s.grade || "—"}</td>
-                                <td className="w-32 min-w-[128px] p-2 align-middle bg-inherit border border-slate-200 text-[#00A99D] text-xs font-bold">{s.resolvedAgeGroup || "—"}</td>
-                                <td className="w-44 min-w-[176px] p-2 p-2 align-middle bg-inherit border border-slate-200">
-                                  <div className="text-xs text-slate-700 max-w-[200px] whitespace-normal break-words">
-                                    {s.assignedTeachers || <span className="text-slate-400 italic">Chưa phân công</span>}
-                                  </div>
-                                </td>
-
-                                <td className="w-32 min-w-[128px] p-2 p-2 align-middle bg-inherit border border-slate-200">{statusBadge()}</td>
-                                <td className="w-28 min-w-[112px] p-2 p-2 align-middle bg-inherit border border-slate-200">
-                                  <button
-                                    onClick={() => openEvaluation(s)}
-                                    className="inline-flex items-center gap-1.5 text-[10px] font-medium text-violet-600 hover:bg-violet-100 transition-colors text-xs font-semibold"
-                                  >
-                                    <Eye className="w-3.5 h-3.5" /> Xem kết quả
-                                  </button>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Sub-tab: Xét duyệt học thử */}
-          {devTab === "xetDuyet" && (
-            <div className="space-y-4">
-              <div className="bg-white/80 backdrop-blur-md p-6 rounded-3xl shadow-sm border border-slate-200/60 grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-4 text-left items-end">
-                <div className="group">
-                  <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-[#00A99D]/80 flex items-center gap-2 ml-1">
-                    <Calendar className="w-3.5 h-3.5 text-[#00A99D]"/> Kỳ Khảo sát
-                  </label>
-                  <div className="relative">
-                    <select value={cPeriodId} onChange={e => { setCPeriodId(e.target.value); setCBatchId(""); }} className="w-full bg-white border border-slate-200 rounded-2xl pl-4 pr-10 py-2.5 outline-none focus:border-[#00A99D] focus:ring-4 focus:ring-[#00A99D]/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer text-xs">
-                      <option value="">-- Chọn Kỳ --</option>
-                      {periods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A99D] transition-colors">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="group">
-                  <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-[#00A99D]/80 flex items-center gap-2 ml-1">
-                    <Layers className="w-3.5 h-3.5 text-[#00A99D]"/> Đợt khảo sát
-                  </label>
-                  <div className="relative">
-                    <select value={cBatchId} onChange={e => setCBatchId(e.target.value)} className="w-full bg-white border border-slate-200 rounded-2xl pl-4 pr-10 py-2.5 outline-none focus:border-[#00A99D] focus:ring-4 focus:ring-[#00A99D]/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer text-xs" disabled={!cPeriodId}>
-                      <option value="">Tất cả đợt</option>
-                      {selPeriod?.batches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A99D] transition-colors">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="group">
-                  <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-[#00A99D]/80 flex items-center gap-2 ml-1">
-                    <Sparkles className="w-3.5 h-3.5 text-[#00A99D]"/> Kết quả
-                  </label>
-                  <div className="relative">
-                    <select value={approvalFilter} onChange={e => setApprovalFilter(e.target.value)} className="w-full bg-white border border-slate-200 rounded-2xl pl-4 pr-10 py-2.5 outline-none focus:border-[#00A99D] focus:ring-4 focus:ring-[#00A99D]/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer text-xs">
-                      <option value="">-- Tất cả --</option>
-                      <option value="CHUA_DUYET">Chưa duyệt</option>
-                      <option value="DAT_MIEN_HOC_THU">Đạt - Miễn Học Thử</option>
-                      <option value="DAT_HOC_THU">Đạt - Học Thử</option>
-                      <option value="DAT">Đạt</option>
-                      <option value="KHONG_DAT">Không đạt</option>
-                      <option value="Y_KIEN_KHAC">Ý kiến khác</option>
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A99D] transition-colors">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="group flex gap-2">
-                  <button onClick={fetchStudentSummaries} className="h-9 px-4 text-xs font-black uppercase text-white bg-[#00A99D] hover:bg-[#008F89] rounded-2xl shadow-sm hover:shadow-md transition-all flex items-center gap-1.5 cursor-pointer">
-                    <Search className="w-3.5 h-3.5" /> Tìm kiếm
-                  </button>
-                  <button
-                    onClick={exportDevExcel}
-                    disabled={studentSummaries.length === 0}
-                    className="h-9 px-4 text-xs font-black uppercase text-emerald-700 bg-white border border-emerald-300 hover:bg-emerald-50 disabled:opacity-40 transition-all rounded-2xl shadow-sm flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Download className="w-3.5 h-3.5" /> Xuất Excel
-                  </button>
-                </div>
-
-                <div className="group">
-                  <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-[#00A99D]/80 flex items-center gap-2 ml-1">
-                    <Search className="w-3.5 h-3.5 text-[#00A99D]"/> Tìm nhanh
-                  </label>
-                  <div className="relative">
-                    <input value={cSearch} onChange={e => setCSearch(e.target.value)} placeholder="Tên hoặc mã bé..." className="w-full bg-white border border-slate-200 rounded-2xl pl-10 pr-4 py-2 outline-none focus:border-[#00A99D] focus:ring-4 focus:ring-[#00A99D]/10 font-semibold text-slate-700 shadow-sm transition-all text-xs" />
-                    <Search className="w-4 h-4 text-slate-350 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                {sumLoading ? <Spin /> : studentSummaries.length === 0 ? (
-                  <Empty text={cPeriodId ? "Chưa có bé nào" : "Vui lòng chọn Kỳ và bấm Tìm"} sub={cPeriodId ? "Hãy thêm học sinh trước" : ""} />
-                ) : (
-                   <div className="overflow-x-auto rounded-lg shadow-sm">
-                     <table className="w-full min-w-max text-left whitespace-nowrap border-collapse">
-                      <thead className="sticky top-0 z-30">
-                        <tr className="bg-[#0D3330] text-white select-none">
-                          {xetDuyetCols.filter(col => {
-                            if (col.id === "bghApproval") return showBghSection;
-                            if (col.id === "gdcsApproval") return showGdcsSection;
-                            return true;
-                          }).map(col => (
-                            <th key={col.id} className={`px-3 py-2.5 text-[10px] font-semibold text-[#9ECFCB] uppercase tracking-wider whitespace-nowrap ${col.width}`} className="p-2 border border-slate-200">
-                              {col.label}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                       <tbody className="divide-y divide-slate-100/80">
-                        {studentSummaries
-                          .filter(s => !cSearch || s.studentCode.toLowerCase().includes(cSearch.toLowerCase()) || s.fullName.toLowerCase().includes(cSearch.toLowerCase()))
-                          .filter(s => {
-                            if (!approvalFilter) return true;
-                            const res = s.generalResult;
-                            if (approvalFilter === "CHUA_DUYET") {
-                              return !res || res === "" || res === "CHUA_DUYET" || res === "Chưa duyệt";
-                            }
-                            if (approvalFilter === "DAT_MIEN_HOC_THU") {
-                              return res === "DAT_MIEN_HOC_THU" || res === "Đạt - Miễn Học Thử";
-                            }
-                            if (approvalFilter === "DAT_HOC_THU") {
-                              return res === "DAT_HOC_THU" || res === "Đạt - Học Thử" || res === "Học thử" || res === "HOC_THU";
-                            }
-                            if (approvalFilter === "DAT") {
-                              return res === "DAT" || res === "Đạt";
-                            }
-                            if (approvalFilter === "KHONG_DAT") {
-                              return res === "KHONG_DAT" || res === "Không đạt";
-                            }
-                            if (approvalFilter === "Y_KIEN_KHAC") {
-                              return res === "Y_KIEN_KHAC" || res === "Ý kiến khác";
-                            }
-                            return res === approvalFilter;
-                          })
-                          .map((s, idx) => {
-                            const getResultBadge = (res: string) => {
-                              if (res === "Đạt - Miễn Học Thử" || res === "DAT_MIEN_HOC_THU") {
-                                return <span className="inline-flex items-center gap-1 text-[10px] font-medium text-teal-700 text-xs font-semibold">✓ Miễn HT</span>;
-                              }
-                              if (res === "Đạt - Học Thử" || res === "DAT_HOC_THU" || res === "Học thử" || res === "HOC_THU") {
-                                return <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2.5 py-1 rounded-full bg-sky-100 text-sky-700">★ Học thử</span>;
-                              }
-                              if (res === "Đạt" || res === "DAT") {
-                                return <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700 text-xs font-semibold">✓ Đạt</span>;
-                              }
-                              if (res === "Không đạt" || res === "KHONG_DAT") {
-                                return <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2.5 py-1 rounded-full bg-red-100 text-red-600">✗ K.Đạt</span>;
-                              }
-                              if (res === "Ý kiến khác" || res === "Y_KIEN_KHAC") {
-                                return <span className="inline-flex items-center gap-1 text-[10px] font-medium text-amber-700 text-xs font-semibold">Ý kiến</span>;
-                              }
-                              return <span className="text-[10px] text-slate-300">—</span>;
-                            };
-
-                            // Height, Weight, BMI extractors
-                            const heightScore = s.scores?.find((sc: any) => sc.criteria?.code?.endsWith("_01") || sc.criteria?.name?.toLowerCase().includes("chiều cao"));
-                            const weightScore = s.scores?.find((sc: any) => sc.criteria?.code?.endsWith("_02") || sc.criteria?.name?.toLowerCase().includes("cân nặng"));
-
-                            const getHeightVal = (score: any) => {
-                              if (!score || !score.note) return null;
-                              const rawPart = score.note.includes("|") ? score.note.split("|")[0] : score.note;
-                              const num = parseFloat(rawPart.replace(/[^\d.]/g, ""));
-                              return isNaN(num) || num <= 0 ? null : num;
-                            };
-
-                            const getWeightVal = (score: any) => {
-                              if (!score || !score.note) return null;
-                              const rawPart = score.note.includes("|") ? score.note.split("|")[0] : score.note;
-                              const num = parseFloat(rawPart.replace(/[^\d.]/g, ""));
-                              return isNaN(num) || num <= 0 ? null : num;
-                            };
-
-                            const hVal = getHeightVal(heightScore);
-                            const wVal = getWeightVal(weightScore);
-
-                            let bmiVal = null;
-                            if (hVal && wVal) {
-                              const heightInMeters = hVal / 100;
-                              bmiVal = wVal / (heightInMeters * heightInMeters);
-                            }
-
-                            const bmiClass = bmiVal ? getBMIClassification(bmiVal) : null;
-
-                            const renderAreaCell = (areaCode: string, tdClass: string) => {
-                              const areaScores = s.scores?.filter((sc: any) => sc.criteria?.area?.code === areaCode) || [];
-                              if (areaScores.length === 0) {
-                                return <td className={`p-4 text-xs font-medium text-slate-300 align-top ${tdClass}`} className="p-2 border border-slate-200">—</td>;
-                              }
-                              
-                              const datCount = areaScores.filter((sc: any) => sc.result === "DAT").length;
-                              const khongDatCount = areaScores.filter((sc: any) => sc.result === "KHONG_DAT").length;
-                              const chuaDanhGiaCount = areaScores.length - datCount - khongDatCount;
-
-                              // Custom preschool theme styling per developmental area (warm, harmonious international preschool palettes)
-                              let cardClass = "bg-slate-50 border-slate-300/70 text-slate-700";
-                              let progressBg = "bg-[#00A99D]";
-                              let progressTrack = "bg-teal-100";
-                              let pillClass = "text-[#00A99D] bg-[#00A99D]/5 border-slate-300";
-                              let headerIcon = "🧠";
-                              let areaName = "Lĩnh vực";
-
-                              if (areaCode === "NHAN_THUC") {
-                                cardClass = "bg-gradient-to-br from-amber-50/70 to-orange-50/30 border-amber-100/70 text-amber-900 shadow-[0_4px_12px_rgba(245,158,11,0.03)]";
-                                progressBg = "bg-gradient-to-r from-amber-400 to-orange-500";
-                                progressTrack = "bg-amber-100/60";
-                                pillClass = "text-amber-700 bg-amber-100/80 border-amber-200/50";
-                                headerIcon = "🧩";
-                                areaName = "Nhận thức";
-                              } else if (areaCode === "NGON_NGU") {
-                                cardClass = "bg-gradient-to-br from-sky-50/70 to-indigo-50/30 border-sky-100/70 text-sky-900 shadow-[0_4px_12px_rgba(14,165,233,0.03)]";
-                                progressBg = "bg-gradient-to-r from-sky-400 to-indigo-500";
-                                progressTrack = "bg-sky-100/60";
-                                pillClass = "text-sky-700 bg-sky-100/80 border-sky-200/50";
-                                headerIcon = "🗣️";
-                                areaName = "Ngôn ngữ";
-                              } else if (areaCode === "TINH_CAM_XH_TM") {
-                                cardClass = "bg-gradient-to-br from-rose-50/70 to-fuchsia-50/30 border-rose-100/70 text-rose-900 shadow-[0_4px_12px_rgba(244,63,94,0.03)]";
-                                progressBg = "bg-gradient-to-r from-rose-400 to-fuchsia-500";
-                                progressTrack = "bg-rose-100/60";
-                                pillClass = "text-rose-700 bg-rose-100/80 border-rose-200/50";
-                                headerIcon = "🎨";
-                                areaName = "Tình cảm - XH";
-                              }
-
-                              return (
-                                <td className={`p-4 align-top ${tdClass}`} className="p-2 border border-slate-200">
-                                  <div className="flex flex-col gap-2 w-full">
-                                    <div className="flex flex-col gap-1.5">
-                                      <div className={`border rounded-lg p-2.5 space-y-2 transition-all hover:scale-[1.01] hover:shadow-sm ${cardClass}`}>
-                                        <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-wider pb-1.5 border-b border-white/60">
-                                          <span className="flex items-center gap-1">
-                                            <span>{headerIcon}</span>
-                                            <span>{areaName} ({areaScores.length})</span>
-                                          </span>
-                                          <span className={`px-1.5 py-0.5 rounded border leading-none font-bold ${pillClass}`}>
-                                            {areaScores.length > 0 ? Math.round((datCount / areaScores.length) * 100) : 0}% Đạt
-                                          </span>
-                                        </div>
-                                        
-                                        {/* Premium HSL Progress Bar */}
-                                        <div className={`w-full h-1.5 rounded-full overflow-hidden border border-slate-300/40 ${progressTrack}`}>
-                                          <div className={`h-full rounded-full ${progressBg}`} style={{ width: `${areaScores.length > 0 ? Math.round((datCount / areaScores.length) * 100) : 0}%` }} />
-                                        </div>
-
-                                        <div className="flex items-center justify-between gap-1 mt-1.5">
-                                          <span className="text-[10px] font-bold text-emerald-700 flex items-center gap-1 shadow-sm text-xs font-semibold">
-                                            <span className="w-1.5 h-1.5 text-xs font-semibold" /> {datCount}
-                                          </span>
-                                          <span className="text-[10px] font-bold text-rose-700 flex items-center gap-1 shadow-sm text-xs font-semibold">
-                                            <span className="w-1.5 h-1.5 text-xs font-semibold" /> {khongDatCount}
-                                          </span>
-                                          {chuaDanhGiaCount > 0 && (
-                                            <span className="text-[10px] font-bold text-slate-600 bg-slate-100/90 px-1.5 py-0.5 rounded border border-slate-200/80 flex items-center gap-1 shadow-sm">
-                                              <span className="w-1.5 h-1.5 rounded-full bg-slate-400" /> {chuaDanhGiaCount}
-                                            </span>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </td>
-                              );
-                            };
-
-                            return (
+return (
                               <tr key={s.id} className={`group border-b border-slate-200 hover:bg-[#F0FAF9] transition-colors duration-100 ${idx % 2 === 0 ? "bg-white" : "bg-slate-50/60"}`}>
-                                  <td className="w-10 min-w-[40px] max-w-[40px] sticky left-0 z-10 p-2 p-2 align-middle text-center text-[10px] text-slate-300 bg-inherit border border-slate-200">{idx + 1}</td>
-                                 <td className="w-[200px] min-w-[200px] max-w-[200px] sticky left-10 z-10 shadow-[1px_0_0_0_#e2e8f0] whitespace-normal p-2 p-2 align-top bg-inherit border border-slate-200">
+                                 <td className="w-10 min-w-[40px] max-w-[40px] sticky left-0 z-10 p-2 align-middle text-center text-[10px] text-slate-350 bg-inherit border border-slate-200">{idx + 1}</td>
+                                 
+                                 {/* 1. Họ và tên */}
+                                 <td className="w-[160px] min-w-[160px] max-w-[160px] sticky left-10 z-10 shadow-[1px_0_0_0_#e2e8f0] whitespace-normal p-2 align-top bg-inherit border border-slate-200">
                                    <div className="flex flex-col gap-0.5 w-full">
                                      <div className="font-semibold text-slate-800 text-[11px] leading-tight">{s.fullName}</div>
-                                     <div className="text-[9px] text-[#00A99D] font-mono font-bold">{s.studentCode}{s.grade ? <span className="text-slate-500 font-normal"> · {s.grade}</span> : null}</div>
+                                     <div className="text-[9px] text-[#00A99D] font-mono font-bold">{s.studentCode}</div>
                                      <div className="text-[9px] text-slate-400 leading-tight">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"} · {s.gender || "—"}</div>
-                                     <div className="text-[9px] text-slate-400 truncate" title={s.admissionCampus}>{s.admissionCampus || "—"}</div>
                                    </div>
-                                </td>
-                                
+                                 </td>
 
+                                 {/* 2. Khối */}
+                                 <td className="w-28 min-w-[112px] p-2 align-top bg-inherit border border-slate-200 text-xs font-bold text-slate-700 whitespace-normal">
+                                   {getStandardGrade(s.grade)}
+                                 </td>
 
-                                
+                                 {/* 3. Cơ sở */}
+                                 <td className="w-24 min-w-[96px] p-2 align-top bg-inherit border border-slate-200 text-xs font-semibold text-slate-650 truncate" title={s.admissionCampus}>
+                                   {s.admissionCampus || "—"}
+                                 </td>
 
-                                {/* Duyệt BGH MN */}
+                                 {/* 4. Duyệt BGH MN */}
                                  {showBghSection && (
-                                   <td className="w-[148px] min-w-[148px] whitespace-normal p-2 p-2 align-middle bg-inherit border border-slate-200">
-                                     <div className="flex flex-col gap-0.5 w-full">
+                                   <td className="w-[148px] min-w-[148px] whitespace-normal p-2 align-middle bg-inherit border border-slate-200">
+                                     <div className="flex flex-col gap-1 w-full">
                                        {s.bghApprovalStatus ? (
-                                         <>
+                                         <div onClick={() => openEvaluation(s)} className="cursor-pointer hover:bg-slate-100/80 p-1 rounded-lg transition-all">
                                            <div>
                                              {s.bghApprovalStatus === "DAT_MIEN_HOC_THU" && (
                                                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-teal-700 text-xs font-semibold">✓ Miễn HT</span>
@@ -4118,25 +3838,44 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                              )}
                                            </div>
                                            {s.bghApprovalComment && (
-                                             <div className="text-[10px] text-slate-400 mt-1 leading-snug italic">
+                                             <div className="text-[10px] text-slate-400 mt-1 leading-snug italic truncate max-w-[130px]" title={s.bghApprovalComment}>
                                                {s.bghApprovalComment}
                                              </div>
                                            )}
-                                           {s.bghApprovalUser && <div className="text-[9px] text-slate-400">{s.bghApprovalUser}</div>}
-                                         </>
+                                           {s.bghApprovalUser && <div className="text-[9px] text-slate-400 mt-0.5">{s.bghApprovalUser}</div>}
+                                         </div>
                                        ) : (
-                                         <span className="inline-flex items-center gap-1 text-[10px] text-slate-400">Chờ duyệt</span>
+                                         <div className="flex items-center gap-2">
+                                           <button
+                                             onClick={() => openEvaluation(s)}
+                                             className="px-2.5 py-1 text-[10px] font-black bg-[#00A99D] hover:bg-[#008F89] text-white rounded-lg transition-all shadow-xs"
+                                           >
+                                             Xét duyệt
+                                           </button>
+                                           <button
+                                             disabled={sendingNotifyId === s.id}
+                                             onClick={() => sendApprovalNotification(s.id)}
+                                             className="p-1 text-slate-400 hover:text-amber-600 hover:bg-slate-100 rounded-lg transition-all"
+                                             title="Gửi email yêu cầu duyệt đến BGH"
+                                           >
+                                             {sendingNotifyId === s.id ? (
+                                               <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                             ) : (
+                                                <Mail className="w-3.5 h-3.5" />
+                                             )}
+                                           </button>
+                                         </div>
                                        )}
                                      </div>
                                    </td>
                                  )}
 
-                                {/* Duyệt GĐCS */}
+                                 {/* 5. Duyệt GĐCS */}
                                  {showGdcsSection && (
-                                   <td className="w-[148px] min-w-[148px] whitespace-normal p-2 p-2 align-middle bg-inherit border border-slate-200">
-                                     <div className="flex flex-col gap-0.5 w-full">
+                                   <td className="w-[148px] min-w-[148px] whitespace-normal p-2 align-middle bg-inherit border border-slate-200">
+                                     <div className="flex flex-col gap-1 w-full">
                                        {s.gdcsApprovalStatus ? (
-                                         <>
+                                         <div onClick={() => openEvaluation(s)} className="cursor-pointer hover:bg-slate-100/80 p-1 rounded-lg transition-all">
                                            <div>
                                              {s.gdcsApprovalStatus === "DAT_MIEN_HOC_THU" && (
                                                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-teal-700 text-xs font-semibold">✓ Miễn HT</span>
@@ -4155,70 +3894,67 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                              )}
                                            </div>
                                            {s.gdcsApprovalComment && (
-                                             <div className="text-[10px] text-slate-400 mt-1 leading-snug italic">
+                                             <div className="text-[10px] text-slate-400 mt-1 leading-snug italic truncate max-w-[130px]" title={s.gdcsApprovalComment}>
                                                {s.gdcsApprovalComment}
                                              </div>
                                            )}
-                                           {s.gdcsApprovalUser && <div className="text-[9px] text-slate-400">{s.gdcsApprovalUser}</div>}
-                                         </>
+                                           {s.gdcsApprovalUser && <div className="text-[9px] text-slate-400 mt-0.5">{s.gdcsApprovalUser}</div>}
+                                         </div>
                                        ) : (
-                                         <span className="inline-flex items-center gap-1 text-[10px] text-slate-400">Chờ duyệt</span>
+                                         <div className="flex items-center gap-2">
+                                           <button
+                                             onClick={() => openEvaluation(s)}
+                                             className="px-2.5 py-1 text-[10px] font-black bg-[#00A99D] hover:bg-[#008F89] text-white rounded-lg transition-all shadow-xs"
+                                           >
+                                             Xét duyệt
+                                           </button>
+                                           <button
+                                             disabled={sendingNotifyId === s.id}
+                                             onClick={() => sendApprovalNotification(s.id)}
+                                             className="p-1 text-slate-400 hover:text-amber-600 hover:bg-slate-100 rounded-lg transition-all"
+                                             title="Gửi email yêu cầu duyệt đến GĐCS"
+                                           >
+                                             {sendingNotifyId === s.id ? (
+                                               <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                             ) : (
+                                               <Mail className="w-3.5 h-3.5" />
+                                             )}
+                                           </button>
+                                         </div>
                                        )}
                                      </div>
                                    </td>
                                  )}
 
-                                <td className="w-[110px] min-w-[110px] p-2 p-2 align-middle bg-inherit border border-slate-200">{getResultBadge(s.generalResult)}</td>
-                                <td className="w-[160px] min-w-[160px] p-2 p-2 align-top bg-inherit border border-slate-200">
-                                    <div className="flex flex-col gap-1.5 w-full">
-                                      {s.probationaryTeacher ? (
-                                        <div className="flex flex-col gap-0.5">
-                                          <span className="text-[11px] font-semibold text-slate-700 leading-snug">{s.probationaryTeacher}</span>
-                                          {s.probationaryClass && (
-                                            <span className="text-[10px] text-slate-400">{s.probationaryClass}</span>
-                                          )}
-                                        </div>
-                                      ) : (
-                                        <button
-                                          onClick={() => openAssignModal(s)}
-                                          className="inline-flex items-center justify-center gap-1 text-[10px] font-medium text-[#00A99D] hover:bg-teal-100 transition-colors w-full text-xs font-semibold"
-                                        >
-                                          Phân công
-                                        </button>
-                                      )}
-                                    </div>
-                                </td>
-                                <td className="w-[180px] min-w-[180px] p-2 p-2 align-middle bg-inherit border border-slate-200">
-                                    <div className="flex items-center gap-1 flex-wrap">
-                                     {(() => {
-                                        const hasBgh = s.bghApprovalStatus && s.bghApprovalStatus !== "" && s.bghApprovalStatus !== "CHUA_DUYET" && s.bghApprovalStatus !== "Chưa duyệt";
-                                        const hasGdcs = s.gdcsApprovalStatus && s.gdcsApprovalStatus !== "" && s.gdcsApprovalStatus !== "CHUA_DUYET" && s.gdcsApprovalStatus !== "Chưa duyệt";
-                                        if (!hasBgh || !hasGdcs) {
-                                          return (
-                                            <button
-                                                                                   disabled={sendingNotifyId === s.id}
-                                                                                   onClick={() => sendApprovalNotification(s.id)}
-                                                                                   className="inline-flex items-center gap-1.5 text-[10px] font-medium text-amber-700 hover:bg-amber-100 disabled:opacity-50 transition-colors text-xs font-semibold"
-                                                                                 >
-                                                                                   {sendingNotifyId === s.id ? (
-                                                                                     <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                                                                                   ) : (
-                                                                                     <Send className="w-3.5 h-3.5" />
-                                                                                   )}
-                                                                                   Yêu cầu Duyệt
-                                                                                 </button>
-                                          );
-                                        }
-                                        return null;
-                                      })()}
-                                     <button
-                                       onClick={() => openEvaluation(s)}
-                                       className="inline-flex items-center gap-1.5 text-[10px] font-medium text-violet-600 hover:bg-violet-100 transition-colors text-xs font-semibold"
-                                       title="Xem kết quả"
-                                     >
-                                       <Eye className="w-3.5 h-3.5" /> Xem kết quả
-                                     </button>
-                                   </div>
+                                 {/* 6. Kết quả */}
+                                 <td className="w-[110px] min-w-[110px] p-2 align-middle bg-inherit border border-slate-200">{getResultBadge(s.generalResult)}</td>
+
+                                 {/* 7. Lớp học thử */}
+                                 <td className="w-[160px] min-w-[160px] p-2 align-top bg-inherit border border-slate-200">
+                                   {(() => {
+                                     const isHocThu = s.generalResult === "DAT_HOC_THU" || s.generalResult === "Đạt - Học thử" || s.generalResult === "Học thử" || s.generalResult === "HOC_THU";
+                                     if (!isHocThu) return <span className="text-slate-300 text-xs">—</span>;
+
+                                     return (
+                                       <div className="flex flex-col gap-1.5 w-full">
+                                         {s.probationaryTeacher ? (
+                                           <div className="flex flex-col gap-0.5">
+                                             <span className="text-[11px] font-semibold text-slate-700 leading-snug">{s.probationaryTeacher}</span>
+                                             {s.probationaryClass && (
+                                               <span className="text-[10px] text-slate-400">{s.probationaryClass}</span>
+                                             )}
+                                           </div>
+                                         ) : (
+                                           <button
+                                             onClick={() => openAssignModal(s)}
+                                             className="inline-flex items-center justify-center gap-1 px-2.5 py-1 text-[10px] font-black text-white bg-[#00A99D] hover:bg-[#008F89] rounded-lg transition-all shadow-xs w-full"
+                                           >
+                                             Phân công
+                                           </button>
+                                         )}
+                                       </div>
+                                     );
+                                   })()}
                                  </td>
                               </tr>
                             );
