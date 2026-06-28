@@ -33,7 +33,7 @@ function Empty({ icon: Icon, text, sub }: { icon: any; text: string; sub?: strin
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="flex items-center gap-1 text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">
+      <label className="flex items-center gap-0.5 text-xs font-semibold text-slate-600 ml-1">
         {label}{required && <span className="text-rose-500 ml-0.5">*</span>}
       </label>
       {children}
@@ -41,7 +41,7 @@ function Field({ label, required, children }: { label: string; required?: boolea
   )
 }
 
-const inp = "w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition-all placeholder:text-slate-300 shadow-sm"
+const inp = "w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 outline-none appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20fill%3D%27none%27%20viewBox%3D%270%200%2020%2020%27%3E%3Cpath%20stroke%3D%27%2394a3b8%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%20stroke-width%3D%271.5%27%20d%3D%27m6%208%204%204%204-4%27%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_14px_center] bg-[length:18px_18px] pr-10 focus:ring-4 focus:ring-teal-50 focus:border-[#00A99D] hover:border-slate-300 transition-all placeholder:text-slate-400 shadow-sm"
 
 interface ConfirmState { msg: string; fn: () => void }
 function ConfirmDialog({ open, onClose, onConfirm, message }: { open: boolean; onClose: () => void; onConfirm: () => void; message: string }) {
@@ -354,7 +354,7 @@ export function PhanCongK12Client({
       {/* Header */}
       <div className="bg-white border border-slate-200 shadow-sm rounded-xl px-5 py-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 flex items-center justify-center flex-shrink-0 text-xs font-semibold">
+          <div className="w-10 h-10 rounded-xl bg-teal-500 flex items-center justify-center flex-shrink-0 text-xs font-semibold shadow-md shadow-teal-100">
             <UserCheck className="w-5 h-5 text-white" />
           </div>
           <div>
@@ -384,52 +384,61 @@ export function PhanCongK12Client({
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left: Config */}
           <div className="bg-white rounded-[2rem] border-2 border-slate-100 shadow-sm overflow-hidden flex flex-col">
-            <div className="h-1.5 w-full flex-shrink-0 text-xs font-semibold" />
-            <div className="p-8 space-y-8 flex-1">
+            <div className="bg-slate-50/60 border-b border-slate-100 px-6 py-4 flex items-center gap-3">
+              <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold text-white shadow-md shadow-indigo-100">1</div>
+              <h2 className="font-bold text-slate-800 text-sm tracking-tight">Kỳ Khảo sát & Người phụ trách</h2>
+            </div>
+            <div className="p-6 space-y-6 flex-1">
               <div>
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-7 h-7 flex items-center justify-center text-[11px] font-black text-white shadow-lg shadow-indigo-100 text-xs font-semibold">1</div>
-                  <span className="font-black text-slate-800 tracking-tight">Kỳ Khảo sát & Người phụ trách</span>
-                </div>
                 <div className="space-y-5">
                   <Field label="Kỳ khảo sát" required>
-                    <select value={asPeriodId} onChange={e => { setAsPeriodId(e.target.value); setAsBatchId("") }} className={inp}>
-                      <option value="">-- Chọn Kỳ --</option>
-                      {visiblePeriods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                    </select>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <Calendar className="w-4 h-4" />
+                      </div>
+                      <select value={asPeriodId} onChange={e => { setAsPeriodId(e.target.value); setAsBatchId("") }} className={inp + " pl-10"}>
+                        <option value="">-- Chọn Kỳ --</option>
+                        {visiblePeriods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                      </select>
+                    </div>
                   </Field>
                   <Field label="Đợt khảo sát" required>
-                    <select value={asBatchId} onChange={e => setAsBatchId(e.target.value)} className={inp} disabled={!asPeriodId}>
-                      <option value="">-- Chọn Đợt --</option>
-                      {visiblePeriods.find(p => p.id === asPeriodId)?.batches?.map((b: any) => <option key={b.id} value={b.id}>{b.name}</option>)}
-                    </select>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <Layers className="w-4 h-4" />
+                      </div>
+                      <select value={asBatchId} onChange={e => setAsBatchId(e.target.value)} className={inp + " pl-10"} disabled={!asPeriodId}>
+                        <option value="">-- Chọn Đợt --</option>
+                        {visiblePeriods.find(p => p.id === asPeriodId)?.batches?.map((b: any) => <option key={b.id} value={b.id}>{b.name}</option>)}
+                      </select>
+                    </div>
                   </Field>
 
                   {/* Thống kê theo Khối */}
                   {asPeriodId && (
-                    <div className="p-4.5 space-y-3 animate-in fade-in duration-350 text-xs font-semibold">
-                      <div className="flex items-center justify-between border-b border-slate-200/50 pb-2">
+                    <div className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100/70 space-y-3 animate-in fade-in duration-350">
+                      <div className="flex items-center justify-between border-b border-slate-200/40 pb-2">
                         <div className="flex items-center gap-2">
-                          <Users className="w-4 h-4 text-indigo-600" />
-                          <span className="text-[11px] font-black text-slate-800 uppercase tracking-widest">Thống kê theo Khối</span>
+                          <Users className="w-4 h-4 text-[#00A99D]" />
+                          <span className="text-xs font-bold text-slate-800">Thống kê theo Khối</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          {statsLoading && <Loader2 className="w-3.5 h-3.5 text-indigo-600 animate-spin" />}
-                          <span className="text-[10px] font-black text-slate-500">
+                          {statsLoading && <Loader2 className="w-3.5 h-3.5 text-teal-600 animate-spin" />}
+                          <span className="text-xs font-bold text-slate-500">
                             Tổng: {Object.values(studentStats).reduce((a, b) => a + b, 0)} HS
                           </span>
                         </div>
                       </div>
                       {Object.keys(studentStats).length === 0 ? (
-                        <div className="text-[11px] text-slate-400 font-semibold text-center py-2">
+                        <div className="text-xs text-slate-400 font-medium text-center py-2">
                           {statsLoading ? "Đang tải dữ liệu..." : "Không có học sinh trong đợt khảo sát này"}
                         </div>
                       ) : (
                         <div className="grid grid-cols-2 gap-2">
                           {Object.entries(studentStats).map(([grade, count]) => (
-                            <div key={grade} className="flex items-center justify-between bg-white border border-slate-100 px-3 py-2.5 rounded-xl text-xs shadow-sm">
-                              <span className="font-bold text-slate-600 truncate mr-2" title={grade}>{grade}</span>
-                              <span className="text-[10px] font-black text-indigo-600 flex-shrink-0 text-xs font-semibold">
+                            <div key={grade} className="flex items-center justify-between bg-white border border-slate-200/50 px-3.5 py-2.5 rounded-xl text-xs shadow-sm">
+                              <span className="font-bold text-slate-700 truncate mr-2" title={grade}>Khối {grade}</span>
+                              <span className="text-xs font-extrabold text-[#00A99D] flex-shrink-0">
                                 {count} HS
                               </span>
                             </div>
@@ -439,38 +448,48 @@ export function PhanCongK12Client({
                     </div>
                   )}
                   <Field label="Lọc theo Tổ chuyên môn (Không bắt buộc)">
-                    <select value={asDeptId} onChange={e => setAsDeptId(e.target.value)} className={inp}>
-                      <option value="">Tất cả Tổ chuyên môn</option>
-                      {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-                    </select>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <Users className="w-4 h-4" />
+                      </div>
+                      <select value={asDeptId} onChange={e => setAsDeptId(e.target.value)} className={inp + " pl-10"}>
+                        <option value="">Tất cả Tổ chuyên môn</option>
+                        {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                      </select>
+                    </div>
                   </Field>
                   <Field label="Giáo viên phụ trách" required>
-                    <select value={asTeacherId} onChange={e => setAsTeacherId(e.target.value)} className={inp + " bg-slate-50/50 border-indigo-100 hover:border-indigo-300 focus:bg-white"}>
-                      <option value="">-- Chọn Giáo viên --</option>
-                      {filteredTeachers.map(t => <option key={t.userId} value={t.userId}>{t.teacherName}</option>)}
-                    </select>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <UserCheck className="w-4 h-4" />
+                      </div>
+                      <select value={asTeacherId} onChange={e => setAsTeacherId(e.target.value)} className={inp + " pl-10 bg-slate-50/20 hover:border-teal-300 focus:bg-white"}>
+                        <option value="">-- Chọn Giáo viên --</option>
+                        {filteredTeachers.map(t => <option key={t.userId} value={t.userId}>{t.teacherName}</option>)}
+                      </select>
+                    </div>
                   </Field>
 
                   {/* Hiển thị phân công hiện tại của giáo viên */}
                   {asTeacherId && (() => {
                     const currentTeacherAssigns = assignments.filter(a => a.userId === asTeacherId)
                     return (
-                      <div className="p-3.5 space-y-2 animate-in fade-in duration-300 text-xs font-semibold">
-                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
-                          <BookOpen className="w-3.5 h-3.5 text-[#00A99D]" /> 
+                      <div className="p-4 bg-teal-50/30 border border-teal-100/50 rounded-2xl space-y-2.5 animate-in fade-in duration-300">
+                        <div className="text-[11px] font-bold text-teal-700 uppercase tracking-wider flex items-center gap-1.5">
+                          <BookOpen className="w-4 h-4 text-[#00A99D]" /> 
                           <span>Phân công hiện tại của GV</span>
                         </div>
                         {currentTeacherAssigns.length === 0 ? (
-                          <div className="text-[11px] text-slate-400 font-bold italic">Chưa có phân công nào trong đợt này.</div>
+                          <div className="text-xs text-slate-400 italic pl-5">Chưa có phân công nào trong đợt này.</div>
                         ) : (
-                          <div className="flex flex-wrap gap-1.5">
+                          <div className="flex flex-wrap gap-2 pl-5">
                             {currentTeacherAssigns.map((a) => (
-                              <span key={a.id} className="inline-flex items-center gap-1 px-2.5 py-1 bg-white border border-slate-100 rounded-lg text-[10px] font-bold text-slate-700 shadow-sm">
-                                <span className="font-black text-[#00A99D]">{a.subject?.name}</span>
+                              <span key={a.id} className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-teal-100/80 rounded-xl text-xs font-semibold text-slate-700 shadow-sm">
+                                <span className="font-bold text-[#00A99D]">{a.subject?.name}</span>
                                 <span className="text-slate-300">•</span>
                                 <span>Khối {a.grade}</span>
                                 <span className="text-slate-300">•</span>
-                                <span className="text-amber-600 uppercase">{a.educationSystem}</span>
+                                <span className="text-amber-600 text-[10px] font-bold uppercase">{a.educationSystem}</span>
                               </span>
                             ))}
                           </div>
@@ -485,13 +504,12 @@ export function PhanCongK12Client({
 
           {/* Right: Scope */}
           <div className="bg-white rounded-[2rem] border-2 border-slate-100 shadow-sm overflow-hidden flex flex-col">
-            <div className="h-1.5 w-full flex-shrink-0 text-xs font-semibold" />
-            <div className="p-8 space-y-8 flex-1">
+            <div className="bg-slate-50/60 border-b border-slate-100 px-6 py-4 flex items-center gap-3">
+              <div className="w-7 h-7 rounded-full bg-emerald-600 flex items-center justify-center text-xs font-bold text-white shadow-md shadow-emerald-100">2</div>
+              <h2 className="font-bold text-slate-800 text-sm tracking-tight">Phạm vi Phân công</h2>
+            </div>
+            <div className="p-6 space-y-6 flex-1">
               <div>
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-7 h-7 flex items-center justify-center text-[11px] font-black text-white shadow-lg shadow-emerald-100 text-xs font-semibold">2</div>
-                  <span className="font-black text-slate-800 tracking-tight">Phạm vi Phân công</span>
-                </div>
                 <div className="space-y-8">
                   {/* Subjects */}
                   <div>
@@ -504,7 +522,7 @@ export function PhanCongK12Client({
                     <div className="flex flex-wrap gap-2">
                       {initialSubjects.map(sub => (
                         <button key={sub.id} onClick={() => setAsSelSubjects(p => p.includes(sub.id) ? p.filter(x => x !== sub.id) : [...p, sub.id])}
-                          className={`px-4 py-2.5 rounded-2xl text-xs font-bold border-2 transition-all ${asSelSubjects.includes(sub.id) ? "bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-100" : "bg-white border-slate-100 text-slate-500 hover:border-indigo-200 hover:text-indigo-500"}`}>
+                          className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${asSelSubjects.includes(sub.id) ? "bg-[#00A99D] border-[#00A99D] text-white shadow-md shadow-teal-100/40" : "bg-slate-50 border-slate-200/60 text-slate-600 hover:bg-slate-100 hover:border-slate-300 hover:text-slate-800"}`}>
                           {sub.name}
                         </button>
                       ))}
@@ -521,7 +539,7 @@ export function PhanCongK12Client({
                       <div className="grid grid-cols-4 gap-2">
                         {activeGrades.map(g => (
                           <button key={g} onClick={() => setAsSelGrades(p => p.includes(g) ? p.filter(x => x !== g) : [...p, g])}
-                            className={`py-2 rounded-xl text-[11px] font-black border-2 transition-all ${asSelGrades.includes(g) ? "bg-[#00A99D] border-[#00A99D] text-white shadow-sm" : "bg-white border-white text-slate-400 hover:border-slate-200 hover:text-[#00A99D]"}`}>
+                            className={`py-2 rounded-xl text-xs font-bold border transition-all ${asSelGrades.includes(g) ? "bg-[#00A99D] border-[#00A99D] text-white shadow-md shadow-teal-100/40" : "bg-slate-50 border-slate-200/60 text-slate-600 hover:bg-slate-100 hover:border-slate-300 hover:text-slate-800"}`}>
                             {g}
                           </button>
                         ))}
@@ -537,7 +555,7 @@ export function PhanCongK12Client({
                       <div className="flex flex-wrap gap-2">
                         {currentEduSystems.map((es: any) => (
                           <button key={es.code} onClick={() => setAsSelSystems(p => p.includes(es.code) ? p.filter(x => x !== es.code) : [...p, es.code])}
-                            className={`px-3 py-2 rounded-xl text-[11px] font-black border-2 transition-all ${asSelSystems.includes(es.code) ? "bg-[#003B3A] border-[#003B3A] text-white shadow-sm" : "bg-white border-white text-slate-400 hover:border-slate-200 hover:text-[#00A99D]"}`}>
+                            className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${asSelSystems.includes(es.code) ? "bg-slate-800 border-slate-800 text-white shadow-md shadow-slate-200" : "bg-slate-50 border-slate-200/60 text-slate-600 hover:bg-slate-100 hover:border-slate-300 hover:text-slate-800"}`}>
                             {es.code}
                           </button>
                         ))}

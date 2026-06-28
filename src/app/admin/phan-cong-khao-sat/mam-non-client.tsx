@@ -33,7 +33,7 @@ function Empty({ text, sub }: { text: string; sub?: string }) {
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="flex items-center gap-1 text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">
+      <label className="flex items-center gap-0.5 text-xs font-semibold text-slate-600 ml-1">
         {label}{required && <span className="text-rose-500 ml-0.5">*</span>}
       </label>
       {children}
@@ -41,7 +41,7 @@ function Field({ label, required, children }: { label: string; required?: boolea
   )
 }
 
-const inp = "w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-teal-200 focus:border-teal-400 transition-all placeholder:text-slate-300 shadow-sm"
+const inp = "w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 outline-none appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20fill%3D%27none%27%20viewBox%3D%270%200%2020%2020%27%3E%3Cpath%20stroke%3D%27%2394a3b8%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%20stroke-width%3D%271.5%27%20d%3D%27m6%208%204%204%204-4%27%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_14px_center] bg-[length:18px_18px] pr-10 focus:ring-4 focus:ring-teal-50 focus:border-[#00A99D] hover:border-slate-300 transition-all placeholder:text-slate-400 shadow-sm"
 const TEAL = "#00A99D"
 
 interface ConfirmState { msg: string; fn: () => void }
@@ -473,19 +473,29 @@ export function PhanCongMamNonClient({
 
               <div className="space-y-3">
                 <Field label="Kỳ Khảo sát" required>
-                  <select value={aPeriodId} onChange={e => setAPeriodId(e.target.value)} className={inp}>
-                    <option value="">-- Chọn kỳ khảo sát --</option>
-                    {periods.map(p => <option key={p.id} value={p.id}>{p.name} ({p.code})</option>)}
-                  </select>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                      <Calendar className="w-4 h-4" />
+                    </div>
+                    <select value={aPeriodId} onChange={e => setAPeriodId(e.target.value)} className={inp + " pl-10"}>
+                      <option value="">-- Chọn kỳ khảo sát --</option>
+                      {periods.map(p => <option key={p.id} value={p.id}>{p.name} ({p.code})</option>)}
+                    </select>
+                  </div>
                 </Field>
 
                 <Field label="Đợt Khảo sát">
-                  <select value={aBatchId} onChange={e => setABatchId(e.target.value)} className={inp}>
-                    <option value="all">Tất cả các đợt</option>
-                    {periods.find(p => p.id === aPeriodId)?.batches?.map((b: any) => (
-                      <option key={b.id} value={b.id}>{b.name}</option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                      <Filter className="w-4 h-4" />
+                    </div>
+                    <select value={aBatchId} onChange={e => setABatchId(e.target.value)} className={inp + " pl-10"}>
+                      <option value="all">Tất cả các đợt</option>
+                      {periods.find(p => p.id === aPeriodId)?.batches?.map((b: any) => (
+                        <option key={b.id} value={b.id}>{b.name}</option>
+                      ))}
+                    </select>
+                  </div>
                 </Field>
 
                 {/* Giai đoạn */}
@@ -595,11 +605,16 @@ export function PhanCongMamNonClient({
 
                     {/* Phiếu KS */}
                     <Field label="Phiếu KS (Tự động ánh xạ)">
-                      <select value={uiForm} disabled className={`${inp} opacity-80 bg-slate-50 cursor-not-allowed`}>
-                        {formOptions.map(f => (
-                          <option key={f} value={f}>Phiếu KS {f}</option>
-                        ))}
-                      </select>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                          <Baby className="w-4 h-4" />
+                        </div>
+                        <select value={uiForm} disabled className={`${inp} pl-10 opacity-80 bg-slate-50 cursor-not-allowed`}>
+                          {formOptions.map(f => (
+                            <option key={f} value={f}>Phiếu KS {f}</option>
+                          ))}
+                        </select>
+                      </div>
                     </Field>
                   </div>
                 </div>
@@ -620,11 +635,16 @@ export function PhanCongMamNonClient({
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Lọc theo Tổ Chuyên môn</label>
-                <select value={aDeptId} onChange={e => setADeptId(e.target.value)} className={inp}>
-                  <option value="">Tất cả Tổ Chuyên môn</option>
-                  {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-                </select>
+                <label className="block text-xs font-semibold text-slate-600">Lọc theo Tổ Chuyên môn</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <Users className="w-4 h-4" />
+                  </div>
+                  <select value={aDeptId} onChange={e => setADeptId(e.target.value)} className={inp + " pl-10"}>
+                    <option value="">Tất cả Tổ Chuyên môn</option>
+                    {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                  </select>
+                </div>
               </div>
 
               <div className="relative">
