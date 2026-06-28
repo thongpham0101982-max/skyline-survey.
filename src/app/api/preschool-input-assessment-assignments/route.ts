@@ -30,11 +30,18 @@ export async function GET(req: NextRequest) {
     }
 
     if (grade && grade !== "all") {
-      if (grade.includes(",")) {
-        where.grade = { in: grade.split(",") };
-      } else {
-        where.grade = grade;
+      const parts = grade.split(",").map(x => x.trim()).filter(Boolean);
+      const mappedGrades = [];
+      for (const p of parts) {
+        mappedGrades.push(p);
+        if (p === "12 đến 18 tháng" || p === "12-18 tháng") mappedGrades.push("Nhà trẻ 12-18 tháng");
+        else if (p === "18 đến 24 tháng" || p === "18-24 tháng") mappedGrades.push("Nhà trẻ 18-24 tháng");
+        else if (p === "24 đến 36 tháng" || p === "24-36 tháng") mappedGrades.push("Nhà trẻ 24-36 tháng");
+        else if (p === "3 đến 4 tuổi" || p === "3-4 tuổi") mappedGrades.push("Mẫu giáo bé");
+        else if (p === "4 đến 5 tuổi" || p === "4-5 tuổi") mappedGrades.push("Mẫu giáo nhỡ");
+        else if (p === "5 đến 6 tuổi" || p === "5-6 tuổi") mappedGrades.push("Mẫu giáo lớn");
       }
+      where.grade = { in: mappedGrades };
     }
 
     const assignments = await (prisma as any).preschoolInputAssessmentTeacherAssignment.findMany({
