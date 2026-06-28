@@ -107,32 +107,18 @@ const parsePreschoolGrade = (gradeValue: string) => {
     return { grade: "Mẫu giáo lớn", ageGroup: "5 đến 6 tuổi" };
   }
   
-  if (val.startsWith("Nhà trẻ")) {
-    let ageGroup = "12 đến 36 tháng";
-    const match = val.match(/(\d+)\s*[-–]\s*(\d+)\s*tháng/);
-    if (match) {
-      ageGroup = `${match[1]} đến ${match[2]} tháng`;
+  if (val.toLowerCase().includes("tháng") || val.toLowerCase().includes("nhà trẻ")) {
+    let ageGroup = val;
+    if (val.startsWith("Nhà trẻ")) {
+      const match = val.match(/(\d+)\s*[-–]\s*(\d+)\s*tháng/);
+      if (match) {
+        ageGroup = `${match[1]} đến ${match[2]} tháng`;
+      }
     }
     return { grade: "Nhà trẻ", ageGroup };
   }
   
-  if (val === "12 đến 18 tháng" || val === "12-18 tháng") {
-    return { grade: "Nhà trẻ", ageGroup: "12 đến 18 tháng" };
-  }
-  if (val === "18 đến 24 tháng" || val === "18-24 tháng") {
-    return { grade: "Nhà trẻ", ageGroup: "18 đến 24 tháng" };
-  }
-  if (val === "24 đến 36 tháng" || val === "24-36 tháng") {
-    return { grade: "Nhà trẻ", ageGroup: "24 đến 36 tháng" };
-  }
-  if (val === "12 đến 24 tháng" || val === "12-24 tháng") {
-    return { grade: "Nhà trẻ", ageGroup: "12 đến 24 tháng" };
-  }
-  if (val === "18 đến 36 tháng" || val === "18-36 tháng") {
-    return { grade: "Nhà trẻ", ageGroup: "18 đến 36 tháng" };
-  }
-  
-  return { grade: val, ageGroup: "—" };
+  return { grade: "Nhà trẻ", ageGroup: val };
 };
 
 export function AdminClassesClient({ initialClasses, campuses, academicYears, teachers, isCampusLocked = false, defaultCampusId = null }: any) {
@@ -157,22 +143,18 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
   const eduSystems = activeTab === "mam-non" ? mnEduSystems : baseEduSystems;
 
   const getGradesList = (level: string, tab: string) => {
-    if (tab === "mam-non") return [
-      "Nhà trẻ (12-18 tháng)",
-      "Nhà trẻ (18-24 tháng)",
-      "Nhà trẻ (24-36 tháng)",
-      "Nhà trẻ (12-24 tháng)",
-      "Nhà trẻ (18-36 tháng)",
-      "Mẫu giáo bé",
-      "Mẫu giáo nhỡ",
-      "Mẫu giáo lớn"
-    ];
+    if (tab === "mam-non") return ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "12 đến 24 tháng", "18 đến 36 tháng", "3 đến 4 tuổi", "4 đến 5 tuổi", "5 đến 6 tuổi"];
     if (level === "Tiểu học") return ["1", "2", "3", "4", "5"];
     if (level === "THCS") return ["6", "7", "8", "9"];
     if (level === "THPT") return ["10", "11", "12"];
     return ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"];
   }
-  const getAvailableGrades = () => getGradesList(selectedLevel, activeTab);
+  const getAvailableGrades = () => {
+    if (activeTab === "mam-non") {
+      return ["Nhà trẻ", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"];
+    }
+    return getGradesList(selectedLevel, activeTab);
+  };
 
 
   useEffect(() => { setClasses(initialClasses); setSelectedIds([]) }, [initialClasses])
@@ -186,7 +168,24 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
   }
   if (selectedCampus) filteredClasses = filteredClasses.filter((c: any) => c.campusId === selectedCampus)
   if (selectedLevel) filteredClasses = filteredClasses.filter((c: any) => c.level === selectedLevel)
-  if (selectedGrade) filteredClasses = filteredClasses.filter((c: any) => c.grade === selectedGrade)
+  if (selectedGrade) {
+    if (activeTab === "mam-non") {
+      if (selectedGrade === "Nhà trẻ") {
+        const babyGrades = ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "12 đến 24 tháng", "18 đến 36 tháng", "12 đến 36 tháng", "nhà trẻ"];
+        filteredClasses = filteredClasses.filter((c: any) => c.grade && babyGrades.includes(c.grade.toLowerCase()));
+      } else if (selectedGrade === "Mẫu giáo bé") {
+        filteredClasses = filteredClasses.filter((c: any) => c.grade === "3 đến 4 tuổi" || c.grade === "Mẫu giáo bé");
+      } else if (selectedGrade === "Mẫu giáo nhỡ") {
+        filteredClasses = filteredClasses.filter((c: any) => c.grade === "4 đến 5 tuổi" || c.grade === "Mẫu giáo nhỡ");
+      } else if (selectedGrade === "Mẫu giáo lớn") {
+        filteredClasses = filteredClasses.filter((c: any) => c.grade === "5 đến 6 tuổi" || c.grade === "Mẫu giáo lớn");
+      } else {
+        filteredClasses = filteredClasses.filter((c: any) => c.grade === selectedGrade);
+      }
+    } else {
+      filteredClasses = filteredClasses.filter((c: any) => c.grade === selectedGrade);
+    }
+  }
   if (selectedEduSystem) filteredClasses = filteredClasses.filter((c: any) => c.educationSystem === selectedEduSystem)
 
   const handleDownloadTemplate = () => {
@@ -537,7 +536,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
                 <div><label className="block text-sm font-semibold text-slate-700 mb-1">Cơ sở</label><select required value={editModal.campusId} disabled={isCampusLocked} onChange={e => !isCampusLocked && setEditModal({...editModal, campusId: e.target.value})} className={`w-full border rounded-xl p-2.5 outline-none text-sm ${isCampusLocked ? "bg-[#00A99D]/10 border-indigo-200 text-indigo-700 cursor-not-allowed" : "focus:ring-2 focus:ring-blue-500 border-slate-200"}`}>{campuses.map((cp: any) => <option key={cp.id} value={cp.id}>{cp.campusName}</option>)}</select></div>
                 <div className="grid grid-cols-2 gap-4">
                   <div><label className="block text-sm font-semibold text-slate-700 mb-1">Bậc học</label><select required value={editModal.level} onChange={e => setEditModal({...editModal, level: e.target.value, grade: ""})} className="w-full border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-sm"><option value="">Chọn bậc</option>{(activeTab === "mam-non" ? MN_LEVELS : K12_LEVELS).filter(l => l.value).map(l => <option key={l.value} value={l.value}>{l.label}</option>)}</select></div>
-                  <div><label className="block text-sm font-semibold text-slate-700 mb-1">Khối học</label><select required value={editModal.grade} onChange={e => setEditModal({...editModal, grade: e.target.value})} className="w-full border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-sm"><option value="">Chọn khối</option>{getGradesList(editModal.level, activeTab).map(g => <option key={g} value={g}>{g}</option>)}</select></div>
+                  <div><label className="block text-sm font-semibold text-slate-700 mb-1">{activeTab === "mam-non" ? "Nhóm tuổi" : "Khối học"}</label><select required value={editModal.grade} onChange={e => setEditModal({...editModal, grade: e.target.value})} className="w-full border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-sm"><option value="">Chọn khối</option>{getGradesList(editModal.level, activeTab).map(g => <option key={g} value={g}>{g}</option>)}</select></div>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1">Hệ học</label>
@@ -629,7 +628,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1">Khối học <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">{activeTab === "mam-non" ? "Nhóm tuổi" : "Khối học"} <span className="text-red-500">*</span></label>
                     <select required value={createModal.grade} onChange={e => setCreateModal({...createModal, grade: e.target.value})} className="w-full border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-sm">
                       <option value="">Chọn khối</option>
                       {getGradesList(createModal.level, activeTab).map(g => <option key={g} value={g}>{g}</option>)}
