@@ -143,6 +143,18 @@ const xetDuyetCols = [
   { id: "actions", label: "Thao tác", width: "w-[350px] min-w-[350px]" }
 ];
 
+// Get standardized grade name from age group
+const getStandardGrade = (grade: string) => {
+  const g = (grade || "").trim();
+  if (g === "12 đến 18 tháng") return "Nhà trẻ 12-18 tháng";
+  if (g === "18 đến 24 tháng") return "Nhà trẻ 18-24 tháng";
+  if (g === "24 đến 36 tháng") return "Nhà trẻ 24-36 tháng";
+  if (g === "3 đến 4 tuổi") return "Mẫu giáo bé";
+  if (g === "4 đến 5 tuổi") return "Mẫu giáo nhỡ";
+  if (g === "5 đến 6 tuổi") return "Mẫu giáo lớn";
+  return g;
+};
+
 export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoVuCSUsers, grades: gradesProp, teachers, departments, currentUser, mode = "config" }: { academicYears: AcademicYear[]; campuses: Camp[]; giaoVuCSUsers: any[]; grades: string[]; teachers: any[]; departments: any[]; currentUser: any; mode?: "config" | "input"; }) {
   const grades = gradesProp && gradesProp.length > 0 ? gradesProp : ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "3 đến 4 tuổi", "4 đến 5 tuổi", "5 đến 6 tuổi"];
 
@@ -6724,6 +6736,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               <div className="text-xs font-semibold">
                 <span className="text-[9px] font-black text-purple-400 uppercase tracking-widest block leading-none mb-1">Nhóm tuổi</span>
                 <span className="text-xs font-black text-purple-700">{evalStudent?.grade}</span>
+              </div>
+              <div className="text-xs font-semibold">
+                <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest block leading-none mb-1">Khối lớp</span>
+                <span className="text-xs font-black text-emerald-700">{getStandardGrade(evalStudent?.grade)}</span>
               </div>
               <div className="text-xs font-semibold">
                 <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest block leading-none mb-1">Cơ sở tuyển sinh</span>
