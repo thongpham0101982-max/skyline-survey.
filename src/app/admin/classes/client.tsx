@@ -92,6 +92,49 @@ function SearchableSelect({ options, value, onChange, placeholder = "Chọn giá
   );
 }
 
+// Parse preschool grade to extract Khối học and Nhóm tuổi
+const parsePreschoolGrade = (gradeValue: string) => {
+  if (!gradeValue) return { grade: "—", ageGroup: "—" };
+  const val = gradeValue.trim();
+  
+  if (val === "Mẫu giáo bé" || val === "3 đến 4 tuổi") {
+    return { grade: "Mẫu giáo bé", ageGroup: "3 đến 4 tuổi" };
+  }
+  if (val === "Mẫu giáo nhỡ" || val === "4 đến 5 tuổi") {
+    return { grade: "Mẫu giáo nhỡ", ageGroup: "4 đến 5 tuổi" };
+  }
+  if (val === "Mẫu giáo lớn" || val === "5 đến 6 tuổi") {
+    return { grade: "Mẫu giáo lớn", ageGroup: "5 đến 6 tuổi" };
+  }
+  
+  if (val.startsWith("Nhà trẻ")) {
+    let ageGroup = "12 đến 36 tháng";
+    const match = val.match(/(\d+)\s*[-–]\s*(\d+)\s*tháng/);
+    if (match) {
+      ageGroup = `${match[1]} đến ${match[2]} tháng`;
+    }
+    return { grade: "Nhà trẻ", ageGroup };
+  }
+  
+  if (val === "12 đến 18 tháng" || val === "12-18 tháng") {
+    return { grade: "Nhà trẻ", ageGroup: "12 đến 18 tháng" };
+  }
+  if (val === "18 đến 24 tháng" || val === "18-24 tháng") {
+    return { grade: "Nhà trẻ", ageGroup: "18 đến 24 tháng" };
+  }
+  if (val === "24 đến 36 tháng" || val === "24-36 tháng") {
+    return { grade: "Nhà trẻ", ageGroup: "24 đến 36 tháng" };
+  }
+  if (val === "12 đến 24 tháng" || val === "12-24 tháng") {
+    return { grade: "Nhà trẻ", ageGroup: "12 đến 24 tháng" };
+  }
+  if (val === "18 đến 36 tháng" || val === "18-36 tháng") {
+    return { grade: "Nhà trẻ", ageGroup: "18 đến 36 tháng" };
+  }
+  
+  return { grade: val, ageGroup: "—" };
+};
+
 export function AdminClassesClient({ initialClasses, campuses, academicYears, teachers, isCampusLocked = false, defaultCampusId = null }: any) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("k12")
@@ -114,7 +157,16 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
   const eduSystems = activeTab === "mam-non" ? mnEduSystems : baseEduSystems;
 
   const getGradesList = (level: string, tab: string) => {
-    if (tab === "mam-non") return ["Nhà trẻ", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"];
+    if (tab === "mam-non") return [
+      "Nhà trẻ (12-18 tháng)",
+      "Nhà trẻ (18-24 tháng)",
+      "Nhà trẻ (24-36 tháng)",
+      "Nhà trẻ (12-24 tháng)",
+      "Nhà trẻ (18-36 tháng)",
+      "Mẫu giáo bé",
+      "Mẫu giáo nhỡ",
+      "Mẫu giáo lớn"
+    ];
     if (level === "Tiểu học") return ["1", "2", "3", "4", "5"];
     if (level === "THCS") return ["6", "7", "8", "9"];
     if (level === "THPT") return ["10", "11", "12"];
@@ -413,6 +465,9 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
               <th className="p-2 p-2 font-semibold text-slate-500 uppercase text-xs border border-slate-200">Cơ sở</th>
               <th className="p-2 p-2 font-semibold text-slate-500 uppercase text-xs border border-slate-200">Bậc học</th>
               <th className="p-2 p-2 font-semibold text-slate-500 uppercase text-xs border border-slate-200">Khối học</th>
+              {activeTab === "mam-non" && (
+                <th className="p-2 p-2 font-semibold text-slate-500 uppercase text-xs border border-slate-200">Nhóm tuổi</th>
+              )}
               <th className="p-2 p-2 font-semibold text-slate-500 uppercase text-xs border border-slate-200">Tên lớp</th>
               <th className="p-2 p-2 font-semibold text-slate-500 uppercase text-xs border border-slate-200">Hệ học</th>
               <th className="p-2 p-2 font-semibold text-slate-500 uppercase text-xs border border-slate-200">Sỹ số</th>
@@ -422,7 +477,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
           </thead>
           <tbody className="divide-y divide-slate-100">
             {filteredClasses.length === 0 && (
-              <tr><td colSpan={10} className="p-2 text-center text-slate-400 border border-slate-200">Chưa có lớp học nào trong năm học này.</td></tr>
+              <tr><td colSpan={activeTab === "mam-non" ? 11 : 10} className="p-2 text-center text-slate-400 border border-slate-200">Chưa có lớp học nào trong năm học này.</td></tr>
             )}
             {filteredClasses.map((c: any, i: number) => (
                <tr key={c.id} className={"hover:bg-slate-50 transition-colors " + (selectedIds.includes(c.id) ? "bg-blue-50/50" : "")}>
@@ -432,9 +487,23 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
                  <td className="p-2 p-2 border border-slate-200">
                    {c.level ? (<span className={"text-xs px-2 py-1 rounded-full font-medium " + (["tiểu học", "tieu hoc"].includes(c.level.toLowerCase()) ? "bg-amber-50 text-amber-700" : ["thcs"].includes(c.level.toLowerCase()) ? "bg-blue-50 text-blue-700" : ["thpt"].includes(c.level.toLowerCase()) ? "bg-purple-50 text-purple-700" : ["mầm non", "nhà trẻ", "mẫu giáo bé", "mẫu giáo nhỡ", "mẫu giáo lớn"].includes(c.level.toLowerCase()) ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600")}>{["mầm non", "nhà trẻ", "mẫu giáo bé", "mẫu giáo nhỡ", "mẫu giáo lớn"].includes(c.level.toLowerCase()) ? "Mầm non" : c.level}</span>) : <span className="text-slate-300">--</span>}
                  </td>
-                 <td className="p-2 p-2 border border-slate-200">
-                   {c.grade ? (<span className="flex items-center gap-1.5"><Layers className="w-3.5 h-3.5 text-emerald-500" /><span className="text-slate-700 font-medium">{c.grade}</span></span>) : <span className="text-slate-300">--</span>}
-                 </td>
+                                   {activeTab === "mam-non" ? (
+                    <>
+                      <td className="p-2 p-2 border border-slate-200">
+                        <span className="flex items-center gap-1.5">
+                          <Layers className="w-3.5 h-3.5 text-emerald-500" />
+                          <span className="text-slate-700 font-medium">{parsePreschoolGrade(c.grade).grade}</span>
+                        </span>
+                      </td>
+                      <td className="p-2 p-2 border border-slate-200">
+                        <span className="text-slate-600 font-normal">{parsePreschoolGrade(c.grade).ageGroup}</span>
+                      </td>
+                    </>
+                  ) : (
+                    <td className="p-2 p-2 border border-slate-200">
+                      {c.grade ? (<span className="flex items-center gap-1.5"><Layers className="w-3.5 h-3.5 text-emerald-500" /><span className="text-slate-700 font-medium">{c.grade}</span></span>) : <span className="text-slate-300">--</span>}
+                    </td>
+                  )}
                  <td className="p-2 p-2 border border-slate-200">
                    <Link href={"/admin/classes/" + c.id} className="text-blue-600 hover:text-blue-800 hover:underline flex items-center font-semibold">
                      <div className="p-1.5 mr-2 text-xs font-semibold"><BookOpen className="w-3.5 h-3.5 text-blue-600" /></div>{c.className}
