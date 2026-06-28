@@ -114,7 +114,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
   const eduSystems = activeTab === "mam-non" ? mnEduSystems : baseEduSystems;
 
   const getGradesList = (level: string, tab: string) => {
-    if (tab === "mam-non") return ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "3 đến 4 tuổi", "4 đến 5 tuổi", "5 đến 6 tuổi"];
+    if (tab === "mam-non") return ["Nhà trẻ", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"];
     if (level === "Tiểu học") return ["1", "2", "3", "4", "5"];
     if (level === "THCS") return ["6", "7", "8", "9"];
     if (level === "THPT") return ["10", "11", "12"];
@@ -145,9 +145,9 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
     ];
     
     const mnData = [
-      { "Mã lớp*": "MN-26-1", "Cơ sở": "CS1", "Bậc học": "Mầm non", "Khối lớp": "12 đến 18 tháng", "Tên lớp*": "Nhà trẻ 1", "Hệ học": "MNS", "Sỹ số": 20, "GVCN": "Nguyễn Thị Mầm" },
-      { "Mã lớp*": "MN-26-2", "Cơ sở": "CS2", "Bậc học": "Mầm non", "Khối lớp": "3 đến 4 tuổi", "Tên lớp*": "Mầm 1", "Hệ học": "MNG", "Sỹ số": 25, "GVCN": "Trần Thị Non" },
-      { "Mã lớp*": "MN-26-3", "Cơ sở": "CS1", "Bậc học": "Mầm non", "Khối lớp": "5 đến 6 tuổi", "Tên lớp*": "Lá 1", "Hệ học": "MNS", "Sỹ số": 25, "GVCN": "" }
+      { "Mã lớp*": "MN-26-1", "Cơ sở": "CS1", "Bậc học": "Mầm non", "Khối lớp": "Nhà trẻ", "Tên lớp*": "Nhà trẻ 1", "Hệ học": "MNS", "Sỹ số": 20, "GVCN": "Nguyễn Thị Mầm" },
+      { "Mã lớp*": "MN-26-2", "Cơ sở": "CS2", "Bậc học": "Mầm non", "Khối lớp": "Mẫu giáo bé", "Tên lớp*": "Mầm 1", "Hệ học": "MNG", "Sỹ số": 25, "GVCN": "Trần Thị Non" },
+      { "Mã lớp*": "MN-26-3", "Cơ sở": "CS1", "Bậc học": "Mầm non", "Khối lớp": "Mẫu giáo lớn", "Tên lớp*": "Lá 1", "Hệ học": "MNS", "Sỹ số": 25, "GVCN": "" }
     ];
 
     const dataToExport = activeTab === "mam-non" ? mnData : k12Data;
