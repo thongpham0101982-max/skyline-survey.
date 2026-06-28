@@ -114,7 +114,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
   const eduSystems = activeTab === "mam-non" ? mnEduSystems : baseEduSystems;
 
   const getGradesList = (level: string, tab: string) => {
-    if (tab === "mam-non") return ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"];
+    if (tab === "mam-non") return ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "3 đến 4 tuổi", "4 đến 5 tuổi", "5 đến 6 tuổi"];
     if (level === "Tiểu học") return ["1", "2", "3", "4", "5"];
     if (level === "THCS") return ["6", "7", "8", "9"];
     if (level === "THPT") return ["10", "11", "12"];
@@ -146,8 +146,8 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
     
     const mnData = [
       { "Mã lớp*": "MN-26-1", "Cơ sở": "CS1", "Bậc học": "Mầm non", "Khối lớp": "12 đến 18 tháng", "Tên lớp*": "Nhà trẻ 1", "Hệ học": "MNS", "Sỹ số": 20, "GVCN": "Nguyễn Thị Mầm" },
-      { "Mã lớp*": "MN-26-2", "Cơ sở": "CS2", "Bậc học": "Mầm non", "Khối lớp": "Mẫu giáo bé", "Tên lớp*": "Mầm 1", "Hệ học": "MNG", "Sỹ số": 25, "GVCN": "Trần Thị Non" },
-      { "Mã lớp*": "MN-26-3", "Cơ sở": "CS1", "Bậc học": "Mầm non", "Khối lớp": "Mẫu giáo lớn", "Tên lớp*": "Lá 1", "Hệ học": "MNS", "Sỹ số": 25, "GVCN": "" }
+      { "Mã lớp*": "MN-26-2", "Cơ sở": "CS2", "Bậc học": "Mầm non", "Khối lớp": "3 đến 4 tuổi", "Tên lớp*": "Mầm 1", "Hệ học": "MNG", "Sỹ số": 25, "GVCN": "Trần Thị Non" },
+      { "Mã lớp*": "MN-26-3", "Cơ sở": "CS1", "Bậc học": "Mầm non", "Khối lớp": "5 đến 6 tuổi", "Tên lớp*": "Lá 1", "Hệ học": "MNS", "Sỹ số": 25, "GVCN": "" }
     ];
 
     const dataToExport = activeTab === "mam-non" ? mnData : k12Data;
@@ -185,7 +185,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
             classCode: row["Mã lớp*"] || row["Ma lop*"] || row["Ma lop"] || "C-" + Date.now() + "-" + Math.floor(Math.random()*1000),
             className: row["Tên lớp*"] || row["Ten lop*"] || row["Ten lop"] || "New Class",
             level: (row["Bậc học"] || row["Bac hoc"] || "").toString().trim(),
-            grade: (row["Khối lớp"] || row["Khoi lop"] || "").toString().trim(),
+            grade: (row["Khối học"] || row["Khoi hoc"] || row["Khối lớp"] || row["Khoi lop"] || row["Nhóm tuổi"] || row["Nhom tuoi"] || row["Khối"] || row["Khoi"] || "").toString().trim(),
             educationSystem: (row["Hệ học"] || row["He hoc"] || "").toString().trim(),
             campusId: matchedCampus ? matchedCampus.id : defaultCampus,
             academicYearId: selectedYearId
@@ -412,7 +412,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
               <th className="p-2 p-2 font-semibold text-slate-500 uppercase text-xs w-12 border border-slate-200">STT</th>
               <th className="p-2 p-2 font-semibold text-slate-500 uppercase text-xs border border-slate-200">Cơ sở</th>
               <th className="p-2 p-2 font-semibold text-slate-500 uppercase text-xs border border-slate-200">Bậc học</th>
-              <th className="p-2 p-2 font-semibold text-slate-500 uppercase text-xs border border-slate-200">Khối</th>
+              <th className="p-2 p-2 font-semibold text-slate-500 uppercase text-xs border border-slate-200">Khối học</th>
               <th className="p-2 p-2 font-semibold text-slate-500 uppercase text-xs border border-slate-200">Tên lớp</th>
               <th className="p-2 p-2 font-semibold text-slate-500 uppercase text-xs border border-slate-200">Hệ học</th>
               <th className="p-2 p-2 font-semibold text-slate-500 uppercase text-xs border border-slate-200">Sỹ số</th>
@@ -468,7 +468,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
                 <div><label className="block text-sm font-semibold text-slate-700 mb-1">Cơ sở</label><select required value={editModal.campusId} disabled={isCampusLocked} onChange={e => !isCampusLocked && setEditModal({...editModal, campusId: e.target.value})} className={`w-full border rounded-xl p-2.5 outline-none text-sm ${isCampusLocked ? "bg-[#00A99D]/10 border-indigo-200 text-indigo-700 cursor-not-allowed" : "focus:ring-2 focus:ring-blue-500 border-slate-200"}`}>{campuses.map((cp: any) => <option key={cp.id} value={cp.id}>{cp.campusName}</option>)}</select></div>
                 <div className="grid grid-cols-2 gap-4">
                   <div><label className="block text-sm font-semibold text-slate-700 mb-1">Bậc học</label><select required value={editModal.level} onChange={e => setEditModal({...editModal, level: e.target.value, grade: ""})} className="w-full border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-sm"><option value="">Chọn bậc</option>{(activeTab === "mam-non" ? MN_LEVELS : K12_LEVELS).filter(l => l.value).map(l => <option key={l.value} value={l.value}>{l.label}</option>)}</select></div>
-                  <div><label className="block text-sm font-semibold text-slate-700 mb-1">Khối lớp</label><select required value={editModal.grade} onChange={e => setEditModal({...editModal, grade: e.target.value})} className="w-full border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-sm"><option value="">Chọn khối</option>{getGradesList(editModal.level, activeTab).map(g => <option key={g} value={g}>{g}</option>)}</select></div>
+                  <div><label className="block text-sm font-semibold text-slate-700 mb-1">Khối học</label><select required value={editModal.grade} onChange={e => setEditModal({...editModal, grade: e.target.value})} className="w-full border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-sm"><option value="">Chọn khối</option>{getGradesList(editModal.level, activeTab).map(g => <option key={g} value={g}>{g}</option>)}</select></div>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1">Hệ học</label>
@@ -560,7 +560,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1">Khối lớp <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">Khối học <span className="text-red-500">*</span></label>
                     <select required value={createModal.grade} onChange={e => setCreateModal({...createModal, grade: e.target.value})} className="w-full border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-sm">
                       <option value="">Chọn khối</option>
                       {getGradesList(createModal.level, activeTab).map(g => <option key={g} value={g}>{g}</option>)}
