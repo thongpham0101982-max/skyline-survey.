@@ -224,6 +224,29 @@ export function PhanCongMamNonClient({
     }
   }
 
+  const isStatsGroupSelected = (g: string) => {
+    const norm = (g || "").trim();
+    if (norm === "12 đến 18 tháng") {
+      return aGrades.includes("Nhà trẻ") && uiForm === "12 đến 18 tháng";
+    }
+    if (norm === "18 đến 24 tháng") {
+      return aGrades.includes("Nhà trẻ") && uiForm === "18 đến 24 tháng";
+    }
+    if (norm === "24 đến 36 tháng") {
+      return (aGrades.includes("Nhà trẻ") && uiForm === "24 đến 36 tháng") || (aGrades.includes("Mẫu giáo bé") && uiStage === "STAGE_1");
+    }
+    if (norm === "3 đến 4 tuổi") {
+      return (aGrades.includes("Mẫu giáo bé") && uiStage === "STAGE_2") || (aGrades.includes("Mẫu giáo nhỡ") && uiStage === "STAGE_1");
+    }
+    if (norm === "4 đến 5 tuổi") {
+      return (aGrades.includes("Mẫu giáo nhỡ") && uiStage === "STAGE_2") || (aGrades.includes("Mẫu giáo lớn") && uiStage === "STAGE_1");
+    }
+    if (norm === "5 đến 6 tuổi") {
+      return aGrades.includes("Mẫu giáo lớn") && uiStage === "STAGE_2";
+    }
+    return false;
+  }
+
   // ─── Student stats state ───
   const [studentStats, setStudentStats] = useState<Record<string, number>>({})
   const [statsLoading, setStatsLoading] = useState(false)
@@ -472,7 +495,7 @@ export function PhanCongMamNonClient({
                       <div className="grid grid-cols-2 gap-2">
                         {Object.entries(studentStats).map(([grade, count]) => {
                           const isStandard = ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "3 đến 4 tuổi", "4 đến 5 tuổi", "5 đến 6 tuổi", "12 đến 24 tháng", "18 đến 36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"].includes(grade)
-                          const isSelected = aGrades.includes(grade)
+                          const isSelected = isStatsGroupSelected(grade)
                           return (
                             <button key={grade}
                               onClick={() => isStandard && selectGradeFromStats(grade)}
