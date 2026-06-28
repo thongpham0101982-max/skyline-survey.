@@ -442,6 +442,19 @@ export function PhanCongMamNonClient({
         </div>
       </div>
 
+      {/* Guidance Alert */}
+      <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex gap-3 text-amber-850 animate-in fade-in duration-300">
+        <Info className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+        <div className="text-xs space-y-1">
+          <p className="font-bold text-amber-900">Hướng dẫn phân công:</p>
+          <ol className="list-decimal list-inside space-y-1 text-amber-800 font-semibold leading-relaxed">
+            <li>Để phân công Thầy cô vui lòng chọn <strong className="text-amber-950 font-black">Nhóm tuổi</strong> ở phần Thống kê bên dưới (hệ thống sẽ tự động chọn Khối và Phiếu khảo sát tương ứng).</li>
+            <li>Tích chọn <strong className="text-amber-950 font-black">Giáo viên</strong> cần phân công ở danh sách bên phải.</li>
+            <li>Nhấn nút <strong className="text-amber-950 font-black">Lưu Phân công Giáo viên</strong> màu xanh để hoàn tất.</li>
+          </ol>
+        </div>
+      </div>
+
       {/* Content */}
       <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
 
