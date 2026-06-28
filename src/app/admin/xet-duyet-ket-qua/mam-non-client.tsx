@@ -144,7 +144,9 @@ const assessCols = [
   { id: "studentCode", label: "Mã bé", width: "w-20 min-w-[80px]" },
   { id: "fullName", label: "Họ và tên", width: "w-[200px] min-w-[200px] max-w-[200px] sticky left-10 z-20 whitespace-normal" },
   { id: "dateOfBirth", label: "Ngày sinh", width: "w-24 min-w-[96px]" },
-  { id: "resolvedAgeGroup", label: "Nhóm tuổi", width: "w-28 min-w-[112px]" },
+  { id: "grade", label: "Khối", width: "w-28 min-w-[112px]" },
+  { id: "ageGroup", label: "Nhóm tuổi", width: "w-28 min-w-[112px]" },
+  { id: "surveyForm", label: "Phiếu khảo sát", width: "w-32 min-w-[128px]" },
   { id: "assignedTeachers", label: "GV Phân công", width: "w-44 min-w-[176px] whitespace-normal" },
   { id: "status", label: "Trạng thái", width: "w-32 min-w-[128px]" },
   { id: "actions", label: "Thao tác", width: "w-28 min-w-[112px]" }
@@ -155,7 +157,9 @@ const dgkqHocThuCols = [
   { id: "studentCode", label: "Mã bé", width: "w-20 min-w-[80px]" },
   { id: "fullName", label: "Họ và tên", width: "w-[200px] min-w-[200px] max-w-[200px] sticky left-10 z-20 whitespace-normal" },
   { id: "dateOfBirth", label: "Ngày sinh", width: "w-24 min-w-[96px]" },
-  { id: "resolvedAgeGroup", label: "Nhóm tuổi", width: "w-28 min-w-[112px]" },
+  { id: "grade", label: "Khối", width: "w-28 min-w-[112px]" },
+  { id: "ageGroup", label: "Nhóm tuổi", width: "w-28 min-w-[112px]" },
+  { id: "surveyForm", label: "Phiếu khảo sát", width: "w-32 min-w-[128px]" },
   { id: "probationaryClass", label: "Lớp học thử", width: "w-28 min-w-[112px]" },
   { id: "probationaryTeacher", label: "GV Học thử", width: "w-36 min-w-[144px] whitespace-normal" },
   { id: "probationaryResult", label: "Kết quả học thử", width: "w-32 min-w-[128px]" },
@@ -167,7 +171,9 @@ const xuatThuChucMungCols = [
   { id: "studentCode", label: "Mã bé", width: "w-20 min-w-[80px]" },
   { id: "fullName", label: "Họ và tên", width: "w-[200px] min-w-[200px] max-w-[200px] sticky left-10 z-20 whitespace-normal" },
   { id: "dateOfBirth", label: "Ngày sinh", width: "w-24 min-w-[96px]" },
-  { id: "resolvedAgeGroup", label: "Nhóm tuổi", width: "w-28 min-w-[112px]" },
+  { id: "grade", label: "Khối", width: "w-28 min-w-[112px]" },
+  { id: "ageGroup", label: "Nhóm tuổi", width: "w-28 min-w-[112px]" },
+  { id: "surveyForm", label: "Phiếu khảo sát", width: "w-32 min-w-[128px]" },
   { id: "admissionCampus", label: "Cơ sở", width: "w-32 min-w-[128px] whitespace-normal" },
   { id: "result", label: "Kết quả duyệt", width: "w-36 min-w-[144px]" },
   { id: "actions", label: "Thao tác", width: "w-64 min-w-[256px]" }
@@ -3790,17 +3796,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 <td className="w-20 min-w-[80px] p-2 p-2 align-middle bg-inherit border border-slate-200"><span className="font-mono text-[10px] font-semibold text-[#00A99D] text-xs font-semibold">{s.studentCode}</span></td>
                                 <td className="w-[200px] min-w-[200px] max-w-[200px] sticky left-10 z-10 shadow-[1px_0_0_0_#e2e8f0] whitespace-normal p-2 p-2 align-middle bg-inherit font-semibold text-slate-800 text-xs border border-slate-200">{s.fullName}</td>
                                 <td className="w-24 min-w-[96px] p-2 p-2 align-middle text-xs text-slate-500 bg-inherit border border-slate-200">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
-                                <td className="w-28 min-w-[112px] p-2 p-2 align-middle bg-inherit border border-slate-200">
-                                  <div className="flex flex-col gap-0.5">
-                                    <span className="text-xs font-bold text-slate-700">Khối: {getStandardGrade(s.grade)}</span>
-                                    <span className="text-[10px] font-semibold text-slate-500">Nhóm tuổi: {s.grade || "—"}</span>
-                                    {s.resolvedAgeGroup && (
-                                      <span className="text-[10px] font-bold text-[#00A99D]">
-                                        Phiếu KS: {s.resolvedAgeGroup}
-                                      </span>
-                                    )}
-                                  </div>
-                                </td>
+                                <td className="w-28 min-w-[112px] p-2 align-middle bg-inherit border border-slate-200 text-slate-700 text-xs font-bold">{getStandardGrade(s.grade)}</td>
+                                <td className="w-28 min-w-[112px] p-2 align-middle bg-inherit border border-slate-200 text-slate-500 text-xs font-semibold">{s.grade || "—"}</td>
+                                <td className="w-32 min-w-[128px] p-2 align-middle bg-inherit border border-slate-200 text-[#00A99D] text-xs font-bold">{s.resolvedAgeGroup || "—"}</td>
                                 <td className="w-44 min-w-[176px] p-2 p-2 align-middle bg-inherit border border-slate-200">
                                   <div className="text-xs text-slate-700 max-w-[200px] whitespace-normal break-words">
                                     {s.assignedTeachers || <span className="text-slate-400 italic">Chưa phân công</span>}
@@ -4332,17 +4330,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 <td className="w-20 min-w-[80px] p-2 p-2 align-middle bg-inherit border border-slate-200"><span className="font-mono text-[10px] font-semibold text-[#00A99D] text-xs font-semibold">{s.studentCode}</span></td>
                                 <td className="w-[200px] min-w-[200px] max-w-[200px] sticky left-10 z-10 shadow-[1px_0_0_0_#e2e8f0] whitespace-normal p-2 p-2 align-middle bg-inherit font-semibold text-slate-800 text-xs border border-slate-200">{s.fullName}</td>
                                 <td className="w-24 min-w-[96px] p-2 p-2 align-middle text-xs text-slate-500 bg-inherit border border-slate-200">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
-                                <td className="w-28 min-w-[112px] p-2 p-2 align-middle bg-inherit border border-slate-200">
-                                  <div className="flex flex-col gap-0.5">
-                                    <span className="text-xs font-bold text-slate-700">Khối: {getStandardGrade(s.grade)}</span>
-                                    <span className="text-[10px] font-semibold text-slate-500">Nhóm tuổi: {s.grade || "—"}</span>
-                                    {s.resolvedAgeGroup && (
-                                      <span className="text-[10px] font-bold text-[#00A99D]">
-                                        Phiếu KS: {s.resolvedAgeGroup}
-                                      </span>
-                                    )}
-                                  </div>
-                                </td>
+                                <td className="w-28 min-w-[112px] p-2 align-middle bg-inherit border border-slate-200 text-slate-700 text-xs font-bold">{getStandardGrade(s.grade)}</td>
+                                <td className="w-28 min-w-[112px] p-2 align-middle bg-inherit border border-slate-200 text-slate-500 text-xs font-semibold">{s.grade || "—"}</td>
+                                <td className="w-32 min-w-[128px] p-2 align-middle bg-inherit border border-slate-200 text-[#00A99D] text-xs font-bold">{s.resolvedAgeGroup || "—"}</td>
                                 <td className="w-28 min-w-[112px] p-2 p-2 align-middle text-slate-600 text-xs bg-inherit border border-slate-200">{s.probationaryClass || "—"}</td>
                                 <td className="w-36 min-w-[144px] p-2 p-2 align-middle text-slate-600 text-xs bg-inherit whitespace-normal break-words border border-slate-200">{s.probationaryTeacher || "—"}</td>
                                 <td className="w-32 min-w-[128px] p-2 p-2 align-middle bg-inherit border border-slate-200">{resultBadge()}</td>
@@ -4452,17 +4442,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 <td className="w-20 min-w-[80px] p-2 p-2 align-middle bg-inherit border border-slate-200"><span className="font-mono text-[10px] font-semibold text-[#00A99D] text-xs font-semibold">{s.studentCode}</span></td>
                                 <td className="w-[200px] min-w-[200px] max-w-[200px] sticky left-10 z-10 shadow-[1px_0_0_0_#e2e8f0] whitespace-normal p-2 p-2 align-middle bg-inherit font-semibold text-slate-800 text-xs border border-slate-200">{s.fullName}</td>
                                 <td className="w-24 min-w-[96px] p-2 p-2 align-middle text-xs text-slate-500 bg-inherit border border-slate-200">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
-                                <td className="w-28 min-w-[112px] p-2 p-2 align-middle bg-inherit border border-slate-200">
-                                  <div className="flex flex-col gap-0.5">
-                                    <span className="text-xs font-bold text-slate-700">Khối: {getStandardGrade(s.grade)}</span>
-                                    <span className="text-[10px] font-semibold text-slate-500">Nhóm tuổi: {s.grade || "—"}</span>
-                                    {s.resolvedAgeGroup && (
-                                      <span className="text-[10px] font-bold text-[#00A99D]">
-                                        Phiếu KS: {s.resolvedAgeGroup}
-                                      </span>
-                                    )}
-                                  </div>
-                                </td>
+                                <td className="w-28 min-w-[112px] p-2 align-middle bg-inherit border border-slate-200 text-slate-700 text-xs font-bold">{getStandardGrade(s.grade)}</td>
+                                <td className="w-28 min-w-[112px] p-2 align-middle bg-inherit border border-slate-200 text-slate-500 text-xs font-semibold">{s.grade || "—"}</td>
+                                <td className="w-32 min-w-[128px] p-2 align-middle bg-inherit border border-slate-200 text-[#00A99D] text-xs font-bold">{s.resolvedAgeGroup || "—"}</td>
                                 <td className="w-32 min-w-[128px] p-2 p-2 align-middle text-slate-600 text-xs bg-inherit whitespace-normal break-words border border-slate-200">{s.admissionCampus || "—"}</td>
                                 <td className="w-36 min-w-[144px] p-2 p-2 align-middle bg-inherit border border-slate-200">{resultBadge()}</td>
                                 <td className="w-64 min-w-[256px] p-2 p-2 align-middle bg-inherit border border-slate-200">
