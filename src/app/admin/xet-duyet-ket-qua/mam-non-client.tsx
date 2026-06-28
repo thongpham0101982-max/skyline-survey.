@@ -3746,7 +3746,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       <thead className="sticky top-0 z-30">
                         <tr className="bg-[#0D3330] text-white select-none">
                           {assessCols.map(col => (
-                            <th key={col.id} className={`px-3 py-2.5 text-[10px] font-semibold text-[#9ECFCB] uppercase tracking-wider whitespace-nowrap ${col.width}`} className="p-2 border border-slate-200">
+                            <th key={col.id} className={`px-3 py-2.5 text-[10px] font-semibold text-[#9ECFCB] uppercase tracking-wider whitespace-nowrap p-2 border border-slate-200 ${col.width}`}>
                               {col.label}
                             </th>
                           ))}
@@ -3919,7 +3919,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                             if (col.id === "gdcsApproval") return showGdcsSection;
                             return true;
                           }).map(col => (
-                            <th key={col.id} className={`px-3 py-2.5 text-[10px] font-semibold text-[#9ECFCB] uppercase tracking-wider whitespace-nowrap ${col.width}`} className="p-2 border border-slate-200">
+                            <th key={col.id} className={`px-3 py-2.5 text-[10px] font-semibold text-[#9ECFCB] uppercase tracking-wider whitespace-nowrap p-2 border border-slate-200 ${col.width}`}>
                               {col.label}
                             </th>
                           ))}
@@ -4003,7 +4003,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                             const renderAreaCell = (areaCode: string, tdClass: string) => {
                               const areaScores = s.scores?.filter((sc: any) => sc.criteria?.area?.code === areaCode) || [];
                               if (areaScores.length === 0) {
-                                return <td className={`p-4 text-xs font-medium text-slate-300 align-top ${tdClass}`} className="p-2 border border-slate-200">—</td>;
+                                return <td className={`p-4 text-xs font-medium text-slate-300 align-top p-2 border border-slate-200 ${tdClass}`}>—</td>;
                               }
                               
                               const datCount = areaScores.filter((sc: any) => sc.result === "DAT").length;
@@ -4042,7 +4042,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               }
 
                               return (
-                                <td className={`p-4 align-top ${tdClass}`} className="p-2 border border-slate-200">
+                                <td className={`p-4 align-top p-2 border border-slate-200 ${tdClass}`}>
                                   <div className="flex flex-col gap-2 w-full">
                                     <div className="flex flex-col gap-1.5">
                                       <div className={`border rounded-lg p-2.5 space-y-2 transition-all hover:scale-[1.01] hover:shadow-sm ${cardClass}`}>
@@ -4326,7 +4326,7 @@ return (
                       <thead className="sticky top-0 z-30">
                         <tr className="bg-[#0D3330] text-white select-none">
                           {dgkqHocThuCols.map(col => (
-                            <th key={col.id} className={`px-3 py-2.5 text-[10px] font-semibold text-[#9ECFCB] uppercase tracking-wider whitespace-nowrap ${col.width}`} className="p-2 border border-slate-200">
+                            <th key={col.id} className={`px-3 py-2.5 text-[10px] font-semibold text-[#9ECFCB] uppercase tracking-wider whitespace-nowrap p-2 border border-slate-200 ${col.width}`}>
                               {col.label}
                             </th>
                           ))}
@@ -4449,7 +4449,7 @@ return (
                       <thead className="sticky top-0 z-30">
                         <tr className="bg-[#0D3330] text-white select-none">
                           {xuatThuChucMungCols.map(col => (
-                            <th key={col.id} className={`px-3 py-2.5 text-[10px] font-semibold text-[#9ECFCB] uppercase tracking-wider whitespace-nowrap ${col.width}`} className="p-2 border border-slate-200">
+                            <th key={col.id} className={`px-3 py-2.5 text-[10px] font-semibold text-[#9ECFCB] uppercase tracking-wider whitespace-nowrap p-2 border border-slate-200 ${col.width}`}>
                               {col.label}
                             </th>
                           ))}
