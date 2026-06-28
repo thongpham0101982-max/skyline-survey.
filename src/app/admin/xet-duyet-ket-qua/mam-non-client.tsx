@@ -3280,7 +3280,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     </div>
                   )}
 
-                  <Field label="Nhóm tuổi (Khối)" required>
+                  <Field label="Khối" required>
                     <div className="grid grid-cols-2 gap-2 mt-1">
                       {grades.map(g => {
                         const isChecked = aGrades.includes(g);

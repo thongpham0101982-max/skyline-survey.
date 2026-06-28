@@ -517,7 +517,7 @@ export function PhanCongMamNonClient({
                 </Field>
 
                 {/* Nhóm tuổi (Khối) */}
-                <Field label="Nhóm tuổi (Khối)" required>
+                <Field label="Khối" required>
                   <div className="grid grid-cols-2 gap-2 mt-1">
                     {grades.map(g => {
                       const isChecked = aGrades.includes(g)
