@@ -186,6 +186,22 @@ const getStandardGrade = (grade: string) => {
   return g;
 };
 
+const isStudentHocThu = (s: any): boolean => {
+  if (!s) return false;
+  const gResult = s.generalResult || "";
+  const bgh = s.bghApprovalStatus || "";
+  const gdcs = s.gdcsApprovalStatus || "";
+  const devAssess = s.devAssessmentResult || "";
+  const admResult = s.admissionResult || "";
+
+  const isTrialText = (val: string) => {
+    const v = val.toUpperCase();
+    return v === "DAT_HOC_THU" || v === "HOC_THU" || v.includes("HỌC THỬ") || v.includes("HOC_THU") || v.includes("HOC THU");
+  };
+
+  return isTrialText(gResult) || isTrialText(bgh) || isTrialText(gdcs) || isTrialText(devAssess) || isTrialText(admResult);
+};
+
 export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, grades: gradesProp, teachers, departments, currentUser, classes = [] }: { academicYears: AcademicYear[]; campuses: Camp[]; giaoVuCSUsers: any[]; grades: string[]; teachers: any[]; departments: any[]; currentUser: any; classes?: any[]; }) {
   const grades = gradesProp && gradesProp.length > 0 ? gradesProp : ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"];
   const criteriaGrades = ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "3 đến 4 tuổi", "4 đến 5 tuổi", "5 đến 6 tuổi"];
@@ -4222,7 +4238,7 @@ return (
                                  {/* 7. Lớp học thử */}
                                  <td className="w-[160px] min-w-[160px] p-2 align-top bg-inherit border border-slate-200">
                                    {(() => {
-                                     const isHocThu = s.generalResult === "DAT_HOC_THU" || s.generalResult === "Đạt - Học Thử" || s.generalResult === "Đạt - Học thử" || s.generalResult === "Học thử" || s.generalResult === "HOC_THU" || s.generalResult === "Học Thử";
+                                     const isHocThu = isStudentHocThu(s);
                                      if (!isHocThu) return <span className="text-slate-300 text-xs">—</span>;
 
                                      return (
