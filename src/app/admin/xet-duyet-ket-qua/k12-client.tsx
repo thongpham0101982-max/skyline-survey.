@@ -2845,7 +2845,7 @@ ${reportForm.directorNote}`;
       .filter(item => item.id !== fallbackId || item.total > 0);
   }, [filteredReportStudents, reportBatches]);
 
-    const gradeStats = useMemo(() => {
+      const gradeStats = useMemo(() => {
     const gradesList = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"];
     const map = new Map();
     gradesList.forEach(g => {
@@ -2943,6 +2943,7 @@ ${reportForm.directorNote}`;
       };
     });
   }, [filteredReportStudents, reportBatches, periods, campuses]);
+
 
 
   const overallKPIs = useMemo(() => {
@@ -5338,7 +5339,7 @@ return {
                         text: "text-purple-700",
                         bg: "bg-purple-50/10",
                         accent: "bg-purple-50 text-purple-700 border border-purple-200",
-                        bar: "bg-purple-500"
+                        bar: "bg-purple-550"
                       };
                     } else if (shortCode === "CS4") {
                       campusColor = {
@@ -5576,7 +5577,7 @@ return {
                       
                       {chartCampusId === "all" ? (
                         <>
-                          <Bar yAxisId="right" dataKey="Chung" fill="url(#colorChung)" stroke="#94a3b8" strokeWidth={1} radius={[4, 4, 0, 0]} barSize={26} name="Tỷ lệ Chung" />
+                          <Bar yAxisId="left" dataKey="total" fill="url(#colorTotal)" radius={[4, 4, 0, 0]} barSize={26} name="Tổng Học sinh" />
                           <Line yAxisId="right" type="monotone" dataKey="CS1_rate" stroke="#00A99D" strokeWidth={3} dot={{ r: 3, strokeWidth: 1.5, fill: "#ffffff" }} activeDot={{ r: 6 }} name="Cơ sở 1" />
                           <Line yAxisId="right" type="monotone" dataKey="CS2_rate" stroke="#db2777" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 2" />
                           <Line yAxisId="right" type="monotone" dataKey="CS3_rate" stroke="#7c3aed" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 3" />
@@ -5836,6 +5837,7 @@ return {
                 </div>
               </div>
             </div>
+
 
 
 
