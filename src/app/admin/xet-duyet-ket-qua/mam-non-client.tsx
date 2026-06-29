@@ -159,7 +159,7 @@ const dgkqHocThuCols = [
   { id: "resolvedAgeGroup", label: "Nhóm tuổi", width: "w-28 min-w-[112px]" },
   { id: "probationaryClass", label: "Lớp học thử", width: "w-28 min-w-[112px]" },
   { id: "probationaryTeacher", label: "GV Học thử", width: "w-36 min-w-[144px] whitespace-normal" },
-  { id: "probationaryResult", label: "Kết quả học thử", width: "w-32 min-w-[128px]" },
+  { id: "probationaryResult", label: "KQĐG GV", width: "w-32 min-w-[128px]" },
   { id: "actions", label: "Thao tác", width: "w-56 min-w-[224px]" }
 ];
 
@@ -4453,7 +4453,7 @@ return (
                                           : 'text-violet-600 bg-violet-50 hover:bg-violet-100'
                                       }`}
                                     >
-                                      <ClipboardList className="w-3.5 h-3.5" /> Đánh giá học thử
+                                      <ClipboardList className="w-3.5 h-3.5" /> Xét duyệt
                                     </button>
                                     <button
                                       onClick={() => printProbationaryAssessment(s)}
