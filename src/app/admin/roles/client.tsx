@@ -160,11 +160,7 @@ export function RolesClient({ initialRoles }: any) {
         TASKS: { r: true, c: true, u: true },
         WEEKLY_REPORTS: { r: true, c: true, u: true }
       },
-      GVCN_PT: {
-        TASKS: { r: true, c: true, u: true, d: true },
-        WEEKLY_REPORTS: { r: true, u: true }
-      },
-      GVBM_PT: {
+      TEACHER: {
         TASKS: { r: true, c: true, u: true, d: true },
         WEEKLY_REPORTS: { r: true, u: true }
       },
@@ -303,8 +299,7 @@ export function RolesClient({ initialRoles }: any) {
               <button onClick={() => applyPreset('GIAO_VU')} className="px-2.5 py-1.5 border border-blue-100 text-blue-600 hover:bg-blue-50 rounded-lg text-[10.5px] font-bold transition-colors">Preset Giáo vụ</button>
               <button onClick={() => applyPreset('TVAN')} className="px-2.5 py-1.5 border border-amber-100 text-amber-600 hover:bg-amber-50 rounded-lg text-[10.5px] font-bold transition-colors">Preset Tư vấn</button>
               <button onClick={() => applyPreset('BGH_MN')} className="px-2.5 py-1.5 border border-purple-100 text-purple-600 hover:bg-purple-50 rounded-lg text-[10.5px] font-bold transition-colors">Preset BGH Mầm non</button>
-              <button onClick={() => applyPreset('GVCN_PT')} className="px-2.5 py-1.5 border border-slate-200 hover:bg-slate-50 rounded-lg text-[10.5px] font-bold transition-colors">Preset GVCN Phổ thông</button>
-              <button onClick={() => applyPreset('GVBM_PT')} className="px-2.5 py-1.5 border border-slate-200 hover:bg-slate-50 rounded-lg text-[10.5px] font-bold transition-colors">Preset GVBM Phổ thông</button>
+              <button onClick={() => applyPreset('TEACHER')} className="px-2.5 py-1.5 border border-slate-200 hover:bg-slate-50 rounded-lg text-[10.5px] font-bold transition-colors">Preset GV Phổ thông</button>
               <button onClick={() => applyPreset('GV_MN')} className="px-2.5 py-1.5 border border-slate-200 hover:bg-slate-50 rounded-lg text-[10.5px] font-bold transition-colors">Preset GV Mầm non</button>
             </div>
           </div>
