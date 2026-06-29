@@ -137,7 +137,7 @@ const xetDuyetCols = [
   { id: "bghApproval", label: "BGH MN duyệt", width: "w-[148px] min-w-[148px] whitespace-normal" },
   { id: "gdcsApproval", label: "GĐCS duyệt", width: "w-[148px] min-w-[148px] whitespace-normal" },
   { id: "result", label: "Kết quả", width: "w-[110px] min-w-[110px]" },
-  { id: "pcgv", label: "Lớp học thử", width: "w-[160px] min-w-[160px] whitespace-normal" }
+  { id: "pcgv", label: "Phân lớp học thử", width: "w-[160px] min-w-[160px] whitespace-normal" }
 ];
 
 const assessCols = [
@@ -4352,9 +4352,6 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                         </button>
                                       );
                                     }
-
-                                    const isHocThu = isStudentHocThu(s);
-                                    if (!isHocThu) return <span className="text-slate-355 text-xs font-semibold">—</span>;
 
                                     return (
                                       <div className="flex flex-col gap-1.5 w-full items-start">
