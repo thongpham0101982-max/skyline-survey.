@@ -5205,7 +5205,7 @@ return {
           {reportsSubTab === "stats" ? (
             <div className="space-y-8 animate-in fade-in duration-300 bg-gradient-to-br from-slate-50 via-white to-teal-50/10 text-slate-800 p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm">
               {/* KPI Cards Row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 {/* Card 1: Tổng Học sinh */}
                 <div className="relative overflow-hidden bg-white p-6 rounded-2xl border border-slate-200 border-l-4 border-l-blue-500 shadow-sm flex flex-col justify-between group hover:-translate-y-1 hover:shadow-md transition-all duration-300">
                   <div className="flex items-center justify-between">
@@ -5220,54 +5220,10 @@ return {
                   </div>
                 </div>
 
-                {/* Card 2: Tiến độ Khảo sát */}
-                <div className="relative overflow-hidden bg-white p-6 rounded-2xl border border-slate-200 border-l-4 border-l-amber-500 shadow-sm flex flex-col justify-between group hover:-translate-y-1 hover:shadow-md transition-all duration-300">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tiến độ Khảo sát</span>
-                    <div className="p-2.5 bg-amber-50 text-amber-600 rounded-xl transition-all duration-300 group-hover:scale-110 group-hover:bg-amber-100">
-                      <BarChart3 className="w-4 h-4" />
-                    </div>
-                  </div>
-                  <div className="space-y-2 mt-4">
-                    <div className="flex items-baseline justify-between">
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-4xl font-black text-slate-800 tracking-tight">{overallKPIs.surveyed}</span>
-                        <span className="text-[10px] text-slate-400 font-bold">/ {overallKPIs.total} HS</span>
-                      </div>
-                      <span className="text-xs font-black text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/50">{overallKPIs.surveyRate}%</span>
-                    </div>
-                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full transition-all duration-550" style={{ width: `${overallKPIs.surveyRate}%` }}></div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Card 3: Tiến độ Xét duyệt */}
-                <div className="relative overflow-hidden bg-white p-6 rounded-2xl border border-slate-200 border-l-4 border-l-indigo-500 shadow-sm flex flex-col justify-between group hover:-translate-y-1 hover:shadow-md transition-all duration-300">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tiến độ Xét duyệt</span>
-                    <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl transition-all duration-300 group-hover:scale-110 group-hover:bg-indigo-100">
-                      <CheckCircle2 className="w-4 h-4" />
-                    </div>
-                  </div>
-                  <div className="space-y-2 mt-4">
-                    <div className="flex items-baseline justify-between">
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-4xl font-black text-slate-800 tracking-tight">{overallKPIs.total - overallKPIs.pending}</span>
-                        <span className="text-[10px] text-slate-400 font-bold">/ {overallKPIs.total} HS</span>
-                      </div>
-                      <span className="text-xs font-black text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200/50">{overallKPIs.approvedRate}%</span>
-                    </div>
-                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-indigo-400 to-indigo-600 rounded-full transition-all duration-550" style={{ width: `${overallKPIs.approvedRate}%` }}></div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Card 4: Kết quả Khảo sát */}
+                {/* Card 2: Kết quả Khảo sát */}
                 <div className="relative overflow-hidden bg-white p-6 rounded-2xl border border-slate-200 border-l-4 border-l-emerald-500 shadow-sm flex flex-col justify-between group hover:-translate-y-1 hover:shadow-md transition-all duration-300">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Kết quả Khảo sát</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Kết quả Khảo sát K-12</span>
                     <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl transition-all duration-300 group-hover:scale-110 group-hover:bg-emerald-100">
                       <GraduationCap className="w-4 h-4" />
                     </div>
@@ -5277,71 +5233,16 @@ return {
                       <span className="text-3xl font-black text-emerald-600">{overallKPIs.passed}</span>
                       <span className="text-[9px] text-emerald-600/70 font-bold uppercase tracking-wider">Đạt KS</span>
                     </div>
-                    <div className="w-px h-8 bg-slate-200"></div>
-                    <div className="flex flex-col items-end">
-                      <span className="text-3xl font-black text-amber-600">{overallKPIs.committed}</span>
-                      <span className="text-[9px] text-amber-600/70 font-bold uppercase tracking-wider">Cam kết</span>
+                    <div className="w-px h-8 bg-slate-250"></div>
+                    <div className="flex flex-col items-center">
+                      <span className="text-3xl font-black text-purple-650">{overallKPIs.committed}</span>
+                      <span className="text-[9px] text-purple-650/70 font-bold uppercase tracking-wider">Cam kết</span>
                     </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Survey Methods Breakdown Row */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                {/* Method 1: Khảo sát lẻ */}
-                <div className="bg-white p-5 rounded-2xl border border-slate-200 border-t-4 border-t-amber-500 shadow-sm flex flex-col justify-between group hover:shadow-md transition-all duration-300">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Khảo sát lẻ</span>
-                    <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-[9px] font-black uppercase tracking-wider">Tiến độ</span>
-                  </div>
-                  <div className="flex items-baseline justify-between mb-2">
-                    <span className="text-2xl font-black text-slate-800 tracking-tight">{methodStats.le.rate}%</span>
-                    <span className="text-[10px] text-slate-450 font-bold">{methodStats.le.surveyed}/{methodStats.le.total} HS</span>
-                  </div>
-                  <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mb-2">
-                    <div className="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full transition-all duration-500" style={{ width: `${methodStats.le.rate}%` }}></div>
-                  </div>
-                  <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider flex justify-between">
-                    <span>Tỷ lệ tham gia:</span>
-                    <span className="text-amber-600 font-extrabold">{methodStats.le.share}%</span>
-                  </div>
-                </div>
-
-                {/* Method 2: Open Day */}
-                <div className="bg-white p-5 rounded-2xl border border-slate-200 border-t-4 border-t-teal-500 shadow-sm flex flex-col justify-between group hover:shadow-md transition-all duration-300">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Khảo sát Open Day</span>
-                    <span className="px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 text-[9px] font-black uppercase tracking-wider">Tiến độ</span>
-                  </div>
-                  <div className="flex items-baseline justify-between mb-2">
-                    <span className="text-2xl font-black text-teal-600 tracking-tight">{methodStats.openday.rate}%</span>
-                    <span className="text-[10px] text-slate-450 font-bold">{methodStats.openday.surveyed}/{methodStats.openday.total} HS</span>
-                  </div>
-                  <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mb-2">
-                    <div className="h-full bg-gradient-to-r from-teal-400 to-teal-500 rounded-full transition-all duration-500" style={{ width: `${methodStats.openday.rate}%` }}></div>
-                  </div>
-                  <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider flex justify-between">
-                    <span>Tỷ lệ tham gia:</span>
-                    <span className="text-teal-650 font-extrabold">{methodStats.openday.share}%</span>
-                  </div>
-                </div>
-
-                {/* Method 3: Khảo sát chuyển hệ */}
-                <div className="bg-white p-5 rounded-2xl border border-slate-200 border-t-4 border-t-purple-500 shadow-sm flex flex-col justify-between group hover:shadow-md transition-all duration-300">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Khảo sát Chuyển hệ</span>
-                    <span className="px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 text-[9px] font-black uppercase tracking-wider">Tiến độ</span>
-                  </div>
-                  <div className="flex items-baseline justify-between mb-2">
-                    <span className="text-2xl font-black text-purple-650 tracking-tight">{methodStats.chuyenhe.rate}%</span>
-                    <span className="text-[10px] text-slate-450 font-bold">{methodStats.chuyenhe.surveyed}/{methodStats.chuyenhe.total} HS</span>
-                  </div>
-                  <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mb-2">
-                    <div className="h-full bg-gradient-to-r from-purple-400 to-purple-500 rounded-full transition-all duration-550" style={{ width: `${methodStats.chuyenhe.rate}%` }}></div>
-                  </div>
-                  <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider flex justify-between">
-                    <span>Tỷ lệ tham gia:</span>
-                    <span className="text-purple-650 font-extrabold">{methodStats.chuyenhe.share}%</span>
+                    <div className="w-px h-8 bg-slate-250"></div>
+                    <div className="flex flex-col items-end">
+                      <span className="text-3xl font-black text-rose-600">{overallKPIs.failed}</span>
+                      <span className="text-[9px] text-rose-600/70 font-bold uppercase tracking-wider">Không Đạt</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -5508,7 +5409,20 @@ return {
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#f1f5f9" />
-                      <XAxis dataKey="grade" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} dy={8} className="font-semibold" />
+                      <XAxis 
+                        dataKey="grade" 
+                        stroke="#64748b" 
+                        fontSize={10} 
+                        tickLine={false} 
+                        axisLine={false} 
+                        dy={8} 
+                        className="font-semibold" 
+                        tickFormatter={(tick) => {
+                          const stat = gradeStats.find(item => item.grade === tick);
+                          if (!stat || stat.total === 0) return tick;
+                          return `${tick} (${stat.total} HS)`;
+                        }}
+                      />
                       
                       {/* Left Y-axis: counts */}
                       <YAxis yAxisId="left" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} allowDecimals={false} className="font-semibold" />
@@ -5517,12 +5431,103 @@ return {
                       <YAxis yAxisId="right" orientation="right" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} domain={[0, 100]} tickFormatter={v => `${v}%`} className="font-semibold" />
                       
                       <Tooltip
-                        contentStyle={{ 
-                          backgroundColor: "#ffffff", 
-                          borderColor: "#e2e8f0",
-                          borderRadius: "12px",
-                          boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-                          color: "#1e293b"
+                        content={({ active, payload, label }) => {
+                          if (active && payload && payload.length) {
+                            const stat = gradeStats.find(g => g.grade === label);
+                            if (!stat) return null;
+                            
+                            const overallTotal = overallKPIs.total;
+                            const gradePct = overallTotal > 0 ? ((stat.total / overallTotal) * 100).toFixed(1) : "0";
+                            
+                            if (chartCampusId === "all") {
+                              return (
+                                <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-lg text-xs font-semibold text-slate-800 space-y-2">
+                                  <div className="font-black text-sm border-b border-slate-100 pb-1.5 flex justify-between gap-4">
+                                    <span>{stat.grade}</span>
+                                    <span className="text-indigo-600">{stat.total}/{overallTotal} HS ({gradePct}%)</span>
+                                  </div>
+                                  
+                                  <div className="space-y-1.5 pt-1">
+                                    <div className="flex justify-between gap-4 text-slate-400 text-[9px] font-black uppercase tracking-wider">
+                                      <span>Cơ sở (Phần trăm Khối)</span>
+                                      <span>Khảo sát / Tổng (Tiến độ)</span>
+                                    </div>
+                                    
+                                    {[
+                                      { code: "CS1", name: "Cơ sở 1", color: "bg-teal-500", total: stat.CS1_total, surveyed: stat.CS1 },
+                                      { code: "CS2", name: "Cơ sở 2", color: "bg-pink-500", total: stat.CS2_total, surveyed: stat.CS2 },
+                                      { code: "CS3", name: "Cơ sở 3", color: "bg-purple-500", total: stat.CS3_total, surveyed: stat.CS3 },
+                                      { code: "CS4", name: "Cơ sở 4", color: "bg-amber-500", total: stat.CS4_total, surveyed: stat.CS4 },
+                                      { code: "CS5", name: "Cơ sở 5", color: "bg-blue-500", total: stat.CS5_total, surveyed: stat.CS5 }
+                                    ].map(cs => {
+                                      const csSurveyRate = cs.total > 0 ? Math.round((cs.surveyed / cs.total) * 100) : 0;
+                                      const csPctOfGrade = stat.total > 0 ? ((cs.total / stat.total) * 100).toFixed(1) : "0";
+                                      return (
+                                        <div key={cs.code} className="flex justify-between items-center py-0.5">
+                                          <div className="flex items-center gap-1.5">
+                                            <span className={`w-2 h-2 rounded-full ${
+                                              cs.code === "CS1" ? "bg-teal-500" :
+                                              cs.code === "CS2" ? "bg-pink-500" :
+                                              cs.code === "CS3" ? "bg-purple-500" :
+                                              cs.code === "CS4" ? "bg-amber-500" : "bg-blue-500"
+                                            }`}></span>
+                                            <span className="font-bold text-slate-700">{cs.name} ({csPctOfGrade}%)</span>
+                                          </div>
+                                          <span className="font-extrabold text-slate-850">{cs.surveyed}/{cs.total} HS ({csSurveyRate}%)</span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                  
+                                  <div className="border-t border-slate-100 pt-1.5 text-center text-[10px] text-slate-400 font-bold">
+                                    Tiến độ khảo sát chung: <span className="text-slate-800 font-extrabold">{stat.Chung}%</span>
+                                  </div>
+                                </div>
+                              );
+                            } else {
+                              const campusCode = chartCampusId;
+                              const totalKey = `${campusCode}_total`;
+                              const rateKey = `${campusCode}_rate`;
+                              const campusTotal = stat[totalKey] || 0;
+                              const campusSurveyed = stat[campusCode] || 0;
+                              const campusRate = stat[rateKey] || 0;
+                              
+                              const campusMatch = campusStats.find(c => c.campusName?.includes(campusCode === "CS1" ? "1" : campusCode === "CS2" ? "2" : campusCode === "CS3" ? "3" : campusCode === "CS4" ? "4" : "5"));
+                              const campusOverallTotal = campusMatch ? campusMatch.total : 0;
+                              const campusGradePct = campusOverallTotal > 0 ? ((campusTotal / campusOverallTotal) * 100).toFixed(1) : "0";
+                              
+                              let campusName = "Cơ sở";
+                              if (campusCode === "CS1") campusName = "Cơ sở 1";
+                              else if (campusCode === "CS2") campusName = "Cơ sở 2";
+                              else if (campusCode === "CS3") campusName = "Cơ sở 3";
+                              else if (campusCode === "CS4") campusName = "Cơ sở 4";
+                              else if (campusCode === "CS5") campusName = "Cơ sở 5";
+                              
+                              return (
+                                <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-lg text-xs font-semibold text-slate-800 space-y-2">
+                                  <div className="font-black text-sm border-b border-slate-100 pb-1.5 flex justify-between gap-4">
+                                    <span>{stat.grade} - {campusName}</span>
+                                    <span className="text-teal-650">{campusTotal}/{campusOverallTotal} HS ({campusGradePct}%)</span>
+                                  </div>
+                                  <div className="space-y-1.5 pt-1">
+                                    <div className="flex justify-between py-0.5">
+                                      <span className="text-slate-500 font-bold">Số HS đã Khảo sát:</span>
+                                      <span className="font-extrabold text-slate-850">{campusSurveyed} HS</span>
+                                    </div>
+                                    <div className="flex justify-between py-0.5">
+                                      <span className="text-slate-500 font-bold">Tỷ lệ hoàn thành:</span>
+                                      <span className="font-extrabold text-teal-600">{campusRate}%</span>
+                                    </div>
+                                    <div className="flex justify-between py-0.5 border-t border-slate-100/50 mt-1 pt-1">
+                                      <span className="text-slate-550 font-bold">Tỷ lệ trong tổng Khối:</span>
+                                      <span className="font-extrabold text-slate-800">{stat.total > 0 ? ((campusTotal / stat.total) * 100).toFixed(1) : 0}%</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            }
+                          }
+                          return null;
                         }}
                       />
                       <Legend verticalAlign="top" height={36} iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "10px", fontWeight: "bold", paddingBottom: "10px" }} />
@@ -5569,7 +5574,7 @@ return {
                         <th className="py-3.5 px-4 text-center text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">Tổng HS</th>
                         <th className="py-3.5 px-4 text-center text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">Đã KS</th>
                         <th className="py-3.5 px-4 text-center text-[9px] font-extrabold text-emerald-600 uppercase tracking-wider">Đạt</th>
-                        <th className="py-3.5 px-4 text-center text-[9px] font-extrabold text-purple-600 uppercase tracking-wider">Cam kết</th>
+                        <th className="py-3.5 px-4 text-center text-[9px] font-extrabold text-purple-650 uppercase tracking-wider">Cam kết</th>
                         <th className="py-3.5 px-4 text-center text-[9px] font-extrabold text-rose-600 uppercase tracking-wider">Không Đạt</th>
                         <th className="py-3.5 px-4 text-center text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">Chưa Duyệt</th>
                         <th className="py-3.5 px-4 text-right text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">Tiến độ KS</th>
@@ -5705,7 +5710,7 @@ return {
                         <th className="py-3.5 px-4 text-center text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">Tổng HS</th>
                         <th className="py-3.5 px-4 text-center text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">Đã KS</th>
                         <th className="py-3.5 px-4 text-center text-[9px] font-extrabold text-emerald-600 uppercase tracking-wider">Đạt</th>
-                        <th className="py-3.5 px-4 text-center text-[9px] font-extrabold text-purple-600 uppercase tracking-wider">Cam kết</th>
+                        <th className="py-3.5 px-4 text-center text-[9px] font-extrabold text-purple-650 uppercase tracking-wider">Cam kết</th>
                         <th className="py-3.5 px-4 text-center text-[9px] font-extrabold text-rose-600 uppercase tracking-wider">Không Đạt</th>
                         <th className="py-3.5 px-4 text-center text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">Chưa Duyệt</th>
                         <th className="py-3.5 px-4 text-right text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">Tiến độ KS</th>
@@ -5772,7 +5777,7 @@ return {
                               <div className="flex items-center justify-end gap-2.5">
                                 <span className="text-xs font-extrabold text-slate-800 w-9">{batchApprovedRate}%</span>
                                 <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                  <div className="h-full bg-teal-500 rounded-full transition-all duration-300" style={{ width: `${batchApprovedRate}%` }}></div>
+                                  <div className="h-full bg-teal-555 rounded-full transition-all duration-300" style={{ width: `${batchApprovedRate}%` }}></div>
                                 </div>
                               </div>
                             </td>
@@ -5789,6 +5794,7 @@ return {
                 </div>
               </div>
             </div>
+
 
 
           ) : (
