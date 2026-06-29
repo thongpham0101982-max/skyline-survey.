@@ -80,7 +80,11 @@ export default function PreschoolEvaluationForm({
 
   // If approved by both BGH and GDCS, the whole form is locked for editing
   const isApprovedStatus = (s: any) => s === "DAT" || s === "DAT_MIEN_HOC_THU" || s === "DAT_HOC_THU";
-  const isAssessmentLocked = isLocked || !!(isApprovedStatus(bghApprovalStatus) && isApprovedStatus(gdcsApprovalStatus));
+  const isAssessmentLocked = isLocked || !!(
+    student.isPreschoolProbation
+      ? (student.probationaryBghStatus && student.probationaryBghStatus !== "")
+      : (student.bghApprovalStatus || student.gdcsApprovalStatus)
+  );
 
     useEffect(() => {
     async function loadData() {
@@ -303,7 +307,7 @@ export default function PreschoolEvaluationForm({
               <div>
                 <p className="text-xs font-black uppercase tracking-wider">Phiếu Đánh Giá Ở Trạng Thái Khóa</p>
                 <p className="text-[11px] font-semibold text-emerald-600 mt-0.5">
-                  Học sinh đã đạt cả hai bước phê duyệt (BGH &amp; GĐCS) hoặc đợt khảo sát đã đóng. Phiếu hiển thị ở chế độ Chỉ đọc.
+                  Đã có phê duyệt từ Ban Giám Hiệu / GĐCS hoặc đợt khảo sát đã đóng. Phiếu hiển thị ở chế độ Chỉ đọc.
                 </p>
               </div>
             </div>
