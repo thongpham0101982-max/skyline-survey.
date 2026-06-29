@@ -1560,7 +1560,7 @@ export function ObservationClient(props: ObservationClientProps) {
           </div>
         </div>
 
-        {/* Panel 5: Lịch biểu & Hiệu suất đánh giá */}
+                {/* Panel 5: Lịch biểu & Hiệu suất đánh giá */}
         <div className="bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-4 border-t-4 border-t-[#00A99D]">
           <div className="flex items-center gap-2 border-b border-slate-150 pb-3">
             <ClipboardList className="w-5 h-5 text-[#00A99D]" />
@@ -1569,32 +1569,38 @@ export function ObservationClient(props: ObservationClientProps) {
 
           {/* Monthly stats card */}
           {monthlyStats.length > 0 && (
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-150 flex flex-col gap-3 text-xs font-semibold">
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-150 flex flex-col gap-3 text-xs font-semibold flex-1 justify-center">
               <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Hiệu suất tháng {monthlyStats[0].monthStr}</span>
               <div className="grid grid-cols-2 gap-3">
-                <div className="bg-white p-3 rounded-xl border border-slate-150 shadow-sm flex flex-col">
+                <div className="bg-white p-3 rounded-xl border border-slate-150 shadow-sm flex flex-col justify-center items-center py-5">
                   <span className="text-[9px] font-black text-slate-400 uppercase">Tiết dạy</span>
-                  <span className="text-base font-black text-emerald-600 mt-1">{monthlyStats[0].taughtCount} tiết</span>
+                  <span className="text-xl font-black text-emerald-600 mt-2">{monthlyStats[0].taughtCount} tiết</span>
                 </div>
-                <div className="bg-white p-3 rounded-xl border border-slate-150 shadow-sm flex flex-col">
+                <div className="bg-white p-3 rounded-xl border border-slate-150 shadow-sm flex flex-col justify-center items-center py-5">
                   <span className="text-[9px] font-black text-slate-400 uppercase">Tiết dự giờ</span>
-                  <span className="text-base font-black text-violet-600 mt-1">{monthlyStats[0].observedCount} tiết</span>
+                  <span className="text-xl font-black text-[#8B5CF6] mt-2">{monthlyStats[0].observedCount} tiết</span>
                 </div>
               </div>
             </div>
           )}
+        </div>
+
+        {/* Panel 6: Kết quả đánh giá gần đây */}
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-4 border-t-4 border-t-[#00A99D]">
+          <div className="flex items-center gap-2 border-b border-slate-150 pb-3">
+            <ClipboardList className="w-5 h-5 text-[#00A99D]" />
+            <span className="font-extrabold text-sm text-[#003B3A] uppercase tracking-wider">6. Kết quả đánh giá gần đây</span>
+          </div>
 
           {/* Evaluations list */}
           <div className="flex-1 flex flex-col gap-2.5">
-            <span className="text-[10px] font-black text-[#003B3A] uppercase tracking-wider">📑 Kết quả đánh giá gần đây</span>
-            
             {receivedEvaluations.length === 0 ? (
               <div className="flex flex-col items-center justify-center flex-1 py-8 text-slate-450 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
                 <ClipboardList className="w-8 h-8 text-slate-300 mb-1 stroke-1" />
                 <p className="text-[10px] font-bold text-center">Chưa nhận được phiếu đánh giá nào.</p>
               </div>
             ) : (
-              <div className="space-y-2.5 max-h-[250px] overflow-y-auto pr-1 custom-scrollbar">
+              <div className="space-y-2.5 max-h-[250px] overflow-y-auto pr-1 custom-scrollbar flex-1">
                 {receivedEvaluations.map(evalItem => {
                   const hasPassed = evalItem.evaluation?.isPassed ?? true;
                   return (
@@ -1603,15 +1609,15 @@ export function ObservationClient(props: ObservationClientProps) {
                       onClick={() => openEvalModal(evalItem.registration, evalItem.slot)}
                       className="p-3 bg-slate-50 hover:bg-[#E6F7F6]/30 border border-slate-150 rounded-xl flex items-center justify-between gap-3 text-xs font-semibold transition-all cursor-pointer hover:border-[#00A99D]/40 hover:shadow-sm"
                     >
-                      <div className="min-w-0">
-                        <p className="text-xs font-bold text-slate-800 truncate">{evalItem.evaluation?.topic || "Đánh giá tiết dạy"}</p>
-                        <p className="text-[10px] text-slate-400 truncate mt-0.5">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-bold text-slate-800 truncate leading-snug">{evalItem.evaluation?.topic || "Đánh giá tiết dạy"}</p>
+                        <p className="text-[10px] text-slate-400 truncate mt-0.5 font-bold">
                           Assessor: {evalItem.registration?.teacher?.teacherName || "Giáo viên"} • {new Date(evalItem.evaluation?.createdAt || evalItem.createdAt).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}
                         </p>
                       </div>
                       
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className={`px-2 py-0.5 text-[9px] font-black uppercase rounded ${hasPassed ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-rose-50 text-rose-700 border border-rose-200"}`}>
+                        <span className="px-2 py-0.5 text-[9px] font-black uppercase rounded bg-emerald-50 text-emerald-700 border border-emerald-250">
                           {hasPassed ? "Đạt" : "Không đạt"}
                         </span>
                       </div>
@@ -1623,6 +1629,7 @@ export function ObservationClient(props: ObservationClientProps) {
           </div>
         </div>
       </div>
+
       {/* Create Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
