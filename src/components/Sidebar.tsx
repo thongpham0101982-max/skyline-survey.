@@ -86,10 +86,10 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
   // Keep active category expanded on load or pathname change
   useEffect(() => {
     APP_CATEGORIES.forEach((cat) => {
-      const visibleModules = cat.modules.filter((m) => checkPermission(m.code, m.requiresAdmin, m.subModules))
-      const hasActiveChild = visibleModules.some((m) => {
+      const visibleModules = cat.modules.filter((m: any) => checkPermission(m.code, m.requiresAdmin, m.subModules))
+      const hasActiveChild = visibleModules.some((m: any) => {
         if (pathname === m.href) return true;
-        if (m.subModules && m.subModules.some((sub) => pathname === sub.href || (sub.href && pathname.startsWith(sub.href + "/")))) return true;
+        if (m.subModules && m.subModules.some((sub: any) => pathname === sub.href || (sub.href && pathname.startsWith(sub.href + "/")))) return true;
         return false;
       })
       if (hasActiveChild) {
@@ -154,13 +154,13 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
           )}
 
           {role === "ADMIN" && APP_CATEGORIES.map((cat) => {
-            const visibleModules = cat.modules.filter((m) => checkPermission(m.code, m.requiresAdmin, m.subModules))
+            const visibleModules = cat.modules.filter((m: any) => checkPermission(m.code, m.requiresAdmin, m.subModules))
             if (visibleModules.length === 0) return null
 
             // Detect if any module in this category is currently active
-            const hasActiveChild = visibleModules.some((m) => {
+            const hasActiveChild = visibleModules.some((m: any) => {
               if (pathname === m.href) return true;
-              if (m.subModules && m.subModules.some((sub) => pathname === sub.href || (sub.href && pathname.startsWith(sub.href + "/")))) return true;
+              if (m.subModules && m.subModules.some((sub: any) => pathname === sub.href || (sub.href && pathname.startsWith(sub.href + "/")))) return true;
               return false;
             })
 
@@ -203,8 +203,8 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                       : "max-h-0 opacity-0 invisible group-hover/cat:max-h-[500px] group-hover/cat:opacity-100 group-hover/cat:visible"
                   }`}
                 >
-                  {visibleModules.map((m) => {
-                    const isActive = pathname === m.href || (m.subModules && m.subModules.some((sub) => pathname === sub.href || (sub.href && pathname.startsWith(sub.href + "/"))))
+                  {visibleModules.map((m: any) => {
+                    const isActive = pathname === m.href || (m.subModules && m.subModules.some((sub: any) => pathname === sub.href || (sub.href && pathname.startsWith(sub.href + "/"))))
                     return (
                       <Link 
                         key={m.code} 

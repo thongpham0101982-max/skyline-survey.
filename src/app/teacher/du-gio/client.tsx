@@ -13,7 +13,22 @@ import {
   approveRegistration, submitEvaluation, updateTeacherObservationTargets
 } from "./actions"
 
-interface TeacherInfo { id: string; teacherName: string; teacherCode: string; email: string | null; departmentId: string | null; campusId: string; departmentRel?: any }
+interface TeacherInfo {
+  id: string;
+  teacherName: string;
+  teacherCode: string;
+  email: string | null;
+  departmentId: string | null;
+  campusId: string;
+  departmentRel?: any;
+  observerType?: string | null;
+  observeeType?: string | null;
+  requiredObserved?: number | null;
+  observedUnit?: string | null;
+  requiredTaught?: number | null;
+  taughtUnit?: string | null;
+  position?: string | null;
+}
 interface SubjectInfo { id: string; subjectCode: string; subjectName: string }
 interface DeptInfo { id: string; code: string; name: string }
 interface CampusInfo { id: string; campusCode: string; campusName: string }
@@ -83,9 +98,10 @@ const RATING_COLORS: Record<string, string> = {
   "Yếu": "bg-rose-100 text-rose-700 border-rose-300"
 }
 
-export function ObservationClient({
-  initialSlots, currentTeacher, subjects, departments, teachers, campuses, classes, initialFilters, academicYears, selectedYearId
-}: ObservationClientProps) {
+export function ObservationClient(props: ObservationClientProps) {
+  const {
+    initialSlots, currentTeacher, subjects, departments, teachers, campuses, classes, initialFilters, academicYears, selectedYearId
+  } = props;
   const isMamNonTeacher = (currentTeacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
   const router = useRouter()
   const pathname = usePathname()
@@ -734,7 +750,7 @@ export function ObservationClient({
   }
 
   const monthlyStats = useMemo(() => {
-    const stats = {};
+    const stats: Record<string, { monthStr: string; year: number; month: number; taughtCount: number; observedCount: number }> = {};
     slots.forEach(slot => {
       const slotDate = new Date(slot.date);
       if (isNaN(slotDate.getTime())) return;
@@ -943,8 +959,8 @@ export function ObservationClient({
   const selectedMonthStr = newDate ? `${(new Date(newDate).getMonth() + 1).toString().padStart(2, "0")}/${new Date(newDate).getFullYear()}` : "tháng hiện tại"
 
   return (
-    <div className="flex flex-col gap-6 relative pb-12 animate-fade-in text-slate-800">
-      {/* Toast */}
+    <div className="flex flex-col gap-6 relative pb-12 text-slate-800 bg-slate-50/50 min-h-screen p-1">
+      {/* Toast Notification */}
       {toast && (
         <div className={`fixed top-4 right-4 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border border-white/20 text-white animate-in slide-in-from-top duration-300 ${toast.type === "success" ? "bg-emerald-600" : toast.type === "error" ? "bg-rose-600" : "bg-sky-600"}`}>
           {toast.type === "success" && <Check className="w-5 h-5 shrink-0" />}
@@ -954,14 +970,14 @@ export function ObservationClient({
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
+      {/* Top Header Navbar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5 bg-white p-6 rounded-3xl shadow-sm">
         <div>
           <h1 className="text-2xl font-black text-[#003B3A] tracking-tight flex items-center gap-2">
             <Calendar className="w-7 h-7 text-[#00A99D]" />
-            Đăng ký dự giờ
+            Hệ thống Dự giờ Giáo viên
           </h1>
-          <p className="text-slate-500 text-sm font-medium mt-1">Đăng ký dự giờ tiết dạy tại Sky-Line</p>
+          <p className="text-slate-500 text-xs font-semibold mt-1">Giao diện điều khiển dự giờ và phân công chuyên môn chuẩn Sky-Line</p>
         </div>
         <div className="flex items-center gap-3 shrink-0">
           {academicYears && academicYears.length > 0 && (
@@ -977,1206 +993,565 @@ export function ObservationClient({
               ))}
             </select>
           )}
-          <button onClick={() => setShowCreateModal(true)}
-            className="flex items-center justify-center gap-2 bg-[#00A99D] hover:bg-[#008B85] text-white font-bold py-2.5 px-5 rounded-xl transition-all shadow-md hover:shadow-lg active:scale-95 text-sm shrink-0">
-            <Plus className="w-4 h-4" /> Thêm mới tiết dạy
-          </button>
+          
+          <div className="flex items-center gap-2 border-l pl-4 border-slate-200">
+            <div className="w-8 h-8 rounded-full bg-[#00A99D]/10 text-[#00A99D] flex items-center justify-center font-black text-sm uppercase">
+              {currentTeacher.teacherName.charAt(0)}
+            </div>
+            <div className="hidden md:flex flex-col text-left">
+              <span className="text-xs font-black text-[#003B3A]">{currentTeacher.teacherName}</span>
+              <span className="text-[9px] font-bold text-slate-400">{currentTeacher.teacherCode}</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex border border-slate-200/60 gap-1.5 bg-slate-100/80 p-1.5 rounded-2xl mb-2 backdrop-blur-sm">
-        {[
-          ["dang-ky", "Đăng ký dự giờ", <Calendar className="w-4 h-4" key="c"/>],
-          ["my-schedule", "Lịch của tôi", <Layers className="w-4 h-4" key="l"/>],
-          ["history", "Lịch sử đăng ký", <FileText className="w-4 h-4" key="f"/>],
-          ["evaluation-results", "Kết quả đánh giá", <CheckCircle className="w-4 h-4" key="e"/>],
-          ["tong-hop", "Tổng hợp dự giờ", <ClipboardList className="w-4 h-4" key="t"/>]
-        ].map(([tab, label, icon]) => (
-          <button key={tab as string} onClick={() => handleTabChange(tab as string)}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-wider transition-all duration-300 ${activeTab === tab ? "bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white shadow-md font-black scale-105" : "text-slate-600 hover:text-slate-900 hover:bg-white/60"}`}>
-            {icon as React.ReactNode}{label as string}
-          </button>
-        ))}
+      {/* ROW 1: 3-Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Panel 1: Khởi tạo tiết dạy của tôi */}
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-4 border-t-4 border-t-[#00A99D]">
+          <div className="flex items-center justify-between border-b border-slate-150 pb-3">
+            <div className="flex items-center gap-2">
+              <Plus className="w-5 h-5 text-[#00A99D]" />
+              <span className="font-extrabold text-sm text-[#003B3A] uppercase tracking-wider">1. Khởi tạo tiết dạy của tôi</span>
+            </div>
+            <span className="text-[10px] font-extrabold bg-[#E6F7F6] text-[#00A99D] px-2 py-0.5 rounded-md">
+              Tháng {new Date().getMonth() + 1}: {monthlyLimitCount}/2
+            </span>
+          </div>
+
+          <form onSubmit={handleCreateSubmit} className="flex flex-col gap-3 text-xs font-semibold">
+            {/* Topic Input */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-extrabold text-slate-500 uppercase">Tên bài dạy / Chủ đề *</label>
+              <input 
+                type="text" 
+                placeholder="Ví dụ: Đơn vị đo độ dài..." 
+                value={newTopic} 
+                onChange={e => setNewTopic(e.target.value)} 
+                required
+                className="w-full text-xs font-semibold p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A99D] focus:border-[#00A99D] outline-none transition-all"
+              />
+            </div>
+
+            {/* Subject Select */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-extrabold text-slate-500 uppercase">Môn học *</label>
+                <select value={newSubjectId} onChange={e => setNewSubjectId(e.target.value)} required
+                  className="w-full text-xs font-semibold p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A99D] outline-none bg-white">
+                  <option value="">Chọn môn</option>
+                  {subjects.map(s => <option key={s.id} value={s.id}>{s.subjectName}</option>)}
+                </select>
+              </div>
+
+              {/* Level Select */}
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-extrabold text-slate-500 uppercase">Cấp học *</label>
+                <select value={newLevel} onChange={e => { setNewLevel(e.target.value); setNewGrade(""); setNewClassId(""); }} required
+                  className="w-full text-xs font-semibold p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A99D] outline-none bg-white">
+                  <option value="">Chọn cấp</option>
+                  <option value="Mầm non">Mầm non</option>
+                  <option value="Tiểu học">Tiểu học</option>
+                  <option value="THCS">THCS</option>
+                  <option value="THPT">THPT</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Grade & Class Select */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-extrabold text-slate-500 uppercase">Khối lớp *</label>
+                <select value={newGrade} onChange={e => { setNewGrade(e.target.value); setNewClassId(""); }} required disabled={!newLevel}
+                  className="w-full text-xs font-semibold p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A99D] outline-none bg-white disabled:opacity-55">
+                  <option value="">Chọn khối</option>
+                  {getGradesForLevel(newLevel).map(g => <option key={g} value={g}>{g}</option>)}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-extrabold text-slate-500 uppercase">Lớp học *</label>
+                <select value={newClassId} onChange={e => setNewClassId(e.target.value)} required disabled={!newGrade}
+                  className="w-full text-xs font-semibold p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A99D] outline-none bg-white disabled:opacity-55">
+                  <option value="">Chọn lớp</option>
+                  {classes.filter(c => c.campusId === newCampusId && c.level === newLevel && c.grade === newGrade).map(c => (
+                    <option key={c.id} value={c.id}>{c.className}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Date & Period */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-extrabold text-slate-500 uppercase">Ngày dạy *</label>
+                <input 
+                  type="date" 
+                  value={newDate} 
+                  onChange={e => setNewDate(e.target.value)} 
+                  required
+                  className="w-full text-xs font-semibold p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A99D] focus:border-[#00A99D] outline-none transition-all"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-extrabold text-slate-500 uppercase">Tiết dạy *</label>
+                <select value={newStartTime} onChange={e => { setNewStartTime(e.target.value); setNewEndTime(e.target.value); }} required
+                  className="w-full text-xs font-semibold p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A99D] outline-none bg-white">
+                  <option value="">Chọn tiết</option>
+                  {[1,2,3,4,5,6,7,8].map(p => <option key={p} value={`Tiết ${p}`}>Tiết {p}</option>)}
+                </select>
+              </div>
+            </div>
+
+            {/* Room & Visibility */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-extrabold text-slate-500 uppercase">Phòng học *</label>
+                <input 
+                  type="text" 
+                  placeholder="Ví dụ: Phòng 302..." 
+                  value={newClassNameText} 
+                  onChange={e => setNewClassNameText(e.target.value)} 
+                  required
+                  className="w-full text-xs font-semibold p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A99D] focus:border-[#00A99D] outline-none transition-all"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-extrabold text-slate-500 uppercase">Chế độ hiển thị</label>
+                <select value={newVisibility} onChange={e => setNewVisibility(e.target.value)}
+                  className="w-full text-xs font-semibold p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A99D] outline-none bg-white">
+                  <option value="ALL">Công khai toàn trường</option>
+                  <option value="DEPARTMENT">Nội bộ Tổ chuyên môn</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Submit Button */}
+            <button 
+              type="submit" 
+              disabled={submitting}
+              className="w-full mt-2 bg-gradient-to-r from-[#003B3A] to-[#00A99D] hover:from-[#002b2a] hover:to-[#008b82] text-white font-extrabold py-3 px-5 rounded-2xl transition-all shadow-md active:scale-[0.98] text-xs uppercase tracking-wider shrink-0 flex items-center justify-center gap-1.5"
+            >
+              <Plus className="w-4 h-4" />
+              {submitting ? "Đang xử lý..." : "Khởi tạo tiết dạy"}
+            </button>
+          </form>
+        </div>
+
+        {/* Panel 2: Chỉ tiêu chuyên môn & Đăng ký nhanh */}
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-4 border-t-4 border-t-[#003B3A]">
+          <div className="flex items-center gap-2 border-b border-slate-150 pb-3">
+            <Award className="w-5 h-5 text-[#003B3A]" />
+            <span className="font-extrabold text-sm text-[#003B3A] uppercase tracking-wider">2. Chỉ tiêu chuyên môn & Đăng ký nhanh</span>
+          </div>
+
+          {/* Target Indicators */}
+          <div className="grid grid-cols-2 gap-4 p-3 bg-slate-50 rounded-2xl border border-slate-100">
+            <div className="flex flex-col items-center justify-center p-3.5 bg-white rounded-xl shadow-sm border border-slate-150 text-center">
+              <span className="text-[9px] font-black text-slate-400 uppercase">Chỉ tiêu dự giờ</span>
+              <span className="text-xl font-black text-[#00A99D] mt-1">
+                {(teacherStats[currentTeacher.id]?.observedCount || 0)} / {selfRequiredObserved}
+              </span>
+              <span className="text-[9px] font-extrabold text-slate-400 mt-0.5">tiết/{selfObservedUnit}</span>
+            </div>
+
+            <div className="flex flex-col items-center justify-center p-3.5 bg-white rounded-xl shadow-sm border border-slate-150 text-center">
+              <span className="text-[9px] font-black text-slate-400 uppercase">Chỉ tiêu tiết dạy</span>
+              <span className="text-xl font-black text-[#003B3A] mt-1">
+                {(teacherStats[currentTeacher.id]?.taughtCount || 0)} / {selfRequiredTaught || 1}
+              </span>
+              <span className="text-[9px] font-extrabold text-slate-400 mt-0.5">tiết/{selfTaughtUnit}</span>
+            </div>
+          </div>
+
+          {/* Quick Register Slots */}
+          <div className="flex-1 flex flex-col gap-2.5">
+            <span className="text-[10px] font-black text-[#003B3A] uppercase tracking-wider">⚡ Tiết học gợi ý đăng ký nhanh</span>
+            
+            {(() => {
+              const suggested = slots
+                .filter(s => s.teacherId !== currentTeacher.id && !s.registrations.some((r: any) => r.teacherId === currentTeacher.id))
+                .slice(0, 3);
+              
+              if (suggested.length === 0) {
+                return (
+                  <div className="flex flex-col items-center justify-center flex-1 py-8 text-slate-400 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                    <CheckCircle className="w-8 h-8 text-slate-350 mb-1 stroke-1" />
+                    <p className="text-[10px] font-bold text-center">Bạn đã đăng ký hết các tiết học khả dụng!</p>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="space-y-2">
+                  {suggested.map(slot => {
+                    const isPastSlot = new Date(slot.date) < new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+                    return (
+                      <div key={slot.id} className="p-3 bg-slate-50 hover:bg-[#E6F7F6]/50 rounded-xl border border-slate-150 flex items-center justify-between gap-3 text-xs font-semibold transition-all">
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-slate-800 truncate">{slot.topic}</p>
+                          <p className="text-[10px] text-slate-500 truncate mt-0.5">
+                            {slot.teacher.teacherName} • {slot.className || "Lớp"} • {new Date(slot.date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}
+                          </p>
+                        </div>
+                        <button 
+                          onClick={() => handleRegister(slot.id)}
+                          className={`px-3 py-1.5 ${isPastSlot ? "bg-slate-200 text-slate-600" : "bg-[#00A99D] hover:bg-[#008b82] text-white"} text-[10px] font-black uppercase rounded-lg transition-all shadow-sm flex-shrink-0`}
+                        >
+                          {isPastSlot ? "Đăng ký bù" : "Đăng ký"}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+
+        {/* Panel 3: Lịch dạy & dự giờ của tôi */}
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-4 border-t-4 border-t-[#00A99D]">
+          <div className="flex items-center gap-2 border-b border-slate-150 pb-3">
+            <Calendar className="w-5 h-5 text-[#00A99D]" />
+            <span className="font-extrabold text-sm text-[#003B3A] uppercase tracking-wider">3. Lịch dạy & dự giờ của tôi</span>
+          </div>
+
+          <div className="flex-1 overflow-y-auto max-h-[315px] space-y-3 custom-scrollbar pr-1">
+            {(() => {
+              const mySchedule = slots.filter(slot => {
+                const isHost = slot.teacherId === currentTeacher.id;
+                const isObserver = slot.registrations.some((r: any) => r.teacherId === currentTeacher.id);
+                return isHost || isObserver;
+              }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+              if (mySchedule.length === 0) {
+                return (
+                  <div className="flex flex-col items-center justify-center py-16 text-slate-400 border border-dashed border-slate-250 rounded-2xl bg-slate-50/50">
+                    <Calendar className="w-10 h-10 text-slate-300 stroke-1 mb-2" />
+                    <p className="text-xs font-bold text-center">Bạn chưa có tiết dạy hoặc lịch dự giờ nào.</p>
+                    <p className="text-[10px] text-slate-400 text-center mt-1">Đăng ký dự giờ ở bảng bên dưới hoặc tạo tiết dạy mới.</p>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {mySchedule.map(slot => {
+                    const isHost = slot.teacherId === currentTeacher.id;
+                    const slotDate = new Date(slot.date);
+                    const myReg = slot.registrations.find((r: any) => r.teacherId === currentTeacher.id);
+                    const isPastSlot = slotDate < new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+                    
+                    return (
+                      <div key={slot.id} className={`p-4 rounded-2xl border flex flex-col gap-2.5 transition-all shadow-sm hover:shadow-md ${isHost ? "bg-amber-50/40 border-amber-200/80 border-l-4 border-l-amber-500" : "bg-teal-50/30 border-teal-200/60 border-l-4 border-l-[#00A99D]"}`}>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className={`px-2 py-0.5 text-[9px] font-black uppercase rounded-md ${isHost ? "bg-amber-100 text-amber-800" : "bg-[#E6F7F6] text-[#00A99D]"}`}>
+                            {isHost ? "Tôi dạy" : "Tôi dự"}
+                          </span>
+                          <span className="text-[9px] font-extrabold text-slate-400">
+                            {slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}
+                          </span>
+                        </div>
+                        
+                        <div className="min-w-0">
+                          <h4 className="text-xs font-black text-slate-800 truncate leading-tight" title={slot.topic}>{slot.topic}</h4>
+                          <p className="text-[10px] font-semibold text-slate-500 truncate mt-1">
+                            Lớp: {slot.className || "Chưa xếp"} • Tiết: {slot.startTime}
+                          </p>
+                          <p className="text-[10px] font-semibold text-slate-400 truncate mt-0.5">
+                            Gv dạy: {slot.teacher.teacherName}
+                          </p>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-1.5 mt-1 border-t border-slate-100 pt-2 text-[10px]">
+                          {isHost ? (
+                            <>
+                              <button onClick={() => openEditModal(slot)}
+                                className="px-2.5 py-1 text-slate-600 bg-white border border-slate-200 rounded-lg font-bold hover:bg-slate-50 transition-colors">
+                                Sửa
+                              </button>
+                              <button onClick={() => handleDeleteSlot(slot.id)}
+                                className="px-2.5 py-1 text-rose-600 bg-white border border-rose-250 rounded-lg font-bold hover:bg-rose-50 transition-colors">
+                                Hủy tiết
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              {isPastSlot ? (
+                                <button onClick={() => openEvalModal(myReg, slot)}
+                                  className="px-2.5 py-1 bg-[#00A99D] hover:bg-[#008b82] text-white rounded-lg font-black shadow-sm transition-all whitespace-nowrap">
+                                  Nhập đánh giá
+                                </button>
+                              ) : (
+                                <button onClick={() => handleCancelRegistration(myReg?.id)}
+                                  className="px-2.5 py-1 text-rose-600 bg-white border border-rose-200 rounded-lg font-bold hover:bg-rose-50/50 transition-all">
+                                  Hủy đăng ký
+                                </button>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </div>
+        </div>
       </div>
 
-      {/* Main Layout */}
-      <div className="flex flex-col gap-6">
-        {/* Target Confirmation Card */}
-        {activeTab === "dang-ky" && (
-          <div className="bg-white rounded-3xl border border-slate-100 shadow-md shadow-slate-100/40 p-6 border-t-4 border-t-[#00A99D] flex flex-col gap-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <Award className="w-5 h-5 text-[#00A99D]" />
-                <span className="font-extrabold text-sm text-slate-800 uppercase tracking-wider">🎯 Xác nhận chỉ tiêu dự giờ & tiết dạy</span>
-              </div>
-              {selfObserverType && !isEditingSelfTargets && (
-                <button
-                  onClick={() => setIsEditingSelfTargets(true)}
-                  className="text-xs font-bold text-[#00A99D] hover:underline"
-                >
-                  Thay đổi thông tin
-                </button>
+      {/* ROW 2: 2-Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        {/* Panel 4: Danh sách tiết dạy đang mở đăng ký (Wider Col) */}
+        <div className="lg:col-span-8 bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-5 border-t-4 border-t-[#003B3A]">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-150 pb-4">
+            <div className="flex items-center gap-2">
+              <SlidersHorizontal className="w-5 h-5 text-[#00A99D]" />
+              <span className="font-extrabold text-sm text-[#003B3A] uppercase tracking-wider">4. Danh sách tiết dạy đăng ký dự giờ</span>
+              {isSearching && (
+                <div className="flex items-center gap-1.5 ml-2 animate-pulse text-xs font-semibold">
+                  <div className="w-2 h-2 border border-sky-400 border-t-transparent rounded-full animate-spin" />
+                  <span className="text-[10px] font-bold text-sky-600">Đang cập nhật...</span>
+                </div>
               )}
             </div>
 
-            {!isEditingSelfTargets ? (
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 text-xs font-semibold">
-                <div className="space-y-1">
-                  <p className="text-xs text-slate-500 font-bold">Thông tin chỉ tiêu của Thầy/Cô đã được xác nhận:</p>
-                  <div className="flex flex-wrap gap-4 text-xs font-semibold text-slate-800">
-                    <div>Chức danh / Nhóm: <span className="font-black text-[#003B3A]">{selfObserverType}</span></div>
-                    <div>Chỉ tiêu Dự giờ: <span className="font-black text-[#003B3A]">{selfRequiredObserved} tiết/{selfObservedUnit}</span></div>
-                    <div>Chỉ tiêu Tiết dạy: <span className="font-black text-[#003B3A]">{selfRequiredTaught > 0 ? `${selfRequiredTaught} tiết/${selfTaughtUnit}` : "Không quy định"}</span></div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5 text-xs font-black text-emerald-600 self-start md:self-auto text-xs font-semibold">
-                  <Check className="w-4 h-4" /> Đã xác nhận chỉ tiêu
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Họ và Tên & Chức vụ</label>
-                    <div className="text-xs font-bold text-slate-700 p-2.5 text-xs font-semibold">
-                      {currentTeacher?.teacherName} ({currentTeacher?.position || "Giáo viên"})
-                    </div>
-                  </div>
-
-                  {!isSpecialPosition ? (
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-[10px] font-bold uppercase tracking-wider text-[#00A99D]">Chọn nhóm giáo viên</label>
-                      <select
-                        value={gvOption}
-                        onChange={(e) => setGvOption(e.target.value as "new" | "old")}
-                        className="w-full text-xs font-semibold p-2.5 text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A99D] outline-none text-xs font-semibold"
-                      >
-                        <option value="new">Giáo viên mới (dưới 1 năm kinh nghiệm)</option>
-                        <option value="old">Giáo viên cũ (từ 2 năm trở lên)</option>
-                      </select>
-                    </div>
-                  ) : (
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Nhóm chỉ tiêu (Theo chức vụ)</label>
-                      <div className="text-xs font-bold text-[#00A99D] p-2.5 text-xs font-semibold">
-                        {computedTargets.obsType}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 text-xs font-semibold">
-                  <div className="flex flex-col">
-                    <span className="text-[9px] font-bold uppercase text-slate-400">Chỉ tiêu dự giờ</span>
-                    <span className="text-xs font-black text-slate-800 mt-1">{computedTargets.labelObs}</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[9px] font-bold uppercase text-slate-400">Chỉ tiêu tiết dạy</span>
-                    <span className="text-xs font-black text-slate-800 mt-1">{computedTargets.labelTgt}</span>
-                  </div>
-                </div>
-
-                <div className="flex justify-end gap-2.5 border-t border-slate-100 pt-4">
-                  {selfObserverType && (
-                    <button
-                      type="button"
-                      onClick={() => setIsEditingSelfTargets(false)}
-                      className="text-xs font-bold text-slate-500 hover:bg-slate-50 text-xs font-semibold"
-                    >
-                      Hủy bỏ
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    disabled={savingSelfTargets}
-                    onClick={async () => {
-                      setSavingSelfTargets(true);
-                      const res = await updateTeacherObservationTargets(currentTeacher.id, {
-                        observerType: computedTargets.obsType,
-                        observeeType: computedTargets.tgtType,
-                        requiredObserved: computedTargets.obsCount,
-                        observedUnit: computedTargets.obsUnit,
-                        requiredTaught: computedTargets.tgtCount,
-                        taughtUnit: computedTargets.tgtUnit
-                      });
-                      setSavingSelfTargets(false);
-                      if (res.success) {
-                        showToast("Xác nhận thông tin chỉ tiêu thành công!", "success");
-                        setSelfObserverType(computedTargets.obsType);
-                        setSelfObserveeType(computedTargets.tgtType);
-                        setSelfRequiredObserved(computedTargets.obsCount);
-                        setSelfObservedUnit(computedTargets.obsUnit);
-                        setSelfRequiredTaught(computedTargets.tgtCount);
-                        setSelfTaughtUnit(computedTargets.tgtUnit);
-                        setIsEditingSelfTargets(false);
-                        
-                        // Sync with teachers local list
-                        const tIdx = teachers.findIndex(t => t.id === currentTeacher.id);
-                        if (tIdx > -1) {
-                          teachers[tIdx].observerType = computedTargets.obsType;
-                          teachers[tIdx].observeeType = computedTargets.tgtType;
-                          teachers[tIdx].requiredObserved = computedTargets.obsCount;
-                          teachers[tIdx].observedUnit = computedTargets.obsUnit;
-                          teachers[tIdx].requiredTaught = computedTargets.tgtCount;
-                          teachers[tIdx].taughtUnit = computedTargets.tgtUnit;
-                        }
-                      } else {
-                        showToast("Lỗi: " + res.error, "error");
-                      }
-                    }}
-                    className="px-5 py-2 bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white text-xs font-extrabold uppercase tracking-wider rounded-xl shadow-sm hover:shadow-lg transition-all disabled:opacity-50"
-                  >
-                    {savingSelfTargets ? "Đang lưu..." : "Xác nhận & Lưu chỉ tiêu"}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-        {/* Filters */}
-        {activeTab === "dang-ky" && (
-          <div className="bg-white rounded-3xl border border-slate-100 shadow-md shadow-slate-100/40 flex flex-col border-t-4 border-t-[#003B3A] overflow-hidden">
-            {/* Filter Header - collapsible */}
-            <button
-              onClick={() => setShowFilterPanel(!showFilterPanel)}
-              className="flex items-center justify-between hover:bg-slate-50/80 transition-colors text-xs font-semibold"
-            >
-              <div className="flex items-center gap-2">
-                <SlidersHorizontal className="w-4 h-4 text-[#00A99D]" />
-                <span className="font-extrabold text-sm text-slate-800 uppercase tracking-wider">Bộ lọc tìm kiếm</span>
-                {activeFilterCount > 0 && (
-                  <span className="inline-flex items-center justify-center w-5 h-5 text-[10px] font-black text-white bg-[#00A99D] rounded-full">
-                    {activeFilterCount}
-                  </span>
-                )}
-                {isSearching && (
-                  <div className="flex items-center gap-1.5 ml-2 animate-pulse text-xs font-semibold">
-                    <div className="w-2.5 h-2.5 border-2 border-sky-400 border-t-transparent rounded-full animate-spin" />
-                    <span className="text-[10px] font-bold text-sky-600">Đang cập nhật...</span>
-                  </div>
-                )}
-              </div>
-              <div className="flex items-center gap-3">
-                {activeFilterCount > 0 && (
-                  <button onClick={(e) => { e.stopPropagation(); clearAllFilters() }}
-                    className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-500 hover:bg-rose-100 transition-colors text-xs font-semibold">
-                    <RotateCcw className="w-3 h-3" /> Xóa tất cả
-                  </button>
-                )}
-                <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-300 ${showFilterPanel ? "rotate-180" : ""}`} />
-              </div>
-            </button>
-
-            {/* Filter Body */}
-            <div className={`transition-all duration-300 ease-in-out overflow-hidden ${showFilterPanel ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"}`}>
-              <div className="px-6 pb-6 flex flex-col gap-4 border-t border-slate-100 pt-5">
-                
-                {/* Horizontal Grid of Inputs */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
-                  {/* Campus Filter */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1"><Building2 className="w-3 h-3"/>Cơ sở</label>
-                    <select value={filterCampusId} onChange={e => setFilterCampusId(e.target.value)}
-                      className={`w-full text-sm rounded-xl border p-2.5 transition-all outline-none ${filterCampusId !== "all" ? "border-[#00A99D] bg-[#00A99D]/5 text-[#003B3A] font-semibold ring-1 ring-[#00A99D]/20" : "border-slate-200/80 bg-slate-50/50 text-slate-700 hover:border-[#00A99D]/50 focus:border-[#00A99D] focus:bg-white focus:ring-2 focus:ring-[#00A99D]/20"}`}>
-                      <option value="all">Tất cả cơ sở</option>
-                      {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
-                    </select>
-                  </div>
-
-                  {/* Level Filter */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1"><Layers className="w-3 h-3"/>Bậc học</label>
-                    <select value={filterLevel} onChange={e => { setFilterLevel(e.target.value); setFilterGrade("all") }}
-                      className={`w-full text-sm rounded-xl border p-2.5 transition-all outline-none ${filterLevel !== "all" ? "border-[#00A99D] bg-[#00A99D]/5 text-[#003B3A] font-semibold ring-1 ring-[#00A99D]/20" : "border-slate-200/80 bg-slate-50/50 text-slate-700 hover:border-[#00A99D]/50 focus:border-[#00A99D] focus:bg-white focus:ring-2 focus:ring-[#00A99D]/20"}`}>
-                      <option value="all">Tất cả bậc học</option>
-                      <option value="Mầm non">Mầm non</option>
-                      <option value="Phổ thông K-12">Phổ thông K-12</option>
-                    </select>
-                  </div>
-
-                  {/* Grade Filter */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1"><ChevronDown className="w-3 h-3"/>Khối lớp</label>
-                    <select value={filterGrade} onChange={e => setFilterGrade(e.target.value)} disabled={filterLevel === "all"}
-                      className={`w-full text-sm rounded-xl border p-2.5 transition-all outline-none disabled:opacity-50 disabled:cursor-not-allowed ${filterGrade !== "all" ? "border-[#00A99D] bg-[#00A99D]/5 text-[#003B3A] font-semibold ring-1 ring-[#00A99D]/20" : "border-slate-200/80 bg-slate-50/50 text-slate-700 hover:border-[#00A99D]/50 focus:border-[#00A99D] focus:bg-white focus:ring-2 focus:ring-[#00A99D]/20"}`}>
-                      <option value="all">Tất cả khối lớp</option>
-                      {getGradesForLevel(filterLevel).map(g => <option key={g} value={g}>{g}</option>)}
-                    </select>
-                  </div>
-
-                  {/* Date Filter */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1"><Calendar className="w-3 h-3"/>Ngày dạy</label>
-                    <div className="relative">
-                      <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)}
-                        className={`w-full text-sm rounded-xl border p-2.5 transition-all outline-none pr-8 ${filterDate ? "border-[#00A99D] bg-[#00A99D]/5 text-[#003B3A] font-semibold ring-1 ring-[#00A99D]/20" : "border-slate-200/80 bg-slate-50/50 text-slate-700 hover:border-[#00A99D]/50 focus:border-[#00A99D] focus:bg-white focus:ring-2 focus:ring-[#00A99D]/20"}`} />
-                      {filterDate && (
-                        <button onClick={() => setFilterDate("")} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-slate-200/80 transition-colors">
-                          <X className="w-3.5 h-3.5 text-slate-400" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Period Filter */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1"><Clock className="w-3 h-3"/>Tiết dạy</label>
-                    <select value={filterPeriod} onChange={e => setFilterPeriod(e.target.value)}
-                      className={`w-full text-sm rounded-xl border p-2.5 transition-all outline-none ${filterPeriod !== "all" ? "border-[#00A99D] bg-[#00A99D]/5 text-[#003B3A] font-semibold ring-1 ring-[#00A99D]/20" : "border-slate-200/80 bg-slate-50/50 text-slate-700 hover:border-[#00A99D]/50 focus:border-[#00A99D] focus:bg-white focus:ring-2 focus:ring-[#00A99D]/20"}`}>
-                      <option value="all">Tất cả tiết</option>
-                      {[1, 2, 3, 4, 5, 6, 7, 8].map(p => <option key={p} value={`Tiết ${p}`}>Tiết ${p}</option>)}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Active Filter Tags */}
-                {activeFilterCount > 0 && (
-                  <div className="flex flex-wrap gap-1.5 pt-2.5 border-t border-slate-100 mt-2">
-                    {activeFilterTags.map(tag => (
-                      <span key={tag.key}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-lg bg-[#00A99D]/10 text-[#00A99D] border border-[#00A99D]/20">
-                        <span className="text-[#003B3A]/50">{tag.label}:</span> {tag.value}
-                        <button onClick={tag.onRemove} className="ml-0.5 p-0.5 rounded-full hover:bg-[#00A99D]/20 transition-colors">
-                          <X className="w-3 h-3" />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-              </div>
+            {/* Department tabs selector */}
+            <div className="flex gap-2">
+              <button onClick={() => setActiveDeptTab("my-dept")}
+                className={`px-4 py-1.5 text-xs font-extrabold rounded-xl transition-all duration-300 shadow-sm border ${activeDeptTab === "my-dept" ? "bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white border-transparent" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                Tiết dạy thuộc TCM
+              </button>
+              <button onClick={() => setActiveDeptTab("other-dept")}
+                className={`px-4 py-1.5 text-xs font-extrabold rounded-xl transition-all duration-300 shadow-sm border ${activeDeptTab === "other-dept" ? "bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white border-transparent" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                Tiết dạy TCM khác
+              </button>
             </div>
           </div>
-        )}
 
-        {/* Slot Cards */}
-        <div className="flex flex-col gap-6">
-          {activeTab === "dang-ky" && (
-            <div className="flex flex-col gap-4">
-              
+          {/* Advanced filters inputs block */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-4 bg-slate-50 border border-slate-200/60 rounded-2xl text-xs font-semibold">
+            {/* Campus */}
+            <div className="flex flex-col gap-1">
+              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Cơ sở</span>
+              <select value={filterCampusId} onChange={e => setFilterCampusId(e.target.value)}
+                className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none">
+                <option value="all">Tất cả cơ sở</option>
+                {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
+              </select>
+            </div>
 
-              <div className="flex gap-2">
-                
-                <button onClick={() => setActiveDeptTab("my-dept")}
-                  className={`px-4 py-1.5 text-xs font-bold rounded-xl transition-all duration-300 shadow-sm ${activeDeptTab === "my-dept" ? "bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
-                  Tiết dạy thuộc TCM
-                </button>
-                <button onClick={() => setActiveDeptTab("other-dept")}
-                  className={`px-4 py-1.5 text-xs font-bold rounded-xl transition-all duration-300 shadow-sm ${activeDeptTab === "other-dept" ? "bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
-                  Tiết dạy TCM khác
-                </button>
-              </div>
+            {/* Level */}
+            <div className="flex flex-col gap-1">
+              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Bậc học</span>
+              <select value={filterLevel} onChange={e => { setFilterLevel(e.target.value); setFilterGrade("all"); }}
+                className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none">
+                <option value="all">Tất cả bậc</option>
+                <option value="Mầm non">Mầm non</option>
+                <option value="Phổ thông K-12">Phổ thông K-12</option>
+              </select>
+            </div>
+
+            {/* Grade */}
+            <div className="flex flex-col gap-1">
+              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Khối lớp</span>
+              <select value={filterGrade} onChange={e => setFilterGrade(e.target.value)} disabled={filterLevel === "all"}
+                className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none disabled:opacity-55">
+                <option value="all">Tất cả khối</option>
+                {getGradesForLevel(filterLevel).map(g => <option key={g} value={g}>{g}</option>)}
+              </select>
+            </div>
+
+            {/* Date */}
+            <div className="flex flex-col gap-1">
+              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Ngày dạy</span>
+              <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)}
+                className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-1.5 bg-white text-slate-800 outline-none" />
+            </div>
+
+            {/* Period */}
+            <div className="flex flex-col gap-1">
+              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Tiết dạy</span>
+              <select value={filterPeriod} onChange={e => setFilterPeriod(e.target.value)}
+                className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none">
+                <option value="all">Tất cả tiết</option>
+                {[1,2,3,4,5,6,7,8].map(p => <option key={p} value={`Tiết ${p}`}>Tiết {p}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {/* Active Tags */}
+          {activeFilterCount > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {activeFilterTags.map(tag => (
+                <span key={tag.key} className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-black rounded-lg bg-[#E6F7F6] text-[#00A99D] border border-[#00A99D]/10">
+                  <span>{tag.label}:</span> {tag.value}
+                  <button onClick={tag.onRemove} className="ml-1 p-0.5 rounded-full hover:bg-[#00A99D]/20 transition-colors">
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+              <button onClick={clearAllFilters} className="text-[10px] font-black text-rose-500 hover:underline ml-1">Xóa tất cả bộ lọc</button>
             </div>
           )}
-          {activeTab === "tong-hop" ? (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-in fade-in duration-300">
-              {/* Left Column: Teachers List */}
-              <div className="lg:col-span-5 flex flex-col gap-4">
-                {/* Department Selector & Teacher Search Card */}
-                <div className="bg-white p-5 rounded-3xl border-2 border-slate-100 shadow-sm space-y-4">
-                  <div className="flex flex-col gap-2">
-                    <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Tổ chuyên môn</label>
-                    <select value={selectedDeptId} onChange={e => { setSelectedDeptId(e.target.value); setSelectedTeacherId(null); setTongHopSearchTeacherQuery(""); }}
-                      className="w-full text-sm font-semibold p-3 text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none text-xs font-semibold">
-                      {departments.map(dept => (
-                        <option key={dept.id} value={dept.id}>{dept.name}</option>
-                      ))}
-                    </select>
-                  </div>
 
-                  {/* Teacher Search Input */}
-                  <div className="flex flex-col gap-2">
-                    <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Tìm kiếm giáo viên</label>
-                    <div className="relative group/search">
-                      <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400 group-focus-within/search:text-[#00A99D] transition-colors" />
-                      <input 
-                        type="text" 
-                        placeholder="Tìm tên hoặc mã giáo viên..."
-                        value={tongHopSearchTeacherQuery}
-                        onChange={e => { setTongHopSearchTeacherQuery(e.target.value); setSelectedTeacherId(null); }}
-                        className="w-full text-xs font-semibold pl-9 pr-8 text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A99D] focus:border-[#00A99D] transition-all outline-none text-xs font-semibold"
-                      />
-                      {tongHopSearchTeacherQuery && (
-                        <button onClick={() => { setTongHopSearchTeacherQuery(""); setSelectedTeacherId(null); }} className="absolute right-3 top-3 text-slate-400 hover:text-slate-600">
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Teachers Statistics List Card */}
-                <div className="bg-white p-5 rounded-3xl border-2 border-slate-100 shadow-sm flex-1 flex flex-col min-h-[400px]">
-                  <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider pb-3 border-b border-slate-100 flex items-center justify-between mb-4">
-                    <span>Thống kê thành viên ({filteredDeptTeachers.length})</span>
-                  </h3>
-                  
-                  {filteredDeptTeachers.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center flex-1 py-12 text-slate-400">
-                      <ClipboardList className="w-10 h-10 text-slate-300 mb-2 stroke-1" />
-                      <p className="text-xs font-bold text-center">Không tìm thấy giáo viên nào.</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1 custom-scrollbar">
-                      {filteredDeptTeachers.map(teacher => {
-                        const stats = teacherStats[teacher.id] || { taughtCount: 0, observedCount: 0 };
-                        const isSelected = selectedTeacherId === teacher.id;
-                        return (
-                          <button key={teacher.id} onClick={() => { setSelectedTeacherId(teacher.id); setTongHopSearchSlotQuery(""); setTongHopFilterLevel("all"); setTongHopFilterGrade("all"); setActiveDetailTab("lich-su"); }}
-                            className={`w-full text-left p-3.5 rounded-2xl border-2 transition-all duration-200 flex items-center justify-between gap-3 ${
-                              isSelected
-                                ? "bg-teal-50/50 border-[#00A99D] shadow-sm"
-                                : "bg-slate-50/50 border-slate-150 hover:bg-slate-50 hover:border-slate-300"
-                            }`}>
-                            <div className="min-w-0">
-                              <p className={`text-xs font-black truncate ${isSelected ? "text-[#00A99D]" : "text-slate-800"}`}>
-                                {teacher.teacherName}
-                              </p>
-                              <p className="text-[10px] font-bold text-slate-400 mt-0.5">
-                                Mã GV: {teacher.teacherCode}
-                              </p>
-                            </div>
-                            <div className="flex gap-2 shrink-0">
-                              <span className="text-emerald-600 text-[9px] font-black uppercase text-xs font-semibold">
-                                Dạy: {stats.taughtCount}{teacher.requiredTaught ? `/${teacher.requiredTaught}` : ""}
-                              </span>
-                              <span className="text-violet-600 text-[9px] font-black uppercase text-xs font-semibold">
-                                Dự: {stats.observedCount}{teacher.requiredObserved ? `/${teacher.requiredObserved}` : ""}
-                              </span>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Right Column: Teacher Details */}
-              <div className="lg:col-span-7 bg-white p-6 rounded-3xl border-2 border-slate-100 shadow-sm min-h-[500px] flex flex-col">
-                {!selectedTeacherId ? (
-                  <div className="flex flex-col items-center justify-center flex-1 text-slate-400 py-12">
-                    <ClipboardList className="w-16 h-16 stroke-1 text-slate-200 mb-3" />
-                    <p className="text-xs font-bold uppercase tracking-wider">Chọn giáo viên để xem chi tiết tiết dạy</p>
-                    <p className="text-[10px] text-slate-400 mt-1">Danh sách tiết dạy, ĐTB và các phiếu đánh giá chi tiết sẽ xuất hiện tại đây.</p>
-                  </div>
-                ) : (() => {
-                  const selTeacher = teachers.find(t => t.id === selectedTeacherId);
-                  const selTeacherSlots = slots.filter(s => s.teacherId === selectedTeacherId);
-                  
-                  // Local filter logic for slots
-                  const filteredSlots = selTeacherSlots.filter(slot => {
-                    const matchQuery = !tongHopSearchSlotQuery || 
-                      slot.topic.toLowerCase().includes(tongHopSearchSlotQuery.toLowerCase()) ||
-                      (slot.className && slot.className.toLowerCase().includes(tongHopSearchSlotQuery.toLowerCase()));
-                    const matchLevel = tongHopFilterLevel === "all" || slot.level === tongHopFilterLevel;
-                    const matchGrade = tongHopFilterGrade === "all" || slot.grade === tongHopFilterGrade;
-                    return matchQuery && matchLevel && matchGrade;
-                  });
-
-                  return (
-                    <div className="space-y-4 flex-1 flex flex-col text-slate-800">
-                      <div className="pb-3 border-b border-slate-100 flex items-center justify-between gap-3 shrink-0">
-                        <div>
-                          <h3 className="text-base font-black text-slate-800">{selTeacher?.teacherName}</h3>
-                          <p className="text-xs font-bold text-slate-400 mt-0.5">Mã GV: {selTeacher?.teacherCode}</p>
-                          {selTeacher && (selTeacher.observerType || selTeacher.observeeType) && (
-                            <div className="flex flex-wrap gap-1.5 mt-1.5 text-[9px] font-extrabold">
-                              {selTeacher.observerType && (
-                                <span className="text-violet-700 text-xs font-semibold">
-                                  Dự: {selTeacher.requiredObserved} tiết/{selTeacher.observedUnit} ({selTeacher.observerType})
-                                </span>
-                              )}
-                              {selTeacher.observeeType && (
-                                <span className="text-emerald-700 text-xs font-semibold">
-                                  Dạy: {selTeacher.requiredTaught} tiết/{selTeacher.taughtUnit} ({selTeacher.observeeType})
-                                </span>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                        <span className="px-3 py-1 bg-[#00A99D]/10 text-[#00A99D] border border-[#00A99D]/20 rounded-xl text-xs font-black">
-                          {filteredSlots.length} / {selTeacherSlots.length} tiết dạy
-                        </span>
-                      </div>
-
-                        <>
-
-                      {/* Slot Search & Filter controls */}
-                      <div className="grid grid-cols-1 md:grid-cols-12 gap-2 p-3 shrink-0 text-xs font-semibold">
-                        <div className="md:col-span-6 relative">
-                          <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
-                          <input
-                            type="text"
-                            placeholder="Tìm kiếm chủ đề, lớp học..."
-                            value={tongHopSearchSlotQuery}
-                            onChange={e => setTongHopSearchSlotQuery(e.target.value)}
-                            className="w-full text-xs font-semibold rounded-xl border border-slate-200 pl-9 pr-3 py-2 bg-white text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none"
-                          />
-                        </div>
-                        <div className="md:col-span-3">
-                          <select 
-                            value={tongHopFilterLevel} 
-                            onChange={e => { setTongHopFilterLevel(e.target.value); setTongHopFilterGrade("all"); }}
-                            className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none"
-                          >
-                            <option value="all">Mọi cấp học</option>
-                            <option value="Tiểu học">Tiểu học</option>
-                            <option value="THCS">THCS</option>
-                            <option value="THPT">THPT</option>
-                            <option value="Mầm non">Mầm non</option>
-                          </select>
-                        </div>
-                        <div className="md:col-span-3">
-                          <select 
-                            value={tongHopFilterGrade} 
-                            onChange={e => setTongHopFilterGrade(e.target.value)}
-                            className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none"
-                          >
-                            <option value="all">Mọi khối</option>
-                            {Array.from(new Set(selTeacherSlots.map(s => s.grade))).sort().map(g => (
-                              <option key={g} value={g}>{g}</option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-
-                      {filteredSlots.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center flex-1 py-12 text-slate-400">
-                          <ClipboardList className="w-12 h-12 stroke-1 text-slate-200 mb-2" />
-                          <p className="text-xs font-bold">Không tìm thấy tiết dạy tương ứng.</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-4 max-h-[500px] overflow-y-auto pr-1 custom-scrollbar">
-                          {filteredSlots.map(slot => {
-                            const avgScore = getSlotAverageScore(slot);
-                            const slotDate = new Date(slot.date);
-                            const isK12 = !["Mầm non"].includes(slot.level);
-                            const evals = slot.registrations.filter((r: any) => r.evaluation !== null);
-
-                            return (
-                              <div key={slot.id} className="p-4 space-y-4 text-xs font-semibold">
-                                {/* Slot Info */}
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/50 pb-3">
-                                  <div>
-                                    <div className="flex flex-wrap items-center gap-1.5">
-                                <span className="text-[8px] font-extrabold text-sky-600 uppercase tracking-wider text-xs font-semibold">{slot.level}</span>
-                                <span className="text-[8px] font-extrabold text-amber-600 uppercase tracking-wider text-xs font-semibold">{slot.grade}</span>
-                                <span className="text-[8px] font-extrabold text-rose-600 uppercase tracking-wider text-xs font-semibold">{slot.startTime}</span>
-                                <span className="text-[10px] font-bold text-slate-400">{slotDate.toLocaleDateString("vi-VN")}</span>
-                                {slot.className && <span className="px-1.5 py-0.2 text-[8px] font-bold bg-slate-200/50 text-slate-600 border border-slate-300/30 rounded">Lớp: {slot.className}</span>}
-                              </div>
-                              <h4 className="font-black text-[15px] text-[#00A99D] mt-1.5 tracking-tight">{slot.topic}</h4>
-                                  </div>
-                                  <div className="shrink-0 text-right">
-                                    {avgScore !== null ? (
-                                      <span className="px-2.5 py-1 bg-[#00A99D]/10 text-[#00A99D] border-[#00A99D]/20 rounded-lg font-black text-xs">
-                                        ĐTB chung: {typeof avgScore === "number" ? `${avgScore.toFixed(2)}/20.00đ` : avgScore}
-                                      </span>
-                                    ) : (
-                                      <span className="px-2.5 py-1 bg-slate-100 text-slate-400 border border-slate-200 rounded-lg font-bold text-xs">
-                                        ĐTB chung: --
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-
-                                {/* Observers Evaluations Detail */}
-                                <div className="space-y-3">
-                                  <h5 className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Chi tiết đánh giá của từng Giáo viên dự ({evals.length})</h5>
-                                  {evals.length === 0 ? (
-                                    <p className="text-xs text-slate-400 italic">Chưa nhận được phiếu đánh giá nào.</p>
-                                  ) : (
-                                    <div className="space-y-3">
-                                      {evals.map((reg: any) => {
-                                        const evalData = reg.evaluation;
-                                        const passed = isK12
-                                          ? (evalData.totalScore !== null && evalData.totalScore !== undefined ? evalData.totalScore >= 14 : (evalData.overallRating === "Giỏi" || evalData.overallRating === "Khá"))
-                                          : (evalData.overallRating === "Tốt" || evalData.overallRating === "Khá");
-
-                                        return (
-                                          <div key={reg.id} className="p-3 bg-white border border-slate-200/60 rounded-xl space-y-2.5">
-                                            {/* Observer Header */}
-                                            <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2">
-                                              <div className="min-w-0">
-                                                <p className="text-xs font-black text-slate-800">{reg.teacher?.teacherName}</p>
-                                                <p className="text-[9px] text-slate-400 font-bold">Mã GV: {reg.teacher?.teacherCode}</p>
-                                              </div>
-                                              <div className="flex items-center gap-1 shrink-0">
-                                                <span className="text-[9px] font-bold text-violet-600 text-xs font-semibold">
-                                                  {evalData.totalScore !== null && evalData.totalScore !== undefined
-                                                    ? `${evalData.totalScore.toFixed(2)}đ`
-                                                    : evalData.overallRating}
-                                                </span>
-                                                {passed ? (
-                                                  <span className="text-[9px] font-black text-emerald-600 uppercase tracking-wider text-xs font-semibold">ĐẠT</span>
-                                                ) : (
-                                                  <span className="text-[9px] font-black text-rose-600 uppercase tracking-wider text-xs font-semibold">CHƯA ĐẠT</span>
-                                                )}
-                                              </div>
-                                            </div>
-
-                                            {/* Requirement Scores badges */}
-                                            <div className="flex flex-wrap gap-1">
-                                              {isK12 ? (
-                                                [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((num) => {
-                                                  const scoreKey = `score${num}`;
-                                                  const scoreVal = evalData[scoreKey] !== null && evalData[scoreKey] !== undefined
-                                                    ? Number(evalData[scoreKey])
-                                                    : 0;
-                                                  const maxScores = [1.5, 1.5, 2.0, 2.0, 1.0, 2.0, 3.0, 2.0, 2.0, 2.0, 1.0];
-                                                  const maxVal = maxScores[num - 1];
-                                                  const isPassed = scoreVal >= maxVal * 0.5;
-
-                                                  let stdClass = "";
-                                                  let labelTextClass = "";
-                                                  if (isPassed) {
-                                                    if (num <= 2) {
-                                                      stdClass = "bg-teal-50 text-teal-600 border-teal-150";
-                                                      labelTextClass = "text-teal-600/60 font-bold";
-                                                    } else if (num <= 5) {
-                                                      stdClass = "bg-sky-50 text-sky-600 border-sky-150";
-                                                      labelTextClass = "text-sky-600/60 font-bold";
-                                                    } else if (num <= 9) {
-                                                      stdClass = "bg-indigo-50 text-indigo-600 border-indigo-150";
-                                                      labelTextClass = "text-indigo-600/60 font-bold";
-                                                    } else {
-                                                      stdClass = "bg-amber-50 text-amber-600 border-amber-150";
-                                                      labelTextClass = "text-amber-600/60 font-bold";
-                                                    }
-                                                  } else {
-                                                    stdClass = "bg-rose-50/70 text-rose-500 border-rose-100";
-                                                    labelTextClass = "text-rose-300 font-bold";
-                                                  }
-
-                                                  return (
-                                                    <span key={num} className={`inline-flex items-center gap-0.5 px-1 py-0.2 text-[8px] font-extrabold border rounded ${stdClass}`}>
-                                                      <span className={labelTextClass}>Y{num}:</span>
-                                                      <span>{scoreVal.toFixed(1)}</span>
-                                                    </span>
-                                                  );
-                                                })
-                                              ) : (
-                                                [1, 2, 3, 4, 5].map((num) => {
-                                                  const critKey = `criterion${num}`;
-                                                  const ratingLabels: Record<number, string> = { 4: "Tốt", 3: "Khá", 2: "Tr.bình", 1: "Yếu" };
-                                                  const critVal = evalData[critKey] !== null && evalData[critKey] !== undefined
-                                                    ? evalData[critKey]
-                                                    : 0;
-                                                  const critLabel = ratingLabels[critVal] || "-";
-                                                  const isPassed = critVal >= 3;
-                                                  return (
-                                                    <span key={num} className={`inline-flex items-center gap-0.5 px-1 py-0.2 text-[8px] font-extrabold border rounded ${
-                                                      isPassed 
-                                                        ? "bg-[#00A99D]/5 text-[#00A99D] border-[#00A99D]/15" 
-                                                        : "bg-rose-50/70 text-rose-500 border-rose-100"
-                                                    }`}>
-                                                      <span className={isPassed ? "text-[#00A99D]/60 font-bold" : "text-rose-300 font-bold"}>T{num}:</span>
-                                                      <span>{critLabel}</span>
-                                                    </span>
-                                                  );
-                                                })
-                                              )}
-                                            </div>
-
-                                            {/* Strengths & Improvements */}
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[10px] text-slate-600 border-t border-slate-100 pt-2 font-medium">
-                                              {evalData.strengths && (
-                                                <div>
-                                                  <span className="font-extrabold text-slate-800 block">✓ Ưu điểm:</span>
-                                                  <span className="italic block mt-0.5">{evalData.strengths}</span>
-                                                </div>
-                                              )}
-                                              {evalData.improvements && (
-                                                <div>
-                                                  <span className="font-extrabold text-slate-800 block">⚠ Góp ý:</span>
-                                                  <span className="italic block mt-0.5">{evalData.improvements}</span>
-                                                </div>
-                                              )}
-                                            </div>
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                      </>
-                    </div>
-                  );
-                })()}
-              </div>
-            </div>
-
-          ) : activeTab === "evaluation-results" ? (
-            <div className="space-y-8 animate-in fade-in duration-300">
-              {/* 1. Monthly Statistics Section */}
-              <div className="bg-white p-6 rounded-3xl border-2 border-slate-100 shadow-sm space-y-4">
-                <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-3">
-                  <CheckCircle className="w-5 h-5 text-[#00A99D]" /> Thống kê hoạt động theo Tháng
-                </h3>
-                
-                {monthlyStats.length === 0 ? (
-                  <p className="text-xs text-slate-400 italic">Chưa có dữ liệu thống kê.</p>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {monthlyStats.map(stat => (
-                      <div key={stat.monthStr} className="p-4 flex flex-col gap-3 text-xs font-semibold">
-                        <span className="text-xs font-black text-slate-700">{stat.monthStr}</span>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="bg-white p-3 rounded-xl border border-slate-200/60 shadow-sm flex flex-col">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tiết dạy</span>
-                            <span className="text-lg font-black text-emerald-600 mt-1">{stat.taughtCount} tiết</span>
-                          </div>
-                          <div className="bg-white p-3 rounded-xl border border-slate-200/60 shadow-sm flex flex-col">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tiết dự giờ</span>
-                            <span className="text-lg font-black text-violet-600 mt-1">{stat.observedCount} tiết</span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* 2. Received Evaluations Section */}
-              <div className="bg-white p-6 rounded-3xl border-2 border-slate-100 shadow-sm space-y-4">
-                <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-3">
-                  <ClipboardList className="w-5 h-5 text-[#00A99D]" /> Kết quả đánh giá tiết dạy (Phiếu GV dự)
-                </h3>
-                
-                {receivedEvaluations.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-12 text-slate-400">
-                    <ClipboardList className="w-12 h-12 stroke-1 text-slate-300 mb-2" />
-                    <p className="text-xs font-bold">Chưa nhận được phiếu đánh giá nào từ giáo viên dự giờ.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-6">
-                    {evaluationsGroupedBySlot.map(({ slot, evaluations }) => {
-                      const slotDate = new Date(slot.date);
-                      const isK12Slot = !["Mầm non"].includes(slot.level);
-                      let dtbText = "";
-                      if (isK12Slot) {
-                        const passedEvals = evaluations.filter(({ evaluation }) => {
-                          return evaluation.totalScore !== null && evaluation.totalScore !== undefined && evaluation.totalScore >= 14;
-                        });
-                        if (passedEvals.length > 0) {
-                          const sum = passedEvals.reduce((acc, curr) => acc + (curr.evaluation.totalScore || 0), 0);
-                          const avg = sum / passedEvals.length;
-                          dtbText = `ĐBT: ${avg.toFixed(2)}/20.00đ`;
-                        } else {
-                          dtbText = "ĐBT: --";
-                        }
-                      }
-                      return (
-                        <div key={slot.id} className="p-5 bg-white border border-slate-150 rounded-2xl shadow-sm space-y-4 border-l-4 border-l-[#00A99D]">
-                          {/* Slot Info Header */}
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
-                            <div className="space-y-1 min-w-0">
-                              <div className="flex flex-wrap items-center gap-2">
-                                <span className="text-[9px] font-extrabold text-sky-600 uppercase tracking-wider text-xs font-semibold">
-                                  {["Tiểu học", "THCS", "THPT", "Phổ thông K-12"].includes(slot.level) ? "Phổ thông K-12" : slot.level}
-                                </span>
-                                <span className="text-[9px] font-extrabold text-amber-600 uppercase tracking-wider text-xs font-semibold">{slot.grade}</span>
-                                <span className="text-xs font-bold text-slate-400">{slotDate.toLocaleDateString("vi-VN")} · {slot.startTime}</span>
-                                {slot.className && (
-                                  <span className="px-2 py-0.5 text-[9px] font-bold bg-slate-100 text-slate-600 border border-slate-200 rounded-md">Lớp: {slot.className} ({slot.campusName})</span>
-                                )}
-                              </div>
-                              <h4 className="font-extrabold text-sm text-slate-800 truncate">{slot.topic}</h4>
-                            </div>
-                            <div className="flex items-center gap-3 shrink-0 text-xs font-bold text-slate-400">
-                              {isK12Slot && dtbText && (
-                                <span className="px-2.5 py-1 bg-[#00A99D]/10 text-[#00A99D] border border-[#00A99D]/20 rounded-lg font-black" title="Điểm Trung Bình Tiết (chỉ tính trên các phiếu ĐẠT)">
-                                  {dtbText}
-                                </span>
-                              )}
-                              <span>
-                                Tổng số: <span className="font-black text-slate-700">{evaluations.length} phiếu</span>
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* List of evaluations */}
-                          <div className="space-y-2.5">
-                            {evaluations.map(({ registration, evaluation }) => {
-                              const isK12 = !["Mầm non"].includes(slot.level);
-                              const passed = isK12
-                                ? (evaluation.totalScore !== null && evaluation.totalScore !== undefined ? evaluation.totalScore >= 14 : (evaluation.overallRating === "Giỏi" || evaluation.overallRating === "Khá"))
-                                : (evaluation.overallRating === "Tốt" || evaluation.overallRating === "Khá");
-
-                              return (
-                                <div key={registration.id} className="p-3 hover:border-[#00A99D]/20 transition-all text-xs font-semibold">
-                                  {/* Desktop Grid Layout */}
-                                  <div className="hidden md:grid grid-cols-12 items-center gap-3">
-                                    {/* Col 1: Evaluator Info (Avatar + Name) */}
-                                    <div className="col-span-3 flex items-center gap-2 min-w-0">
-                                      <div className="w-8 h-8 rounded-full bg-[#00A99D]/10 text-[#00A99D] flex items-center justify-center text-xs font-black shrink-0">
-                                        {registration.teacher?.teacherName.charAt(0)}
-                                      </div>
-                                      <div className="min-w-0">
-                                        <p className="text-xs font-black text-slate-800 truncate" title={registration.teacher?.teacherName}>
-                                          {registration.teacher?.teacherName}
-                                        </p>
-                                        <p className="text-[10px] font-bold text-slate-400">
-                                          {registration.teacher?.teacherCode}
-                                        </p>
-                                      </div>
-                                    </div>
-
-                                    {/* Col 2: Result & Badge */}
-                                    <div className="col-span-2 flex flex-col gap-0.5 justify-center">
-                                      <span className="text-xs font-black text-slate-800">
-                                        {evaluation.totalScore !== null && evaluation.totalScore !== undefined
-                                          ? `${evaluation.totalScore.toFixed(2)}/20.00đ`
-                                          : "Mầm non"}
-                                      </span>
-                                      <div className="flex flex-wrap items-center gap-1">
-                                        <span className="text-[8px] font-bold text-violet-600 text-xs font-semibold">
-                                          {evaluation.overallRating}
-                                        </span>
-                                        {passed ? (
-                                          <span className="text-[8px] font-black text-emerald-600 uppercase tracking-wider text-xs font-semibold">ĐẠT</span>
-                                        ) : (
-                                          <span className="text-[8px] font-black text-rose-600 uppercase tracking-wider text-xs font-semibold">CHƯA ĐẠT</span>
-                                        )}
-                                      </div>
-                                    </div>
-
-                                    {/* Col 3: Score List */}
-                                    <div className="col-span-6 flex flex-wrap gap-1">
-                                      {isK12 ? (
-                                        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((num) => {
-                                          const scoreKey = `score${num}`;
-                                          const scoreVal = evaluation[scoreKey] !== null && evaluation[scoreKey] !== undefined
-                                            ? Number(evaluation[scoreKey])
-                                            : 0;
-                                          const maxScores = [1.5, 1.5, 2.0, 2.0, 1.0, 2.0, 3.0, 2.0, 2.0, 2.0, 1.0];
-                                          const maxVal = maxScores[num - 1];
-                                          const isPassed = scoreVal >= maxVal * 0.5;
-                                          
-                                          let stdClass = "";
-                                          let labelTextClass = "";
-                                          if (isPassed) {
-                                            if (num <= 2) {
-                                              stdClass = "bg-teal-50 text-teal-600 border-teal-150";
-                                              labelTextClass = "text-teal-600/60 font-bold";
-                                            } else if (num <= 5) {
-                                              stdClass = "bg-sky-50 text-sky-600 border-sky-150";
-                                              labelTextClass = "text-sky-600/60 font-bold";
-                                            } else if (num <= 9) {
-                                              stdClass = "bg-indigo-50 text-indigo-600 border-indigo-150";
-                                              labelTextClass = "text-indigo-600/60 font-bold";
-                                            } else {
-                                              stdClass = "bg-amber-50 text-amber-600 border-amber-150";
-                                              labelTextClass = "text-amber-600/60 font-bold";
-                                            }
-                                          } else {
-                                            stdClass = "bg-rose-50/70 text-rose-500 border-rose-100";
-                                            labelTextClass = "text-rose-300 font-bold";
-                                          }
-
-                                          return (
-                                            <span key={num} className={`inline-flex items-center gap-0.5 px-1 py-0.2 text-[9px] font-extrabold border rounded transition-all ${stdClass}`}>
-                                              <span className={labelTextClass}>Y{num}:</span>
-                                              <span>{scoreVal.toFixed(1)}</span>
-                                            </span>
-                                          );
-                                        })
-                                      ) : (
-                                        [1, 2, 3, 4, 5].map((num) => {
-                                          const critKey = `criterion${num}`;
-                                          const ratingLabels = { 4: "Tốt", 3: "Khá", 2: "Tr.bình", 1: "Yếu" };
-                                          const critVal = evaluation[critKey] !== null && evaluation[critKey] !== undefined
-                                            ? evaluation[critKey]
-                                            : 0;
-                                          const critLabel = ratingLabels[critVal] || "-";
-                                          const isPassed = critVal >= 3;
-                                          return (
-                                            <span key={num} className={`inline-flex items-center gap-0.5 px-1 py-0.2 text-[9px] font-extrabold border rounded transition-all ${
-                                              isPassed 
-                                                ? "bg-[#00A99D]/5 text-[#00A99D] border-[#00A99D]/15" 
-                                                : "bg-rose-50/70 text-rose-500 border-rose-100"
-                                            }`}>
-                                              <span className={isPassed ? "text-[#00A99D]/60 font-bold" : "text-rose-300 font-bold"}>T{num}:</span>
-                                              <span>{critLabel}</span>
-                                            </span>
-                                          );
-                                        })
-                                      )}
-                                    </div>
-
-                                    {/* Col 4: Action button */}
-                                    <div className="col-span-1 text-right">
-                                      <button onClick={() => openEvalModal(registration, slot)}
-                                        className="px-2.5 py-1.5 bg-[#00A99D] hover:bg-[#008B85] text-white rounded-lg text-[11px] font-black shadow-sm transition-all whitespace-nowrap">
-                                        Xem
-                                      </button>
-                                    </div>
-                                  </div>
-
-                                  {/* Mobile Card Layout (visible only on small screens) */}
-                                  <div className="md:hidden flex flex-col gap-2">
-                                    <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-1.5">
-                                      <div className="flex items-center gap-1.5">
-                                        <div className="w-6 h-6 rounded-full bg-[#00A99D]/10 text-[#00A99D] flex items-center justify-center text-[10px] font-black shrink-0">
-                                          {registration.teacher?.teacherName.charAt(0)}
-                                        </div>
-                                        <span className="text-xs font-black text-slate-700 truncate">{registration.teacher?.teacherName}</span>
-                                      </div>
-                                      <button onClick={() => openEvalModal(registration, slot)}
-                                        className="px-2 py-1 bg-[#00A99D] text-white rounded-md text-[10px] font-black shadow-sm">
-                                        Xem phiếu
-                                      </button>
-                                    </div>
-                                    <div className="flex items-center justify-between gap-2">
-                                      <div className="flex flex-wrap items-center gap-1">
-                                        <span className="text-xs font-black text-slate-700 mr-1">
-                                          {evaluation.totalScore !== null && evaluation.totalScore !== undefined
-                                            ? `${evaluation.totalScore.toFixed(2)}đ`
-                                            : "Mầm non"}
-                                        </span>
-                                        <span className="text-[8px] font-bold text-violet-600 text-xs font-semibold">
-                                          {evaluation.overallRating}
-                                        </span>
-                                        {passed ? (
-                                          <span className="text-[8px] font-black text-emerald-600 uppercase tracking-wider text-xs font-semibold">ĐẠT</span>
-                                        ) : (
-                                          <span className="text-[8px] font-black text-rose-600 uppercase tracking-wider text-xs font-semibold">CHƯA ĐẠT</span>
-                                        )}
-                                      </div>
-                                    </div>
-                                    <div className="flex flex-wrap gap-1 border-t border-slate-100 pt-1.5">
-                                      {isK12 ? (
-                                        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((num) => {
-                                          const scoreKey = `score${num}`;
-                                          const scoreVal = evaluation[scoreKey] !== null && evaluation[scoreKey] !== undefined
-                                            ? Number(evaluation[scoreKey])
-                                            : 0;
-                                          const maxScores = [1.5, 1.5, 2.0, 2.0, 1.0, 2.0, 3.0, 2.0, 2.0, 2.0, 1.0];
-                                          const maxVal = maxScores[num - 1];
-                                          const isPassed = scoreVal >= maxVal * 0.5;
-                                          
-                                          let stdClass = "";
-                                          let labelTextClass = "";
-                                          if (isPassed) {
-                                            if (num <= 2) {
-                                              stdClass = "bg-teal-50 text-teal-600 border-teal-150";
-                                              labelTextClass = "text-teal-600/60 font-bold";
-                                            } else if (num <= 5) {
-                                              stdClass = "bg-sky-50 text-sky-600 border-sky-150";
-                                              labelTextClass = "text-sky-600/60 font-bold";
-                                            } else if (num <= 9) {
-                                              stdClass = "bg-indigo-50 text-indigo-600 border-indigo-150";
-                                              labelTextClass = "text-indigo-600/60 font-bold";
-                                            } else {
-                                              stdClass = "bg-amber-50 text-amber-600 border-amber-150";
-                                              labelTextClass = "text-amber-600/60 font-bold";
-                                            }
-                                          } else {
-                                            stdClass = "bg-rose-50/70 text-rose-500 border-rose-100";
-                                            labelTextClass = "text-rose-300 font-bold";
-                                          }
-
-                                          return (
-                                            <span key={num} className={`inline-flex items-center gap-0.5 px-1.5 py-0.2 text-[9px] font-extrabold border rounded transition-all ${stdClass}`}>
-                                              <span className={labelTextClass}>Y{num}:</span>
-                                              <span>{scoreVal.toFixed(1)}</span>
-                                            </span>
-                                          );
-                                        })
-                                      ) : (
-                                        [1, 2, 3, 4, 5].map((num) => {
-                                          const critKey = `criterion${num}`;
-                                          const ratingLabels = { 4: "Tốt", 3: "Khá", 2: "Tr.bình", 1: "Yếu" };
-                                          const critVal = evaluation[critKey] !== null && evaluation[critKey] !== undefined
-                                            ? evaluation[critKey]
-                                            : 0;
-                                          const critLabel = ratingLabels[critVal] || "-";
-                                          const isPassed = critVal >= 3;
-                                          return (
-                                            <span key={num} className={`inline-flex items-center gap-0.5 px-1.5 py-0.2 text-[9px] font-extrabold border rounded transition-all ${
-                                              isPassed 
-                                                ? "bg-[#00A99D]/5 text-[#00A99D] border-[#00A99D]/15" 
-                                                : "bg-rose-50/70 text-rose-500 border-rose-100"
-                                            }`}>
-                                              <span className={isPassed ? "text-[#00A99D]/60 font-bold" : "text-rose-300 font-bold"}>T{num}:</span>
-                                              <span>{critLabel}</span>
-                                            </span>
-                                          );
-                                        })
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : tabFilteredSlots.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border-2 border-dashed border-slate-200">
-              <Calendar className="w-16 h-16 text-slate-300 stroke-1 mb-4" />
-              <p className="text-slate-400 font-bold text-sm">Không tìm thấy tiết dạy dự giờ nào!</p>
-              <p className="text-slate-400 text-xs mt-1">Vui lòng thay đổi bộ lọc hoặc thêm mới tiết dạy của bạn.</p>
+          {/* Slots Table */}
+          {tabFilteredSlots.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-slate-450 border border-dashed border-slate-200 rounded-3xl bg-slate-50/50">
+              <Calendar className="w-12 h-12 text-slate-300 stroke-1 mb-2" />
+              <p className="text-xs font-bold">Không tìm thấy tiết dạy dự giờ nào!</p>
+              <p className="text-[10px] text-slate-400 mt-1">Thay đổi bộ lọc hoặc tạo thêm tiết dạy của bạn ở Panel 1.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {tabFilteredSlots.map((slot) => {
-                const isHost = slot.teacherId === currentTeacher.id
-                const myReg = slot.registrations.find((r: any) => r.teacherId === currentTeacher.id)
-                const isRegistered = !!myReg
-                const observerCount = slot.registrations.length
-                const isExpanded = expandedSlotId === slot.id
-                const slotDate = new Date(slot.date)
+            <div className="overflow-x-auto rounded-2xl border border-slate-150">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-150 text-slate-500 font-extrabold uppercase text-[10px] tracking-wider">
+                    <th className="p-4">Giáo viên</th>
+                    <th className="p-4">Môn học & Chủ đề</th>
+                    <th className="p-4">Thời gian / Phòng</th>
+                    <th className="p-4 text-center">Số chỗ</th>
+                    <th className="p-4">Trạng thái</th>
+                    <th className="p-4 text-right">Đăng ký</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-150 text-xs font-semibold text-slate-700">
+                  {tabFilteredSlots.map(slot => {
+                    const isHost = slot.teacherId === currentTeacher.id;
+                    const myReg = slot.registrations.find((r: any) => r.teacherId === currentTeacher.id);
+                    const isRegistered = !!myReg;
+                    const observerCount = slot.registrations.length;
+                    const slotDate = new Date(slot.date);
+                    
+                    // Expired (Hết hạn) check compared to today's date
+                    const today = new Date();
+                    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                    const isExpired = slotDate < todayStart;
 
-                return (
-                  <div key={slot.id} className="bg-white rounded-2xl border border-slate-100/80 p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col gap-4 group relative overflow-hidden border-l-4 border-l-[#00A99D]">
-                    {/* Tags */}
-                    <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
-                      <div className="flex flex-wrap gap-1.5">
-                        <span className="px-2.5 py-1 text-[10px] font-extrabold bg-[#E0F2FE] text-[#0284C7] rounded-lg uppercase tracking-wider">
-                          {["Tiểu học", "THCS", "THPT", "Phổ thông K-12"].includes(slot.level) ? "Phổ thông K-12" : slot.level}
-                        </span>
-                        {slot.teacher?.departmentRel?.name && (
-                          <span className="text-[10px] font-extrabold text-indigo-700 uppercase tracking-wider text-xs font-semibold" title={`Tổ chuyên môn gán với Mã GV ${slot.teacher.teacherCode}`}>
-                            TCM: {slot.teacher.departmentRel.name}
+                    return (
+                      <tr key={slot.id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="p-4 font-bold text-slate-800">
+                          <p className="font-extrabold">{slot.teacher.teacherName}</p>
+                          <p className="text-[10px] text-slate-400 font-bold mt-0.5">Mã: {slot.teacher.teacherCode}</p>
+                        </td>
+                        <td className="p-4">
+                          <p className="font-extrabold text-[#003B3A]">{slot.topic}</p>
+                          <p className="text-[10px] text-slate-500 mt-0.5">
+                            {slot.subjectName} • {slot.className || "Lớp"} ({slot.campusName || "Cơ sở"})
+                          </p>
+                        </td>
+                        <td className="p-4">
+                          <p className="font-bold">{slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}</p>
+                          <p className="text-[10px] text-[#00A99D] font-bold mt-0.5">
+                            {slot.startTime} • Phòng: {slot.room || "X"}
+                          </p>
+                        </td>
+                        <td className="p-4 text-center font-black">
+                          <span className={`px-2 py-0.5 rounded-md ${observerCount >= slot.maxSeats ? "bg-slate-100 text-slate-500" : "bg-sky-50 text-sky-700"}`}>
+                            {observerCount} / {slot.maxSeats}
                           </span>
-                        )}
-                        <span className="px-2.5 py-1 text-[10px] font-extrabold bg-[#FEF3C7] text-[#D97706] rounded-lg uppercase tracking-wider">{slot.grade}</span>
-                        {isHost && <span className="px-2 py-0.5 text-[9px] font-bold bg-[#00A99D]/10 border border-[#00A99D]/30 text-[#00A99D] rounded-md">Chủ trì</span>}
-                      </div>
-                      {slot.visibilityType === "DEPARTMENT" && (
-                        <span className="text-[9px] font-bold text-indigo-600 text-xs font-semibold">Nội bộ Tổ</span>
-                      )}
-                    </div>
-
-                    {/* Topic */}
-                    <div className="space-y-1.5">
-                      <h4 className="font-extrabold text-slate-800 text-base group-hover:text-[#00A99D] transition-colors leading-snug">{slot.topic}</h4>
-                      <p className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
-                        <BookOpen className="w-3.5 h-3.5 text-[#00A99D]" /> Môn học: <span className="text-slate-700">{slot.subjectName}</span>
-                      </p>
-                    </div>
-
-                    {/* Meta */}
-                    <div className="grid grid-cols-1 gap-2.5 p-3.5 text-xs font-semibold text-slate-600 text-xs font-semibold">
-                      <div className="flex items-center gap-2"><Calendar className="w-4 h-4 text-[#00A99D] shrink-0" />
-                        <span>{slotDate.toLocaleDateString("vi-VN", { weekday: "long", year: "numeric", month: "2-digit", day: "2-digit" })}</span>
-                      </div>
-                      <div className="flex items-center gap-2"><Clock className="w-4 h-4 text-[#00A99D] shrink-0" />
-                        <span>Tiết dạy: <span className="font-bold text-slate-850">{slot.startTime === slot.endTime ? slot.startTime : `${slot.startTime} - ${slot.endTime}`}</span>
-                          {slot.isDoublePeriod && <span className="text-[9px] font-extrabold bg-[#00A99D]/10 text-[#00A99D] px-1.5 py-0.5 rounded-md ml-2">Dạy 2 tiết liên tiếp</span>}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2"><MapPin className="w-4 h-4 text-[#00A99D] shrink-0" />
-                        <span>Lớp: <span className="font-bold text-slate-800">{slot.className || "Chưa xếp"}</span>
-                          <span className="text-slate-400 ml-1.5">({slot.campusName || "Cơ sở"})</span>
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 border-t border-slate-200 pt-2 mt-0.5"><User className="w-4 h-4 text-[#00A99D] shrink-0" />
-                        <span>Gv dạy: <span className="font-bold text-slate-800">{slot.teacher.teacherName}</span>
-                          <span className="text-slate-400 text-[10px] ml-1.5">({slot.teacher.campus?.campusName || "Sky-Line"})</span>
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* My Registration Status (observer view) */}
-                    {!isHost && isRegistered && (
-                      <div className="flex flex-col gap-2 w-full">
-                        <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-bold ${myReg.isApproved ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-amber-50 border-amber-200 text-amber-700"}`}>
-                          {myReg.isApproved ? <CheckCircle className="w-4 h-4 shrink-0" /> : <Clock3 className="w-4 h-4 shrink-0" />}
-                          {myReg.isApproved ? "Đã được xác nhận dự giờ" : "Chờ xác nhận từ GV chủ trì"}
-                        </div>
-                        {myReg.evaluation && (
-                          <div className="flex items-center justify-between gap-2 text-violet-700 text-xs font-bold text-xs font-semibold">
-                            <div className="flex items-center gap-2">
-                              <ClipboardList className="w-4 h-4 shrink-0" />
-                              <span>
-                                {myReg.evaluation.totalScore !== null
-                                  ? `Kết quả: ${myReg.evaluation.totalScore.toFixed(2)}/20 điểm (${myReg.evaluation.overallRating})`
-                                  : `Kết quả: ${myReg.evaluation.overallRating}`}
-                              </span>
-                            </div>
-                            {(() => {
-                              const isK12 = !["Mầm non"].includes(slot.level);
-                              const passed = isK12
-                                ? (myReg.evaluation.totalScore !== null && myReg.evaluation.totalScore !== undefined ? myReg.evaluation.totalScore >= 14 : (myReg.evaluation.overallRating === "Giỏi" || myReg.evaluation.overallRating === "Khá"))
-                                : (myReg.evaluation.overallRating === "Tốt" || myReg.evaluation.overallRating === "Khá");
-                              return passed ? (
-                                <span className="text-emerald-700 text-[9px] font-black uppercase tracking-wider text-xs font-semibold">ĐẠT</span>
-                              ) : (
-                                <span className="text-rose-700 text-[9px] font-black uppercase tracking-wider text-xs font-semibold">CHƯA ĐẠT</span>
-                              );
-                            })()}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Footer */}
-                    <div className="mt-auto pt-3 border-t border-slate-100 flex items-center justify-between gap-2.5">
-                      <div className="flex items-center gap-1 text-[11px] text-slate-500 font-bold shrink-0">
-                        <Users className="w-3.5 h-3.5 text-slate-400" />
-                        <span>Số GV đăng ký: <span className="text-emerald-600 font-black">{observerCount}</span>/{Math.min(slot.maxSeats || 4, 4)} GV</span>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
-                        {slot.lessonPlanData && (
-                          <button onClick={() => handleViewPdf(slot.lessonPlanName || "GiaoAn.pdf", slot.lessonPlanData)}
-                            className="flex items-center gap-1 hover:bg-sky-100 text-sky-600 text-xs font-bold transition-all text-xs font-semibold" title="Xem giáo án PDF đính kèm">
-                            <FileText className="w-3.5 h-3.5" /> Giáo án
-                          </button>
-                        )}
-
-                        {/* Host: expand registrant list + delete */}
-                        {isHost ? (
-                          <div className="flex items-center gap-1.5">
-                            <button onClick={() => setExpandedSlotId(isExpanded ? null : slot.id)}
-                              className="flex items-center gap-1 px-3 py-1.5 bg-[#00A99D]/10 border border-[#00A99D]/30 hover:bg-[#00A99D]/20 text-[#00A99D] rounded-lg text-xs font-bold transition-all">
-                              <Users className="w-3.5 h-3.5" />
-                              {observerCount} GV
-                              {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                        </td>
+                        <td className="p-4">
+                          {isExpired ? (
+                            <span className="px-2 py-0.5 text-[9px] font-black uppercase rounded bg-rose-50 border border-rose-200 text-rose-600">
+                              Hết hạn
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 text-[9px] font-black uppercase rounded bg-emerald-50 border border-emerald-250 text-emerald-700">
+                              Mở đăng ký
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-4 text-right">
+                          {isRegistered ? (
+                            <button onClick={() => handleCancelRegistration(myReg.id)}
+                              className="px-3 py-1.5 text-[10px] font-black bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition-all border border-rose-200">
+                              Hủy dự
                             </button>
-                            {observerCount === 0 && (
-                              <button onClick={() => openEditModal(slot)}
-                                className="flex items-center gap-1 hover:bg-blue-100 text-blue-600 text-xs font-bold transition-all text-xs font-semibold">
-                                <FileText className="w-3.5 h-3.5" />
-                                Sửa
-                              </button>
-                            )}                            {observerCount < Math.min(slot.maxSeats || 4, 4) ? (
-                              <button onClick={() => handleDeleteSlot(slot.id)}
-                                className="flex items-center gap-1 hover:bg-rose-100 text-rose-600 text-xs font-bold transition-all text-xs font-semibold">
-                                <Trash2 className="w-3.5 h-3.5" /> Xóa
-                              </button>
-                            ) : (
-                              <span
-                                className="flex items-center gap-1 px-3 py-1.5 bg-slate-100 border border-slate-200 text-slate-400 rounded-lg text-xs font-bold cursor-not-allowed select-none"
-                                title="Không thể xóa khi đã đủ GV đăng ký">
-                                <Trash2 className="w-3.5 h-3.5" /> Xóa
-                              </span>
-                            )}
-                          </div>
-                        ) : isRegistered ? (
-                          <div className="flex items-center gap-1.5">
-                            {/* Eval form button if approved */}
-                            {myReg.isApproved && (
-                              myReg.evaluation ? (
-                                <span className="flex items-center gap-1 text-emerald-600 text-xs font-extrabold select-none cursor-default text-xs font-semibold">
-                                  <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
-                                  Đã đánh giá
-                                </span>
-                              ) : (
-                                <button onClick={() => openEvalModal(myReg, slot)}
-                                  className="flex items-center gap-1 text-violet-600 hover:bg-violet-100 text-xs font-bold transition-all text-xs font-semibold">
-                                  <ClipboardList className="w-3.5 h-3.5" />
-                                  Điền phiếu
-                                </button>
-                              )
-                            )}
-                            {!myReg.isApproved ? (
-                              <button onClick={() => handleCancelRegistration(slot.id)}
-                                className="hover:bg-rose-50 hover:border-rose-300 hover:text-rose-600 text-slate-600 text-xs font-bold transition-all text-xs font-semibold">
-                                Hủy đăng ký
-                              </button>
-                            ) : (
-                              <span className="text-emerald-600 text-xs font-extrabold select-none cursor-default text-xs font-semibold">
-                                GV đã xác nhận
-                              </span>
-                            )}
-                          </div>
-                        ) : (
-                          <button onClick={() => handleRegister(slot.id)} disabled={observerCount >= Math.min(slot.maxSeats || 4, 4)}
-                            className="px-4 py-1.5 bg-[#00A99D] hover:bg-[#008B85] disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-lg text-xs font-extrabold uppercase tracking-wide transition-all shadow-sm disabled:shadow-none">
-                            Đăng ký
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Expanded registrant list (host view) */}
-                    {isHost && isExpanded && (
-                      <div className="border-t border-slate-200 pt-4 space-y-2 animate-in fade-in duration-200">
-                        <h5 className="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                          <Users className="w-3.5 h-3.5 text-[#00A99D]" /> Danh sách GV đăng ký dự giờ
-                        </h5>
-                        {slot.registrations.length === 0 ? (
-                          <p className="text-xs text-slate-400 italic">Chưa có giáo viên nào đăng ký.</p>
-                        ) : (
-                          <div className="space-y-2">
-                            {slot.registrations.map((reg: any) => (
-                              <div key={reg.id} className={`flex items-center justify-between gap-2 p-3 rounded-xl border ${reg.isApproved ? "bg-emerald-50 border-emerald-200" : "bg-slate-50 border-slate-200"}`}>
-                                <div className="flex items-center gap-2 min-w-0">
-                                  <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${reg.isApproved ? "bg-emerald-500 text-white" : "bg-slate-300 text-slate-600"}`}>
-                                    {reg.teacher.teacherName.charAt(0)}
-                                  </div>
-                                  <div className="min-w-0">
-                                    <p className="text-xs font-extrabold text-slate-800 truncate">{reg.teacher.teacherName}</p>
-                                    <p className="text-[10px] text-slate-500 truncate">
-                                      {reg.teacher.teacherCode}
-                                      {reg.teacher.departmentRel?.name && ` · ${reg.teacher.departmentRel.name}`}
-                                      {reg.teacher.campus?.campusName && ` · ${reg.teacher.campus.campusName}`}
-                                    </p>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-1.5 shrink-0">
-                                  {reg.evaluation && (
-                                    <div className="flex flex-col items-end gap-1">
-                                      <span className="text-[9px] font-bold text-violet-600 text-xs font-semibold">
-                                        {reg.evaluation.totalScore !== null && reg.evaluation.totalScore !== undefined
-                                          ? `Đã nộp: ${reg.evaluation.totalScore}đ (${reg.evaluation.overallRating})`
-                                          : `Đã nộp: ${reg.evaluation.overallRating}`}
-                                      </span>
-                                      {(() => {
-                                        const isK12 = !["Mầm non"].includes(slot.level);
-                                        const passed = isK12
-                                          ? (reg.evaluation.totalScore !== null && reg.evaluation.totalScore !== undefined ? reg.evaluation.totalScore >= 14 : (reg.evaluation.overallRating === "Giỏi" || reg.evaluation.overallRating === "Khá"))
-                                          : (reg.evaluation.overallRating === "Tốt" || reg.evaluation.overallRating === "Khá");
-                                        return passed ? (
-                                          <span className="text-emerald-700 text-[9px] font-extrabold uppercase tracking-wider text-xs font-semibold">ĐẠT</span>
-                                        ) : (
-                                          <span className="text-rose-700 text-[9px] font-extrabold uppercase tracking-wider text-xs font-semibold">CHƯA ĐẠT</span>
-                                        );
-                                      })()}
-                                    </div>
-                                  )}
-                                  {reg.isApproved ? (
-                                    <span className="flex items-center gap-1 text-emerald-700 text-[10px] font-extrabold text-xs font-semibold">
-                                      <CheckCircle className="w-3 h-3" /> Đã xác nhận
-                                    </span>
-                                  ) : (
-                                    <button onClick={() => handleApprove(reg.id)} disabled={isPending}
-                                      className="flex items-center gap-1 px-2.5 py-1 bg-[#00A99D] hover:bg-[#008B85] disabled:opacity-50 text-white rounded-lg text-[10px] font-extrabold transition-all">
-                                      <Shield className="w-3 h-3" /> Xác nhận
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
+                          ) : (
+                            <button 
+                              onClick={() => handleRegister(slot.id)}
+                              className={`px-3 py-1.5 text-[10px] font-black rounded-xl transition-all shadow-sm ${isExpired ? "bg-slate-100 border border-slate-200 text-slate-600 hover:bg-slate-200" : "bg-[#00A99D] hover:bg-[#008b82] text-white"}`}
+                            >
+                              {isExpired ? "Đăng ký bù" : "Đăng ký"}
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
+
+        {/* Panel 5: Hiệu suất & Lịch sử đánh giá (Narrower Col) */}
+        <div className="lg:col-span-4 bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-4 border-t-4 border-t-[#00A99D]">
+          <div className="flex items-center gap-2 border-b border-slate-150 pb-3">
+            <ClipboardList className="w-5 h-5 text-[#00A99D]" />
+            <span className="font-extrabold text-sm text-[#003B3A] uppercase tracking-wider">5. Lịch biểu & Hiệu suất đánh giá</span>
+          </div>
+
+          {/* Monthly stats card */}
+          {monthlyStats.length > 0 && (
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-150 flex flex-col gap-3 text-xs font-semibold">
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Hiệu suất tháng {monthlyStats[0].monthStr}</span>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-white p-3 rounded-xl border border-slate-150 shadow-sm flex flex-col">
+                  <span className="text-[9px] font-black text-slate-400 uppercase">Tiết dạy</span>
+                  <span className="text-base font-black text-emerald-600 mt-1">{monthlyStats[0].taughtCount} tiết</span>
+                </div>
+                <div className="bg-white p-3 rounded-xl border border-slate-150 shadow-sm flex flex-col">
+                  <span className="text-[9px] font-black text-slate-400 uppercase">Tiết dự giờ</span>
+                  <span className="text-base font-black text-violet-600 mt-1">{monthlyStats[0].observedCount} tiết</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Evaluations list */}
+          <div className="flex-1 flex flex-col gap-2.5">
+            <span className="text-[10px] font-black text-[#003B3A] uppercase tracking-wider">📑 Kết quả đánh giá gần đây</span>
+            
+            {receivedEvaluations.length === 0 ? (
+              <div className="flex flex-col items-center justify-center flex-1 py-8 text-slate-450 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                <ClipboardList className="w-8 h-8 text-slate-300 mb-1 stroke-1" />
+                <p className="text-[10px] font-bold text-center">Chưa nhận được phiếu đánh giá nào.</p>
+              </div>
+            ) : (
+              <div className="space-y-2.5 max-h-[250px] overflow-y-auto pr-1 custom-scrollbar">
+                {receivedEvaluations.slice(0, 4).map(evalItem => {
+                  const hasPassed = evalItem.evaluation?.isPassed ?? true;
+                  return (
+                    <div key={evalItem.id} className="p-3 bg-slate-50 hover:bg-[#E6F7F6]/30 border border-slate-150 rounded-xl flex items-center justify-between gap-3 text-xs font-semibold transition-all">
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-slate-800 truncate">{evalItem.evaluation?.topic || "Đánh giá tiết dạy"}</p>
+                        <p className="text-[10px] text-slate-400 truncate mt-0.5">
+                          Assessor: {evalItem.teacher.teacherName} • {new Date(evalItem.evaluation?.createdAt || evalItem.createdAt).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}
+                        </p>
+                      </div>
+                      
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className={`px-2 py-0.5 text-[9px] font-black uppercase rounded ${hasPassed ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-rose-50 text-rose-700 border border-rose-200"}`}>
+                          {hasPassed ? "Đạt" : "Không đạt"}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
-
-      
-
       {/* Create Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
