@@ -2845,7 +2845,7 @@ ${reportForm.directorNote}`;
       .filter(item => item.id !== fallbackId || item.total > 0);
   }, [filteredReportStudents, reportBatches]);
 
-  const gradeStats = useMemo(() => {
+    const gradeStats = useMemo(() => {
     const gradesList = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"];
     const map = new Map();
     gradesList.forEach(g => {
@@ -2857,6 +2857,9 @@ ${reportForm.directorNote}`;
         CS1_total: 0, CS2_total: 0, CS3_total: 0, CS4_total: 0, CS5_total: 0
       });
     });
+    
+    const overallTotal = filteredReportStudents.length;
+    
     filteredReportStudents.forEach(s => {
       let g = String(s.grade || "").trim();
       const match = g.match(/\d+/);
@@ -2869,9 +2872,43 @@ ${reportForm.directorNote}`;
       const isTested = s.mathScore !== null || s.literatureScore !== null || s.writtenEnglishScore !== null || s.oralEnglishScore !== null || s.psychologyScore !== null || (s.scores && s.scores.length > 0);
       if (isTested) stat.surveyed++;
 
-      const batchObj = reportBatches.find(b => b.id === s.batchId);
-      const campusCode = batchObj?.campus?.campusCode || "";
-      const csKey = campusCode.toUpperCase();
+      // Resolve campus code for this student
+      let campusCode = null;
+      const studentPeriod = periods.find(p => p.id === s.periodId);
+      const isOpenDay = studentPeriod?.name?.toLowerCase().includes("open day");
+      
+      if (isOpenDay && s.registeredCampus) {
+        const matchingCampus = campuses.find(c => c.id === s.registeredCampus);
+        if (matchingCampus) {
+          campusCode = matchingCampus.campusCode;
+        }
+      }
+      
+      if (!campusCode) {
+        let tc = campuses.find(c => 
+          c.campusName && (c.campusName === s.admissionCampus)
+        );
+        if (!tc && s.batchId) {
+          const b = reportBatches.find(bx => bx.id === s.batchId);
+          if (b?.campusId) {
+            tc = campuses.find(c => c.id === b.campusId);
+          }
+        }
+        if (tc) {
+          campusCode = tc.campusCode;
+        }
+      }
+      
+      if (!campusCode) {
+        const campusName = s.admissionCampus || "";
+        if (campusName.includes("CS1") || campusName.includes("Cơ sở 1")) campusCode = "CS1";
+        else if (campusName.includes("CS2") || campusName.includes("Cơ sở 2")) campusCode = "CS2";
+        else if (campusName.includes("CS3") || campusName.includes("Cơ sở 3")) campusCode = "CS3";
+        else if (campusName.includes("CS4") || campusName.includes("Cơ sở 4")) campusCode = "CS4";
+        else if (campusName.includes("CS5") || campusName.includes("Cơ sở 5")) campusCode = "CS5";
+      }
+
+      const csKey = (campusCode || "").toUpperCase();
       if (csKey === "CS1") { stat.CS1_total++; if (isTested) stat.CS1++; }
       else if (csKey === "CS2") { stat.CS2_total++; if (isTested) stat.CS2++; }
       else if (csKey === "CS3") { stat.CS3_total++; if (isTested) stat.CS3++; }
@@ -2886,6 +2923,9 @@ ${reportForm.directorNote}`;
       const cs3Rate = item.CS3_total > 0 ? Math.round((item.CS3 / item.CS3_total) * 100) : 0;
       const cs4Rate = item.CS4_total > 0 ? Math.round((item.CS4 / item.CS4_total) * 100) : 0;
       const cs5Rate = item.CS5_total > 0 ? Math.round((item.CS5 / item.CS5_total) * 100) : 0;
+      
+      const gradeShare = overallTotal > 0 ? parseFloat(((item.total / overallTotal) * 100).toFixed(1)) : 0;
+      
       return {
         ...item,
         "Chung": rate,
@@ -2898,10 +2938,12 @@ ${reportForm.directorNote}`;
         "CS2": item.CS2,
         "CS3": item.CS3,
         "CS4": item.CS4,
-        "CS5": item.CS5
+        "CS5": item.CS5,
+        "gradeShare": gradeShare
       };
     });
-  }, [filteredReportStudents, reportBatches]);
+  }, [filteredReportStudents, reportBatches, periods, campuses]);
+
 
   const overallKPIs = useMemo(() => {
     const total = filteredReportStudents.length;
@@ -5794,6 +5836,7 @@ return {
                 </div>
               </div>
             </div>
+
 
 
 
