@@ -161,7 +161,7 @@ export function StudentTransfersClient() {
            )}
 
            {activeTab === "IN" && (
-             <button onClick={() => setShowInModal(true)} className="text-white font-bold hover:bg-emerald-700 transition-all flex items-center shadow-lg shadow-emerald-100 text-xs font-semibold">
+             <button onClick={() => setShowInModal(true)} className="px-6 py-3 bg-emerald-600 text-white font-bold rounded-2xl hover:bg-emerald-700 transition-all flex items-center shadow-lg shadow-emerald-100">
                <Plus className="w-5 h-5 mr-2" /> Tạo phiếu Chuyển đến
              </button>
            )}
@@ -301,7 +301,7 @@ export function StudentTransfersClient() {
                                   setSelectedRequest(req);
                                   setShowInModal(true);
                                 }}
-                                className="hover:bg-emerald-700 text-white text-xs font-bold shadow-md transition-all flex items-center gap-1.5 ml-auto cursor-pointer text-xs font-semibold"
+                                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-1.5 ml-auto cursor-pointer"
                               >
                                 <UserCheck className="w-3.5 h-3.5" />
                                 Xếp lớp
