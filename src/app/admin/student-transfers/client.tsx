@@ -497,108 +497,137 @@ function TransferOutModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
         {loading ? (
            <div className="p-20 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-slate-400" /></div>
         ) : (
-                                                  <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6 custom-scrollbar">
-            {enrollmentRequest && (
-              <div className="bg-amber-50/50 border border-amber-100 p-5 rounded-2xl animate-in fade-in duration-200">
-                <span className="text-[10px] font-bold text-amber-700 uppercase tracking-widest flex items-center gap-1.5 mb-2">
-                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-ping"></span>
-                  Học sinh khảo sát liên kết
-                </span>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-semibold">
-                  <div><span className="text-slate-400 font-medium">Họ và tên:</span> <span className="text-slate-800 font-bold">{enrollmentRequest.fullName}</span></div>
-                  <div><span className="text-slate-400 font-medium">Mã khảo sát:</span> <span className="text-slate-800 font-bold text-teal-600">{enrollmentRequest.studentCode}</span></div>
-                  <div><span className="text-slate-400 font-medium">Phân hệ / Khối:</span> <span className="text-slate-800 font-bold">{enrollmentRequest.isPreschool ? "Mầm non" : `Khối ${enrollmentRequest.grade}`}</span></div>
+                                                            <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6 custom-scrollbar">
+            {/* Filter Group */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Năm học</label>
+                <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.academicYearId} onChange={e => setForm({...form, academicYearId: e.target.value})}>
+                  <option value="">Chọn năm học</option>
+                  {options.years.filter((y: any) => !y.isOff).map(y => <option key={y.id} value={y.id}>{y.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Cơ sở</label>
+                <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.campusId} onChange={e => setForm({...form, campusId: e.target.value})}>
+                  <option value="">Chọn cơ sở</option>
+                  {options.campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Lớp học</label>
+                <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.classId} onChange={e => setForm({...form, classId: e.target.value})}>
+                  <option value="">Chọn lớp học</option>
+                  {filteredClasses.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
+                </select>
+                {form.classId && (
+                  <div className="mt-2 text-[10px] font-bold text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-100 flex items-center gap-1.5 animate-in fade-in duration-200">
+                    <UserCheck className="w-3.5 h-3.5 text-[#00A99D]" />
+                    <span>GVCN: <span className="text-slate-800 font-extrabold">{filteredClasses.find(c => c.id === form.classId)?.homeroomTeacher || "Chưa phân công"}</span></span>
+                  </div>
+                )}
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Học sinh</label>
+                <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.studentId} onChange={e => setForm({...form, studentId: e.target.value})}>
+                  <option value="">Chọn học sinh</option>
+                  {students.map(s => <option key={s.id} value={s.id}>{s.studentName} ({s.studentCode})</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div className="h-px bg-slate-100" />
+
+            {/* Transfer Details */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Ngày chuyển</label>
+                <input required type="date" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.transferDate} onChange={e => setForm({...form, transferDate: e.target.value})} />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Kỳ học</label>
+                <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.semester} onChange={e => setForm({...form, semester: e.target.value})}>
+                  <option value="">Chọn kỳ</option>
+                  <option value="HK1">Học kỳ 1</option>
+                  <option value="HK2">Học kỳ 2</option>
+                  <option value="SUMMER">Trong hè</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Diện chuyển</label>
+                <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.transferCategory} onChange={e => setForm({...form, transferCategory: e.target.value})}>
+                  <option value="">Chọn diện</option>
+                  <option value="DOMESTIC">Chuyển trường VN</option>
+                  <option value="ABROAD">Du học</option>
+                  <option value="RESERVE">Bảo lưu</option>
+                </select>
+              </div>
+            </div>
+
+            {form.transferCategory === "DOMESTIC" && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50/55 p-5 rounded-2xl border border-slate-200">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Trường chuyển đến</label>
+                  <input type="text" placeholder="Tên trường" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.destinationSchool} onChange={e => setForm({...form, destinationSchool: e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Loại hình</label>
+                  <select className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.destinationType} onChange={e => setForm({...form, destinationType: e.target.value})}>
+                    <option value="">Chọn loại</option>
+                    <option value="PRIVATE">Tư thục</option>
+                    <option value="PUBLIC">Công lập</option>
+                    <option value="OTHER">Khác</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Tỉnh/TP</label>
+                  <select className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.destinationProvince} onChange={e => setForm({...form, destinationProvince: e.target.value})}>
+                    <option value="">Chọn Tỉnh/TP</option>
+                    {provinces.map(p => <option key={p} value={p}>{p}</option>)}
+                  </select>
                 </div>
               </div>
             )}
 
-            <div className="space-y-4">
-              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Thông tin tiếp nhận</h4>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Họ và tên học sinh</label>
-                  <input required type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.studentName} onChange={e => setForm({...form, studentName: e.target.value})} placeholder="Nhập họ và tên..." />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Mã KS (Khảo sát)</label>
-                  <input required type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.studentCode} onChange={e => setForm({...form, studentCode: e.target.value})} placeholder="Nhập mã HS mới..." />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Mã HS</label>
-                  <input required type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.studentCode} readOnly placeholder="Sẽ tự động đồng bộ..." />
-                </div>
+            {form.transferCategory === "ABROAD" && (
+              <div className="p-5 bg-slate-50/55 rounded-2xl border border-slate-200">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Quốc gia theo học</label>
+                <select className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.destinationCountry} onChange={e => setForm({...form, destinationCountry: e.target.value})}>
+                  <option value="">Chọn Quốc gia</option>
+                  {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
               </div>
+            )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            {form.transferCategory === "RESERVE" && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-5 bg-slate-50/55 rounded-2xl border border-slate-200">
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Năm học</label>
-                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.academicYearId} onChange={e => {
-                    const yId = e.target.value;
-                    setForm({ ...form, academicYearId: yId, classId: "" });
-                    loadClasses(form.campusId, yId);
-                  }}>
-                    <option value="">Chọn năm học</option>
-                    {options.years.filter((y: any) => !y.isOff).map(y => <option key={y.id} value={y.id}>{y.name}</option>)}
-                  </select>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Từ ngày</label>
+                  <input required type="date" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.reserveStartDate} onChange={e => setForm({...form, reserveStartDate: e.target.value})} />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Kỳ học</label>
-                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.semester} onChange={e => setForm({...form, semester: e.target.value})}>
-                    <option value="">Chọn kỳ</option>
-                    <option value="HK1">Học kỳ 1</option>
-                    <option value="HK2">Học kỳ 2</option>
-                    <option value="SUMMER">Trong hè</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Cơ sở</label>
-                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.campusId} onChange={e => setForm({...form, campusId: e.target.value})}>
-                    <option value="">Chọn cơ sở</option>
-                    {options.campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Lớp học</label>
-                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.classId} onChange={e => setForm({...form, classId: e.target.value})}>
-                    <option value="">Chọn lớp học</option>
-                    {filteredClasses.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
-                  </select>
-                  {form.classId && (
-                    <div className="mt-2 text-[10px] font-bold text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-100 flex items-center gap-1.5 animate-in fade-in duration-200">
-                      <UserCheck className="w-3.5 h-3.5 text-[#00A99D]" />
-                      <span>GVCN: <span className="text-slate-800 font-extrabold">{filteredClasses.find(c => c.id === form.classId)?.homeroomTeacher || "Chưa phân công"}</span></span>
-                    </div>
-                  )}
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Đến ngày</label>
+                  <input required type="date" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.reserveEndDate} onChange={e => setForm({...form, reserveEndDate: e.target.value})} />
                 </div>
               </div>
+            )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Ngày nhập học</label>
-                  <input required type="date" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.transferDate} onChange={e => setForm({...form, transferDate: e.target.value})} />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Ghi chú thêm</label>
-                <input type="text" placeholder="Nhập ghi chú chi tiết (nếu có)..." className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} />
-              </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Lý do chuyển</label>
+              <textarea placeholder="Nhập lý do chi tiết..." rows={3} className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} />
             </div>
 
             <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
               <button type="button" onClick={onClose} className="px-6 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-colors">
                 Hủy
               </button>
-              <button disabled={saving} type="button" onClick={() => handleSave(false)} className="px-6 py-3 bg-indigo-50 text-indigo-500 font-bold rounded-xl border border-indigo-100 hover:bg-indigo-100 transition-colors flex items-center">
+              <button disabled={saving} type="submit" className="px-6 py-3 bg-[#00A99D] text-white font-bold rounded-xl hover:bg-[#009085] transition-colors shadow-lg shadow-[#00A99D]/20 flex items-center">
                 {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Lưu phiếu
-              </button>
-              <button disabled={saving} type="button" onClick={() => handleSave(true)} className="px-6 py-3 bg-indigo-500 hover:bg-indigo-600 text-white font-bold rounded-xl transition-colors shadow-lg shadow-indigo-100 flex items-center">
-                {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Thông báo đến GVCN
+                Xác nhận chuyển
               </button>
             </div>
           </form>
+
 
 
 
@@ -716,85 +745,82 @@ function ChangeClassModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
         {loading ? (
            <div className="p-20 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-slate-400" /></div>
         ) : (
-                    <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-8 custom-scrollbar">
-            
-            {/* Current Info */}
-            <div>
-              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 pb-2 border-b">Thông tin hiện tại</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Năm học</label>
-                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.academicYearId} onChange={e => setForm({...form, academicYearId: e.target.value})}>
-                    <option value="">Chọn năm học</option>
-                    {options.years.filter((y: any) => !y.isOff).map(y => <option key={y.id} value={y.id}>{y.name}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Cơ sở hiện tại</label>
-                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.campusId} onChange={e => setForm({...form, campusId: e.target.value})}>
-                    <option value="">Chọn cơ sở</option>
-                    {options.campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Lớp hiện tại</label>
-                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.classId} onChange={e => setForm({...form, classId: e.target.value})}>
-                    <option value="">Chọn lớp học</option>
-                    {filteredClasses.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Học sinh</label>
-                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.studentId} onChange={e => setForm({...form, studentId: e.target.value})}>
-                    <option value="">Chọn học sinh</option>
-                    {students.map(s => <option key={s.id} value={s.id}>{s.studentName} ({s.studentCode})</option>)}
-                  </select>
-                </div>
+                              <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6 custom-scrollbar">
+            {/* Filter Group */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Năm học</label>
+                <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.academicYearId} onChange={e => setForm({...form, academicYearId: e.target.value})}>
+                  <option value="">Chọn năm học</option>
+                  {options.years.filter((y: any) => !y.isOff).map(y => <option key={y.id} value={y.id}>{y.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Cơ sở</label>
+                <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.campusId} onChange={e => setForm({...form, campusId: e.target.value})}>
+                  <option value="">Chọn cơ sở</option>
+                  {options.campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Lớp hiện tại</label>
+                <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.classId} onChange={e => setForm({...form, classId: e.target.value})}>
+                  <option value="">Chọn lớp hiện tại</option>
+                  {filteredClasses.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
+                </select>
+                {form.classId && (
+                  <div className="mt-2 text-[10px] font-bold text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-100 flex items-center gap-1.5 animate-in fade-in duration-200">
+                    <UserCheck className="w-3.5 h-3.5 text-[#00A99D]" />
+                    <span>GVCN: <span className="text-slate-800 font-extrabold">{filteredClasses.find(c => c.id === form.classId)?.homeroomTeacher || "Chưa phân công"}</span></span>
+                  </div>
+                )}
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Học sinh</label>
+                <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.studentId} onChange={e => setForm({...form, studentId: e.target.value})}>
+                  <option value="">Chọn học sinh</option>
+                  {students.map(s => <option key={s.id} value={s.id}>{s.studentName} ({s.studentCode})</option>)}
+                </select>
               </div>
             </div>
 
-            {/* Destination Info */}
-            <div>
-              <h3 className="text-sm font-bold text-indigo-800 uppercase tracking-wider mb-4 pb-2 border-b border-[#00A99D]/20">Thông tin chuyển đến</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-[#00A99D]/5 p-5 rounded-2xl border border-[#00A99D]/20">
+            <div className="h-px bg-slate-100" />
+
+            <div className="bg-slate-50/55 p-5 rounded-2xl border border-slate-200 space-y-4">
+              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                <ArrowRightLeft className="w-4 h-4 text-[#00A99D]" /> Thông tin chuyển lớp
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Cơ sở chuyển đến</label>
                   <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.destCampusId} onChange={e => setForm({...form, destCampusId: e.target.value})}>
-                    <option value="">Chọn cơ sở</option>
+                    <option value="">Chọn cơ sở đến</option>
                     {options.campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Lớp chuyển đến</label>
                   <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.destClassId} onChange={e => setForm({...form, destClassId: e.target.value})}>
-                    <option value="">Chọn lớp</option>
+                    <option value="">Chọn lớp đến</option>
                     {filteredDestClasses.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
                   </select>
+                  {form.destClassId && (
+                    <div className="mt-2 text-[10px] font-bold text-slate-500 bg-white p-2.5 rounded-lg border border-slate-100 flex items-center gap-1.5 animate-in fade-in duration-200">
+                      <UserCheck className="w-3.5 h-3.5 text-[#00A99D]" />
+                      <span>GVCN: <span className="text-slate-800 font-extrabold">{filteredDestClasses.find(c => c.id === form.destClassId)?.homeroomTeacher || "Chưa phân công"}</span></span>
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Ngày chuyển lớp</label>
+                  <input required type="date" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.transferDate} onChange={e => setForm({...form, transferDate: e.target.value})} />
                 </div>
               </div>
             </div>
 
-            {/* Other details */}
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Ngày chuyển</label>
-                  <input required type="date" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.transferDate} onChange={e => setForm({...form, transferDate: e.target.value})} />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Kỳ học</label>
-                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.semester} onChange={e => setForm({...form, semester: e.target.value})}>
-                    <option value="">Chọn kỳ</option>
-                    <option value="HK1">Học kỳ 1</option>
-                    <option value="HK2">Học kỳ 2</option>
-                    <option value="SUMMER">Trong hè</option>
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Lý do chuyển</label>
-                <input type="text" placeholder="Nhập lý do chi tiết..." className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} />
-              </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Lý do chuyển lớp</label>
+              <textarea placeholder="Nhập lý do chi tiết..." rows={3} className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} />
             </div>
 
             <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
@@ -807,6 +833,7 @@ function ChangeClassModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
               </button>
             </div>
           </form>
+
 
         )}
       </div>
@@ -1006,57 +1033,27 @@ function TransferInModal({ activeSubTab, onClose, onSaved, initialData, enrollme
         {loading ? (
            <div className="p-20 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-slate-400" /></div>
         ) : (
-                    <form className="p-6 overflow-y-auto space-y-8 custom-scrollbar">
-            
-            {/* Input Assessment Data selection */}
-            {enrollmentRequest ? (
-              <div className="p-5 mb-4 text-xs font-semibold bg-amber-50/50 rounded-2xl border border-amber-200">
-                <h3 className="text-xs font-bold text-amber-800 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                  <span className="h-2 w-2 animate-pulse bg-amber-500 rounded-full"></span>
+                              <form className="p-6 overflow-y-auto space-y-6 custom-scrollbar">
+            {enrollmentRequest && (
+              <div className="bg-amber-50/50 border border-amber-100 p-5 rounded-2xl animate-in fade-in duration-200">
+                <span className="text-[10px] font-bold text-amber-700 uppercase tracking-widest flex items-center gap-1.5 mb-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-ping"></span>
                   Học sinh khảo sát liên kết
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm font-semibold text-slate-700">
-                  <div>Họ và tên: <span className="font-black text-slate-900">{enrollmentRequest.fullName}</span></div>
-                  <div>Mã khảo sát: <span className="font-mono font-black text-indigo-700 text-xs font-semibold">{enrollmentRequest.studentCode}</span></div>
-                  <div>Phân hệ / Khối: <span className="font-black text-slate-900">{enrollmentRequest.isPreschool ? "Mầm non" : `Khối ${enrollmentRequest.grade}`}</span></div>
-                </div>
-              </div>
-            ) : !initialData && (
-              <div>
-                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 pb-2 border-b">CĂN CỨ DỮ LIỆU KHẢO SÁT</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-5 mb-4 bg-slate-50/55 rounded-2xl border border-slate-200">
-                  <div>
-                    <label className="block text-xs font-bold text-emerald-650 uppercase tracking-wider mb-2">1. Chọn Kỳ khảo sát ({periods.length})</label>
-                    <select className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all text-xs font-semibold text-slate-800" value={selectedPeriod} onChange={e => setSelectedPeriod(e.target.value)}>
-                      <option value="">Chọn kỳ...</option>
-                      {periods.filter(p => !form.academicYearId || p.academicYearId === form.academicYearId).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-emerald-650 uppercase tracking-wider mb-2">2. Chọn Đợt khảo sát</label>
-                    <select className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all text-xs font-semibold text-slate-800" value={selectedBatch} onChange={e => setSelectedBatch(e.target.value)}>
-                      <option value="">Tất cả các đợt</option>
-                      {batches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-emerald-650 uppercase tracking-wider mb-2">3. Chọn Học sinh</label>
-                    <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all text-xs font-semibold text-slate-800" value={form.assessmentStudentId} onChange={e => handleSelectStudent(e.target.value)}>
-                      <option value="">Chọn học sinh...</option>
-                      {assessmentStudents.map(s => <option key={s.id} value={s.id}>{s.fullName} - MS: {s.studentCode}</option>)}
-                    </select>
-                  </div>
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-semibold">
+                  <div><span className="text-slate-400 font-medium">Họ và tên:</span> <span className="text-slate-800 font-bold">{enrollmentRequest.fullName}</span></div>
+                  <div><span className="text-slate-400 font-medium">Mã khảo sát:</span> <span className="text-slate-800 font-bold text-teal-650">{enrollmentRequest.studentCode}</span></div>
+                  <div><span className="text-slate-400 font-medium">Phân hệ / Khối:</span> <span className="text-slate-800 font-bold">{enrollmentRequest.isPreschool ? "Mầm non" : `Khối ${enrollmentRequest.grade}`}</span></div>
                 </div>
               </div>
             )}
 
-            {/* Destination Info */}
-            <div>
-              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 pb-2 border-b">Thông tin tiếp nhận</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="space-y-4">
+              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Thông tin tiếp nhận</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Họ và tên học sinh</label>
-                  <input required type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all text-xs font-semibold text-slate-800" value={form.studentName} onChange={e => setForm({...form, studentName: e.target.value})} placeholder="Nhập họ và tên..." />
+                  <input required type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.studentName} onChange={e => setForm({...form, studentName: e.target.value})} placeholder="Nhập họ và tên..." />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Mã KS (Khảo sát)</label>
@@ -1064,16 +1061,16 @@ function TransferInModal({ activeSubTab, onClose, onSaved, initialData, enrollme
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Mã HS</label>
-                  <input required type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all text-xs font-semibold text-slate-800" value={form.studentCode} onChange={e => setForm({...form, studentCode: e.target.value})} placeholder="Nhập mã HS mới..." />
+                  <input required type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.studentCode} onChange={e => setForm({...form, studentCode: e.target.value})} placeholder="Nhập mã HS mới..." />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mt-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Năm học</label>
-                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all text-xs font-semibold text-slate-800" value={form.academicYearId} onChange={e => {
+                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.academicYearId} onChange={e => {
                     const yId = e.target.value;
-                    setForm({...form, academicYearId: yId});
+                    setForm({ ...form, academicYearId: yId, classId: "" });
                     const currentPeriodObj = periods.find(p => p.id === selectedPeriod);
                     if (currentPeriodObj && currentPeriodObj.academicYearId !== yId) {
                       setSelectedPeriod("");
@@ -1087,7 +1084,7 @@ function TransferInModal({ activeSubTab, onClose, onSaved, initialData, enrollme
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Kỳ học</label>
-                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all text-xs font-semibold text-slate-800" value={form.semester} onChange={e => setForm({...form, semester: e.target.value})}>
+                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.semester} onChange={e => setForm({...form, semester: e.target.value})}>
                     <option value="HK1">Học kỳ 1</option>
                     <option value="HK2">Học kỳ 2</option>
                     <option value="SUMMER">Trong hè</option>
@@ -1095,32 +1092,36 @@ function TransferInModal({ activeSubTab, onClose, onSaved, initialData, enrollme
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Cơ sở</label>
-                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all text-xs font-semibold text-slate-800" value={form.campusId} onChange={e => setForm({...form, campusId: e.target.value})}>
+                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.campusId} onChange={e => setForm({...form, campusId: e.target.value})}>
                     <option value="">Chọn cơ sở</option>
                     {options.campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Lớp học</label>
-                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all text-xs font-semibold text-slate-800" value={form.classId} onChange={e => setForm({...form, classId: e.target.value})}>
+                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.classId} onChange={e => setForm({...form, classId: e.target.value})}>
                     <option value="">Chọn lớp học</option>
                     {filteredClasses.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
                   </select>
+                  {form.classId && (
+                    <div className="mt-2 text-[10px] font-bold text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-100 flex items-center gap-1.5 animate-in fade-in duration-200">
+                      <UserCheck className="w-3.5 h-3.5 text-[#00A99D]" />
+                      <span>GVCN: <span className="text-slate-800 font-extrabold">{filteredClasses.find(c => c.id === form.classId)?.homeroomTeacher || "Chưa phân công"}</span></span>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
 
-            {/* Other details */}
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Ngày nhập học</label>
-                  <input required type="date" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all text-xs font-semibold text-slate-800" value={form.transferDate} onChange={e => setForm({...form, transferDate: e.target.value})} />
+                  <input required type="date" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.transferDate} onChange={e => setForm({...form, transferDate: e.target.value})} />
                 </div>
               </div>
+
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Ghi chú thêm</label>
-                <input type="text" placeholder="Nhập ghi chú chi tiết (nếu có)..." className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all text-xs font-semibold text-slate-800" value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} />
+                <input type="text" placeholder="Nhập ghi chú chi tiết (nếu có)..." className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} />
               </div>
             </div>
 
@@ -1128,28 +1129,17 @@ function TransferInModal({ activeSubTab, onClose, onSaved, initialData, enrollme
               <button type="button" onClick={onClose} className="px-6 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-colors">
                 Hủy
               </button>
-              
-              <button 
-                type="button"
-                onClick={() => handleSubmit(null)}
-                disabled={saving}
-                className="px-6 py-3 bg-emerald-50 text-emerald-700 font-bold rounded-xl border border-emerald-100 hover:bg-emerald-100 transition-colors flex items-center"
-              >
+              <button disabled={saving} type="button" onClick={() => handleSubmit(null)} className="px-6 py-3 bg-indigo-50 text-indigo-500 font-bold rounded-xl border border-indigo-100 hover:bg-indigo-100 transition-colors flex items-center">
                 {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                {initialData ? "Lưu thay đổi" : "Lưu phiếu"}
+                Lưu phiếu
               </button>
-
-              <button 
-                type="button"
-                onClick={() => handleSubmit(null, true)}
-                disabled={saving}
-                className="px-6 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-100 flex items-center"
-              >
+              <button disabled={saving} type="button" onClick={() => handleSubmit(null, true)} className="px-6 py-3 bg-[#00A99D] hover:bg-[#009085] text-white font-bold rounded-xl transition-colors shadow-lg shadow-indigo-100 flex items-center">
                 {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Thông báo đến GVCN
               </button>
             </div>
           </form>
+
 
         )}
       </div>
