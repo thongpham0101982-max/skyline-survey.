@@ -231,9 +231,8 @@ export async function getObservationSlots(filters: {
         teacher: {
           select: {
             id: true,
-        teacherName: true,
-        teacherCode: true,
-        departmentId: true,
+            teacherName: true,
+            teacherCode: true,
             email: true,
             departmentId: true,
             departmentRel: true,

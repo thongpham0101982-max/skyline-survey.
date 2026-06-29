@@ -36,7 +36,7 @@ interface ClassInfo { id: string; classCode: string; className: string; level: s
 
 interface ObservationClientProps {
   initialSlots: any[]
-  currentTeacher: TeacherInfo
+  currentTeacher: TeacherInfo | null | undefined
   subjects: SubjectInfo[]
   departments: DeptInfo[]
   teachers: any[]
@@ -758,8 +758,8 @@ export function ObservationClient(props: ObservationClientProps) {
       const month = slotDate.getMonth() + 1;
       const key = `${year}-${month.toString().padStart(2, "0")}`;
       
-      const isHost = slot.teacherId === currentTeacher.id;
-      const isObserverApproved = slot.registrations.some(r => r.teacherId === currentTeacher.id && r.isApproved);
+      const isHost = slot.teacherId === currentTeacher?.id;
+      const isObserverApproved = slot.registrations.some((r: any) => r.teacherId === currentTeacher?.id && r.isApproved);
       
       if (!stats[key]) {
         stats[key] = {
@@ -774,15 +774,15 @@ export function ObservationClient(props: ObservationClientProps) {
       const countWeight = slot.isDoublePeriod ? 2 : 1;
       if (isHost) {
         // Chỉ tính tiết dạy khi tất cả GV đã được duyệt đều đã điền phiếu đánh giá
-        const approvedRegs = slot.registrations.filter((r) => r.isApproved);
-        const allEvaluated = approvedRegs.length > 0 && approvedRegs.every((r) => !!r.evaluation);
+        const approvedRegs = slot.registrations.filter((r: any) => r.isApproved);
+        const allEvaluated = approvedRegs.length > 0 && approvedRegs.every((r: any) => !!r.evaluation);
         if (allEvaluated) {
           stats[key].taughtCount += countWeight;
         }
       }
       if (isObserverApproved) {
         // Chỉ tính tiết dự khi GV dự đã điền phiếu đánh giá
-        const myReg = slot.registrations.find((r) => r.teacherId === currentTeacher.id && r.isApproved);
+        const myReg = slot.registrations.find((r: any) => r.teacherId === currentTeacher?.id && r.isApproved);
         if (myReg && myReg.evaluation) {
           stats[key].observedCount += countWeight;
         }
@@ -790,13 +790,13 @@ export function ObservationClient(props: ObservationClientProps) {
     });
     
     return Object.values(stats).sort((a, b) => b.year !== a.year ? b.year - a.year : b.month - a.month);
-  }, [slots, currentTeacher.id]);
+  }, [slots, currentTeacher?.id]);
 
   const receivedEvaluations = useMemo(() => {
-    const list = [];
+    const list: any[] = [];
     slots.forEach(slot => {
-      if (slot.teacherId === currentTeacher.id) {
-        slot.registrations.forEach(reg => {
+      if (slot.teacherId === currentTeacher?.id) {
+        slot.registrations.forEach((reg: any) => {
           if (reg.evaluation) {
             list.push({
               slot,
@@ -808,14 +808,14 @@ export function ObservationClient(props: ObservationClientProps) {
       }
     });
     return list.sort((a, b) => new Date(b.slot.date).getTime() - new Date(a.slot.date).getTime());
-  }, [slots, currentTeacher.id]);
+  }, [slots, currentTeacher?.id]);
 
   const evaluationsGroupedBySlot = useMemo(() => {
-    const groups = [];
+    const groups: any[] = [];
     slots.forEach(slot => {
-      if (slot.teacherId === currentTeacher.id) {
-        const evals = [];
-        slot.registrations.forEach(reg => {
+      if (slot.teacherId === currentTeacher?.id) {
+        const evals: any[] = [];
+        slot.registrations.forEach((reg: any) => {
           if (reg.evaluation) {
             evals.push({
               registration: reg,
@@ -832,7 +832,7 @@ export function ObservationClient(props: ObservationClientProps) {
       }
     });
     return groups.sort((a, b) => new Date(b.slot.date).getTime() - new Date(a.slot.date).getTime());
-  }, [slots, currentTeacher.id]);
+  }, [slots, currentTeacher?.id]);
 
   // Get all teachers in the selected department
   const deptTeachers = useMemo(() => {
@@ -897,15 +897,15 @@ export function ObservationClient(props: ObservationClientProps) {
   const tabFilteredSlots = useMemo(() => {
     const now = new Date()
     return slots.filter(slot => {
-      const isHost = slot.teacherId === currentTeacher.id
-      const isObserver = slot.registrations.some((r: any) => r.teacherId === currentTeacher.id)
+      const isHost = slot.teacherId === currentTeacher?.id
+      const isObserver = slot.registrations.some((r: any) => r.teacherId === currentTeacher?.id)
       const slotDate = new Date(slot.date)
       const isPast = slotDate < new Date(now.getFullYear(), now.getMonth(), now.getDate())
       if (activeTab === "dang-ky") {
         // Relax isPast to allow retroactive registration and viewing of recent slots
         if (isHost || isObserver) return false;
         if (activeDeptTab !== "all") {
-          const isMyDept = slot.teacher?.departmentId === currentTeacher.departmentId;
+          const isMyDept = slot.teacher?.departmentId === currentTeacher?.departmentId;
           if (activeDeptTab === "my-dept" && !isMyDept) return false;
           if (activeDeptTab === "other-dept") {
             if (isMyDept) return false;
@@ -928,7 +928,7 @@ export function ObservationClient(props: ObservationClientProps) {
       if (activeTab === "history") return isObserver
       return true
     })
-  }, [slots, activeTab, currentTeacher.id, activeDeptTab])
+  }, [slots, activeTab, currentTeacher?.id, activeDeptTab])
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab)
@@ -996,11 +996,11 @@ export function ObservationClient(props: ObservationClientProps) {
           
           <div className="flex items-center gap-2 border-l pl-4 border-slate-200">
             <div className="w-8 h-8 rounded-full bg-[#00A99D]/10 text-[#00A99D] flex items-center justify-center font-black text-sm uppercase">
-              {currentTeacher.teacherName.charAt(0)}
+              {currentTeacher?.teacherName?.charAt(0) || ""}
             </div>
             <div className="hidden md:flex flex-col text-left">
-              <span className="text-xs font-black text-[#003B3A]">{currentTeacher.teacherName}</span>
-              <span className="text-[9px] font-bold text-slate-400">{currentTeacher.teacherCode}</span>
+              <span className="text-xs font-black text-[#003B3A]">{currentTeacher?.teacherName}</span>
+              <span className="text-[9px] font-bold text-slate-400">{currentTeacher?.teacherCode}</span>
             </div>
           </div>
         </div>
@@ -1154,7 +1154,7 @@ export function ObservationClient(props: ObservationClientProps) {
             <div className="flex flex-col items-center justify-center p-3.5 bg-white rounded-xl shadow-sm border border-slate-150 text-center">
               <span className="text-[9px] font-black text-slate-400 uppercase">Chỉ tiêu dự giờ</span>
               <span className="text-xl font-black text-[#00A99D] mt-1">
-                {(teacherStats[currentTeacher.id]?.observedCount || 0)} / {selfRequiredObserved}
+                {((currentTeacher?.id ? teacherStats[currentTeacher.id] : undefined)?.observedCount || 0)} / {selfRequiredObserved}
               </span>
               <span className="text-[9px] font-extrabold text-slate-400 mt-0.5">tiết/{selfObservedUnit}</span>
             </div>
@@ -1162,7 +1162,7 @@ export function ObservationClient(props: ObservationClientProps) {
             <div className="flex flex-col items-center justify-center p-3.5 bg-white rounded-xl shadow-sm border border-slate-150 text-center">
               <span className="text-[9px] font-black text-slate-400 uppercase">Chỉ tiêu tiết dạy</span>
               <span className="text-xl font-black text-[#003B3A] mt-1">
-                {(teacherStats[currentTeacher.id]?.taughtCount || 0)} / {selfRequiredTaught || 1}
+                {((currentTeacher?.id ? teacherStats[currentTeacher.id] : undefined)?.taughtCount || 0)} / {selfRequiredTaught || 1}
               </span>
               <span className="text-[9px] font-extrabold text-slate-400 mt-0.5">tiết/{selfTaughtUnit}</span>
             </div>
@@ -1174,7 +1174,7 @@ export function ObservationClient(props: ObservationClientProps) {
             
             {(() => {
               const suggested = slots
-                .filter(s => s.teacherId !== currentTeacher.id && !s.registrations.some((r: any) => r.teacherId === currentTeacher.id))
+                .filter(s => s.teacherId !== currentTeacher?.id && !s.registrations.some((r: any) => r.teacherId === currentTeacher?.id))
                 .slice(0, 3);
               
               if (suggested.length === 0) {
@@ -1223,8 +1223,8 @@ export function ObservationClient(props: ObservationClientProps) {
           <div className="flex-1 overflow-y-auto max-h-[315px] space-y-3 custom-scrollbar pr-1">
             {(() => {
               const mySchedule = slots.filter(slot => {
-                const isHost = slot.teacherId === currentTeacher.id;
-                const isObserver = slot.registrations.some((r: any) => r.teacherId === currentTeacher.id);
+                const isHost = slot.teacherId === currentTeacher?.id;
+                const isObserver = slot.registrations.some((r: any) => r.teacherId === currentTeacher?.id);
                 return isHost || isObserver;
               }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
@@ -1241,9 +1241,9 @@ export function ObservationClient(props: ObservationClientProps) {
               return (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {mySchedule.map(slot => {
-                    const isHost = slot.teacherId === currentTeacher.id;
+                    const isHost = slot.teacherId === currentTeacher?.id;
                     const slotDate = new Date(slot.date);
-                    const myReg = slot.registrations.find((r: any) => r.teacherId === currentTeacher.id);
+                    const myReg = slot.registrations.find((r: any) => r.teacherId === currentTeacher?.id);
                     const isPastSlot = slotDate < new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
                     
                     return (
@@ -1424,8 +1424,8 @@ export function ObservationClient(props: ObservationClientProps) {
                 </thead>
                 <tbody className="divide-y divide-slate-150 text-xs font-semibold text-slate-700">
                   {tabFilteredSlots.map(slot => {
-                    const isHost = slot.teacherId === currentTeacher.id;
-                    const myReg = slot.registrations.find((r: any) => r.teacherId === currentTeacher.id);
+                    const isHost = slot.teacherId === currentTeacher?.id;
+                    const myReg = slot.registrations.find((r: any) => r.teacherId === currentTeacher?.id);
                     const isRegistered = !!myReg;
                     const observerCount = slot.registrations.length;
                     const slotDate = new Date(slot.date);
