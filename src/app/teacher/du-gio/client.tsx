@@ -1584,49 +1584,81 @@ export function ObservationClient(props: ObservationClientProps) {
             </div>
           )}
         </div>
+      </div>
 
+      {/* ROW 4: Full Width Layout for Panel 6 */}
+      <div className="w-full mt-6">
         {/* Panel 6: Kết quả đánh giá gần đây */}
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-4 border-t-4 border-t-[#00A99D]">
-          <div className="flex items-center gap-2 border-b border-slate-150 pb-3">
+        <div className="w-full bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-5 border-t-4 border-t-[#00A99D]">
+          <div className="flex items-center gap-2 border-b border-slate-150 pb-4">
             <ClipboardList className="w-5 h-5 text-[#00A99D]" />
             <span className="font-extrabold text-sm text-[#003B3A] uppercase tracking-wider">6. Kết quả đánh giá gần đây</span>
           </div>
 
-          {/* Evaluations list */}
-          <div className="flex-1 flex flex-col gap-2.5">
-            {receivedEvaluations.length === 0 ? (
-              <div className="flex flex-col items-center justify-center flex-1 py-8 text-slate-450 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
-                <ClipboardList className="w-8 h-8 text-slate-300 mb-1 stroke-1" />
-                <p className="text-[10px] font-bold text-center">Chưa nhận được phiếu đánh giá nào.</p>
-              </div>
-            ) : (
-              <div className="space-y-2.5 max-h-[250px] overflow-y-auto pr-1 custom-scrollbar flex-1">
-                {receivedEvaluations.map(evalItem => {
-                  const hasPassed = evalItem.evaluation?.isPassed ?? true;
-                  return (
-                    <div 
-                      key={evalItem.evaluation?.id || evalItem.registration?.id} 
-                      onClick={() => openEvalModal(evalItem.registration, evalItem.slot)}
-                      className="p-3 bg-slate-50 hover:bg-[#E6F7F6]/30 border border-slate-150 rounded-xl flex items-center justify-between gap-3 text-xs font-semibold transition-all cursor-pointer hover:border-[#00A99D]/40 hover:shadow-sm"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs font-bold text-slate-800 truncate leading-snug">{evalItem.evaluation?.topic || "Đánh giá tiết dạy"}</p>
-                        <p className="text-[10px] text-slate-400 truncate mt-0.5 font-bold">
-                          Assessor: {evalItem.registration?.teacher?.teacherName || "Giáo viên"} • {new Date(evalItem.evaluation?.createdAt || evalItem.createdAt).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}
-                        </p>
-                      </div>
-                      
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="px-2 py-0.5 text-[9px] font-black uppercase rounded bg-emerald-50 text-emerald-700 border border-emerald-250">
-                          {hasPassed ? "Đạt" : "Không đạt"}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          {receivedEvaluations.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-slate-400 border border-dashed border-slate-250 rounded-2xl bg-slate-50/50">
+              <ClipboardList className="w-10 h-10 text-slate-300 mb-2 stroke-1" />
+              <p className="text-xs font-bold text-center">Chưa nhận được phiếu đánh giá nào.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-2xl border border-slate-150">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-150 text-slate-500 font-extrabold uppercase text-[10px] tracking-wider">
+                    <th className="p-4">Giáo viên dạy</th>
+                    <th className="p-4">Người đánh giá</th>
+                    <th className="p-4">Môn học & Chủ đề</th>
+                    <th className="p-4">Thời gian / Phòng</th>
+                    <th className="p-4 text-center">Kết quả</th>
+                    <th className="p-4 text-right">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-150 text-xs font-semibold text-slate-700">
+                  {receivedEvaluations.map(evalItem => {
+                    const hasPassed = evalItem.evaluation?.isPassed ?? true;
+                    const slotDate = new Date(evalItem.slot.date);
+                    return (
+                      <tr key={evalItem.evaluation?.id || evalItem.registration?.id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="p-4 font-bold text-slate-800">
+                          <p className="font-extrabold">{evalItem.slot.teacher?.teacherName || "Giáo viên"}</p>
+                          <p className="text-[10px] text-slate-400 font-bold mt-0.5">Mã: {evalItem.slot.teacher?.teacherCode || ""}</p>
+                        </td>
+                        <td className="p-4 font-bold text-slate-800">
+                          <p className="font-extrabold">{evalItem.registration?.teacher?.teacherName || "Giáo viên"}</p>
+                          <p className="text-[10px] text-slate-400 font-bold mt-0.5">Mã: {evalItem.registration?.teacher?.teacherCode || ""}</p>
+                        </td>
+                        <td className="p-4">
+                          <p className="font-extrabold text-[#003B3A]">{evalItem.evaluation?.topic || evalItem.slot.topic || "Đánh giá tiết dạy"}</p>
+                          <p className="text-[10px] text-slate-500 mt-0.5">
+                            {evalItem.slot.subjectName} • {evalItem.slot.className || "Lớp"} ({evalItem.slot.campusName || "Cơ sở"})
+                          </p>
+                        </td>
+                        <td className="p-4">
+                          <p className="font-bold">{slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}</p>
+                          <p className="text-[10px] text-[#00A99D] font-bold mt-0.5">
+                            {evalItem.slot.startTime} • Phòng: {evalItem.slot.room || "X"}
+                          </p>
+                        </td>
+                        <td className="p-4 text-center">
+                          <span className={`px-2.5 py-0.5 text-[9px] font-black uppercase rounded-md border ${hasPassed ? "bg-emerald-50 text-emerald-700 border-emerald-250" : "bg-rose-50 text-rose-700 border-rose-200"}`}>
+                            {hasPassed ? "Đạt" : "Không đạt"}
+                          </span>
+                        </td>
+                        <td className="p-4 text-right">
+                          <button 
+                            onClick={() => openEvalModal(evalItem.registration, evalItem.slot)}
+                            className="px-3 py-1.5 text-[10px] font-black rounded-xl transition-all shadow-sm bg-[#00A99D] hover:bg-[#008b82] text-white"
+                          >
+                            Xem chi tiết
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
 
