@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react"
 import { 
   Users, Loader2, User, Award, Compass, 
-  FileText, BookOpen, MessageSquare, ClipboardCheck, ArrowLeftRight 
+  FileText, BookOpen, MessageSquare, ClipboardCheck, ArrowLeftRight,
+  Bell, ThumbsUp, MessageCircle, Share2, Send, Globe, Camera
 } from "lucide-react"
 
 export default function TeacherStudentProfilePage() {
@@ -14,6 +15,15 @@ export default function TeacherStudentProfilePage() {
   const [loadingStudents, setLoadingStudents] = useState(true)
   const [loadingProfile, setLoadingProfile] = useState(false)
   const [isNotGVCN, setIsNotGVCN] = useState(false)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const [avatarUrl, setAvatarUrl] = useState("")
+  const [newPostText, setNewPostText] = useState("")
+  const [postingAnnouncement, setPostingAnnouncement] = useState(false)
+  
+  // Custom interactive mock likes/comments state for the wall posts
+  const [postLikes, setPostLikes] = useState<Record<string, { count: number, liked: boolean }>>({})
+  const [postCommentsState, setPostCommentsState] = useState<Record<string, { author: string, text: string, time: string }[]>>({})
+  const [newCommentTexts, setNewCommentTexts] = useState<Record<string, string>>({})
 
   // Profile data
   const [profileData, setProfileData] = useState<{
@@ -52,12 +62,111 @@ export default function TeacherStudentProfilePage() {
     loadHomeroomStudents()
   }, [])
 
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    try {
+      setUploadingAvatar(true)
+      const formData = new FormData()
+      formData.append("file", file)
+
+      const res = await fetch(`/api/teacher-student-records?action=uploadAvatar&studentId=${selectedStudentId}`, {
+        method: "POST",
+        body: formData
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        if (data.success) {
+          setAvatarUrl(data.url)
+        }
+      }
+    } catch (err) {
+      console.error("Error uploading avatar:", err)
+    } finally {
+      setUploadingAvatar(false)
+    }
+  }
+
+  const handleCreatePostSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newPostText.trim()) return
+
+    try {
+      setPostingAnnouncement(true)
+      const res = await fetch("/api/teacher-student-records?action=saveHighlightComment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId: selectedStudentId,
+          comment: newPostText,
+          category: "ANNOUNCEMENT"
+        })
+      })
+
+      if (res.ok) {
+        setNewPostText("")
+        // Refresh profile data
+        const profileRes = await fetch(`/api/teacher-student-records?action=getStudentRecord&studentId=${selectedStudentId}`)
+        if (profileRes.ok) {
+          const data = await profileRes.json()
+          setProfileData(data)
+        }
+      }
+    } catch (err) {
+      console.error("Error creating post:", err)
+    } finally {
+      setPostingAnnouncement(false)
+    }
+  }
+
+  const toggleLike = (postId: string) => {
+    setPostLikes(prev => {
+      const current = prev[postId] || { count: 0, liked: false }
+      return {
+        ...prev,
+        [postId]: {
+          count: current.liked ? current.count - 1 : current.count + 1,
+          liked: !current.liked
+        }
+      }
+    })
+  }
+
+  const handleAddComment = (postId: string, authorName: string) => {
+    const commentText = newCommentTexts[postId]
+    if (!commentText || !commentText.trim()) return
+
+    setPostCommentsState(prev => {
+      const currentList = prev[postId] || []
+      return {
+        ...prev,
+        [postId]: [
+          ...currentList,
+          {
+            author: authorName,
+            text: commentText,
+            time: "Vừa xong"
+          }
+        ]
+      }
+    })
+
+    setNewCommentTexts(prev => ({
+      ...prev,
+      [postId]: ""
+    }))
+  }
+
   useEffect(() => {
     if (!selectedStudentId) {
       setSelectedStudent(null)
       setProfileData(null)
+      setAvatarUrl("")
       return
     }
+    setAvatarUrl(`/uploads/students/${selectedStudentId}.jpg?t=${Date.now()}`)
 
     async function loadProfile() {
       try {
@@ -99,6 +208,7 @@ export default function TeacherStudentProfilePage() {
 
   const tabs = [
     { id: "entrance", label: "Khảo sát đầu vào", icon: ClipboardCheck },
+    { id: "announcements", label: "Bản tin & Thông báo", icon: Bell },
     { id: "achievements", label: "Thành tích", icon: Award },
     { id: "orientation", label: "Hướng nghiệp", icon: Compass },
     { id: "commitment", label: "Cam kết học tập", icon: FileText },
@@ -154,8 +264,22 @@ export default function TeacherStudentProfilePage() {
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
               {/* Profile header */}
               <div className="p-6 bg-slate-50 border-b border-slate-100 flex items-center gap-4">
-                <div className="w-14 h-14 rounded-full bg-teal-50 border border-teal-100 flex items-center justify-center text-[#00A99D]">
-                  <User className="w-7 h-7" />
+                <div className="relative group w-14 h-14 rounded-full overflow-hidden bg-teal-50 border border-teal-100 flex items-center justify-center text-[#00A99D] cursor-pointer">
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" onError={() => setAvatarUrl("")} />
+                  ) : (
+                    <User className="w-7 h-7" />
+                  )}
+                  {uploadingAvatar && (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    </div>
+                  )}
+                  <label className="absolute inset-0 bg-black/40 text-white text-[8px] font-black uppercase flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                    <Camera className="w-3.5 h-3.5 mb-0.5" />
+                    Tải ảnh
+                    <input type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
+                  </label>
                 </div>
                 <div>
                   <h3 className="font-extrabold text-base text-slate-800">{selectedStudent?.studentName}</h3>
@@ -312,6 +436,195 @@ export default function TeacherStudentProfilePage() {
                       </div>
                     )}
 
+                    {/* TAB: ANNOUNCEMENTS */}
+                    {activeTab === "announcements" && (
+                      <div className="space-y-6">
+                        <div className="border-b border-slate-100 pb-3 flex justify-between items-center">
+                          <h4 className="text-sm font-black text-slate-800 uppercase tracking-wide">Bản tin & Thông báo Lớp học</h4>
+                          <span className="bg-[#E6F7F6] text-[#00A99D] border border-teal-100 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
+                            Facebook Feed
+                          </span>
+                        </div>
+
+                        {/* Facebook-style Write Post Box */}
+                        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
+                          <div className="flex gap-3">
+                            <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500 flex-shrink-0">
+                              <User className="w-5 h-5" />
+                            </div>
+                            <form onSubmit={handleCreatePostSubmit} className="flex-1 space-y-3">
+                              <textarea
+                                value={newPostText}
+                                onChange={e => setNewPostText(e.target.value)}
+                                placeholder={`Chia sẻ thông báo hoặc bản tin lớp học cho học sinh ${selectedStudent?.studentName}...`}
+                                className="w-full text-xs font-semibold p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#00A99D] outline-none min-h-[72px] resize-none bg-slate-50/50"
+                              />
+                              <div className="flex justify-end">
+                                <button
+                                  type="submit"
+                                  disabled={postingAnnouncement || !newPostText.trim()}
+                                  className="px-4 py-2 bg-[#00A99D] hover:bg-[#008b82] disabled:bg-slate-100 disabled:text-slate-400 text-white font-extrabold rounded-xl transition-all shadow-sm text-xs flex items-center gap-1.5"
+                                >
+                                  <Send className="w-3 h-3" />
+                                  {postingAnnouncement ? "Đang đăng..." : "Đăng tin"}
+                                </button>
+                              </div>
+                            </form>
+                          </div>
+                        </div>
+
+                        {/* Combined feed list */}
+                        {(() => {
+                          const sysPosts = (profileData.transfers || []).map((tr: any) => ({
+                            id: `transfer-${tr.id}`,
+                            type: "SYSTEM",
+                            author: "Hệ thống Luân chuyển Học sinh",
+                            avatarColor: "bg-orange-100 text-orange-600",
+                            avatarIcon: ArrowLeftRight,
+                            content: tr.type === "IN" 
+                              ? `📢 BẢN TIN LUÂN CHUYỂN: Học sinh ${selectedStudent?.studentName} đã chính thức LUÂN CHUYỂN ĐẾN lớp ${selectedStudent?.className} từ trường ${tr.destinationSchool || "N/A"} vào ngày ${new Date(tr.transferDate).toLocaleDateString('vi-VN')}. Lý do: ${tr.reason || "Không có"}.`
+                              : tr.type === "OUT"
+                              ? `📢 BẢN TIN LUÂN CHUYỂN: Học sinh ${selectedStudent?.studentName} đã thực hiện thủ tục LUÂN CHUYỂN ĐI vào ngày ${new Date(tr.transferDate).toLocaleDateString('vi-VN')}. Trường chuyển đến: ${tr.destinationSchool || "N/A"}. Lý do: ${tr.reason || "Không có"}.`
+                              : `📢 BẢN TIN LUÂN CHUYỂN: Học sinh ${selectedStudent?.studentName} đã được điều chuyển lớp vào ngày ${new Date(tr.transferDate).toLocaleDateString('vi-VN')}. Lý do: ${tr.reason || "Không có"}.`,
+                            date: new Date(tr.transferDate)
+                          }));
+
+                          const teacherPosts = (profileData.highlightComments || [])
+                            .filter((c: any) => c.category === "ANNOUNCEMENT")
+                            .map((c: any) => ({
+                              id: `announcement-${c.id}`,
+                              type: "TEACHER",
+                              author: c.teacherName || "Giáo viên chủ nhiệm",
+                              avatarColor: "bg-teal-100 text-[#00A99D]",
+                              avatarIcon: User,
+                              content: c.comment,
+                              date: new Date(c.updatedAt)
+                            }));
+
+                          const combinedFeed = [...sysPosts, ...teacherPosts].sort((a, b) => b.date.getTime() - a.date.getTime());
+
+                          if (combinedFeed.length === 0) {
+                            return (
+                              <div className="text-xs text-slate-400 italic text-center py-12 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                                Chưa có thông báo hoặc hoạt động luân chuyển nào được ghi nhận trên bảng tin.
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <div className="space-y-4">
+                              {combinedFeed.map(post => {
+                                const Icon = post.avatarIcon;
+                                const likesInfo = postLikes[post.id] || { count: 0, liked: false };
+                                const commentsList = postCommentsState[post.id] || [];
+                                const commentText = newCommentTexts[post.id] || "";
+
+                                return (
+                                  <div key={post.id} className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                                    {/* Post Header */}
+                                    <div className="p-4 flex items-center gap-3">
+                                      <div className={`w-9 h-9 rounded-full ${post.avatarColor} flex items-center justify-center flex-shrink-0`}>
+                                        <Icon className="w-4 h-4" />
+                                      </div>
+                                      <div className="min-w-0 flex-1">
+                                        <h5 className="text-xs font-black text-slate-800 leading-tight truncate">{post.author}</h5>
+                                        <p className="text-[9px] text-slate-400 font-bold mt-0.5 flex items-center gap-1">
+                                          <span>{post.date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                                          <span>•</span>
+                                          <Globe className="w-2.5 h-2.5" />
+                                        </p>
+                                      </div>
+                                    </div>
+
+                                    {/* Post Content */}
+                                    <div className="px-4 pb-3.5 text-xs text-slate-700 font-semibold leading-relaxed whitespace-pre-line">
+                                      {post.content}
+                                    </div>
+
+                                    {/* Post Footer / Actions */}
+                                    <div className="px-4 py-2 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between text-[10px] font-black text-slate-500 select-none">
+                                      <div className="flex items-center gap-1 text-[#00A99D]">
+                                        <ThumbsUp className="w-3.5 h-3.5 fill-[#00A99D]/20" />
+                                        <span>{likesInfo.count} lượt thích</span>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <span>{commentsList.length} bình luận</span>
+                                      </div>
+                                    </div>
+
+                                    <div className="px-4 py-2.5 border-t border-slate-100 flex items-center justify-around gap-2 text-xs font-black text-slate-500 border-b">
+                                      <button 
+                                        onClick={() => toggleLike(post.id)}
+                                        className={`flex-1 py-1.5 rounded-xl hover:bg-slate-50 flex items-center justify-center gap-2 transition-all ${likesInfo.liked ? "text-[#00A99D]" : ""}`}
+                                      >
+                                        <ThumbsUp className={`w-4 h-4 ${likesInfo.liked ? "fill-current" : ""}`} />
+                                        <span>Thích</span>
+                                      </button>
+                                      <button className="flex-1 py-1.5 rounded-xl hover:bg-slate-50 flex items-center justify-center gap-2 transition-all">
+                                        <MessageCircle className="w-4 h-4" />
+                                        <span>Bình luận</span>
+                                      </button>
+                                      <button className="flex-1 py-1.5 rounded-xl hover:bg-slate-50 flex items-center justify-center gap-2 transition-all">
+                                        <Share2 className="w-4 h-4" />
+                                        <span>Chia sẻ</span>
+                                      </button>
+                                    </div>
+
+                                    {/* Comments section */}
+                                    <div className="p-4 bg-slate-50/30 space-y-3">
+                                      {commentsList.length > 0 && (
+                                        <div className="space-y-2">
+                                          {commentsList.map((comm, cIdx) => (
+                                            <div key={cIdx} className="flex gap-2.5 items-start">
+                                              <div className="w-6 h-6 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500 flex-shrink-0">
+                                                <User className="w-3.5 h-3.5" />
+                                              </div>
+                                              <div className="bg-slate-100 p-2.5 rounded-2xl text-[10px] font-semibold text-slate-700 flex-1 leading-snug">
+                                                <span className="font-black text-slate-800 mr-1.5">{comm.author}</span>
+                                                {comm.text}
+                                                <div className="text-[8px] text-slate-400 font-bold mt-1">{comm.time}</div>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+
+                                      {/* Add comment input */}
+                                      <div className="flex gap-2.5 items-center">
+                                        <div className="w-6 h-6 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500 flex-shrink-0">
+                                          <User className="w-3.5 h-3.5" />
+                                        </div>
+                                        <div className="flex-1 flex gap-2">
+                                          <input
+                                            type="text"
+                                            value={commentText}
+                                            onChange={e => setNewCommentTexts(prev => ({ ...prev, [post.id]: e.target.value }))}
+                                            placeholder="Viết bình luận..."
+                                            className="flex-1 text-[10px] font-semibold px-3 py-1.5 border border-slate-200 bg-white rounded-full focus:ring-1 focus:ring-[#00A99D] outline-none"
+                                            onKeyDown={e => {
+                                              if (e.key === "Enter") {
+                                                handleAddComment(post.id, selectedStudent?.className ? `GVCN lớp ${selectedStudent.className}` : "Giáo viên chủ nhiệm");
+                                              }
+                                            }}
+                                          />
+                                          <button 
+                                            onClick={() => handleAddComment(post.id, selectedStudent?.className ? `GVCN lớp ${selectedStudent.className}` : "Giáo viên chủ nhiệm")}
+                                            className="p-1.5 bg-[#00A99D] hover:bg-[#008b82] text-white rounded-full transition-colors flex items-center justify-center"
+                                          >
+                                            <Send className="w-3.5 h-3.5" />
+                                          </button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    )}
+
                     {/* TAB: ACHIEVEMENTS */}
                     {activeTab === "achievements" && (
                       <div className="space-y-4">
@@ -436,11 +749,11 @@ export default function TeacherStudentProfilePage() {
                     {activeTab === "comments" && (
                       <div className="space-y-4">
                         <h4 className="text-sm font-black text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-3">Nhận xét nổi bật định kỳ từ Giáo viên Chủ nhiệm</h4>
-                        {profileData.highlightComments?.length === 0 ? (
+                        {profileData.highlightComments?.filter((c: any) => c.category !== "ANNOUNCEMENT").length === 0 ? (
                           <div className="text-xs text-slate-400 italic text-center py-12">Chưa có nhận xét nổi bật định kỳ từ giáo viên chủ nhiệm.</div>
                         ) : (
                           <div className="space-y-3">
-                            {profileData.highlightComments.map((c: any) => (
+                            {profileData.highlightComments.filter((c: any) => c.category !== "ANNOUNCEMENT").map((c: any) => (
                               <div key={c.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs font-semibold">
                                 <span className="inline-block px-2.5 py-0.5 bg-[#00A99D]/15 text-[#00A99D] text-[9px] font-black rounded-full uppercase tracking-wider mb-2">
                                   {c.category || "Chung"}

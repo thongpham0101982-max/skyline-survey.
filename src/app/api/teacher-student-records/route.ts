@@ -220,6 +220,34 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Teacher profile not found" }, { status: 404 })
     }
 
+    if (action === "uploadAvatar") {
+      const studentId = searchParams.get("studentId")
+      if (!studentId) return NextResponse.json({ error: "Missing studentId" }, { status: 400 })
+
+      const formData = await req.formData()
+      const file = formData.get("file") as File
+      if (!file) return NextResponse.json({ error: "No file uploaded" }, { status: 400 })
+
+      if (!file.type.startsWith("image/")) {
+        return NextResponse.json({ error: "Only image files are allowed" }, { status: 400 })
+      }
+
+      const arrayBuffer = await file.arrayBuffer()
+      const buffer = Buffer.from(arrayBuffer)
+
+      const path = require("path")
+      const fs = require("fs")
+      const uploadDir = path.join(process.cwd(), "public", "uploads", "students")
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true })
+      }
+
+      const filePath = path.join(uploadDir, `${studentId}.jpg`)
+      fs.writeFileSync(filePath, buffer)
+
+      return NextResponse.json({ success: true, url: `/uploads/students/${studentId}.jpg?t=${Date.now()}` })
+    }
+
     const body = await req.json()
 
     if (action === "saveOrientation") {
