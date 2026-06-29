@@ -237,10 +237,10 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
             <>
               {/* Category A. Công tác GVCN - Only show if isGVCN is true */}
               {isGVCN && (
-                <div className="pt-4 border-b border-white/10 pb-4">
+                <div className="mb-4">
                   <div className="px-3 py-2">
                     {!isCollapsed ? (
-                      <span className="text-[10px] font-extrabold text-[#00A99D] uppercase tracking-[0.1em]">
+                      <span className="text-[10px] font-extrabold text-[#00A99D] uppercase tracking-[0.12em]">
                         A. Công tác GVCN
                       </span>
                     ) : (
@@ -252,13 +252,21 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                   <Link 
                     href="/teacher/classes" 
                     onClick={() => setIsOpen(false)} 
-                    className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${
+                    className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
                       pathname.includes('/teacher/classes') 
-                        ? "bg-white/20 text-white border border-[#135E5B]/30" 
-                        : "text-white/70 hover:text-white hover:bg-white/10"
-                    } mb-1`}
+                        ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10" 
+                        : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
+                    }`}
                   >
-                    <Layers className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/classes') ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
+                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
+                      pathname.includes('/teacher/classes')
+                        ? "bg-teal-500/20 border border-teal-500/40 shadow-[0_0_8px_rgba(20,184,166,0.25)]"
+                        : "bg-white/5 border border-white/10 group-hover:border-teal-500/30"
+                    }`}>
+                      <Layers className={`w-4 h-4 transition-all ${
+                        pathname.includes('/teacher/classes') ? "text-teal-400" : "text-slate-400 group-hover:text-teal-400 group-hover:scale-110"
+                      }`} />
+                    </div>
                     {!isCollapsed && <span>1. Lớp chủ nhiệm</span>}
                   </Link>
 
@@ -266,13 +274,21 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                   <Link 
                     href="/teacher/surveys" 
                     onClick={() => setIsOpen(false)} 
-                    className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${
+                    className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
                       (pathname.includes('/teacher/surveys') || pathname.includes('/teacher/nps') || pathname.includes('/teacher/feedback')) 
-                        ? "bg-white/20 text-white border border-[#135E5B]/30" 
-                        : "text-white/70 hover:text-white hover:bg-white/10"
-                    } mb-1`}
+                        ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10" 
+                        : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
+                    }`}
                   >
-                    <FileText className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${(pathname.includes('/teacher/surveys') || pathname.includes('/teacher/nps') || pathname.includes('/teacher/feedback')) ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
+                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
+                      (pathname.includes('/teacher/surveys') || pathname.includes('/teacher/nps') || pathname.includes('/teacher/feedback'))
+                        ? "bg-sky-500/20 border border-sky-500/40 shadow-[0_0_8px_rgba(14,165,233,0.25)]"
+                        : "bg-white/5 border border-white/10 group-hover:border-sky-500/30"
+                    }`}>
+                      <FileText className={`w-4 h-4 transition-all ${
+                        (pathname.includes('/teacher/surveys') || pathname.includes('/teacher/nps') || pathname.includes('/teacher/feedback')) ? "text-sky-400" : "text-slate-400 group-hover:text-sky-400 group-hover:scale-110"
+                      }`} />
+                    </div>
                     {!isCollapsed && <span>2. NSP Khảo sát</span>}
                   </Link>
 
@@ -280,13 +296,21 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                   <Link 
                     href="/teacher/nhan-xet-noi-bat" 
                     onClick={() => setIsOpen(false)} 
-                    className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${
+                    className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
                       pathname.includes('/teacher/nhan-xet-noi-bat') 
-                        ? "bg-white/20 text-white border border-[#135E5B]/30" 
-                        : "text-white/70 hover:text-white hover:bg-white/10"
-                    } mb-1`}
+                        ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10" 
+                        : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
+                    }`}
                   >
-                    <MessageSquare className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/nhan-xet-noi-bat') ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
+                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
+                      pathname.includes('/teacher/nhan-xet-noi-bat')
+                        ? "bg-indigo-500/20 border border-indigo-500/40 shadow-[0_0_8px_rgba(99,102,241,0.25)]"
+                        : "bg-white/5 border border-white/10 group-hover:border-indigo-500/30"
+                    }`}>
+                      <MessageSquare className={`w-4 h-4 transition-all ${
+                        pathname.includes('/teacher/nhan-xet-noi-bat') ? "text-indigo-400" : "text-slate-400 group-hover:text-indigo-400 group-hover:scale-110"
+                      }`} />
+                    </div>
                     {!isCollapsed && <span>3. Nhận xét nổi bật</span>}
                   </Link>
 
@@ -294,13 +318,21 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                   <Link 
                     href="/teacher/ho-so-hoc-sinh" 
                     onClick={() => setIsOpen(false)} 
-                    className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${
+                    className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold ${
                       pathname.includes('/teacher/ho-so-hoc-sinh') 
-                        ? "bg-white/20 text-white border border-[#135E5B]/30" 
-                        : "text-white/70 hover:text-white hover:bg-white/10"
+                        ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10" 
+                        : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
                     }`}
                   >
-                    <ClipboardCheck className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/ho-so-hoc-sinh') ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
+                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
+                      pathname.includes('/teacher/ho-so-hoc-sinh')
+                        ? "bg-fuchsia-500/20 border border-fuchsia-500/40 shadow-[0_0_8px_rgba(217,70,239,0.25)]"
+                        : "bg-white/5 border border-white/10 group-hover:border-fuchsia-500/30"
+                    }`}>
+                      <ClipboardCheck className={`w-4 h-4 transition-all ${
+                        pathname.includes('/teacher/ho-so-hoc-sinh') ? "text-fuchsia-400" : "text-slate-400 group-hover:text-fuchsia-400 group-hover:scale-110"
+                      }`} />
+                    </div>
                     {!isCollapsed && <span>4. Hồ sơ Học sinh</span>}
                   </Link>
                 </div>
