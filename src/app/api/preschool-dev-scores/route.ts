@@ -96,6 +96,15 @@ export async function GET(req: NextRequest) {
           probationaryResult: true,
           probationaryClass: true,
           probationaryTeacher: true,
+          probationaryPeriod: true,
+          probationaryComment: true,
+          probationaryBghStatus: true,
+          probationaryBghComment: true,
+          probationaryBghUser: true,
+          probationaryBghDate: true,
+          probationaryBghLog: true,
+          probationaryTeacherLog: true,
+          probationaryScoreText: true,
           batch: {
             select: {
               startDate: true,
