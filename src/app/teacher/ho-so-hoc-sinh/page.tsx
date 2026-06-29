@@ -19,6 +19,7 @@ export default function TeacherStudentProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState("")
   const [newPostText, setNewPostText] = useState("")
   const [postingAnnouncement, setPostingAnnouncement] = useState(false)
+  const [apiError, setApiError] = useState("")
   
   // Custom interactive mock likes/comments state for the wall posts
   const [postLikes, setPostLikes] = useState<Record<string, { count: number, liked: boolean }>>({})
@@ -54,13 +55,18 @@ export default function TeacherStudentProfilePage() {
                 setIsNotGVCN(false)
               } else {
                 setIsNotGVCN(true)
+                setApiError("checkGVCN returned isGVCN: false")
               }
             } else {
               setIsNotGVCN(true)
+              const errData = await gvcnCheckRes.json().catch(() => ({}))
+              setApiError(`checkGVCN failed with status ${gvcnCheckRes.status}: ${errData.error || "Unknown"}`)
             }
           }
         } else {
           setIsNotGVCN(true)
+          const errData = await res.json().catch(() => ({}))
+          setApiError(`getHomeroomStudents failed with status ${res.status}: ${errData.error || "Unknown"}`)
         }
       } catch (err) {
         console.error("Error loading homeroom students:", err)
@@ -202,7 +208,12 @@ export default function TeacherStudentProfilePage() {
     return (
       <div className="bg-red-50 border border-red-200 text-red-700 p-6 rounded-2xl max-w-xl mx-auto mt-20 text-center">
         <h3 className="font-extrabold text-base mb-2">Quyền truy cập hạn chế</h3>
-        <p className="text-xs font-semibold">Trang này chỉ dành riêng cho Giáo viên Chủ nhiệm (GVCN). Bạn không có lớp chủ nhiệm nào được chỉ định trong năm học này.</p>
+        <p className="text-xs font-semibold mb-2">Trang này chỉ dành riêng cho Giáo viên Chủ nhiệm (GVCN). Bạn không có lớp chủ nhiệm nào được chỉ định trong năm học này.</p>
+        {apiError && (
+          <p className="text-[10px] text-red-500 font-mono mt-2 bg-white/50 p-2 rounded border border-red-100">
+            Debug Info: {apiError}
+          </p>
+        )}
       </div>
     )
   }
