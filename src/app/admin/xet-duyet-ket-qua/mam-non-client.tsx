@@ -4767,7 +4767,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             </div>
           )}
         </div>
-      )}/* End Redesigned Dev Assess */      {/* Tab: Quản lý Tiêu chí & Lĩnh vực */}
+      )}
+      {/* Tab: Quản lý Tiêu chí & Lĩnh vực */}
                 {tab === "devCriteria" && (
             <div className="space-y-4">
           <div className="flex items-center justify-between">
