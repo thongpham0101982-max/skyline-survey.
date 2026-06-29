@@ -2771,7 +2771,7 @@ ${reportForm.directorNote}`;
       .filter(item => item.id !== fallbackId || item.total > 0);
   }, [filteredReportStudents, reportBatches, campuses]);
 
-      const batchStats = useMemo(() => {
+        const batchStats = useMemo(() => {
     const map = new Map<string, {
       batchName: string;
       total: number;
@@ -2845,6 +2845,7 @@ ${reportForm.directorNote}`;
 
 
 
+
             const campusOverallSurveyed = useMemo(() => {
     let CS1 = 0;
     let CS2 = 0;
@@ -2859,6 +2860,62 @@ ${reportForm.directorNote}`;
       
       total++;
       
+      // Resolve campus code for this student
+      let campusCode = null;
+      const studentPeriod = periods.find(p => p.id === s.periodId);
+      const isOpenDay = studentPeriod?.name?.toLowerCase().includes("open day");
+      
+      if (isOpenDay && s.registeredCampus) {
+        const matchingCampus = campuses.find(c => c.id === s.registeredCampus);
+        if (matchingCampus) {
+          campusCode = matchingCampus.campusCode;
+        }
+      }
+      
+      if (!campusCode) {
+        let tc = campuses.find(c => 
+          c.campusName && (c.campusName === s.admissionCampus)
+        );
+        if (!tc && s.batchId) {
+          const b = reportBatches.find(bx => bx.id === s.batchId);
+          if (b?.campusId) {
+            tc = campuses.find(c => c.id === b.campusId);
+          }
+        }
+        if (tc) {
+          campusCode = tc.campusCode;
+        }
+      }
+      
+      if (!campusCode) {
+        const campusName = s.admissionCampus || "";
+        if (campusName.includes("CS1") || campusName.includes("Cơ sở 1")) campusCode = "CS1";
+        else if (campusName.includes("CS2") || campusName.includes("Cơ sở 2")) campusCode = "CS2";
+        else if (campusName.includes("CS3") || campusName.includes("Cơ sở 3")) campusCode = "CS3";
+        else if (campusName.includes("CS4") || campusName.includes("Cơ sở 4")) campusCode = "CS4";
+        else if (campusName.includes("CS5") || campusName.includes("Cơ sở 5")) campusCode = "CS5";
+      }
+
+      const csKey = (campusCode || "").toUpperCase();
+      if (csKey === "CS1") CS1++;
+      else if (csKey === "CS2") CS2++;
+      else if (csKey === "CS3") CS3++;
+      else if (csKey === "CS4") CS4++;
+      else if (csKey === "CS5") CS5++;
+    });
+
+    return { CS1, CS2, CS3, CS4, CS5, total };
+  }, [filteredReportStudents, periods, campuses, reportBatches]);
+
+    const campusOverallTotal = useMemo(() => {
+    let CS1 = 0;
+    let CS2 = 0;
+    let CS3 = 0;
+    let CS4 = 0;
+    let CS5 = 0;
+    const total = filteredReportStudents.length;
+
+    filteredReportStudents.forEach(s => {
       // Resolve campus code for this student
       let campusCode = null;
       const studentPeriod = periods.find(p => p.id === s.periodId);
@@ -3004,6 +3061,7 @@ ${reportForm.directorNote}`;
       };
     });
   }, [filteredReportStudents, reportBatches, periods, campuses]);
+
 
 
 
@@ -5480,7 +5538,7 @@ return {
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
                     </span>
-                    Biểu đồ theo dõi số liệu Khảo sát theo Khối của các Cơ sở
+                    Biểu đồ theo dõi Học sinh Khảo sát theo Khối của các Cơ sở
                   </h4>
                   <div className="flex items-center gap-2 self-end sm:self-auto">
                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest hidden sm:inline-block">Hiển thị:</span>
@@ -5526,8 +5584,8 @@ return {
                         className="font-semibold" 
                         tickFormatter={(tick) => {
                           const stat = gradeStats.find(item => item.grade === tick);
-                          if (!stat || stat.surveyed === 0) return tick;
-                          return `${tick} (${stat.surveyed} HS)`;
+                          if (!stat || stat.total === 0) return tick;
+                          return `${tick} (${stat.total} HS)`;
                         }}
                       />
                       
@@ -5540,31 +5598,31 @@ return {
                             const stat = gradeStats.find(g => g.grade === label);
                             if (!stat) return null;
                             
-                            const overallTotal = campusOverallSurveyed.total;
-                            const gradePct = overallTotal > 0 ? ((stat.surveyed / overallTotal) * 100).toFixed(1) : "0";
+                            const overallTotal = campusOverallTotal.total;
+                            const gradePct = overallTotal > 0 ? ((stat.total / overallTotal) * 100).toFixed(1) : "0";
                             
                             if (chartCampusId === "all") {
                               return (
                                 <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-lg text-xs font-semibold text-slate-800 space-y-2">
                                   <div className="font-black text-sm border-b border-slate-100 pb-1.5 flex justify-between gap-4">
                                     <span>{stat.grade}</span>
-                                    <span className="text-indigo-650">{stat.surveyed}/{overallTotal} HS Khảo sát ({gradePct}%)</span>
+                                    <span className="text-indigo-650">{stat.total}/{overallTotal} HS ({gradePct}%)</span>
                                   </div>
                                   
                                   <div className="space-y-1.5 pt-1">
                                     <div className="flex justify-between gap-4 text-slate-400 text-[9px] font-black uppercase tracking-wider">
-                                      <span>Cơ sở (Khảo sát toàn CS)</span>
-                                      <span>Số HS khảo sát trong Khối / Tổng Cơ sở</span>
+                                      <span>Cơ sở (Tổng HS Cơ sở)</span>
+                                      <span>Số HS trong Khối / Tổng Cơ sở</span>
                                     </div>
                                     
                                     {[
-                                      { code: "CS1", name: "Cơ sở 1", color: "bg-teal-500", total: campusOverallSurveyed.CS1, surveyed: stat.CS1 },
-                                      { code: "CS2", name: "Cơ sở 2", color: "bg-pink-500", total: campusOverallSurveyed.CS2, surveyed: stat.CS2 },
-                                      { code: "CS3", name: "Cơ sở 3", color: "bg-purple-500", total: campusOverallSurveyed.CS3, surveyed: stat.CS3 },
-                                      { code: "CS4", name: "Cơ sở 4", color: "bg-amber-500", total: campusOverallSurveyed.CS4, surveyed: stat.CS4 },
-                                      { code: "CS5", name: "Cơ sở 5", color: "bg-blue-500", total: campusOverallSurveyed.CS5, surveyed: stat.CS5 }
+                                      { code: "CS1", name: "Cơ sở 1", color: "bg-teal-500", total: campusOverallTotal.CS1, count: stat.CS1_total },
+                                      { code: "CS2", name: "Cơ sở 2", color: "bg-pink-500", total: campusOverallTotal.CS2, count: stat.CS2_total },
+                                      { code: "CS3", name: "Cơ sở 3", color: "bg-purple-500", total: campusOverallTotal.CS3, count: stat.CS3_total },
+                                      { code: "CS4", name: "Cơ sở 4", color: "bg-amber-500", total: campusOverallTotal.CS4, count: stat.CS4_total },
+                                      { code: "CS5", name: "Cơ sở 5", color: "bg-blue-500", total: campusOverallTotal.CS5, count: stat.CS5_total }
                                     ].map(cs => {
-                                      const csPctOfCampus = cs.total > 0 ? ((cs.surveyed / cs.total) * 100).toFixed(1) : "0";
+                                      const csPctOfCampus = cs.total > 0 ? ((cs.count / cs.total) * 100).toFixed(1) : "0";
                                       const csPctOfTotal = overallTotal > 0 ? ((cs.total / overallTotal) * 100).toFixed(1) : "0";
                                       return (
                                         <div key={cs.code} className="flex justify-between items-center py-0.5">
@@ -5577,7 +5635,7 @@ return {
                                             }`}></span>
                                             <span className="font-bold text-slate-700">{cs.name} ({cs.total}/{overallTotal} HS - {csPctOfTotal}%)</span>
                                           </div>
-                                          <span className="font-extrabold text-slate-850">{cs.surveyed}/{cs.total} HS ({csPctOfCampus}%)</span>
+                                          <span className="font-extrabold text-slate-850">{cs.count}/{cs.total} HS ({csPctOfCampus}%)</span>
                                         </div>
                                       );
                                     })}
@@ -5586,9 +5644,9 @@ return {
                               );
                             } else {
                               const campusCode = chartCampusId;
-                              const campusTotal = campusOverallSurveyed[campusCode] || 0;
-                              const campusGradeSurveyed = stat[campusCode] || 0;
-                              const campusGradePct = campusTotal > 0 ? ((campusGradeSurveyed / campusTotal) * 100).toFixed(1) : "0";
+                              const campusTotal = campusOverallTotal[campusCode] || 0;
+                              const campusGradeTotal = stat[`${campusCode}_total`] || 0;
+                              const campusGradePct = campusTotal > 0 ? ((campusGradeTotal / campusTotal) * 100).toFixed(1) : "0";
                               
                               let campusName = "Cơ sở";
                               if (campusCode === "CS1") campusName = "Cơ sở 1";
@@ -5601,16 +5659,16 @@ return {
                                 <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-lg text-xs font-semibold text-slate-800 space-y-2">
                                   <div className="font-black text-sm border-b border-slate-100 pb-1.5 flex justify-between gap-4">
                                     <span>{stat.grade} - {campusName}</span>
-                                    <span className="text-teal-650">{campusGradeSurveyed}/{campusTotal} HS ({campusGradePct}%)</span>
+                                    <span className="text-teal-650">{campusGradeTotal}/{campusTotal} HS ({campusGradePct}%)</span>
                                   </div>
                                   <div className="space-y-1.5 pt-1">
                                     <div className="flex justify-between py-0.5">
                                       <span className="text-slate-500 font-bold">Số HS Khảo sát:</span>
-                                      <span className="font-extrabold text-slate-850">{campusGradeSurveyed} HS</span>
+                                      <span className="font-extrabold text-slate-850">{campusGradeTotal} HS</span>
                                     </div>
                                     <div className="flex justify-between py-0.5 border-t border-slate-100/50 mt-1 pt-1">
                                       <span className="text-slate-550 font-bold">Tỷ lệ trong tổng Khối khảo sát:</span>
-                                      <span className="font-extrabold text-slate-800">{stat.surveyed > 0 ? ((campusGradeSurveyed / stat.surveyed) * 100).toFixed(1) : 0}%</span>
+                                      <span className="font-extrabold text-slate-800">{stat.total > 0 ? ((campusGradeTotal / stat.total) * 100).toFixed(1) : 0}%</span>
                                     </div>
                                   </div>
                                 </div>
@@ -5624,12 +5682,12 @@ return {
                       
                       {chartCampusId === "all" ? (
                         <>
-                          <Bar yAxisId="left" dataKey="surveyed" fill="url(#colorTotal)" radius={[4, 4, 0, 0]} barSize={26} name="Tổng Khảo sát" />
-                          <Line yAxisId="left" type="monotone" dataKey="CS1" stroke="#00A99D" strokeWidth={3} dot={{ r: 3, strokeWidth: 1.5, fill: "#ffffff" }} activeDot={{ r: 6 }} name="Cơ sở 1" />
-                          <Line yAxisId="left" type="monotone" dataKey="CS2" stroke="#db2777" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 2" />
-                          <Line yAxisId="left" type="monotone" dataKey="CS3" stroke="#7c3aed" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 3" />
-                          <Line yAxisId="left" type="monotone" dataKey="CS4" stroke="#d97706" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 4" />
-                          <Line yAxisId="left" type="monotone" dataKey="CS5" stroke="#2563eb" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 5" />
+                          <Bar yAxisId="left" dataKey="total" fill="url(#colorTotal)" radius={[4, 4, 0, 0]} barSize={26} name="Tổng Học sinh" />
+                          <Line yAxisId="left" type="monotone" dataKey="CS1_total" stroke="#00A99D" strokeWidth={3} dot={{ r: 3, strokeWidth: 1.5, fill: "#ffffff" }} activeDot={{ r: 6 }} name="Cơ sở 1" />
+                          <Line yAxisId="left" type="monotone" dataKey="CS2_total" stroke="#db2777" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 2" />
+                          <Line yAxisId="left" type="monotone" dataKey="CS3_total" stroke="#7c3aed" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 3" />
+                          <Line yAxisId="left" type="monotone" dataKey="CS4_total" stroke="#d97706" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 4" />
+                          <Line yAxisId="left" type="monotone" dataKey="CS5_total" stroke="#2563eb" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 5" />
                         </>
                       ) : (
                         <>
@@ -5883,6 +5941,7 @@ return {
                 </div>
               </div>
             </div>
+
 
 
 
