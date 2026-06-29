@@ -2771,9 +2771,7 @@ ${reportForm.directorNote}`;
       .filter(item => item.id !== fallbackId || item.total > 0);
   }, [filteredReportStudents, reportBatches, campuses]);
 
-  const batchStats = useMemo(() => {
-    if (!Array.isArray(reportStudents)) return [];
-    
+    const batchStats = useMemo(() => {
     const map = new Map<string, {
       batchName: string;
       total: number;
@@ -2784,9 +2782,9 @@ ${reportForm.directorNote}`;
       surveyed: number;
     }>();
     
-    reportBatches.forEach(b => {
-      map.set(b.id, {
-        batchName: b.name,
+    periods.forEach(p => {
+      map.set(p.id, {
+        batchName: p.name,
         total: 0,
         passed: 0,
         failed: 0,
@@ -2798,7 +2796,7 @@ ${reportForm.directorNote}`;
     
     const fallbackId = "unassigned";
     map.set(fallbackId, {
-      batchName: "Khác / Chưa phân đợt",
+      batchName: "Khác / Chưa phân kỳ",
       total: 0,
       passed: 0,
       failed: 0,
@@ -2810,11 +2808,11 @@ ${reportForm.directorNote}`;
     const targetStudents = filteredReportStudents;
     
     targetStudents.forEach(s => {
-      const batchId = s.batchId || fallbackId;
-      let stat = map.get(batchId);
+      const periodId = s.periodId || fallbackId;
+      let stat = map.get(periodId);
       if (!stat) {
         stat = {
-          batchName: reportBatches.find(b => b.id === batchId)?.name || "Khác / Chưa phân đợt",
+          batchName: periods.find(p => p.id === periodId)?.name || "Khác / Chưa phân kỳ",
           total: 0,
           passed: 0,
           failed: 0,
@@ -2822,7 +2820,7 @@ ${reportForm.directorNote}`;
           pending: 0,
           surveyed: 0
         };
-        map.set(batchId, stat);
+        map.set(periodId, stat);
       }
       
       stat.total++;
@@ -2843,9 +2841,10 @@ ${reportForm.directorNote}`;
     return Array.from(map.entries())
       .map(([id, val]) => ({ id, ...val }))
       .filter(item => item.id !== fallbackId || item.total > 0);
-  }, [filteredReportStudents, reportBatches]);
+  }, [filteredReportStudents, periods]);
 
-        const gradeStats = useMemo(() => {
+
+          const gradeStats = useMemo(() => {
     const gradesList = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"];
     const map = new Map();
     gradesList.forEach(g => {
@@ -2943,6 +2942,7 @@ ${reportForm.directorNote}`;
       };
     });
   }, [filteredReportStudents, reportBatches, periods, campuses]);
+
 
 
 
@@ -5838,6 +5838,7 @@ return {
                 </div>
               </div>
             </div>
+
 
 
 
