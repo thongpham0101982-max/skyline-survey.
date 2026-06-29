@@ -114,6 +114,7 @@ export function ObservationClient(props: ObservationClientProps) {
   const [isPending, startTransition] = useTransition()
   const [isSearching, setIsSearching] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [registerDetailSlot, setRegisterDetailSlot] = useState<any | null>(null)
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null)
 
   // Filter states
@@ -541,6 +542,7 @@ export function ObservationClient(props: ObservationClientProps) {
   }
 
   const handleRegister = async (slotId: string) => {
+    setRegisterDetailSlot(null)
     startTransition(async () => {
       const res = await registerObservation(slotId)
       if (res.success) { showToast("Đăng ký dự giờ thành công!", "success"); refreshSlots() }
@@ -1199,10 +1201,10 @@ export function ObservationClient(props: ObservationClientProps) {
                           </p>
                         </div>
                         <button 
-                          onClick={() => handleRegister(slot.id)}
-                          className={`px-3 py-1.5 ${isPastSlot ? "bg-slate-200 text-slate-600" : "bg-[#00A99D] hover:bg-[#008b82] text-white"} text-[10px] font-black uppercase rounded-lg transition-all shadow-sm flex-shrink-0`}
+                          onClick={() => setRegisterDetailSlot(slot)}
+                          className="px-3 py-1.5 bg-[#00A99D] hover:bg-[#008b82] text-white text-[10px] font-black uppercase rounded-lg transition-all shadow-sm flex-shrink-0"
                         >
-                          {isPastSlot ? "Đăng ký bù" : "Đăng ký"}
+                          Đăng ký
                         </button>
                       </div>
                     );
@@ -1477,10 +1479,10 @@ export function ObservationClient(props: ObservationClientProps) {
                             </button>
                           ) : (
                             <button 
-                              onClick={() => handleRegister(slot.id)}
-                              className={`px-3 py-1.5 text-[10px] font-black rounded-xl transition-all shadow-sm ${isExpired ? "bg-slate-100 border border-slate-200 text-slate-600 hover:bg-slate-200" : "bg-[#00A99D] hover:bg-[#008b82] text-white"}`}
+                              onClick={() => setRegisterDetailSlot(slot)}
+                              className="px-3 py-1.5 text-[10px] font-black rounded-xl transition-all shadow-sm bg-[#00A99D] hover:bg-[#008b82] text-white"
                             >
-                              {isExpired ? "Đăng ký bù" : "Đăng ký"}
+                              Đăng ký
                             </button>
                           )}
                         </td>
@@ -1722,6 +1724,91 @@ export function ObservationClient(props: ObservationClientProps) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Register Details Modal */}
+      {registerDetailSlot && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
+            <div className="px-6 py-5 bg-[#003B3A] text-white flex items-center justify-between shrink-0">
+              <div>
+                <h3 className="font-black text-base">Thông tin & Đăng ký Dự giờ</h3>
+                <p className="text-white/60 text-[10px] mt-0.5">Vui lòng kiểm tra kỹ thông tin tiết dạy trước khi đăng ký</p>
+              </div>
+              <button 
+                onClick={() => setRegisterDetailSlot(null)} 
+                className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors"
+              >
+                <X className="w-5 h-5 text-white/80" />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4 text-xs font-semibold">
+              <div className="bg-[#E6F7F6]/30 p-4 rounded-2xl border border-emerald-100/50">
+                <span className="text-[9px] font-black text-[#00A99D] uppercase tracking-wider">Tên bài dạy / Chủ đề</span>
+                <h4 className="text-sm font-black text-[#003B3A] mt-1 leading-snug">{registerDetailSlot.topic}</h4>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3.5">
+                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-150 flex flex-col">
+                  <span className="text-[9px] font-black text-slate-400 uppercase">Giáo viên giảng dạy</span>
+                  <span className="text-xs font-bold text-slate-800 mt-1">{registerDetailSlot.teacher?.teacherName || "Chưa rõ"}</span>
+                  <span className="text-[9px] text-slate-400 mt-0.5">{registerDetailSlot.teacher?.teacherCode || ""}</span>
+                </div>
+                
+                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-150 flex flex-col">
+                  <span className="text-[9px] font-black text-slate-400 uppercase">Lớp học / Môn học</span>
+                  <span className="text-xs font-bold text-slate-800 mt-1">{registerDetailSlot.className || "Chưa xếp lớp"}</span>
+                  <span className="text-[9px] text-[#00A99D] font-bold mt-0.5">{registerDetailSlot.subjectCode || "Môn học"}</span>
+                </div>
+                
+                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-150 flex flex-col">
+                  <span className="text-[9px] font-black text-slate-400 uppercase">Thời gian</span>
+                  <span className="text-xs font-bold text-slate-800 mt-1">{registerDetailSlot.startTime}</span>
+                  <span className="text-[9px] text-slate-400 mt-0.5">
+                    {new Date(registerDetailSlot.date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                  </span>
+                </div>
+                
+                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-150 flex flex-col">
+                  <span className="text-[9px] font-black text-slate-400 uppercase">Địa điểm</span>
+                  <span className="text-xs font-bold text-slate-800 mt-1">Phòng: {registerDetailSlot.room || "Chưa xếp phòng"}</span>
+                  <span className="text-[9px] text-slate-400 mt-0.5">{registerDetailSlot.campus?.campusName || ""}</span>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-150">
+                <span className="text-[10px] font-black text-slate-400 uppercase">Hình thức đăng ký</span>
+                <span className={`px-2 py-0.5 text-[9px] font-black uppercase rounded ${
+                  new Date(registerDetailSlot.date) < new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate())
+                    ? "bg-amber-50 text-amber-700 border border-amber-200"
+                    : "bg-emerald-50 text-emerald-700 border border-emerald-250"
+                }`}>
+                  {new Date(registerDetailSlot.date) < new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate())
+                    ? "Dự giờ bù"
+                    : "Dự giờ chính thức"}
+                </span>
+              </div>
+            </div>
+            
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-150 flex items-center justify-end gap-3 shrink-0">
+              <button 
+                type="button" 
+                onClick={() => setRegisterDetailSlot(null)} 
+                className="px-5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl transition-all text-xs"
+              >
+                Hủy bỏ
+              </button>
+              <button 
+                type="button" 
+                onClick={() => handleRegister(registerDetailSlot.id)} 
+                className="px-5 py-2 bg-[#00A99D] hover:bg-[#008b82] text-white font-bold rounded-xl transition-all text-xs shadow-md"
+              >
+                Xác nhận Đăng ký
+              </button>
+            </div>
           </div>
         </div>
       )}
