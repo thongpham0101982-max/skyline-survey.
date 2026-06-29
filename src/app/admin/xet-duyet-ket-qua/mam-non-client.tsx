@@ -8203,94 +8203,116 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
         onClose={() => setIsAssignModalOpen(false)}
         title="Phân công GVCN đánh giá Học thử"
         footer={
-          <>
-            <button onClick={() => setIsAssignModalOpen(false)} className="px-4 text-xs font-black uppercase text-slate-400 hover:text-slate-600">
+          <div className="flex items-center justify-end gap-3 w-full px-6 py-4 bg-slate-50 border-t border-slate-200/60 -mx-6 -mb-6 mt-6 rounded-b-3xl">
+            <button
+              onClick={() => setIsAssignModalOpen(false)}
+              className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200/80 active:scale-95 text-slate-500 font-extrabold rounded-2xl transition-all cursor-pointer border-none text-[11px] tracking-wider uppercase"
+            >
               Hủy
             </button>
             <button
               onClick={saveAssignment}
               disabled={savingAssignment}
-              className="flex-1 hover:bg-teal-700 text-white text-xs font-black uppercase tracking-widest transition-all disabled:opacity-50 text-xs font-semibold"
+              className="px-6 py-2.5 bg-gradient-to-r from-[#00A99D] to-[#008075] hover:from-[#008075] hover:to-[#007067] text-white font-black rounded-2xl transition-all disabled:opacity-50 active:scale-[0.98] cursor-pointer border-none text-[11px] tracking-wider uppercase shadow-md shadow-[#00A99D]/15"
             >
               {savingAssignment ? "Đang lưu..." : "Xác nhận Phân công"}
             </button>
-          </>
+          </div>
         }
       >
-        <div className="space-y-4">
+        <div className="space-y-5 py-1">
           <Field label="Bậc học">
             <input
               type="text"
               value="Mầm non"
               disabled
-              className="w-full px-3.5 py-2.5 border border-slate-300 rounded-none text-sm font-medium bg-slate-100 text-slate-500 cursor-not-allowed outline-none"
+              className="w-full px-4 py-3 border border-slate-200 rounded-2xl text-xs font-bold bg-slate-50 text-slate-400 cursor-not-allowed outline-none select-none"
             />
           </Field>
 
           <Field label="Cơ sở" required>
-            <select
-              value={assignCampusId}
-              onChange={e => {
-                setAssignCampusId(e.target.value);
-                setAssignClassId("");
-                setAssignTeacherId("");
-              }}
-              className="w-full px-3.5 py-2.5 border border-slate-300 rounded-none text-sm font-medium outline-none focus:ring-2 focus:ring-violet-300 bg-white"
-            >
-              <option value="">-- Chọn Cơ sở --</option>
-              {campuses.map((c: any) => (
-                <option key={c.id} value={c.id}>{c.campusName}</option>
-              ))}
-            </select>
+            <div className="relative group">
+              <select
+                value={assignCampusId}
+                onChange={e => {
+                  setAssignCampusId(e.target.value);
+                  setAssignClassId("");
+                  setAssignTeacherId("");
+                }}
+                className="w-full px-4 py-3 border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-2xl text-xs font-bold outline-none bg-[#FBFDFD] transition-all cursor-pointer appearance-none text-slate-700"
+              >
+                <option value="">-- Chọn Cơ sở --</option>
+                {campuses.map((c: any) => (
+                  <option key={c.id} value={c.id}>{c.campusName}</option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A99D] transition-colors">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
+              </div>
+            </div>
           </Field>
 
           <Field label="Khối" required>
-            <select
-              value={assignGrade}
-              onChange={e => {
-                setAssignGrade(e.target.value);
-                setAssignClassId("");
-                setAssignTeacherId("");
-              }}
-              className="w-full px-3.5 py-2.5 border border-slate-300 rounded-none text-sm font-medium outline-none focus:ring-2 focus:ring-violet-300 bg-white"
-            >
-              <option value="">-- Tất cả Khối --</option>
-              {uniquePreschoolClassGrades.map((g: string) => (
-                <option key={g} value={g}>{g}</option>
-              ))}
-            </select>
+            <div className="relative group">
+              <select
+                value={assignGrade}
+                onChange={e => {
+                  setAssignGrade(e.target.value);
+                  setAssignClassId("");
+                  setAssignTeacherId("");
+                }}
+                className="w-full px-4 py-3 border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-2xl text-xs font-bold outline-none bg-[#FBFDFD] transition-all cursor-pointer appearance-none text-slate-700"
+              >
+                <option value="">-- Tất cả Khối --</option>
+                {uniquePreschoolClassGrades.map((g: string) => (
+                  <option key={g} value={g}>{g}</option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A99D] transition-colors">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
+              </div>
+            </div>
           </Field>
 
           <Field label="Tên lớp" required>
-            <select
-              value={assignClassId}
-              onChange={e => handleAssignClassChange(e.target.value)}
-              disabled={!assignCampusId}
-              className="w-full px-3.5 py-2.5 border border-slate-300 rounded-none text-sm font-medium outline-none focus:ring-2 focus:ring-violet-300 bg-white disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <option value="">-- Chọn Lớp --</option>
-              {filteredClassesForAssign.map((c: any) => (
-                <option key={c.id} value={c.id}>{c.className}</option>
-              ))}
-            </select>
+            <div className="relative group">
+              <select
+                value={assignClassId}
+                onChange={e => handleAssignClassChange(e.target.value)}
+                disabled={!assignCampusId}
+                className="w-full px-4 py-3 border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-2xl text-xs font-bold outline-none bg-[#FBFDFD] transition-all cursor-pointer appearance-none text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <option value="">-- Chọn Lớp --</option>
+                {filteredClassesForAssign.map((c: any) => (
+                  <option key={c.id} value={c.id}>{c.className}</option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A99D] transition-colors">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
+              </div>
+            </div>
           </Field>
 
           <Field label="Giáo viên Đánh giá (GVCN bám sát)" required>
-            <select
-              value={assignTeacherId}
-              onChange={e => setAssignTeacherId(e.target.value)}
-              className="w-full px-3.5 py-2.5 border border-slate-300 rounded-none text-sm font-medium outline-none focus:ring-2 focus:ring-violet-300 bg-white"
-            >
-              <option value="">-- Chọn Giáo viên --</option>
-              {teachers.map((t: any) => (
-                <option key={t.id} value={t.id}>{t.teacherName} ({t.campus?.campusCode || "N/A"})</option>
-              ))}
-            </select>
+            <div className="relative group">
+              <select
+                value={assignTeacherId}
+                onChange={e => setAssignTeacherId(e.target.value)}
+                className="w-full px-4 py-3 border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-2xl text-xs font-bold outline-none bg-[#FBFDFD] transition-all cursor-pointer appearance-none text-slate-700"
+              >
+                <option value="">-- Chọn Giáo viên --</option>
+                {teachers.map((t: any) => (
+                  <option key={t.id} value={t.id}>{t.teacherName} ({t.campus?.campusCode || "N/A"})</option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A99D] transition-colors">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
+              </div>
+            </div>
           </Field>
         </div>
       </Modal>
-
-
+      
       {/* Modal: Criteria */}
       <Modal
         open={criteriaModal}
