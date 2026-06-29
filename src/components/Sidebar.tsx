@@ -307,10 +307,10 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
               )}
 
               {/* Category B. Công tác GVBM */}
-              <div className="pt-4">
+              <div className="pt-4 border-t border-white/10 mt-2">
                 <div className="px-3 py-2">
                   {!isCollapsed ? (
-                    <span className="text-[10px] font-extrabold text-[#00A99D] uppercase tracking-[0.1em]">
+                    <span className="text-[10px] font-extrabold text-[#00A99D] uppercase tracking-[0.12em]">
                       B. Công tác GVBM
                     </span>
                   ) : (
@@ -320,29 +320,93 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
 
                 {/* 1. Khảo sát đầu vào */}
                 {checkPermission("INPUT_ASSESSMENTS") && (
-                  <div className="mb-1">
+                  <div className="mb-1.5">
                     {loadingAssignments ? (
-                      <Link href="/teacher/input-assessments?type=general" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool' ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"}`}>
-                        <ClipboardCheck className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool' ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
+                      <Link 
+                        href="/teacher/input-assessments?type=general" 
+                        onClick={() => setIsOpen(false)} 
+                        className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold ${
+                          pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool'
+                            ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10"
+                            : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
+                        }`}
+                      >
+                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
+                          pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool'
+                            ? "bg-amber-500/20 border border-amber-500/40 shadow-[0_0_8px_rgba(245,158,11,0.25)]"
+                            : "bg-white/5 border border-white/10 group-hover:border-amber-500/30"
+                        }`}>
+                          <ClipboardCheck className={`w-4 h-4 transition-all ${
+                            pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool' ? "text-amber-400" : "text-slate-400 group-hover:text-amber-400 group-hover:scale-110"
+                          }`} />
+                        </div>
                         {!isCollapsed && <span>1. Đang tải...</span>}
                       </Link>
                     ) : (
                       <>
                         {hasPreschool && (
-                          <Link href="/teacher/input-assessments?type=preschool" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/input-assessments') && typeParam === 'preschool' ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"} mb-1`}>
-                            <ClipboardCheck className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/input-assessments') && typeParam === 'preschool' ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
+                          <Link 
+                            href="/teacher/input-assessments?type=preschool" 
+                            onClick={() => setIsOpen(false)} 
+                            className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1 ${
+                              pathname.includes('/teacher/input-assessments') && typeParam === 'preschool'
+                                ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10"
+                                : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
+                            }`}
+                          >
+                            <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
+                              pathname.includes('/teacher/input-assessments') && typeParam === 'preschool'
+                                ? "bg-amber-500/20 border border-amber-500/40 shadow-[0_0_8px_rgba(245,158,11,0.25)]"
+                                : "bg-white/5 border border-white/10 group-hover:border-amber-500/30"
+                            }`}>
+                              <ClipboardCheck className={`w-4 h-4 transition-all ${
+                                pathname.includes('/teacher/input-assessments') && typeParam === 'preschool' ? "text-amber-400" : "text-slate-400 group-hover:text-amber-400 group-hover:scale-110"
+                              }`} />
+                            </div>
                             {!isCollapsed && <span>1. Mầm non</span>}
                           </Link>
                         )}
                         {hasGeneral && (
-                          <Link href="/teacher/input-assessments?type=general" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool' ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"}`}>
-                            <ClipboardCheck className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool' ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
+                          <Link 
+                            href="/teacher/input-assessments?type=general" 
+                            onClick={() => setIsOpen(false)} 
+                            className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold ${
+                              pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool'
+                                ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10"
+                                : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
+                            }`}
+                          >
+                            <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
+                              pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool'
+                                ? "bg-amber-500/20 border border-amber-500/40 shadow-[0_0_8px_rgba(245,158,11,0.25)]"
+                                : "bg-white/5 border border-white/10 group-hover:border-amber-500/30"
+                            }`}>
+                              <ClipboardCheck className={`w-4 h-4 transition-all ${
+                                pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool' ? "text-amber-400" : "text-slate-400 group-hover:text-amber-400 group-hover:scale-110"
+                              }`} />
+                            </div>
                             {!isCollapsed && <span>1. Khảo sát đầu vào</span>}
                           </Link>
                         )}
                         {!hasPreschool && !hasGeneral && (
-                          <Link href="/teacher/input-assessments?type=general" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool' ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"}`}>
-                            <ClipboardCheck className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool' ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
+                          <Link 
+                            href="/teacher/input-assessments?type=general" 
+                            onClick={() => setIsOpen(false)} 
+                            className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold ${
+                              pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool'
+                                ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10"
+                                : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
+                            }`}
+                          >
+                            <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
+                              pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool'
+                                ? "bg-amber-500/20 border border-amber-500/40 shadow-[0_0_8px_rgba(245,158,11,0.25)]"
+                                : "bg-white/5 border border-white/10 group-hover:border-amber-500/30"
+                            }`}>
+                              <ClipboardCheck className={`w-4 h-4 transition-all ${
+                                pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool' ? "text-amber-400" : "text-slate-400 group-hover:text-amber-400 group-hover:scale-110"
+                              }`} />
+                            </div>
                             {!isCollapsed && <span>1. Khảo sát đầu vào</span>}
                           </Link>
                         )}
@@ -352,26 +416,90 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                 )}
 
                 {/* 2. Dự giờ Giáo viên */}
-                <Link href="/teacher/du-gio" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/du-gio') ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"} mb-1`}>
-                  <ClipboardCheck className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/du-gio') ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
+                <Link 
+                  href="/teacher/du-gio" 
+                  onClick={() => setIsOpen(false)} 
+                  className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
+                    pathname.includes('/teacher/du-gio')
+                      ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10"
+                      : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
+                  }`}
+                >
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
+                    pathname.includes('/teacher/du-gio')
+                      ? "bg-indigo-500/20 border border-indigo-500/40 shadow-[0_0_8px_rgba(99,102,241,0.25)]"
+                      : "bg-white/5 border border-white/10 group-hover:border-indigo-500/30"
+                  }`}>
+                    <ClipboardCheck className={`w-4 h-4 transition-all ${
+                      pathname.includes('/teacher/du-gio') ? "text-indigo-400" : "text-slate-400 group-hover:text-indigo-400 group-hover:scale-110"
+                    }`} />
+                  </div>
                   {!isCollapsed && <span>2. Dự giờ Giáo viên</span>}
                 </Link>
 
                 {/* 3. Đánh giá nhận xét: Hướng nghiệp */}
-                <Link href="/teacher/orientation" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/orientation') ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"} mb-1`}>
-                  <Compass className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/orientation') ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
+                <Link 
+                  href="/teacher/orientation" 
+                  onClick={() => setIsOpen(false)} 
+                  className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
+                    pathname.includes('/teacher/orientation')
+                      ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10"
+                      : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
+                  }`}
+                >
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
+                    pathname.includes('/teacher/orientation')
+                      ? "bg-cyan-500/20 border border-cyan-500/40 shadow-[0_0_8px_rgba(6,182,212,0.25)]"
+                      : "bg-white/5 border border-white/10 group-hover:border-cyan-500/30"
+                  }`}>
+                    <Compass className={`w-4 h-4 transition-all ${
+                      pathname.includes('/teacher/orientation') ? "text-cyan-400" : "text-slate-400 group-hover:text-cyan-400 group-hover:scale-110"
+                    }`} />
+                  </div>
                   {!isCollapsed && <span>3. Hướng nghiệp</span>}
                 </Link>
 
                 {/* 4. Dự án & Trải nghiệm */}
-                <Link href="/teacher/du-an-trai-nghiem" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/du-an-trai-nghiem') ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"} mb-1`} >
-                  <BookOpen className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/du-an-trai-nghiem') ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
+                <Link 
+                  href="/teacher/du-an-trai-nghiem" 
+                  onClick={() => setIsOpen(false)} 
+                  className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
+                    pathname.includes('/teacher/du-an-trai-nghiem')
+                      ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10"
+                      : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
+                  }`}
+                >
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
+                    pathname.includes('/teacher/du-an-trai-nghiem')
+                      ? "bg-emerald-500/20 border border-emerald-500/40 shadow-[0_0_8px_rgba(16,185,129,0.25)]"
+                      : "bg-white/5 border border-white/10 group-hover:border-emerald-500/30"
+                  }`}>
+                    <BookOpen className={`w-4 h-4 transition-all ${
+                      pathname.includes('/teacher/du-an-trai-nghiem') ? "text-emerald-400" : "text-slate-400 group-hover:text-emerald-400 group-hover:scale-110"
+                    }`} />
+                  </div>
                   {!isCollapsed && <span>4. Dự án & Trải nghiệm</span>}
                 </Link>
 
                 {/* 5. Cam kết học tập */}
-                <Link href="/teacher/cam-ket-hoc-tap" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/cam-ket-hoc-tap') ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"}`}>
-                  <FileText className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/cam-ket-hoc-tap') ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
+                <Link 
+                  href="/teacher/cam-ket-hoc-tap" 
+                  onClick={() => setIsOpen(false)} 
+                  className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold ${
+                    pathname.includes('/teacher/cam-ket-hoc-tap')
+                      ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10"
+                      : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
+                  }`}
+                >
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
+                    pathname.includes('/teacher/cam-ket-hoc-tap')
+                      ? "bg-rose-500/20 border border-rose-500/40 shadow-[0_0_8px_rgba(244,63,94,0.25)]"
+                      : "bg-white/5 border border-white/10 group-hover:border-rose-500/30"
+                  }`}>
+                    <FileText className={`w-4 h-4 transition-all ${
+                      pathname.includes('/teacher/cam-ket-hoc-tap') ? "text-rose-400" : "text-slate-400 group-hover:text-rose-400 group-hover:scale-110"
+                    }`} />
+                  </div>
                   {!isCollapsed && <span>5. Cam kết học tập</span>}
                 </Link>
               </div>
