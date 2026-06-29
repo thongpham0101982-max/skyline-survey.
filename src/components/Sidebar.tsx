@@ -363,7 +363,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                                 pathname.includes('/teacher/input-assessments') && typeParam === 'preschool' ? "text-amber-400" : "text-slate-400 group-hover:text-amber-400 group-hover:scale-110"
                               }`} />
                             </div>
-                            {!isCollapsed && <span>1. Mầm non</span>}
+                            {!isCollapsed && <span>1. Khảo sát đầu vào</span>}
                           </Link>
                         )}
                         {hasGeneral && (
