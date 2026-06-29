@@ -160,7 +160,7 @@ const dgkqHocThuCols = [
   { id: "probationaryClass", label: "Lớp học thử", width: "w-28 min-w-[112px]" },
   { id: "probationaryTeacher", label: "GV Học thử", width: "w-36 min-w-[144px] whitespace-normal" },
   { id: "probationaryResult", label: "KQĐG GV", width: "w-32 min-w-[128px]" },
-  { id: "actions", label: "Thao tác", width: "w-56 min-w-[224px]" }
+  { id: "actions", label: "Xét duyệt", width: "w-56 min-w-[224px]" }
 ];
 
 const xuatThuChucMungCols = [
