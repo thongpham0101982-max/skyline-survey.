@@ -134,6 +134,7 @@ const xetDuyetCols = [
   { id: "fullName", label: "Họ và tên", width: "w-[160px] min-w-[160px] max-w-[160px] sticky left-10 z-20 whitespace-normal" },
   { id: "grade", label: "Khối", width: "w-28 min-w-[112px]" },
   { id: "admissionCampus", label: "Cơ sở", width: "w-24 min-w-[96px]" },
+  { id: "kqgvDg", label: "KQGV ĐG", width: "w-[280px] min-w-[280px]" },
   { id: "bghApproval", label: "BGH MN duyệt", width: "w-[148px] min-w-[148px] whitespace-normal" },
   { id: "gdcsApproval", label: "GĐCS duyệt", width: "w-[148px] min-w-[148px] whitespace-normal" },
   { id: "result", label: "Kết quả", width: "w-[110px] min-w-[110px]" },
@@ -185,6 +186,89 @@ const getStandardGrade = (grade: string) => {
   if (g === "5 đến 6 tuổi") return "Mẫu giáo lớn";
   return g;
 };
+// Helper to render mini cards for developmental areas in unified column
+const renderAreaMiniCard = (s: any, areaCode: string) => {
+  const areaScores = s.scores?.filter((sc: any) => sc.criteria?.area?.code === areaCode) || [];
+  let name = "Thể chất";
+  if (areaCode === "NHAN_THUC") name = "Nhận thức";
+  if (areaCode === "NGON_NGU") name = "Ngôn ngữ";
+  if (areaCode === "TINH_CAM_XH_TM") name = "Tình cảm - XH";
+
+  if (areaScores.length === 0) {
+    return (
+      <div className="border border-slate-200/50 rounded-xl p-2 bg-slate-50/50 text-slate-400 text-[10px] flex items-center justify-between font-bold shadow-xs">
+        <span>{name}</span>
+        <span className="text-slate-300 font-medium">—</span>
+      </div>
+    );
+  }
+  
+  const datCount = areaScores.filter((sc: any) => sc.result === "DAT").length;
+  const khongDatCount = areaScores.filter((sc: any) => sc.result === "KHONG_DAT").length;
+  const chuaDanhGiaCount = areaScores.length - datCount - khongDatCount;
+  const pct = Math.round((datCount / areaScores.length) * 100);
+
+  let cardClass = "bg-gradient-to-br from-indigo-50/60 to-purple-50/20 border-indigo-100/60 text-indigo-900 shadow-xs";
+  let progressBg = "bg-gradient-to-r from-indigo-450 to-purple-450";
+  let progressTrack = "bg-indigo-50";
+  let pillClass = "text-indigo-700 bg-indigo-50 border-indigo-150/50";
+  let headerIcon = "🤸";
+
+  if (areaCode === "NHAN_THUC") {
+    cardClass = "bg-gradient-to-br from-amber-50/60 to-orange-50/20 border-amber-100/60 text-amber-900 shadow-xs";
+    progressBg = "bg-gradient-to-r from-amber-400 to-orange-400";
+    progressTrack = "bg-amber-50";
+    pillClass = "text-amber-700 bg-amber-50 border-amber-150/50";
+    headerIcon = "🧩";
+  } else if (areaCode === "NGON_NGU") {
+    cardClass = "bg-gradient-to-br from-sky-50/60 to-indigo-50/20 border-sky-100/60 text-sky-900 shadow-xs";
+    progressBg = "bg-gradient-to-r from-sky-400 to-indigo-400";
+    progressTrack = "bg-sky-50";
+    pillClass = "text-sky-700 bg-sky-50 border-sky-150/50";
+    headerIcon = "🗣️";
+  } else if (areaCode === "TINH_CAM_XH_TM") {
+    cardClass = "bg-gradient-to-br from-rose-50/60 to-fuchsia-50/20 border-rose-100/60 text-rose-900 shadow-xs";
+    progressBg = "bg-gradient-to-r from-rose-400 to-fuchsia-400";
+    progressTrack = "bg-rose-50";
+    pillClass = "text-rose-700 bg-rose-50 border-rose-150/50";
+    headerIcon = "🎨";
+  }
+
+  return (
+    <div className={`border rounded-xl p-2.5 space-y-1.5 transition-all hover:scale-[1.01] hover:shadow-xs ${cardClass}`}>
+      <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-wider pb-1 border-b border-white/60">
+        <span className="flex items-center gap-1">
+          <span>{headerIcon}</span>
+          <span>{name} ({areaScores.length})</span>
+        </span>
+        <span className={`px-1 rounded border leading-none font-bold text-[8px] ${pillClass}`}>
+          {pct}%
+        </span>
+      </div>
+      
+      <div className={`w-full h-1 rounded-full overflow-hidden border border-slate-350/10 ${progressTrack}`}>
+        <div className={`h-full rounded-full ${progressBg}`} style={{ width: `${pct}%` }} />
+      </div>
+
+      <div className="flex items-center justify-between gap-1 text-[8px] font-black leading-none">
+        <span className="text-emerald-700 flex items-center gap-0.5">
+          <span className="w-1 h-1 rounded-full bg-emerald-500" /> {datCount}
+        </span>
+        {khongDatCount > 0 && (
+          <span className="text-rose-700 flex items-center gap-0.5">
+            <span className="w-1 h-1 rounded-full bg-rose-500" /> {khongDatCount}
+          </span>
+        )}
+        {chuaDanhGiaCount > 0 && (
+          <span className="text-slate-500 flex items-center gap-0.5">
+            <span className="w-1 h-1 rounded-full bg-slate-400" /> {chuaDanhGiaCount}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+};
+
 
 const isStudentHocThu = (s: any): boolean => {
   if (!s) return false;
@@ -4245,6 +4329,16 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                   {s.admissionCampus || "—"}
                                 </td>
 
+                                {/* KQGV DG cell */}
+                                <td className="w-[280px] min-w-[280px] p-3 align-middle bg-inherit border border-slate-100">
+                                  <div className="grid grid-cols-2 gap-2 w-full">
+                                    {renderAreaMiniCard(s, "THE_CHAT")}
+                                    {renderAreaMiniCard(s, "NHAN_THUC")}
+                                    {renderAreaMiniCard(s, "NGON_NGU")}
+                                    {renderAreaMiniCard(s, "TINH_CAM_XH_TM")}
+                                  </div>
+                                </td>
+
                                 {/* BGH column */}
                                 {showBghSection && (
                                   <td className="w-[148px] min-w-[148px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
@@ -4314,15 +4408,6 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 )}
 
                                 <td className="w-[110px] min-w-[110px] p-3 align-middle bg-inherit border border-slate-100">{getResultBadge(s.generalResult)}</td>
-
-                                {/* Area cognitive */}
-                                {renderAreaCell("NHAN_THUC", "w-44 min-w-[176px]")}
-
-                                {/* Area language */}
-                                {renderAreaCell("NGON_NGU", "w-44 min-w-[176px]")}
-
-                                {/* Area social-emotional */}
-                                {renderAreaCell("TINH_CAM_XH_TM", "w-44 min-w-[176px]")}
 
                                 <td className="w-[160px] min-w-[160px] p-3 align-middle bg-inherit border border-slate-100">
                                   {(() => {
