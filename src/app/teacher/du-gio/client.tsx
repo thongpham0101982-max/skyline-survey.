@@ -1009,10 +1009,10 @@ export function ObservationClient(props: ObservationClientProps) {
       </div>
 
       {/* ROW 1: 3-Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* Panel 1: Khởi tạo tiết dạy của tôi */}
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-4 border-t-4 border-t-[#00A99D]">
+        <div className="lg:col-span-7 bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-4 border-t-4 border-t-[#00A99D]">
           <div className="flex items-center justify-between border-b border-slate-150 pb-3">
             <div className="flex items-center gap-2">
               <Plus className="w-5 h-5 text-[#00A99D]" />
@@ -1145,7 +1145,7 @@ export function ObservationClient(props: ObservationClientProps) {
         </div>
 
         {/* Panel 2: Chỉ tiêu chuyên môn & Đăng ký nhanh */}
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-4 border-t-4 border-t-[#003B3A]">
+        <div className="lg:col-span-5 bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-4 border-t-4 border-t-[#003B3A]">
           <div className="flex items-center gap-2 border-b border-slate-150 pb-3">
             <Award className="w-5 h-5 text-[#003B3A]" />
             <span className="font-extrabold text-sm text-[#003B3A] uppercase tracking-wider">2. Chỉ tiêu chuyên môn & Đăng ký nhanh</span>
@@ -1215,163 +1215,13 @@ export function ObservationClient(props: ObservationClientProps) {
           </div>
         </div>
 
-        {/* Panel 3: Lịch dạy & dự giờ của tôi */}
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-4 border-t-4 border-t-[#00A99D]">
-          <div className="flex items-center gap-2 border-b border-slate-150 pb-3">
-            <Calendar className="w-5 h-5 text-[#00A99D]" />
-            <span className="font-extrabold text-sm text-[#003B3A] uppercase tracking-wider">3. Lịch dạy & dự giờ của tôi</span>
-          </div>
-
-          <div className="flex-1 overflow-y-auto max-h-[315px] space-y-3 custom-scrollbar pr-1">
-            {(() => {
-              const mySchedule = slots.filter(slot => {
-                const isHost = slot.teacherId === currentTeacher?.id;
-                const isObserver = slot.registrations.some((r: any) => r.teacherId === currentTeacher?.id);
-                return isHost || isObserver;
-              }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-              if (mySchedule.length === 0) {
-                return (
-                  <div className="flex flex-col items-center justify-center py-16 text-slate-400 border border-dashed border-slate-250 rounded-2xl bg-slate-50/50">
-                    <Calendar className="w-10 h-10 text-slate-300 stroke-1 mb-2" />
-                    <p className="text-xs font-bold text-center">Bạn chưa có tiết dạy hoặc lịch dự giờ nào.</p>
-                    <p className="text-[10px] text-slate-400 text-center mt-1">Đăng ký dự giờ ở bảng bên dưới hoặc tạo tiết dạy mới.</p>
-                  </div>
-                );
-              }
-
-              return (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {mySchedule.map(slot => {
-                    const isHost = slot.teacherId === currentTeacher?.id;
-                    const slotDate = new Date(slot.date);
-                    const myReg = slot.registrations.find((r: any) => r.teacherId === currentTeacher?.id);
-                    const isPastSlot = slotDate < new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
-                    
-                    return (
-                      <div key={slot.id} className={`p-4 rounded-2xl border flex flex-col gap-2.5 transition-all shadow-sm hover:shadow-md ${isHost ? "bg-amber-50/40 border-amber-200/80 border-l-4 border-l-amber-500" : "bg-teal-50/30 border-teal-200/60 border-l-4 border-l-[#00A99D]"}`}>
-                        <div className="flex items-center justify-between gap-2">
-                          <span className={`px-2 py-0.5 text-[9px] font-black uppercase rounded-md ${isHost ? "bg-amber-100 text-amber-800" : "bg-[#E6F7F6] text-[#00A99D]"}`}>
-                            {isHost ? "Tôi dạy" : "Tôi dự"}
-                          </span>
-                          <span className="text-[9px] font-extrabold text-slate-400">
-                            {slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}
-                          </span>
-                        </div>
-                        
-                        <div className="min-w-0">
-                          <h4 className="text-xs font-black text-slate-800 truncate leading-tight" title={slot.topic}>{slot.topic}</h4>
-                          <p className="text-[10px] font-semibold text-slate-500 truncate mt-1">
-                            Lớp: {slot.className || "Chưa xếp"} • Tiết: {slot.startTime}
-                          </p>
-                          <p className="text-[10px] font-semibold text-slate-400 truncate mt-0.5">
-                            Gv dạy: {slot.teacher.teacherName}
-                          </p>
-                        </div>
-
-                        {/* Host's Observers list block */}
-                        {isHost && (
-                          <div className="mt-2.5 pt-2.5 border-t border-slate-150 flex flex-col gap-1.5 w-full text-[10px] font-semibold text-slate-500">
-                            <span className="font-black text-[#003B3A] uppercase tracking-wider text-[8px]">
-                              GV đăng ký dự giờ ({slot.registrations.length}/4):
-                            </span>
-                            {slot.registrations.length === 0 ? (
-                              <span className="text-slate-400 italic">Chưa có GV nào đăng ký</span>
-                            ) : (
-                              <div className="flex flex-col gap-1 w-full max-h-[120px] overflow-y-auto pr-0.5 custom-scrollbar">
-                                {slot.registrations.map((reg: any) => {
-                                  const approvedCount = slot.registrations.filter((r: any) => r.isApproved).length;
-                                  return (
-                                    <div key={reg.id} className="flex items-center justify-between bg-slate-50 p-1.5 rounded-lg border border-slate-150 gap-2">
-                                      <div className="min-w-0 flex-1">
-                                        <p className="font-bold text-slate-800 truncate leading-snug">{reg.teacher?.teacherName || "Giáo viên"}</p>
-                                        <p className="text-[8px] text-slate-400 mt-0.5 font-bold">{reg.teacher?.teacherCode || ""}</p>
-                                      </div>
-                                      <div className="shrink-0">
-                                        {reg.isApproved ? (
-                                          <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded font-black text-[8px] uppercase">Đã duyệt</span>
-                                        ) : approvedCount >= 4 ? (
-                                          <span className="px-1.5 py-0.5 bg-slate-100 text-slate-400 border border-slate-200 rounded font-black text-[8px] uppercase">Đầy (Tối đa 4)</span>
-                                        ) : (
-                                          <button 
-                                            onClick={() => handleApprove(reg.id)}
-                                            className="px-2 py-0.5 bg-[#00A99D] hover:bg-[#008b82] text-white rounded font-black text-[8px] uppercase shadow-sm transition-all"
-                                          >
-                                            Xác nhận
-                                          </button>
-                                        )}
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Actions */}
-                        <div className="flex items-center gap-1.5 mt-2 border-t border-slate-100 pt-2 text-[10px] w-full">
-                          {isHost ? (
-                            <>
-                              <button onClick={() => openEditModal(slot)}
-                                className="px-2.5 py-1 text-slate-600 bg-white border border-slate-200 rounded-lg font-bold hover:bg-slate-50 transition-colors">
-                                Sửa
-                              </button>
-                              <button onClick={() => handleDeleteSlot(slot.id)}
-                                className="px-2.5 py-1 text-rose-600 bg-white border border-rose-250 rounded-lg font-bold hover:bg-rose-50 transition-colors">
-                                Hủy tiết
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              {!myReg?.isApproved ? (
-                                <div className="flex flex-col gap-1.5 w-full">
-                                  <span className="px-2 py-1 text-[8px] font-black uppercase text-amber-700 bg-amber-50 border border-amber-200 rounded-md text-center leading-snug">
-                                    Chờ xác nhận GV tổ chức tiết dạy
-                                  </span>
-                                  <button onClick={() => handleCancelRegistration(myReg?.id)}
-                                    className="px-2.5 py-1 text-rose-600 bg-white border border-rose-200 rounded-lg font-bold hover:bg-rose-50/50 transition-all text-center">
-                                    Hủy đăng ký
-                                  </button>
-                                </div>
-                              ) : (
-                                <>
-                                  {isPastSlot ? (
-                                    <button onClick={() => openEvalModal(myReg, slot)}
-                                      className="px-2.5 py-1 bg-[#00A99D] hover:bg-[#008b82] text-white rounded-lg font-black shadow-sm transition-all whitespace-nowrap w-full text-center">
-                                      Nhập đánh giá
-                                    </button>
-                                  ) : (
-                                    <div className="flex flex-col gap-1.5 w-full">
-                                      <span className="px-2 py-1 text-[8px] font-black uppercase text-emerald-700 bg-emerald-50 border border-emerald-250 rounded-md text-center leading-snug">
-                                        Đã xác nhận dự giờ
-                                      </span>
-                                      <button onClick={() => handleCancelRegistration(myReg?.id)}
-                                        className="px-2.5 py-1 text-rose-600 bg-white border border-rose-200 rounded-lg font-bold hover:bg-rose-50/50 transition-all text-center">
-                                        Hủy đăng ký
-                                      </button>
-                                    </div>
-                                  )}
-                                </>
-                              )}
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              );
-            })()}
-          </div>
-        </div>
       </div>
 
-      {/* ROW 2: 2-Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      {/* ROW 2: Full Width Layout */}
+      <div className="w-full mt-6">
         
-        {/* Panel 4: Danh sách tiết dạy đang mở đăng ký (Wider Col) */}
-        <div className="lg:col-span-8 bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-5 border-t-4 border-t-[#003B3A]">
+        {/* Panel 4: Danh sách tiết dạy đang mở đăng ký */}
+        <div className="w-full bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-5 border-t-4 border-t-[#003B3A]">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-150 pb-4">
             <div className="flex items-center gap-2">
               <SlidersHorizontal className="w-5 h-5 text-[#00A99D]" />
@@ -1554,8 +1404,164 @@ export function ObservationClient(props: ObservationClientProps) {
           )}
         </div>
 
-        {/* Panel 5: Hiệu suất & Lịch sử đánh giá (Narrower Col) */}
-        <div className="lg:col-span-4 bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-4 border-t-4 border-t-[#00A99D]">
+      </div>
+
+      {/* ROW 3: Horizontal Layout for Panel 3 & Panel 5 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+        
+        {/* Panel 3: Lịch dạy & dự giờ của tôi */}
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-4 border-t-4 border-t-[#00A99D]">
+          <div className="flex items-center gap-2 border-b border-slate-150 pb-3">
+            <Calendar className="w-5 h-5 text-[#00A99D]" />
+            <span className="font-extrabold text-sm text-[#003B3A] uppercase tracking-wider">3. Lịch dạy & dự giờ của tôi</span>
+          </div>
+
+          <div className="flex-1 overflow-y-auto max-h-[315px] space-y-3 custom-scrollbar pr-1">
+            {(() => {
+              const mySchedule = slots.filter(slot => {
+                const isHost = slot.teacherId === currentTeacher?.id;
+                const isObserver = slot.registrations.some((r: any) => r.teacherId === currentTeacher?.id);
+                return isHost || isObserver;
+              }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+              if (mySchedule.length === 0) {
+                return (
+                  <div className="flex flex-col items-center justify-center py-16 text-slate-400 border border-dashed border-slate-250 rounded-2xl bg-slate-50/50">
+                    <Calendar className="w-10 h-10 text-slate-300 stroke-1 mb-2" />
+                    <p className="text-xs font-bold text-center">Bạn chưa có tiết dạy hoặc lịch dự giờ nào.</p>
+                    <p className="text-[10px] text-slate-400 text-center mt-1">Đăng ký dự giờ ở bảng bên dưới hoặc tạo tiết dạy mới.</p>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {mySchedule.map(slot => {
+                    const isHost = slot.teacherId === currentTeacher?.id;
+                    const slotDate = new Date(slot.date);
+                    const myReg = slot.registrations.find((r: any) => r.teacherId === currentTeacher?.id);
+                    const isSchedulePastSlot = slotDate < new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+                    
+                    return (
+                      <div key={slot.id} className={`p-4 rounded-2xl border flex flex-col gap-2.5 transition-all shadow-sm hover:shadow-md ${isHost ? "bg-amber-50/40 border-amber-200/80 border-l-4 border-l-amber-500" : "bg-teal-50/30 border-teal-200/60 border-l-4 border-l-[#00A99D]"}`}>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className={`px-2 py-0.5 text-[9px] font-black uppercase rounded-md ${isHost ? "bg-amber-100 text-amber-800" : "bg-[#E6F7F6] text-[#00A99D]"}`}>
+                            {isHost ? "Tôi dạy" : "Tôi dự"}
+                          </span>
+                          <span className="text-[9px] font-extrabold text-slate-400">
+                            {slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}
+                          </span>
+                        </div>
+                        
+                        <div className="min-w-0">
+                          <h4 className="text-xs font-black text-slate-800 truncate leading-tight" title={slot.topic}>{slot.topic}</h4>
+                          <p className="text-[10px] font-semibold text-slate-500 truncate mt-1">
+                            Lớp: {slot.className || "Chưa xếp"} • Tiết: {slot.startTime}
+                          </p>
+                          <p className="text-[10px] font-semibold text-slate-400 truncate mt-0.5">
+                            Gv dạy: {slot.teacher.teacherName}
+                          </p>
+                        </div>
+
+                        {/* Host's Observers list block */}
+                        {isHost && (
+                          <div className="mt-2.5 pt-2.5 border-t border-slate-150 flex flex-col gap-1.5 w-full text-[10px] font-semibold text-slate-500">
+                            <span className="font-black text-[#003B3A] uppercase tracking-wider text-[8px]">
+                              GV đăng ký dự giờ ({slot.registrations.length}/4):
+                            </span>
+                            {slot.registrations.length === 0 ? (
+                              <span className="text-slate-400 italic">Chưa có GV nào đăng ký</span>
+                            ) : (
+                              <div className="flex flex-col gap-1 w-full max-h-[120px] overflow-y-auto pr-0.5 custom-scrollbar">
+                                {slot.registrations.map((reg: any) => {
+                                  const approvedCount = slot.registrations.filter((r: any) => r.isApproved).length;
+                                  return (
+                                    <div key={reg.id} className="flex items-center justify-between bg-slate-50 p-1.5 rounded-lg border border-slate-150 gap-2">
+                                      <div className="min-w-0 flex-1">
+                                        <p className="font-bold text-slate-800 truncate leading-snug">{reg.teacher?.teacherName || "Giáo viên"}</p>
+                                        <p className="text-[8px] text-slate-400 mt-0.5 font-bold">{reg.teacher?.teacherCode || ""}</p>
+                                      </div>
+                                      <div className="shrink-0">
+                                        {reg.isApproved ? (
+                                          <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded font-black text-[8px] uppercase">Đã duyệt</span>
+                                        ) : approvedCount >= 4 ? (
+                                          <span className="px-1.5 py-0.5 bg-slate-100 text-slate-400 border border-slate-200 rounded font-black text-[8px] uppercase">Đầy (Tối đa 4)</span>
+                                        ) : (
+                                          <button 
+                                            onClick={() => handleApprove(reg.id)}
+                                            className="px-2 py-0.5 bg-[#00A99D] hover:bg-[#008b82] text-white rounded font-black text-[8px] uppercase shadow-sm transition-all"
+                                          >
+                                            Xác nhận
+                                          </button>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-1.5 mt-2 border-t border-slate-100 pt-2 text-[10px] w-full">
+                          {isHost ? (
+                            <>
+                              <button onClick={() => openEditModal(slot)}
+                                className="px-2.5 py-1 text-slate-600 bg-white border border-slate-200 rounded-lg font-bold hover:bg-slate-50 transition-colors">
+                                Sửa
+                              </button>
+                              <button onClick={() => handleDeleteSlot(slot.id)}
+                                className="px-2.5 py-1 text-rose-600 bg-white border border-rose-250 rounded-lg font-bold hover:bg-rose-50 transition-colors">
+                                Hủy tiết
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              {!myReg?.isApproved ? (
+                                <div className="flex flex-col gap-1.5 w-full">
+                                  <span className="px-2 py-1 text-[8px] font-black uppercase text-amber-700 bg-amber-50 border border-amber-200 rounded-md text-center leading-snug">
+                                    Chờ xác nhận GV tổ chức tiết dạy
+                                  </span>
+                                  <button onClick={() => handleCancelRegistration(myReg?.id)}
+                                    className="px-2.5 py-1 text-rose-600 bg-white border border-rose-200 rounded-lg font-bold hover:bg-rose-50/50 transition-all text-center">
+                                    Hủy đăng ký
+                                  </button>
+                                </div>
+                              ) : (
+                                <>
+                                  {isSchedulePastSlot ? (
+                                    <button onClick={() => openEvalModal(myReg, slot)}
+                                      className="px-2.5 py-1 bg-[#00A99D] hover:bg-[#008b82] text-white rounded-lg font-black shadow-sm transition-all whitespace-nowrap w-full text-center">
+                                      Nhập đánh giá
+                                    </button>
+                                  ) : (
+                                    <div className="flex flex-col gap-1.5 w-full">
+                                      <span className="px-2 py-1 text-[8px] font-black uppercase text-emerald-700 bg-emerald-50 border border-emerald-250 rounded-md text-center leading-snug">
+                                        Đã xác nhận dự giờ
+                                      </span>
+                                      <button onClick={() => handleCancelRegistration(myReg?.id)}
+                                        className="px-2.5 py-1 text-rose-600 bg-white border border-rose-200 rounded-lg font-bold hover:bg-rose-50/50 transition-all text-center">
+                                        Hủy đăng ký
+                                      </button>
+                                    </div>
+                                  )}
+                                </>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+
+        {/* Panel 5: Lịch biểu & Hiệu suất đánh giá */}
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-4 border-t-4 border-t-[#00A99D]">
           <div className="flex items-center gap-2 border-b border-slate-150 pb-3">
             <ClipboardList className="w-5 h-5 text-[#00A99D]" />
             <span className="font-extrabold text-sm text-[#003B3A] uppercase tracking-wider">5. Lịch biểu & Hiệu suất đánh giá</span>
