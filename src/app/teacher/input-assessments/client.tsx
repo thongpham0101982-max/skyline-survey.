@@ -852,16 +852,59 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
             </>
         )}
 <td className="p-2 p-2 md:p-2 md:p-2 text-center bg-transparent md:sticky md:right-0 z-10 md:backdrop-blur-sm border border-slate-200">
-                                            <button 
-                                                onClick={() => saveStudentScore(st)}
-                                                disabled={isLocked || isPsychSubject || isChildDevSubject || isThinkingSkillsSubject || isPreschoolSubject}
-                                                className={`px-3 py-1 rounded-xl text-xs font-bold flex items-center justify-center w-full gap-2 transition-all shadow-sm ${isLocked || isPsychSubject || isChildDevSubject || isThinkingSkillsSubject ? "bg-slate-200 text-slate-400 cursor-not-allowed border-none" : 
-                                                    saveStatus[st.id] === "saved" ? "bg-emerald-500 text-white" : 
-                                                    saveStatus[st.id] === "saving" ? "bg-slate-200 text-slate-500" :
-                                                    "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300"}`}
-                                            >
-                                                {saveStatus[st.id] === "saved" ? <><CheckCircle2 className="w-4 h-4"/> <span className="hidden md:inline">Đã lưu</span></> : <><Save className="w-4 h-4" /> <span className="hidden md:inline">Lưu</span></>}
-                                            </button>
+                                            {(() => {
+                                                const isCustomSubject = isPsychSubject || isChildDevSubject || isThinkingSkillsSubject || isPreschoolSubject;
+                                                
+                                                if (isCustomSubject) {
+                                                    const isCompleted = (() => {
+                                                        if (isPreschoolSubject) {
+                                                            return st.scoredCount > 0;
+                                                        }
+                                                        if (isThinkingSkillsSubject) {
+                                                            return st.scoreVals?.length >= 1;
+                                                        }
+                                                        if (isChildDevSubject) {
+                                                            return st.scoreVals?.length >= 1;
+                                                        }
+                                                        if (isPsychSubject) {
+                                                            return st.scoreVals?.length >= 7;
+                                                        }
+                                                        return false;
+                                                    })();
+
+                                                    if (isCompleted) {
+                                                        return (
+                                                            <div className="px-3 py-1 rounded-xl text-xs font-bold flex items-center justify-center w-full gap-2 bg-emerald-500 text-white shadow-sm cursor-default">
+                                                                <CheckCircle2 className="w-4 h-4" />
+                                                                <span className="hidden md:inline">Đã lưu</span>
+                                                            </div>
+                                                        );
+                                                    } else {
+                                                        return (
+                                                            <button
+                                                                disabled={true}
+                                                                className="px-3 py-1 rounded-xl text-xs font-bold flex items-center justify-center w-full gap-2 bg-slate-100 border border-slate-250 text-slate-400 cursor-not-allowed shadow-none"
+                                                            >
+                                                                <Save className="w-4 h-4" />
+                                                                <span className="hidden md:inline">Lưu</span>
+                                                            </button>
+                                                        );
+                                                    }
+                                                }
+
+                                                return (
+                                                    <button 
+                                                        onClick={() => saveStudentScore(st)}
+                                                        disabled={isLocked}
+                                                        className={`px-3 py-1 rounded-xl text-xs font-bold flex items-center justify-center w-full gap-2 transition-all shadow-sm ${isLocked ? "bg-slate-200 text-slate-400 cursor-not-allowed border-none" : 
+                                                            saveStatus[st.id] === "saved" ? "bg-emerald-500 text-white" : 
+                                                            saveStatus[st.id] === "saving" ? "bg-slate-200 text-slate-500" :
+                                                            "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300"}`}
+                                                    >
+                                                        {saveStatus[st.id] === "saved" ? <><CheckCircle2 className="w-4 h-4"/> <span className="hidden md:inline">Đã lưu</span></> : <><Save className="w-4 h-4" /> <span className="hidden md:inline">Lưu</span></>}
+                                                    </button>
+                                                );
+                                            })()}
                                         </td>
                                     </tr>
                                 ))}

@@ -4238,6 +4238,37 @@ return (
                                  {/* 7. Lớp học thử */}
                                  <td className="w-[160px] min-w-[160px] p-2 align-top bg-inherit border border-slate-200">
                                    {(() => {
+                                     const isMienHT = (() => {
+                                       const values = [
+                                         s.generalResult || "",
+                                         s.bghApprovalStatus || "",
+                                         s.gdcsApprovalStatus || "",
+                                         s.admissionResult || ""
+                                       ].map(v => v.toUpperCase());
+                                       return values.some(v => 
+                                         v === "DAT_MIEN_HOC_THU" || 
+                                         v === "MIEN_HOC_THU" || 
+                                         v === "MIEN_HT" || 
+                                         v.includes("MIỄN HT") || 
+                                         v.includes("MIEN HT") || 
+                                         v.includes("MIỄN HỌC THỬ") || 
+                                         v.includes("MIEN_HOC_THU") ||
+                                         v.includes("MIEN HOC THU")
+                                       );
+                                     })();
+
+                                     if (isMienHT) {
+                                       return (
+                                         <button
+                                           onClick={() => openEmailCongratsModal(s)}
+                                           className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1 text-[10px] font-extrabold text-white bg-violet-600 hover:bg-violet-700 rounded-lg transition-all shadow-xs w-fit px-3"
+                                         >
+                                           <Mail className="w-3.5 h-3.5" />
+                                           Trả Kết quả
+                                         </button>
+                                       );
+                                     }
+
                                      const isHocThu = isStudentHocThu(s);
                                      if (!isHocThu) return <span className="text-slate-300 text-xs">—</span>;
 
