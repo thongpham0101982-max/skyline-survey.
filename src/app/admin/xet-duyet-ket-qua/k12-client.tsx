@@ -2695,6 +2695,47 @@ ${reportForm.directorNote}`;
     return `Đà Nẵng, ngày ${day} tháng ${month} năm ${year}`;
   }, []);
 
+    const resolveStudentCampusId = useCallback((s: Student) => {
+    // 1. If Open Day student, check registeredCampus
+    const studentPeriod = periods.find(p => p.id === s.periodId);
+    const isOpenDay = studentPeriod?.name?.toLowerCase().includes("open day");
+    if (isOpenDay && s.registeredCampus) {
+      const matchingCampus = campuses.find(c => c.id === s.registeredCampus);
+      if (matchingCampus) return matchingCampus.id;
+    }
+    
+    // 2. Check admissionCampus matching campusName
+    if (s.admissionCampus) {
+      const tc = campuses.find(c => c.campusName === s.admissionCampus);
+      if (tc) return tc.id;
+    }
+    
+    // 3. Fallback to batch campusId
+    if (s.batchId) {
+      const b = reportBatches.find(bx => bx.id === s.batchId);
+      if (b?.campusId) {
+        const tc = campuses.find(c => c.id === b.campusId);
+        if (tc) return tc.id;
+      }
+    }
+    
+    // 4. Try string match on admissionCampus
+    const campusName = s.admissionCampus || "";
+    let code = null;
+    if (campusName.includes("CS1") || campusName.includes("Cơ sở 1")) code = "CS1";
+    else if (campusName.includes("CS2") || campusName.includes("Cơ sở 2")) code = "CS2";
+    else if (campusName.includes("CS3") || campusName.includes("Cơ sở 3")) code = "CS3";
+    else if (campusName.includes("CS4") || campusName.includes("Cơ sở 4")) code = "CS4";
+    else if (campusName.includes("CS5") || campusName.includes("Cơ sở 5")) code = "CS5";
+    
+    if (code) {
+      const tc = campuses.find(c => c.campusCode === code);
+      if (tc) return tc.id;
+    }
+    
+    return "unassigned";
+  }, [campuses, periods, reportBatches]);
+
   const campusStats = useMemo(() => {
     if (!Array.isArray(reportStudents)) return [];
     
@@ -2734,8 +2775,7 @@ ${reportForm.directorNote}`;
     const targetStudents = filteredReportStudents;
     
     targetStudents.forEach(s => {
-      const batchObj = reportBatches.find(b => b.id === s.batchId);
-      const campusId = batchObj?.campusId || fallbackId;
+      const campusId = resolveStudentCampusId(s);
       
       let stat = map.get(campusId);
       if (!stat) {
@@ -2769,9 +2809,10 @@ ${reportForm.directorNote}`;
     return Array.from(map.entries())
       .map(([id, val]) => ({ id, ...val }))
       .filter(item => item.id !== fallbackId || item.total > 0);
-  }, [filteredReportStudents, reportBatches, campuses]);
+  }, [filteredReportStudents, resolveStudentCampusId, campuses]);
 
-        const batchStats = useMemo(() => {
+
+          const batchStats = useMemo(() => {
     const map = new Map<string, {
       batchName: string;
       total: number;
@@ -2846,6 +2887,7 @@ ${reportForm.directorNote}`;
 
 
 
+
             const campusOverallSurveyed = useMemo(() => {
     let CS1 = 0;
     let CS2 = 0;
@@ -2907,7 +2949,7 @@ ${reportForm.directorNote}`;
     return { CS1, CS2, CS3, CS4, CS5, total };
   }, [filteredReportStudents, periods, campuses, reportBatches]);
 
-    const campusOverallTotal = useMemo(() => {
+      const campusOverallTotal = useMemo(() => {
     let CS1 = 0;
     let CS2 = 0;
     let CS3 = 0;
@@ -2916,42 +2958,9 @@ ${reportForm.directorNote}`;
     const total = filteredReportStudents.length;
 
     filteredReportStudents.forEach(s => {
-      // Resolve campus code for this student
-      let campusCode = null;
-      const studentPeriod = periods.find(p => p.id === s.periodId);
-      const isOpenDay = studentPeriod?.name?.toLowerCase().includes("open day");
+      const campusId = resolveStudentCampusId(s);
+      const campusCode = campuses.find(c => c.id === campusId)?.campusCode;
       
-      if (isOpenDay && s.registeredCampus) {
-        const matchingCampus = campuses.find(c => c.id === s.registeredCampus);
-        if (matchingCampus) {
-          campusCode = matchingCampus.campusCode;
-        }
-      }
-      
-      if (!campusCode) {
-        let tc = campuses.find(c => 
-          c.campusName && (c.campusName === s.admissionCampus)
-        );
-        if (!tc && s.batchId) {
-          const b = reportBatches.find(bx => bx.id === s.batchId);
-          if (b?.campusId) {
-            tc = campuses.find(c => c.id === b.campusId);
-          }
-        }
-        if (tc) {
-          campusCode = tc.campusCode;
-        }
-      }
-      
-      if (!campusCode) {
-        const campusName = s.admissionCampus || "";
-        if (campusName.includes("CS1") || campusName.includes("Cơ sở 1")) campusCode = "CS1";
-        else if (campusName.includes("CS2") || campusName.includes("Cơ sở 2")) campusCode = "CS2";
-        else if (campusName.includes("CS3") || campusName.includes("Cơ sở 3")) campusCode = "CS3";
-        else if (campusName.includes("CS4") || campusName.includes("Cơ sở 4")) campusCode = "CS4";
-        else if (campusName.includes("CS5") || campusName.includes("Cơ sở 5")) campusCode = "CS5";
-      }
-
       const csKey = (campusCode || "").toUpperCase();
       if (csKey === "CS1") CS1++;
       else if (csKey === "CS2") CS2++;
@@ -2961,9 +2970,10 @@ ${reportForm.directorNote}`;
     });
 
     return { CS1, CS2, CS3, CS4, CS5, total };
-  }, [filteredReportStudents, periods, campuses, reportBatches]);
+  }, [filteredReportStudents, resolveStudentCampusId, campuses]);
 
-  const gradeStats = useMemo(() => {
+
+    const gradeStats = useMemo(() => {
     const gradesList = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"];
     const map = new Map();
     gradesList.forEach(g => {
@@ -2991,40 +3001,8 @@ ${reportForm.directorNote}`;
       if (isTested) stat.surveyed++;
 
       // Resolve campus code for this student
-      let campusCode = null;
-      const studentPeriod = periods.find(p => p.id === s.periodId);
-      const isOpenDay = studentPeriod?.name?.toLowerCase().includes("open day");
-      
-      if (isOpenDay && s.registeredCampus) {
-        const matchingCampus = campuses.find(c => c.id === s.registeredCampus);
-        if (matchingCampus) {
-          campusCode = matchingCampus.campusCode;
-        }
-      }
-      
-      if (!campusCode) {
-        let tc = campuses.find(c => 
-          c.campusName && (c.campusName === s.admissionCampus)
-        );
-        if (!tc && s.batchId) {
-          const b = reportBatches.find(bx => bx.id === s.batchId);
-          if (b?.campusId) {
-            tc = campuses.find(c => c.id === b.campusId);
-          }
-        }
-        if (tc) {
-          campusCode = tc.campusCode;
-        }
-      }
-      
-      if (!campusCode) {
-        const campusName = s.admissionCampus || "";
-        if (campusName.includes("CS1") || campusName.includes("Cơ sở 1")) campusCode = "CS1";
-        else if (campusName.includes("CS2") || campusName.includes("Cơ sở 2")) campusCode = "CS2";
-        else if (campusName.includes("CS3") || campusName.includes("Cơ sở 3")) campusCode = "CS3";
-        else if (campusName.includes("CS4") || campusName.includes("Cơ sở 4")) campusCode = "CS4";
-        else if (campusName.includes("CS5") || campusName.includes("Cơ sở 5")) campusCode = "CS5";
-      }
+      const campusId = resolveStudentCampusId(s);
+      const campusCode = campuses.find(c => c.id === campusId)?.campusCode;
       
       const csKey = (campusCode || "").toUpperCase();
       if (csKey === "CS1") { stat.CS1_total++; if (isTested) stat.CS1++; }
@@ -3060,7 +3038,8 @@ ${reportForm.directorNote}`;
         "gradeShare": gradeShare
       };
     });
-  }, [filteredReportStudents, reportBatches, periods, campuses]);
+  }, [filteredReportStudents, resolveStudentCampusId, campuses]);
+
 
 
 
@@ -5941,6 +5920,7 @@ return {
                 </div>
               </div>
             </div>
+
 
 
 
