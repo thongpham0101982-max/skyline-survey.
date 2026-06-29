@@ -1201,10 +1201,15 @@ export function ObservationClient(props: ObservationClientProps) {
                           </p>
                         </div>
                         <button 
+                          disabled={isPastSlot}
                           onClick={() => setRegisterDetailSlot(slot)}
-                          className="px-3 py-1.5 bg-[#00A99D] hover:bg-[#008b82] text-white text-[10px] font-black uppercase rounded-lg transition-all shadow-sm flex-shrink-0"
+                          className={`px-3 py-1.5 text-[10px] font-black uppercase rounded-lg transition-all shadow-sm flex-shrink-0 ${
+                            isPastSlot
+                              ? "bg-slate-100 text-slate-450 border border-slate-200 cursor-not-allowed"
+                              : "bg-[#00A99D] hover:bg-[#008b82] text-white"
+                          }`}
                         >
-                          Đăng ký
+                          {isPastSlot ? "Hết hạn" : "Đăng ký"}
                         </button>
                       </div>
                     );
@@ -1381,20 +1386,27 @@ export function ObservationClient(props: ObservationClientProps) {
                           )}
                         </td>
                         <td className="p-4 text-right">
-                          {isRegistered ? (
-                            <button onClick={() => handleCancelRegistration(myReg.id)}
-                              className="px-3 py-1.5 text-[10px] font-black bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition-all border border-rose-200">
-                              Hủy dự
-                            </button>
-                          ) : (
-                            <button 
-                              onClick={() => setRegisterDetailSlot(slot)}
-                              className="px-3 py-1.5 text-[10px] font-black rounded-xl transition-all shadow-sm bg-[#00A99D] hover:bg-[#008b82] text-white"
-                            >
-                              Đăng ký
-                            </button>
-                          )}
-                        </td>
+                           {isExpired ? (
+                             <button 
+                               disabled
+                               className="px-3 py-1.5 text-[10px] font-black rounded-xl bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
+                             >
+                               Hết hạn
+                             </button>
+                           ) : isRegistered ? (
+                             <button onClick={() => handleCancelRegistration(myReg.id)}
+                               className="px-3 py-1.5 text-[10px] font-black bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition-all border border-rose-200">
+                               Hủy dự
+                             </button>
+                           ) : (
+                             <button 
+                               onClick={() => setRegisterDetailSlot(slot)}
+                               className="px-3 py-1.5 text-[10px] font-black rounded-xl transition-all shadow-sm bg-[#00A99D] hover:bg-[#008b82] text-white"
+                             >
+                               Đăng ký
+                             </button>
+                           )}
+                         </td>
                       </tr>
                     );
                   })}
@@ -1909,13 +1921,22 @@ export function ObservationClient(props: ObservationClientProps) {
               >
                 Hủy bỏ
               </button>
-              <button 
-                type="button" 
-                onClick={() => handleRegister(registerDetailSlot.id)} 
-                className="px-5 py-2 bg-[#00A99D] hover:bg-[#008b82] text-white font-bold rounded-xl transition-all text-xs shadow-md"
-              >
-                Xác nhận Đăng ký
-              </button>
+              {(() => {
+                const slotDate = new Date(registerDetailSlot.date);
+                const today = new Date();
+                const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                const isExpired = slotDate < todayStart;
+                return (
+                  <button 
+                    type="button" 
+                    disabled={isExpired}
+                    onClick={() => handleRegister(registerDetailSlot.id)} 
+                    className="px-5 py-2 bg-[#00A99D] hover:bg-[#008b82] disabled:bg-slate-200 disabled:text-slate-450 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all text-xs shadow-md"
+                  >
+                    {isExpired ? "Đã hết hạn" : "Xác nhận Đăng ký"}
+                  </button>
+                );
+              })()}
             </div>
           </div>
         </div>
