@@ -414,9 +414,11 @@ export async function registerObservation(slotId: string) {
       return { success: false, error: "Observation slot not found" }
     }
 
-    // Chặn đăng ký dự giờ tiết dạy đã diễn ra trong quá khứ
-    if (new Date(slot.date) < new Date()) {
-      return { success: false, error: "Không thể đăng ký dự giờ tiết dạy đã diễn ra." }
+    // Chặn đăng ký dự giờ tiết dạy đã diễn ra trong quá khứ (Cho phép thời gian trễ trong vòng 30 ngày để nộp bù đánh giá)
+    const limitDate = new Date()
+    limitDate.setDate(limitDate.getDate() - 30)
+    if (new Date(slot.date) < limitDate) {
+      return { success: false, error: "Không thể đăng ký dự giờ tiết dạy đã diễn ra quá 30 ngày." }
     }
 
     if (slot.status !== "ACTIVE") {

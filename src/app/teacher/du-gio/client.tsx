@@ -886,7 +886,8 @@ export function ObservationClient({
       const slotDate = new Date(slot.date)
       const isPast = slotDate < new Date(now.getFullYear(), now.getMonth(), now.getDate())
       if (activeTab === "dang-ky") {
-        if (isHost || isObserver || isPast) return false;
+        // Relax isPast to allow retroactive registration and viewing of recent slots
+        if (isHost || isObserver) return false;
         if (activeDeptTab !== "all") {
           const isMyDept = slot.teacher?.departmentId === currentTeacher.departmentId;
           if (activeDeptTab === "my-dept" && !isMyDept) return false;
