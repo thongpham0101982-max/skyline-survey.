@@ -497,33 +497,33 @@ function TransferOutModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
         {loading ? (
            <div className="p-20 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-slate-400" /></div>
         ) : (
-          <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6 custom-scrollbar">
+                    <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6 custom-scrollbar">
             {/* Filter Group */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Năm học</label>
-                <select required className="w-full font-medium outline-none focus:border-indigo-500 transition-colors text-xs font-semibold" value={form.academicYearId} onChange={e => setForm({...form, academicYearId: e.target.value})}>
+                <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.academicYearId} onChange={e => setForm({...form, academicYearId: e.target.value})}>
                   <option value="">Chọn năm học</option>
                   {options.years.filter((y: any) => !y.isOff).map(y => <option key={y.id} value={y.id}>{y.name}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Cơ sở</label>
-                <select required className="w-full font-medium outline-none focus:border-indigo-500 transition-colors text-xs font-semibold" value={form.campusId} onChange={e => setForm({...form, campusId: e.target.value})}>
+                <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.campusId} onChange={e => setForm({...form, campusId: e.target.value})}>
                   <option value="">Chọn cơ sở</option>
                   {options.campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Lớp học</label>
-                <select required className="w-full font-medium outline-none focus:border-indigo-500 transition-colors text-xs font-semibold" value={form.classId} onChange={e => setForm({...form, classId: e.target.value})}>
+                <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.classId} onChange={e => setForm({...form, classId: e.target.value})}>
                   <option value="">Chọn lớp học</option>
                   {filteredClasses.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Học sinh</label>
-                <select required className="w-full font-medium outline-none focus:border-indigo-500 transition-colors text-xs font-semibold" value={form.studentId} onChange={e => setForm({...form, studentId: e.target.value})}>
+                <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.studentId} onChange={e => setForm({...form, studentId: e.target.value})}>
                   <option value="">Chọn học sinh</option>
                   {students.map(s => <option key={s.id} value={s.id}>{s.studentName} ({s.studentCode})</option>)}
                 </select>
@@ -533,14 +533,14 @@ function TransferOutModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
             <div className="h-px bg-slate-100" />
 
             {/* Transfer Details */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Ngày chuyển</label>
-                <input required type="date" className="w-full font-medium outline-none focus:border-indigo-500 transition-colors text-xs font-semibold" value={form.transferDate} onChange={e => setForm({...form, transferDate: e.target.value})} />
+                <input required type="date" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.transferDate} onChange={e => setForm({...form, transferDate: e.target.value})} />
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Kỳ học</label>
-                <select required className="w-full font-medium outline-none focus:border-indigo-500 transition-colors text-xs font-semibold" value={form.semester} onChange={e => setForm({...form, semester: e.target.value})}>
+                <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.semester} onChange={e => setForm({...form, semester: e.target.value})}>
                   <option value="">Chọn kỳ</option>
                   <option value="HK1">Học kỳ 1</option>
                   <option value="HK2">Học kỳ 2</option>
@@ -549,7 +549,7 @@ function TransferOutModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Diện chuyển</label>
-                <select required className="w-full font-medium outline-none focus:border-indigo-500 transition-colors text-xs font-semibold" value={form.transferCategory} onChange={e => setForm({...form, transferCategory: e.target.value})}>
+                <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.transferCategory} onChange={e => setForm({...form, transferCategory: e.target.value})}>
                   <option value="">Chọn diện</option>
                   <option value="DOMESTIC">Chuyển trường VN</option>
                   <option value="ABROAD">Du học</option>
@@ -559,14 +559,14 @@ function TransferOutModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
             </div>
 
             {form.transferCategory === "DOMESTIC" && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-[#00A99D]/10/50 p-4 rounded-2xl border border-[#00A99D]/20">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50/55 p-5 rounded-2xl border border-slate-200">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Trường chuyển đến</label>
-                  <input type="text" placeholder="Tên trường" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 transition-colors" value={form.destinationSchool} onChange={e => setForm({...form, destinationSchool: e.target.value})} />
+                  <input type="text" placeholder="Tên trường" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.destinationSchool} onChange={e => setForm({...form, destinationSchool: e.target.value})} />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Loại hình</label>
-                  <select className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 transition-colors" value={form.destinationType} onChange={e => setForm({...form, destinationType: e.target.value})}>
+                  <select className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.destinationType} onChange={e => setForm({...form, destinationType: e.target.value})}>
                     <option value="">Chọn loại</option>
                     <option value="PRIVATE">Tư thục</option>
                     <option value="PUBLIC">Công lập</option>
@@ -575,7 +575,7 @@ function TransferOutModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Tỉnh/TP</label>
-                  <select className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 transition-colors" value={form.destinationProvince} onChange={e => setForm({...form, destinationProvince: e.target.value})}>
+                  <select className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.destinationProvince} onChange={e => setForm({...form, destinationProvince: e.target.value})}>
                     <option value="">Chọn Tỉnh/TP</option>
                     {provinces.map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
@@ -584,32 +584,31 @@ function TransferOutModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
             )}
 
             {form.transferCategory === "ABROAD" && (
-              <div className="p-4 text-xs font-semibold">
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Quốc gia theo học</label>
-                  <select className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-orange-500 transition-colors" value={form.destinationCountry} onChange={e => setForm({...form, destinationCountry: e.target.value})}>
-                    <option value="">Chọn Quốc gia</option>
-                    {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
+              <div className="p-5 bg-slate-50/55 rounded-2xl border border-slate-200">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Quốc gia theo học</label>
+                <select className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.destinationCountry} onChange={e => setForm({...form, destinationCountry: e.target.value})}>
+                  <option value="">Chọn Quốc gia</option>
+                  {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
               </div>
             )}
 
             {form.transferCategory === "RESERVE" && (
-              <div className="grid grid-cols-2 gap-4 p-4 text-xs font-semibold">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Từ ngày</label>
-                    <input required type="date" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-yellow-500 transition-colors" value={form.reserveStartDate} onChange={e => setForm({...form, reserveStartDate: e.target.value})} />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Đến ngày</label>
-                    <input required type="date" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-yellow-500 transition-colors" value={form.reserveEndDate} onChange={e => setForm({...form, reserveEndDate: e.target.value})} />
-                  </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-5 bg-slate-50/55 rounded-2xl border border-slate-200">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Từ ngày</label>
+                  <input required type="date" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.reserveStartDate} onChange={e => setForm({...form, reserveStartDate: e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Đến ngày</label>
+                  <input required type="date" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.reserveEndDate} onChange={e => setForm({...form, reserveEndDate: e.target.value})} />
+                </div>
               </div>
             )}
 
-
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Lý do chuyển</label>
-              <textarea placeholder="Nhập lý do chi tiết..." rows={3} className="w-full font-medium outline-none focus:border-indigo-500 transition-colors text-xs font-semibold" value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} />
+              <textarea placeholder="Nhập lý do chi tiết..." rows={3} className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} />
             </div>
 
             <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
@@ -622,6 +621,7 @@ function TransferOutModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
               </button>
             </div>
           </form>
+
         )}
       </div>
     </div>
@@ -735,36 +735,36 @@ function ChangeClassModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
         {loading ? (
            <div className="p-20 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-slate-400" /></div>
         ) : (
-          <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-8 custom-scrollbar">
+                    <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-8 custom-scrollbar">
             
             {/* Current Info */}
             <div>
               <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 pb-2 border-b">Thông tin hiện tại</h3>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Năm học</label>
-                  <select required className="w-full font-medium outline-none focus:border-indigo-500 transition-colors text-xs font-semibold" value={form.academicYearId} onChange={e => setForm({...form, academicYearId: e.target.value})}>
+                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.academicYearId} onChange={e => setForm({...form, academicYearId: e.target.value})}>
                     <option value="">Chọn năm học</option>
                     {options.years.filter((y: any) => !y.isOff).map(y => <option key={y.id} value={y.id}>{y.name}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Cơ sở hiện tại</label>
-                  <select required className="w-full font-medium outline-none focus:border-indigo-500 transition-colors text-xs font-semibold" value={form.campusId} onChange={e => setForm({...form, campusId: e.target.value})}>
+                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.campusId} onChange={e => setForm({...form, campusId: e.target.value})}>
                     <option value="">Chọn cơ sở</option>
                     {options.campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Lớp hiện tại</label>
-                  <select required className="w-full font-medium outline-none focus:border-indigo-500 transition-colors text-xs font-semibold" value={form.classId} onChange={e => setForm({...form, classId: e.target.value})}>
+                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.classId} onChange={e => setForm({...form, classId: e.target.value})}>
                     <option value="">Chọn lớp học</option>
                     {filteredClasses.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Học sinh</label>
-                  <select required className="w-full font-medium outline-none focus:border-indigo-500 transition-colors text-xs font-semibold" value={form.studentId} onChange={e => setForm({...form, studentId: e.target.value})}>
+                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.studentId} onChange={e => setForm({...form, studentId: e.target.value})}>
                     <option value="">Chọn học sinh</option>
                     {students.map(s => <option key={s.id} value={s.id}>{s.studentName} ({s.studentCode})</option>)}
                   </select>
@@ -775,17 +775,17 @@ function ChangeClassModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
             {/* Destination Info */}
             <div>
               <h3 className="text-sm font-bold text-indigo-800 uppercase tracking-wider mb-4 pb-2 border-b border-[#00A99D]/20">Thông tin chuyển đến</h3>
-              <div className="grid grid-cols-2 gap-4 bg-[#00A99D]/10/50 p-4 rounded-2xl border border-[#00A99D]/20">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-[#00A99D]/5 p-5 rounded-2xl border border-[#00A99D]/20">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Cơ sở chuyển đến</label>
-                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 transition-colors" value={form.destCampusId} onChange={e => setForm({...form, destCampusId: e.target.value})}>
+                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.destCampusId} onChange={e => setForm({...form, destCampusId: e.target.value})}>
                     <option value="">Chọn cơ sở</option>
                     {options.campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Lớp chuyển đến</label>
-                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 transition-colors" value={form.destClassId} onChange={e => setForm({...form, destClassId: e.target.value})}>
+                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.destClassId} onChange={e => setForm({...form, destClassId: e.target.value})}>
                     <option value="">Chọn lớp</option>
                     {filteredDestClasses.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
                   </select>
@@ -794,23 +794,25 @@ function ChangeClassModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
             </div>
 
             {/* Other details */}
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Ngày chuyển</label>
-                <input required type="date" className="w-full font-medium outline-none focus:border-indigo-500 transition-colors text-xs font-semibold" value={form.transferDate} onChange={e => setForm({...form, transferDate: e.target.value})} />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Kỳ học</label>
-                <select required className="w-full font-medium outline-none focus:border-indigo-500 transition-colors text-xs font-semibold" value={form.semester} onChange={e => setForm({...form, semester: e.target.value})}>
-                  <option value="">Chọn kỳ</option>
-                  <option value="HK1">Học kỳ 1</option>
-                  <option value="HK2">Học kỳ 2</option>
-                  <option value="SUMMER">Trong hè</option>
-                </select>
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Ngày chuyển</label>
+                  <input required type="date" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.transferDate} onChange={e => setForm({...form, transferDate: e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Kỳ học</label>
+                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.semester} onChange={e => setForm({...form, semester: e.target.value})}>
+                    <option value="">Chọn kỳ</option>
+                    <option value="HK1">Học kỳ 1</option>
+                    <option value="HK2">Học kỳ 2</option>
+                    <option value="SUMMER">Trong hè</option>
+                  </select>
+                </div>
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Lý do chuyển</label>
-                <input type="text" placeholder="Nhập lý do chi tiết..." className="w-full font-medium outline-none focus:border-indigo-500 transition-colors text-xs font-semibold" value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} />
+                <input type="text" placeholder="Nhập lý do chi tiết..." className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} />
               </div>
             </div>
 
@@ -824,6 +826,7 @@ function ChangeClassModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
               </button>
             </div>
           </form>
+
         )}
       </div>
     </div>
@@ -1022,13 +1025,13 @@ function TransferInModal({ activeSubTab, onClose, onSaved, initialData, enrollme
         {loading ? (
            <div className="p-20 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-slate-400" /></div>
         ) : (
-          <form className="p-6 overflow-y-auto space-y-8 custom-scrollbar">
+                    <form className="p-6 overflow-y-auto space-y-8 custom-scrollbar">
             
             {/* Input Assessment Data selection */}
             {enrollmentRequest ? (
-              <div className="p-5 mb-4 text-xs font-semibold">
+              <div className="p-5 mb-4 text-xs font-semibold bg-amber-50/50 rounded-2xl border border-amber-200">
                 <h3 className="text-xs font-bold text-amber-800 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                  <span className="h-2 w-2 animate-pulse text-xs font-semibold"></span>
+                  <span className="h-2 w-2 animate-pulse bg-amber-500 rounded-full"></span>
                   Học sinh khảo sát liên kết
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm font-semibold text-slate-700">
@@ -1039,25 +1042,25 @@ function TransferInModal({ activeSubTab, onClose, onSaved, initialData, enrollme
               </div>
             ) : !initialData && (
               <div>
-                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 pb-2 border-b">CĂN CỨ DỮ LIỆU KHẢO SÁT (BẢN MỚI 16/05)</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 mb-4 text-xs font-semibold">
+                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 pb-2 border-b">CĂN CỨ DỮ LIỆU KHẢO SÁT</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-5 mb-4 bg-slate-50/55 rounded-2xl border border-slate-200">
                   <div>
-                    <label className="block text-xs font-bold text-emerald-600 uppercase tracking-wider mb-2">1. Chọn Kỳ khảo sát ({periods.length})</label>
-                    <select className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 font-medium outline-none focus:border-emerald-500 transition-colors" value={selectedPeriod} onChange={e => setSelectedPeriod(e.target.value)}>
+                    <label className="block text-xs font-bold text-emerald-650 uppercase tracking-wider mb-2">1. Chọn Kỳ khảo sát ({periods.length})</label>
+                    <select className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all text-xs font-semibold text-slate-800" value={selectedPeriod} onChange={e => setSelectedPeriod(e.target.value)}>
                       <option value="">Chọn kỳ...</option>
                       {periods.filter(p => !form.academicYearId || p.academicYearId === form.academicYearId).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-emerald-600 uppercase tracking-wider mb-2">2. Chọn Đợt khảo sát</label>
-                    <select className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 font-medium outline-none focus:border-emerald-500 transition-colors" value={selectedBatch} onChange={e => setSelectedBatch(e.target.value)}>
+                    <label className="block text-xs font-bold text-emerald-650 uppercase tracking-wider mb-2">2. Chọn Đợt khảo sát</label>
+                    <select className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all text-xs font-semibold text-slate-800" value={selectedBatch} onChange={e => setSelectedBatch(e.target.value)}>
                       <option value="">Tất cả các đợt</option>
                       {batches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-emerald-600 uppercase tracking-wider mb-2">3. Chọn Học sinh</label>
-                    <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 font-medium outline-none focus:border-emerald-500 transition-colors" value={form.assessmentStudentId} onChange={e => handleSelectStudent(e.target.value)}>
+                    <label className="block text-xs font-bold text-emerald-650 uppercase tracking-wider mb-2">3. Chọn Học sinh</label>
+                    <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all text-xs font-semibold text-slate-800" value={form.assessmentStudentId} onChange={e => handleSelectStudent(e.target.value)}>
                       <option value="">Chọn học sinh...</option>
                       {assessmentStudents.map(s => <option key={s.id} value={s.id}>{s.fullName} - MS: {s.studentCode}</option>)}
                     </select>
@@ -1072,22 +1075,22 @@ function TransferInModal({ activeSubTab, onClose, onSaved, initialData, enrollme
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Họ và tên học sinh</label>
-                  <input required type="text" className="w-full font-medium outline-none focus:border-emerald-500 transition-colors text-xs font-semibold" value={form.studentName} onChange={e => setForm({...form, studentName: e.target.value})} placeholder="Nhập họ và tên..." />
+                  <input required type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all text-xs font-semibold text-slate-800" value={form.studentName} onChange={e => setForm({...form, studentName: e.target.value})} placeholder="Nhập họ và tên..." />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Mã KS (Khảo sát)</label>
-                  <input disabled type="text" className="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 font-semibold outline-none text-slate-500 cursor-not-allowed" value={selectedAssessmentStudent?.studentCode || ""} placeholder="Mã KS từ dữ liệu..." />
+                  <input disabled type="text" className="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 font-semibold outline-none text-slate-550 cursor-not-allowed" value={selectedAssessmentStudent?.studentCode || ""} placeholder="Mã KS từ dữ liệu..." />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Mã HS</label>
-                  <input required type="text" className="w-full font-medium outline-none focus:border-emerald-500 transition-colors text-xs font-semibold" value={form.studentCode} onChange={e => setForm({...form, studentCode: e.target.value})} placeholder="Nhập mã HS mới..." />
+                  <input required type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all text-xs font-semibold text-slate-800" value={form.studentCode} onChange={e => setForm({...form, studentCode: e.target.value})} placeholder="Nhập mã HS mới..." />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Năm học</label>
-                  <select required className="w-full font-medium outline-none focus:border-emerald-500 transition-colors text-xs font-semibold" value={form.academicYearId} onChange={e => {
+                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all text-xs font-semibold text-slate-800" value={form.academicYearId} onChange={e => {
                     const yId = e.target.value;
                     setForm({...form, academicYearId: yId});
                     const currentPeriodObj = periods.find(p => p.id === selectedPeriod);
@@ -1103,7 +1106,7 @@ function TransferInModal({ activeSubTab, onClose, onSaved, initialData, enrollme
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Kỳ học</label>
-                  <select required className="w-full font-medium outline-none focus:border-emerald-500 transition-colors text-xs font-semibold" value={form.semester} onChange={e => setForm({...form, semester: e.target.value})}>
+                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all text-xs font-semibold text-slate-800" value={form.semester} onChange={e => setForm({...form, semester: e.target.value})}>
                     <option value="HK1">Học kỳ 1</option>
                     <option value="HK2">Học kỳ 2</option>
                     <option value="SUMMER">Trong hè</option>
@@ -1111,14 +1114,14 @@ function TransferInModal({ activeSubTab, onClose, onSaved, initialData, enrollme
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Cơ sở</label>
-                  <select required className="w-full font-medium outline-none focus:border-emerald-500 transition-colors text-xs font-semibold" value={form.campusId} onChange={e => setForm({...form, campusId: e.target.value})}>
+                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all text-xs font-semibold text-slate-800" value={form.campusId} onChange={e => setForm({...form, campusId: e.target.value})}>
                     <option value="">Chọn cơ sở</option>
                     {options.campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Lớp học</label>
-                  <select required className="w-full font-medium outline-none focus:border-emerald-500 transition-colors text-xs font-semibold" value={form.classId} onChange={e => setForm({...form, classId: e.target.value})}>
+                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all text-xs font-semibold text-slate-800" value={form.classId} onChange={e => setForm({...form, classId: e.target.value})}>
                     <option value="">Chọn lớp học</option>
                     {filteredClasses.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
                   </select>
@@ -1127,14 +1130,16 @@ function TransferInModal({ activeSubTab, onClose, onSaved, initialData, enrollme
             </div>
 
             {/* Other details */}
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Ngày nhập học</label>
-                <input required type="date" className="w-full font-medium outline-none focus:border-emerald-500 transition-colors text-xs font-semibold" value={form.transferDate} onChange={e => setForm({...form, transferDate: e.target.value})} />
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Ngày nhập học</label>
+                  <input required type="date" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all text-xs font-semibold text-slate-800" value={form.transferDate} onChange={e => setForm({...form, transferDate: e.target.value})} />
+                </div>
               </div>
-              <div className="col-span-2">
+              <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Ghi chú thêm</label>
-                <input type="text" placeholder="Nhập ghi chú chi tiết (nếu có)..." className="w-full font-medium outline-none focus:border-emerald-500 transition-colors text-xs font-semibold" value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} />
+                <input type="text" placeholder="Nhập ghi chú chi tiết (nếu có)..." className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all text-xs font-semibold text-slate-800" value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} />
               </div>
             </div>
 
@@ -1147,7 +1152,7 @@ function TransferInModal({ activeSubTab, onClose, onSaved, initialData, enrollme
                 type="button"
                 onClick={() => handleSubmit(null)}
                 disabled={saving}
-                className="text-emerald-600 font-bold hover:bg-emerald-50 transition-colors flex items-center text-xs font-semibold"
+                className="px-6 py-3 bg-emerald-50 text-emerald-700 font-bold rounded-xl border border-emerald-100 hover:bg-emerald-100 transition-colors flex items-center"
               >
                 {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 {initialData ? "Lưu thay đổi" : "Lưu phiếu"}
@@ -1157,13 +1162,14 @@ function TransferInModal({ activeSubTab, onClose, onSaved, initialData, enrollme
                 type="button"
                 onClick={() => handleSubmit(null, true)}
                 disabled={saving}
-                className="text-white font-bold hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-100 flex items-center text-xs font-semibold"
+                className="px-6 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-100 flex items-center"
               >
                 {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Thông báo đến GVCN
               </button>
             </div>
           </form>
+
         )}
       </div>
     </div>
