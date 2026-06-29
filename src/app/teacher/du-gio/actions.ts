@@ -581,6 +581,15 @@ export async function approveRegistration(registrationId: string) {
     const registration = await prisma.observationRegistration.findUnique({ where: { id: registrationId }, include: { slot: true } })
     if (!registration) return { success: false, error: "Registration not found" }
     if (registration.slot.teacherId !== currentTeacher.id) return { success: false, error: "Bạn không phải giáo viên chủ trì tiết dạy này" }
+    
+    // Enforce max 4 approved observers limit
+    const approvedCount = await prisma.observationRegistration.count({
+      where: { slotId: registration.slotId, isApproved: true }
+    })
+    if (approvedCount >= 4) {
+      return { success: false, error: "Tiết dạy này đã đạt tối đa 4 giáo viên dự giờ được xác nhận." }
+    }
+
     await prisma.observationRegistration.update({ where: { id: registrationId }, data: { isApproved: true, approvedAt: new Date() } })
     revalidatePath("/teacher/du-gio")
     return { success: true }

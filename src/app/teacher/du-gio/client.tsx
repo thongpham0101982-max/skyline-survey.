@@ -1269,8 +1269,48 @@ export function ObservationClient(props: ObservationClientProps) {
                           </p>
                         </div>
 
+                        {/* Host's Observers list block */}
+                        {isHost && (
+                          <div className="mt-2.5 pt-2.5 border-t border-slate-150 flex flex-col gap-1.5 w-full text-[10px] font-semibold text-slate-500">
+                            <span className="font-black text-[#003B3A] uppercase tracking-wider text-[8px]">
+                              GV đăng ký dự giờ ({slot.registrations.length}/4):
+                            </span>
+                            {slot.registrations.length === 0 ? (
+                              <span className="text-slate-400 italic">Chưa có GV nào đăng ký</span>
+                            ) : (
+                              <div className="flex flex-col gap-1 w-full max-h-[120px] overflow-y-auto pr-0.5 custom-scrollbar">
+                                {slot.registrations.map((reg: any) => {
+                                  const approvedCount = slot.registrations.filter((r: any) => r.isApproved).length;
+                                  return (
+                                    <div key={reg.id} className="flex items-center justify-between bg-slate-50 p-1.5 rounded-lg border border-slate-150 gap-2">
+                                      <div className="min-w-0 flex-1">
+                                        <p className="font-bold text-slate-800 truncate leading-snug">{reg.teacher?.teacherName || "Giáo viên"}</p>
+                                        <p className="text-[8px] text-slate-400 mt-0.5 font-bold">{reg.teacher?.teacherCode || ""}</p>
+                                      </div>
+                                      <div className="shrink-0">
+                                        {reg.isApproved ? (
+                                          <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded font-black text-[8px] uppercase">Đã duyệt</span>
+                                        ) : approvedCount >= 4 ? (
+                                          <span className="px-1.5 py-0.5 bg-slate-100 text-slate-400 border border-slate-200 rounded font-black text-[8px] uppercase">Đầy (Tối đa 4)</span>
+                                        ) : (
+                                          <button 
+                                            onClick={() => handleApprove(reg.id)}
+                                            className="px-2 py-0.5 bg-[#00A99D] hover:bg-[#008b82] text-white rounded font-black text-[8px] uppercase shadow-sm transition-all"
+                                          >
+                                            Xác nhận
+                                          </button>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
                         {/* Actions */}
-                        <div className="flex items-center gap-1.5 mt-1 border-t border-slate-100 pt-2 text-[10px]">
+                        <div className="flex items-center gap-1.5 mt-2 border-t border-slate-100 pt-2 text-[10px] w-full">
                           {isHost ? (
                             <>
                               <button onClick={() => openEditModal(slot)}
@@ -1284,16 +1324,35 @@ export function ObservationClient(props: ObservationClientProps) {
                             </>
                           ) : (
                             <>
-                              {isPastSlot ? (
-                                <button onClick={() => openEvalModal(myReg, slot)}
-                                  className="px-2.5 py-1 bg-[#00A99D] hover:bg-[#008b82] text-white rounded-lg font-black shadow-sm transition-all whitespace-nowrap">
-                                  Nhập đánh giá
-                                </button>
+                              {!myReg?.isApproved ? (
+                                <div className="flex flex-col gap-1.5 w-full">
+                                  <span className="px-2 py-1 text-[8px] font-black uppercase text-amber-700 bg-amber-50 border border-amber-200 rounded-md text-center leading-snug">
+                                    Chờ xác nhận GV tổ chức tiết dạy
+                                  </span>
+                                  <button onClick={() => handleCancelRegistration(myReg?.id)}
+                                    className="px-2.5 py-1 text-rose-600 bg-white border border-rose-200 rounded-lg font-bold hover:bg-rose-50/50 transition-all text-center">
+                                    Hủy đăng ký
+                                  </button>
+                                </div>
                               ) : (
-                                <button onClick={() => handleCancelRegistration(myReg?.id)}
-                                  className="px-2.5 py-1 text-rose-600 bg-white border border-rose-200 rounded-lg font-bold hover:bg-rose-50/50 transition-all">
-                                  Hủy đăng ký
-                                </button>
+                                <>
+                                  {isPastSlot ? (
+                                    <button onClick={() => openEvalModal(myReg, slot)}
+                                      className="px-2.5 py-1 bg-[#00A99D] hover:bg-[#008b82] text-white rounded-lg font-black shadow-sm transition-all whitespace-nowrap w-full text-center">
+                                      Nhập đánh giá
+                                    </button>
+                                  ) : (
+                                    <div className="flex flex-col gap-1.5 w-full">
+                                      <span className="px-2 py-1 text-[8px] font-black uppercase text-emerald-700 bg-emerald-50 border border-emerald-250 rounded-md text-center leading-snug">
+                                        Đã xác nhận dự giờ
+                                      </span>
+                                      <button onClick={() => handleCancelRegistration(myReg?.id)}
+                                        className="px-2.5 py-1 text-rose-600 bg-white border border-rose-200 rounded-lg font-bold hover:bg-rose-50/50 transition-all text-center">
+                                        Hủy đăng ký
+                                      </button>
+                                    </div>
+                                  )}
+                                </>
                               )}
                             </>
                           )}
