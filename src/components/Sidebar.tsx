@@ -15,7 +15,9 @@ import {
   X,
   ChevronDown,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Compass,
+  BookOpen
 } from "lucide-react"
 import { APP_CATEGORIES } from "@/config/modules"
 
@@ -25,9 +27,10 @@ interface SidebarProps {
   actualRole?: string
   taskCount?: number
   isTTCM?: boolean
+  isGVCN?: boolean
 }
 
-function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, isTTCM = false }: SidebarProps) {
+function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, isTTCM = false, isGVCN = false }: SidebarProps) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const typeParam = searchParams?.get("type")
@@ -232,88 +235,144 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
 
           {role === "TEACHER" && (
             <>
-              <div className="pt-4">
-                <div className="px-3 py-2">
-                  {!isCollapsed ? <span className="text-[10px] font-bold text-white/60 uppercase tracking-[0.1em]">Lớp học</span> : <span className="w-full text-center text-white/50 block text-xs">•••</span>}
-                </div>
-                <Link href="/teacher/classes" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/classes') ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"}`}>
-                  <Layers className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/classes') ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
-                  {!isCollapsed && <span>Lớp học của tôi</span>}
-                </Link>
-              </div>
-              
-              {checkPermission("INPUT_ASSESSMENTS") && (
-                <div className="pt-4">
+              {/* Category A. Công tác GVCN - Only show if isGVCN is true */}
+              {isGVCN && (
+                <div className="pt-4 border-b border-white/10 pb-4">
                   <div className="px-3 py-2">
-                    {!isCollapsed ? <span className="text-[10px] font-bold text-white/60 uppercase tracking-[0.1em]">Khảo sát đầu vào</span> : <span className="w-full text-center text-white/50 block text-xs">•••</span>}
+                    {!isCollapsed ? (
+                      <span className="text-[10px] font-extrabold text-[#00A99D] uppercase tracking-[0.1em]">
+                        A. Công tác GVCN
+                      </span>
+                    ) : (
+                      <span className="w-full text-center text-[#00A99D] block text-[10px] font-bold">A</span>
+                    )}
                   </div>
-                  {loadingAssignments ? (
-                    <Link href="/teacher/input-assessments?type=general" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool' ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"}`}>
-                      <ClipboardCheck className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool' ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
-                      {!isCollapsed && <span>Đang tải khảo sát...</span>}
-                    </Link>
-                  ) : (
-                    <>
-                      {hasPreschool && (
-                        <Link href="/teacher/input-assessments?type=preschool" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/input-assessments') && typeParam === 'preschool' ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"} mb-1`}>
-                          <ClipboardCheck className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/input-assessments') && typeParam === 'preschool' ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
-                          {!isCollapsed && <span>KSNL Đầu vào Mầm non</span>}
-                        </Link>
-                      )}
-                      {hasGeneral && (
-                        <Link href="/teacher/input-assessments?type=general" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool' ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"}`}>
-                          <ClipboardCheck className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool' ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
-                          {!isCollapsed && <span>Phổ thông K-12</span>}
-                        </Link>
-                      )}
-                      {!hasPreschool && !hasGeneral && (
-                        <Link href="/teacher/input-assessments?type=general" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool' ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"}`}>
-                          <ClipboardCheck className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool' ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
-                          {!isCollapsed && <span>Phổ thông K-12</span>}
-                        </Link>
-                      )}
-                    </>
-                  )}
+                  
+                  {/* 1. Lớp chủ nhiệm */}
+                  <Link 
+                    href="/teacher/classes" 
+                    onClick={() => setIsOpen(false)} 
+                    className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${
+                      pathname.includes('/teacher/classes') 
+                        ? "bg-white/20 text-white border border-[#135E5B]/30" 
+                        : "text-white/70 hover:text-white hover:bg-white/10"
+                    } mb-1`}
+                  >
+                    <Layers className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/classes') ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
+                    {!isCollapsed && <span>1. Lớp chủ nhiệm</span>}
+                  </Link>
+
+                  {/* 2. NSP Khảo sát */}
+                  <Link 
+                    href="/teacher/surveys" 
+                    onClick={() => setIsOpen(false)} 
+                    className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${
+                      (pathname.includes('/teacher/surveys') || pathname.includes('/teacher/nps') || pathname.includes('/teacher/feedback')) 
+                        ? "bg-white/20 text-white border border-[#135E5B]/30" 
+                        : "text-white/70 hover:text-white hover:bg-white/10"
+                    } mb-1`}
+                  >
+                    <FileText className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${(pathname.includes('/teacher/surveys') || pathname.includes('/teacher/nps') || pathname.includes('/teacher/feedback')) ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
+                    {!isCollapsed && <span>2. NSP Khảo sát</span>}
+                  </Link>
+
+                  {/* 3. Nhận xét nổi bật */}
+                  <Link 
+                    href="/teacher/nhan-xet-noi-bat" 
+                    onClick={() => setIsOpen(false)} 
+                    className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${
+                      pathname.includes('/teacher/nhan-xet-noi-bat') 
+                        ? "bg-white/20 text-white border border-[#135E5B]/30" 
+                        : "text-white/70 hover:text-white hover:bg-white/10"
+                    } mb-1`}
+                  >
+                    <MessageSquare className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/nhan-xet-noi-bat') ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
+                    {!isCollapsed && <span>3. Nhận xét nổi bật</span>}
+                  </Link>
+
+                  {/* 4. Hồ sơ Học sinh */}
+                  <Link 
+                    href="/teacher/ho-so-hoc-sinh" 
+                    onClick={() => setIsOpen(false)} 
+                    className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${
+                      pathname.includes('/teacher/ho-so-hoc-sinh') 
+                        ? "bg-white/20 text-white border border-[#135E5B]/30" 
+                        : "text-white/70 hover:text-white hover:bg-white/10"
+                    }`}
+                  >
+                    <ClipboardCheck className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/ho-so-hoc-sinh') ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
+                    {!isCollapsed && <span>4. Hồ sơ Học sinh</span>}
+                  </Link>
                 </div>
               )}
-              
+
+              {/* Category B. Công tác GVBM */}
               <div className="pt-4">
                 <div className="px-3 py-2">
-                  {!isCollapsed ? <span className="text-[10px] font-bold text-white/60 uppercase tracking-[0.1em]">Khảo sát</span> : <span className="w-full text-center text-white/50 block text-xs">•••</span>}
+                  {!isCollapsed ? (
+                    <span className="text-[10px] font-extrabold text-[#00A99D] uppercase tracking-[0.1em]">
+                      B. Công tác GVBM
+                    </span>
+                  ) : (
+                    <span className="w-full text-center text-[#00A99D] block text-[10px] font-bold">B</span>
+                  )}
                 </div>
-                <Link 
-                  href="/teacher/surveys" 
-                  onClick={() => setIsOpen(false)} 
-                  className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${
-                    (pathname.includes('/teacher/surveys') || pathname.includes('/teacher/nps') || pathname.includes('/teacher/feedback')) 
-                      ? "bg-white/20 text-white border border-[#135E5B]/30" 
-                      : "text-white/70 hover:text-white hover:bg-white/10"
-                  }`}
-                >
-                  <FileText className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${(pathname.includes('/teacher/surveys') || pathname.includes('/teacher/nps') || pathname.includes('/teacher/feedback')) ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
-                  {!isCollapsed && <span>Quản lý Khảo sát</span>}
+
+                {/* 1. Khảo sát đầu vào */}
+                {checkPermission("INPUT_ASSESSMENTS") && (
+                  <div className="mb-1">
+                    {loadingAssignments ? (
+                      <Link href="/teacher/input-assessments?type=general" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool' ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"}`}>
+                        <ClipboardCheck className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool' ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
+                        {!isCollapsed && <span>1. Đang tải...</span>}
+                      </Link>
+                    ) : (
+                      <>
+                        {hasPreschool && (
+                          <Link href="/teacher/input-assessments?type=preschool" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/input-assessments') && typeParam === 'preschool' ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"} mb-1`}>
+                            <ClipboardCheck className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/input-assessments') && typeParam === 'preschool' ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
+                            {!isCollapsed && <span>1. Mầm non</span>}
+                          </Link>
+                        )}
+                        {hasGeneral && (
+                          <Link href="/teacher/input-assessments?type=general" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool' ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"}`}>
+                            <ClipboardCheck className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool' ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
+                            {!isCollapsed && <span>1. Khảo sát đầu vào</span>}
+                          </Link>
+                        )}
+                        {!hasPreschool && !hasGeneral && (
+                          <Link href="/teacher/input-assessments?type=general" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool' ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"}`}>
+                            <ClipboardCheck className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool' ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
+                            {!isCollapsed && <span>1. Khảo sát đầu vào</span>}
+                          </Link>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {/* 2. Dự giờ Giáo viên */}
+                <Link href="/teacher/du-gio" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/du-gio') ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"} mb-1`}>
+                  <ClipboardCheck className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/du-gio') ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
+                  {!isCollapsed && <span>2. Dự giờ Giáo viên</span>}
                 </Link>
-              </div>
-              
-              <div className="pt-4">
-                <div className="px-3 py-2">
-                  {!isCollapsed ? <span className="text-[10px] font-bold text-white/60 uppercase tracking-[0.1em]">Dự giờ Giáo viên</span> : <span className="w-full text-center text-white/50 block text-xs">•••</span>}
-                </div>
-                <Link href="/teacher/du-gio" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname === '/teacher/du-gio' && !searchParams?.get("tab") ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"} mb-1`}>
-                  <ClipboardCheck className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname === '/teacher/du-gio' && !searchParams?.get("tab") ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
-                  {!isCollapsed && <span>Đăng ký dự giờ</span>}
+
+                {/* 3. Đánh giá nhận xét: Hướng nghiệp */}
+                <Link href="/teacher/orientation" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/orientation') ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"} mb-1`}>
+                  <Compass className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/orientation') ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
+                  {!isCollapsed && <span>3. Hướng nghiệp</span>}
                 </Link>
-                <Link href="/teacher/du-gio?tab=my-schedule" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname === '/teacher/du-gio' && searchParams?.get("tab") === 'my-schedule' ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"} mb-1`}>
-                  <Layers className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname === '/teacher/du-gio' && searchParams?.get("tab") === 'my-schedule' ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
-                  {!isCollapsed && <span>Lịch của tôi</span>}
+
+                {/* 4. Dự án & Trải nghiệm */}
+                <Link href="/teacher/du-an-trai-nghiem" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/du-an-trai-nghiem') ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"} mb-1`} >
+                  <BookOpen className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/du-an-trai-nghiem') ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
+                  {!isCollapsed && <span>4. Dự án & Trải nghiệm</span>}
                 </Link>
-                <Link href="/teacher/du-gio?tab=history" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname === '/teacher/du-gio' && searchParams?.get("tab") === 'history' ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"}`}>
-                  <FileText className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname === '/teacher/du-gio' && searchParams?.get("tab") === 'history' ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
-                  {!isCollapsed && <span>Lịch sử đăng ký</span>}
-                </Link>
-                <Link href="/teacher/du-gio?tab=tong-hop" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname === '/teacher/du-gio' && searchParams?.get("tab") === 'tong-hop' ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"} mt-1`}>
-                  <PieChart className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname === '/teacher/du-gio' && searchParams?.get("tab") === 'tong-hop' ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
-                  {!isCollapsed && <span>Tổng hợp dự giờ</span>}
+
+                {/* 5. Cam kết học tập */}
+                <Link href="/teacher/cam-ket-hoc-tap" onClick={() => setIsOpen(false)} className={`group flex items-center px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${pathname.includes('/teacher/cam-ket-hoc-tap') ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"}`}>
+                  <FileText className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.includes('/teacher/cam-ket-hoc-tap') ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
+                  {!isCollapsed && <span>5. Cam kết học tập</span>}
                 </Link>
               </div>
             </>

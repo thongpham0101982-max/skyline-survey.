@@ -5,6 +5,7 @@ import { NotificationBell } from "@/components/NotificationBell"
 import { auth } from "@/lib/auth"
 import { UserMenu } from "@/components/UserMenu"
 import { AcademicYearSelector } from "@/components/AcademicYearSelector"
+import { prisma } from "@/lib/db"
 export default async function TeacherLayout({ children }: { children: React.ReactNode }) {
   let session: any = null;
   try {
@@ -13,9 +14,30 @@ export default async function TeacherLayout({ children }: { children: React.Reac
     console.error("Auth fail in TeacherLayout:", e);
   }
   const roleCode = (session?.user as any)?.role || "TEACHER"
+
+  let isGVCN = false
+  if (session?.user?.id) {
+    try {
+      const teacher = await prisma.teacher.findUnique({ where: { userId: session.user.id } })
+      if (teacher) {
+        const homeroomClassesCount = await prisma.class.count({
+          where: {
+            OR: [
+              { homeroomTeacherId: teacher.id },
+              { homeroomTeacherId: { contains: teacher.id } }
+            ]
+          }
+        })
+        isGVCN = homeroomClassesCount > 0
+      }
+    } catch (err) {
+      console.error("Error querying isGVCN in layout:", err)
+    }
+  }
+
   return (
     <div className="flex min-h-screen text-xs font-semibold">
-      <Sidebar role="TEACHER" actualRole={roleCode} />
+      <Sidebar role="TEACHER" actualRole={roleCode} isGVCN={isGVCN} />
       <main className="flex-1 flex flex-col relative min-w-0 overflow-hidden">
         {/* Top Header */}
         <header className="h-16 border-b border-slate-200 bg-white/80 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between px-6 shrink-0">

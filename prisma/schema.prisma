@@ -188,6 +188,10 @@ model Student {
   //  user           User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
   exams            ExamStudent[]
   achievements     StudentAchievement[]
+  careerOrientations   StudentCareerOrientation[]
+  projectExperiences   StudentProjectExperience[]
+  learningCommitments  StudentLearningCommitment[]
+  highlightComments    StudentHighlightComment[]
 
   @@index([classId])
   @@index([campusId])
@@ -1232,4 +1236,64 @@ model AuditLog {
 
   @@index([userId])
   @@index([targetTable, targetId])
+}
+
+model StudentCareerOrientation {
+  id             String   @id @default(cuid())
+  studentId      String
+  student        Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  teacherId      String
+  teacherName    String
+  result         String
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([studentId])
+  @@index([studentId])
+}
+
+model StudentProjectExperience {
+  id             String   @id @default(cuid())
+  studentId      String
+  student        Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  teacherId      String
+  teacherName    String
+  projectName    String
+  role           String?
+  result         String
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([studentId])
+}
+
+model StudentLearningCommitment {
+  id             String   @id @default(cuid())
+  studentId      String
+  student        Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  teacherId      String
+  teacherName    String
+  content        String
+  status         String   @default("ACTIVE")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([studentId])
+  @@index([studentId])
+}
+
+model StudentHighlightComment {
+  id             String   @id @default(cuid())
+  studentId      String
+  student        Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  teacherId      String
+  teacherName    String
+  comment        String
+  category       String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([studentId])
 }
