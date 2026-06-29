@@ -2949,7 +2949,7 @@ ${reportForm.directorNote}`;
     return { CS1, CS2, CS3, CS4, CS5, total };
   }, [filteredReportStudents, periods, campuses, reportBatches]);
 
-      const campusOverallTotal = useMemo(() => {
+        const campusOverallTotal = useMemo(() => {
     let CS1 = 0;
     let CS2 = 0;
     let CS3 = 0;
@@ -2971,6 +2971,58 @@ ${reportForm.directorNote}`;
 
     return { CS1, CS2, CS3, CS4, CS5, total };
   }, [filteredReportStudents, resolveStudentCampusId, campuses]);
+
+  const enrollmentStats = useMemo(() => {
+    let g1_passed = 0; let g1_enrolled = 0;
+    let g6_passed = 0; let g6_enrolled = 0;
+    let g10_passed = 0; let g10_enrolled = 0;
+    let other_passed = 0; let other_enrolled = 0;
+    let total_passed = 0; let total_enrolled = 0;
+
+    filteredReportStudents.forEach(s => {
+      const isPassed = s.admissionResult === "Đạt" || s.admissionResult === "Đạt cam kết";
+      if (!isPassed) return;
+
+      total_passed++;
+      const isEnrolled = s.enrollmentStatus === "COMPLETED";
+      if (isEnrolled) total_enrolled++;
+
+      let g = String(s.grade || "").trim();
+      const match = g.match(/\d+/);
+      if (match) {
+        g = match[0];
+      }
+
+      if (g === "1") {
+        g1_passed++;
+        if (isEnrolled) g1_enrolled++;
+      } else if (g === "6") {
+        g6_passed++;
+        if (isEnrolled) g6_enrolled++;
+      } else if (g === "10") {
+        g10_passed++;
+        if (isEnrolled) g10_enrolled++;
+      } else {
+        other_passed++;
+        if (isEnrolled) other_enrolled++;
+      }
+    });
+
+    const overallRate = total_passed > 0 ? Math.round((total_enrolled / total_passed) * 100) : 0;
+    const g1Rate = g1_passed > 0 ? Math.round((g1_enrolled / g1_passed) * 100) : 0;
+    const g6Rate = g6_passed > 0 ? Math.round((g6_enrolled / g6_passed) * 100) : 0;
+    const g10Rate = g10_passed > 0 ? Math.round((g10_enrolled / g10_passed) * 100) : 0;
+    const otherRate = other_passed > 0 ? Math.round((other_enrolled / other_passed) * 100) : 0;
+
+    return {
+      total_passed, total_enrolled, overallRate,
+      g1_passed, g1_enrolled, g1Rate,
+      g6_passed, g6_enrolled, g6Rate,
+      g10_passed, g10_enrolled, g10Rate,
+      other_passed, other_enrolled, otherRate
+    };
+  }, [filteredReportStudents]);
+
 
 
     const gradeStats = useMemo(() => {
@@ -5349,7 +5401,7 @@ return {
           {reportsSubTab === "stats" ? (
             <div className="space-y-8 animate-in fade-in duration-300 bg-gradient-to-br from-slate-50 via-white to-teal-50/10 text-slate-800 p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm">
               {/* KPI Cards Row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 {/* Card 1: Tổng Học sinh */}
                 <div className="relative overflow-hidden bg-white p-6 rounded-2xl border border-slate-200 border-l-4 border-l-blue-500 shadow-sm flex flex-col justify-between group hover:-translate-y-1 hover:shadow-md transition-all duration-300">
                   <div className="flex items-center justify-between">
@@ -5365,10 +5417,10 @@ return {
                 </div>
 
                 {/* Card 2: Kết quả Khảo sát */}
-                <div className="relative overflow-hidden bg-white p-6 rounded-2xl border border-slate-200 border-l-4 border-l-emerald-500 shadow-sm flex flex-col justify-between group hover:-translate-y-1 hover:shadow-md transition-all duration-300">
+                <div className="relative overflow-hidden bg-white p-6 rounded-2xl border border-slate-200 border-l-4 border-l-purple-500 shadow-sm flex flex-col justify-between group hover:-translate-y-1 hover:shadow-md transition-all duration-300">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Kết quả Khảo sát K-12</span>
-                    <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl transition-all duration-300 group-hover:scale-110 group-hover:bg-emerald-100">
+                    <div className="p-2.5 bg-purple-50 text-purple-600 rounded-xl transition-all duration-300 group-hover:scale-110 group-hover:bg-purple-100">
                       <GraduationCap className="w-4 h-4" />
                     </div>
                   </div>
@@ -5387,6 +5439,20 @@ return {
                       <span className="text-3xl font-black text-rose-600">{overallKPIs.failed}</span>
                       <span className="text-[9px] text-rose-600/70 font-bold uppercase tracking-wider">Không Đạt</span>
                     </div>
+                  </div>
+                </div>
+
+                {/* Card 3: Thống kê Nhập học */}
+                <div className="relative overflow-hidden bg-white p-6 rounded-2xl border border-slate-200 border-l-4 border-l-emerald-500 shadow-sm flex flex-col justify-between group hover:-translate-y-1 hover:shadow-md transition-all duration-300">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Thống kê Nhập học (Đạt/Cam kết)</span>
+                    <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl transition-all duration-300 group-hover:scale-110 group-hover:bg-emerald-100">
+                      <UserCheck className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div className="flex items-baseline gap-1 mt-4">
+                    <span className="text-4xl font-black text-slate-800 tracking-tight">{enrollmentStats.total_enrolled}</span>
+                    <span className="text-xs text-slate-405 font-bold">/ {enrollmentStats.total_passed} HS nhập học ({enrollmentStats.overallRate}%)</span>
                   </div>
                 </div>
               </div>
@@ -5509,173 +5575,215 @@ return {
                 </div>
               </div>
 
-              {/* Chart Card */}
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 overflow-hidden hover:shadow-md transition-all duration-300">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 border-b border-slate-100 pb-4 gap-3">
-                  <h4 className="font-black text-slate-800 text-sm tracking-tight uppercase flex items-center gap-2.5">
-                    <span className="flex h-2 w-2 relative">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
-                    </span>
-                    Biểu đồ theo dõi Học sinh Khảo sát theo Khối của các Cơ sở
-                  </h4>
-                  <div className="flex items-center gap-2 self-end sm:self-auto">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest hidden sm:inline-block">Hiển thị:</span>
-                    <select
-                      value={chartCampusId}
-                      onChange={e => setChartCampusId(e.target.value)}
-                      className="bg-slate-50 border border-slate-200 rounded-xl text-[10px] font-black text-slate-700 py-1.5 px-3 outline-none cursor-pointer hover:border-slate-300 transition-colors shadow-sm"
-                    >
-                      <option value="all">Tất cả các cơ sở</option>
-                      <option value="CS1">Cơ sở 1</option>
-                      <option value="CS2">Cơ sở 2</option>
-                      <option value="CS3">Cơ sở 3</option>
-                      <option value="CS4">Cơ sở 4</option>
-                      <option value="CS5">Cơ sở 5</option>
-                    </select>
+              {/* Chart & Enrollment Breakdown Row */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Chart Card */}
+                <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 overflow-hidden hover:shadow-md transition-all duration-300">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 border-b border-slate-100 pb-4 gap-3">
+                    <h4 className="font-black text-slate-800 text-sm tracking-tight uppercase flex items-center gap-2.5">
+                      <span className="flex h-2 w-2 relative">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
+                      </span>
+                      Biểu đồ theo dõi Học sinh Khảo sát theo Khối của các Cơ sở
+                    </h4>
+                    <div className="flex items-center gap-2 self-end sm:self-auto">
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest hidden sm:inline-block">Hiển thị:</span>
+                      <select
+                        value={chartCampusId}
+                        onChange={e => setChartCampusId(e.target.value)}
+                        className="bg-slate-50 border border-slate-200 rounded-xl text-[10px] font-black text-slate-700 py-1.5 px-3 outline-none cursor-pointer hover:border-slate-300 transition-colors shadow-sm"
+                      >
+                        <option value="all">Tất cả các cơ sở</option>
+                        <option value="CS1">Cơ sở 1</option>
+                        <option value="CS2">Cơ sở 2</option>
+                        <option value="CS3">Cơ sở 3</option>
+                        <option value="CS4">Cơ sở 4</option>
+                        <option value="CS5">Cơ sở 5</option>
+                      </select>
+                    </div>
                   </div>
-                </div>
-                <div className="h-80 w-full text-xs">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={gradeStats} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.15}/>
-                          <stop offset="95%" stopColor="#4f46e5" stopOpacity={0.02}/>
-                        </linearGradient>
-                        <linearGradient id="colorSurveyed" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#00A99D" stopOpacity={0.8}/>
-                          <stop offset="95%" stopColor="#00A99D" stopOpacity={0.2}/>
-                        </linearGradient>
-                        <linearGradient id="colorChung" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#94a3b8" stopOpacity={0.2}/>
-                          <stop offset="95%" stopColor="#94a3b8" stopOpacity={0.02}/>
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#f1f5f9" />
-                      <XAxis 
-                        dataKey="grade" 
-                        stroke="#64748b" 
-                        fontSize={10} 
-                        tickLine={false} 
-                        axisLine={false} 
-                        dy={8} 
-                        className="font-semibold" 
-                        tickFormatter={(tick) => {
-                          const stat = gradeStats.find(item => item.grade === tick);
-                          if (!stat || stat.total === 0) return tick;
-                          return `${tick} (${stat.total} HS)`;
-                        }}
-                      />
-                      
-                      {/* Left Y-axis: counts */}
-                      <YAxis yAxisId="left" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} allowDecimals={false} className="font-semibold" />
-                      
-                      <Tooltip
-                        content={({ active, payload, label }) => {
-                          if (active && payload && payload.length) {
-                            const stat = gradeStats.find(g => g.grade === label);
-                            if (!stat) return null;
-                            
-                            const overallTotal = campusOverallTotal.total;
-                            const gradePct = overallTotal > 0 ? ((stat.total / overallTotal) * 100).toFixed(1) : "0";
-                            
-                            if (chartCampusId === "all") {
-                              return (
-                                <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-lg text-xs font-semibold text-slate-800 space-y-2">
-                                  <div className="font-black text-sm border-b border-slate-100 pb-1.5 flex justify-between gap-4">
-                                    <span>{stat.grade}</span>
-                                    <span className="text-indigo-650">{stat.total}/{overallTotal} HS ({gradePct}%)</span>
-                                  </div>
-                                  
-                                  <div className="space-y-1.5 pt-1">
-                                    <div className="flex justify-between gap-4 text-slate-400 text-[9px] font-black uppercase tracking-wider">
-                                      <span>Cơ sở (Tổng HS Cơ sở)</span>
-                                      <span>Số HS trong Khối / Tổng Cơ sở</span>
+                  <div className="h-80 w-full text-xs">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ComposedChart data={gradeStats} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.15}/>
+                            <stop offset="95%" stopColor="#4f46e5" stopOpacity={0.02}/>
+                          </linearGradient>
+                          <linearGradient id="colorSurveyed" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#00A99D" stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor="#00A99D" stopOpacity={0.2}/>
+                          </linearGradient>
+                          <linearGradient id="colorChung" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#94a3b8" stopOpacity={0.2}/>
+                            <stop offset="95%" stopColor="#94a3b8" stopOpacity={0.02}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#f1f5f9" />
+                        <XAxis 
+                          dataKey="grade" 
+                          stroke="#64748b" 
+                          fontSize={10} 
+                          tickLine={false} 
+                          axisLine={false} 
+                          dy={8} 
+                          className="font-semibold" 
+                          tickFormatter={(tick) => {
+                            const stat = gradeStats.find(item => item.grade === tick);
+                            if (!stat || stat.total === 0) return tick;
+                            return `${tick} (${stat.total} HS)`;
+                          }}
+                        />
+                        
+                        {/* Left Y-axis: counts */}
+                        <YAxis yAxisId="left" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} allowDecimals={false} className="font-semibold" />
+                        
+                        <Tooltip
+                          content={({ active, payload, label }) => {
+                            if (active && payload && payload.length) {
+                              const stat = gradeStats.find(g => g.grade === label);
+                              if (!stat) return null;
+                              
+                              const overallTotal = campusOverallTotal.total;
+                              const gradePct = overallTotal > 0 ? ((stat.total / overallTotal) * 100).toFixed(1) : "0";
+                              
+                              if (chartCampusId === "all") {
+                                return (
+                                  <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-lg text-xs font-semibold text-slate-800 space-y-2">
+                                    <div className="font-black text-sm border-b border-slate-100 pb-1.5 flex justify-between gap-4">
+                                      <span>{stat.grade}</span>
+                                      <span className="text-indigo-650">{stat.total}/{overallTotal} HS ({gradePct}%)</span>
                                     </div>
                                     
-                                    {[
-                                      { code: "CS1", name: "Cơ sở 1", color: "bg-teal-500", total: campusOverallTotal.CS1, count: stat.CS1_total },
-                                      { code: "CS2", name: "Cơ sở 2", color: "bg-pink-500", total: campusOverallTotal.CS2, count: stat.CS2_total },
-                                      { code: "CS3", name: "Cơ sở 3", color: "bg-purple-500", total: campusOverallTotal.CS3, count: stat.CS3_total },
-                                      { code: "CS4", name: "Cơ sở 4", color: "bg-amber-500", total: campusOverallTotal.CS4, count: stat.CS4_total },
-                                      { code: "CS5", name: "Cơ sở 5", color: "bg-blue-500", total: campusOverallTotal.CS5, count: stat.CS5_total }
-                                    ].map(cs => {
-                                      const csPctOfCampus = cs.total > 0 ? ((cs.count / cs.total) * 100).toFixed(1) : "0";
-                                      const csPctOfTotal = overallTotal > 0 ? ((cs.total / overallTotal) * 100).toFixed(1) : "0";
-                                      return (
-                                        <div key={cs.code} className="flex justify-between items-center py-0.5">
-                                          <div className="flex items-center gap-1.5">
-                                            <span className={`w-2 h-2 rounded-full ${
-                                              cs.code === "CS1" ? "bg-teal-500" :
-                                              cs.code === "CS2" ? "bg-pink-500" :
-                                              cs.code === "CS3" ? "bg-purple-500" :
-                                              cs.code === "CS4" ? "bg-amber-500" : "bg-blue-500"
-                                            }`}></span>
-                                            <span className="font-bold text-slate-700">{cs.name} ({cs.total}/{overallTotal} HS - {csPctOfTotal}%)</span>
+                                    <div className="space-y-1.5 pt-1">
+                                      <div className="flex justify-between gap-4 text-slate-400 text-[9px] font-black uppercase tracking-wider">
+                                        <span>Cơ sở (Tổng HS Cơ sở)</span>
+                                        <span>Số HS trong Khối / Tổng Cơ sở</span>
+                                      </div>
+                                      
+                                      {[
+                                        { code: "CS1", name: "Cơ sở 1", color: "bg-teal-500", total: campusOverallTotal.CS1, count: stat.CS1_total },
+                                        { code: "CS2", name: "Cơ sở 2", color: "bg-pink-500", total: campusOverallTotal.CS2, count: stat.CS2_total },
+                                        { code: "CS3", name: "Cơ sở 3", color: "bg-purple-500", total: campusOverallTotal.CS3, count: stat.CS3_total },
+                                        { code: "CS4", name: "Cơ sở 4", color: "bg-amber-500", total: campusOverallTotal.CS4, count: stat.CS4_total },
+                                        { code: "CS5", name: "Cơ sở 5", color: "bg-blue-500", total: campusOverallTotal.CS5, count: stat.CS5_total }
+                                      ].map(cs => {
+                                        const csPctOfCampus = cs.total > 0 ? ((cs.count / cs.total) * 100).toFixed(1) : "0";
+                                        const csPctOfTotal = overallTotal > 0 ? ((cs.total / overallTotal) * 100).toFixed(1) : "0";
+                                        return (
+                                          <div key={cs.code} className="flex justify-between items-center py-0.5">
+                                            <div className="flex items-center gap-1.5">
+                                              <span className={`w-2 h-2 rounded-full ${
+                                                cs.code === "CS1" ? "bg-teal-500" :
+                                                cs.code === "CS2" ? "bg-pink-500" :
+                                                cs.code === "CS3" ? "bg-purple-500" :
+                                                cs.code === "CS4" ? "bg-amber-500" : "bg-blue-500"
+                                              }`}></span>
+                                              <span className="font-bold text-slate-700">{cs.name} ({cs.total}/{overallTotal} HS - {csPctOfTotal}%)</span>
+                                            </div>
+                                            <span className="font-extrabold text-slate-850">{cs.count}/{cs.total} HS ({csPctOfCampus}%)</span>
                                           </div>
-                                          <span className="font-extrabold text-slate-850">{cs.count}/{cs.total} HS ({csPctOfCampus}%)</span>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                </div>
-                              );
-                            } else {
-                              const campusCode = chartCampusId;
-                              const campusTotal = campusOverallTotal[campusCode] || 0;
-                              const campusGradeTotal = stat[`${campusCode}_total`] || 0;
-                              const campusGradePct = campusTotal > 0 ? ((campusGradeTotal / campusTotal) * 100).toFixed(1) : "0";
-                              
-                              let campusName = "Cơ sở";
-                              if (campusCode === "CS1") campusName = "Cơ sở 1";
-                              else if (campusCode === "CS2") campusName = "Cơ sở 2";
-                              else if (campusCode === "CS3") campusName = "Cơ sở 3";
-                              else if (campusCode === "CS4") campusName = "Cơ sở 4";
-                              else if (campusCode === "CS5") campusName = "Cơ sở 5";
-                              
-                              return (
-                                <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-lg text-xs font-semibold text-slate-800 space-y-2">
-                                  <div className="font-black text-sm border-b border-slate-100 pb-1.5 flex justify-between gap-4">
-                                    <span>{stat.grade} - {campusName}</span>
-                                    <span className="text-teal-650">{campusGradeTotal}/{campusTotal} HS ({campusGradePct}%)</span>
-                                  </div>
-                                  <div className="space-y-1.5 pt-1">
-                                    <div className="flex justify-between py-0.5">
-                                      <span className="text-slate-500 font-bold">Số HS Khảo sát:</span>
-                                      <span className="font-extrabold text-slate-850">{campusGradeTotal} HS</span>
-                                    </div>
-                                    <div className="flex justify-between py-0.5 border-t border-slate-100/50 mt-1 pt-1">
-                                      <span className="text-slate-550 font-bold">Tỷ lệ trong tổng Khối khảo sát:</span>
-                                      <span className="font-extrabold text-slate-800">{stat.total > 0 ? ((campusGradeTotal / stat.total) * 100).toFixed(1) : 0}%</span>
+                                        );
+                                      })}
                                     </div>
                                   </div>
-                                </div>
-                              );
+                                );
+                              } else {
+                                const campusCode = chartCampusId;
+                                const campusTotal = campusOverallTotal[campusCode] || 0;
+                                const campusGradeTotal = stat[`${campusCode}_total`] || 0;
+                                const campusGradePct = campusTotal > 0 ? ((campusGradeTotal / campusTotal) * 100).toFixed(1) : "0";
+                                
+                                let campusName = "Cơ sở";
+                                if (campusCode === "CS1") campusName = "Cơ sở 1";
+                                else if (campusCode === "CS2") campusName = "Cơ sở 2";
+                                else if (campusCode === "CS3") campusName = "Cơ sở 3";
+                                else if (campusCode === "CS4") campusName = "Cơ sở 4";
+                                else if (campusCode === "CS5") campusName = "Cơ sở 5";
+                                
+                                return (
+                                  <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-lg text-xs font-semibold text-slate-800 space-y-2">
+                                    <div className="font-black text-sm border-b border-slate-100 pb-1.5 flex justify-between gap-4">
+                                      <span>{stat.grade} - {campusName}</span>
+                                      <span className="text-teal-650">{campusGradeTotal}/{campusTotal} HS ({campusGradePct}%)</span>
+                                    </div>
+                                    <div className="space-y-1.5 pt-1">
+                                      <div className="flex justify-between py-0.5">
+                                        <span className="text-slate-500 font-bold">Số HS Khảo sát:</span>
+                                        <span className="font-extrabold text-slate-850">{campusGradeTotal} HS</span>
+                                      </div>
+                                      <div className="flex justify-between py-0.5 border-t border-slate-100/50 mt-1 pt-1">
+                                        <span className="text-slate-550 font-bold">Tỷ lệ trong tổng Khối khảo sát:</span>
+                                        <span className="font-extrabold text-slate-800">{stat.total > 0 ? ((campusGradeTotal / stat.total) * 100).toFixed(1) : 0}%</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              }
                             }
-                          }
-                          return null;
-                        }}
-                      />
-                      <Legend verticalAlign="top" height={36} iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "10px", fontWeight: "bold", paddingBottom: "10px" }} />
-                      
-                      {chartCampusId === "all" ? (
-                        <>
-                          <Bar yAxisId="left" dataKey="total" fill="url(#colorTotal)" radius={[4, 4, 0, 0]} barSize={26} name="Tổng Học sinh" />
-                          <Line yAxisId="left" type="monotone" dataKey="CS1_total" stroke="#00A99D" strokeWidth={3} dot={{ r: 3, strokeWidth: 1.5, fill: "#ffffff" }} activeDot={{ r: 6 }} name="Cơ sở 1" />
-                          <Line yAxisId="left" type="monotone" dataKey="CS2_total" stroke="#db2777" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 2" />
-                          <Line yAxisId="left" type="monotone" dataKey="CS3_total" stroke="#7c3aed" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 3" />
-                          <Line yAxisId="left" type="monotone" dataKey="CS4_total" stroke="#d97706" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 4" />
-                          <Line yAxisId="left" type="monotone" dataKey="CS5_total" stroke="#2563eb" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 5" />
-                        </>
-                      ) : (
-                        <>
-                          <Bar yAxisId="left" dataKey={`${chartCampusId}_total`} fill="url(#colorTotal)" radius={[4, 4, 0, 0]} barSize={20} name="Tổng Học sinh" />
-                          <Bar yAxisId="left" dataKey={chartCampusId} fill="url(#colorSurveyed)" radius={[4, 4, 0, 0]} barSize={20} name="Đã Khảo sát" />
-                        </>
-                      )}
-                    </ComposedChart>
-                  </ResponsiveContainer>
+                            return null;
+                          }}
+                        />
+                        <Legend verticalAlign="top" height={36} iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "10px", fontWeight: "bold", paddingBottom: "10px" }} />
+                        
+                        {chartCampusId === "all" ? (
+                          <>
+                            <Bar yAxisId="left" dataKey="total" fill="url(#colorTotal)" radius={[4, 4, 0, 0]} barSize={26} name="Tổng Học sinh" />
+                            <Line yAxisId="left" type="monotone" dataKey="CS1_total" stroke="#00A99D" strokeWidth={3} dot={{ r: 3, strokeWidth: 1.5, fill: "#ffffff" }} activeDot={{ r: 6 }} name="Cơ sở 1" />
+                            <Line yAxisId="left" type="monotone" dataKey="CS2_total" stroke="#db2777" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 2" />
+                            <Line yAxisId="left" type="monotone" dataKey="CS3_total" stroke="#7c3aed" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 3" />
+                            <Line yAxisId="left" type="monotone" dataKey="CS4_total" stroke="#d97706" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 4" />
+                            <Line yAxisId="left" type="monotone" dataKey="CS5_total" stroke="#2563eb" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 5" />
+                          </>
+                        ) : (
+                          <>
+                            <Bar yAxisId="left" dataKey={`${chartCampusId}_total`} fill="url(#colorTotal)" radius={[4, 4, 0, 0]} barSize={20} name="Tổng Học sinh" />
+                            <Bar yAxisId="left" dataKey={chartCampusId} fill="url(#colorSurveyed)" radius={[4, 4, 0, 0]} barSize={20} name="Đã Khảo sát" />
+                          </>
+                        )}
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Enrollment Card */}
+                <div className="lg:col-span-1 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col justify-between hover:shadow-md transition-all duration-300">
+                  <div className="flex items-center justify-between mb-5 border-b border-slate-100 pb-4">
+                    <h4 className="font-black text-slate-800 text-sm tracking-tight uppercase flex items-center gap-2.5">
+                      <span className="flex h-2 w-2 relative">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
+                      </span>
+                      Nhập học theo Khối
+                    </h4>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded">Trọng tâm</span>
+                  </div>
+
+                  <div className="space-y-5 flex-1 flex flex-col justify-center">
+                    {[
+                      { label: "Khối 1 (Tiểu học)", passed: enrollmentStats.g1_passed, enrolled: enrollmentStats.g1_enrolled, rate: enrollmentStats.g1Rate, color: "from-teal-400 to-teal-500", bg: "bg-teal-50 text-teal-700 border-teal-100" },
+                      { label: "Khối 6 (THCS)", passed: enrollmentStats.g6_passed, enrolled: enrollmentStats.g6_enrolled, rate: enrollmentStats.g6Rate, color: "from-indigo-400 to-indigo-500", bg: "bg-indigo-50 text-indigo-700 border-indigo-100" },
+                      { label: "Khối 10 (THPT)", passed: enrollmentStats.g10_passed, enrolled: enrollmentStats.g10_enrolled, rate: enrollmentStats.g10Rate, color: "from-amber-400 to-amber-500", bg: "bg-amber-50 text-amber-700 border-amber-100" },
+                      { label: "Các khối khác", passed: enrollmentStats.other_passed, enrolled: enrollmentStats.other_enrolled, rate: enrollmentStats.otherRate, color: "from-slate-400 to-slate-500", bg: "bg-slate-50 text-slate-600 border-slate-200" }
+                    ].map((g, idx) => (
+                      <div key={idx} className="space-y-2">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="font-extrabold text-slate-750">{g.label}</span>
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-black ${g.bg}`}>
+                            {g.enrolled} / {g.passed} HS ({g.rate}%)
+                          </span>
+                        </div>
+                        <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-100/50">
+                          <div className={`h-full bg-gradient-to-r ${g.color} rounded-full transition-all duration-500`} style={{ width: `${g.rate}%` }}></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-5 pt-4 border-t border-slate-100/80 text-[10px] font-bold text-slate-400 uppercase text-center tracking-wider">
+                    Dựa trên dữ liệu HS lưu chuyển (Chuyển đến)
+                  </div>
                 </div>
               </div>
 
@@ -5920,6 +6028,7 @@ return {
                 </div>
               </div>
             </div>
+
 
 
 
