@@ -47,7 +47,17 @@ export default function TeacherStudentProfilePage() {
           if (data.length > 0) {
             setSelectedStudentId(data[0].id)
           } else {
-            setIsNotGVCN(true)
+            const gvcnCheckRes = await fetch("/api/teacher-student-records?action=checkGVCN")
+            if (gvcnCheckRes.ok) {
+              const gvcnData = await gvcnCheckRes.json()
+              if (gvcnData.isGVCN) {
+                setIsNotGVCN(false)
+              } else {
+                setIsNotGVCN(true)
+              }
+            } else {
+              setIsNotGVCN(true)
+            }
           }
         } else {
           setIsNotGVCN(true)
@@ -237,23 +247,29 @@ export default function TeacherStudentProfilePage() {
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
             <h3 className="text-xs font-black text-slate-700 uppercase tracking-wider">Học sinh Lớp chủ nhiệm</h3>
             <div className="space-y-1 max-h-[480px] overflow-y-auto pr-1">
-              {students.map(s => (
-                <button
-                  key={s.id}
-                  onClick={() => setSelectedStudentId(s.id)}
-                  className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
-                    selectedStudentId === s.id
-                      ? "bg-[#00A99D]/10 text-[#00A99D] border border-[#00A99D]/30"
-                      : "text-slate-600 hover:bg-slate-50 border border-transparent"
-                  }`}
-                >
-                  <div>
-                    <div className="truncate font-black">{s.studentName}</div>
-                    <div className="text-[9px] opacity-60 font-bold mt-0.5">{s.className || "Lớp chủ nhiệm"}</div>
-                  </div>
-                  <span className="text-[9px] opacity-60 font-semibold">{s.studentCode}</span>
-                </button>
-              ))}
+              {students.length === 0 ? (
+                <div className="text-[11px] text-slate-400 font-semibold italic text-center py-6">
+                  Lớp chủ nhiệm chưa có học sinh nào.
+                </div>
+              ) : (
+                students.map(s => (
+                  <button
+                    key={s.id}
+                    onClick={() => setSelectedStudentId(s.id)}
+                    className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
+                      selectedStudentId === s.id
+                        ? "bg-[#00A99D]/10 text-[#00A99D] border border-[#00A99D]/30"
+                        : "text-slate-600 hover:bg-slate-50 border border-transparent"
+                    }`}
+                  >
+                    <div>
+                      <div className="truncate font-black">{s.studentName}</div>
+                      <div className="text-[9px] opacity-60 font-bold mt-0.5">{s.className || "Lớp chủ nhiệm"}</div>
+                    </div>
+                    <span className="text-[9px] opacity-60 font-semibold">{s.studentCode}</span>
+                  </button>
+                ))
+              )}
             </div>
           </div>
         </div>
