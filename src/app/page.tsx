@@ -12,7 +12,7 @@ export default async function Home() {
   
   if (role === "STUDENT") {
     redirect("/Hocsinh/khaosat")
-  } else if (role === "TEACHER" || role === "GV_MN") {
+  } else if (["TEACHER", "GV_MN", "GVCN_PT", "GVBM_PT"].includes(role)) {
     redirect("/teacher/classes")
   } else if (role === "PARENT") {
     redirect("/parent")

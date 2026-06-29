@@ -16,7 +16,9 @@ export default async function TeacherLayout({ children }: { children: React.Reac
   const roleCode = (session?.user as any)?.role || "TEACHER"
 
   let isGVCN = false
-  if (session?.user?.id) {
+  if (roleCode === 'GVCN_PT') {
+    isGVCN = true;
+  } else if (session?.user?.id) {
     try {
       const teacher = await prisma.teacher.findUnique({ where: { userId: session.user.id } })
       if (teacher) {

@@ -216,6 +216,14 @@ export async function getObservationSlots(filters: {
         lt: endOfDay
       }
     }
+    if (filters.campusId && filters.campusId !== "all") {
+      where.campusId = filters.campusId
+    }
+    if (filters.deptId && filters.deptId !== "all") {
+      where.teacher = {
+        departmentId: filters.deptId
+      }
+    }
 
     const slots = await prisma.observationSlot.findMany({
       where,

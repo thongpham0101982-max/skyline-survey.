@@ -22,7 +22,7 @@ export default auth((req) => {
   if (isLoggedIn && isOnLogin) {
     const role = (req.auth?.user as any)?.role || 'PARENT'
     if (role === 'PARENT') return NextResponse.redirect(new URL('/parent', req.nextUrl))
-    if (role === 'TEACHER' || role === 'GV_MN') return NextResponse.redirect(new URL('/teacher/classes', req.nextUrl))
+    if (['TEACHER', 'GV_MN', 'GVCN_PT', 'GVBM_PT'].includes(role)) return NextResponse.redirect(new URL('/teacher/classes', req.nextUrl))
     return NextResponse.redirect(new URL('/admin', req.nextUrl))
   }
 
@@ -32,7 +32,7 @@ export default auth((req) => {
     
     // 1. Teacher paths protection (/teacher/...)
     if (pathname.startsWith('/teacher')) {
-      const isTeacher = role === 'TEACHER' || role === 'GV_MN';
+      const isTeacher = ['TEACHER', 'GV_MN', 'GVCN_PT', 'GVBM_PT'].includes(role);
       if (!isTeacher) {
         // Redirect unauthorized users to their correct home page
         if (role === 'PARENT') return NextResponse.redirect(new URL('/parent', req.nextUrl))
@@ -42,7 +42,7 @@ export default auth((req) => {
     
     // 2. Admin paths protection (/admin/...)
     if (pathname.startsWith('/admin')) {
-      const isTeacher = role === 'TEACHER' || role === 'GV_MN';
+      const isTeacher = ['TEACHER', 'GV_MN', 'GVCN_PT', 'GVBM_PT'].includes(role);
       const isParent = role === 'PARENT';
       if (isTeacher) {
         return NextResponse.redirect(new URL('/teacher/classes', req.nextUrl))
@@ -56,7 +56,7 @@ export default auth((req) => {
     if (pathname.startsWith('/parent')) {
       const isParent = role === 'PARENT';
       if (!isParent) {
-        const isTeacher = role === 'TEACHER' || role === 'GV_MN';
+        const isTeacher = ['TEACHER', 'GV_MN', 'GVCN_PT', 'GVBM_PT'].includes(role);
         if (isTeacher) return NextResponse.redirect(new URL('/teacher/classes', req.nextUrl))
         return NextResponse.redirect(new URL('/admin', req.nextUrl))
       }

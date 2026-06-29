@@ -10,13 +10,28 @@ export default async function RolesPage() {
     include: { permissions: true }
   })
 
+  const userCounts = await prisma.user.groupBy({
+    by: ['role'],
+    _count: {
+      role: true
+    }
+  })
+
+  const rolesWithCounts = roles.map(r => {
+    const countObj = userCounts.find(uc => uc.role === r.code)
+    return {
+      ...r,
+      userCount: countObj?._count?.role || 0
+    }
+  })
+
   return (
     <div className="space-y-6">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-slate-900">Quản lý Phân quyền</h1>
         <p className="text-slate-500 mt-1">Quản lý các nhóm quyền và ma trận phân quyền chi tiết cho từng chức năng.</p>
       </div>
-      <RolesClient initialRoles={roles} />
+      <RolesClient initialRoles={rolesWithCounts} />
     </div>
   )
 }
