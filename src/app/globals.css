@@ -582,17 +582,19 @@ tr:hover {
 }
 
 
-/* 15. Premium Form Input Global Styles */
-input[type="text"]:not(.raw-input),
-input[type="date"]:not(.raw-input),
-input[type="number"]:not(.raw-input),
-input[type="email"]:not(.raw-input),
-input[type="password"]:not(.raw-input),
-select:not(.raw-select),
-textarea:not(.raw-textarea) {
+/* 15. Premium Form Input Global Styles using :where() for zero specificity */
+:where(
+  input[type="text"]:not(.raw-input),
+  input[type="date"]:not(.raw-input),
+  input[type="number"]:not(.raw-input),
+  input[type="email"]:not(.raw-input),
+  input[type="password"]:not(.raw-input),
+  select:not(.raw-select),
+  textarea:not(.raw-textarea)
+) {
   background-color: #ffffff;
   border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 0.75rem 1rem;
   font-weight: 500;
   outline: none;
@@ -601,13 +603,26 @@ textarea:not(.raw-textarea) {
   transition: all 0.2s ease-in-out;
 }
 
-input[type="text"]:not(.raw-input):focus,
-input[type="date"]:not(.raw-input):focus,
-input[type="number"]:not(.raw-input):focus,
-input[type="email"]:not(.raw-input):focus,
-input[type="password"]:not(.raw-input):focus,
-select:not(.raw-select):focus,
-textarea:not(.raw-textarea):focus {
+:where(
+  input[type="text"]:not(.raw-input):focus,
+  input[type="date"]:not(.raw-input):focus,
+  input[type="number"]:not(.raw-input):focus,
+  input[type="email"]:not(.raw-input):focus,
+  input[type="password"]:not(.raw-input):focus,
+  select:not(.raw-select):focus,
+  textarea:not(.raw-textarea):focus
+) {
   border-color: #00A99D !important;
-  box-shadow: 0 0 0 4px rgba(0, 169, 157, 0.1) !important;
+  box-shadow: 0 0 0 4px rgba(0, 169, 157, 0.15) !important;
+}
+
+/* 16. Premium Search Bar Focus Transitions */
+.relative > svg.absolute {
+  color: #94a3b8 !important;
+  transition: color 0.2s ease-in-out, transform 0.2s ease-in-out !important;
+}
+
+.relative:focus-within > svg.absolute {
+  color: #00A99D !important;
+  transform: translateY(-50%) scale(1.05) !important;
 }
