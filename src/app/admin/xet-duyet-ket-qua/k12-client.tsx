@@ -2845,7 +2845,7 @@ ${reportForm.directorNote}`;
       .filter(item => item.id !== fallbackId || item.total > 0);
   }, [filteredReportStudents, reportBatches]);
 
-      const gradeStats = useMemo(() => {
+        const gradeStats = useMemo(() => {
     const gradesList = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"];
     const map = new Map();
     gradesList.forEach(g => {
@@ -2943,6 +2943,7 @@ ${reportForm.directorNote}`;
       };
     });
   }, [filteredReportStudents, reportBatches, periods, campuses]);
+
 
 
 
@@ -5616,8 +5617,8 @@ return {
                         <th className="py-3.5 px-4 text-[9px] font-extrabold text-slate-500 uppercase tracking-wider rounded-l-xl">Cơ sở</th>
                         <th className="py-3.5 px-4 text-center text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">Tổng HS</th>
                         <th className="py-3.5 px-4 text-center text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">Đã KS</th>
-                        <th className="py-3.5 px-4 text-center text-[9px] font-extrabold text-emerald-600 uppercase tracking-wider">Đạt</th>
-                        <th className="py-3.5 px-4 text-center text-[9px] font-extrabold text-purple-650 uppercase tracking-wider">Cam kết</th>
+                        <th className="py-3.5 px-4 text-center text-[9px] font-extrabold text-emerald-650 uppercase tracking-wider">Đạt</th>
+                        <th className="py-3.5 px-4 text-center text-[9px] font-extrabold text-purple-600 uppercase tracking-wider">Cam kết</th>
                         <th className="py-3.5 px-4 text-center text-[9px] font-extrabold text-rose-600 uppercase tracking-wider">Không Đạt</th>
                         <th className="py-3.5 px-4 text-center text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">Chưa Duyệt</th>
                         <th className="py-3.5 px-4 text-right text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">Tiến độ KS</th>
@@ -5740,16 +5741,16 @@ return {
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
                     </span>
-                    Số liệu phân theo Đợt khảo sát
+                    Số liệu phân theo Kỳ khảo sát
                   </h4>
-                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest bg-slate-100 px-2.5 py-1 rounded-lg">Chi tiết các đợt</span>
+                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest bg-slate-100 px-2.5 py-1 rounded-lg">Chi tiết các kỳ</span>
                 </div>
                 
                 <div className="overflow-x-auto">
                   <table className="w-full text-left whitespace-nowrap table-auto border-collapse">
                     <thead>
                       <tr className="border-b border-slate-200 bg-slate-50/50">
-                        <th className="py-3.5 px-4 text-[9px] font-extrabold text-slate-500 uppercase tracking-wider rounded-l-xl">Đợt khảo sát</th>
+                        <th className="py-3.5 px-4 text-[9px] font-extrabold text-slate-500 uppercase tracking-wider rounded-l-xl">Kỳ khảo sát</th>
                         <th className="py-3.5 px-4 text-center text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">Tổng HS</th>
                         <th className="py-3.5 px-4 text-center text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">Đã KS</th>
                         <th className="py-3.5 px-4 text-center text-[9px] font-extrabold text-emerald-600 uppercase tracking-wider">Đạt</th>
@@ -5837,6 +5838,7 @@ return {
                 </div>
               </div>
             </div>
+
 
 
 
