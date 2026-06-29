@@ -88,7 +88,33 @@ export async function getClassesByCampusAndYearAction(campusId: string, academic
     where: { campusId, academicYearId },
     orderBy: { className: 'asc' }
   })
-  return classes
+
+  // Fetch all teachers to map homeroomTeacherId to name
+  const teachers = await prisma.teacher.findMany({
+    select: { userId: true, teacherName: true }
+  })
+  
+  const teacherMap = {}
+  teachers.forEach(t => {
+    if (t.userId) {
+      teacherMap[t.userId.trim()] = t.teacherName
+    }
+  })
+
+  return classes.map(c => {
+    let homeroomTeacher = ""
+    if (c.homeroomTeacherId) {
+      homeroomTeacher = c.homeroomTeacherId
+        .split(",")
+        .map(id => teacherMap[id.trim()])
+        .filter(Boolean)
+        .join(", ")
+    }
+    return {
+      ...c,
+      homeroomTeacher
+    }
+  })
 }
 
 export async function getStudentsByClassAction(classId: string) {
