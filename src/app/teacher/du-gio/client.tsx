@@ -1530,10 +1530,14 @@ export function ObservationClient(props: ObservationClientProps) {
               </div>
             ) : (
               <div className="space-y-2.5 max-h-[250px] overflow-y-auto pr-1 custom-scrollbar">
-                {receivedEvaluations.slice(0, 4).map(evalItem => {
+                {receivedEvaluations.map(evalItem => {
                   const hasPassed = evalItem.evaluation?.isPassed ?? true;
                   return (
-                    <div key={evalItem.evaluation?.id || evalItem.registration?.id} className="p-3 bg-slate-50 hover:bg-[#E6F7F6]/30 border border-slate-150 rounded-xl flex items-center justify-between gap-3 text-xs font-semibold transition-all">
+                    <div 
+                      key={evalItem.evaluation?.id || evalItem.registration?.id} 
+                      onClick={() => openEvalModal(evalItem.registration, evalItem.slot)}
+                      className="p-3 bg-slate-50 hover:bg-[#E6F7F6]/30 border border-slate-150 rounded-xl flex items-center justify-between gap-3 text-xs font-semibold transition-all cursor-pointer hover:border-[#00A99D]/40 hover:shadow-sm"
+                    >
                       <div className="min-w-0">
                         <p className="text-xs font-bold text-slate-800 truncate">{evalItem.evaluation?.topic || "Đánh giá tiết dạy"}</p>
                         <p className="text-[10px] text-slate-400 truncate mt-0.5">
