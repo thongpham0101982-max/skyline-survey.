@@ -23,10 +23,6 @@ export default async function AchievementsPage() {
   return (
     <div className="max-w-4xl mx-auto">
       <ExamTabs activeTab="achievements" />
-      <div className="mb-8">
-        <h1 className="text-2xl font-black text-[#003B3A] tracking-tight">Danh Mục Thành Tích</h1>
-        <p className="text-slate-500 mt-2 text-xs font-semibold uppercase tracking-wider">Cấu hình loại thành tích và các mức giải thưởng của học sinh.</p>
-      </div>
       <AchievementsClient 
         initialCategories={categories} 
         initialLevels={levels} 
