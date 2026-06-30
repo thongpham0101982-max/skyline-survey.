@@ -70,10 +70,13 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
 
   let title = ""
 
-  const checkPermission = (module?: string, requiresAdmin?: boolean, subModules?: any[]) => {
+    const checkPermission = (module?: string, requiresAdmin?: boolean, subModules?: any[]) => {
     if (requiresAdmin && !isSuperAdmin) return false
     if (!isSuperAdmin && module) {
-      const hasParent = permissionModules?.includes(module) || false
+      let hasParent = permissionModules?.includes(module) || false
+      if (module === "KTDBCL_EXAMS") {
+        hasParent = hasParent || permissionModules?.includes("KTDBCL_EXAM_CONFIG") || false
+      }
       if (hasParent) return true
       if (subModules && subModules.length > 0) {
         return subModules.some((sub) => permissionModules?.includes(sub.code))

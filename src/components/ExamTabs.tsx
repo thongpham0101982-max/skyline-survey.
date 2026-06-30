@@ -8,7 +8,13 @@ interface ExamTabsProps {
 
 export function ExamTabs({ activeTab }: ExamTabsProps) {
   const isConfigTab = activeTab === 'categories' || activeTab === 'rounds' || activeTab === 'achievements'
-  const tabs = isConfigTab
+
+  const mainTabs = [
+    { id: 'config', label: 'Cấu hình kỳ thi', href: '/admin/ktdbcl/categories', isActive: isConfigTab, icon: Layers },
+    { id: 'results', label: 'Theo dõi kết quả', href: '/admin/ktdbcl/exams', isActive: !isConfigTab, icon: ClipboardList }
+  ]
+
+  const subTabs = isConfigTab
     ? [
         { id: 'categories', label: 'Quản lý danh mục', href: '/admin/ktdbcl/categories', icon: Layers },
         { id: 'rounds', label: 'Vòng thi', href: '/admin/ktdbcl/rounds', icon: GitCommit },
@@ -21,26 +27,50 @@ export function ExamTabs({ activeTab }: ExamTabsProps) {
       ]
 
   return (
-    <div className="bg-white border border-[#00A99D]/20 shadow-xs rounded-xl px-1.5 py-1.5 mb-6 no-print">
-      <div className="flex flex-wrap gap-1">
-        {tabs.map((tab) => {
-          const isActive = activeTab === tab.id
+    <div className="space-y-4 mb-6 no-print">
+      {/* Level 1: Main Tabs */}
+      <div className="flex border-b border-slate-200">
+        {mainTabs.map((tab) => {
           const Icon = tab.icon
           return (
             <Link
               key={tab.id}
               href={tab.href}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-black transition-all duration-200 border ${
-                isActive
-                  ? 'bg-[#00A99D] text-white border-[#00A99D] shadow-xs'
-                  : 'text-slate-600 border-transparent hover:bg-[#00A99D]/5 hover:text-[#00A99D]'
+              className={`flex items-center gap-2 px-6 py-3 border-b-2 font-black text-xs transition-all duration-200 uppercase tracking-wider ${
+                tab.isActive
+                  ? 'border-[#00A99D] text-[#00A99D]'
+                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
               }`}
             >
-              <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+              <Icon className="w-4 h-4" />
               <span>{tab.label}</span>
             </Link>
           )
         })}
+      </div>
+
+      {/* Level 2: Sub Tabs */}
+      <div className="bg-white border border-slate-200/60 shadow-2xs rounded-xl px-1.5 py-1.5">
+        <div className="flex flex-wrap gap-1">
+          {subTabs.map((tab) => {
+            const isActive = activeTab === tab.id
+            const Icon = tab.icon
+            return (
+              <Link
+                key={tab.id}
+                href={tab.href}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black transition-all duration-200 border ${
+                  isActive
+                    ? 'bg-[#00A99D] text-white border-[#00A99D] shadow-xs'
+                    : 'text-slate-600 border-transparent hover:bg-slate-50 hover:text-slate-800'
+                }`}
+              >
+                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                <span>{tab.label}</span>
+              </Link>
+            )
+          })}
+        </div>
       </div>
     </div>
   )
