@@ -11,7 +11,12 @@ export default async function CategoriesPage() {
   const categories = await prisma.examCategory.findMany({
     orderBy: { name: "asc" },
     include: {
-      _count: { select: { exams: true } }
+      exams: {
+        select: {
+          id: true,
+          academicYearId: true
+        }
+      }
     }
   })
 

@@ -47,7 +47,7 @@ export function RoundsClient({ initialRounds, academicYears }: ExamRoundClientPr
     setErrorMsg("")
     try {
       await createExamRoundAction({ ...newForm, academicYearId: null })
-      setRounds([...rounds, { ...newForm, id: `temp_${Date.now()}`, academicYearId: null, _count: { exams: 0 } }])
+      setRounds([...rounds, { ...newForm, id: `temp_${Date.now()}`, academicYearId: null, exams: [] }])
       setNewForm({ name: "", code: "", description: "" })
       setCreating(false)
       // Reload page to get absolute db state
@@ -88,6 +88,10 @@ export function RoundsClient({ initialRounds, academicYears }: ExamRoundClientPr
     }
   }
 
+  const displayRounds = rounds.filter(
+    (r: any) => r.academicYearId === null || r.academicYearId === yearId
+  )
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -95,7 +99,7 @@ export function RoundsClient({ initialRounds, academicYears }: ExamRoundClientPr
         <p className="text-slate-500 text-sm font-medium">Tạo và quản lý các vòng thi học sinh (ví dụ: Vòng 1, Vòng Trường, Vòng Quận, Vòng Thành phố...).</p>
         <button
           onClick={() => { setCreating(true); setErrorMsg("") }}
-          className="flex items-center gap-2 bg-[#00A99D] hover:bg-[#009085] text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-[#00A99D]/20 transition-all text-xs"
+          className="flex items-center gap-2 bg-[#00A99D] hover:bg-[#009085] text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-[#00A99D]/20 transition-all text-xs cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           Tạo Vòng Thi Mới
@@ -154,13 +158,13 @@ export function RoundsClient({ initialRounds, academicYears }: ExamRoundClientPr
             <button
               onClick={handleCreate}
               disabled={saving}
-              className="px-6 py-2.5 bg-[#00A99D] hover:bg-[#009085] text-white rounded-lg font-bold text-xs shadow-md shadow-[#00A99D]/20 transition-all disabled:opacity-60"
+              className="px-6 py-2.5 bg-[#00A99D] hover:bg-[#009085] text-white rounded-lg font-bold text-xs shadow-md shadow-[#00A99D]/20 transition-all disabled:opacity-60 cursor-pointer"
             >
               {saving ? "Đang lưu..." : "Lưu Vòng Thi"}
             </button>
             <button
               onClick={() => { setCreating(false); setErrorMsg("") }}
-              className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold text-xs transition-all"
+              className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold text-xs transition-all cursor-pointer"
             >
               Hủy
             </button>
@@ -173,11 +177,11 @@ export function RoundsClient({ initialRounds, academicYears }: ExamRoundClientPr
         <div className="bg-slate-50/70 border-b border-slate-100 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Flag className="w-5 h-5 text-[#00A99D]" />
-            <span className="font-bold text-slate-700 text-sm">Danh Sách Vòng Thi ({rounds.length})</span>
+            <span className="font-bold text-slate-700 text-sm">Danh Sách Vòng Thi ({displayRounds.length})</span>
           </div>
         </div>
 
-        {rounds.length === 0 ? (
+        {displayRounds.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-slate-400">
             <Flag className="w-16 h-16 mb-4 opacity-20" />
             <p className="font-bold text-lg mb-1">Chưa có vòng thi nào</p>
@@ -185,8 +189,9 @@ export function RoundsClient({ initialRounds, academicYears }: ExamRoundClientPr
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
-            {rounds.map((round: any) => {
+            {displayRounds.map((round: any) => {
               const isEditing = editingId === round.id
+              const examCount = round.exams ? round.exams.filter((e: any) => e.academicYearId === yearId).length : 0;
               return (
                 <div key={round.id} className="flex flex-col p-6 hover:bg-slate-50/50 transition-colors group">
                   <div className="flex items-start gap-4">
@@ -232,12 +237,10 @@ export function RoundsClient({ initialRounds, academicYears }: ExamRoundClientPr
                             <span className="text-[10px] font-mono bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md flex items-center gap-1 font-bold">
                               <Hash className="w-3 h-3" />{round.code}
                             </span>
-                            {round._count && (
-                              <span className="text-[10px] text-teal-600 bg-teal-50 px-2 py-0.5 rounded-md flex items-center gap-1 font-bold">
-                                <FileText className="w-3 h-3" />
-                                {round._count.exams} kỳ thi
-                              </span>
-                            )}
+                            <span className="text-[10px] text-teal-600 bg-teal-50 px-2 py-0.5 rounded-md flex items-center gap-1 font-bold">
+                              <FileText className="w-3 h-3" />
+                              {examCount} kỳ thi
+                            </span>
                           </div>
                           {round.description ? (
                             <p className="text-slate-500 text-xs font-semibold line-clamp-2">{round.description}</p>
@@ -255,14 +258,14 @@ export function RoundsClient({ initialRounds, academicYears }: ExamRoundClientPr
                           <button
                             onClick={() => handleSaveEdit(round.id)}
                             disabled={saving}
-                            className="p-2 hover:bg-emerald-50 text-emerald-600 rounded-xl transition-all"
+                            className="p-2 hover:bg-emerald-50 text-emerald-600 rounded-xl transition-all cursor-pointer"
                             title="Lưu"
                           >
                             <Check className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => setEditingId(null)}
-                            className="p-2 hover:bg-rose-50 text-rose-600 rounded-xl transition-all"
+                            className="p-2 hover:bg-rose-50 text-rose-600 rounded-xl transition-all cursor-pointer"
                             title="Hủy"
                           >
                             <X className="w-4 h-4" />
@@ -272,14 +275,14 @@ export function RoundsClient({ initialRounds, academicYears }: ExamRoundClientPr
                         <>
                           <button
                             onClick={() => handleEdit(round)}
-                            className="p-2 hover:bg-teal-50 text-[#00A99D] rounded-xl transition-all"
+                            className="p-2 hover:bg-teal-50 text-[#00A99D] rounded-xl transition-all cursor-pointer"
                             title="Chỉnh sửa"
                           >
                             <Edit2 className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDelete(round.id, round.name)}
-                            className="p-2 hover:bg-rose-50 text-rose-600 rounded-xl transition-all"
+                            className="p-2 hover:bg-rose-50 text-rose-600 rounded-xl transition-all cursor-pointer"
                             title="Xóa"
                           >
                             <Trash2 className="w-4 h-4" />

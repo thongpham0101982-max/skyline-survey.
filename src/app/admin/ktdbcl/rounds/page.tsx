@@ -11,7 +11,12 @@ export default async function RoundsPage() {
   const rounds = await prisma.examRound.findMany({
     orderBy: { name: "asc" },
     include: {
-      _count: { select: { exams: true } }
+      exams: {
+        select: {
+          id: true,
+          academicYearId: true
+        }
+      }
     }
   })
 
