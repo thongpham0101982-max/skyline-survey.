@@ -4547,7 +4547,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   </div>
                 ) : studentSummaries.filter(s => {
                   const result = (s.admissionResult || "").toUpperCase();
-                  return result.includes("HỌC THỬ") || result.includes("HOC_THU") || s.probationaryResult || s.probationaryClass;
+                  const isMien = result.includes("MIỄN") || result.includes("MIEN");
+                  return (result.includes("HỌC THỬ") || result.includes("HOC_THU") || s.probationaryResult || s.probationaryClass) && !isMien;
                 }).length === 0 ? (
                   <div className="text-center text-slate-400 font-extrabold text-xs p-12 bg-white rounded-3xl">
                     {cPeriodId ? "Không có học sinh nào đang ở trạng thái học thử" : "Vui lòng chọn Kỳ và bấm Tìm"}
@@ -4568,7 +4569,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         {studentSummaries
                           .filter(s => {
                             const result = (s.admissionResult || "").toUpperCase();
-                            return result.includes("HỌC THỬ") || result.includes("HOC_THU") || s.probationaryResult || s.probationaryClass;
+                            const isMien = result.includes("MIỄN") || result.includes("MIEN");
+                            return (result.includes("HỌC THỬ") || result.includes("HOC_THU") || s.probationaryResult || s.probationaryClass) && !isMien;
                           })
                           .filter(s => !cSearch || s.studentCode.toLowerCase().includes(cSearch.toLowerCase()) || s.fullName.toLowerCase().includes(cSearch.toLowerCase()))
                           .map((s, idx) => {
