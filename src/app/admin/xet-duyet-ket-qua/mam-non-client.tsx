@@ -161,7 +161,7 @@ const dgkqHocThuCols = [
   { id: "probationaryClass", label: "Lớp học thử", width: "w-28 min-w-[112px]" },
   { id: "probationaryTeacher", label: "GV Học thử", width: "w-36 min-w-[144px] whitespace-normal" },
   { id: "probationaryResult", label: "KQĐG GV", width: "w-32 min-w-[128px]" },
-  { id: "actions", label: "Xét duyệt", width: "w-28 min-w-[112px]" }
+  { id: "actions", label: "BGH Xét duyệt", width: "w-36 min-w-[144px]" }
 ];
 
 const xuatThuChucMungCols = [
@@ -4648,18 +4648,51 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                   )}
                                 </td>
                                 <td className="w-32 min-w-[128px] p-3 align-middle bg-inherit border border-slate-100">{resultBadge()}</td>
-                                <td className="w-28 min-w-[112px] p-3 align-middle bg-inherit border border-slate-100">
-                                  <button
-                                    onClick={() => openProbationary(s)}
-                                    disabled={isExempt}
-                                    className={`inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-[10px] font-extrabold rounded-xl transition-all hover:scale-[1.02] border border-violet-100 ${
-                                      isExempt 
-                                        ? 'text-slate-400 bg-slate-100 cursor-not-allowed border-transparent' 
-                                        : 'text-violet-700 bg-violet-50 hover:bg-violet-100 cursor-pointer'
-                                    }`}
-                                  >
-                                    <ClipboardList className="w-3.5 h-3.5" /> Xét duyệt
-                                  </button>
+                                <td className="w-36 min-w-[144px] p-3 align-middle bg-inherit border border-slate-100">
+                                  <div className="flex flex-col gap-2 items-center">
+                                    {/* BGH status badge */}
+                                    {(() => {
+                                      const status = s.probationaryBghStatus || "";
+                                      if (status === "DAT") {
+                                        return (
+                                          <span className="inline-flex items-center justify-center bg-emerald-50 text-emerald-700 border border-emerald-250/50 rounded-full px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider">
+                                            ✓ Đạt
+                                          </span>
+                                        );
+                                      }
+                                      if (status === "KHONG_DAT") {
+                                        return (
+                                          <span className="inline-flex items-center justify-center bg-rose-50 text-rose-700 border border-rose-250/50 rounded-full px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider">
+                                            ✗ Không đạt
+                                          </span>
+                                        );
+                                      }
+                                      if (status === "Y_KIEN_KHAC") {
+                                        return (
+                                          <span className="inline-flex items-center justify-center bg-amber-50 text-amber-700 border border-amber-250/50 rounded-full px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider">
+                                            ★ Ý kiến khác
+                                          </span>
+                                        );
+                                      }
+                                      return (
+                                        <span className="inline-flex items-center justify-center bg-slate-100 text-slate-400 border border-slate-200/60 rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider">
+                                          Chưa duyệt
+                                        </span>
+                                      );
+                                    })()}
+
+                                    <button
+                                      onClick={() => openProbationary(s)}
+                                      disabled={isExempt}
+                                      className={`inline-flex items-center justify-center gap-1.5 px-3 py-1 text-[9px] font-extrabold rounded-xl transition-all hover:scale-[1.02] border border-violet-100 ${
+                                        isExempt 
+                                          ? 'text-slate-400 bg-slate-100 cursor-not-allowed border-transparent' 
+                                          : 'text-violet-750 bg-violet-55 hover:bg-violet-100/80 cursor-pointer'
+                                      }`}
+                                    >
+                                      <ClipboardList className="w-3 h-3" /> Xét duyệt
+                                    </button>
+                                  </div>
                                 </td>
                               </tr>
                             );
