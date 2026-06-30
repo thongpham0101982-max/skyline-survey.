@@ -560,6 +560,11 @@ export function ObservationClient(props: ObservationClientProps) {
   }
 
   const handleDeleteSlot = async (slotId: string) => {
+    const slot = slots.find(s => s.id === slotId);
+    if (slot && slot.registrations && slot.registrations.length > 0) {
+      showToast("Không thể xóa tiết dạy đã có giáo viên đăng ký!", "error");
+      return;
+    }
     if (!confirm("Thầy/Cô có chắc chắn muốn xóa tiết dạy dự giờ này? Tất cả đăng ký liên quan sẽ bị hủy.")) return
     startTransition(async () => {
       const res = await deleteObservationSlot(slotId)
@@ -1419,10 +1424,10 @@ export function ObservationClient(props: ObservationClientProps) {
       </div>
 
       {/* ROW 3: Horizontal Layout for Panel 3 & Panel 5 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
         
         {/* Panel 3: Lịch dạy & dự giờ của tôi */}
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-4 border-t-4 border-t-[#00A99D]">
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-4 border-t-4 border-t-[#00A99D] lg:col-span-2">
           <div className="flex items-center gap-2 border-b border-slate-150 pb-3">
             <Calendar className="w-5 h-5 text-[#00A99D]" />
             <span className="font-extrabold text-sm text-[#003B3A] uppercase tracking-wider">4. Lịch dạy & dự giờ của tôi</span>
@@ -1523,8 +1528,16 @@ export function ObservationClient(props: ObservationClientProps) {
                                 className="px-2.5 py-1 text-slate-600 bg-white border border-slate-200 rounded-lg font-bold hover:bg-slate-50 transition-colors">
                                 Sửa
                               </button>
-                              <button onClick={() => handleDeleteSlot(slot.id)}
-                                className="px-2.5 py-1 text-rose-600 bg-white border border-rose-250 rounded-lg font-bold hover:bg-rose-50 transition-colors">
+                              <button 
+                                onClick={() => handleDeleteSlot(slot.id)}
+                                disabled={slot.registrations.length > 0}
+                                className={`px-2.5 py-1 border rounded-lg font-bold transition-all ${
+                                  slot.registrations.length > 0
+                                    ? "text-slate-400 bg-slate-100 border-slate-200 cursor-not-allowed"
+                                    : "text-rose-600 bg-white border-rose-250 hover:bg-rose-50 cursor-pointer"
+                                }`}
+                                title={slot.registrations.length > 0 ? "Không thể hủy tiết đã có giáo viên đăng ký" : "Hủy tiết"}
+                              >
                                 Hủy tiết
                               </button>
                             </>
@@ -1573,7 +1586,7 @@ export function ObservationClient(props: ObservationClientProps) {
         </div>
 
                 {/* Panel 5: Lịch biểu & Hiệu suất đánh giá */}
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-4 border-t-4 border-t-[#00A99D]">
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-4 border-t-4 border-t-[#00A99D] lg:col-span-1">
           <div className="flex items-center gap-2 border-b border-slate-150 pb-3">
             <ClipboardList className="w-5 h-5 text-[#00A99D]" />
             <span className="font-extrabold text-sm text-[#003B3A] uppercase tracking-wider">5. Lịch biểu & Hiệu suất đánh giá</span>

@@ -520,13 +520,12 @@ export async function deleteObservationSlot(slotId: string) {
       return { success: false, error: "You can only delete your own hosted slots" }
     }
 
-    // Check if registrations are full (4/4)
+    // Check if there are any registrations
     const registrationCount = await prisma.observationRegistration.count({
       where: { slotId }
     })
-    const maxSeats = Math.min(slot.maxSeats || 4, 4)
-    if (registrationCount >= maxSeats) {
-      return { success: false, error: "Không thể xóa tiết dạy đã đủ " + maxSeats + "/" + maxSeats + " GV đăng ký dự giờ." }
+    if (registrationCount > 0) {
+      return { success: false, error: "Không thể xóa tiết dạy đã có giáo viên đăng ký dự giờ." }
     }
 
     await prisma.observationSlot.delete({
