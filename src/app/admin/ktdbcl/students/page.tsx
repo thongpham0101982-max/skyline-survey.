@@ -61,12 +61,7 @@ export default async function StudentsPage() {
   return (
     <div className="max-w-7xl mx-auto">
       <ExamTabs activeTab="students" />
-      <div className="mb-8">
-        <h1 className="text-2xl font-black text-[#003B3A] tracking-tight">Đăng Ký Dự Thi</h1>
-        <p className="text-slate-500 mt-2 text-xs font-semibold uppercase tracking-wider">
-          Gán học sinh vào danh sách dự thi theo từng kỳ thi, cơ sở và lớp học theo khối.
-        </p>
-      </div>
+
 
       <StudentsClient exams={exams} campuses={campuses} classes={classes} academicYears={academicYears} />
     </div>

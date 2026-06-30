@@ -80,12 +80,7 @@ export default async function ResultsPage() {
   return (
     <div className="max-w-7xl mx-auto">
       <ExamTabs activeTab="results" />
-      <div className="mb-8">
-        <h1 className="text-2xl font-black text-[#003B3A] tracking-tight">Nhập Điểm & Kết Quả</h1>
-        <p className="text-slate-500 mt-2 text-xs font-semibold uppercase tracking-wider">
-          Hệ thống nhập điểm, phân loại và công bố kết quả thi, quản lý thành tích và báo cáo học sinh.
-        </p>
-      </div>
+
 
       <ResultsClient
         exams={exams}

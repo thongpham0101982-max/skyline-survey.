@@ -49,12 +49,7 @@ export default async function ExamsPage() {
   return (
     <div className="max-w-7xl mx-auto">
       <ExamTabs activeTab="exams" />
-      <div className="mb-8">
-        <h1 className="text-2xl font-black text-[#003B3A] tracking-tight">Danh Sách Kỳ Thi</h1>
-        <p className="text-slate-500 mt-2 text-xs font-semibold uppercase tracking-wider">
-          Tạo và quản lý tất cả kỳ thi học sinh, cấu hình danh mục, vòng thi và tổ chuyên môn.
-        </p>
-      </div>
+
       <ExamsClient
         initialExams={exams}
         categories={categories}
