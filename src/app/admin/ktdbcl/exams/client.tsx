@@ -38,9 +38,28 @@ function matchesLevelFilter(examGrade: string, filterVal: string) {
 }
 
 import { useState, useEffect } from "react"
-import { Plus, Trash2, Edit2, Check, X, Calendar, Star, Tag, User, Layers, Search, Filter, Users, Award, UserCheck } from "lucide-react"
+import { Plus, Trash2, Edit2, Check, X, Calendar, Star, Tag, User, Layers, Search, Filter, Users, Award, UserCheck, Cpu, BookOpen, Lightbulb, Trophy } from "lucide-react"
 import Link from "next/link"
 import { createExamAction, updateExamAction, deleteExamAction } from "./actions"
+
+const getCategoryIconAndColor = (code: string, name: string) => {
+  const cleanCode = (code || "").toUpperCase()
+  const cleanName = (name || "").toLowerCase()
+  
+  if (cleanCode.includes("CN_ST") || cleanCode.includes("CONG_NGHE") || cleanName.includes("công nghệ") || cleanName.includes("sáng tạo")) {
+    return { Icon: Cpu, bg: "bg-amber-50 text-amber-600 border-amber-100/50" }
+  }
+  if (cleanCode.includes("HOC_THUAT") || cleanCode.includes("ACADEMIC") || cleanName.includes("học thuật") || cleanName.includes("học tập")) {
+    return { Icon: BookOpen, bg: "bg-blue-50 text-blue-600 border-blue-100/50" }
+  }
+  if (cleanCode.includes("KY_NANG") || cleanCode.includes("SKILL") || cleanName.includes("kỹ năng")) {
+    return { Icon: Lightbulb, bg: "bg-emerald-50 text-emerald-600 border-emerald-100/50" }
+  }
+  if (cleanCode.includes("NT_TT") || cleanCode.includes("THE_THAO") || cleanName.includes("nghệ thuật") || cleanName.includes("thể thao") || cleanName.includes("âm nhạc") || cleanName.includes("mỹ thuật")) {
+    return { Icon: Trophy, bg: "bg-rose-50 text-rose-600 border-rose-100/50" }
+  }
+  return { Icon: Calendar, bg: "bg-teal-50 text-[#00A99D] border-teal-100/50" }
+}
 
 const generateNextExamCode = (existingExams: any[]) => {
   const currentYear = new Date().getFullYear() // e.g. 2026
@@ -133,7 +152,7 @@ export function ExamsClient({
   const [saving, setSaving] = useState(false)
   const [errorMsg, setErrorMsg] = useState("")
   const [showFilters, setShowFilters] = useState(false)
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+  const [viewMode, setViewMode] = useState<"grid" | "list">("list")
 
   const standardPlans = ["HE_THONG", "TRUONG", "PHUONG", "SO", "BO", "TU_DANG_KY"]
   const customPlansInDB = Array.from(
@@ -807,6 +826,7 @@ export function ExamsClient({
                     const status = getExamStatus(exam.startDate, exam.endDate)
                     const regCount = exam._count?.students || 0
                     const achCount = exam._count?.achievements || 0
+                    const categoryIcon = getCategoryIconAndColor(exam.category.code, exam.category.name)
 
                     return (
                       <tr
@@ -817,10 +837,8 @@ export function ExamsClient({
                       >
                         <td className="py-4 px-5">
                           <div className="flex items-center gap-3">
-                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                              exam.isPriority ? "bg-amber-50 text-amber-500" : "bg-teal-50 text-[#00A99D]"
-                            }`}>
-                              <Calendar className="w-4 h-4" />
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${categoryIcon.bg}`}>
+                              <categoryIcon.Icon className="w-4 h-4" />
                             </div>
                             <div>
                               <div className="flex items-center gap-2">
@@ -869,13 +887,13 @@ export function ExamsClient({
                           )}
                         </td>
 
-                        <td className="py-4 px-4">
-                          <div className="flex flex-col items-center gap-1.5 justify-center">
-                            <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] font-bold">
-                              Đăng ký: <strong className="text-slate-800">{regCount}</strong>
+                        <td className="py-4 px-4 text-center">
+                          <div className="flex items-center gap-1.5 justify-center">
+                            <span className="bg-slate-50 border border-slate-200/60 text-slate-600 px-2.5 py-0.5 rounded-full text-[10px] font-black shadow-2xs">
+                              {regCount} đ/ký
                             </span>
-                            <span className="bg-amber-50 text-amber-800 px-2 py-0.5 rounded text-[10px] font-bold border border-amber-100/50">
-                              Thành tích: <strong className="text-amber-900">{achCount}</strong>
+                            <span className="bg-amber-50 border border-amber-200/50 text-amber-700 px-2.5 py-0.5 rounded-full text-[10px] font-black shadow-2xs">
+                              {achCount} t/tích
                             </span>
                           </div>
                         </td>
