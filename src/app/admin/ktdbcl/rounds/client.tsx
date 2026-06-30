@@ -123,7 +123,7 @@ export function RoundsClient({ initialRounds, academicYears }: ExamRoundClientPr
         </button>
       </div>
 
-      {/* Grid of Redesigned Round Cards */}
+      {/* Table of Redesigned Round Rows */}
       {displayRounds.length === 0 ? (
         <div className="bg-white border border-slate-200/60 rounded-2xl flex flex-col items-center justify-center py-20 text-slate-400 shadow-2xs">
           <Flag className="w-16 h-16 mb-4 opacity-20 text-[#00A99D]" />
@@ -131,65 +131,61 @@ export function RoundsClient({ initialRounds, academicYears }: ExamRoundClientPr
           <p className="text-xs text-slate-400 font-medium">Nhấn "Tạo Vòng Thi Mới" để bắt đầu thiết lập.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {displayRounds.map((round: any) => {
-            const examCount = round.exams ? round.exams.filter((e: any) => e.academicYearId === yearId).length : 0;
-            return (
-              <div
-                key={round.id}
-                className="bg-white rounded-2xl border border-slate-200/70 hover:border-[#00A99D]/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-md flex flex-col justify-between overflow-hidden relative group"
-              >
-                <div className="p-5 space-y-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-1 flex-1 min-w-0">
-                      <span className="text-[10px] font-mono font-black tracking-wider text-slate-400 uppercase flex items-center gap-1">
-                        <Hash className="w-3 h-3" />
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200/60 text-[10px] font-black text-slate-500 uppercase tracking-wider">
+                  <th className="py-3.5 px-5">Tên Vòng thi</th>
+                  <th className="py-3.5 px-4">Mã (Code)</th>
+                  <th className="py-3.5 px-4">Mô tả</th>
+                  <th className="py-3.5 px-4 text-center">Số lượng Kỳ thi</th>
+                  <th className="py-3.5 px-5 text-right">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {displayRounds.map((round: any) => {
+                  const examCount = round.exams ? round.exams.filter((e: any) => e.academicYearId === yearId).length : 0;
+                  return (
+                    <tr key={round.id} className="hover:bg-slate-50/40 transition-colors text-xs font-semibold">
+                      <td className="py-4 px-5">
+                        <span className="font-bold text-slate-800">{round.name}</span>
+                      </td>
+                      <td className="py-4 px-4 font-mono text-slate-500 font-bold">
                         {round.code}
-                      </span>
-                      <h4 className="font-black text-slate-800 text-sm leading-snug group-hover:text-[#00A99D] transition-colors line-clamp-2" title={round.name}>
-                        {round.name}
-                      </h4>
-                    </div>
-
-                    <span className="bg-teal-50 text-[#00A99D] border border-teal-100/50 text-[10px] px-2.5 py-1 rounded-full whitespace-nowrap font-black shrink-0 flex items-center gap-1.5 shadow-2xs">
-                      <FileText className="w-3.5 h-3.5" />
-                      {examCount} kỳ thi
-                    </span>
-                  </div>
-
-                  {round.description ? (
-                    <p className="text-slate-500 text-xs line-clamp-3 font-semibold leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-100/80">
-                      {round.description}
-                    </p>
-                  ) : (
-                    <p className="text-slate-400 text-xs italic font-semibold bg-slate-50/50 p-3 rounded-lg border border-dashed border-slate-200">
-                      Chưa có mô tả chi tiết cho vòng thi này.
-                    </p>
-                  )}
-                </div>
-
-                {/* Footer with actions */}
-                <div className="bg-slate-50/80 border-t border-slate-100 px-5 py-3.5 flex items-center justify-end gap-1 shrink-0">
-                  <button
-                    onClick={() => handleEdit(round)}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-white hover:bg-slate-200/50 text-slate-600 hover:text-slate-800 border border-slate-200 rounded-lg text-[10px] font-black transition-all cursor-pointer shadow-2xs"
-                    title="Chỉnh sửa"
-                  >
-                    <Edit2 className="w-3.5 h-3.5" />
-                    Sửa
-                  </button>
-                  <button
-                    onClick={() => handleDelete(round.id, round.name)}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-200 hover:border-rose-100 rounded-lg text-[10px] font-black transition-all cursor-pointer shadow-2xs"
-                    title="Xóa"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    Xóa
-                  </button>
-                </div>
-              </div>
-            )
-          })}
+                      </td>
+                      <td className="py-4 px-4 text-slate-500 max-w-xs truncate" title={round.description || ''}>
+                        {round.description || <span className="text-slate-300 italic font-normal">Chưa có mô tả</span>}
+                      </td>
+                      <td className="py-4 px-4 text-center">
+                        <span className="bg-teal-50 text-[#00A99D] border border-teal-100/50 text-[10px] px-2.5 py-0.5 rounded-full font-black">
+                          {examCount} kỳ thi
+                        </span>
+                      </td>
+                      <td className="py-4 px-5 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => handleEdit(round)}
+                            className="p-1.5 hover:bg-slate-100 text-slate-500 hover:text-slate-800 rounded-lg transition-all cursor-pointer"
+                            title="Chỉnh sửa"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(round.id, round.name)}
+                            className="p-1.5 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-lg transition-all cursor-pointer"
+                            title="Xóa"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
