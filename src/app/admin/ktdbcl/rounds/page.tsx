@@ -25,7 +25,7 @@ export default async function RoundsPage() {
   })
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-7xl mx-auto">
       <ExamTabs activeTab="rounds" />
       <RoundsClient initialRounds={rounds} academicYears={academicYears} />
     </div>

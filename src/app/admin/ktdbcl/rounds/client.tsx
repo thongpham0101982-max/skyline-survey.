@@ -1,11 +1,33 @@
 "use client"
 import { useState, useEffect } from "react"
-import { Plus, Trash2, Edit2, Check, X, Flag, Hash, FileText } from "lucide-react"
+import { Plus, Trash2, Edit2, Check, X, Flag, Hash, FileText, School, MapPin, Building2, Award, Globe } from "lucide-react"
 import { createExamRoundAction, updateExamRoundAction, deleteExamRoundAction } from "./actions"
 
 interface ExamRoundClientProps {
   initialRounds: any[]
   academicYears: any[]
+}
+
+const getRoundIconAndColor = (code: string, name: string) => {
+  const cleanCode = (code || "").toUpperCase()
+  const cleanName = (name || "").toLowerCase()
+  
+  if (cleanCode.includes("TRUONG") || cleanName.includes("trường") || cleanCode.includes("VONG_1") || cleanName.includes("vòng 1")) {
+    return { Icon: School, bg: "bg-blue-50 text-blue-600 border-blue-100/50" }
+  }
+  if (cleanCode.includes("QUAN") || cleanCode.includes("HUYEN") || cleanName.includes("quận") || cleanName.includes("huyện")) {
+    return { Icon: MapPin, bg: "bg-amber-50 text-amber-600 border-amber-100/50" }
+  }
+  if (cleanCode.includes("THANH_PHO") || cleanCode.includes("TINH") || cleanName.includes("thành phố") || cleanName.includes("tỉnh")) {
+    return { Icon: Building2, bg: "bg-emerald-50 text-emerald-600 border-emerald-100/50" }
+  }
+  if (cleanCode.includes("QUOC_GIA") || cleanName.includes("quốc gia")) {
+    return { Icon: Award, bg: "bg-rose-50 text-rose-600 border-rose-100/50" }
+  }
+  if (cleanCode.includes("QUOC_TE") || cleanName.includes("quốc tế")) {
+    return { Icon: Globe, bg: "bg-violet-50 text-violet-600 border-violet-100/50" }
+  }
+  return { Icon: Flag, bg: "bg-teal-50 text-[#00A99D] border-teal-100/50" }
 }
 
 export function RoundsClient({ initialRounds, academicYears }: ExamRoundClientProps) {
@@ -146,10 +168,16 @@ export function RoundsClient({ initialRounds, academicYears }: ExamRoundClientPr
               <tbody className="divide-y divide-slate-100">
                 {displayRounds.map((round: any) => {
                   const examCount = round.exams ? round.exams.filter((e: any) => e.academicYearId === yearId).length : 0;
+                  const { Icon, bg } = getRoundIconAndColor(round.code, round.name);
                   return (
                     <tr key={round.id} className="hover:bg-slate-50/40 transition-colors text-xs font-semibold">
                       <td className="py-4 px-5">
-                        <span className="font-bold text-slate-800">{round.name}</span>
+                        <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 border ${bg}`}>
+                            <Icon className="w-4 h-4" />
+                          </div>
+                          <span className="font-bold text-slate-800">{round.name}</span>
+                        </div>
                       </td>
                       <td className="py-4 px-4 font-mono text-slate-500 font-bold">
                         {round.code}

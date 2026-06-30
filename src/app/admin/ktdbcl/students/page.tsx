@@ -59,7 +59,7 @@ export default async function StudentsPage() {
   })
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-7xl mx-auto">
       <ExamTabs activeTab="students" />
       <div className="mb-8">
         <h1 className="text-2xl font-black text-[#003B3A] tracking-tight">Đăng Ký Dự Thi</h1>

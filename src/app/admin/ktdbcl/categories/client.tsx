@@ -1,11 +1,30 @@
 "use client"
 import { useState, useEffect } from "react"
-import { Plus, Trash2, Edit2, Check, X, Tag, Hash, FileText } from "lucide-react"
+import { Plus, Trash2, Edit2, Check, X, Tag, Hash, FileText, Cpu, BookOpen, Lightbulb, Trophy } from "lucide-react"
 import { createExamCategoryAction, updateExamCategoryAction, deleteExamCategoryAction } from "./actions"
 
 interface ExamCategoryClientProps {
   initialCategories: any[]
   academicYears: any[]
+}
+
+const getCategoryIconAndColor = (code: string, name: string) => {
+  const cleanCode = (code || "").toUpperCase()
+  const cleanName = (name || "").toLowerCase()
+  
+  if (cleanCode.includes("CN_ST") || cleanCode.includes("CONG_NGHE") || cleanName.includes("công nghệ") || cleanName.includes("sáng tạo")) {
+    return { Icon: Cpu, bg: "bg-amber-50 text-amber-600 border-amber-100/50" }
+  }
+  if (cleanCode.includes("HOC_THUAT") || cleanCode.includes("ACADEMIC") || cleanName.includes("học thuật") || cleanName.includes("học tập")) {
+    return { Icon: BookOpen, bg: "bg-blue-50 text-blue-600 border-blue-100/50" }
+  }
+  if (cleanCode.includes("KY_NANG") || cleanCode.includes("SKILL") || cleanName.includes("kỹ năng")) {
+    return { Icon: Lightbulb, bg: "bg-emerald-50 text-emerald-600 border-emerald-100/50" }
+  }
+  if (cleanCode.includes("NT_TT") || cleanCode.includes("THE_THAO") || cleanName.includes("nghệ thuật") || cleanName.includes("thể thao") || cleanName.includes("âm nhạc") || cleanName.includes("mỹ thuật")) {
+    return { Icon: Trophy, bg: "bg-rose-50 text-rose-600 border-rose-100/50" }
+  }
+  return { Icon: Tag, bg: "bg-teal-50 text-[#00A99D] border-teal-100/50" }
 }
 
 export function CategoriesClient({ initialCategories, academicYears }: ExamCategoryClientProps) {
@@ -146,15 +165,21 @@ export function CategoriesClient({ initialCategories, academicYears }: ExamCateg
               <tbody className="divide-y divide-slate-100">
                 {displayCategories.map((cat: any) => {
                   const examCount = cat.exams ? cat.exams.filter((e: any) => e.academicYearId === yearId).length : 0;
+                  const { Icon, bg } = getCategoryIconAndColor(cat.code, cat.name);
                   return (
                     <tr key={cat.id} className="hover:bg-slate-50/40 transition-colors text-xs font-semibold">
                       <td className="py-4 px-5">
-                        <span className="font-bold text-slate-800">{cat.name}</span>
+                        <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 border ${bg}`}>
+                            <Icon className="w-4 h-4" />
+                          </div>
+                          <span className="font-bold text-slate-800">{cat.name}</span>
+                        </div>
                       </td>
                       <td className="py-4 px-4 font-mono text-slate-500 font-bold">
                         {cat.code}
                       </td>
-                      <td className="py-4 px-4 text-slate-500 max-w-xs truncate animate-fade-in" title={cat.description || ''}>
+                      <td className="py-4 px-4 text-slate-500 max-w-xs truncate" title={cat.description || ''}>
                         {cat.description || <span className="text-slate-300 italic font-normal">Chưa có mô tả</span>}
                       </td>
                       <td className="py-4 px-4 text-center">
