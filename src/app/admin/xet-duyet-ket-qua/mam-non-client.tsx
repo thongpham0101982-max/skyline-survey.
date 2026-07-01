@@ -2,6 +2,7 @@
 import { getDefaultAcademicYearClient } from "@/lib/academicYear"
 import { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import * as XLSX from "xlsx"
+import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts"
 import { getSurveyFormAgeGroup } from "@/lib/preschool";
 import {
   Baby, Clock, Settings, Users, BarChart3, Calendar, Layers,
@@ -1124,8 +1125,229 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
 
   // useMemos depending on cBatchId moved below
 // Đánh giá phát triển
-  const [devTab, setDevTab] = useState<"assess" | "xetDuyet" | "manage" | "dgkqHocThu" | "xuatThuChucMung">("assess");
+  const [devTab, setDevTab] = useState<"stats" | "assess" | "xetDuyet" | "manage" | "dgkqHocThu" | "xuatThuChucMung">("stats");
   const [ageGroupFilter, setAgeGroupFilter] = useState("12 đến 18 tháng");
+﻿  const [chartCampusId, setChartCampusId] = useState("all");
+
+  // 1. overallKPIs
+  const overallKPIs = useMemo(() => {
+    const total = studentSummaries.length;
+    const surveyed = studentSummaries.filter(s => Array.isArray(s.scores) && s.scores.length > 0).length;
+    const surveyedRate = total > 0 ? Math.round((surveyed / total) * 100) : 0;
+
+    let passed = 0;
+    let trial = 0;
+    let failed = 0;
+    let pending = 0;
+
+    studentSummaries.forEach(s => {
+      const res = s.admissionResult || "";
+      if (res === "Đạt" || res === "DAT" || res === "DAT_MIEN_HOC_THU" || res === "Đạt - Miễn Học Thử") {
+        passed++;
+      } else if (res === "Đạt - Học Thử" || res === "DAT_HOC_THU" || res === "Học thử" || res === "HOC_THU") {
+        trial++;
+      } else if (res === "Không đạt" || res === "KHONG_DAT") {
+        failed++;
+      } else {
+        pending++;
+      }
+    });
+
+    const bghApproved = studentSummaries.filter(s => !!s.bghApprovalStatus).length;
+    const gdcsApproved = studentSummaries.filter(s => !!s.gdcsApprovalStatus).length;
+    const bothApproved = studentSummaries.filter(s => !!s.bghApprovalStatus && !!s.gdcsApprovalStatus).length;
+    const approvedRate = total > 0 ? Math.round((bothApproved / total) * 100) : 0;
+
+    return { total, surveyed, surveyedRate, passed, trial, failed, pending, bghApproved, gdcsApproved, bothApproved, approvedRate };
+  }, [studentSummaries]);
+
+  // 2. campusStats
+  const campusStats = useMemo(() => {
+    if (!Array.isArray(studentSummaries)) return [];
+
+    const map = new Map();
+
+    campuses.forEach(c => {
+      map.set(c.id, {
+        campusName: c.campusName,
+        total: 0,
+        surveyed: 0,
+        passed: 0,
+        trial: 0,
+        failed: 0,
+        pending: 0,
+        bghApproved: 0,
+        gdcsApproved: 0,
+        bothApproved: 0
+      });
+    });
+
+    const fallbackId = "unassigned";
+    map.set(fallbackId, {
+      campusName: "Khác / Chưa phân",
+      total: 0,
+      surveyed: 0,
+      passed: 0,
+      trial: 0,
+      failed: 0,
+      pending: 0,
+      bghApproved: 0,
+      gdcsApproved: 0,
+      bothApproved: 0
+    });
+
+    studentSummaries.forEach(s => {
+      let matchedCampusId = fallbackId;
+      for (const c of campuses) {
+        if (isPreschoolCampusMatch(s.admissionCampus, c.campusCode, c.campusName) || s.admissionCampus === c.id) {
+          matchedCampusId = c.id;
+          break;
+        }
+      }
+
+      const stat = map.get(matchedCampusId) || map.get(fallbackId);
+      stat.total++;
+
+      const isTested = Array.isArray(s.scores) && s.scores.length > 0;
+      if (isTested) stat.surveyed++;
+
+      const res = s.admissionResult || "";
+      if (res === "Đạt" || res === "DAT" || res === "DAT_MIEN_HOC_THU" || res === "Đạt - Miễn Học Thử") {
+        stat.passed++;
+      } else if (res === "Đạt - Học Thử" || res === "DAT_HOC_THU" || res === "Học thử" || res === "HOC_THU") {
+        stat.trial++;
+      } else if (res === "Không đạt" || res === "KHONG_DAT") {
+        stat.failed++;
+      } else {
+        stat.pending++;
+      }
+
+      if (s.bghApprovalStatus) stat.bghApproved++;
+      if (s.gdcsApprovalStatus) stat.gdcsApproved++;
+      if (s.bghApprovalStatus && s.gdcsApprovalStatus) stat.bothApproved++;
+    });
+
+    return Array.from(map.entries())
+      .map(([id, val]) => ({ id, ...val }))
+      .filter(item => item.total > 0 || item.id !== "unassigned");
+  }, [studentSummaries, campuses]);
+
+  // 3. campusOverallTotal
+  const campusOverallTotal = useMemo(() => {
+    const total = studentSummaries.length;
+    let CS1 = 0; let CS2 = 0; let CS3 = 0; let CS4 = 0; let CS5 = 0;
+    
+    studentSummaries.forEach(s => {
+      let campusCode = "";
+      for (const c of campuses) {
+        if (isPreschoolCampusMatch(s.admissionCampus, c.campusCode, c.campusName) || s.admissionCampus === c.id) {
+          campusCode = c.campusCode || "";
+          break;
+        }
+      }
+      const csKey = campusCode.toUpperCase();
+      if (csKey === "CS1") CS1++;
+      else if (csKey === "CS2") CS2++;
+      else if (csKey === "CS3") CS3++;
+      else if (csKey === "CS4") CS4++;
+      else if (csKey === "CS5") CS5++;
+    });
+
+    return { total, CS1, CS2, CS3, CS4, CS5 };
+  }, [studentSummaries, campuses]);
+
+  // 4. gradeStats (Age groups)
+  const gradeStats = useMemo(() => {
+    const ageGroupsList = [
+      "12 đến 18 tháng",
+      "18 đến 24 tháng",
+      "24 đến 36 tháng",
+      "3 đến 4 tuổi",
+      "4 đến 5 tuổi",
+      "5 đến 6 tuổi"
+    ];
+
+    const map = new Map();
+
+    ageGroupsList.forEach(g => {
+      map.set(g, {
+        grade: g,
+        total: 0,
+        surveyed: 0,
+        CS1: 0, CS2: 0, CS3: 0, CS4: 0, CS5: 0,
+        CS1_total: 0, CS2_total: 0, CS3_total: 0, CS4_total: 0, CS5_total: 0
+      });
+    });
+
+    studentSummaries.forEach(s => {
+      const g = s.grade || "";
+      if (!map.has(g)) return;
+
+      const stat = map.get(g);
+      stat.total++;
+
+      const isTested = Array.isArray(s.scores) && s.scores.length > 0;
+      if (isTested) stat.surveyed++;
+
+      let campusCode = "";
+      for (const c of campuses) {
+        if (isPreschoolCampusMatch(s.admissionCampus, c.campusCode, c.campusName) || s.admissionCampus === c.id) {
+          campusCode = c.campusCode || "";
+          break;
+        }
+      }
+
+      const csKey = campusCode.toUpperCase();
+      if (csKey === "CS1") { stat.CS1_total++; if (isTested) stat.CS1++; }
+      else if (csKey === "CS2") { stat.CS2_total++; if (isTested) stat.CS2++; }
+      else if (csKey === "CS3") { stat.CS3_total++; if (isTested) stat.CS3++; }
+      else if (csKey === "CS4") { stat.CS4_total++; if (isTested) stat.CS4++; }
+      else if (csKey === "CS5") { stat.CS5_total++; if (isTested) stat.CS5++; }
+    });
+
+    return Array.from(map.values()).map(item => {
+      return {
+        ...item,
+        "Chung": item.total > 0 ? Math.round((item.surveyed / item.total) * 100) : 0,
+        "CS1_rate": item.CS1_total > 0 ? Math.round((item.CS1 / item.CS1_total) * 100) : 0,
+        "CS2_rate": item.CS2_total > 0 ? Math.round((item.CS2 / item.CS2_total) * 100) : 0,
+        "CS3_rate": item.CS3_total > 0 ? Math.round((item.CS3 / item.CS3_total) * 100) : 0,
+        "CS4_rate": item.CS4_total > 0 ? Math.round((item.CS4 / item.CS4_total) * 100) : 0,
+        "CS5_rate": item.CS5_total > 0 ? Math.round((item.CS5 / item.CS5_total) * 100) : 0,
+      };
+    });
+  }, [studentSummaries, campuses]);
+
+  // 5. developmentalAreaStats
+  const developmentalAreaStats = useMemo(() => {
+    const areas = {
+      THE_CHAT: { name: "Thể chất", code: "THE_CHAT", total: 0, passed: 0, failed: 0 },
+      NHAN_THUC: { name: "Nhận thức", code: "NHAN_THUC", total: 0, passed: 0, failed: 0 },
+      NGON_NGU: { name: "Ngôn ngữ", code: "NGON_NGU", total: 0, passed: 0, failed: 0 },
+      TINH_CAM_XH_TM: { name: "Tình cảm - XH & Thẩm mỹ", code: "TINH_CAM_XH_TM", total: 0, passed: 0, failed: 0 }
+    };
+
+    studentSummaries.forEach(s => {
+      if (!Array.isArray(s.scores)) return;
+      s.scores.forEach((sc) => {
+        const areaCode = sc.criteria?.area?.code;
+        if (areaCode && areas[areaCode]) {
+          areas[areaCode].total++;
+          if (sc.result === "DAT") {
+            areas[areaCode].passed++;
+          } else if (sc.result === "KHONG_DAT") {
+            areas[areaCode].failed++;
+          }
+        }
+      });
+    });
+
+    return Object.values(areas).map(a => {
+      const rate = a.total > 0 ? Math.round((a.passed / a.total) * 100) : 0;
+      return { ...a, rate };
+    });
+  }, [studentSummaries]);
+
   
   // Đánh giá học sinh
   const [evalStudent, setEvalStudent] = useState<PreschoolChild | null>(null);
@@ -1793,7 +2015,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
   }, [cPeriodId, cBatchId]);
 
   useEffect(() => {
-    if (tab === "devAssess" && (devTab === "assess" || devTab === "xetDuyet" || devTab === "dgkqHocThu" || devTab === "xuatThuChucMung")) {
+    if (tab === "devAssess" && (devTab === "assess" || devTab === "xetDuyet" || devTab === "dgkqHocThu" || devTab === "xuatThuChucMung" || devTab === "stats")) {
       fetchStudentSummaries();
     }
   }, [tab, devTab, fetchStudentSummaries]);
@@ -3762,7 +3984,19 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-3 duration-500">
           
           {/* Custom Preschool/School Styled Tab Bar */}
+          ﻿          {/* Custom Preschool/School Styled Tab Bar */}
           <div className="bg-[#EBF5F4]/60 backdrop-blur-md p-1.5 rounded-3xl flex flex-wrap gap-2 w-fit border border-[#00A99D]/15 shadow-sm no-print mb-6">
+            <button
+              onClick={() => setDevTab("stats")}
+              className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black tracking-wider transition-all duration-300 border-none cursor-pointer ${
+                devTab === "stats" 
+                  ? "bg-gradient-to-r from-[#00A99D] to-[#008075] text-white shadow-md shadow-[#00A99D]/20 scale-[1.02]" 
+                  : "bg-transparent text-slate-500 hover:text-[#00A99D] hover:bg-[#00A99D]/5"
+              }`}
+            >
+              <BarChart3 className="w-4 h-4"/>
+              THỐNG KÊ PHÂN TÍCH
+            </button>
             <button
               onClick={() => setDevTab("assess")}
               className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black tracking-wider transition-all duration-300 border-none cursor-pointer ${
@@ -3796,7 +4030,419 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               <Sparkles className="w-4 h-4"/>
               DUYỆT KQ HỌC THỬ
             </button>
+            <button
+              onClick={() => setDevTab("xuatThuChucMung")}
+              className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black tracking-wider transition-all duration-300 border-none cursor-pointer ${
+                devTab === "xuatThuChucMung" 
+                  ? "bg-gradient-to-r from-[#00A99D] to-[#008075] text-white shadow-md shadow-[#00A99D]/20 scale-[1.02]" 
+                  : "bg-transparent text-slate-500 hover:text-[#00A99D] hover:bg-[#00A99D]/5"
+              }`}
+            >
+              <GraduationCap className="w-4 h-4"/>
+              XUẤT THƯ CHÚC MỪNG
+            </button>
           </div>
+
+
+﻿          {/* Sub-tab: Thống kê Phân tích */}
+          {devTab === "stats" && (
+            <div className="space-y-8 animate-in fade-in duration-300 text-slate-800 p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm bg-white">
+              {/* KPI Cards Row */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                {/* Card 1: Tổng Học sinh */}
+                <div className="relative overflow-hidden bg-white p-6 rounded-2xl border border-slate-200 border-l-4 border-l-[#00A99D] shadow-sm flex flex-col justify-between group hover:-translate-y-1 hover:shadow-md transition-all duration-300">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tổng trẻ Khảo sát</span>
+                    <div className="p-2.5 bg-teal-50 text-[#00A99D] rounded-xl transition-all duration-300 group-hover:scale-110 group-hover:bg-teal-100">
+                      <Users className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div className="flex items-baseline gap-1 mt-4">
+                    <span className="text-4xl font-black text-slate-800 tracking-tight">{overallKPIs.total}</span>
+                    <span className="text-xs text-slate-400 font-bold">trẻ</span>
+                  </div>
+                  <div className="text-[10px] text-slate-500 mt-2 font-bold flex justify-between">
+                    <span>Đã đánh giá: {overallKPIs.surveyed} ({overallKPIs.surveyedRate}%)</span>
+                    <div className="w-24 h-2 bg-slate-100 rounded-full overflow-hidden self-center">
+                      <div className="h-full bg-[#00A99D] rounded-full" style={{ width: `${overallKPIs.surveyedRate}%` }}></div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 2: Kết quả Khảo sát */}
+                <div className="relative overflow-hidden bg-white p-6 rounded-2xl border border-slate-200 border-l-4 border-l-purple-500 shadow-sm flex flex-col justify-between group hover:-translate-y-1 hover:shadow-md transition-all duration-300">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Kết quả Khảo sát Mầm non</span>
+                    <div className="p-2.5 bg-purple-50 text-purple-600 rounded-xl transition-all duration-300 group-hover:scale-110 group-hover:bg-purple-100">
+                      <Baby className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between mt-4">
+                    <div className="flex flex-col">
+                      <span className="text-3xl font-black text-emerald-600">{overallKPIs.passed}</span>
+                      <span className="text-[9px] text-emerald-650 font-bold uppercase tracking-wider">Đạt</span>
+                    </div>
+                    <div className="w-px h-8 bg-slate-200"></div>
+                    <div className="flex flex-col items-center">
+                      <span className="text-3xl font-black text-sky-650">{overallKPIs.trial}</span>
+                      <span className="text-[9px] text-sky-600 font-bold uppercase tracking-wider">Học thử</span>
+                    </div>
+                    <div className="w-px h-8 bg-slate-200"></div>
+                    <div className="flex flex-col items-end">
+                      <span className="text-3xl font-black text-rose-600">{overallKPIs.failed}</span>
+                      <span className="text-[9px] text-rose-600 font-bold uppercase tracking-wider">K.Đạt</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 3: Tiến độ Phê duyệt */}
+                <div className="relative overflow-hidden bg-white p-6 rounded-2xl border border-slate-200 border-l-4 border-l-emerald-500 shadow-sm flex flex-col justify-between group hover:-translate-y-1 hover:shadow-md transition-all duration-300">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tiến độ Phê duyệt (2 Bước)</span>
+                    <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl transition-all duration-300 group-hover:scale-110 group-hover:bg-emerald-100">
+                      <UserCheck className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between mt-4">
+                    <div className="flex flex-col">
+                      <span className="text-3xl font-black text-slate-800">{overallKPIs.bothApproved}</span>
+                      <span className="text-[9px] text-[#00A99D] font-bold uppercase tracking-wider">Xong cả 2 (${overallKPIs.approvedRate}%)</span>
+                    </div>
+                    <div className="w-px h-8 bg-slate-200"></div>
+                    <div className="flex flex-col items-center">
+                      <span className="text-lg font-black text-slate-700">${overallKPIs.bghApproved}</span>
+                      <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider">BGH duyệt</span>
+                    </div>
+                    <div className="w-px h-8 bg-slate-200"></div>
+                    <div className="flex flex-col items-end">
+                      <span className="text-lg font-black text-slate-700">${overallKPIs.gdcsApproved}</span>
+                      <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider">GĐCS duyệt</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Grid 5 Cơ sở */}
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <h4 className="font-black text-slate-800 text-sm tracking-tight uppercase flex items-center gap-2">
+                    <span className="flex h-2 w-2 relative">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
+                    </span>
+                    Tổng hợp số liệu các Cơ sở tuyển sinh
+                  </h4>
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded">Trực quan nhanh</span>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                  {campusStats.map(stat => {
+                    const campusApprovedRate = stat.total > 0 ? Math.round((stat.bothApproved / stat.total) * 100) : 0;
+                    const campusSurveyRate = stat.total > 0 ? Math.round((stat.surveyed / stat.total) * 100) : 0;
+                    const shortCode = stat.campusName?.replace("Cơ sở ", "CS");
+                    
+                    let campusColor = {
+                      border: "border-l-slate-400 border-slate-200",
+                      text: "text-slate-700",
+                      bg: "bg-slate-50/10",
+                      accent: "bg-slate-50 text-slate-700 border border-slate-200",
+                      bar: "bg-slate-400"
+                    };
+                    
+                    if (shortCode === "CS1") {
+                      campusColor = {
+                        border: "border-l-teal-500 border-teal-100",
+                        text: "text-teal-700",
+                        bg: "bg-teal-50/10",
+                        accent: "bg-teal-50 text-teal-700 border border-teal-200",
+                        bar: "bg-teal-500"
+                      };
+                    } else if (shortCode === "CS2") {
+                      campusColor = {
+                        border: "border-l-pink-500 border-pink-100",
+                        text: "text-pink-700",
+                        bg: "bg-pink-50/10",
+                        accent: "bg-pink-50 text-pink-700 border border-pink-200",
+                        bar: "bg-pink-500"
+                      };
+                    } else if (shortCode === "CS3") {
+                      campusColor = {
+                        border: "border-l-purple-500 border-purple-100",
+                        text: "text-purple-700",
+                        bg: "bg-purple-50/10",
+                        accent: "bg-purple-50 text-purple-700 border border-purple-200",
+                        bar: "bg-purple-550"
+                      };
+                    } else if (shortCode === "CS4") {
+                      campusColor = {
+                        border: "border-l-amber-500 border-amber-100",
+                        text: "text-amber-805",
+                        bg: "bg-amber-50/10",
+                        accent: "bg-amber-50 text-amber-805 border border-amber-200",
+                        bar: "bg-amber-500"
+                      };
+                    } else if (shortCode === "CS5") {
+                      campusColor = {
+                        border: "border-l-blue-500 border-blue-100",
+                        text: "text-blue-700",
+                        bg: "bg-blue-50/10",
+                        accent: "bg-blue-50 text-blue-700 border border-blue-200",
+                        bar: "bg-blue-500"
+                      };
+                    }
+
+                    return (
+                      <div 
+                        key={stat.id} 
+                        className={`p-4 rounded-xl border-l-4 ${campusColor.border} border border-slate-200/80 shadow-sm flex flex-col justify-between hover:shadow hover:-translate-y-0.5 transition-all duration-300 bg-white`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className={`px-2 py-0.5 rounded text-[9px] font-black tracking-wider ${campusColor.accent}`}>{shortCode}</span>
+                          <span className="text-[10px] text-slate-400 font-bold">Duyệt: {campusApprovedRate}%</span>
+                        </div>
+                        
+                        <div className="mb-3">
+                          <h5 className="text-xs font-black text-slate-800 truncate" title={stat.campusName}>{stat.campusName}</h5>
+                          <div className="flex items-baseline gap-1.5 mt-1">
+                            <span className="text-2xl font-black text-slate-900">{stat.total}</span>
+                            <span className="text-[10px] text-slate-400 font-bold">Bé</span>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-1.5 pt-2 border-t border-slate-100 text-[10px]">
+                          <div className="flex justify-between items-center text-slate-400 font-bold">
+                            <span>Đã đánh giá:</span>
+                            <span className="font-extrabold text-slate-700">{stat.surveyed}/{stat.total} ({campusSurveyRate}%)</span>
+                          </div>
+                          
+                          <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
+                            <div className={`h-full ${campusColor.bar} rounded-full`} style={{ width: `${campusSurveyRate}%` }}></div>
+                          </div>
+                          
+                          <div className="grid grid-cols-3 gap-1 pt-1.5 font-bold text-center">
+                            <div className="bg-emerald-50 text-emerald-700 rounded py-0.5">
+                              <span className="block text-[8px] uppercase font-bold opacity-60">Đạt</span>
+                              <span className="text-[10px] font-black">{stat.passed}</span>
+                            </div>
+                            <div className="bg-sky-50 text-sky-700 rounded py-0.5">
+                              <span className="block text-[8px] uppercase font-bold opacity-60">HT</span>
+                              <span className="text-[10px] font-black">{stat.trial}</span>
+                            </div>
+                            <div className="bg-rose-50 text-rose-700 rounded py-0.5">
+                              <span className="block text-[8px] uppercase font-bold opacity-60">K.Đ</span>
+                              <span className="text-[10px] font-black">{stat.failed}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Chart & Developmental Area breakdown Row */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Chart Card */}
+                <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 overflow-hidden hover:shadow-md transition-all duration-300">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 border-b border-slate-100 pb-4 gap-3">
+                    <h4 className="font-black text-slate-800 text-sm tracking-tight uppercase flex items-center gap-2.5">
+                      <span className="flex h-2 w-2 relative">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
+                      </span>
+                      Học sinh Khảo sát theo Nhóm tuổi của các Cơ sở
+                    </h4>
+                    <div className="flex items-center gap-2 self-end sm:self-auto">
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest hidden sm:inline-block">Hiển thị:</span>
+                      <select
+                        value={chartCampusId}
+                        onChange={e => setChartCampusId(e.target.value)}
+                        className="bg-slate-50 border border-slate-200 rounded-xl text-[10px] font-black text-slate-700 py-1.5 px-3 outline-none cursor-pointer hover:border-[#00A99D] transition-colors shadow-sm"
+                      >
+                        <option value="all">Tất cả các cơ sở</option>
+                        <option value="CS1">Cơ sở 1</option>
+                        <option value="CS2">Cơ sở 2</option>
+                        <option value="CS3">Cơ sở 3</option>
+                        <option value="CS4">Cơ sở 4</option>
+                        <option value="CS5">Cơ sở 5</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="h-80 w-full text-xs">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ComposedChart data={gradeStats} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#00A99D" stopOpacity={0.15}/>
+                            <stop offset="95%" stopColor="#00A99D" stopOpacity={0.02}/>
+                          </linearGradient>
+                          <linearGradient id="colorSurveyed" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#008075" stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor="#008075" stopOpacity={0.2}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#f1f5f9" />
+                        <XAxis 
+                          dataKey="grade" 
+                          stroke="#64748b" 
+                          fontSize={9} 
+                          tickLine={false} 
+                          axisLine={false} 
+                          dy={8} 
+                          className="font-bold text-slate-600"
+                        />
+                        <YAxis yAxisId="left" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} allowDecimals={false} className="font-semibold" />
+                        <Tooltip
+                          content={({ active, payload, label }) => {
+                            if (active && payload && payload.length) {
+                              const stat = gradeStats.find(g => g.grade === label);
+                              if (!stat) return null;
+                              
+                              if (chartCampusId === "all") {
+                                return (
+                                  <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-lg text-xs font-semibold text-slate-800 space-y-2">
+                                    <div className="font-black text-sm border-b border-slate-100 pb-1.5 flex justify-between gap-4">
+                                      <span>{stat.grade}</span>
+                                      <span className="text-[#00A99D]">{stat.total} Bé</span>
+                                    </div>
+                                    <div className="space-y-1 pt-1 text-[10px]">
+                                      {[
+                                        { name: "Cơ sở 1", count: stat.CS1_total },
+                                        { name: "Cơ sở 2", count: stat.CS2_total },
+                                        { name: "Cơ sở 3", count: stat.CS3_total },
+                                        { name: "Cơ sở 4", count: stat.CS4_total },
+                                        { name: "Cơ sở 5", count: stat.CS5_total }
+                                      ].map(cs => (
+                                        <div key={cs.name} className="flex justify-between items-center py-0.5">
+                                          <span className="text-slate-550 font-bold">{cs.name}</span>
+                                          <span className="font-extrabold text-slate-800">{cs.count} Bé</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                );
+                              } else {
+                                const campusCode = chartCampusId;
+                                const campusGradeTotal = stat[`${campusCode}_total`] || 0;
+                                const campusGradeSurveyed = stat[campusCode] || 0;
+                                let campusName = "Cơ sở";
+                                if (campusCode === "CS1") campusName = "Cơ sở 1";
+                                else if (campusCode === "CS2") campusName = "Cơ sở 2";
+                                else if (campusCode === "CS3") campusName = "Cơ sở 3";
+                                else if (campusCode === "CS4") campusName = "Cơ sở 4";
+                                else if (campusCode === "CS5") campusName = "Cơ sở 5";
+                                
+                                return (
+                                  <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-lg text-xs font-semibold text-slate-800 space-y-2">
+                                    <div className="font-black text-sm border-b border-slate-100 pb-1.5 flex justify-between gap-4">
+                                      <span>{stat.grade} - {campusName}</span>
+                                      <span className="text-[#00A99D]">{campusGradeSurveyed}/{campusGradeTotal} Bé</span>
+                                    </div>
+                                    <div className="space-y-1.5 pt-1">
+                                      <div className="flex justify-between py-0.5">
+                                        <span className="text-slate-500 font-bold">Tổng số trẻ:</span>
+                                        <span className="font-extrabold text-slate-850">{campusGradeTotal} Bé</span>
+                                      </div>
+                                      <div className="flex justify-between py-0.5">
+                                        <span className="text-slate-500 font-bold">Đã đánh giá:</span>
+                                        <span className="font-extrabold text-slate-850">{campusGradeSurveyed} Bé ({campusGradeTotal > 0 ? Math.round((campusGradeSurveyed/campusGradeTotal)*100) : 0}%)</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              }
+                            }
+                            return null;
+                          }}
+                        />
+                        <Legend verticalAlign="top" height={36} iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "10px", fontWeight: "bold", paddingBottom: "10px" }} />
+                        
+                        {chartCampusId === "all" ? (
+                          <>
+                            <Bar yAxisId="left" dataKey="total" fill="url(#colorTotal)" radius={[4, 4, 0, 0]} barSize={26} name="Tổng Trẻ Khảo sát" />
+                            <Line yAxisId="left" type="monotone" dataKey="CS1_total" stroke="#00A99D" strokeWidth={3} dot={{ r: 3, strokeWidth: 1.5, fill: "#ffffff" }} activeDot={{ r: 6 }} name="Cơ sở 1" />
+                            <Line yAxisId="left" type="monotone" dataKey="CS2_total" stroke="#db2777" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 2" />
+                            <Line yAxisId="left" type="monotone" dataKey="CS3_total" stroke="#7c3aed" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 3" />
+                            <Line yAxisId="left" type="monotone" dataKey="CS4_total" stroke="#d97706" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 4" />
+                            <Line yAxisId="left" type="monotone" dataKey="CS5_total" stroke="#2563eb" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 5" />
+                          </>
+                        ) : (
+                          <>
+                            <Bar yAxisId="left" dataKey={`${chartCampusId}_total`} fill="url(#colorTotal)" radius={[4, 4, 0, 0]} barSize={20} name="Tổng Số Trẻ" />
+                            <Bar yAxisId="left" dataKey={chartCampusId} fill="url(#colorSurveyed)" radius={[4, 4, 0, 0]} barSize={20} name="Đã Đánh giá" />
+                          </>
+                        )}
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Developmental Areas Achievement */}
+                <div className="lg:col-span-1 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col justify-between hover:shadow-md transition-all duration-300">
+                  <div className="flex items-center justify-between mb-5 border-b border-slate-100 pb-4">
+                    <h4 className="font-black text-slate-800 text-sm tracking-tight uppercase flex items-center gap-2.5">
+                      <span className="flex h-2 w-2 relative">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
+                      </span>
+                      Lĩnh vực Phát triển (Tỷ lệ Đạt)
+                    </h4>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded">Chi tiết</span>
+                  </div>
+
+                  <div className="space-y-4.5 flex-1 flex flex-col justify-center">
+                    {developmentalAreaStats.map(area => {
+                      let areaStyle = {
+                        color: "text-teal-700",
+                        bg: "bg-teal-50 border-teal-100",
+                        bar: "bg-[#00A99D]"
+                      };
+
+                      if (area.code === "NHAN_THUC") {
+                        areaStyle = {
+                          color: "text-purple-750",
+                          bg: "bg-purple-50 border-purple-100",
+                          bar: "bg-purple-500"
+                        };
+                      } else if (area.code === "NGON_NGU") {
+                        areaStyle = {
+                          color: "text-sky-700",
+                          bg: "bg-sky-50 border-sky-100",
+                          bar: "bg-sky-500"
+                        };
+                      } else if (area.code === "TINH_CAM_XH_TM") {
+                        areaStyle = {
+                          color: "text-rose-700",
+                          bg: "bg-rose-50 border-rose-100",
+                          bar: "bg-rose-500"
+                        };
+                      }
+
+                      return (
+                        <div key={area.code} className="space-y-1.5">
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="font-bold text-slate-700">{area.name}</span>
+                            <span className={`px-2 py-0.5 text-[10px] font-black rounded-lg border ${areaStyle.color} ${areaStyle.bg}`}>
+                              Đạt: {area.rate}%
+                            </span>
+                          </div>
+                          
+                          <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                            <div className={`h-full ${areaStyle.bar} rounded-full`} style={{ width: `${area.rate}%` }}></div>
+                          </div>
+                          <div className="flex justify-between text-[9px] text-slate-400 font-bold">
+                            <span>Đã khảo sát: {area.total} tiêu chí</span>
+                            <span>Đạt: {area.passed} / K.Đạt: {area.failed}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
 
           {/* Sub-tab: GV Đánh Giá */}
           {devTab === "assess" && (
