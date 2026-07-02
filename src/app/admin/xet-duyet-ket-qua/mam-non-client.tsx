@@ -1129,6 +1129,17 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
   const [ageGroupFilter, setAgeGroupFilter] = useState("12 đến 18 tháng");
 ﻿  const [chartCampusId, setChartCampusId] = useState("all");
 
+  const [cSearch, setCSearch] = useState("");
+  const [approvalFilter, setApprovalFilter] = useState("");
+  const [cPeriodId, setCPeriodId] = useState("all");
+  const [cBatchId, setCBatchId] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [cPeriodId, cBatchId, approvalFilter, cSearch, devTab]);
+
   // Summary scores for students list (Moved here to avoid TDZ ReferenceError in useMemo hooks below)
   const [studentSummaries, setStudentSummaries] = useState<any[]>([]);
   const [sumLoading, setSumLoading] = useState(false);
@@ -1195,7 +1206,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
   const renderPaginationControl = () => {
     if (filteredStudents.length === 0) return null;
     return (
-      <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 bg-slate-50/50 text-xs font-bold text-slate-500">
+      <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 bg-slate-50/50 text-xs font-bold text-slate-505">
         <div>
           Hiển thị <span className="text-slate-800 font-extrabold">{Math.min(filteredStudents.length, (currentPage - 1) * pageSize + 1)}-{Math.min(filteredStudents.length, currentPage * pageSize)}</span> trong số <span className="text-[#00A99D] font-extrabold">{filteredStudents.length}</span> học sinh
         </div>
@@ -1220,11 +1231,11 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
                 <button
                   key={pageNum}
                   onClick={() => setCurrentPage(pageNum)}
-                  className={`h-8 w-8 rounded-xl flex items-center justify-center transition-all cursor-pointer border-none font-black ${
+                  className={"h-8 w-8 rounded-xl flex items-center justify-center transition-all cursor-pointer border-none font-black " + (
                     currentPage === pageNum
                       ? "bg-[#00A99D] text-white shadow-sm shadow-[#00A99D]/20"
                       : "text-slate-655 hover:bg-slate-100"
-                  }`}
+                  )}
                 >
                   {pageNum}
                 </button>
