@@ -1639,6 +1639,7 @@ export function StudentInfoClient({
                   <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600 w-16 text-center">Khối</th>
                   <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600 w-16 text-center">Giới tính</th>
                   <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600 w-24 text-center">Ngày sinh</th>
+                  <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600 w-28 text-center">Cơ sở</th>
                   <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600 w-20 text-center">Hệ KS</th>
                   <th className="p-2 border border-slate-300 text-xs font-bold text-slate-600 w-16 text-center">Vắng</th>
                   {subTab === "info" && (
@@ -1666,7 +1667,7 @@ export function StudentInfoClient({
               <tbody className="divide-y divide-slate-300 text-slate-700">
                 {paginatedStudents.length === 0 ? (
                   <tr>
-                    <td colSpan={selectedPeriod?.toLowerCase().includes("open day") ? (subTab === "info" ? 17 : 12) : (subTab === "info" ? 15 : 10)} className="p-2 p-2 text-center text-slate-400 font-medium border border-slate-300">
+                    <td colSpan={selectedPeriod?.toLowerCase().includes("open day") ? (subTab === "info" ? 18 : 13) : (subTab === "info" ? 16 : 11)} className="p-2 p-2 text-center text-slate-400 font-medium border border-slate-300">
                       Không tìm thấy dữ liệu học sinh phù hợp.
                     </td>
                   </tr>
@@ -1712,6 +1713,9 @@ export function StudentInfoClient({
                       </td>
                       <td className="p-2 border border-slate-300 text-center text-xs text-slate-500">
                         {formatDate(s.dateOfBirth)}
+                      </td>
+                      <td className="p-2 border border-slate-300 text-center text-xs font-semibold text-slate-650">
+                        {campuses.find(c => c.id === resolveStudentCampusId(s))?.campusName || s.admissionCampus || s.registeredCampus || "—"}
                       </td>
                       <td className="p-2 border border-slate-300 text-center text-xs text-slate-650">
                         {s.surveyFormType || "-"}
