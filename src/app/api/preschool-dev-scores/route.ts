@@ -55,7 +55,10 @@ export async function GET(req: NextRequest) {
 
     // Mode 2: Get summary for all students in a period
     if (periodId) {
-      const where: any = { periodId }
+      const where: any = {}
+      if (periodId !== "all") {
+        where.periodId = periodId;
+      }
       if (batchId && batchId !== "all" && batchId !== "null") {
         where.OR = [
           { batchId: batchId },
@@ -147,7 +150,7 @@ export async function GET(req: NextRequest) {
 
       // Fetch all teacher assignments for this period
       const assignments = await (prisma as any).preschoolInputAssessmentTeacherAssignment.findMany({
-        where: { periodId },
+        where: periodId !== "all" ? { periodId } : {},
         select: {
           periodId: true,
           batchId: true,

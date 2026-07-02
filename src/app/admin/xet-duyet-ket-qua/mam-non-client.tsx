@@ -1447,7 +1447,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
   // Children/Students
   const [children, setChildren] = useState<PreschoolChild[]>([]);
   const [cLoading, setCLoading] = useState(false);
-  const [cPeriodId, setCPeriodId] = useState("");
+  const [cPeriodId, setCPeriodId] = useState("all");
   const [cBatchId, setCBatchId] = useState("");
 
   // useMemos that depend on cBatchId - must be AFTER declaration to avoid TDZ crash in production
@@ -3175,7 +3175,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
   const doDeleteSelected = async () => { await fetch(`/api/preschool-input-assessment-students?ids=${cSelected.join(",")}`, { method: "DELETE" }); setCSelected([]); fetchChildren(); notify(`Đã xóa ${cSelected.length} bé`); };
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]; if (!file || !cPeriodId) return;
+    const file = e.target.files?.[0]; if (!file || !cPeriodId || cPeriodId === "all") return;
     setImporting(true);
     try {
       const d = await file.arrayBuffer();
@@ -3889,13 +3889,13 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             <div className="flex items-center gap-2">
               <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Kỳ KS:</label>
               <select value={cPeriodId} onChange={e => { setCPeriodId(e.target.value); setCBatchId(""); }} className="border border-slate-300 rounded-none p-2 text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-violet-300 min-w-[160px]">
-                <option value="">-- Chọn Kỳ --</option>
+                <option value="all">Tất cả các kỳ</option>
                 {periods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
             </div>
             <div className="flex items-center gap-2">
               <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Đợt:</label>
-              <select value={cBatchId} onChange={e => setCBatchId(e.target.value)} className="border border-slate-300 rounded-none p-2 text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-violet-300 min-w-[140px]" disabled={!cPeriodId}>
+              <select value={cBatchId} onChange={e => setCBatchId(e.target.value)} className="border border-slate-300 rounded-none p-2 text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-violet-300 min-w-[140px]" disabled={!cPeriodId || cPeriodId === "all"}>
                 <option value="">Tất cả đợt</option>
                 {selPeriod?.batches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
               </select>
@@ -3912,7 +3912,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             <div className="flex items-center gap-2">
               <button onClick={downloadTemplate} className="flex items-center gap-1.5 text-xs font-black text-blue-600 hover:bg-blue-100 transition-all text-xs font-semibold"><Download className="w-4 h-4" /> Tải mẫu</button>
               <input type="file" ref={fileRef} onChange={handleImport} accept=".xlsx,.xls,.csv" className="hidden" />
-              <button onClick={() => fileRef.current?.click()} disabled={importing || !cPeriodId} className="flex items-center gap-1.5 text-xs font-black text-emerald-700 hover:bg-emerald-100 transition-all disabled:opacity-50 text-xs font-semibold"><Upload className="w-4 h-4" /> {importing ? "Đang import..." : "Import Excel"}</button>
+              <button onClick={() => fileRef.current?.click()} disabled={importing || !cPeriodId || cPeriodId === "all"} className="flex items-center gap-1.5 text-xs font-black text-emerald-700 hover:bg-emerald-100 transition-all disabled:opacity-50 text-xs font-semibold"><Upload className="w-4 h-4" /> {importing ? "Đang import..." : "Import Excel"}</button>
               <button onClick={openAddChild} disabled={!cPeriodId} className="flex items-center gap-1.5 px-4 py-2 text-xs font-black text-white bg-[#00A99D] hover:bg-[#00A99D]-700 rounded-none shadow-none shadow-teal-100 transition-all disabled:opacity-50"><Plus className="w-4 h-4" /> Thêm bé</button>
             </div>
           </div>
@@ -4365,7 +4365,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       onChange={e => { setCPeriodId(e.target.value); setCBatchId(""); }} 
                       className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-2xl pl-4 pr-10 py-2.5 outline-none font-bold text-slate-700 shadow-sm transition-all text-xs cursor-pointer appearance-none"
                     >
-                      <option value="">-- Chọn Kỳ --</option>
+                      <option value="all">Tất cả các kỳ</option>
                       {periods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                     </select>
                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A99D] transition-colors">
@@ -4579,7 +4579,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       onChange={e => { setCPeriodId(e.target.value); setCBatchId(""); }} 
                       className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-2xl pl-4 pr-10 py-2.5 outline-none font-bold text-slate-700 shadow-sm transition-all text-xs cursor-pointer appearance-none"
                     >
-                      <option value="">-- Chọn Kỳ --</option>
+                      <option value="all">Tất cả các kỳ</option>
                       {periods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                     </select>
                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A99D] transition-colors">
@@ -5035,7 +5035,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       onChange={e => { setCPeriodId(e.target.value); setCBatchId(""); }} 
                       className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-2xl pl-4 pr-10 py-2.5 outline-none font-bold text-slate-700 shadow-sm transition-all text-xs cursor-pointer appearance-none"
                     >
-                      <option value="">-- Chọn Kỳ --</option>
+                      <option value="all">Tất cả các kỳ</option>
                       {periods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                     </select>
                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A99D] transition-colors">
@@ -5272,7 +5272,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       onChange={e => { setCPeriodId(e.target.value); setCBatchId(""); }} 
                       className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-2xl pl-4 pr-10 py-2.5 outline-none font-bold text-slate-700 shadow-sm transition-all text-xs cursor-pointer appearance-none"
                     >
-                      <option value="">-- Chọn Kỳ --</option>
+                      <option value="all">Tất cả các kỳ</option>
                       {periods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                     </select>
                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A99D] transition-colors">
@@ -5664,7 +5664,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             <div className="flex items-center gap-2">
               <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Kỳ KS:</label>
               <select value={rptPeriodId} onChange={e => { setRptPeriodId(e.target.value); setCPeriodId(e.target.value); setRptBatchId("all"); }} className="border border-slate-300 rounded-none p-2 text-sm outline-none focus:ring-2 focus:ring-violet-300 min-w-[160px]">
-                <option value="">-- Chọn Kỳ --</option>
+                <option value="all">Tất cả các kỳ</option>
                 {periods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
             </div>
