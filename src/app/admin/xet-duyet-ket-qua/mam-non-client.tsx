@@ -1194,7 +1194,8 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
         pending: 0,
         bghApproved: 0,
         gdcsApproved: 0,
-        bothApproved: 0
+        bothApproved: 0,
+        enrolled: 0
       });
     });
 
@@ -1209,7 +1210,8 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
       pending: 0,
       bghApproved: 0,
       gdcsApproved: 0,
-      bothApproved: 0
+      bothApproved: 0,
+      enrolled: 0
     });
 
     studentSummaries.forEach(s => {
@@ -1241,6 +1243,12 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
       if (s.bghApprovalStatus) stat.bghApproved++;
       if (s.gdcsApprovalStatus) stat.gdcsApproved++;
       if (s.bghApprovalStatus && s.gdcsApprovalStatus) stat.bothApproved++;
+      
+      const isPassed = res === "Đạt" || res === "DAT" || res === "DAT_MIEN_HOC_THU" || res === "Đạt - Miễn Học Thử" || res === "Đạt - Học Thử" || res === "DAT_HOC_THU" || res === "Học thử" || res === "HOC_THU";
+      const isEnrolled = s.enrollmentStatus === "COMPLETED";
+      if (isPassed && isEnrolled) {
+        stat.enrolled++;
+      }
     });
 
     return Array.from(map.entries())
@@ -4154,6 +4162,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   {campusStats.map(stat => {
                     const campusApprovedRate = stat.total > 0 ? Math.round((stat.bothApproved / stat.total) * 100) : 0;
                     const campusSurveyRate = stat.total > 0 ? Math.round((stat.surveyed / stat.total) * 100) : 0;
+                    const campusEnrolledRate = (stat.passed + stat.trial) > 0 ? Math.round((stat.enrolled / (stat.passed + stat.trial)) * 100) : 0;
                     const shortCode = stat.campusName?.replace("Cơ sở ", "CS");
                     
                     let campusColor = {
@@ -4244,6 +4253,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                           
                           <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
                             <div className={`h-full ${campusColor.bar} rounded-full`} style={{ width: `${campusSurveyRate}%` }}></div>
+                          </div>
+                          
+                          <div className="flex justify-between items-center text-slate-400 font-bold pt-0.5">
+                            <span>Đạt nhập học:</span>
+                            <span className="font-extrabold text-[#008075]">{stat.enrolled}/{stat.passed + stat.trial} ({campusEnrolledRate}%)</span>
                           </div>
                           
                           <div className="grid grid-cols-3 gap-1 pt-1.5 font-bold text-center">
