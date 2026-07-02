@@ -1129,6 +1129,10 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
   const [ageGroupFilter, setAgeGroupFilter] = useState("12 đến 18 tháng");
 ﻿  const [chartCampusId, setChartCampusId] = useState("all");
 
+  // Summary scores for students list (Moved here to avoid TDZ ReferenceError in useMemo hooks below)
+  const [studentSummaries, setStudentSummaries] = useState<any[]>([]);
+  const [sumLoading, setSumLoading] = useState(false);
+
   // 1. overallKPIs
   const overallKPIs = useMemo(() => {
     const total = studentSummaries.length;
@@ -1415,9 +1419,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
     return { label: "Béo phì", color: "text-rose-600 bg-rose-50 border-rose-100", dot: "bg-rose-400" };
   };
 
-  // Summary scores for students list
-  const [studentSummaries, setStudentSummaries] = useState<any[]>([]);
-  const [sumLoading, setSumLoading] = useState(false);
+  // Summary scores for students list (Moved to top of component hooks to prevent TDZ ReferenceError)
 
   // Quản lý tiêu chí / lĩnh vực
   const [criteriaModal, setCriteriaModal] = useState(false);
