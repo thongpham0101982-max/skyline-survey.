@@ -6,7 +6,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import {
   Plus, Search, Edit2, Trash2, Users, Settings, Clock, BarChart3,
   Upload, Download, Layers, Database, UserCheck, Calendar, X, Check, AlertCircle,
-  ChevronDown, ChevronUp, Loader2, BookOpen, GraduationCap, RefreshCw,
+  ChevronDown, ChevronUp, Loader2, BookOpen, GraduationCap, RefreshCw, Building,
   Tag, FolderOpen, Hash, MoreVertical, PenLine, CheckCircle2,
   Filter, ClipboardCheck, ArrowRight, UserPlus, Info,
   FileSpreadsheet, Pencil, Mail, FileText,
@@ -1038,6 +1038,13 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
   const [reportBatchId, setReportBatchId] = useState("all");
   const [reportStudentId, setReportStudentId] = useState("");
   const [reportsSubTab, setReportsSubTab] = useState("stats"); // stats or results
+  const [reportCampusFilter, setReportCampusFilter] = useState("all");
+  const [reportCurrentPage, setReportCurrentPage] = useState(1);
+  const reportPageSize = 10;
+
+  useEffect(() => {
+    setReportCurrentPage(1);
+  }, [reportPeriodId, reportBatchId, reportCampusFilter]);
   const [chartCampusId, setChartCampusId] = useState("all");
   const [reportStudents, setReportStudents] = useState<any[]>([]);
   const [retestHistory, setRetestHistory] = useState<any[]>([]);
@@ -2397,6 +2404,47 @@ ${reportForm.directorNote}`;
     }
   }, [reportStudents, tab]);
 
+    const resolveStudentCampusId = useCallback((s: Student) => {
+    // 1. If Open Day student, check registeredCampus
+    const studentPeriod = periods.find(p => p.id === s.periodId);
+    const isOpenDay = studentPeriod?.name?.toLowerCase().includes("open day");
+    if (isOpenDay && s.registeredCampus) {
+      const matchingCampus = campuses.find(c => c.id === s.registeredCampus);
+      if (matchingCampus) return matchingCampus.id;
+    }
+    
+    // 2. Check admissionCampus matching campusName
+    if (s.admissionCampus) {
+      const tc = campuses.find(c => c.campusName === s.admissionCampus);
+      if (tc) return tc.id;
+    }
+    
+    // 3. Fallback to batch campusId
+    if (s.batchId) {
+      const b = reportBatches.find(bx => bx.id === s.batchId);
+      if (b?.campusId) {
+        const tc = campuses.find(c => c.id === b.campusId);
+        if (tc) return tc.id;
+      }
+    }
+    
+    // 4. Try string match on admissionCampus
+    const campusName = s.admissionCampus || "";
+    let code = null;
+    if (campusName.includes("CS1") || campusName.includes("Cơ sở 1")) code = "CS1";
+    else if (campusName.includes("CS2") || campusName.includes("Cơ sở 2")) code = "CS2";
+    else if (campusName.includes("CS3") || campusName.includes("Cơ sở 3")) code = "CS3";
+    else if (campusName.includes("CS4") || campusName.includes("Cơ sở 4")) code = "CS4";
+    else if (campusName.includes("CS5") || campusName.includes("Cơ sở 5")) code = "CS5";
+    
+    if (code) {
+      const tc = campuses.find(c => c.campusCode === code);
+      if (tc) return tc.id;
+    }
+    
+    return "unassigned";
+  }, [campuses, periods, reportBatches]);
+
   const filteredReportStudents = useMemo(() => {
     if (!Array.isArray(reportStudents)) return [];
     
@@ -2412,12 +2460,77 @@ ${reportForm.directorNote}`;
       
       if (isOpenDay && isGDCS) {
         const allowedIds = currentUser?.campusIds || [];
-        return s.registeredCampus && allowedIds.includes(s.registeredCampus);
+        if (!(s.registeredCampus && allowedIds.includes(s.registeredCampus))) return false;
+      }
+
+      if (reportCampusFilter && reportCampusFilter !== "all") {
+        const resolvedCampusId = resolveStudentCampusId(s);
+        const matchesCampus = resolvedCampusId === reportCampusFilter || 
+                              s.admissionCampus === reportCampusFilter || 
+                              s.registeredCampus === reportCampusFilter;
+        if (!matchesCampus) return false;
       }
       
       return true;
     });
-  }, [reportStudents, reportBatchId, reportSelPeriod, currentUser]);
+  }, [reportStudents, reportBatchId, reportSelPeriod, currentUser, reportCampusFilter, resolveStudentCampusId]);
+
+  const reportTotalPages = Math.ceil(filteredReportStudents.length / reportPageSize);
+  const paginatedReportStudents = useMemo(() => {
+    const startIndex = (reportCurrentPage - 1) * reportPageSize;
+    return filteredReportStudents.slice(startIndex, startIndex + reportPageSize);
+  }, [filteredReportStudents, reportCurrentPage, reportPageSize]);
+
+  const renderReportPaginationControl = () => {
+    if (filteredReportStudents.length === 0) return null;
+    return (
+      <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 bg-slate-50/50 text-xs font-bold text-slate-505">
+        <div>
+          Hiển thị <span className="text-slate-800 font-extrabold">{Math.min(filteredReportStudents.length, (reportCurrentPage - 1) * reportPageSize + 1)}-{Math.min(filteredReportStudents.length, reportCurrentPage * reportPageSize)}</span> trong số <span className="text-[#00A99D] font-extrabold">{filteredReportStudents.length}</span> học sinh
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            disabled={reportCurrentPage === 1}
+            onClick={() => setReportCurrentPage(prev => Math.max(prev - 1, 1))}
+            className="px-3 py-1.5 rounded-xl border border-slate-200 hover:border-indigo-500 hover:bg-white text-slate-655 disabled:opacity-40 disabled:hover:border-slate-200 disabled:hover:bg-transparent transition-all cursor-pointer font-black bg-transparent border-none"
+          >
+            Trước
+          </button>
+          <div className="flex items-center gap-1">
+            {Array.from({ length: reportTotalPages }).map((_, i) => {
+              const pageNum = i + 1;
+              if (reportTotalPages > 6 && pageNum !== 1 && pageNum !== reportTotalPages && Math.abs(pageNum - reportCurrentPage) > 1) {
+                if (pageNum === 2 || pageNum === reportTotalPages - 1) {
+                  return <span key={pageNum} className="px-1 text-slate-400 font-bold select-none">...</span>;
+                }
+                return null;
+              }
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => setReportCurrentPage(pageNum)}
+                  className={"h-8 w-8 rounded-xl flex items-center justify-center transition-all cursor-pointer border-none font-black " + (
+                    reportCurrentPage === pageNum
+                      ? "bg-indigo-600 text-white shadow-sm shadow-indigo-600/20"
+                      : "text-slate-655 hover:bg-slate-100"
+                  )}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+          </div>
+          <button
+            disabled={reportCurrentPage === reportTotalPages || reportTotalPages === 0}
+            onClick={() => setReportCurrentPage(prev => Math.min(prev + 1, reportTotalPages))}
+            className="px-3 py-1.5 rounded-xl border border-slate-200 hover:border-indigo-500 hover:bg-white text-slate-655 disabled:opacity-40 disabled:hover:border-slate-200 disabled:hover:bg-transparent transition-all cursor-pointer font-black bg-transparent border-none"
+          >
+            Sau
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   const modalDocList = useMemo(() => {
     if (typeof window === "undefined" || !selectedReportStudent) return [];
@@ -2695,46 +2808,7 @@ ${reportForm.directorNote}`;
     return `Đà Nẵng, ngày ${day} tháng ${month} năm ${year}`;
   }, []);
 
-    const resolveStudentCampusId = useCallback((s: Student) => {
-    // 1. If Open Day student, check registeredCampus
-    const studentPeriod = periods.find(p => p.id === s.periodId);
-    const isOpenDay = studentPeriod?.name?.toLowerCase().includes("open day");
-    if (isOpenDay && s.registeredCampus) {
-      const matchingCampus = campuses.find(c => c.id === s.registeredCampus);
-      if (matchingCampus) return matchingCampus.id;
-    }
-    
-    // 2. Check admissionCampus matching campusName
-    if (s.admissionCampus) {
-      const tc = campuses.find(c => c.campusName === s.admissionCampus);
-      if (tc) return tc.id;
-    }
-    
-    // 3. Fallback to batch campusId
-    if (s.batchId) {
-      const b = reportBatches.find(bx => bx.id === s.batchId);
-      if (b?.campusId) {
-        const tc = campuses.find(c => c.id === b.campusId);
-        if (tc) return tc.id;
-      }
-    }
-    
-    // 4. Try string match on admissionCampus
-    const campusName = s.admissionCampus || "";
-    let code = null;
-    if (campusName.includes("CS1") || campusName.includes("Cơ sở 1")) code = "CS1";
-    else if (campusName.includes("CS2") || campusName.includes("Cơ sở 2")) code = "CS2";
-    else if (campusName.includes("CS3") || campusName.includes("Cơ sở 3")) code = "CS3";
-    else if (campusName.includes("CS4") || campusName.includes("Cơ sở 4")) code = "CS4";
-    else if (campusName.includes("CS5") || campusName.includes("Cơ sở 5")) code = "CS5";
-    
-    if (code) {
-      const tc = campuses.find(c => c.campusCode === code);
-      if (tc) return tc.id;
-    }
-    
-    return "unassigned";
-  }, [campuses, periods, reportBatches]);
+
 
   const campusStats = useMemo(() => {
     if (!Array.isArray(reportStudents)) return [];
@@ -5333,7 +5407,7 @@ return {
           </div>
 
           {/* TOP SELECTORS BAR */}
-          <div className="bg-white/80 backdrop-blur-md p-6 rounded-3xl shadow-sm border border-slate-200/60 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-white/80 backdrop-blur-md p-6 rounded-3xl shadow-sm border border-slate-200/60 grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="group">
               <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-indigo-900/70 flex items-center gap-2 ml-1">
                 <Calendar className="w-3.5 h-3.5 text-indigo-500"/> Kỳ Khảo sát
@@ -5353,6 +5427,30 @@ return {
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
                   {periods.length === 0 && <option value="">Không có kỳ KS nào</option>}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-indigo-500 transition-colors">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+              </div>
+            </div>
+
+            <div className="group">
+              <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-indigo-900/70 flex items-center gap-2 ml-1">
+                <Building className="w-3.5 h-3.5 text-indigo-500"/> Cơ sở
+              </label>
+              <div className="relative">
+                <select 
+                  value={reportCampusFilter} 
+                  onChange={e => {
+                    setReportCampusFilter(e.target.value);
+                    setReportStudentId("");
+                  }}
+                  className="w-full bg-white border border-slate-200 rounded-2xl pl-5 pr-10 py-3.5 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
+                >
+                  <option value="all">Tất cả các cơ sở</option>
+                  {campuses.map(c => (
+                    <option key={c.id} value={c.id}>{c.campusName}</option>
+                  ))}
                 </select>
                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-indigo-500 transition-colors">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
@@ -6072,7 +6170,7 @@ return {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200">
-                      {filteredReportStudents.map(s => {
+                      {paginatedReportStudents.map(s => {
                         const isSelected = reportStudentId === s.id;
                         return (
                           <tr key={s.id} className={`hover:bg-slate-50/80 transition-colors ${isSelected ? 'bg-indigo-50/40' : ''}`}>
@@ -6141,6 +6239,7 @@ return {
                     </tbody>
                   </table>
                 </div>
+                {renderReportPaginationControl()}
               </div>
 
               {selectedReportStudent && (
