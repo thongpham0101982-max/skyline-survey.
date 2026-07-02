@@ -4077,7 +4077,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               {/* KPI Cards Row */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 {/* Card 1: Tổng Học sinh */}
-                <div className="relative overflow-hidden bg-white p-6 rounded-2xl border border-slate-200 border-l-4 border-l-[#00A99D] shadow-sm flex flex-col justify-between group hover:-translate-y-1 hover:shadow-md transition-all duration-300">
+                <div className="relative overflow-hidden bg-white p-6 rounded-2xl border border-slate-200/80 border-l-4 border-l-[#00A99D] shadow-sm flex flex-col justify-between group hover:-translate-y-1.5 hover:shadow-[0_12px_30px_rgba(0,169,157,0.1)] hover:border-teal-300 transition-all duration-500 cursor-pointer">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tổng trẻ Khảo sát</span>
                     <div className="p-2.5 bg-teal-50 text-[#00A99D] rounded-xl transition-all duration-300 group-hover:scale-110 group-hover:bg-teal-100">
@@ -4097,7 +4097,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 </div>
 
                 {/* Card 2: Kết quả Khảo sát */}
-                <div className="relative overflow-hidden bg-white p-6 rounded-2xl border border-slate-200 border-l-4 border-l-purple-500 shadow-sm flex flex-col justify-between group hover:-translate-y-1 hover:shadow-md transition-all duration-300">
+                <div className="relative overflow-hidden bg-white p-6 rounded-2xl border border-slate-200/80 border-l-4 border-l-purple-500 shadow-sm flex flex-col justify-between group hover:-translate-y-1.5 hover:shadow-[0_12px_30px_rgba(147,51,234,0.1)] hover:border-purple-300 transition-all duration-500 cursor-pointer">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Kết quả Khảo sát Mầm non</span>
                     <div className="p-2.5 bg-purple-50 text-purple-600 rounded-xl transition-all duration-300 group-hover:scale-110 group-hover:bg-purple-100">
@@ -4123,7 +4123,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 </div>
 
                 {/* Card 3: Số Học sinh Đạt - Nhập học */}
-                <div className="relative overflow-hidden bg-white p-6 rounded-2xl border border-slate-200 border-l-4 border-l-emerald-500 shadow-sm flex flex-col justify-between group hover:-translate-y-1 hover:shadow-md transition-all duration-300">
+                <div className="relative overflow-hidden bg-white p-6 rounded-2xl border border-slate-200/80 border-l-4 border-l-emerald-500 shadow-sm flex flex-col justify-between group hover:-translate-y-1.5 hover:shadow-[0_12px_30px_rgba(16,185,129,0.1)] hover:border-emerald-300 transition-all duration-500 cursor-pointer">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Số Học sinh Đạt - Nhập học</span>
                     <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl transition-all duration-300 group-hover:scale-110 group-hover:bg-emerald-100">
@@ -4161,7 +4161,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       text: "text-slate-700",
                       bg: "bg-slate-50/10",
                       accent: "bg-slate-50 text-slate-700 border border-slate-200",
-                      bar: "bg-slate-400"
+                      bar: "bg-slate-400",
+                      hoverShadow: "hover:shadow-md",
+                      hoverBorder: "hover:border-slate-350"
                     };
                     
                     if (shortCode === "CS1") {
@@ -4170,7 +4172,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         text: "text-teal-700",
                         bg: "bg-teal-50/10",
                         accent: "bg-teal-50 text-teal-700 border border-teal-200",
-                        bar: "bg-teal-500"
+                        bar: "bg-teal-500",
+                        hoverShadow: "hover:shadow-[0_10px_25px_rgba(20,184,166,0.12)]",
+                        hoverBorder: "hover:border-teal-350"
                       };
                     } else if (shortCode === "CS2") {
                       campusColor = {
@@ -4178,7 +4182,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         text: "text-pink-700",
                         bg: "bg-pink-50/10",
                         accent: "bg-pink-50 text-pink-700 border border-pink-200",
-                        bar: "bg-pink-500"
+                        bar: "bg-pink-500",
+                        hoverShadow: "hover:shadow-[0_10px_25px_rgba(236,72,153,0.12)]",
+                        hoverBorder: "hover:border-pink-350"
                       };
                     } else if (shortCode === "CS3") {
                       campusColor = {
@@ -4186,7 +4192,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         text: "text-purple-700",
                         bg: "bg-purple-50/10",
                         accent: "bg-purple-50 text-purple-700 border border-purple-200",
-                        bar: "bg-purple-550"
+                        bar: "bg-purple-550",
+                        hoverShadow: "hover:shadow-[0_10px_25px_rgba(168,85,247,0.12)]",
+                        hoverBorder: "hover:border-purple-355"
                       };
                     } else if (shortCode === "CS4") {
                       campusColor = {
@@ -4194,7 +4202,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         text: "text-amber-805",
                         bg: "bg-amber-50/10",
                         accent: "bg-amber-50 text-amber-805 border border-amber-200",
-                        bar: "bg-amber-500"
+                        bar: "bg-amber-500",
+                        hoverShadow: "hover:shadow-[0_10px_25px_rgba(245,158,11,0.12)]",
+                        hoverBorder: "hover:border-amber-350"
                       };
                     } else if (shortCode === "CS5") {
                       campusColor = {
@@ -4202,14 +4212,16 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         text: "text-blue-700",
                         bg: "bg-blue-50/10",
                         accent: "bg-blue-50 text-blue-700 border border-blue-200",
-                        bar: "bg-blue-500"
+                        bar: "bg-blue-500",
+                        hoverShadow: "hover:shadow-[0_10px_25px_rgba(59,130,246,0.12)]",
+                        hoverBorder: "hover:border-blue-350"
                       };
                     }
 
                     return (
                       <div 
                         key={stat.id} 
-                        className={`p-4 rounded-xl border-l-4 ${campusColor.border} border border-slate-200/80 shadow-sm flex flex-col justify-between hover:shadow hover:-translate-y-0.5 transition-all duration-300 bg-white`}
+                        className={`p-4 rounded-xl border-l-4 ${campusColor.border} border border-slate-200/80 shadow-sm flex flex-col justify-between hover:shadow-md ${campusColor.hoverShadow || ""} ${campusColor.hoverBorder || ""} hover:-translate-y-1.5 transition-all duration-500 bg-white cursor-pointer`}
                       >
                         <div className="flex items-center justify-between mb-2">
                           <span className={`px-2 py-0.5 rounded text-[9px] font-black tracking-wider ${campusColor.accent}`}>{shortCode}</span>
