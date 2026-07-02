@@ -88,7 +88,7 @@ function Field({ label, required, children }: { label:string; required?:boolean;
     </div>
   )
 }
-const inp = "h-11 w-full px-3.5 bg-white border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-xl outline-none transition-all focus:ring-4 focus:ring-[#00B5E2]/10 focus:border-[#00B5E2] disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+const inp = "h-11 w-full pl-3.5 pr-3.5 bg-white border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-xl outline-none transition-all focus:ring-4 focus:ring-[#00B5E2]/10 focus:border-[#00B5E2] disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
 
 function Modal({ open, onClose, title, size="md", children, footer }: {
   open:boolean; onClose:()=>void; title:string; size?:"sm"|"md"|"lg"|"xl"|"2xl";

@@ -47,7 +47,7 @@ const isPreschoolCampusMatch = (effCampus: string | null | undefined, cCode: str
   return normEff.includes(normCode) || normEff.includes(normName) || normCode.includes(normEff) || normName.includes(normEff);
 };
 
-const inp = "w-full bg-white border border-slate-300 rounded-none px-4 py-3 outline-none focus:border-teal-400 focus:ring-4 focus:ring-teal-400/10 text-sm font-medium text-slate-700 transition-all shadow-none";
+const inp = "w-full bg-white border border-slate-300 rounded-none pl-4 pr-4 py-3 outline-none focus:border-teal-400 focus:ring-4 focus:ring-teal-400/10 text-sm font-medium text-slate-700 transition-all shadow-none";
 
 function Toast({ msg, type }: { msg: string; type: string }) {
   return <div className={`fixed top-6 right-6 z-[9999] flex items-center gap-3 px-5 py-4 rounded-none shadow-2xl font-bold text-sm animate-in slide-in-from-right-4 fade-in duration-300 ${type === "err" ? "bg-rose-600 text-white" : "bg-emerald-600 text-white"}`}>{type === "err" ? <AlertCircle className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}{msg}</div>;

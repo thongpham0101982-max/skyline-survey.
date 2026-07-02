@@ -242,7 +242,7 @@ const renderTemplate = (content: string, student: any, academicYearName?: string
     .replace(/\{\{devAssessmentResult\}\}/g, student?.devAssessmentResult || "");
 };
 
-const inp = "w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-400/10 text-sm font-medium text-slate-700 transition-all shadow-sm";
+const inp = "w-full bg-slate-50 border border-slate-200 rounded-2xl pl-4 pr-4 py-3 outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-400/10 text-sm font-medium text-slate-700 transition-all shadow-sm";
 
 function Toast({ msg, type }: { msg: string; type: string }) {
   return (

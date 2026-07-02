@@ -41,7 +41,7 @@ function Field({ label, required, children }: { label: string; required?: boolea
   )
 }
 
-const inp = "w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 outline-none appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20fill%3D%27none%27%20viewBox%3D%270%200%2020%2020%27%3E%3Cpath%20stroke%3D%27%2394a3b8%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%20stroke-width%3D%271.5%27%20d%3D%27m6%208%204%204%204-4%27%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_14px_center] bg-[length:18px_18px] pr-10 focus:ring-4 focus:ring-teal-50 focus:border-[#00A99D] hover:border-slate-300 transition-all placeholder:text-slate-400 shadow-sm"
+const inp = "w-full bg-white border border-slate-200 rounded-xl pl-4 pr-4 py-3 text-sm font-semibold text-slate-700 outline-none appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20fill%3D%27none%27%20viewBox%3D%270%200%2020%2020%27%3E%3Cpath%20stroke%3D%27%2394a3b8%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%20stroke-width%3D%271.5%27%20d%3D%27m6%208%204%204%204-4%27%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_14px_center] bg-[length:18px_18px] pr-10 focus:ring-4 focus:ring-teal-50 focus:border-[#00A99D] hover:border-slate-300 transition-all placeholder:text-slate-400 shadow-sm"
 const TEAL = "#00A99D"
 
 interface ConfirmState { msg: string; fn: () => void }
