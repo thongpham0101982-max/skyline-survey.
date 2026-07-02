@@ -1162,7 +1162,19 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
     const bothApproved = studentSummaries.filter(s => !!s.bghApprovalStatus && !!s.gdcsApprovalStatus).length;
     const approvedRate = total > 0 ? Math.round((bothApproved / total) * 100) : 0;
 
-    return { total, surveyed, surveyedRate, passed, trial, failed, pending, bghApproved, gdcsApproved, bothApproved, approvedRate };
+    let enrolled = 0;
+    studentSummaries.forEach(s => {
+      const res = s.admissionResult || "";
+      const isPassed = res === "Đạt" || res === "DAT" || res === "DAT_MIEN_HOC_THU" || res === "Đạt - Miễn Học Thử" || res === "Đạt - Học Thử" || res === "DAT_HOC_THU" || res === "Học thử" || res === "HOC_THU";
+      const isEnrolled = s.enrollmentStatus === "COMPLETED";
+      if (isPassed && isEnrolled) {
+        enrolled++;
+      }
+    });
+    const totalPassedForEnrollment = passed + trial;
+    const enrolledRate = totalPassedForEnrollment > 0 ? Math.round((enrolled / totalPassedForEnrollment) * 100) : 0;
+
+    return { total, surveyed, surveyedRate, passed, trial, failed, pending, bghApproved, gdcsApproved, bothApproved, approvedRate, enrolled, totalPassedForEnrollment, enrolledRate };
   }, [studentSummaries]);
 
   // 2. campusStats
@@ -4110,29 +4122,17 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   </div>
                 </div>
 
-                {/* Card 3: Tiến độ Phê duyệt */}
+                {/* Card 3: Số Học sinh Đạt - Nhập học */}
                 <div className="relative overflow-hidden bg-white p-6 rounded-2xl border border-slate-200 border-l-4 border-l-emerald-500 shadow-sm flex flex-col justify-between group hover:-translate-y-1 hover:shadow-md transition-all duration-300">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tiến độ Phê duyệt (2 Bước)</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Số Học sinh Đạt - Nhập học</span>
                     <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl transition-all duration-300 group-hover:scale-110 group-hover:bg-emerald-100">
                       <UserCheck className="w-4 h-4" />
                     </div>
                   </div>
-                  <div className="flex items-center justify-between mt-4">
-                    <div className="flex flex-col">
-                      <span className="text-3xl font-black text-slate-800">{overallKPIs.bothApproved}</span>
-                      <span className="text-[9px] text-[#00A99D] font-bold uppercase tracking-wider">Xong cả 2 (${overallKPIs.approvedRate}%)</span>
-                    </div>
-                    <div className="w-px h-8 bg-slate-200"></div>
-                    <div className="flex flex-col items-center">
-                      <span className="text-lg font-black text-slate-700">${overallKPIs.bghApproved}</span>
-                      <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider">BGH duyệt</span>
-                    </div>
-                    <div className="w-px h-8 bg-slate-200"></div>
-                    <div className="flex flex-col items-end">
-                      <span className="text-lg font-black text-slate-700">${overallKPIs.gdcsApproved}</span>
-                      <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider">GĐCS duyệt</span>
-                    </div>
+                  <div className="flex items-baseline gap-1 mt-4">
+                    <span className="text-4xl font-black text-slate-800 tracking-tight">{overallKPIs.enrolled}</span>
+                    <span className="text-xs text-slate-500 font-bold">/ {overallKPIs.totalPassedForEnrollment} HS nhập học ({overallKPIs.enrolledRate}%)</span>
                   </div>
                 </div>
               </div>

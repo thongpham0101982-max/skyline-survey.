@@ -88,6 +88,7 @@ export async function GET(req: NextRequest) {
           devImportantNote: true, 
           devAssessmentResult: true, 
           admissionResult: true,
+          enrollmentStatus: true,
           bghApprovalStatus: true,
           bghApprovalComment: true,
           bghApprovalUser: true,
