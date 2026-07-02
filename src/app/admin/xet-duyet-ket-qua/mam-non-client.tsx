@@ -4020,6 +4020,48 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 ﻿          {/* Sub-tab: Thống kê Phân tích */}
           {devTab === "stats" && (
             <div className="space-y-8 animate-in fade-in duration-300 text-slate-800 p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm bg-white">
+
+              {/* Premium Dashboard-style Filter Bar for Stats */}
+              <div className="bg-[#EBF5F4]/40 p-5 rounded-2xl border border-[#00A99D]/15 grid grid-cols-1 sm:grid-cols-2 gap-4 items-end mb-6">
+                <div className="group relative w-full">
+                  <label className="block text-[10px] font-black tracking-widest uppercase mb-2 text-[#008075] flex items-center gap-1.5 ml-1">
+                    <Calendar className="w-3.5 h-3.5 text-[#00A99D]"/> Kỳ Khảo sát
+                  </label>
+                  <div className="relative">
+                    <select 
+                      value={cPeriodId} 
+                      onChange={e => { setCPeriodId(e.target.value); setCBatchId(""); }} 
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-2xl pl-4 pr-10 py-2.5 outline-none font-bold text-slate-700 shadow-sm transition-all text-xs cursor-pointer appearance-none"
+                    >
+                      <option value="all">Tất cả các kỳ</option>
+                      {periods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A99D] transition-colors">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="group relative w-full">
+                  <label className="block text-[10px] font-black tracking-widest uppercase mb-2 text-[#008075] flex items-center gap-1.5 ml-1">
+                    <Layers className="w-3.5 h-3.5 text-[#00A99D]"/> Đợt khảo sát
+                  </label>
+                  <div className="relative">
+                    <select 
+                      value={cBatchId} 
+                      onChange={e => setCBatchId(e.target.value)} 
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-2xl pl-4 pr-10 py-2.5 outline-none font-bold text-slate-700 shadow-sm transition-all text-xs cursor-pointer appearance-none" 
+                      disabled={!cPeriodId}
+                    >
+                      <option value="">Tất cả đợt</option>
+                      {selPeriod?.batches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A99D] transition-colors">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
               {/* KPI Cards Row */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 {/* Card 1: Tổng Học sinh */}
