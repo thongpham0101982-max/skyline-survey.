@@ -25,7 +25,8 @@ import {
   Sparkles,
   UserCheck,
   RefreshCw,
-  Loader2
+  Loader2,
+  Brain
 } from "lucide-react";
 import { confirmEnrollmentAction } from "../student-transfers/actions";
 import { getSurveyFormAgeGroup } from "@/lib/preschool";
@@ -2713,6 +2714,10 @@ export function StudentInfoClient({
                     let writtenEnglishVal: any = selectedStudent.writtenEnglishScore;
                     let oralEnglishVal: any = selectedStudent.oralEnglishScore;
                     let psychologyVal: any = selectedStudent.psychologyScore;
+                    
+                    let oralEnglishComment = "";
+                    let psychologyConclusion = "";
+                    let psychologyRecommendation = "";
 
                     const studentScores = selectedStudent.scores || [];
                     studentScores.forEach((sc: any) => {
@@ -2742,6 +2747,7 @@ export function StudentInfoClient({
                             writtenEnglishVal = scoreVal;
                           } else if (sNameLower.includes("vấn đáp") || sNameLower.includes("nói") || sCode.includes("speaking") || sCode.includes("oral") || sCode.includes("vd")) {
                             oralEnglishVal = scoreVal;
+                            oralEnglishComment = sc.comments || "";
                           }
                         } else if (sCode.includes("tly")) {
                           try {
@@ -2753,12 +2759,25 @@ export function StudentInfoClient({
                           } catch (e) {
                             psychologyVal = parseFloat(sc.scores || "0");
                           }
+                          try {
+                            if (sc.comments) {
+                              const parsedComments = JSON.parse(sc.comments);
+                              if (Array.isArray(parsedComments)) {
+                                psychologyConclusion = parsedComments[0] || "";
+                                psychologyRecommendation = parsedComments[1] || "";
+                              } else {
+                                psychologyConclusion = sc.comments;
+                              }
+                            }
+                          } catch (e) {
+                            psychologyConclusion = sc.comments || "";
+                          }
                         }
                       }
                     });
 
-                    let writtenDisplay: React.ReactNode = writtenEnglishVal !== null && writtenEnglishVal !== undefined ? writtenEnglishVal : "-";
-                    let oralDisplay: React.ReactNode = oralEnglishVal !== null && oralEnglishVal !== undefined ? oralEnglishVal : "-";
+                    let writtenDisplay: React.ReactNode = writtenEnglishVal !== null && writtenEnglishVal !== undefined ? writtenEnglishVal : "—";
+                    let oralDisplay: React.ReactNode = oralEnglishVal !== null && oralEnglishVal !== undefined ? oralEnglishVal : "—";
                     let totalScore: number | null = null;
                     
                     if (!isGrade1) {
@@ -2775,47 +2794,135 @@ export function StudentInfoClient({
                         totalScore = (isNaN(wScore) ? 0 : wScore) + (isNaN(oScore) ? 0 : oScore);
                       }
                     }
+
+                    // Determine psychology color code based on score
+                    let psychColorClass = "text-slate-800 bg-slate-50 border-slate-200";
+                    let psychBadgeText = "";
+                    if (psychologyVal !== null && psychologyVal !== undefined && psychologyVal !== "—") {
+                      const scNum = parseFloat(psychologyVal);
+                      if (!isNaN(scNum)) {
+                        if (scNum <= 15) {
+                          psychColorClass = "text-[#00A99D] bg-[#00A99D]/5 border-[#00A99D]/20";
+                          psychBadgeText = "Bình thường";
+                        } else if (scNum <= 31) {
+                          psychColorClass = "text-amber-600 bg-amber-50 border-amber-200/50";
+                          psychBadgeText = "Dấu hiệu nhẹ";
+                        } else if (scNum <= 47) {
+                          psychColorClass = "text-orange-600 bg-orange-50 border-orange-200/50";
+                          psychBadgeText = "Dấu hiệu vừa";
+                        } else if (scNum <= 63) {
+                          psychColorClass = "text-rose-600 bg-rose-50 border-rose-200/50";
+                          psychBadgeText = "Nguy cơ cao";
+                        } else {
+                          psychColorClass = "text-red-700 bg-red-50 border-red-200/50";
+                          psychBadgeText = "Nguy cơ rất cao";
+                        }
+                      }
+                    }
                     
                     return (
-                      <div className={`grid grid-cols-2 ${totalScore !== null ? "md:grid-cols-6" : "md:grid-cols-5"} gap-4`}>
-                        <div className="bg-white p-4 rounded-2xl border border-slate-300 text-center">
-                          <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Điểm Toán</span>
-                          <span className="text-2xl font-black text-[#1E1B4B] mt-1 block">
-                            {mathVal !== null && mathVal !== undefined ? mathVal : "-"}
-                          </span>
-                        </div>
-                        <div className="bg-white p-4 rounded-2xl border border-slate-300 text-center">
-                          <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Điểm Ngữ văn</span>
-                          <span className="text-2xl font-black text-[#1E1B4B] mt-1 block">
-                            {literatureVal !== null && literatureVal !== undefined ? literatureVal : "-"}
-                          </span>
-                        </div>
-                        <div className="bg-white p-4 rounded-2xl border border-slate-300 text-center">
-                          <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tiếng Anh viết</span>
-                          <span className="text-2xl font-black text-[#1E1B4B] mt-1 block">
-                            {writtenDisplay}
-                          </span>
-                        </div>
-                        <div className="bg-white p-4 rounded-2xl border border-slate-300 text-center">
-                          <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tiếng Anh nói</span>
-                          <span className="text-2xl font-black text-[#1E1B4B] mt-1 block">
-                            {oralDisplay}
-                          </span>
-                        </div>
-                        {totalScore !== null && (
-                          <div className="p-4 text-center flex flex-col justify-center text-xs font-semibold">
-                            <span className="block text-[10px] font-bold text-indigo-600 uppercase tracking-wider">Tổng điểm Tiếng Anh</span>
-                            <span className="text-2xl font-black text-indigo-700 mt-1 block">
-                              {totalScore}/100
+                      <div className="space-y-4">
+                        {/* 1. Core Subject Grid */}
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                          {/* Math Card */}
+                          <div className="bg-[#00A99D]/5 p-4 rounded-2xl border border-[#00A99D]/10 hover:shadow-md hover:scale-[1.02] transition-all duration-300 text-center">
+                            <span className="block text-[10px] font-black text-[#00A99D] uppercase tracking-widest">Điểm Toán</span>
+                            <span className="text-3xl font-black text-slate-800 mt-1 block">
+                              {mathVal !== null && mathVal !== undefined ? mathVal : "—"}
                             </span>
                           </div>
-                        )}
-                        <div className="bg-white p-4 rounded-2xl border border-slate-300 text-center">
-                          <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Điểm Tâm lý</span>
-                          <span className="text-2xl font-black text-[#1E1B4B] mt-1 block">
-                            {psychologyVal !== null && psychologyVal !== undefined ? psychologyVal : "-"}
-                          </span>
+
+                          {/* Literature Card */}
+                          <div className="bg-indigo-50/30 p-4 rounded-2xl border border-indigo-100 hover:shadow-md hover:scale-[1.02] transition-all duration-300 text-center">
+                            <span className="block text-[10px] font-black text-indigo-600 uppercase tracking-widest">Điểm Ngữ văn</span>
+                            <span className="text-3xl font-black text-slate-800 mt-1 block">
+                              {literatureVal !== null && literatureVal !== undefined ? literatureVal : "—"}
+                            </span>
+                          </div>
+
+                          {/* English Written Card */}
+                          <div className="bg-sky-50/20 p-4 rounded-2xl border border-sky-100/50 hover:shadow-md hover:scale-[1.02] transition-all duration-300 text-center">
+                            <span className="block text-[10px] font-black text-sky-600 uppercase tracking-widest">Tiếng Anh viết</span>
+                            <span className="text-3xl font-black text-slate-800 mt-1 block">
+                              {writtenDisplay}
+                            </span>
+                          </div>
+
+                          {/* English Oral Card */}
+                          <div className="bg-sky-50/20 p-4 rounded-2xl border border-sky-100/50 hover:shadow-md hover:scale-[1.02] transition-all duration-300 text-center">
+                            <span className="block text-[10px] font-black text-sky-600 uppercase tracking-widest">Tiếng Anh nói</span>
+                            <span className="text-3xl font-black text-slate-800 mt-1 block">
+                              {oralDisplay}
+                            </span>
+                          </div>
+
+                          {/* Psychology Card */}
+                          <div className={`${psychColorClass} p-4 rounded-2xl border hover:shadow-md hover:scale-[1.02] transition-all duration-300 text-center flex flex-col justify-center items-center`}>
+                            <span className="block text-[10px] font-black uppercase tracking-widest opacity-80">Điểm Tâm lý</span>
+                            <span className="text-3xl font-black mt-1 block leading-none">
+                              {psychologyVal !== null && psychologyVal !== undefined ? psychologyVal : "—"}
+                            </span>
+                            {psychBadgeText && (
+                              <span className="text-[9px] font-bold mt-1 px-2 py-0.5 rounded-full bg-white/70 border border-current/10">
+                                {psychBadgeText}
+                              </span>
+                            )}
+                          </div>
                         </div>
+
+                        {/* 2. English Speaking Comment & Total English Score */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                          <div className="md:col-span-2 bg-slate-50/60 p-4 rounded-2xl border border-slate-100 flex flex-col justify-center">
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <span className="text-xs font-black text-sky-700 uppercase tracking-wider">Nhận xét Tiếng Anh Nói</span>
+                              <span className="h-1.5 w-1.5 rounded-full bg-sky-400"></span>
+                            </div>
+                            <p className="text-xs text-slate-600 font-semibold leading-relaxed">
+                              {oralEnglishComment ? (
+                                <span className="italic">"{oralEnglishComment}"</span>
+                              ) : (
+                                <span className="text-slate-400 font-normal">Chưa có nhận xét Tiếng Anh Nói.</span>
+                              )}
+                            </p>
+                          </div>
+                          
+                          {totalScore !== null ? (
+                            <div className="bg-gradient-to-br from-indigo-50 to-sky-50/50 p-4 rounded-2xl border border-indigo-100 text-center flex flex-col justify-center">
+                              <span className="block text-[10px] font-black text-indigo-600 uppercase tracking-widest">Tổng điểm Tiếng Anh</span>
+                              <span className="text-2xl font-black text-indigo-700 mt-0.5 block">
+                                {totalScore}/100
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="bg-slate-50/30 p-4 rounded-2xl border border-slate-100 text-center flex flex-col justify-center text-slate-400 text-xs font-normal">
+                              Không áp dụng tổng điểm
+                            </div>
+                          )}
+                        </div>
+
+                        {/* 3. Detailed Psychology Section */}
+                        {(psychologyConclusion || psychologyRecommendation) && (
+                          <div className="bg-gradient-to-br from-violet-50/30 via-indigo-50/20 to-transparent p-5 rounded-2xl border border-violet-100/50 text-left mt-2 animate-fade-in">
+                            <div className="flex items-center gap-2 mb-3.5 border-b border-violet-100/50 pb-2">
+                              <Brain className="w-4 h-4 text-violet-600 animate-pulse" />
+                              <h5 className="text-xs font-black text-violet-800 uppercase tracking-wider">Chi tiết Đánh giá Tâm lý</h5>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                              {psychologyConclusion && (
+                                <div className="bg-white/80 backdrop-blur-sm p-4 rounded-xl border border-violet-100/30 shadow-sm">
+                                  <span className="block text-[10px] font-bold text-violet-600 uppercase tracking-wider mb-1.5">Chẩn đoán</span>
+                                  <p className="text-xs text-slate-700 font-semibold leading-relaxed">{psychologyConclusion}</p>
+                                </div>
+                              )}
+                              {psychologyRecommendation && (
+                                <div className="bg-white/80 backdrop-blur-sm p-4 rounded-xl border border-violet-100/30 shadow-sm">
+                                  <span className="block text-[10px] font-bold text-indigo-600 uppercase tracking-wider mb-1.5">Nhận xét</span>
+                                  <p className="text-xs text-slate-700 font-semibold leading-relaxed">{psychologyRecommendation}</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     );
                   })()}
