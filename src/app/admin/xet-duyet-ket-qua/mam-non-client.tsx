@@ -4513,79 +4513,19 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                           .filter(s => !cSearch || s.studentCode.toLowerCase().includes(cSearch.toLowerCase()) || s.fullName.toLowerCase().includes(cSearch.toLowerCase()))
                           .map((s, idx) => {
                             const statusBadge = () => {
-                              if (s.totalCriteria > 0 && s.scoredCount > 0) {
-                                return (
-                                  <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/50 shadow-xs">
-                                    ✓ Hoàn thành
-                                  </span>
-                                );
-                              }
-                              const res = s.admissionResult || s.devAssessmentResult;
-                              if (res && res !== "Chưa duyệt" && res !== "CHUA_DUYET" && res !== "") {
-                                if (res === "Đạt - Miễn Học Thử" || res === "DAT_MIEN_HOC_THU") {
-                                  return (
-                                    <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-teal-50 text-teal-700 border border-teal-200/50 shadow-xs">
-                                      ✓ Miễn HT
-                                    </span>
-                                  );
-                                }
-                                if (res === "Đạt - Học Thử" || res === "DAT_HOC_THU" || res === "Học thử" || res === "HOC_THU") {
-                                  return (
-                                    <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-sky-50 text-sky-700 border border-sky-200/50 shadow-xs">
-                                      ★ Học thử
-                                    </span>
-                                  );
-                                }
-                                if (res === "Đạt" || res === "DAT") {
-                                  return (
-                                    <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-250/50 shadow-xs">
-                                      ✓ Đạt
-                                    </span>
-                                  );
-                                }
-                                if (res === "Không đạt" || res === "KHONG_DAT") {
-                                  return (
-                                    <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-250/50 shadow-xs">
-                                      ✗ K.Đạt
-                                    </span>
-                                  );
-                                }
-                                if (res === "Ý kiến khác" || res === "Y_KIEN_KHAC") {
-                                  return (
-                                    <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-250/50 shadow-xs">
-                                      Ý kiến
-                                    </span>
-                                  );
-                                }
-                              }
-                              if (s.totalCriteria === 0) {
-                                return (
-                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-400 border border-slate-200/60 shadow-xs">
-                                    Không có tiêu chí
-                                  </span>
-                                );
-                              }
-                              if (s.scoredCount === s.totalCriteria) {
-                                return (
-                                  <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/50 shadow-xs">
-                                    ✓ Hoàn thành
-                                  </span>
-                                );
-                              }
                               if (s.scoredCount > 0) {
                                 return (
-                                  <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200/50 shadow-xs">
-                                    ✓ Hoàn thành
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-250/50 shadow-xs">
+                                    ✓ Đã đánh giá
                                   </span>
                                 );
                               }
                               return (
-                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-505 border border-slate-200/50 shadow-xs">
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-slate-50 text-slate-400 border border-slate-200/60 shadow-xs">
                                   ⚪ Chưa đánh giá
                                 </span>
                               );
                             };
-
                             return (
                               <tr key={s.id} className="hover:bg-[#EBF5F4]/40 even:bg-slate-50/40 transition-colors duration-150 text-xs font-semibold">
                                 <td className="w-10 min-w-[40px] max-w-[40px] sticky left-0 z-10 p-3 align-middle text-center text-[10px] text-slate-400 bg-inherit border border-slate-100">{idx + 1}</td>
