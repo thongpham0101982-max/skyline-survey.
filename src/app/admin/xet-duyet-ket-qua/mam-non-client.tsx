@@ -1322,35 +1322,6 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
     });
   }, [studentSummaries, campuses]);
 
-  // 5. developmentalAreaStats
-  const developmentalAreaStats = useMemo(() => {
-    const areas = {
-      THE_CHAT: { name: "Thể chất", code: "THE_CHAT", total: 0, passed: 0, failed: 0 },
-      NHAN_THUC: { name: "Nhận thức", code: "NHAN_THUC", total: 0, passed: 0, failed: 0 },
-      NGON_NGU: { name: "Ngôn ngữ", code: "NGON_NGU", total: 0, passed: 0, failed: 0 },
-      TINH_CAM_XH_TM: { name: "Tình cảm - XH & Thẩm mỹ", code: "TINH_CAM_XH_TM", total: 0, passed: 0, failed: 0 }
-    };
-
-    studentSummaries.forEach(s => {
-      if (!Array.isArray(s.scores)) return;
-      s.scores.forEach((sc) => {
-        const areaCode = sc.criteria?.area?.code;
-        if (areaCode && areas[areaCode]) {
-          areas[areaCode].total++;
-          if (sc.result === "DAT") {
-            areas[areaCode].passed++;
-          } else if (sc.result === "KHONG_DAT") {
-            areas[areaCode].failed++;
-          }
-        }
-      });
-    });
-
-    return Object.values(areas).map(a => {
-      const rate = a.total > 0 ? Math.round((a.passed / a.total) * 100) : 0;
-      return { ...a, rate };
-    });
-  }, [studentSummaries]);
 
   
   // Đánh giá học sinh
@@ -4242,10 +4213,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 </div>
               </div>
 
-              {/* Chart & Developmental Area breakdown Row */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Chart Card */}
-                <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 overflow-hidden hover:shadow-md transition-all duration-300">
+              {/* Chart Row */}
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 overflow-hidden hover:shadow-md transition-all duration-300">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 border-b border-slate-100 pb-4 gap-3">
                     <h4 className="font-black text-slate-800 text-sm tracking-tight uppercase flex items-center gap-2.5">
                       <span className="flex h-2 w-2 relative">
@@ -4377,75 +4346,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       </ComposedChart>
                     </ResponsiveContainer>
                   </div>
-                </div>
-
-                {/* Developmental Areas Achievement */}
-                <div className="lg:col-span-1 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col justify-between hover:shadow-md transition-all duration-300">
-                  <div className="flex items-center justify-between mb-5 border-b border-slate-100 pb-4">
-                    <h4 className="font-black text-slate-800 text-sm tracking-tight uppercase flex items-center gap-2.5">
-                      <span className="flex h-2 w-2 relative">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
-                      </span>
-                      Lĩnh vực Phát triển (Tỷ lệ Đạt)
-                    </h4>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded">Chi tiết</span>
-                  </div>
-
-                  <div className="space-y-4.5 flex-1 flex flex-col justify-center">
-                    {developmentalAreaStats.map(area => {
-                      let areaStyle = {
-                        color: "text-teal-700",
-                        bg: "bg-teal-50 border-teal-100",
-                        bar: "bg-[#00A99D]"
-                      };
-
-                      if (area.code === "NHAN_THUC") {
-                        areaStyle = {
-                          color: "text-purple-750",
-                          bg: "bg-purple-50 border-purple-100",
-                          bar: "bg-purple-500"
-                        };
-                      } else if (area.code === "NGON_NGU") {
-                        areaStyle = {
-                          color: "text-sky-700",
-                          bg: "bg-sky-50 border-sky-100",
-                          bar: "bg-sky-500"
-                        };
-                      } else if (area.code === "TINH_CAM_XH_TM") {
-                        areaStyle = {
-                          color: "text-rose-700",
-                          bg: "bg-rose-50 border-rose-100",
-                          bar: "bg-rose-500"
-                        };
-                      }
-
-                      return (
-                        <div key={area.code} className="space-y-1.5">
-                          <div className="flex justify-between items-center text-xs">
-                            <span className="font-bold text-slate-700">{area.name}</span>
-                            <span className={`px-2 py-0.5 text-[10px] font-black rounded-lg border ${areaStyle.color} ${areaStyle.bg}`}>
-                              Đạt: {area.rate}%
-                            </span>
-                          </div>
-                          
-                          <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                            <div className={`h-full ${areaStyle.bar} rounded-full`} style={{ width: `${area.rate}%` }}></div>
-                          </div>
-                          <div className="flex justify-between text-[9px] text-slate-400 font-bold">
-                            <span>Đã khảo sát: {area.total} tiêu chí</span>
-                            <span>Đạt: {area.passed} / K.Đạt: {area.failed}</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
               </div>
             </div>
           )}
-
-
           {/* Sub-tab: GV Đánh Giá */}
           {devTab === "assess" && (
             <div className="space-y-6">
