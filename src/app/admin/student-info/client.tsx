@@ -116,10 +116,15 @@ export function StudentInfoClient({
   const [selectedBatch, setSelectedBatch] = useState("");
   const [selectedResult, setSelectedResult] = useState("");
   const [selectedGrade, setSelectedGrade] = useState("");
+  const [selectedCampusFilter, setSelectedCampusFilter] = useState("all");
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedCampusFilter]);
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 15;
+  const pageSize = 10;
 
   // Selected student for details modal
   const [selectedStudent, setSelectedStudent] = useState<any | null>(null);
@@ -504,6 +509,45 @@ export function StudentInfoClient({
   }, [currentDataset]);
 
   // Filtered dataset
+  const resolveStudentCampusId = useCallback((s: any) => {
+    // 1. If s.registeredCampus matches a campus ID or name
+    if (s.registeredCampus) {
+      const matchingCampus = campuses.find(c => c.id === s.registeredCampus || c.campusName === s.registeredCampus);
+      if (matchingCampus) return matchingCampus.id;
+    }
+    
+    // 2. Check admissionCampus
+    if (s.admissionCampus) {
+      const tc = campuses.find(c => c.campusName === s.admissionCampus || c.campusCode === s.admissionCampus);
+      if (tc) return tc.id;
+    }
+    
+    // 3. Fallback to batch campusId
+    if (s.batchId) {
+      const b = preschoolPeriods.flatMap(p => p.batches || []).concat(generalPeriods.flatMap(p => p.batches || [])).find(bx => bx.id === s.batchId);
+      if (b?.campusId) {
+        const tc = campuses.find(c => c.id === b.campusId);
+        if (tc) return tc.id;
+      }
+    }
+    
+    // 4. Try string match on admissionCampus
+    const campusName = s.admissionCampus || "";
+    let code = null;
+    if (campusName.includes("CS1") || campusName.includes("Cơ sở 1")) code = "CS1";
+    else if (campusName.includes("CS2") || campusName.includes("Cơ sở 2")) code = "CS2";
+    else if (campusName.includes("CS3") || campusName.includes("Cơ sở 3")) code = "CS3";
+    else if (campusName.includes("CS4") || campusName.includes("Cơ sở 4")) code = "CS4";
+    else if (campusName.includes("CS5") || campusName.includes("Cơ sở 5")) code = "CS5";
+    
+    if (code) {
+      const tc = campuses.find(c => c.campusCode === code);
+      if (tc) return tc.id;
+    }
+    
+    return "unassigned";
+  }, [campuses, generalPeriods, preschoolPeriods]);
+
   const filteredStudents = useMemo(() => {
     return currentDataset.filter((student) => {
       if (searchQuery) {
@@ -522,6 +566,15 @@ export function StudentInfoClient({
       }
       if (selectedResult && student.admissionResult !== selectedResult) return false;
       if (selectedGrade && student.grade !== selectedGrade) return false;
+
+      // Filter by campus
+      if (selectedCampusFilter && selectedCampusFilter !== "all") {
+        const resolvedCampusId = resolveStudentCampusId(student);
+        const matchesCampus = resolvedCampusId === selectedCampusFilter || 
+                              student.admissionCampus === selectedCampusFilter || 
+                              student.registeredCampus === selectedCampusFilter;
+        if (!matchesCampus) return false;
+      }
 
       // Filter strictly by "Không đạt - Kiểm tra lại" for the "TT Khảo sát lại" sub-tab (subTab === "info")
       if (subTab === "info") {
@@ -1458,7 +1511,7 @@ export function StudentInfoClient({
           <Filter className="w-4 h-4 text-[#00A99D]" />
           Bộ lọc & Tìm kiếm nhanh
         </div>
-        <div className={`grid grid-cols-1 sm:grid-cols-2 ${subTab === "result" ? "md:grid-cols-5" : "md:grid-cols-4"} gap-3`}>
+        <div className={`grid grid-cols-1 sm:grid-cols-2 ${subTab === "result" ? "lg:grid-cols-6 md:grid-cols-3" : "lg:grid-cols-5 md:grid-cols-3"} gap-3`}>
           {/* Search bar */}
           <div className="relative">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -1481,6 +1534,21 @@ export function StudentInfoClient({
               </button>
             )}
           </div>
+
+          {/* Campus Filter */}
+          <select
+            value={selectedCampusFilter}
+            onChange={(e) => {
+              setSelectedCampusFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="px-3 py-2 rounded-xl text-sm border border-slate-300 focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] outline-none bg-white cursor-pointer text-slate-700 font-medium"
+          >
+            <option value="all">Tất cả Cơ sở</option>
+            {campuses.map((c) => (
+              <option key={c.id} value={c.id}>{c.campusName}</option>
+            ))}
+          </select>
 
           {/* Period Filter */}
           <select

@@ -1088,6 +1088,12 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
   const [sPeriodId, setSPeriodId] = useState("")
   const [sBatchId, setSBatchId] = useState("")
   const [sSearch, setSSearch] = useState("")
+  const [studentsCurrentPage, setStudentsCurrentPage] = useState(1);
+  const studentsPageSize = 10;
+
+  useEffect(() => {
+    setStudentsCurrentPage(1);
+  }, [sPeriodId, sBatchId, sSearch]);
   const [importing, setImporting] = useState(false)
   const [sModal, setSModal] = useState(false)
   const [editS, setEditS] = useState<Student|null>(null)
@@ -3319,6 +3325,11 @@ return {
   const asSelPeriod = visiblePeriods.find(p => p.id === asPeriodId)
   const filtStu = students.filter(s => !sSearch || s.studentCode.toLowerCase().includes(sSearch.toLowerCase()) || s.fullName.toLowerCase().includes(sSearch.toLowerCase()))
 
+  const paginatedFiltStu = useMemo(() => {
+    const startIndex = (studentsCurrentPage - 1) * studentsPageSize;
+    return filtStu.slice(startIndex, startIndex + studentsPageSize);
+  }, [filtStu, studentsCurrentPage, studentsPageSize]);
+
     // Merged Student object to ensure printed outputs reflect LIVE unsaved form updates
   const mergedStudent = useMemo(() => {
     if (!selectedReportStudent) return null;
@@ -4000,7 +4011,7 @@ return {
                        </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {filtStu.map((s, idx) => (
+                      {paginatedFiltStu.map((s, idx) => (
                         <tr key={s.id} className={`group hover:bg-slate-50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
                            <td className="p-2 border border-slate-300 font-mono text-xs text-slate-700">{s.studentCode}</td>
                            <td className="p-2 border border-slate-300">
@@ -4058,7 +4069,7 @@ return {
 
                 {/* Mobile Card List View */}
                 <div className="md:hidden flex flex-col p-4 gap-4 text-xs font-semibold">
-                  {filtStu.map(s => (
+                  {paginatedFiltStu.map(s => (
                     <div key={s.id} className="bg-white p-4 rounded-2xl border-2 border-blue-100 shadow-sm relative">
                       <div className="flex justify-between items-start mb-3">
                         <div className="flex flex-col">
@@ -4109,11 +4120,57 @@ return {
                   ))}
                 </div>
 
-                {/* Footer Pagination (Visual only for now) */}
-                <div className="p-4 flex items-center justify-between text-xs font-medium text-slate-500 text-xs font-semibold">
-                  <span>Hiển thị <span className="font-bold text-slate-700">{filtStu.length}</span> kết quả</span>
-                  {/* Future real pagination can go here */}
-                </div>
+                {/* Pagination Controls */}
+                {filtStu.length > 0 && (
+                  <div className="p-4 flex items-center justify-between text-xs font-semibold border-t border-slate-100 bg-slate-50/50">
+                    <span className="text-xs text-slate-500 font-medium">
+                      Hiển thị {Math.min(filtStu.length, (studentsCurrentPage - 1) * studentsPageSize + 1)}-
+                      {Math.min(filtStu.length, studentsCurrentPage * studentsPageSize)} trong tổng số{" "}
+                      {filtStu.length} học sinh
+                    </span>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setStudentsCurrentPage((p) => Math.max(1, p - 1))}
+                        disabled={studentsCurrentPage === 1}
+                        className="px-3 py-1.5 rounded-xl border border-slate-200 hover:border-indigo-500 hover:bg-white text-slate-655 disabled:opacity-40 disabled:hover:border-slate-200 disabled:hover:bg-transparent transition-all cursor-pointer font-black bg-transparent border-none"
+                      >
+                        Trước
+                      </button>
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: Math.ceil(filtStu.length / studentsPageSize) }).map((_, i) => {
+                          const pageNum = i + 1;
+                          const totalPages = Math.ceil(filtStu.length / studentsPageSize);
+                          if (totalPages > 5 && Math.abs(pageNum - studentsCurrentPage) > 1 && pageNum !== 1 && pageNum !== totalPages) {
+                            if (pageNum === 2 || pageNum === totalPages - 1) {
+                              return <span key={pageNum} className="px-1 text-slate-400 font-bold select-none">...</span>;
+                            }
+                            return null;
+                          }
+                          return (
+                            <button
+                              key={pageNum}
+                              onClick={() => setStudentsCurrentPage(pageNum)}
+                              className={"h-8 w-8 rounded-xl flex items-center justify-center transition-all cursor-pointer border-none font-black " + (
+                                studentsCurrentPage === pageNum
+                                  ? "bg-indigo-600 text-white shadow-sm shadow-indigo-600/20"
+                                  : "text-slate-655 hover:bg-slate-100"
+                              )}
+                            >
+                              {pageNum}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <button
+                        onClick={() => setStudentsCurrentPage((p) => Math.min(Math.ceil(filtStu.length / studentsPageSize), p + 1))}
+                        disabled={studentsCurrentPage === Math.ceil(filtStu.length / studentsPageSize) || Math.ceil(filtStu.length / studentsPageSize) === 0}
+                        className="px-3 py-1.5 rounded-xl border border-slate-200 hover:border-indigo-500 hover:bg-white text-slate-655 disabled:opacity-40 disabled:hover:border-slate-200 disabled:hover:bg-transparent transition-all cursor-pointer font-black bg-transparent border-none"
+                      >
+                        Sau
+                      </button>
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </div>

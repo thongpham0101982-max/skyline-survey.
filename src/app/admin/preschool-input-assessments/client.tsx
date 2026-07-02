@@ -1257,6 +1257,12 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
   ], [EMAIL_MAP]);
 
   const [cSearch, setCSearch] = useState("");
+  const [childrenCurrentPage, setChildrenCurrentPage] = useState(1);
+  const childrenPageSize = 10;
+
+  useEffect(() => {
+    setChildrenCurrentPage(1);
+  }, [cPeriodId, cBatchId, cSearch]);
   const [cSelected, setCSelected] = useState<string[]>([]);
   const [cModal, setCModal] = useState(false);
   const [editC, setEditC] = useState<PreschoolChild | null>(null);
@@ -2757,6 +2763,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
   };
 
   const filtChildren = useMemo(() => children.filter(c => !cSearch || c.studentCode.toLowerCase().includes(cSearch.toLowerCase()) || c.fullName.toLowerCase().includes(cSearch.toLowerCase())), [children, cSearch]);
+
+  const paginatedFiltChildren = useMemo(() => {
+    const startIndex = (childrenCurrentPage - 1) * childrenPageSize;
+    return filtChildren.slice(startIndex, startIndex + childrenPageSize);
+  }, [filtChildren, childrenCurrentPage, childrenPageSize]);
   const reportChildren = useMemo(() => { let all = children; if (rptBatchId !== "all") all = all.filter(c => c.batchId === rptBatchId || c.batchId === null || c.batchId === ""); return all; }, [children, rptBatchId]);
   const rptStats = useMemo(() => {
     const total = reportChildren.length;
@@ -3473,7 +3484,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             {cLoading ? <Spin /> : filtChildren.length === 0 ? (
               <Empty text={cPeriodId ? "Chưa có trẻ nào" : "Vui lòng chọn Kỳ và bấm Tìm"} sub={cPeriodId ? "Bấm Thêm trẻ hoặc Import Excel" : ""} />
             ) : (
-              <div className="overflow-x-auto custom-scrollbar flex-1">
+              <>
+                <div className="overflow-x-auto custom-scrollbar flex-1">
                 <table className="w-full text-left text-sm whitespace-nowrap border-collapse">
                   <thead className="bg-[#00A99D]/5 border-b border-slate-300">
                     <tr>
@@ -3482,10 +3494,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200">
-                    {filtChildren.map((child, i) => (
+                    {paginatedFiltChildren.map((child, i) => (
                       <tr key={child.id} className={`hover:bg-[#00A99D]/5/30 transition-colors ${cSelected.includes(child.id) ? "bg-[#00A99D]/5/50" : ""}`}>
                         <td className="p-2 border border-slate-300"><input type="checkbox" className="w-4 h-4 rounded accent-[#00A99D]" checked={cSelected.includes(child.id)} onChange={e => setCSelected(e.target.checked ? [...cSelected, child.id] : cSelected.filter(id => id !== child.id))} /></td>
-                        <td className="p-2 text-slate-500 text-sm border border-slate-300">{i+1}</td>
+                        <td className="p-2 text-slate-500 text-sm border border-slate-300">{(childrenCurrentPage - 1) * childrenPageSize + i + 1}</td>
                         <td className="p-2 border border-slate-300 font-mono text-xs text-slate-700">{child.studentCode}</td>
                         <td className="p-2 border border-slate-300 text-sm font-bold text-slate-800">{child.fullName}</td>
                         <td className="p-2 text-sm text-slate-600 border border-slate-300">{child.dateOfBirth ? new Date(child.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
@@ -3509,6 +3521,59 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   </tbody>
                 </table>
               </div>
+              
+              {/* Pagination Controls */}
+              {filtChildren.length > 0 && (
+                <div className="p-4 flex items-center justify-between text-xs font-semibold border-t border-slate-300 bg-slate-50/50">
+                  <span className="text-xs text-slate-500 font-medium">
+                    Hiển thị {Math.min(filtChildren.length, (childrenCurrentPage - 1) * childrenPageSize + 1)}-
+                    {Math.min(filtChildren.length, childrenCurrentPage * childrenPageSize)} trong tổng số{" "}
+                    {filtChildren.length} trẻ
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setChildrenCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={childrenCurrentPage === 1}
+                      className="px-3 py-1.5 rounded-xl border border-slate-200 hover:border-indigo-500 hover:bg-white text-slate-655 disabled:opacity-40 disabled:hover:border-slate-200 disabled:hover:bg-transparent transition-all cursor-pointer font-black bg-transparent border-none"
+                    >
+                      Trước
+                    </button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: Math.ceil(filtChildren.length / childrenPageSize) }).map((_, i) => {
+                        const pageNum = i + 1;
+                        const totalPages = Math.ceil(filtChildren.length / childrenPageSize);
+                        if (totalPages > 5 && Math.abs(pageNum - childrenCurrentPage) > 1 && pageNum !== 1 && pageNum !== totalPages) {
+                          if (pageNum === 2 || pageNum === totalPages - 1) {
+                            return <span key={pageNum} className="px-1 text-slate-400 font-bold select-none">...</span>;
+                          }
+                          return null;
+                        }
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => setChildrenCurrentPage(pageNum)}
+                            className={"h-8 w-8 rounded-xl flex items-center justify-center transition-all cursor-pointer border-none font-black " + (
+                              childrenCurrentPage === pageNum
+                                ? "bg-indigo-600 text-white shadow-sm shadow-indigo-600/20"
+                                : "text-slate-655 hover:bg-slate-100"
+                            )}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <button
+                      onClick={() => setChildrenCurrentPage((p) => Math.min(Math.ceil(filtChildren.length / childrenPageSize), p + 1))}
+                      disabled={childrenCurrentPage === Math.ceil(filtChildren.length / childrenPageSize) || Math.ceil(filtChildren.length / childrenPageSize) === 0}
+                      className="px-3 py-1.5 rounded-xl border border-slate-200 hover:border-indigo-500 hover:bg-white text-slate-655 disabled:opacity-40 disabled:hover:border-slate-200 disabled:hover:bg-transparent transition-all cursor-pointer font-black bg-transparent border-none"
+                    >
+                      Sau
+                    </button>
+                  </div>
+                </div>
+              )}
+              </>
             )}
           </div>
         </div>
