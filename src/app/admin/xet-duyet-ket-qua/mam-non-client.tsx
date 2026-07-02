@@ -135,7 +135,7 @@ const xetDuyetCols = [
   { id: "fullName", label: "Họ và tên", width: "w-[160px] min-w-[160px] max-w-[160px] sticky left-10 z-20 whitespace-normal" },
   { id: "grade", label: "Khối", width: "w-28 min-w-[112px]" },
   { id: "admissionCampus", label: "Cơ sở", width: "w-24 min-w-[96px]" },
-  { id: "kqgvDg", label: "KQGV ĐG", width: "w-[280px] min-w-[280px]" },
+  { id: "kqgvDg", label: "KQGV ĐG", width: "w-[140px] min-w-[140px]" },
   { id: "bghApproval", label: "BGH MN duyệt", width: "w-[148px] min-w-[148px] whitespace-normal" },
   { id: "gdcsApproval", label: "GĐCS duyệt", width: "w-[148px] min-w-[148px] whitespace-normal" },
   { id: "result", label: "Kết quả", width: "w-[110px] min-w-[110px]" },
@@ -4949,13 +4949,18 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 </td>
 
                                 {/* KQGV DG cell */}
-                                <td className="w-[280px] min-w-[280px] p-3 align-middle bg-inherit border border-slate-100">
-                                  <div className="grid grid-cols-2 gap-2 w-full">
-                                    {renderAreaMiniCard(s, "THE_CHAT")}
-                                    {renderAreaMiniCard(s, "NHAN_THUC")}
-                                    {renderAreaMiniCard(s, "NGON_NGU")}
-                                    {renderAreaMiniCard(s, "TINH_CAM_XH_TM")}
-                                  </div>
+                                <td className="w-[140px] min-w-[140px] p-3 align-middle text-center bg-inherit border border-slate-100">
+                                  {s.scoredCount > 0 ? (
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-250/50 text-[10px] font-black uppercase tracking-wider">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                      Đã đánh giá
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 text-slate-400 border border-slate-200/60 text-[10px] font-bold uppercase tracking-wider">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+                                      Chưa đánh giá
+                                    </span>
+                                  )}
                                 </td>
 
                                 {/* BGH column */}
