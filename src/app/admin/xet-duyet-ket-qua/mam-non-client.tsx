@@ -1133,6 +1133,116 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
   const [studentSummaries, setStudentSummaries] = useState<any[]>([]);
   const [sumLoading, setSumLoading] = useState(false);
 
+  const filteredStudents = useMemo(() => {
+    if (!Array.isArray(studentSummaries)) return [];
+    const cleanSummaries = studentSummaries.filter(Boolean);
+    if (devTab === "assess") {
+      return cleanSummaries.filter(s => !cSearch || (s.studentCode || "").toLowerCase().includes(cSearch.toLowerCase()) || (s.fullName || "").toLowerCase().includes(cSearch.toLowerCase()));
+    }
+    if (devTab === "xetDuyet") {
+      return cleanSummaries
+        .filter(s => !cSearch || (s.studentCode || "").toLowerCase().includes(cSearch.toLowerCase()) || (s.fullName || "").toLowerCase().includes(cSearch.toLowerCase()))
+        .filter(s => {
+          if (!approvalFilter) return true;
+          const res = s.generalResult || "";
+          if (approvalFilter === "CHUA_DUYET") {
+            return !res || res === "" || res === "CHUA_DUYET" || res === "Chưa duyệt";
+          }
+          if (approvalFilter === "DAT_MIEN_HOC_THU") {
+            return res === "DAT_MIEN_HOC_THU" || res === "Đạt - Miễn Học Thử";
+          }
+          if (approvalFilter === "DAT_HOC_THU") {
+            return res === "DAT_HOC_THU" || res === "Đạt - Học Thử" || res === "Học thử" || res === "HOC_THU";
+          }
+          if (approvalFilter === "DAT") {
+            return res === "DAT" || res === "Đạt";
+          }
+          if (approvalFilter === "KHONG_DAT") {
+            return res === "KHONG_DAT" || res === "Không đạt";
+          }
+          if (approvalFilter === "Y_KIEN_KHAC") {
+            return res === "Y_KIEN_KHAC" || res === "Ý kiến khác";
+          }
+          return res === approvalFilter;
+        });
+    }
+    if (devTab === "dgkqHocThu") {
+      return cleanSummaries
+        .filter(s => {
+          const result = (s.admissionResult || "").toUpperCase();
+          const isMien = result.includes("MIỄN") || result.includes("MIEN");
+          return (result.includes("HỌC THỬ") || result.includes("HOC_THU") || s.probationaryResult || s.probationaryClass) && !isMien;
+        })
+        .filter(s => !cSearch || (s.studentCode || "").toLowerCase().includes(cSearch.toLowerCase()) || (s.fullName || "").toLowerCase().includes(cSearch.toLowerCase()));
+    }
+    if (devTab === "xuatThuChucMung") {
+      return cleanSummaries
+        .filter(s => {
+          const result = (s.admissionResult || "").toUpperCase();
+          return result.includes("MIỄN HỌC THỬ") || result.includes("MIEN_HOC_THU") || s.probationaryResult === "DAT";
+        })
+        .filter(s => !cSearch || (s.studentCode || "").toLowerCase().includes(cSearch.toLowerCase()) || (s.fullName || "").toLowerCase().includes(cSearch.toLowerCase()));
+    }
+    return [];
+  }, [studentSummaries, devTab, cSearch, approvalFilter]);
+
+  const totalPages = Math.ceil(filteredStudents.length / pageSize);
+  const paginatedStudents = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return filteredStudents.slice(startIndex, startIndex + pageSize);
+  }, [filteredStudents, currentPage, pageSize]);
+
+  const renderPaginationControl = () => {
+    if (filteredStudents.length === 0) return null;
+    return (
+      <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 bg-slate-50/50 text-xs font-bold text-slate-500">
+        <div>
+          Hiển thị <span className="text-slate-800 font-extrabold">{Math.min(filteredStudents.length, (currentPage - 1) * pageSize + 1)}-{Math.min(filteredStudents.length, currentPage * pageSize)}</span> trong số <span className="text-[#00A99D] font-extrabold">{filteredStudents.length}</span> học sinh
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            className="px-3 py-1.5 rounded-xl border border-slate-200 hover:border-[#00A99D] hover:bg-white text-slate-655 disabled:opacity-40 disabled:hover:border-slate-200 disabled:hover:bg-transparent transition-all cursor-pointer font-black bg-transparent border-none"
+          >
+            Trước
+          </button>
+          <div className="flex items-center gap-1">
+            {Array.from({ length: totalPages }).map((_, i) => {
+              const pageNum = i + 1;
+              if (totalPages > 6 && pageNum !== 1 && pageNum !== totalPages && Math.abs(pageNum - currentPage) > 1) {
+                if (pageNum === 2 || pageNum === totalPages - 1) {
+                  return <span key={pageNum} className="px-1 text-slate-400 font-bold select-none">...</span>;
+                }
+                return null;
+              }
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => setCurrentPage(pageNum)}
+                  className={`h-8 w-8 rounded-xl flex items-center justify-center transition-all cursor-pointer border-none font-black ${
+                    currentPage === pageNum
+                      ? "bg-[#00A99D] text-white shadow-sm shadow-[#00A99D]/20"
+                      : "text-slate-655 hover:bg-slate-100"
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+          </div>
+          <button
+            disabled={currentPage === totalPages || totalPages === 0}
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            className="px-3 py-1.5 rounded-xl border border-slate-200 hover:border-[#00A99D] hover:bg-white text-slate-655 disabled:opacity-40 disabled:hover:border-slate-200 disabled:hover:bg-transparent transition-all cursor-pointer font-black bg-transparent border-none"
+          >
+            Sau
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   // 1. overallKPIs
   const overallKPIs = useMemo(() => {
     const total = studentSummaries.length;
@@ -1467,8 +1577,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
   // Children/Students
   const [children, setChildren] = useState<PreschoolChild[]>([]);
   const [cLoading, setCLoading] = useState(false);
-  const [cPeriodId, setCPeriodId] = useState("all");
-  const [cBatchId, setCBatchId] = useState("");
+
 
   // useMemos that depend on cBatchId - must be AFTER declaration to avoid TDZ crash in production
 
@@ -1680,8 +1789,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
     EMAIL_MAP.cc
   ], [EMAIL_MAP]);
 
-  const [cSearch, setCSearch] = useState("");
-  const [approvalFilter, setApprovalFilter] = useState("");
+
   const [cSelected, setCSelected] = useState<string[]>([]);
   const [cModal, setCModal] = useState(false);
   const [editC, setEditC] = useState<PreschoolChild | null>(null);
@@ -2910,7 +3018,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
   };
 
   const exportDevExcel = () => {
-    if (studentSummaries.length === 0) return;
+    if (filteredStudents.length === 0) return;
     try {
       const exportData = studentSummaries
         .filter(s => !cSearch || s.studentCode.toLowerCase().includes(cSearch.toLowerCase()) || s.fullName.toLowerCase().includes(cSearch.toLowerCase()))
@@ -4494,10 +4602,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <Loader2 className="w-8 h-8 text-[#00A99D] animate-spin" />
                     <span className="text-slate-400 font-bold text-xs uppercase tracking-wider">Đang tải danh sách...</span>
                   </div>
-                ) : studentSummaries.length === 0 ? (
+                ) : filteredStudents.length === 0 ? (
                   <Empty text={cPeriodId ? "Chưa có bé nào" : "Vui lòng chọn Kỳ và bấm Tìm"} sub={cPeriodId ? "Hãy thêm học sinh trước" : ""} />
                 ) : (
-                  <div className="overflow-x-auto">
+                  <>
+                    <div className="overflow-x-auto">
                     <table className="w-full min-w-max text-left whitespace-nowrap border-collapse">
                       <thead>
                         <tr className="bg-[#0D3330] text-white select-none">
@@ -4509,26 +4618,24 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100/80">
-                        {studentSummaries
-                          .filter(s => !cSearch || s.studentCode.toLowerCase().includes(cSearch.toLowerCase()) || s.fullName.toLowerCase().includes(cSearch.toLowerCase()))
-                          .map((s, idx) => {
+                        {paginatedStudents.map((s, idx) => {
                             const statusBadge = () => {
                               if (s.scoredCount > 0) {
                                 return (
                                   <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-250/50 shadow-xs">
-                                    ✓ Đã đánh giá
+                                    Đã đánh giá
                                   </span>
                                 );
                               }
                               return (
                                 <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-slate-50 text-slate-400 border border-slate-200/60 shadow-xs">
-                                  ⚪ Chưa đánh giá
+                                  Chưa đánh giá
                                 </span>
                               );
                             };
                             return (
                               <tr key={s.id} className="hover:bg-[#EBF5F4]/40 even:bg-slate-50/40 transition-colors duration-150 text-xs font-semibold">
-                                <td className="w-10 min-w-[40px] max-w-[40px] sticky left-0 z-10 p-3 align-middle text-center text-[10px] text-slate-400 bg-inherit border border-slate-100">{idx + 1}</td>
+                                <td className="w-10 min-w-[40px] max-w-[40px] sticky left-0 z-10 p-3 align-middle text-center text-[10px] text-slate-400 bg-inherit border border-slate-100">{(currentPage - 1) * pageSize + idx + 1}</td>
                                 <td className="w-20 min-w-[80px] p-3 align-middle bg-inherit border border-slate-100">
                                   <span className="font-mono font-bold text-[#00A99D] bg-teal-50/80 px-2.5 py-0.5 rounded-lg border border-teal-100/50 text-[11px]">
                                     {s.studentCode}
@@ -4566,7 +4673,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       </tbody>
                     </table>
                   </div>
-                )}
+                  {renderPaginationControl()}
+                </>
+              )}
               </div>
             </div>
           )}
@@ -4664,7 +4773,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   </button>
                   <button
                     onClick={exportDevExcel}
-                    disabled={studentSummaries.length === 0}
+                    disabled={filteredStudents.length === 0}
                     className="h-10 px-4 text-xs font-black uppercase text-emerald-700 bg-white hover:bg-[#EBF5F4]/40 hover:scale-[1.01] rounded-2xl shadow-sm border border-emerald-250/80 transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:scale-100 disabled:bg-slate-50 w-full"
                   >
                     <Download className="w-4 h-4" /> Xuất Excel
@@ -4679,10 +4788,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <Loader2 className="w-8 h-8 text-[#00A99D] animate-spin" />
                     <span className="text-slate-400 font-bold text-xs uppercase tracking-wider">Đang tải danh sách...</span>
                   </div>
-                ) : studentSummaries.length === 0 ? (
+                ) : filteredStudents.length === 0 ? (
                   <Empty text={cPeriodId ? "Chưa có bé nào" : "Vui lòng chọn Kỳ và bấm Tìm"} sub={cPeriodId ? "Hãy thêm học sinh trước" : ""} />
                 ) : (
-                  <div className="overflow-x-auto">
+                  <>
+                    <div className="overflow-x-auto">
                     <table className="w-full min-w-max text-left whitespace-nowrap border-collapse">
                       <thead>
                         <tr className="bg-[#0D3330] text-white select-none">
@@ -4698,58 +4808,33 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100/80">
-                        {studentSummaries
-                          .filter(s => !cSearch || s.studentCode.toLowerCase().includes(cSearch.toLowerCase()) || s.fullName.toLowerCase().includes(cSearch.toLowerCase()))
-                          .filter(s => {
-                            if (!approvalFilter) return true;
-                            const res = s.generalResult;
-                            if (approvalFilter === "CHUA_DUYET") {
-                              return !res || res === "" || res === "CHUA_DUYET" || res === "Chưa duyệt";
-                            }
-                            if (approvalFilter === "DAT_MIEN_HOC_THU") {
-                              return res === "DAT_MIEN_HOC_THU" || res === "Đạt - Miễn Học Thử";
-                            }
-                            if (approvalFilter === "DAT_HOC_THU") {
-                              return res === "DAT_HOC_THU" || res === "Đạt - Học Thử" || res === "Học thử" || res === "HOC_THU";
-                            }
-                            if (approvalFilter === "DAT") {
-                              return res === "DAT" || res === "Đạt";
-                            }
-                            if (approvalFilter === "KHONG_DAT") {
-                              return res === "KHONG_DAT" || res === "Không đạt";
-                            }
-                            if (approvalFilter === "Y_KIEN_KHAC") {
-                              return res === "Y_KIEN_KHAC" || res === "Ý kiến khác";
-                            }
-                            return res === approvalFilter;
-                          })
-                          .map((s, idx) => {
+                        {paginatedStudents.map((s, idx) => {
                             const getResultBadge = (res: string) => {
                               if (res === "Đạt - Miễn Học Thử" || res === "DAT_MIEN_HOC_THU") {
                                 return (
                                   <span className="inline-flex items-center justify-center bg-teal-50 text-teal-700 border border-teal-200/50 rounded-full px-2.5 py-1 text-[10px] font-extrabold shadow-xs w-fit">
-                                    ✓ Miễn HT
+                                    Miễn HT
                                   </span>
                                 );
                               }
                               if (res === "Đạt - Học Thử" || res === "DAT_HOC_THU" || res === "Học thử" || res === "HOC_THU") {
                                 return (
                                   <span className="inline-flex items-center justify-center bg-sky-50 text-sky-700 border border-sky-200/50 rounded-full px-2.5 py-1 text-[10px] font-extrabold shadow-xs w-fit">
-                                    ★ Học thử
+                                    Học thử
                                   </span>
                                 );
                               }
                               if (res === "Đạt" || res === "DAT") {
                                 return (
                                   <span className="inline-flex items-center justify-center bg-emerald-50 text-emerald-700 border border-emerald-250/50 rounded-full px-2.5 py-1 text-[10px] font-extrabold shadow-xs w-fit">
-                                    ✓ Đạt
+                                    Đạt
                                   </span>
                                 );
                               }
                               if (res === "Không đạt" || res === "KHONG_DAT") {
                                 return (
                                   <span className="inline-flex items-center justify-center bg-rose-50 text-rose-700 border border-rose-250/50 rounded-full px-2.5 py-1 text-[10px] font-extrabold shadow-xs w-fit">
-                                    ✗ K.Đạt
+                                    K.Đạt
                                   </span>
                                 );
                               }
@@ -4870,7 +4955,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
                             return (
                               <tr key={s.id} className={`group border-b border-slate-100 hover:bg-[#EBF5F4]/40 transition-colors duration-150 ${idx % 2 === 0 ? "bg-white" : "bg-slate-50/40"} text-xs font-semibold`}>
-                                <td className="w-10 min-w-[40px] max-w-[40px] sticky left-0 z-10 p-3 align-middle text-center text-[10px] text-slate-400 bg-inherit border border-slate-100">{idx + 1}</td>
+                                <td className="w-10 min-w-[40px] max-w-[40px] sticky left-0 z-10 p-3 align-middle text-center text-[10px] text-slate-400 bg-inherit border border-slate-100">{(currentPage - 1) * pageSize + idx + 1}</td>
                                  
                                 <td className="w-[160px] min-w-[160px] max-w-[160px] sticky left-10 z-10 shadow-[1px_0_0_0_#e2e8f0] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
                                   <div className="flex flex-col gap-1 w-full">
@@ -4892,12 +4977,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 <td className="w-[140px] min-w-[140px] p-3 align-middle text-center bg-inherit border border-slate-100">
                                   {s.scoredCount > 0 ? (
                                     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-250/50 text-[10px] font-black uppercase tracking-wider">
-                                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                                       Đã đánh giá
                                     </span>
                                   ) : (
                                     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 text-slate-400 border border-slate-200/60 text-[10px] font-bold uppercase tracking-wider">
-                                      <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
                                       Chưa đánh giá
                                     </span>
                                   )}
@@ -4910,10 +4993,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                       {s.bghApprovalStatus ? (
                                         <div onClick={() => openEvaluation(s)} className="cursor-pointer hover:bg-slate-100/80 p-2 rounded-xl border border-slate-200/65 transition-all w-full flex flex-col gap-0.5 bg-white shadow-xs">
                                           <div>
-                                            {s.bghApprovalStatus === "DAT_MIEN_HOC_THU" && <span className="inline-flex items-center justify-center bg-teal-50 text-teal-700 border border-teal-200/50 rounded-full px-2 py-0.5 text-[9px] font-black">✓ Miễn HT</span>}
-                                            {s.bghApprovalStatus === "DAT_HOC_THU" && <span className="inline-flex items-center justify-center bg-sky-50 text-sky-700 border border-sky-200/50 rounded-full px-2 py-0.5 text-[9px] font-black">★ Học thử</span>}
-                                            {s.bghApprovalStatus === "DAT" && <span className="inline-flex items-center justify-center bg-emerald-50 text-emerald-700 border border-emerald-250/50 rounded-full px-2 py-0.5 text-[9px] font-black">✓ Đạt</span>}
-                                            {s.bghApprovalStatus === "KHONG_DAT" && <span className="inline-flex items-center justify-center bg-rose-50 text-rose-700 border border-rose-250/50 rounded-full px-2 py-0.5 text-[9px] font-black">✗ K.Đạt</span>}
+                                            {s.bghApprovalStatus === "DAT_MIEN_HOC_THU" && <span className="inline-flex items-center justify-center bg-teal-50 text-teal-700 border border-teal-200/50 rounded-full px-2 py-0.5 text-[9px] font-black">Miễn HT</span>}
+                                            {s.bghApprovalStatus === "DAT_HOC_THU" && <span className="inline-flex items-center justify-center bg-sky-50 text-sky-700 border border-sky-200/50 rounded-full px-2 py-0.5 text-[9px] font-black">Học thử</span>}
+                                            {s.bghApprovalStatus === "DAT" && <span className="inline-flex items-center justify-center bg-emerald-50 text-emerald-700 border border-emerald-250/50 rounded-full px-2 py-0.5 text-[9px] font-black">Đạt</span>}
+                                            {s.bghApprovalStatus === "KHONG_DAT" && <span className="inline-flex items-center justify-center bg-rose-50 text-rose-700 border border-rose-250/50 rounded-full px-2 py-0.5 text-[9px] font-black">K.Đạt</span>}
                                             {s.bghApprovalStatus === "Y_KIEN_KHAC" && <span className="inline-flex items-center justify-center bg-amber-50 text-amber-700 border border-amber-250/50 rounded-full px-2 py-0.5 text-[9px] font-black">Ý kiến</span>}
                                           </div>
                                           {s.bghApprovalComment && (
@@ -4944,10 +5027,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                       {s.gdcsApprovalStatus ? (
                                         <div onClick={() => openEvaluation(s)} className="cursor-pointer hover:bg-slate-100/80 p-2 rounded-xl border border-slate-200/65 transition-all w-full flex flex-col gap-0.5 bg-white shadow-xs">
                                           <div>
-                                            {s.gdcsApprovalStatus === "DAT_MIEN_HOC_THU" && <span className="inline-flex items-center justify-center bg-teal-50 text-teal-700 border border-teal-200/50 rounded-full px-2 py-0.5 text-[9px] font-black">✓ Miễn HT</span>}
-                                            {s.gdcsApprovalStatus === "DAT_HOC_THU" && <span className="inline-flex items-center justify-center bg-sky-50 text-sky-700 border border-sky-200/50 rounded-full px-2 py-0.5 text-[9px] font-black">★ Học thử</span>}
-                                            {s.gdcsApprovalStatus === "DAT" && <span className="inline-flex items-center justify-center bg-emerald-50 text-emerald-700 border border-emerald-250/50 rounded-full px-2 py-0.5 text-[9px] font-black">✓ Đạt</span>}
-                                            {s.gdcsApprovalStatus === "KHONG_DAT" && <span className="inline-flex items-center justify-center bg-rose-50 text-rose-700 border border-rose-250/50 rounded-full px-2 py-0.5 text-[9px] font-black">✗ K.Đạt</span>}
+                                            {s.gdcsApprovalStatus === "DAT_MIEN_HOC_THU" && <span className="inline-flex items-center justify-center bg-teal-50 text-teal-700 border border-teal-200/50 rounded-full px-2 py-0.5 text-[9px] font-black">Miễn HT</span>}
+                                            {s.gdcsApprovalStatus === "DAT_HOC_THU" && <span className="inline-flex items-center justify-center bg-sky-50 text-sky-700 border border-sky-200/50 rounded-full px-2 py-0.5 text-[9px] font-black">Học thử</span>}
+                                            {s.gdcsApprovalStatus === "DAT" && <span className="inline-flex items-center justify-center bg-emerald-50 text-emerald-700 border border-emerald-250/50 rounded-full px-2 py-0.5 text-[9px] font-black">Đạt</span>}
+                                            {s.gdcsApprovalStatus === "KHONG_DAT" && <span className="inline-flex items-center justify-center bg-rose-50 text-rose-700 border border-rose-250/50 rounded-full px-2 py-0.5 text-[9px] font-black">K.Đạt</span>}
                                             {s.gdcsApprovalStatus === "Y_KIEN_KHAC" && <span className="inline-flex items-center justify-center bg-amber-50 text-amber-700 border border-amber-250/50 rounded-full px-2 py-0.5 text-[9px] font-black">Ý kiến</span>}
                                           </div>
                                           {s.gdcsApprovalComment && (
@@ -5027,7 +5110,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       </tbody>
                     </table>
                   </div>
-                )}
+                  {renderPaginationControl()}
+                </>
+              )}
               </div>
             </div>
           )}
@@ -5118,7 +5203,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     {cPeriodId ? "Không có học sinh nào đang ở trạng thái học thử" : "Vui lòng chọn Kỳ và bấm Tìm"}
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
+                  <>
+                    <div className="overflow-x-auto">
                     <table className="w-full min-w-max text-left whitespace-nowrap border-collapse">
                       <thead>
                         <tr className="bg-[#0D3330] text-white select-none">
@@ -5130,14 +5216,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100/80">
-                        {studentSummaries
-                          .filter(s => {
-                            const result = (s.admissionResult || "").toUpperCase();
-                            const isMien = result.includes("MIỄN") || result.includes("MIEN");
-                            return (result.includes("HỌC THỬ") || result.includes("HOC_THU") || s.probationaryResult || s.probationaryClass) && !isMien;
-                          })
-                          .filter(s => !cSearch || s.studentCode.toLowerCase().includes(cSearch.toLowerCase()) || s.fullName.toLowerCase().includes(cSearch.toLowerCase()))
-                          .map((s, idx) => {
+                        {paginatedStudents.map((s, idx) => {
                             const isExempt = (s.admissionResult || "").toUpperCase().includes("MIỄN") || (s.admissionResult || "").toUpperCase().includes("MIEN");
                             const resultBadge = () => {
                               if (isExempt) {
@@ -5170,7 +5249,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
                             return (
                               <tr key={s.id} className="hover:bg-[#EBF5F4]/40 even:bg-slate-50/40 transition-colors duration-150 text-xs font-semibold">
-                                <td className="w-10 min-w-[40px] max-w-[40px] sticky left-0 z-10 p-3 align-middle text-center text-[10px] text-slate-400 bg-inherit border border-slate-100">{idx + 1}</td>
+                                <td className="w-10 min-w-[40px] max-w-[40px] sticky left-0 z-10 p-3 align-middle text-center text-[10px] text-slate-400 bg-inherit border border-slate-100">{(currentPage - 1) * pageSize + idx + 1}</td>
                                 <td className="w-20 min-w-[80px] p-3 align-middle bg-inherit border border-slate-100">
                                   <span className="font-mono font-bold text-[#00A99D] bg-teal-50/80 px-2.5 py-0.5 rounded-lg border border-teal-100/50 text-[11px]">
                                     {s.studentCode}
@@ -5220,7 +5299,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                       if (status === "DAT") {
                                         return (
                                           <span className="inline-flex items-center justify-center bg-emerald-50 text-emerald-700 border border-emerald-250/50 rounded-full px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider">
-                                            ✓ Đạt
+                                            Đạt
                                           </span>
                                         );
                                       }
@@ -5264,7 +5343,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       </tbody>
                     </table>
                   </div>
-                )}
+                  {renderPaginationControl()}
+                </>
+              )}
               </div>
             </div>
           )}
@@ -5354,7 +5435,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     {cPeriodId ? "Không có học sinh nào được duyệt Miễn học thử" : "Vui lòng chọn Kỳ và bấm Tìm"}
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
+                  <>
+                    <div className="overflow-x-auto">
                     <table className="w-full min-w-max text-left whitespace-nowrap border-collapse">
                       <thead>
                         <tr className="bg-[#0D3330] text-white select-none">
@@ -5366,13 +5448,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100/80">
-                        {studentSummaries
-                          .filter(s => {
-                            const result = (s.admissionResult || "").toUpperCase();
-                            return result.includes("MIỄN HỌC THỬ") || result.includes("MIEN_HOC_THU") || s.probationaryResult === "DAT";
-                          })
-                          .filter(s => !cSearch || s.studentCode.toLowerCase().includes(cSearch.toLowerCase()) || s.fullName.toLowerCase().includes(cSearch.toLowerCase()))
-                          .map((s, idx) => {
+                        {paginatedStudents.map((s, idx) => {
                             const resultBadge = () => {
                               if (s.probationaryResult === "DAT") {
                                 return (
@@ -5390,7 +5466,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
                             return (
                               <tr key={s.id} className="hover:bg-[#EBF5F4]/40 even:bg-slate-50/40 transition-colors duration-150 text-xs font-semibold">
-                                <td className="w-10 min-w-[40px] max-w-[40px] sticky left-0 z-10 p-3 align-middle text-center text-[10px] text-slate-400 bg-inherit border border-slate-100">{idx + 1}</td>
+                                <td className="w-10 min-w-[40px] max-w-[40px] sticky left-0 z-10 p-3 align-middle text-center text-[10px] text-slate-400 bg-inherit border border-slate-100">{(currentPage - 1) * pageSize + idx + 1}</td>
                                 <td className="w-20 min-w-[80px] p-3 align-middle bg-inherit border border-slate-100">
                                   <span className="font-mono font-bold text-[#00A99D] bg-teal-50/80 px-2.5 py-0.5 rounded-lg border border-teal-100/50 text-[11px]">
                                     {s.studentCode}
@@ -5443,7 +5519,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       </tbody>
                     </table>
                   </div>
-                )}
+                  {renderPaginationControl()}
+                </>
+              )}
               </div>
             </div>
           )}
@@ -8396,7 +8474,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                   <span className="font-black text-[10px] text-slate-500 uppercase tracking-wider block mb-1.5">Kết quả tiêu chí chi tiết:</span>
                                   <div className="flex gap-4">
                                     <div className="text-[11px] font-extrabold text-emerald-700 bg-emerald-50/60 px-2.5 py-1 rounded-xl border border-emerald-200/50">
-                                      ✓ Đạt: <span className="font-bold">${histRec.scores.filter((s: any) => s.result === "DAT").length}</span>
+                                      Đạt: <span className="font-bold">${histRec.scores.filter((s: any) => s.result === "DAT").length}</span>
                                     </div>
                                     <div className="text-[11px] font-extrabold text-rose-700 bg-rose-50/60 px-2.5 py-1 rounded-xl border border-rose-200/50">
                                       ✗ Không đạt: <span className="font-bold">${histRec.scores.filter((s: any) => s.result === "KHONG_DAT").length}</span>
