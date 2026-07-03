@@ -154,6 +154,8 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
   const [createModal, setCreateModal] = useState<any>(null)
   const [deleting, setDeleting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [classPage, setClassPage] = useState(1)
+  const CLASS_PAGE_SIZE = 10
 
   // Modal: Kết chuyển lớp học
   const [transferModal, setTransferModal] = useState(false)
@@ -203,6 +205,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
 
 
   useEffect(() => { setClasses(initialClasses); setSelectedIds([]) }, [initialClasses])
+  useEffect(() => { setClassPage(1) }, [selectedYearId, selectedCampus, selectedLevel, selectedGrade, selectedEduSystem, activeTab])
 
   let filteredClasses = classes.filter((c: any) => c.academicYearId === selectedYearId)
   const mnLevelsLowerCase = ["nhà trẻ", "mẫu giáo bé", "mẫu giáo nhỡ", "mẫu giáo lớn", "mầm non"];
@@ -611,10 +614,10 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
             {filteredClasses.length === 0 && (
               <tr><td colSpan={activeTab === "mam-non" ? 11 : 10} className="p-2 text-center text-slate-400 border border-slate-200">Chưa có lớp học nào trong năm học này.</td></tr>
             )}
-            {filteredClasses.map((c: any, i: number) => (
+            {filteredClasses.slice((classPage - 1) * CLASS_PAGE_SIZE, classPage * CLASS_PAGE_SIZE).map((c: any, i: number) => (
                <tr key={c.id} className={"hover:bg-slate-50 transition-colors " + (selectedIds.includes(c.id) ? "bg-blue-50/50" : "")}>
                  <td className="p-2 p-2 text-center border border-slate-200"><input type="checkbox" className="w-4 h-4 rounded text-blue-600" checked={selectedIds.includes(c.id)} onChange={e => handleSelectRow(c.id, e.target.checked)} /></td>
-                 <td className="p-2 p-2 text-slate-400 text-center border border-slate-200">{i + 1}</td>
+                 <td className="p-2 p-2 text-slate-400 text-center border border-slate-200">{(classPage - 1) * CLASS_PAGE_SIZE + i + 1}</td>
                  <td className="p-2 p-2 border border-slate-200"><span className="flex items-center gap-1.5"><Building2 className="w-3.5 h-3.5 text-indigo-500" /><span className="text-slate-700">{c.campus}</span></span></td>
                  <td className="p-2 p-2 border border-slate-200">
                    {c.level ? (<span className={"text-xs px-2 py-1 rounded-full font-medium " + (["tiểu học", "tieu hoc"].includes(c.level.toLowerCase()) ? "bg-amber-50 text-amber-700" : ["thcs"].includes(c.level.toLowerCase()) ? "bg-blue-50 text-blue-700" : ["thpt"].includes(c.level.toLowerCase()) ? "bg-purple-50 text-purple-700" : ["mầm non", "nhà trẻ", "mẫu giáo bé", "mẫu giáo nhỡ", "mẫu giáo lớn"].includes(c.level.toLowerCase()) ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600")}>{["mầm non", "nhà trẻ", "mẫu giáo bé", "mẫu giáo nhỡ", "mẫu giáo lớn"].includes(c.level.toLowerCase()) ? "Mầm non" : c.level}</span>) : <span className="text-slate-300">--</span>}
@@ -655,6 +658,38 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
           </tbody>
         </table>
       </div>
+
+
+      {/* Pagination */}
+      {filteredClasses.length > CLASS_PAGE_SIZE && (() => {
+        const totalPages = Math.ceil(filteredClasses.length / CLASS_PAGE_SIZE);
+        const pages: (number | string)[] = [];
+        Array.from({ length: totalPages }, (_, i) => i + 1)
+          .filter(p => p === 1 || p === totalPages || Math.abs(p - classPage) <= 2)
+          .forEach((p, idx, arr) => {
+            if (idx > 0 && (p as number) - (arr[idx - 1] as number) > 1) pages.push('...');
+            pages.push(p);
+          });
+        return (
+          <div className="flex items-center justify-between px-4 py-3 bg-white border border-slate-200 rounded-xl shadow-sm">
+            <span className="text-sm text-slate-500">
+              Hiển thị <span className="font-bold text-slate-700">{(classPage - 1) * CLASS_PAGE_SIZE + 1}</span>–<span className="font-bold text-slate-700">{Math.min(classPage * CLASS_PAGE_SIZE, filteredClasses.length)}</span> trong <span className="font-bold text-[#00A99D]">{filteredClasses.length}</span> lớp
+            </span>
+            <div className="flex items-center gap-1">
+              <button onClick={() => setClassPage(1)} disabled={classPage === 1} className="px-2 py-1.5 text-xs font-bold text-slate-500 hover:text-[#00A99D] hover:bg-teal-50 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors">«</button>
+              <button onClick={() => setClassPage(p => Math.max(1, p - 1))} disabled={classPage === 1} className="px-3 py-1.5 text-xs font-bold text-slate-500 hover:text-[#00A99D] hover:bg-teal-50 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors">‹ Trước</button>
+              {pages.map((p, idx) => p === '...' ? (
+                <span key={"el" + idx} className="px-2 text-slate-400 text-xs">...</span>
+              ) : (
+                <button key={p} onClick={() => setClassPage(p as number)}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${classPage === p ? 'bg-[#00A99D] text-white shadow-sm' : 'text-slate-600 hover:text-[#00A99D] hover:bg-teal-50'}`}>{p}</button>
+              ))}
+              <button onClick={() => setClassPage(p => Math.min(totalPages, p + 1))} disabled={classPage === totalPages} className="px-3 py-1.5 text-xs font-bold text-slate-500 hover:text-[#00A99D] hover:bg-teal-50 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors">Sau ›</button>
+              <button onClick={() => setClassPage(totalPages)} disabled={classPage === totalPages} className="px-2 py-1.5 text-xs font-bold text-slate-500 hover:text-[#00A99D] hover:bg-teal-50 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors">»</button>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Edit Modal */}
       {editModal && (
