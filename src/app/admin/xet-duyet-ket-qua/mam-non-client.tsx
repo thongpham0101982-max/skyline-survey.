@@ -47,6 +47,34 @@ const isPreschoolCampusMatch = (effCampus: string | null | undefined, cCode: str
   return normEff.includes(normCode) || normEff.includes(normName) || normCode.includes(normEff) || normName.includes(normEff);
 };
 
+const getStatusBadge = (status: string | null | undefined) => {
+  if (!status) return <span className="text-[11px] text-slate-300 font-semibold">—</span>;
+  
+  const normStatus = status.toUpperCase();
+  const badgeConfig: Record<string, { bg: string, text: string, border: string, label: string }> = {
+    DAT_MIEN_HOC_THU: { bg: "bg-teal-50 text-teal-700 border-teal-200/60", label: "Miễn Học Thử" },
+    MIEN_HOC_THU: { bg: "bg-teal-50 text-teal-700 border-teal-200/60", label: "Miễn Học Thử" },
+    MIEN_HT: { bg: "bg-teal-50 text-teal-700 border-teal-200/60", label: "Miễn Học Thử" },
+    DAT_HOC_THU: { bg: "bg-sky-50 text-sky-700 border-sky-200/60", label: "Học thử" },
+    HOC_THU: { bg: "bg-sky-50 text-sky-700 border-sky-200/60", label: "Học thử" },
+    HOC_THU_LAI: { bg: "bg-sky-50 text-sky-700 border-sky-200/60", label: "Học thử" },
+    DAT: { bg: "bg-emerald-50 text-emerald-700 border-emerald-250/60", label: "Đạt" },
+    KHONG_DAT: { bg: "bg-rose-50 text-rose-700 border-rose-250/60", label: "Không Đạt" },
+    K_DAT: { bg: "bg-rose-50 text-rose-700 border-rose-250/60", label: "Không Đạt" },
+    Y_KIEN_KHAC: { bg: "bg-amber-50 text-amber-700 border-amber-250/60", label: "Ý kiến khác" },
+    Y_KIEN: { bg: "bg-amber-50 text-amber-700 border-amber-250/60", label: "Ý kiến khác" },
+    CHUA_DANH_GIA: { bg: "bg-slate-50 text-slate-400 border-slate-200/60", label: "Chưa đánh giá" },
+    DA_DANH_GIA: { bg: "bg-emerald-50 text-emerald-700 border-emerald-200/60", label: "Đã đánh giá" }
+  };
+  
+  const item = badgeConfig[normStatus] || { bg: "bg-slate-50 text-slate-500 border-slate-200/60", label: status };
+  return (
+    <span className={`inline-flex items-center justify-center ${item.bg.split(" ")[0]} ${item.bg.split(" ")[1] || ""} ${item.text} border ${item.border} rounded-md px-2 py-0.5 text-[9px] font-black uppercase tracking-wider shadow-2xs`}>
+      {item.label}
+    </span>
+  );
+};
+
 const inp = "w-full bg-white border border-slate-300 rounded-none pl-4 pr-4 py-3 outline-none focus:border-teal-400 focus:ring-4 focus:ring-teal-400/10 text-sm font-medium text-slate-700 transition-all shadow-none";
 
 function Toast({ msg, type }: { msg: string; type: string }) {
@@ -298,6 +326,60 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
 
   const showBghSection = true;
   const showGdcsSection = true;
+
+  const renderApprovalCell = (s: any, isBGH: boolean) => {
+    const status = isBGH ? s.bghApprovalStatus : s.gdcsApprovalStatus;
+    const comment = isBGH ? s.bghApprovalComment : s.gdcsApprovalComment;
+    const user = isBGH ? s.bghApprovalUser : s.gdcsApprovalUser;
+    const onOpen = () => openEvaluation(s);
+    const onNotify = () => sendApprovalNotification(s.id);
+    const label = isBGH ? "BGH MN" : "GĐCS";
+
+    if (status) {
+      const initials = user ? user.split(" ").map((w: string) => w[0]).join("").substring(0, 2).toUpperCase() : (isBGH ? "BGH" : "GD");
+      return (
+        <div 
+          onClick={onOpen} 
+          className="cursor-pointer hover:bg-slate-50/80 p-2 rounded-xl border border-slate-200 hover:border-[#00A99D]/40 transition-all w-full flex flex-col gap-1.5 bg-white shadow-2xs"
+        >
+          <div className="flex items-center justify-between gap-1">
+            <span className="text-[9px] font-black text-slate-400 tracking-wide uppercase">{label}</span>
+            {getStatusBadge(status)}
+          </div>
+          {comment && (
+            <div className="text-[9px] text-slate-500 leading-tight italic truncate max-w-[130px]" title={comment}>
+              "{comment}"
+            </div>
+          )}
+          <div className="flex items-center gap-1.5 pt-1.5 border-t border-slate-100">
+            <div className="w-5 h-5 rounded-full bg-[#00A99D]/10 border border-[#00A99D]/20 flex items-center justify-center text-[8px] font-black text-[#00A99D] shrink-0">
+              {initials}
+            </div>
+            <span className="text-[9px] text-slate-500 font-bold truncate max-w-[100px]" title={user || ""}>{user || "—"}</span>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex items-center gap-2 w-full justify-between">
+        <button 
+          onClick={onOpen} 
+          className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-1.5 text-[10px] font-bold text-white bg-[#00A99D] hover:bg-[#009085] active:scale-[0.98] rounded-lg transition-all shadow-xs border border-[#009085]/10 cursor-pointer"
+        >
+          Xét duyệt
+        </button>
+        <button 
+          disabled={sendingNotifyId === s.id} 
+          onClick={onNotify} 
+          className="p-1.5 text-slate-400 hover:text-[#00A99D] hover:bg-slate-100 active:scale-[0.98] rounded-lg transition-all border border-slate-200/50 cursor-pointer" 
+          title="Gửi email yêu cầu duyệt"
+        >
+          {sendingNotifyId === s.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
+        </button>
+      </div>
+    );
+  };
 
   const getGdcsRoleCode = (campusName: string | undefined) => {
     if (!campusName) return "GĐCS";
@@ -5049,11 +5131,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               <tr key={s.id} className={`group border-b border-slate-100 hover:bg-[#EBF5F4]/40 transition-colors duration-150 ${idx % 2 === 0 ? "bg-white" : "bg-slate-50/40"} text-xs font-semibold`}>
                                 <td className="w-10 min-w-[40px] max-w-[40px] sticky left-0 z-10 p-3 align-middle text-center text-[10px] text-slate-400 bg-inherit border border-slate-100">{(currentPage - 1) * pageSize + idx + 1}</td>
                                  
-                                <td className="w-[160px] min-w-[160px] max-w-[160px] sticky left-10 z-10 shadow-[1px_0_0_0_#e2e8f0] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
-                                  <div className="flex flex-col gap-1 w-full">
-                                    <div className="font-extrabold text-slate-800 text-[11px] leading-tight">{s.fullName}</div>
-                                    <div className="text-[9px] text-[#00A99D] font-mono font-bold">{s.studentCode}</div>
-                                    <div className="text-[9px] text-slate-400 leading-tight">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"} · {s.gender || "—"}</div>
+                                <td className="w-[170px] min-w-[170px] max-w-[170px] sticky left-10 z-10 shadow-[1px_0_0_0_#e2e8f0] whitespace-normal py-4 px-4 align-middle bg-inherit border border-slate-100">
+                                  <div className="flex flex-col gap-1.5 w-full">
+                                    <div className="font-bold text-slate-900 text-xs leading-snug">{s.fullName}</div>
+                                    <div className="text-[10px] text-[#00A99D] font-mono font-bold bg-[#00A99D]/5 px-2 py-0.5 rounded border border-[#00A99D]/15 w-fit">{s.studentCode}</div>
+                                    <div className="text-[10px] text-slate-400 leading-tight font-medium">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"} · {s.gender || "—"}</div>
                                   </div>
                                 </td>
 
@@ -5067,86 +5149,24 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
                                 {/* KQGV DG cell */}
                                 <td className="w-[140px] min-w-[140px] p-3 align-middle text-center bg-inherit border border-slate-100">
-                                  {s.scoredCount > 0 ? (
-                                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-250/50 text-[10px] font-black uppercase tracking-wider">
-                                      Đã đánh giá
-                                    </span>
-                                  ) : (
-                                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 text-slate-400 border border-slate-200/60 text-[10px] font-bold uppercase tracking-wider">
-                                      Chưa đánh giá
-                                    </span>
-                                  )}
+                                  {getStatusBadge(s.scoredCount > 0 ? "DA_DANH_GIA" : "CHUA_DANH_GIA")}
                                 </td>
 
                                 {/* BGH column */}
                                 {showBghSection && (
                                   <td className="w-[148px] min-w-[148px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
-                                    <div className="flex flex-col gap-1 w-full items-start">
-                                      {s.bghApprovalStatus ? (
-                                        <div onClick={() => openEvaluation(s)} className="cursor-pointer hover:bg-slate-100/80 p-2 rounded-xl border border-slate-200/65 transition-all w-full flex flex-col gap-0.5 bg-white shadow-xs">
-                                          <div>
-                                            {s.bghApprovalStatus === "DAT_MIEN_HOC_THU" && <span className="inline-flex items-center justify-center bg-teal-50 text-teal-700 border border-teal-200/50 rounded-full px-2 py-0.5 text-[9px] font-black">Miễn HT</span>}
-                                            {s.bghApprovalStatus === "DAT_HOC_THU" && <span className="inline-flex items-center justify-center bg-sky-50 text-sky-700 border border-sky-200/50 rounded-full px-2 py-0.5 text-[9px] font-black">Học thử</span>}
-                                            {s.bghApprovalStatus === "DAT" && <span className="inline-flex items-center justify-center bg-emerald-50 text-emerald-700 border border-emerald-250/50 rounded-full px-2 py-0.5 text-[9px] font-black">Đạt</span>}
-                                            {s.bghApprovalStatus === "KHONG_DAT" && <span className="inline-flex items-center justify-center bg-rose-50 text-rose-700 border border-rose-250/50 rounded-full px-2 py-0.5 text-[9px] font-black">K.Đạt</span>}
-                                            {s.bghApprovalStatus === "Y_KIEN_KHAC" && <span className="inline-flex items-center justify-center bg-amber-50 text-amber-700 border border-amber-250/50 rounded-full px-2 py-0.5 text-[9px] font-black">Ý kiến</span>}
-                                          </div>
-                                          {s.bghApprovalComment && (
-                                            <div className="text-[10px] text-slate-400 mt-1 leading-tight italic truncate max-w-[130px]" title={s.bghApprovalComment}>
-                                              {s.bghApprovalComment}
-                                            </div>
-                                          )}
-                                          {s.bghApprovalUser && <div className="text-[9px] text-slate-400 mt-0.5">{s.bghApprovalUser}</div>}
-                                        </div>
-                                      ) : (
-                                        <div className="flex items-center gap-2 w-full justify-between">
-                                          <button onClick={() => openEvaluation(s)} className="px-3 py-1.5 text-[10px] font-black bg-gradient-to-r from-[#00A99D] to-[#008075] hover:scale-[1.02] text-white rounded-xl transition-all shadow-xs border-none cursor-pointer">
-                                            Xét duyệt
-                                          </button>
-                                          <button disabled={sendingNotifyId === s.id} onClick={() => sendApprovalNotification(s.id)} className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-slate-100 rounded-xl transition-all border border-slate-200/50" title="Gửi email yêu cầu duyệt">
-                                            {sendingNotifyId === s.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
-                                          </button>
-                                        </div>
-                                      )}
-                                    </div>
+                                    {renderApprovalCell(s, true)}
                                   </td>
                                 )}
 
                                 {/* GDCS column */}
                                 {showGdcsSection && (
                                   <td className="w-[148px] min-w-[148px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
-                                    <div className="flex flex-col gap-1 w-full items-start">
-                                      {s.gdcsApprovalStatus ? (
-                                        <div onClick={() => openEvaluation(s)} className="cursor-pointer hover:bg-slate-100/80 p-2 rounded-xl border border-slate-200/65 transition-all w-full flex flex-col gap-0.5 bg-white shadow-xs">
-                                          <div>
-                                            {s.gdcsApprovalStatus === "DAT_MIEN_HOC_THU" && <span className="inline-flex items-center justify-center bg-teal-50 text-teal-700 border border-teal-200/50 rounded-full px-2 py-0.5 text-[9px] font-black">Miễn HT</span>}
-                                            {s.gdcsApprovalStatus === "DAT_HOC_THU" && <span className="inline-flex items-center justify-center bg-sky-50 text-sky-700 border border-sky-200/50 rounded-full px-2 py-0.5 text-[9px] font-black">Học thử</span>}
-                                            {s.gdcsApprovalStatus === "DAT" && <span className="inline-flex items-center justify-center bg-emerald-50 text-emerald-700 border border-emerald-250/50 rounded-full px-2 py-0.5 text-[9px] font-black">Đạt</span>}
-                                            {s.gdcsApprovalStatus === "KHONG_DAT" && <span className="inline-flex items-center justify-center bg-rose-50 text-rose-700 border border-rose-250/50 rounded-full px-2 py-0.5 text-[9px] font-black">K.Đạt</span>}
-                                            {s.gdcsApprovalStatus === "Y_KIEN_KHAC" && <span className="inline-flex items-center justify-center bg-amber-50 text-amber-700 border border-amber-250/50 rounded-full px-2 py-0.5 text-[9px] font-black">Ý kiến</span>}
-                                          </div>
-                                          {s.gdcsApprovalComment && (
-                                            <div className="text-[10px] text-slate-400 mt-1 leading-tight italic truncate max-w-[130px]" title={s.gdcsApprovalComment}>
-                                              {s.gdcsApprovalComment}
-                                            </div>
-                                          )}
-                                          {s.gdcsApprovalUser && <div className="text-[9px] text-slate-400 mt-0.5">{s.gdcsApprovalUser}</div>}
-                                        </div>
-                                      ) : (
-                                        <div className="flex items-center gap-2 w-full justify-between">
-                                          <button onClick={() => openEvaluation(s)} className="px-3 py-1.5 text-[10px] font-black bg-gradient-to-r from-[#00A99D] to-[#008075] hover:scale-[1.02] text-white rounded-xl transition-all shadow-xs border-none cursor-pointer">
-                                            Xét duyệt
-                                          </button>
-                                          <button disabled={sendingNotifyId === s.id} onClick={() => sendApprovalNotification(s.id)} className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-slate-100 rounded-xl transition-all border border-slate-200/50" title="Gửi email yêu cầu duyệt">
-                                            {sendingNotifyId === s.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
-                                          </button>
-                                        </div>
-                                      )}
-                                    </div>
+                                    {renderApprovalCell(s, false)}
                                   </td>
                                 )}
 
-                                <td className="w-[110px] min-w-[110px] p-3 align-middle bg-inherit border border-slate-100">{getResultBadge(s.generalResult)}</td>
+                                <td className="w-[110px] min-w-[110px] p-3 align-middle bg-inherit border border-slate-100">{getStatusBadge(s.generalResult)}</td>
 
                                 <td className="w-[160px] min-w-[160px] p-3 align-middle bg-inherit border border-slate-100">
                                   {(() => {
@@ -5171,7 +5191,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
                                     if (isMienHT) {
                                       return (
-                                        <button onClick={() => openEmailCongratsModal(s)} className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-[10px] font-extrabold text-white bg-violet-600 hover:bg-violet-700 hover:scale-[1.02] rounded-xl transition-all shadow-xs w-fit border-none cursor-pointer">
+                                        <button onClick={() => openEmailCongratsModal(s)} className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 text-[10px] font-bold text-white bg-violet-600 hover:bg-violet-700 active:scale-[0.98] rounded-lg transition-all shadow-sm border border-violet-700/10 cursor-pointer">
                                           <Mail className="w-3.5 h-3.5" /> Trả Kết quả
                                         </button>
                                       );
@@ -5183,12 +5203,12 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                           <div className="flex flex-col gap-1 w-full items-start">
                                             <span className="text-[11px] font-extrabold text-slate-700 leading-snug">{s.probationaryTeacher}</span>
                                             {s.probationaryClass && <span className="text-[10px] text-slate-400 font-semibold">{s.probationaryClass}</span>}
-                                            <button onClick={() => openAssignModal(s)} className="inline-flex items-center justify-center gap-1 px-2 py-0.5 text-[9px] font-bold text-[#00A99D] hover:bg-[#00A99D]/10 rounded border border-[#00A99D]/20 transition-all w-fit cursor-pointer">
+                                            <button onClick={() => openAssignModal(s)} className="inline-flex items-center justify-center gap-1 px-2.5 py-1 text-[9px] font-extrabold text-[#00A99D] bg-teal-50/50 hover:bg-[#00A99D]/10 active:scale-[0.98] rounded-lg border border-[#00A99D]/30 transition-all cursor-pointer">
                                               Phân công lại
                                             </button>
                                           </div>
                                         ) : (
-                                          <button onClick={() => openAssignModal(s)} className="inline-flex items-center justify-center gap-1 px-3 py-1.5 text-[10px] font-extrabold text-white bg-[#00A99D] hover:bg-[#008F89] hover:scale-[1.02] rounded-xl transition-all shadow-xs w-fit border-none cursor-pointer">
+                                          <button onClick={() => openAssignModal(s)} className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 text-[10px] font-bold text-white bg-[#00A99D] hover:bg-[#009085] active:scale-[0.98] rounded-lg transition-all shadow-sm border border-[#009085]/10 cursor-pointer">
                                             Phân công
                                           </button>
                                         )}
@@ -5311,32 +5331,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         {paginatedStudents.map((s, idx) => {
                             const isExempt = (s.admissionResult || "").toUpperCase().includes("MIỄN") || (s.admissionResult || "").toUpperCase().includes("MIEN");
                             const resultBadge = () => {
-                              if (isExempt) {
-                                return (
-                                  <span className="inline-flex items-center justify-center bg-teal-50 text-teal-700 border border-teal-200/50 rounded-full px-2.5 py-1 text-[10px] font-extrabold shadow-xs">
-                                    Miễn học thử
-                                  </span>
-                                );
-                              }
-                              if (s.probationaryResult === "DAT") {
-                                return (
-                                  <span className="inline-flex items-center justify-center bg-emerald-50 text-emerald-700 border border-emerald-200/50 rounded-full px-2.5 py-1 text-[10px] font-extrabold shadow-xs">
-                                    ✓ ĐẠT
-                                  </span>
-                                );
-                              }
-                              if (s.probationaryResult === "CHUA_DAT") {
-                                return (
-                                  <span className="inline-flex items-center justify-center bg-rose-50 text-rose-700 border border-rose-250/50 rounded-full px-2.5 py-1 text-[10px] font-extrabold shadow-xs">
-                                    ✗ CHƯA ĐẠT
-                                  </span>
-                                );
-                              }
-                              return (
-                                <span className="inline-flex items-center justify-center bg-slate-100 text-slate-505 border border-slate-200/50 rounded-full px-2.5 py-1 text-[10px] font-bold shadow-xs">
-                                  Chưa đánh giá
-                                </span>
-                              );
+                               if (isExempt) return getStatusBadge("DAT_MIEN_HOC_THU");
+                               if (s.probationaryResult === "DAT") return getStatusBadge("DAT");
+                               if (s.probationaryResult === "CHUA_DAT") return getStatusBadge("KHONG_DAT");
+                               return getStatusBadge("CHUA_DANH_GIA");
                             };
 
                             return (
