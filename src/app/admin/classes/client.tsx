@@ -1,11 +1,11 @@
 "use client"
 import { getDefaultAcademicYearClient } from "@/lib/academicYear"
 import { useState, useRef, useEffect } from "react"
-import { Upload, Users, BookOpen, Download, Calendar, Building2, GraduationCap, Layers, Trash2, Edit, X, Save, CheckSquare, Plus } from "lucide-react"
+import { Upload, Users, BookOpen, Download, Calendar, Building2, GraduationCap, Layers, Trash2, Edit, X, Save, CheckSquare, Plus, ArrowRightLeft, Copy, ClipboardCheck, Loader2, AlertCircle, CheckCircle2, ChevronDown, RefreshCw } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import * as xlsx from "xlsx"
-import { importClassesAction, deleteClasses, updateClass, createClassAction } from "./actions"
+import { importClassesAction, deleteClasses, updateClass, createClassAction, previewClassTransferAction, transferClassesAction, previewStudentCopyAction, copyStudentsAction, previewTeachingAssignmentCopyAction, copyTeachingAssignmentsAction } from "./actions"
 
 const K12_LEVELS = [
   { value: "", label: "Tất cả" },
@@ -154,6 +154,33 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
   const [createModal, setCreateModal] = useState<any>(null)
   const [deleting, setDeleting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Modal: Kết chuyển lớp học
+  const [transferModal, setTransferModal] = useState(false)
+  const [transferSourceYear, setTransferSourceYear] = useState("")
+  const [transferTargetYear, setTransferTargetYear] = useState("")
+  const [transferPreview, setTransferPreview] = useState<any[]>([])
+  const [transferSelectedIds, setTransferSelectedIds] = useState<string[]>([])
+  const [transferMode, setTransferMode] = useState<"class_only"|"with_subjects"|"with_assignments">("class_only")
+  const [transferLoading, setTransferLoading] = useState(false)
+  const [transferResult, setTransferResult] = useState<any>(null)
+
+  // Modal: Sao chép học sinh
+  const [copyStudentModal, setCopyStudentModal] = useState(false)
+  const [copyStudentSourceYear, setCopyStudentSourceYear] = useState("")
+  const [copyStudentTargetYear, setCopyStudentTargetYear] = useState("")
+  const [copyStudentPreview, setCopyStudentPreview] = useState<any[]>([])
+  const [copyStudentLoading, setCopyStudentLoading] = useState(false)
+  const [copyStudentResult, setCopyStudentResult] = useState<any>(null)
+  const [copyStudentClassMap, setCopyStudentClassMap] = useState<any[]>([])
+
+  // Modal: Phân công giảng dạy
+  const [copyAssignModal, setCopyAssignModal] = useState(false)
+  const [copyAssignSourceYear, setCopyAssignSourceYear] = useState("")
+  const [copyAssignTargetYear, setCopyAssignTargetYear] = useState("")
+  const [copyAssignPreview, setCopyAssignPreview] = useState<any[]>([])
+  const [copyAssignLoading, setCopyAssignLoading] = useState(false)
+  const [copyAssignResult, setCopyAssignResult] = useState<any>(null)
 
   const selectedYear = academicYears.find((y: any) => y.id === selectedYearId)
   const baseEduSystems = selectedYear?.educationSystems || [];
@@ -371,6 +398,85 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
     if (res.success) { setEditModal(null); router.refresh(); } else alert("Lỗi khi cập nhật!")
   }
 
+  // ─── Kết chuyển lớp học handlers ───
+  const handleOpenTransferModal = () => {
+    setTransferModal(true);
+    setTransferSourceYear(selectedYearId || academicYears[0]?.id || "");
+    setTransferTargetYear("");
+    setTransferPreview([]);
+    setTransferSelectedIds([]);
+    setTransferMode("class_only");
+    setTransferResult(null);
+  };
+  const handleTransferPreview = async () => {
+    if (!transferSourceYear || !transferTargetYear) return;
+    setTransferLoading(true);
+    const res = await previewClassTransferAction(transferSourceYear, transferTargetYear);
+    if (res.success) {
+      setTransferPreview(res.preview || []);
+      setTransferSelectedIds((res.preview || []).filter((p: any) => !p.alreadyExists).map((p: any) => p.id));
+    }
+    setTransferLoading(false);
+  };
+  const handleTransferExecute = async () => {
+    if (!transferSelectedIds.length) return;
+    setTransferLoading(true);
+    const res = await transferClassesAction({ sourceYearId: transferSourceYear, targetYearId: transferTargetYear, classIds: transferSelectedIds, mode: transferMode });
+    setTransferResult(res);
+    setTransferLoading(false);
+    if (res.success) { router.refresh(); setTransferPreview([]); }
+  };
+
+  // ─── Sao chép học sinh handlers ───
+  const handleOpenCopyStudentModal = () => {
+    setCopyStudentModal(true);
+    setCopyStudentSourceYear(selectedYearId || academicYears[0]?.id || "");
+    setCopyStudentTargetYear("");
+    setCopyStudentPreview([]);
+    setCopyStudentResult(null);
+    setCopyStudentClassMap([]);
+  };
+  const handleCopyStudentPreview = async () => {
+    if (!copyStudentSourceYear || !copyStudentTargetYear) return;
+    setCopyStudentLoading(true);
+    const res = await previewStudentCopyAction(copyStudentSourceYear, copyStudentTargetYear);
+    if (res.success) {
+      setCopyStudentPreview(res.preview || []);
+      setCopyStudentClassMap(res.classMappingList || []);
+    }
+    setCopyStudentLoading(false);
+  };
+  const handleCopyStudentExecute = async () => {
+    setCopyStudentLoading(true);
+    const res = await copyStudentsAction(copyStudentSourceYear, copyStudentTargetYear);
+    setCopyStudentResult(res);
+    setCopyStudentLoading(false);
+    if (res.success) { router.refresh(); setCopyStudentPreview([]); }
+  };
+
+  // ─── Phân công giảng dạy handlers ───
+  const handleOpenCopyAssignModal = () => {
+    setCopyAssignModal(true);
+    setCopyAssignSourceYear(selectedYearId || academicYears[0]?.id || "");
+    setCopyAssignTargetYear("");
+    setCopyAssignPreview([]);
+    setCopyAssignResult(null);
+  };
+  const handleCopyAssignPreview = async () => {
+    if (!copyAssignSourceYear || !copyAssignTargetYear) return;
+    setCopyAssignLoading(true);
+    const res = await previewTeachingAssignmentCopyAction(copyAssignSourceYear, copyAssignTargetYear);
+    if (res.success) setCopyAssignPreview(res.preview || []);
+    setCopyAssignLoading(false);
+  };
+  const handleCopyAssignExecute = async () => {
+    setCopyAssignLoading(true);
+    const res = await copyTeachingAssignmentsAction(copyAssignSourceYear, copyAssignTargetYear);
+    setCopyAssignResult(res);
+    setCopyAssignLoading(false);
+    if (res.success) { router.refresh(); setCopyAssignPreview([]); }
+  };
+
   const getEduBadgeColor = (code: string) => {
     if (code === "HNG") return "bg-purple-100 text-purple-700"
     if (code === "SB") return "bg-teal-100 text-teal-700"
@@ -459,6 +565,15 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
           <div className="flex gap-3 items-center">
             <button onClick={() => handleOpenCreateModal()} className="flex items-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md shadow-sm text-sm">
               <Plus className="w-4 h-4 mr-2" /> Thêm Mới Lớp Học
+            </button>
+            <button onClick={handleOpenTransferModal} className="flex items-center bg-[#00A99D] hover:bg-[#008075] text-white font-semibold py-2 px-4 rounded-md shadow-sm text-sm">
+              <ArrowRightLeft className="w-4 h-4 mr-2" /> Kết chuyển lớp
+            </button>
+            <button onClick={handleOpenCopyStudentModal} className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-md shadow-sm text-sm">
+              <Copy className="w-4 h-4 mr-2" /> Sao chép học sinh
+            </button>
+            <button onClick={handleOpenCopyAssignModal} className="flex items-center bg-violet-600 hover:bg-violet-700 text-white font-semibold py-2 px-4 rounded-md shadow-sm text-sm">
+              <ClipboardCheck className="w-4 h-4 mr-2" /> Phân công GD
             </button>
             <button onClick={handleDownloadTemplate} className="flex items-center text-blue-600 hover:text-blue-700 hover:bg-blue-100 font-semibold text-sm text-xs font-semibold">
               <Download className="w-4 h-4 mr-2" /> Tải File Mẫu
@@ -715,6 +830,463 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
            </div>
         </div>
       )}
+    {/* ═══════════════════════════════════════════════════════════════ */}
+    {/* Modal: Kết chuyển lớp học */}
+    {transferModal && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-[#00A99D] to-[#006E68] text-white rounded-t-2xl">
+            <div className="flex items-center gap-3">
+              <ArrowRightLeft className="w-5 h-5" />
+              <h2 className="text-base font-bold tracking-tight">Kết chuyển lớp học sang năm học mới</h2>
+            </div>
+            <button onClick={() => { setTransferModal(false); setTransferResult(null); }} className="p-1.5 rounded-full hover:bg-white/20 transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Year selectors */}
+          <div className="px-6 py-4 bg-slate-50 border-b border-slate-200">
+            <div className="flex flex-wrap items-end gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Năm học nguồn</label>
+                <select value={transferSourceYear} onChange={e => { setTransferSourceYear(e.target.value); setTransferPreview([]); setTransferResult(null); }}
+                  className="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#00A99D]/40 min-w-[160px]">
+                  <option value="">-- Chọn --</option>
+                  {academicYears.map((y: any) => <option key={y.id} value={y.id}>{y.name}</option>)}
+                </select>
+              </div>
+              <ArrowRightLeft className="w-5 h-5 text-slate-400 mb-2.5" />
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Năm học đích</label>
+                <select value={transferTargetYear} onChange={e => { setTransferTargetYear(e.target.value); setTransferPreview([]); setTransferResult(null); }}
+                  className="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#00A99D]/40 min-w-[160px]">
+                  <option value="">-- Chọn --</option>
+                  {academicYears.filter((y: any) => y.id !== transferSourceYear).map((y: any) => <option key={y.id} value={y.id}>{y.name}</option>)}
+                </select>
+              </div>
+              <button onClick={handleTransferPreview} disabled={!transferSourceYear || !transferTargetYear || transferLoading}
+                className="flex items-center gap-2 px-4 py-2 bg-[#00A99D] hover:bg-[#008075] disabled:opacity-50 text-white font-semibold rounded-lg text-sm transition-colors">
+                {transferLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                Tải danh sách
+              </button>
+            </div>
+
+            {/* Mode radio */}
+            {transferPreview.length > 0 && (
+              <div className="mt-4 flex flex-col gap-2">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tùy chọn kết chuyển:</span>
+                <div className="flex flex-col gap-1.5">
+                  {[
+                    { value: "class_only", label: "Chỉ sao chép cấu trúc lớp (Tên lớp, Cơ sở, Khối, Hệ học, GVCN)" },
+                    { value: "with_assignments", label: "Sao chép lớp + Phân công giảng dạy (kèm Học kỳ)" }
+                  ].map(opt => (
+                    <label key={opt.value} className="flex items-center gap-2.5 cursor-pointer">
+                      <input type="radio" name="transferMode" value={opt.value} checked={transferMode === opt.value}
+                        onChange={() => setTransferMode(opt.value as any)}
+                        className="w-4 h-4 accent-[#00A99D]" />
+                      <span className="text-sm text-slate-700">{opt.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Result banner */}
+          {transferResult && (
+            <div className={`px-6 py-3 flex items-center gap-3 text-sm font-semibold ${transferResult.success ? "bg-emerald-50 text-emerald-700 border-b border-emerald-200" : "bg-rose-50 text-rose-700 border-b border-rose-200"}`}>
+              {transferResult.success ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+              {transferResult.success
+                ? `Kết chuyển thành công! Đã tạo ${transferResult.created} lớp mới. ${transferResult.skipped} lớp đã tồn tại (bỏ qua).`
+                : `Lỗi: ${transferResult.error}`}
+              {transferResult.errors?.length > 0 && <span className="text-xs font-normal ml-2">{transferResult.errors.slice(0,3).join("; ")}</span>}
+            </div>
+          )}
+
+          {/* Preview table */}
+          <div className="flex-1 overflow-y-auto px-6 py-4">
+            {transferPreview.length === 0 && !transferLoading && (
+              <div className="flex flex-col items-center justify-center h-32 text-slate-400 text-sm">
+                <ArrowRightLeft className="w-8 h-8 mb-2 opacity-30" />
+                Chọn năm học nguồn và đích, rồi bấm "Tải danh sách"
+              </div>
+            )}
+            {transferLoading && (
+              <div className="flex items-center justify-center h-32 gap-3 text-[#00A99D]">
+                <Loader2 className="w-6 h-6 animate-spin" />
+                <span className="text-sm font-semibold">Đang tải dữ liệu...</span>
+              </div>
+            )}
+            {transferPreview.length > 0 && !transferLoading && (
+              <>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-bold text-slate-700">
+                    Tổng: <span className="text-[#00A99D]">{transferPreview.length}</span> lớp nguồn •
+                    Chọn: <span className="text-blue-600">{transferSelectedIds.length}</span> lớp •
+                    Đã tồn tại: <span className="text-amber-600">{transferPreview.filter(p => p.alreadyExists).length}</span>
+                  </span>
+                  <div className="flex gap-2">
+                    <button onClick={() => setTransferSelectedIds(transferPreview.filter(p => !p.alreadyExists).map(p => p.id))}
+                      className="text-xs font-semibold text-[#00A99D] hover:underline">Chọn lớp mới</button>
+                    <span className="text-slate-300">|</span>
+                    <button onClick={() => setTransferSelectedIds([])}
+                      className="text-xs font-semibold text-slate-400 hover:underline">Bỏ chọn</button>
+                  </div>
+                </div>
+                <div className="border border-slate-200 rounded-xl overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
+                      <tr>
+                        <th className="px-3 py-2.5 text-center w-10"><input type="checkbox"
+                          checked={transferSelectedIds.length === transferPreview.filter(p => !p.alreadyExists).length && transferPreview.filter(p => !p.alreadyExists).length > 0}
+                          onChange={e => setTransferSelectedIds(e.target.checked ? transferPreview.filter(p => !p.alreadyExists).map(p => p.id) : [])}
+                          className="w-4 h-4 accent-[#00A99D]" /></th>
+                        <th className="px-3 py-2.5 text-left">Tên lớp</th>
+                        <th className="px-3 py-2.5 text-left">Cơ sở</th>
+                        <th className="px-3 py-2.5 text-left">Khối</th>
+                        <th className="px-3 py-2.5 text-left">Bậc học</th>
+                        <th className="px-3 py-2.5 text-center">Sỹ số</th>
+                        <th className="px-3 py-2.5 text-center">Trạng thái</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {transferPreview.map((p: any) => (
+                        <tr key={p.id} className={`transition-colors ${transferSelectedIds.includes(p.id) ? "bg-teal-50/40" : "hover:bg-slate-50"} ${p.alreadyExists ? "opacity-60" : ""}`}>
+                          <td className="px-3 py-2.5 text-center">
+                            <input type="checkbox" checked={transferSelectedIds.includes(p.id)} disabled={p.alreadyExists}
+                              onChange={e => setTransferSelectedIds(e.target.checked ? [...transferSelectedIds, p.id] : transferSelectedIds.filter(id => id !== p.id))}
+                              className="w-4 h-4 accent-[#00A99D] disabled:opacity-40" />
+                          </td>
+                          <td className="px-3 py-2.5 font-semibold text-slate-800">{p.className}</td>
+                          <td className="px-3 py-2.5 text-slate-600">{p.campus}</td>
+                          <td className="px-3 py-2.5 text-slate-600">{p.grade || "—"}</td>
+                          <td className="px-3 py-2.5 text-slate-600">{p.level || "—"}</td>
+                          <td className="px-3 py-2.5 text-center">
+                            <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-600 text-xs font-semibold px-2 py-0.5 rounded-full">
+                              <Users className="w-3 h-3" />{p.studentCount}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2.5 text-center">
+                            {p.alreadyExists
+                              ? <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-md border border-amber-200/60">Đã tồn tại</span>
+                              : <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-md border border-emerald-200/60">Sẽ tạo mới</span>}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-end gap-3 bg-white rounded-b-2xl">
+            <button onClick={() => { setTransferModal(false); setTransferResult(null); }}
+              className="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">
+              {transferResult?.success ? "Đóng" : "Hủy"}
+            </button>
+            {!transferResult?.success && (
+              <button onClick={handleTransferExecute}
+                disabled={!transferSelectedIds.length || transferLoading}
+                className="flex items-center gap-2 px-5 py-2 text-sm font-bold text-white bg-[#00A99D] hover:bg-[#008075] disabled:opacity-50 rounded-xl transition-colors shadow-sm">
+                {transferLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRightLeft className="w-4 h-4" />}
+                Kết chuyển {transferSelectedIds.length > 0 ? `${transferSelectedIds.length} lớp` : ""}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* ═══════════════════════════════════════════════════════════════ */}
+    {/* Modal: Sao chép học sinh */}
+    {copyStudentModal && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-indigo-600 to-indigo-800 text-white rounded-t-2xl">
+            <div className="flex items-center gap-3">
+              <Copy className="w-5 h-5" />
+              <h2 className="text-base font-bold tracking-tight">Sao chép học sinh sang năm học mới</h2>
+            </div>
+            <button onClick={() => { setCopyStudentModal(false); setCopyStudentResult(null); }} className="p-1.5 rounded-full hover:bg-white/20 transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Year selectors */}
+          <div className="px-6 py-4 bg-slate-50 border-b border-slate-200">
+            <div className="flex flex-wrap items-end gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Năm học nguồn</label>
+                <select value={copyStudentSourceYear} onChange={e => { setCopyStudentSourceYear(e.target.value); setCopyStudentPreview([]); setCopyStudentResult(null); }}
+                  className="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-400/40 min-w-[160px]">
+                  <option value="">-- Chọn --</option>
+                  {academicYears.map((y: any) => <option key={y.id} value={y.id}>{y.name}</option>)}
+                </select>
+              </div>
+              <ArrowRightLeft className="w-5 h-5 text-slate-400 mb-2.5" />
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Năm học đích</label>
+                <select value={copyStudentTargetYear} onChange={e => { setCopyStudentTargetYear(e.target.value); setCopyStudentPreview([]); setCopyStudentResult(null); }}
+                  className="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-400/40 min-w-[160px]">
+                  <option value="">-- Chọn --</option>
+                  {academicYears.filter((y: any) => y.id !== copyStudentSourceYear).map((y: any) => <option key={y.id} value={y.id}>{y.name}</option>)}
+                </select>
+              </div>
+              <button onClick={handleCopyStudentPreview} disabled={!copyStudentSourceYear || !copyStudentTargetYear || copyStudentLoading}
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold rounded-lg text-sm transition-colors">
+                {copyStudentLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                Kiểm tra
+              </button>
+            </div>
+            {copyStudentClassMap.length > 0 && (
+              <div className="mt-3 text-xs text-slate-500">
+                <span className="font-bold">Mapping lớp (tự động theo tên lớp):</span>
+                <div className="flex flex-wrap gap-2 mt-1.5">
+                  {copyStudentClassMap.slice(0, 8).map((m: any) => (
+                    <span key={m.sourceClassId} className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold ${m.targetClassId ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60" : "bg-rose-50 text-rose-600 border border-rose-200/60"}`}>
+                      {m.sourceClassName} {m.targetClassId ? "→ ✓" : "→ ✗ Chưa có lớp đích"}
+                    </span>
+                  ))}
+                  {copyStudentClassMap.length > 8 && <span className="text-slate-400">+{copyStudentClassMap.length - 8} lớp khác</span>}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Result banner */}
+          {copyStudentResult && (
+            <div className={`px-6 py-3 flex items-center gap-3 text-sm font-semibold ${copyStudentResult.success ? "bg-emerald-50 text-emerald-700 border-b border-emerald-200" : "bg-rose-50 text-rose-700 border-b border-rose-200"}`}>
+              {copyStudentResult.success ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+              {copyStudentResult.success
+                ? `Hoàn thành! Đã sao chép ${copyStudentResult.copied} học sinh. Bỏ qua ${copyStudentResult.skipped} (trùng hoặc chưa có lớp đích).`
+                : `Lỗi: ${copyStudentResult.error}`}
+            </div>
+          )}
+
+          {/* Preview table */}
+          <div className="flex-1 overflow-y-auto px-6 py-4">
+            {copyStudentPreview.length === 0 && !copyStudentLoading && (
+              <div className="flex flex-col items-center justify-center h-32 text-slate-400 text-sm">
+                <Users className="w-8 h-8 mb-2 opacity-30" />
+                Chọn năm học nguồn và đích, rồi bấm "Kiểm tra" để xem trước
+              </div>
+            )}
+            {copyStudentLoading && (
+              <div className="flex items-center justify-center h-32 gap-3 text-indigo-600">
+                <Loader2 className="w-6 h-6 animate-spin" />
+                <span className="text-sm font-semibold">Đang kiểm tra học sinh...</span>
+              </div>
+            )}
+            {copyStudentPreview.length > 0 && !copyStudentLoading && (
+              <>
+                <div className="flex items-center gap-4 mb-3 text-sm font-bold text-slate-700">
+                  <span>Tổng: <span className="text-indigo-600">{copyStudentPreview.length}</span> học sinh</span>
+                  <span>Sẽ sao chép: <span className="text-emerald-600">{copyStudentPreview.filter(s => !s.isDuplicate && s.hasTargetClass).length}</span></span>
+                  <span>Trùng mã (bỏ qua): <span className="text-amber-600">{copyStudentPreview.filter(s => s.isDuplicate).length}</span></span>
+                  <span>Chưa có lớp đích: <span className="text-rose-600">{copyStudentPreview.filter(s => !s.isDuplicate && !s.hasTargetClass).length}</span></span>
+                </div>
+                <div className="border border-slate-200 rounded-xl overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
+                      <tr>
+                        <th className="px-3 py-2.5 text-left">Mã học sinh</th>
+                        <th className="px-3 py-2.5 text-left">Họ và tên</th>
+                        <th className="px-3 py-2.5 text-left">Ngày sinh</th>
+                        <th className="px-3 py-2.5 text-left">Lớp nguồn</th>
+                        <th className="px-3 py-2.5 text-left">Cơ sở</th>
+                        <th className="px-3 py-2.5 text-center">Trạng thái</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {copyStudentPreview.map((s: any) => (
+                        <tr key={s.id} className={`transition-colors hover:bg-slate-50 ${s.isDuplicate ? "opacity-60" : ""}`}>
+                          <td className="px-3 py-2.5 font-mono text-xs font-bold text-indigo-700">{s.studentCode}</td>
+                          <td className="px-3 py-2.5 font-semibold text-slate-800">{s.studentName}</td>
+                          <td className="px-3 py-2.5 text-slate-500 text-xs">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
+                          <td className="px-3 py-2.5 text-slate-600">{s.sourceClassName}</td>
+                          <td className="px-3 py-2.5 text-slate-500 text-xs">{s.campus}</td>
+                          <td className="px-3 py-2.5 text-center">
+                            {s.isDuplicate
+                              ? <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-md border border-amber-200/60"><AlertCircle className="w-3 h-3" /> Trùng mã</span>
+                              : !s.hasTargetClass
+                              ? <span className="inline-flex items-center gap-1 bg-rose-50 text-rose-700 text-xs font-bold px-2.5 py-1 rounded-md border border-rose-200/60">Chưa có lớp đích</span>
+                              : <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-md border border-emerald-200/60"><CheckCircle2 className="w-3 h-3" /> Sẽ sao chép</span>
+                            }
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-between gap-3 bg-white rounded-b-2xl">
+            <p className="text-xs text-slate-400">Học sinh trùng mã sẽ được bỏ qua tự động. Chỉ sao chép học sinh có lớp đích tương ứng.</p>
+            <div className="flex gap-3">
+              <button onClick={() => { setCopyStudentModal(false); setCopyStudentResult(null); }}
+                className="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">
+                {copyStudentResult?.success ? "Đóng" : "Hủy"}
+              </button>
+              {!copyStudentResult?.success && (
+                <button onClick={handleCopyStudentExecute}
+                  disabled={copyStudentPreview.filter((s: any) => !s.isDuplicate && s.hasTargetClass).length === 0 || copyStudentLoading}
+                  className="flex items-center gap-2 px-5 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-xl transition-colors shadow-sm">
+                  {copyStudentLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Copy className="w-4 h-4" />}
+                  Sao chép {copyStudentPreview.filter((s: any) => !s.isDuplicate && s.hasTargetClass).length} học sinh
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* ═══════════════════════════════════════════════════════════════ */}
+    {/* Modal: Phân công giảng dạy */}
+    {copyAssignModal && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-violet-600 to-violet-800 text-white rounded-t-2xl">
+            <div className="flex items-center gap-3">
+              <ClipboardCheck className="w-5 h-5" />
+              <h2 className="text-base font-bold tracking-tight">Sao chép phân công giảng dạy sang năm học mới</h2>
+            </div>
+            <button onClick={() => { setCopyAssignModal(false); setCopyAssignResult(null); }} className="p-1.5 rounded-full hover:bg-white/20 transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Year selectors */}
+          <div className="px-6 py-4 bg-slate-50 border-b border-slate-200">
+            <div className="flex flex-wrap items-end gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Năm học nguồn</label>
+                <select value={copyAssignSourceYear} onChange={e => { setCopyAssignSourceYear(e.target.value); setCopyAssignPreview([]); setCopyAssignResult(null); }}
+                  className="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-400/40 min-w-[160px]">
+                  <option value="">-- Chọn --</option>
+                  {academicYears.map((y: any) => <option key={y.id} value={y.id}>{y.name}</option>)}
+                </select>
+              </div>
+              <ArrowRightLeft className="w-5 h-5 text-slate-400 mb-2.5" />
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Năm học đích</label>
+                <select value={copyAssignTargetYear} onChange={e => { setCopyAssignTargetYear(e.target.value); setCopyAssignPreview([]); setCopyAssignResult(null); }}
+                  className="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-400/40 min-w-[160px]">
+                  <option value="">-- Chọn --</option>
+                  {academicYears.filter((y: any) => y.id !== copyAssignSourceYear).map((y: any) => <option key={y.id} value={y.id}>{y.name}</option>)}
+                </select>
+              </div>
+              <button onClick={handleCopyAssignPreview} disabled={!copyAssignSourceYear || !copyAssignTargetYear || copyAssignLoading}
+                className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white font-semibold rounded-lg text-sm transition-colors">
+                {copyAssignLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                Kiểm tra
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-slate-400">Phân công được ghép tự động theo tên lớp. Phân công đã tồn tại trong năm đích sẽ được bỏ qua. Học kỳ (HK1/HK2) được giữ nguyên.</p>
+          </div>
+
+          {/* Result banner */}
+          {copyAssignResult && (
+            <div className={`px-6 py-3 flex items-center gap-3 text-sm font-semibold ${copyAssignResult.success ? "bg-emerald-50 text-emerald-700 border-b border-emerald-200" : "bg-rose-50 text-rose-700 border-b border-rose-200"}`}>
+              {copyAssignResult.success ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+              {copyAssignResult.success
+                ? `Hoàn thành! Đã sao chép ${copyAssignResult.copied} phân công. Bỏ qua ${copyAssignResult.skipped} (trùng hoặc chưa có lớp đích).`
+                : `Lỗi: ${copyAssignResult.error}`}
+            </div>
+          )}
+
+          {/* Preview table */}
+          <div className="flex-1 overflow-y-auto px-6 py-4">
+            {copyAssignPreview.length === 0 && !copyAssignLoading && (
+              <div className="flex flex-col items-center justify-center h-32 text-slate-400 text-sm">
+                <ClipboardCheck className="w-8 h-8 mb-2 opacity-30" />
+                Chọn năm học nguồn và đích, rồi bấm "Kiểm tra" để xem trước
+              </div>
+            )}
+            {copyAssignLoading && (
+              <div className="flex items-center justify-center h-32 gap-3 text-violet-600">
+                <Loader2 className="w-6 h-6 animate-spin" />
+                <span className="text-sm font-semibold">Đang kiểm tra phân công...</span>
+              </div>
+            )}
+            {copyAssignPreview.length > 0 && !copyAssignLoading && (
+              <>
+                <div className="flex items-center gap-4 mb-3 text-sm font-bold text-slate-700">
+                  <span>Tổng: <span className="text-violet-600">{copyAssignPreview.length}</span> phân công</span>
+                  <span>Sẽ sao chép: <span className="text-emerald-600">{copyAssignPreview.filter(a => !a.isDuplicate && a.hasTargetClass).length}</span></span>
+                  <span>Trùng (bỏ qua): <span className="text-amber-600">{copyAssignPreview.filter(a => a.isDuplicate).length}</span></span>
+                  <span>Chưa có lớp đích: <span className="text-rose-600">{copyAssignPreview.filter(a => !a.isDuplicate && !a.hasTargetClass).length}</span></span>
+                </div>
+                <div className="border border-slate-200 rounded-xl overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
+                      <tr>
+                        <th className="px-3 py-2.5 text-left">Giáo viên</th>
+                        <th className="px-3 py-2.5 text-left">Môn học</th>
+                        <th className="px-3 py-2.5 text-left">Lớp</th>
+                        <th className="px-3 py-2.5 text-center">Học kỳ</th>
+                        <th className="px-3 py-2.5 text-center">Trạng thái</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {copyAssignPreview.map((a: any, idx: number) => (
+                        <tr key={idx} className={`transition-colors hover:bg-slate-50 ${a.isDuplicate ? "opacity-55" : ""}`}>
+                          <td className="px-3 py-2.5 font-semibold text-slate-800">{a.teacherName}</td>
+                          <td className="px-3 py-2.5 text-slate-600">{a.subjectName}</td>
+                          <td className="px-3 py-2.5 text-slate-600">{a.className}</td>
+                          <td className="px-3 py-2.5 text-center">
+                            <span className={`inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-md ${a.semester === 1 ? "bg-blue-50 text-blue-700 border border-blue-200/60" : "bg-orange-50 text-orange-700 border border-orange-200/60"}`}>
+                              HK{a.semester}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2.5 text-center">
+                            {a.isDuplicate
+                              ? <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-md border border-amber-200/60"><AlertCircle className="w-3 h-3" /> Đã tồn tại</span>
+                              : !a.hasTargetClass
+                              ? <span className="inline-flex items-center gap-1 bg-rose-50 text-rose-700 text-xs font-bold px-2.5 py-1 rounded-md border border-rose-200/60">Chưa có lớp đích</span>
+                              : <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-md border border-emerald-200/60"><CheckCircle2 className="w-3 h-3" /> Sẽ sao chép</span>
+                            }
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-between gap-3 bg-white rounded-b-2xl">
+            <p className="text-xs text-slate-400">Phân công trùng sẽ được bỏ qua. Chỉ sao chép phân công có lớp đích tương ứng.</p>
+            <div className="flex gap-3">
+              <button onClick={() => { setCopyAssignModal(false); setCopyAssignResult(null); }}
+                className="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">
+                {copyAssignResult?.success ? "Đóng" : "Hủy"}
+              </button>
+              {!copyAssignResult?.success && (
+                <button onClick={handleCopyAssignExecute}
+                  disabled={copyAssignPreview.filter((a: any) => !a.isDuplicate && a.hasTargetClass).length === 0 || copyAssignLoading}
+                  className="flex items-center gap-2 px-5 py-2 text-sm font-bold text-white bg-violet-600 hover:bg-violet-700 disabled:opacity-50 rounded-xl transition-colors shadow-sm">
+                  {copyAssignLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ClipboardCheck className="w-4 h-4" />}
+                  Sao chép {copyAssignPreview.filter((a: any) => !a.isDuplicate && a.hasTargetClass).length} phân công
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+
     </div>
   )
 }
