@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect } from "react"
-import { Plus, Edit2, Trash2, CheckCircle2, X, Filter, Search } from "lucide-react"
+import { Plus, Edit2, Trash2, CheckCircle2, X, Filter, Search, RefreshCw } from "lucide-react"
 
 const cleanStr = (s) => 
   (s || "")
@@ -26,6 +26,12 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
 
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
+
+  const handleReset = () => {
+    setFilterRole("ALL");
+    setFilterCampus("ALL");
+    setSearch("");
+  };
 
   useEffect(() => {
     setCurrentPage(1);
@@ -127,79 +133,102 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
 
   return (
     <div className="space-y-4">
-      {/* Bộ Lọc */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-4">
-        {/* Tìm kiếm */}
-        <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
-          <div className="flex items-center gap-2 text-indigo-900 font-bold text-sm">
+      {/* Advanced Filter Bar */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-slate-800 font-extrabold text-sm tracking-tight">
             <Filter className="w-4 h-4 text-[#00A99D]" />
             Bộ lọc & Tìm kiếm nhanh
           </div>
-          <div className="relative w-full md:w-80">
+          {(filterRole !== "ALL" || filterCampus !== "ALL" || search) && (
+            <button 
+              onClick={handleReset} 
+              className="text-xs font-bold text-slate-500 hover:text-[#00A99D] transition-colors flex items-center gap-1 cursor-pointer"
+            >
+              <RefreshCw className="w-3.5 h-3.5" /> Xóa bộ lọc
+            </button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Search Input */}
+          <div className="relative">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Tìm kiếm Họ tên, Mã NV..."
-              className="w-full pl-9 pr-8 py-2 rounded-xl text-sm border border-slate-200 focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] outline-none transition-all"
+              className="w-full pl-9 pr-8 py-2.5 rounded-xl text-sm border border-slate-200 focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] outline-none transition-all font-semibold bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white"
             />
             {search && (
               <button
                 onClick={() => setSearch("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-4 h-4" />
               </button>
             )}
           </div>
-        </div>
 
-        {/* Lọc theo Nhóm */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 pt-4 border-t border-slate-100">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-bold text-slate-700">Lọc theo Nhóm:</span>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <button onClick={() => setFilterRole("ALL")} className={`px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all ${filterRole === "ALL" ? "bg-[#00A99D] text-white border-[#00A99D] shadow-sm" : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"}`}>
-              Gộp Tất cả
-            </button>
-            {roles.map((r: any) => (
-              <button key={r.code} onClick={() => setFilterRole(r.code)} className={`px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all ${filterRole === r.code ? "bg-[#00A99D] text-white border-[#00A99D] shadow-sm" : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"}`}>
-                {r.name}
-              </button>
-            ))}
-
-            {selectedIds.length > 0 && filterRole !== "ALL" && (
-              <button
-                onClick={() => handleMoveGroup(filterRole)}
-                disabled={moving}
-                className="ml-4 hover:bg-amber-600 text-white text-xs font-bold shadow-sm transition-all cursor-pointer flex items-center gap-1.5 text-xs font-semibold"
-              >
-                Chuyển {selectedIds.length} tài khoản đã chọn sang Nhóm: {roles.find((r) => r.code === filterRole)?.name}
-              </button>
-            )}
-          </div>
-        </div>
-        
-        {(filterRole === "PARENT" || filterRole === "TEACHER" || filterRole === "ALL") && !isCampusLocked && (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-4 pt-4 border-t border-slate-100">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-bold text-slate-700">Lọc theo Cơ sở:</span>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <button onClick={() => setFilterCampus("ALL")} className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${filterCampus === "ALL" ? "bg-emerald-600 text-white border-emerald-600 shadow-sm" : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"}`}>
-                Tất cả Cơ sở
-              </button>
-              {campuses.map((c: any) => (
-                <button key={c.id} onClick={() => setFilterCampus(c.id)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${filterCampus === c.id ? "bg-emerald-600 text-white border-emerald-600 shadow-sm" : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"}`}>
-                  {c.campusName}
-                </button>
+          {/* Role Dropdown */}
+          <div className="relative">
+            <select
+              value={filterRole}
+              onChange={(e) => setFilterRole(e.target.value)}
+              className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/10 outline-none bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white transition-all font-bold cursor-pointer text-slate-700"
+            >
+              <option value="ALL">-- Tất cả Nhóm quyền --</option>
+              {roles.map((r: any) => (
+                <option key={r.code} value={r.code}>{r.name}</option>
               ))}
+            </select>
+          </div>
+
+          {/* Campus Dropdown */}
+          {!isCampusLocked && (
+            <div className="relative">
+              <select
+                value={filterCampus}
+                onChange={(e) => setFilterCampus(e.target.value)}
+                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/10 outline-none bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white transition-all font-bold cursor-pointer text-slate-700"
+              >
+                <option value="ALL">-- Tất cả Cơ sở --</option>
+                {campuses.map((c: any) => (
+                  <option key={c.id} value={c.id}>{c.campusName}</option>
+                ))}
+              </select>
             </div>
+          )}
+        </div>
+
+        {/* Selected Filter Badges */}
+        {(filterRole !== "ALL" || filterCampus !== "ALL" || search) && (
+          <div className="flex items-center gap-2 flex-wrap pt-2">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Đang lọc:</span>
+            {filterRole !== "ALL" && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#00A99D]/10 text-[#00A99D] border border-[#00A99D]/20">
+                Nhóm: {roles.find((r: any) => r.code === filterRole)?.name}
+                <button onClick={() => setFilterRole("ALL")} className="hover:text-red-500 ml-0.5"><X className="w-3.5 h-3.5" /></button>
+              </span>
+            )}
+            {filterCampus !== "ALL" && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-250">
+                Cơ sở: {campuses.find((c: any) => c.id === filterCampus)?.campusName}
+                <button onClick={() => setFilterCampus("ALL")} className="hover:text-red-500 ml-0.5"><X className="w-3.5 h-3.5" /></button>
+              </span>
+            )}
+            {search && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-250">
+                Từ khoá: "{search}"
+                <button onClick={() => setSearch("")} className="hover:text-red-500 ml-0.5"><X className="w-3.5 h-3.5" /></button>
+              </span>
+            )}
           </div>
         )}
-      </div>      <div className="bg-white rounded-2xl shadow-sm border-2 border-amber-100">
+      </div>
+      
+            <div className="bg-white rounded-2xl shadow-sm border-2 border-amber-100">
         <div className="p-4 flex justify-between items-center text-xs font-semibold">
           <div className="flex items-center gap-4">
              <h3 className="font-bold text-slate-700">Danh sách Tài khoản ({displayedUsers.length})</h3>
