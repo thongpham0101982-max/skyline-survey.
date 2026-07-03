@@ -8,6 +8,16 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import { prisma } from "./db"
 import bcrypt from "bcryptjs"
 
+async function getClientIp() {
+  try {
+    const { headers } = require('next/headers');
+    const reqHeaders = await headers();
+    return reqHeaders.get('x-forwarded-for')?.split(',')[0] || reqHeaders.get('x-real-ip') || '127.0.0.1';
+  } catch (e) {
+    return '127.0.0.1';
+  }
+}
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   secret: "skyline-survey-super-secret-key-change-in-production", // FORCE exact secret
   trustHost: true,
@@ -89,7 +99,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               targetTable: "User",
               targetId: "N/A",
               newValues: "Tài khoản không tồn tại",
-              ipAddress: "N/A"
+              ipAddress: await getClientIp()
             }
           }).catch(() => {});
           return null
@@ -112,7 +122,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               targetTable: "User",
               targetId: user.id,
               newValues: "Sai mật khẩu",
-              ipAddress: "N/A"
+              ipAddress: await getClientIp()
             }
           }).catch(() => {});
           return null
@@ -139,7 +149,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           targetTable: "User",
           targetId: user.id || "N/A",
           newValues: `Đăng nhập thành công (Vai trò: ${user.role || "N/A"})`,
-          ipAddress: "N/A"
+          ipAddress: await getClientIp()
         }
       }).catch((e) => console.error("Error logging signin event:", e));
     },
@@ -153,7 +163,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             targetTable: "User",
             targetId: (token.id as string) || "N/A",
             newValues: "Đăng xuất thành công",
-            ipAddress: "N/A"
+            ipAddress: await getClientIp()
           }
         }).catch((e) => console.error("Error logging signout event:", e));
       }
