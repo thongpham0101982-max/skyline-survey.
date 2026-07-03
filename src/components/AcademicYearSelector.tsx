@@ -27,16 +27,11 @@ export function AcademicYearSelector() {
             const defaultId = active ? active.id : (data.length > 0 ? data[0].id : null);
             if (defaultId) {
               const stored = localStorage.getItem("selectedAcademicYear");
-              if (stored) {
-                const exists = data.some(y => y.id === stored);
-                setSelectedYear(exists ? stored : defaultId);
-                if (!exists) {
-                  localStorage.setItem("selectedAcademicYear", defaultId);
-                  window.dispatchEvent(new Event("academicYearChanged"));
-                }
-              } else {
-                setSelectedYear(defaultId);
-                localStorage.setItem("selectedAcademicYear", defaultId);
+              const currentId = stored && data.some(y => y.id === stored) ? stored : defaultId;
+              setSelectedYear(currentId);
+              localStorage.setItem("selectedAcademicYear", currentId);
+              document.cookie = "selectedAcademicYear=" + currentId + "; path=/; max-age=31536000; SameSite=Lax";
+              if (currentId !== stored) {
                 window.dispatchEvent(new Event("academicYearChanged"));
               }
             }
@@ -58,9 +53,10 @@ export function AcademicYearSelector() {
   const handleSelect = (id: string) => {
     setSelectedYear(id);
     setIsOpen(false);
-    // Có thể lưu vào localStorage hoặc Context ở đây
     localStorage.setItem("selectedAcademicYear", id);
+    document.cookie = "selectedAcademicYear=" + id + "; path=/; max-age=31536000; SameSite=Lax";
     window.dispatchEvent(new Event("academicYearChanged"));
+    window.location.reload();
   };
 
   const isPortal = pathname.startsWith("/admin") || pathname.startsWith("/teacher") || pathname.startsWith("/parent") || pathname.startsWith("/hocsinh");

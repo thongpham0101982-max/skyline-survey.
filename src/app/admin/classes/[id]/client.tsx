@@ -115,7 +115,11 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
         })
         const res = await importStudentsAction(classId, payload)
         if (res.success) {
-          alert(`[Vêrsion 2.1] Đã import thành công ${res.count} học sinh! Skipped: ${res.skipped || 0}`)
+          let msg = `[Vêrsion 2.1] Đã import thành công ${res.count} học sinh! Bỏ qua: ${res.skipped || 0}`
+          if (res.warnings && res.warnings.length > 0) {
+            msg += `\n\nCảnh báo trùng lặp:\n` + res.warnings.join("\n")
+          }
+          alert(msg)
           window.location.reload()
         } else {
           alert("Lỗi server: " + res.error)

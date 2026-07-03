@@ -1,4 +1,5 @@
 ﻿import { prisma } from "@/lib/db"
+import { getDefaultAcademicYear } from "@/lib/academicYear"
 import { TeacherManagerClient } from "./client"
 import { getAdminSession } from "@/lib/session"
 
@@ -11,7 +12,8 @@ export default async function TeacherManagerPage() {
     orderBy: { startDate: "desc" },
     select: { id: true, name: true, status: true, isOff: true }
   })
-  const defaultYearId = years.find(y => y.status === "ACTIVE" && !y.isOff)?.id || years.find(y => !y.isOff)?.id || years[0]?.id || null
+  const activeYear = await getDefaultAcademicYear(prisma)
+  const defaultYearId = activeYear?.id || years.find(y => y.status === "ACTIVE" && !y.isOff)?.id || years.find(y => !y.isOff)?.id || years[0]?.id || null
 
   const departments = await prisma.department.findMany({
     where: { status: "ACTIVE" },

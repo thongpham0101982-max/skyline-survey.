@@ -81,6 +81,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (!user) {
           console.log('[AUTH] User not found for identifier:', identifier)
+          await prisma.auditLog.create({
+            data: {
+              userId: "N/A",
+              userEmail: identifier,
+              action: "LOGIN_FAILED",
+              targetTable: "User",
+              targetId: "N/A",
+              newValues: "Tài khoản không tồn tại",
+              ipAddress: "N/A"
+            }
+          }).catch(() => {});
           return null
         }
 
@@ -92,7 +103,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         // Validate Password
         const isValid = await bcrypt.compare(password, user.passwordHash)
         console.log('[AUTH] Password check for:', identifier, 'Result:', isValid)
-        if (!isValid) return null
+        if (!isValid) {
+          await prisma.auditLog.create({
+            data: {
+              userId: user.id,
+              userEmail: identifier,
+              action: "LOGIN_FAILED",
+              targetTable: "User",
+              targetId: user.id,
+              newValues: "Sai mật khẩu",
+              ipAddress: "N/A"
+            }
+          }).catch(() => {});
+          return null
+        }
 
         return {
           id: user.id,
@@ -105,6 +129,36 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   session: { strategy: "jwt" },
+  events: {
+    async signIn({ user }) {
+      await prisma.auditLog.create({
+        data: {
+          userId: user.id || "N/A",
+          userEmail: user.email || "N/A",
+          action: "LOGIN_SUCCESS",
+          targetTable: "User",
+          targetId: user.id || "N/A",
+          newValues: `Đăng nhập thành công (Vai trò: ${user.role || "N/A"})`,
+          ipAddress: "N/A"
+        }
+      }).catch((e) => console.error("Error logging signin event:", e));
+    },
+    async signOut({ token }) {
+      if (token) {
+        await prisma.auditLog.create({
+          data: {
+            userId: (token.id as string) || "N/A",
+            userEmail: (token.email as string) || "N/A",
+            action: "LOGOUT",
+            targetTable: "User",
+            targetId: (token.id as string) || "N/A",
+            newValues: "Đăng xuất thành công",
+            ipAddress: "N/A"
+          }
+        }).catch((e) => console.error("Error logging signout event:", e));
+      }
+    }
+  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {

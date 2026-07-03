@@ -2,6 +2,8 @@
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 import bcrypt from "bcryptjs"
+import { auth } from "@/lib/auth"
+import { logActivity } from "@/lib/audit"
 
 async function getDefaultCampusId() {
   const campus = await prisma.campus.findFirst()
@@ -77,30 +79,45 @@ async function syncAdditionalCampuses(userId: string, additionalCampusIds: strin
 
 export async function createTeacherAction(data: any) {
   try {
-    const campusId = data.campusId || await getDefaultCampusId()
-    const hashedPassword = await bcrypt.hash(data.teacherCode, 10)
+    const teacherCode = data.teacherCode?.trim().toUpperCase()
+    if (!teacherCode) {
+      return { success: false, error: "Mã GV không được để trống!" }
+    }
 
-    const existingUser = await prisma.user.findUnique({ where: { email: data.teacherCode } })
+    // Check if Teacher already exists with this code
+    const existing = await prisma.teacher.findUnique({ where: { teacherCode } })
+    if (existing) {
+      return { success: false, error: "Mã GV đã tồn tại: " + teacherCode }
+    }
+
+    // Check if the user email (which is teacherCode) is already associated with another Teacher
+    const existingUser = await prisma.user.findUnique({ 
+      where: { email: teacherCode },
+      include: { teacher: true }
+    })
+    if (existingUser?.teacher) {
+      return { success: false, error: `Tài khoản/Mã GV '${teacherCode}' đã được liên kết với một giáo viên khác!` }
+    }
+
+    const campusId = data.campusId || await getDefaultCampusId()
+    const hashedPassword = await bcrypt.hash(teacherCode, 10)
     let userId: string
 
     if (existingUser) {
       userId = existingUser.id
     } else {
       const user = await prisma.user.create({
-        data: { fullName: data.teacherName, email: data.teacherCode, passwordHash: hashedPassword, role: "TEACHER", status: "ACTIVE" }
+        data: { fullName: data.teacherName, email: teacherCode, passwordHash: hashedPassword, role: "TEACHER", status: "ACTIVE" }
       })
       userId = user.id
     }
-
-    const existing = await prisma.teacher.findUnique({ where: { teacherCode: data.teacherCode } })
-    if (existing) return { success: false, error: "Mã GV đã tồn tại: " + data.teacherCode }
 
     const departmentId = await resolveDepartmentId(data.department)
     const mainSubjectId = await resolveSubjectId(data.mainSubject)
 
     const teacher = await prisma.teacher.create({
       data: {
-        userId, teacherCode: data.teacherCode, teacherName: data.teacherName,
+        userId, teacherCode, teacherName: data.teacherName,
         homeroomClass: null, email: data.email || null, phone: data.phone || null,
         dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
         departmentId: departmentId,
@@ -108,6 +125,17 @@ export async function createTeacherAction(data: any) {
         campusId, status: "ACTIVE", position: data.position || "GV"
       }
     })
+
+    const session = await auth()
+    await logActivity(
+      session?.user?.id || "SYSTEM",
+      session?.user?.email || "SYSTEM",
+      "CREATE_TEACHER",
+      "Teacher",
+      teacher.id,
+      null,
+      { teacherCode, teacherName: data.teacherName, campusId }
+    )
 
     if (data.homeroomClassId) {
       await assignHomeroomClass(teacher.id, data.homeroomClassId)
@@ -145,7 +173,18 @@ export async function updateTeacherAction(data: any) {
       updateData.mainSubjectId = await resolveSubjectId(data.mainSubject)
     }
 
+    const oldTeacher = await prisma.teacher.findUnique({ where: { id } })
     await prisma.teacher.update({ where: { id }, data: updateData })
+    const session = await auth()
+    await logActivity(
+      session?.user?.id || "SYSTEM",
+      session?.user?.email || "SYSTEM",
+      "UPDATE_TEACHER",
+      "Teacher",
+      id,
+      oldTeacher,
+      updateData
+    )
 
     if (teacherName || data.status !== undefined) {
       const teacher = await prisma.teacher.findUnique({ where: { id } })
@@ -194,6 +233,16 @@ export async function deleteTeacherAction(id: string) {
     const teacher = await prisma.teacher.findUnique({ where: { id } })
     if (!teacher) return { success: false, error: "Không tìm thấy giáo viên" }
     await prisma.teacher.delete({ where: { id } })
+    const session = await auth()
+    await logActivity(
+      session?.user?.id || "SYSTEM",
+      session?.user?.email || "SYSTEM",
+      "DELETE_TEACHER",
+      "Teacher",
+      id,
+      teacher,
+      null
+    )
     await prisma.user.delete({ where: { id: teacher.userId } }).catch(() => {})
     revalidatePath("/admin/teachers")
     revalidatePath("/admin/classes")
@@ -207,6 +256,8 @@ export async function importTeachersAction(rows: any[], academicYearId?: string)
   const defaultCampusId = await getDefaultCampusId()
   let created = 0, skipped = 0
   const errors: string[] = []
+  const warnings: string[] = []
+  const seenCodesInFile = new Set()
 
   // 1. Pre-fetch lookups to avoid O(N) database queries inside the loop
   const [campuses, departments, subjects] = await Promise.all([
@@ -240,8 +291,9 @@ export async function importTeachersAction(rows: any[], academicYearId?: string)
   await Promise.all(
     rows.map(async (row) => {
       if (row.teacherCode) {
-        const hash = await bcrypt.hash(row.teacherCode, 10)
-        hashedPasswordsMap.set(row.teacherCode, hash)
+        const code = String(row.teacherCode).trim().toUpperCase()
+        const hash = await bcrypt.hash(code, 10)
+        hashedPasswordsMap.set(code, hash)
       }
     })
   )
@@ -249,18 +301,30 @@ export async function importTeachersAction(rows: any[], academicYearId?: string)
   // 3. Process database updates sequentially
   for (const row of rows) {
     if (!row.teacherCode || !row.teacherName) { skipped++; continue }
-    try {
-      const existing = await prisma.teacher.findUnique({ where: { teacherCode: row.teacherCode } })
-      if (existing) { skipped++; continue }
+    const code = String(row.teacherCode).trim().toUpperCase()
+    if (seenCodesInFile.has(code)) {
+      skipped++
+      warnings.push(`Mã GV trùng lặp trong tệp Excel: ${code}`)
+      continue
+    }
+    seenCodesInFile.add(code)
 
-      const hashedPassword = hashedPasswordsMap.get(row.teacherCode) || await bcrypt.hash(row.teacherCode, 10)
-      const existingUser = await prisma.user.findUnique({ where: { email: row.teacherCode } })
+    try {
+      const existing = await prisma.teacher.findUnique({ where: { teacherCode: code } })
+      if (existing) {
+        skipped++
+        warnings.push(`Mã GV đã tồn tại trong hệ thống: ${code}`)
+        continue
+      }
+
+      const hashedPassword = hashedPasswordsMap.get(code) || await bcrypt.hash(code, 10)
+      const existingUser = await prisma.user.findUnique({ where: { email: code } })
       let userId: string
       if (existingUser) {
         userId = existingUser.id
       } else {
         const user = await prisma.user.create({
-          data: { fullName: row.teacherName, email: row.teacherCode, passwordHash: hashedPassword, role: "TEACHER", status: "ACTIVE" }
+          data: { fullName: row.teacherName, email: code, passwordHash: hashedPassword, role: "TEACHER", status: "ACTIVE" }
         })
         userId = user.id
       }
@@ -287,7 +351,7 @@ export async function importTeachersAction(rows: any[], academicYearId?: string)
 
       const teacher = await prisma.teacher.create({
         data: {
-          userId, teacherCode: row.teacherCode, teacherName: row.teacherName,
+          userId, teacherCode: code, teacherName: row.teacherName,
           email: row.email || null, phone: row.phone || null,
           departmentId, mainSubjectId,
           campusId, status: "ACTIVE"
@@ -310,13 +374,23 @@ export async function importTeachersAction(rows: any[], academicYearId?: string)
       }
       created++
     } catch(e: any) {
-      errors.push(row.teacherCode + ": " + e.message)
+      errors.push(code + ": " + e.message)
     }
   }
 
+  const session = await auth()
+  await logActivity(
+    session?.user?.id || "SYSTEM",
+    session?.user?.email || "SYSTEM",
+    "IMPORT_TEACHERS",
+    "Teacher",
+    "BATCH",
+    null,
+    { created, skipped, errorsCount: errors.length }
+  )
   revalidatePath("/admin/teachers")
   revalidatePath("/admin/classes")
-  return { success: true, created, skipped, errors }
+  return { success: true, created, skipped, errors, warnings }
 }
 
 export async function resetTeacherPasswordAction(teacherId: string) {

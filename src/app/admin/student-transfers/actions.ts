@@ -305,10 +305,21 @@ export async function createTransferInAction(data: any) {
     }
 
     return await prisma.$transaction(async (tx) => {
+      const studentCode = (data.studentCode || assessmentStudent.studentCode)?.trim().toUpperCase();
+      if (!studentCode) {
+        throw new Error("Mã học sinh không được để trống!");
+      }
+      const existing = await tx.student.findUnique({
+        where: { studentCode }
+      });
+      if (existing) {
+        throw new Error(`Mã học sinh '${studentCode}' đã tồn tại trong hệ thống học sinh chính thức!`);
+      }
+
       // Create new student
       const newStudent = await tx.student.create({
         data: {
-          studentCode: data.studentCode || assessmentStudent.studentCode,
+          studentCode: studentCode,
           studentName: data.studentName || assessmentStudent.fullName,
           dateOfBirth: assessmentStudent.dateOfBirth,
           gender: assessmentStudent.gender,
@@ -565,10 +576,21 @@ export async function completeEnrollmentAction(id: string, isPreschool: boolean,
     }
 
     return await prisma.$transaction(async (tx) => {
+      const studentCode = (data.studentCode || candidate.studentCode)?.trim().toUpperCase();
+      if (!studentCode) {
+        throw new Error("Mã học sinh không được để trống!");
+      }
+      const existing = await tx.student.findUnique({
+        where: { studentCode }
+      });
+      if (existing) {
+        throw new Error(`Mã học sinh '${studentCode}' đã tồn tại trong hệ thống học sinh chính thức!`);
+      }
+
       // 1. Create official student in Student table
       const newStudent = await tx.student.create({
         data: {
-          studentCode: data.studentCode || candidate.studentCode,
+          studentCode: studentCode,
           studentName: data.studentName || candidate.fullName,
           dateOfBirth: candidate.dateOfBirth,
           gender: candidate.gender,

@@ -140,7 +140,12 @@ export function TeacherManagerClient({
     setSaving(true); setErrorMsg("")
     try {
       const selectedCampus = (campuses || []).find((c) => c.campusName === newForm.campus)
-      await createTeacherAction({ ...newForm, campusId: selectedCampus?.id, position: newForm.position })
+      const res = await createTeacherAction({ ...newForm, campusId: selectedCampus?.id, position: newForm.position })
+      if (res && !res.success) {
+        setErrorMsg(res.error || "Mã GV đã tồn tại hoặc có lỗi xảy ra!");
+        setSaving(false);
+        return;
+      }
       setTeachers([...teachers, {
         id: "temp_" + Date.now(), teacherCode: newForm.teacherCode, teacherName: newForm.teacherName,
         dateOfBirth: newForm.dateOfBirth || null,
@@ -221,9 +226,19 @@ export function TeacherManagerClient({
       if (!parsed.success) { setErrorMsg(parsed.error || "Lỗi đọc file"); setImporting(false); return }
       const result = await importTeachersAction(parsed.data, defaultYearId)
       setImportResult(result)
-      if (result.created > 0) {
-        setSuccessMsg(`Import thành công: ${result.created} giáo viên, bỏ qua ${result.skipped}`)
-        setTimeout(() => { setSuccessMsg(""); window.location.reload() }, 2000)
+      if (result.success) {
+        let msg = `Import thành công: ${result.created} giáo viên. Bỏ qua: ${result.skipped}.`
+        if (result.warnings && result.warnings.length > 0) {
+          setErrorMsg(`Cảnh báo nhập trùng:\n` + result.warnings.join("\n"))
+        }
+        if (result.created > 0) {
+          setSuccessMsg(msg)
+          setTimeout(() => { setSuccessMsg(""); window.location.reload() }, 4000)
+        } else {
+          if (!result.warnings || result.warnings.length === 0) {
+            setErrorMsg("Không tìm thấy giáo viên mới nào để import.")
+          }
+        }
       }
     } catch(e: any) { setErrorMsg("Lỗi khi import: " + e.message) }
     setImporting(false)
@@ -248,7 +263,7 @@ export function TeacherManagerClient({
       {errorMsg && (
         <div className="flex items-center gap-2.5 text-rose-800 text-sm font-medium shadow-sm transition-all duration-200 text-xs font-semibold">
           <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-500" />
-          <span>{errorMsg}</span>
+          <span className="whitespace-pre-line">{errorMsg}</span>
           <button onClick={() => setErrorMsg("")} className="ml-auto text-rose-450 hover:text-rose-600 transition-colors">
             <X className="w-4 h-4" />
           </button>

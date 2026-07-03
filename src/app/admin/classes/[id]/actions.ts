@@ -1,5 +1,7 @@
 "use server"
 import { prisma } from "@/lib/db"
+import { auth } from "@/lib/auth"
+import { logActivity } from "@/lib/audit"
 import { revalidatePath } from "next/cache"
 
 export async function importStudentsAction(classId: string, data: any[]) {
@@ -11,9 +13,11 @@ export async function importStudentsAction(classId: string, data: any[]) {
   let count = 0
   let skipped = 0
   let errorMsg = ""
+  const warnings: string[] = []
+  const seenCodesInFile = new Set()
 
   // 1. Pre-fetch existing students to avoid N+1 lookups inside loop
-  const studentCodes = data.map(item => item.studentCode).filter(Boolean)
+  const studentCodes = data.map(item => item.studentCode ? String(item.studentCode).trim().toUpperCase() : "").filter(Boolean)
   const existingStudents = await prisma.student.findMany({
     where: { studentCode: { in: studentCodes } }
   })
@@ -27,25 +31,25 @@ export async function importStudentsAction(classId: string, data: any[]) {
           skipped++
           continue
         }
+        const sCode = String(item.studentCode).trim().toUpperCase()
 
-        const existing = existingStudentsMap.get(item.studentCode)
+        if (seenCodesInFile.has(sCode)) {
+          skipped++
+          warnings.push(`Mã HS trùng lặp trong tệp Excel: ${sCode}`)
+          continue
+        }
+        seenCodesInFile.add(sCode)
+
+        const existing = existingStudentsMap.get(sCode)
 
         if (existing) {
-          await tx.student.update({
-            where: { id: existing.id },
-            data: {
-              studentName: item.studentName,
-              gender: item.gender,
-              dateOfBirth: item.dateOfBirth ? new Date(item.dateOfBirth) : null,
-              classId: cls.id,
-              campusId: cls.campusId,
-              academicYearId: cls.academicYearId
-            }
-          })
+          skipped++
+          warnings.push(`Mã HS đã tồn tại trong hệ thống: ${sCode}`)
+          continue
         } else {
           await tx.student.create({
             data: {
-              studentCode: item.studentCode,
+              studentCode: sCode,
               studentName: item.studentName,
               gender: item.gender,
               dateOfBirth: item.dateOfBirth ? new Date(item.dateOfBirth) : null,
@@ -64,20 +68,41 @@ export async function importStudentsAction(classId: string, data: any[]) {
       }
     }
   })
+  const session = await auth()
+  await logActivity(
+    session?.user?.id || "SYSTEM",
+    session?.user?.email || "SYSTEM",
+    "IMPORT_STUDENTS",
+    "Student",
+    "BATCH",
+    null,
+    { count, skipped, warningsCount: warnings.length }
+  )
   revalidatePath(`/admin/classes/${classId}`)
-  if (count === 0 && data.length > 0) {
+  if (count === 0 && data.length > 0 && warnings.length === 0) {
     return { success: false, error: "Lỗi lưu dữ liệu: " + (errorMsg || "Không rõ nguyên nhân") + ". Skpped: " + skipped }
   }
-  return { success: true, count, skipped }
+  return { success: true, count, skipped, warnings }
 }
 
 export async function addStudentAction(classId: string, data: any) {
   const cls = await prisma.class.findUnique({ where: { id: classId } })
   if (!cls) return { success: false, error: "Class not found" }
   try {
-    await prisma.student.create({
+    const studentCode = data.studentCode?.trim().toUpperCase()
+    if (!studentCode) {
+      return { success: false, error: "Mã học sinh không được để trống!" }
+    }
+
+    // Check duplicate studentCode
+    const existing = await prisma.student.findUnique({ where: { studentCode } })
+    if (existing) {
+      return { success: false, error: `Mã học sinh '${studentCode}' đã tồn tại trong hệ thống. Vui lòng nhập mã khác!` }
+    }
+
+    const student = await prisma.student.create({
       data: {
-        studentCode: data.studentCode,
+        studentCode: studentCode,
         studentName: data.studentName,
         gender: data.gender,
         dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
@@ -87,6 +112,16 @@ export async function addStudentAction(classId: string, data: any) {
         status: "ACTIVE"
       }
     })
+    const session = await auth()
+    await logActivity(
+      session?.user?.id || "SYSTEM",
+      session?.user?.email || "SYSTEM",
+      "CREATE_STUDENT",
+      "Student",
+      student.id,
+      null,
+      { studentCode, studentName: data.studentName, classId }
+    )
     revalidatePath(`/admin/classes/${classId}`)
     return { success: true }
   } catch (e: any) {
@@ -96,15 +131,37 @@ export async function addStudentAction(classId: string, data: any) {
 
 export async function updateStudentAction(classId: string, studentId: string, data: any) {
   try {
+    const studentCode = data.studentCode?.trim().toUpperCase()
+    if (!studentCode) {
+      return { success: false, error: "Mã học sinh không được để trống!" }
+    }
+
+    // Check if another student has this code
+    const existing = await prisma.student.findUnique({ where: { studentCode } })
+    if (existing && existing.id !== studentId) {
+      return { success: false, error: `Mã học sinh '${studentCode}' đã tồn tại trên một học sinh khác!` }
+    }
+
+    const oldStudent = await prisma.student.findUnique({ where: { id: studentId } })
     await prisma.student.update({
       where: { id: studentId },
       data: {
-        studentCode: data.studentCode,
+        studentCode: studentCode,
         studentName: data.studentName,
         gender: data.gender,
         dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
       }
     })
+    const session = await auth()
+    await logActivity(
+      session?.user?.id || "SYSTEM",
+      session?.user?.email || "SYSTEM",
+      "UPDATE_STUDENT",
+      "Student",
+      studentId,
+      oldStudent,
+      data
+    )
     revalidatePath(`/admin/classes/${classId}`)
     return { success: true }
   } catch (e: any) {
@@ -117,6 +174,16 @@ export async function deleteStudentsAction(classId: string, studentIds: string[]
     await prisma.student.deleteMany({
       where: { id: { in: studentIds } }
     })
+    const session = await auth()
+    await logActivity(
+      session?.user?.id || "SYSTEM",
+      session?.user?.email || "SYSTEM",
+      "DELETE_STUDENTS",
+      "Student",
+      studentIds.join(","),
+      null,
+      { deletedCount: studentIds.length }
+    )
     revalidatePath(`/admin/classes/${classId}`)
     return { success: true }
   } catch (e: any) {
