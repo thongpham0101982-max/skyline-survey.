@@ -1,10 +1,13 @@
 import { prisma } from "@/lib/db"
 import { LogsClient } from "./client"
+import { getAdminSession } from "@/lib/session"
 
 export const metadata = { title: "Nhật ký Hệ thống | Admin Portal" }
 export const dynamic = "force-dynamic"
 
 export default async function LogsPage({ searchParams }: { searchParams: any }) {
+  const session = await getAdminSession() // Enforce admin session verification
+  
   const params = await searchParams;
   const page = parseInt(params.page) || 1
   const limit = 50
