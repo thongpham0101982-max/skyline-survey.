@@ -101,7 +101,7 @@ export function TeacherManagerClient({
   const [successMsg, setSuccessMsg] = useState("")
   const fileInputRef = useRef(null)
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 40
+  const itemsPerPage = 10
 
   // Reset page to 1 when filters change:
   const [prevFilters, setPrevFilters] = useState('')
