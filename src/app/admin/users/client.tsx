@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Plus, Edit2, Trash2, CheckCircle2, X, Filter, Search } from "lucide-react"
 
 const cleanStr = (s) => 
@@ -23,6 +23,13 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [deleting, setDeleting] = useState(false);
   const [moving, setMoving] = useState(false);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterRole, filterCampus, search]);
 
   const handleMoveGroup = async (newRoleCode: string) => {
     const roleName = roles.find((r: any) => r.code === newRoleCode)?.name || newRoleCode;
@@ -114,6 +121,9 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
     }
     return true;
   });
+
+  const totalPages = Math.ceil(displayedUsers.length / pageSize);
+  const paginatedUsers = displayedUsers.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
     <div className="space-y-4">
@@ -250,7 +260,7 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
             </thead>
             <tbody className="divide-y divide-slate-100">
 
-              {displayedUsers.map((u:any) => editingId === u.id ? (
+              {paginatedUsers.map((u:any) => editingId === u.id ? (
                 <tr key={u.id} className="bg-[#00A99D]/10/30">
                   <td className="p-2 p-2 border border-slate-200"></td>
                   <td className="p-2 p-2 border border-slate-200"><input value={formData.employeeCode} onChange={e=>setFormData({...formData, employeeCode: e.target.value})} className="w-32 p-1.5 rounded border text-sm font-semibold border-slate-300" /></td>
@@ -319,6 +329,53 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
             </tbody>
           </table>
         </div>
+        
+        {/* Pagination Control */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between p-4 border-t border-slate-100 bg-slate-50 text-xs font-semibold rounded-b-2xl">
+            <p className="text-slate-500 font-medium">
+              Hiển thị {((currentPage - 1) * pageSize) + 1} - {Math.min(currentPage * pageSize, displayedUsers.length)} trên tổng số {displayedUsers.length} tài khoản
+            </p>
+            <div className="flex gap-1.5">
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(currentPage - 1)}
+                className="px-3.5 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-40 transition-all cursor-pointer"
+              >
+                Trước
+              </button>
+              {Array.from({ length: totalPages }).map((_, idx) => {
+                const pNum = idx + 1;
+                if (totalPages > 6 && Math.abs(pNum - currentPage) > 2 && pNum !== 1 && pNum !== totalPages) {
+                  if (pNum === 2 || pNum === totalPages - 1) {
+                    return <span key={pNum} className="px-1 text-slate-400 self-center">...</span>;
+                  }
+                  return null;
+                }
+                return (
+                  <button
+                    key={pNum}
+                    onClick={() => setCurrentPage(pNum)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      currentPage === pNum
+                        ? "bg-[#00A99D] text-white border border-[#00A99D]"
+                        : "border border-slate-200 text-slate-700 bg-white hover:bg-slate-50"
+                    }`}
+                  >
+                    {pNum}
+                  </button>
+                );
+              })}
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(currentPage + 1)}
+                className="px-3.5 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-40 transition-all cursor-pointer"
+              >
+                Sau
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
